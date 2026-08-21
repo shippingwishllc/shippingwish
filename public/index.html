@@ -454,6 +454,20 @@
       .platform-preview { display: none; }
       .trust-bar-grid  { gap: var(--space-6); }
     }
+
+    .kpi-hover-card:hover {
+      border-color: rgba(245,158,11,0.4) !important;
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5) !important;
+    }
+
+    @media (max-width: 1024px) {
+      .kpi-cards-responsive { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+
+    @media (max-width: 640px) {
+      .kpi-cards-responsive { grid-template-columns: 1fr !important; }
+    }
   </style>
 </head>
 <body>
@@ -546,57 +560,87 @@
       </a>
     </div>
 
-    <div class="hero-metrics" aria-label="Live Shipping Wish Telemetry Metrics">
+    <!-- REALISTIC HERO METRICS -->
+    <div class="hero-metrics" aria-label="Shipping Wish Business Model Stats">
       <div class="hero-metric-item">
-        <span class="hero-metric-value">$<span class="stat-counter" data-target="4.8" data-decimal="1">0.0</span>M+</span>
-        <span class="hero-metric-label">Gross Freight Dispatched</span>
+        <span class="hero-metric-value" style="color:var(--color-amber-400);">5% – 10%</span>
+        <span class="hero-metric-label">Commission-Only Dispatch Fee</span>
       </div>
       <div class="hero-divider" aria-hidden="true"></div>
       <div class="hero-metric-item">
-        <span class="hero-metric-value"><span class="stat-counter" data-target="1840" data-decimal="0">0</span>+</span>
-        <span class="hero-metric-label">Loads Booked Across USA</span>
+        <span class="hero-metric-value">$0</span>
+        <span class="hero-metric-label">Setup Cost · No Binding Contracts</span>
       </div>
       <div class="hero-divider" aria-hidden="true"></div>
       <div class="hero-metric-item">
-        <span class="hero-metric-value"><span class="stat-counter" data-target="99.8" data-decimal="1">0.0</span>%</span>
-        <span class="hero-metric-label">On-Time Delivery & Check Calls</span>
+        <span class="hero-metric-value">All 48</span>
+        <span class="hero-metric-label">US States Covered</span>
       </div>
       <div class="hero-divider" aria-hidden="true"></div>
       <div class="hero-metric-item">
-        <span class="hero-metric-value" style="color:var(--color-amber-400);">24/7 LIVE</span>
-        <span class="hero-metric-label">Dispatch Operations Desk</span>
+        <span class="hero-metric-value" style="color:#6ee7b7;">24/7 LIVE</span>
+        <span class="hero-metric-label">Dedicated Dispatch Desk</span>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== ENTERPRISE TELEMETRY TICKER BAR ===== -->
-<div class="trust-bar" aria-label="Platform capabilities and telemetry">
+<!-- ===== HIGH-END ENTERPRISE KPI FEATURE CARDS ===== -->
+<section style="background:linear-gradient(180deg, #090d16 0%, #0f172a 100%);padding:var(--space-12) 0;border-bottom:1px solid rgba(255,255,255,0.08);">
   <div class="container">
-    <div class="trust-bar-grid">
-      <div class="trust-bar-item">
-        <span class="trust-bar-value" style="color:var(--color-amber-400);font-weight:800;">⚡ Real-Time Booking</span>
-        <span class="trust-bar-label" style="color:rgba(255,255,255,0.85);font-weight:600;">DAT One & 123Loadboard Network</span>
+    <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:var(--space-6);" class="kpi-cards-responsive">
+
+      <!-- KPI Card 1 -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-2xl);padding:var(--space-6);transition:all var(--transition-base);box-shadow:var(--shadow-md);" class="kpi-hover-card">
+        <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
+          <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;">⚡</div>
+          <div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-amber-400);">Load Board Integration</div>
+            <h4 style="font-size:var(--text-base);font-weight:800;color:#fff;margin:0;">DAT & 123Loadboard</h4>
+          </div>
+        </div>
+        <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.65);line-height:1.6;margin:0;">Direct access to top load boards and nationwide broker networks to book your preferred lanes quickly.</p>
       </div>
-      <div class="trust-bar-item">
-        <span class="trust-bar-value" style="color:#fff;font-weight:800;">📈 $3.48 / Mile Avg</span>
-        <span class="trust-bar-label" style="color:rgba(255,255,255,0.85);font-weight:600;">High-Paying US Freight Lanes</span>
+
+      <!-- KPI Card 2 -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-2xl);padding:var(--space-6);transition:all var(--transition-base);box-shadow:var(--shadow-md);" class="kpi-hover-card">
+        <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
+          <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;">📈</div>
+          <div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#93c5fd;">High Rate Per Mile</div>
+            <h4 style="font-size:var(--text-base);font-weight:800;color:#fff;margin:0;">Rate Negotiation</h4>
+          </div>
+        </div>
+        <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.65);line-height:1.6;margin:0;">Aggressive rate negotiation with top brokers to maximize gross RPM and keep your trucks profitable.</p>
       </div>
-      <div class="trust-bar-item">
-        <span class="trust-bar-value" style="color:#6ee7b7;font-weight:800;">💳 Weekly Settlement</span>
-        <span class="trust-bar-label" style="color:rgba(255,255,255,0.85);font-weight:600;">Stripe Commission Invoicing</span>
+
+      <!-- KPI Card 3 -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-2xl);padding:var(--space-6);transition:all var(--transition-base);box-shadow:var(--shadow-md);" class="kpi-hover-card">
+        <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
+          <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;">💳</div>
+          <div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6ee7b7;">Transparent Billing</div>
+            <h4 style="font-size:var(--text-base);font-weight:800;color:#fff;margin:0;">Stripe Invoicing</h4>
+          </div>
+        </div>
+        <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.65);line-height:1.6;margin:0;">Carriers collect 100% load payments directly. We issue weekly Stripe invoices only for our dispatch commission.</p>
       </div>
-      <div class="trust-bar-item">
-        <span class="trust-bar-value" style="color:#93c5fd;font-weight:800;">🛡️ FMCSA Compliant</span>
-        <span class="trust-bar-label" style="color:rgba(255,255,255,0.85);font-weight:600;">Carrier Packet & Certificate Review</span>
+
+      <!-- KPI Card 4 -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-2xl);padding:var(--space-6);transition:all var(--transition-base);box-shadow:var(--shadow-md);" class="kpi-hover-card">
+        <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
+          <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🛡️</div>
+          <div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#d8b4fe;">FMCSA Compliance</div>
+            <h4 style="font-size:var(--text-base);font-weight:800;color:#fff;margin:0;">Safety & Carrier Packets</h4>
+          </div>
+        </div>
+        <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.65);line-height:1.6;margin:0;">Complete carrier packet setup, COI certificate management, and DOT compliance review per load.</p>
       </div>
-      <div class="trust-bar-item">
-        <span class="trust-bar-value" style="color:#fcd34d;font-weight:800;">🚛 Full Fleet Support</span>
-        <span class="trust-bar-label" style="color:rgba(255,255,255,0.85);font-weight:600;">Dry Van · Reefer · Flatbed · Power Only</span>
-      </div>
+
     </div>
   </div>
-</div>
+</section>
 
 <!-- ===== SERVICES ===== -->
 <section class="section" id="services" aria-labelledby="services-heading">
