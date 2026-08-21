@@ -10,8 +10,9 @@
     <style>
         /* Specific styles for the services page to complement design-system.css */
         .service-layout {
-            max-width: var(--container-2xl);
+            max-width: var(--container-xl);
             margin: 0 auto;
+            padding: 0 var(--space-6);
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 4rem;
@@ -29,6 +30,7 @@
                 grid-template-columns: 1fr;
                 direction: ltr;
                 gap: 2rem;
+                padding: 0 var(--space-4);
             }
         }
         
@@ -93,9 +95,9 @@
             <a href="/services.html" class="active" aria-current="page">Services ▾</a>
             <div class="nav-dropdown-menu" role="menu">
               <div class="dropdown-label">Dispatch</div>
-              <a href="/services.html#dispatch" role="menuitem">Freight Dispatch</a>
-              <a href="/services.html#load-booking" role="menuitem">Load Booking</a>
-              <a href="/services.html#fleet" role="menuitem">Fleet & Driver Support</a>
+              <a href="/dispatch.html" role="menuitem">Freight Dispatch</a>
+              <a href="/load-booking.html" role="menuitem">Load Booking</a>
+              <a href="/fleet-support.html" role="menuitem">Fleet & Driver Support</a>
               <div class="dropdown-label">Financial</div>
               <a href="/factoring.html" role="menuitem">Factoring Assistance</a>
               <a href="/insurance.html" role="menuitem">Insurance Services</a>
