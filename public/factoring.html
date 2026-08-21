@@ -1,16 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1-Day Freight Factoring Setup | Shipping Wish LLC</title>
-<meta name="description" content="Get 1-Day Same-Day Freight Factoring setup. Partnered with RTS Financial & Apex Capital. 0.99% low factoring rates with 0% advance fees.">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/design-system.css">
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1-Day Freight Factoring Setup — Shipping Wish LLC</title>
+  <meta name="description" content="Get 1-Day Same-Day Freight Factoring setup. Partnered with RTS Financial, Apex Capital, and TriumphPay. 0.99% low factoring rates with 0% advance fees.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .factoring-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: var(--space-12);
+      align-items: center;
+    }
+
+    .form-card-dark {
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-8);
+      box-shadow: var(--shadow-2xl);
+    }
+
+    @media (max-width: 992px) {
+      .factoring-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 
+<!-- NAV -->
 <nav class="nav" role="navigation" aria-label="Main navigation">
   <div class="nav-inner">
     <a href="/" class="nav-logo" aria-label="Shipping Wish LLC Home">
@@ -55,115 +75,117 @@
   </div>
 </nav>
 
-<!-- Mobile nav -->
-<div class="nav-mobile" id="nav-mobile" role="dialog" aria-modal="true" aria-label="Mobile navigation">
-  <a href="/">Home</a>
-  <a href="/services.html">Services</a>
-  <a href="/factoring.html" class="active">Factoring Assistance</a>
-  <a href="/insurance.html">Insurance Services</a>
-  <a href="/eld.html">ELD & Telematics</a>
-  <a href="/dot-compliance.html">DOT Compliance</a>
-  <a href="/about.html">About</a>
-  <a href="/contact.html">Contact</a>
-  <div style="margin-top:24px;display:flex;flex-direction:column;gap:12px;">
-    <a href="/login.html" class="btn btn-light btn-lg btn-block">Sign In</a>
-    <a href="/contact.html" class="btn btn-primary btn-lg btn-block">Get Started →</a>
-  </div>
-</div>
-
-<section class="section" style="padding-top:40px;">
-  <div class="container">
-    <div class="hero-grid" style="align-items:center;">
+<!-- HERO SECTION -->
+<section class="section" style="background:var(--color-gray-900);padding:var(--space-20) 0 var(--space-16);border-bottom:1px solid rgba(255,255,255,0.08);">
+  <div class="container" style="max-width:var(--container-xl);">
+    <div class="factoring-grid">
+      
+      <!-- Left Column: Copy -->
       <div>
-        <span class="eyebrow" style="margin-bottom:12px;">Instant Cash Flow &amp; Same-Day Payouts</span>
-        <h1 style="font-size:42px;font-weight:800;line-height:1.2;margin-bottom:16px;">1-Day Same-Day Freight Factoring Setup</h1>
-        <p class="muted" style="font-size:16px;margin-bottom:24px;">Don't wait 30 to 60 days to get paid by brokers. Partnered with <b>RTS Financial</b>, <b>Apex Capital</b>, and <b>TriumphPay</b>. Turn your Rate Confirmations &amp; BOLs into cash on the same day with rates as low as <b>0.99%</b>.</p>
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-amber-400);margin-bottom:var(--space-3);">Instant Cash Flow & Same-Day Payouts</div>
+        <h1 style="font-size:clamp(2.25rem, 5vw, 3.5rem);font-weight:900;color:#fff;line-height:1.1;margin-bottom:var(--space-4);">
+          1-Day Freight Factoring Setup<br><span style="color:var(--color-amber-400);">Turn Rates Confirms Into Cash</span>
+        </h1>
+        <p style="font-size:var(--text-base);color:rgba(255,255,255,0.7);line-height:1.6;margin-bottom:var(--space-6);">
+          Don't wait 30 to 60 days to get paid by brokers. Partnered with <strong>RTS Financial</strong>, <strong>Apex Capital</strong>, and <strong>TriumphPay</strong>. Get same-day funding for your Rate Confirmations & BOLs with rates as low as <strong>0.99%</strong>.
+        </p>
 
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
-          <span class="badge badge-paid">⚡ Same-Day Fuel Advance Available</span>
-          <span class="badge badge-booked">💳 Rates As Low As 0.99%</span>
-          <span class="badge badge-paid">🛡️ Full Non-Recourse Credit Protection</span>
+        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-6);">
+          <span class="badge badge-amber">⚡ Same-Day Fuel Advances</span>
+          <span class="badge badge-green">💳 Rates As Low As 0.99%</span>
+          <span class="badge badge-blue">🛡️ Non-Recourse Credit Protection</span>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:var(--space-4);display:flex;align-items:center;gap:var(--space-4);">
+          <div style="font-size:24px;">🤝</div>
+          <div style="font-size:var(--text-xs);color:rgba(255,255,255,0.7);">
+            <strong style="color:#fff;">Carriers keep 100% of broker payouts.</strong> Shipping Wish does NOT deduct commission from factoring. You receive direct funding to your bank account.
+          </div>
         </div>
       </div>
 
-      <!-- Factoring Application Form Box -->
-      <div class="card-hover" style="background:#ffffff;border:1px solid var(--border-light-color);padding:28px;border-radius:var(--radius-lg);box-shadow:var(--shadow-light-card);">
-        <h3 style="font-size:22px;color:var(--text-dark-main);margin-bottom:6px;">Apply For 1-Day Factoring Setup</h3>
-        <p class="muted" style="font-size:13px;margin-bottom:20px;">Zero setup fees. Submit your carrier info to get approved for same-day funding today.</p>
+      <!-- Right Column: Application Form -->
+      <div class="form-card-dark">
+        <h3 style="font-size:var(--text-xl);font-weight:800;color:#fff;margin-bottom:4px;">Apply For 1-Day Factoring Setup</h3>
+        <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.6);margin-bottom:var(--space-5);">Zero setup fees. Submit your carrier info to get approved for same-day funding.</p>
 
         <form id="factoring-form">
-          <div class="form-row">
-            <div class="field">
-              <label>Company Name *</label>
-              <input type="text" id="fact-comp" required placeholder="Apex Express LLC">
+          <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="fact-comp" style="color:rgba(255,255,255,0.9);">Company Name</label>
+                <input class="form-input" type="text" id="fact-comp" required placeholder="Apex Express LLC" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="fact-name" style="color:rgba(255,255,255,0.9);">Contact Full Name</label>
+                <input class="form-input" type="text" id="fact-name" required placeholder="John Doe" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);">
+              </div>
             </div>
-            <div class="field">
-              <label>Contact Full Name *</label>
-              <input type="text" id="fact-name" required placeholder="John Doe">
-            </div>
-          </div>
 
-          <div class="form-row">
-            <div class="field">
-              <label>Phone Number *</label>
-              <input type="tel" id="fact-phone" required placeholder="+1 (555) 000-0000">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="fact-phone" style="color:rgba(255,255,255,0.9);">Phone Number</label>
+                <input class="form-input" type="tel" id="fact-phone" required placeholder="+1 (917) 000-0000" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="fact-mc" style="color:rgba(255,255,255,0.9);">MC / USDOT Number</label>
+                <input class="form-input" type="text" id="fact-mc" required placeholder="MC-123456" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);">
+              </div>
             </div>
-            <div class="field">
-              <label>MC / USDOT Number *</label>
-              <input type="text" id="fact-mc" required placeholder="MC-123456">
+
+            <div class="form-group">
+              <label class="form-label" for="fact-rev" style="color:rgba(255,255,255,0.9);">Estimated Monthly Revenue ($)</label>
+              <input class="form-input" type="number" id="fact-rev" placeholder="25000" value="25000" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);">
             </div>
-          </div>
 
-          <div class="field" style="margin-bottom:16px;">
-            <label>Estimated Monthly Revenue ($)</label>
-            <input type="number" id="fact-rev" placeholder="25000" value="25000">
+            <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-submit-factoring" style="margin-top:var(--space-2);">
+              Submit Factoring Application (Same-Day Approval) →
+            </button>
           </div>
-
-          <button type="submit" class="btn btn-blue btn-block">Submit Factoring Application (Same-Day Approval)</button>
         </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE HIGHLIGHTS -->
+<section class="section" style="padding:var(--space-16) 0;">
+  <div class="container" style="max-width:var(--container-xl);">
+    <div style="text-align:center;max-width:600px;margin:0 auto var(--space-12);">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-amber-600);margin-bottom:var(--space-2);">Why Factoring With Shipping Wish</div>
+      <h2 style="font-size:var(--text-2xl);font-weight:800;color:var(--text-primary);">Everything You Need For Fuel & Operating Cash</h2>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:var(--space-6);" class="responsive-grid-3col">
+      <div style="background:var(--color-white);border:1px solid var(--border-default);border-radius:var(--radius-2xl);padding:var(--space-6);box-shadow:var(--shadow-sm);">
+        <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(245,158,11,0.12);color:var(--color-amber-600);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:var(--space-4);">⚡</div>
+        <h3 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin-bottom:var(--space-2);">Same-Day Fuel Advances</h3>
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:1.6;margin:0;">Get up to 50% fuel advances as soon as your truck is loaded, so you never get stuck without fuel money.</p>
+      </div>
+
+      <div style="background:var(--color-white);border:1px solid var(--border-default);border-radius:var(--radius-2xl);padding:var(--space-6);box-shadow:var(--shadow-sm);">
+        <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(16,185,129,0.12);color:var(--color-success);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:var(--space-4);">🛡️</div>
+        <h3 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin-bottom:var(--space-2);">Free Broker Credit Checks</h3>
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:1.6;margin:0;">Unlimited instant credit checks on brokers before accepting loads to protect your fleet from non-paying brokers.</p>
+      </div>
+
+      <div style="background:var(--color-white);border:1px solid var(--border-default);border-radius:var(--radius-2xl);padding:var(--space-6);box-shadow:var(--shadow-sm);">
+        <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(59,130,246,0.12);color:var(--color-accent-blue);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:var(--space-4);">💳</div>
+        <h3 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin-bottom:var(--space-2);">Non-Recourse Protection</h3>
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:1.6;margin:0;">Full non-recourse factoring protects your business if the broker goes bankrupt or fails to pay.</p>
       </div>
     </div>
   </div>
 </section>
 
-<footer class="site-footer">
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <a href="/" class="brand"><span class="dot"></span> Shipping Wish LLC</a>
-        <p>Shipping Wish LLC is a full-service truck dispatch company, factoring partner, and enterprise logistics conglomerate.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Navigation</h4>
-        <ul>
-          <li><a href="/index.html">Home</a></li>
-          <li><a href="/services.html">Services</a></li>
-          <li><a href="/insurance.html">Get Insurance</a></li>
-          <li><a href="/factoring.html">Factoring</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Carrier &amp; Staff Portals</h4>
-        <ul>
-          <li><a href="/dashboard.html">Carrier Client Portal</a></li>
-          <li><a href="/signup.html">New Carrier Sign Up</a></li>
-          <li><a href="/login.html">Staff &amp; Carrier Login</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Corporate Head Office</h4>
-        <p style="color:var(--text-muted);font-size:14px;line-height:1.7;">
-          19266 Coastal Hwy,<br>Rehoboth, DE 19971, USA<br>📞 Phone: +1 917 737 0021
-        </p>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>&copy; 2026 Shipping Wish LLC. Freight Factoring Solutions Division.</p>
-    </div>
+<!-- FOOTER -->
+<footer style="background:var(--color-gray-900);padding:var(--space-12) 0 var(--space-8);color:#fff;border-top:1px solid rgba(255,255,255,0.08);">
+  <div class="container" style="max-width:var(--container-xl);text-align:center;">
+    <div style="font-size:14px;color:rgba(255,255,255,0.5);">© 2026 Shipping Wish LLC. 19266 Coastal Hwy, Rehoboth Beach, DE 19971. All rights reserved.</div>
   </div>
 </footer>
 
-<script src="/js/main.js"></script>
 <script>
   document.getElementById('factoring-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -171,16 +193,6 @@
     e.target.reset();
   });
 </script>
-<script>
-  const hamburger = document.getElementById('nav-hamburger');
-  const mobileNav = document.getElementById('nav-mobile');
-  if (hamburger && mobileNav) {
-    hamburger.addEventListener('click', () => {
-      const isOpen = mobileNav.classList.toggle('open');
-      hamburger.setAttribute('aria-expanded', isOpen);
-      document.body.style.overflow = isOpen ? 'hidden' : '';
-    });
-  }
-</script>
+
 </body>
 </html>
