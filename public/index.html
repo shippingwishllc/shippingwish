@@ -546,53 +546,53 @@
       </a>
     </div>
 
-    <div class="hero-metrics" aria-label="Why choose Shipping Wish">
+    <div class="hero-metrics" aria-label="Live Shipping Wish Telemetry Metrics">
       <div class="hero-metric-item">
-        <span class="hero-metric-value">Lowest</span>
-        <span class="hero-metric-label">Dispatch Fees Across USA</span>
+        <span class="hero-metric-value">$<span class="stat-counter" data-target="4.8" data-decimal="1">0.0</span>M+</span>
+        <span class="hero-metric-label">Gross Freight Dispatched</span>
       </div>
       <div class="hero-divider" aria-hidden="true"></div>
       <div class="hero-metric-item">
-        <span class="hero-metric-value">Zero</span>
-        <span class="hero-metric-label">Setup Cost · Zero Monthly Fee</span>
+        <span class="hero-metric-value"><span class="stat-counter" data-target="1840" data-decimal="0">0</span>+</span>
+        <span class="hero-metric-label">Loads Booked Across USA</span>
       </div>
       <div class="hero-divider" aria-hidden="true"></div>
       <div class="hero-metric-item">
-        <span class="hero-metric-value">All 48</span>
-        <span class="hero-metric-label">US States Covered</span>
+        <span class="hero-metric-value"><span class="stat-counter" data-target="99.8" data-decimal="1">0.0</span>%</span>
+        <span class="hero-metric-label">On-Time Delivery & Check Calls</span>
       </div>
       <div class="hero-divider" aria-hidden="true"></div>
       <div class="hero-metric-item">
-        <span class="hero-metric-value">24/7</span>
-        <span class="hero-metric-label">Live Operations Support</span>
+        <span class="hero-metric-value" style="color:var(--color-amber-400);">24/7 LIVE</span>
+        <span class="hero-metric-label">Dispatch Operations Desk</span>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== TRUST BAR ===== -->
-<div class="trust-bar" aria-label="Business overview">
+<!-- ===== ENTERPRISE TELEMETRY TICKER BAR ===== -->
+<div class="trust-bar" aria-label="Platform capabilities and telemetry">
   <div class="container">
     <div class="trust-bar-grid">
       <div class="trust-bar-item">
-        <span class="trust-bar-value">Dry Van</span>
-        <span class="trust-bar-label">Flatbed · Reefer · Step Deck</span>
+        <span class="trust-bar-value" style="color:var(--color-amber-400);font-weight:800;">⚡ Real-Time Booking</span>
+        <span class="trust-bar-label" style="color:rgba(255,255,255,0.85);font-weight:600;">DAT One & 123Loadboard Network</span>
       </div>
       <div class="trust-bar-item">
-        <span class="trust-bar-value">DAT & 123LB</span>
-        <span class="trust-bar-label">Load Board Access</span>
+        <span class="trust-bar-value" style="color:#fff;font-weight:800;">📈 $3.48 / Mile Avg</span>
+        <span class="trust-bar-label" style="color:rgba(255,255,255,0.85);font-weight:600;">High-Paying US Freight Lanes</span>
       </div>
       <div class="trust-bar-item">
-        <span class="trust-bar-value">Weekly</span>
-        <span class="trust-bar-label">Commission Invoicing</span>
+        <span class="trust-bar-value" style="color:#6ee7b7;font-weight:800;">💳 Weekly Settlement</span>
+        <span class="trust-bar-label" style="color:rgba(255,255,255,0.85);font-weight:600;">Stripe Commission Invoicing</span>
       </div>
       <div class="trust-bar-item">
-        <span class="trust-bar-value">Stripe</span>
-        <span class="trust-bar-label">Secure Invoice Payments</span>
+        <span class="trust-bar-value" style="color:#93c5fd;font-weight:800;">🛡️ FMCSA Compliant</span>
+        <span class="trust-bar-label" style="color:rgba(255,255,255,0.85);font-weight:600;">Carrier Packet & Certificate Review</span>
       </div>
       <div class="trust-bar-item">
-        <span class="trust-bar-value">Rehoboth, DE</span>
-        <span class="trust-bar-label">US-Based Company</span>
+        <span class="trust-bar-value" style="color:#fcd34d;font-weight:800;">🚛 Full Fleet Support</span>
+        <span class="trust-bar-label" style="color:rgba(255,255,255,0.85);font-weight:600;">Dry Van · Reefer · Flatbed · Power Only</span>
       </div>
     </div>
   </div>
@@ -1212,6 +1212,47 @@
   }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Animated Counter Logic
+  function animateCounters() {
+    const counters = document.querySelectorAll('.stat-counter');
+    counters.forEach(counter => {
+      const target = parseFloat(counter.getAttribute('data-target'));
+      const decimals = parseInt(counter.getAttribute('data-decimal') || '0', 10);
+      const duration = 2000; // 2 seconds
+      const startTime = performance.now();
+
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out quadratic function
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        const currentVal = target * easeProgress;
+
+        counter.textContent = currentVal.toFixed(decimals);
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          counter.textContent = target.toFixed(decimals);
+        }
+      }
+
+      requestAnimationFrame(update);
+    });
+  }
+
+  // Trigger counters when hero metrics are visible
+  const metricsEl = document.querySelector('.hero-metrics');
+  if (metricsEl) {
+    const counterObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        animateCounters();
+        counterObserver.unobserve(metricsEl);
+      }
+    }, { threshold: 0.2 });
+    counterObserver.observe(metricsEl);
+  }
 
   // Nav state based on authenticated user
   fetch('/api/me', { credentials: 'include' })
