@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us — Shipping Wish LLC | Freight Dispatch & Fleet Operations</title>
+  <meta name="description" content="Get in touch with Shipping Wish LLC. Schedule a free dispatch consultation, request a quote, or call us directly at +1 917 737 0021. No setup fees, no contracts.">
+  <meta name="keywords" content="contact shipping wish, freight dispatch quote, truck dispatch contact, dispatch service request">
+  <link rel="canonical" href="https://www.shippingwish.com/contact.html">
+  <meta property="og:title" content="Contact Shipping Wish LLC — Get Started Today">
+  <meta property="og:description" content="Schedule a free consultation with our dispatch team. No setup fees, no contracts.">
+  <meta property="og:url" content="https://www.shippingwish.com/contact.html">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+
+  <style>
+    .contact-hero {
+      background: var(--color-gray-900);
+      position: relative;
+      overflow: hidden;
+    }
+    .contact-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% -5%, rgba(245,158,11,0.1) 0%, transparent 65%);
+    }
+    .contact-hero-inner {
+      position: relative;
+      z-index: 1;
+      padding: 96px var(--space-6) 80px;
+      max-width: var(--container-2xl);
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: var(--space-12);
+      align-items: start;
+    }
+
+    .contact-form-card {
+      background: var(--color-white);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-10);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .contact-info-panel {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    .contact-method {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      padding: var(--space-5);
+      background: var(--color-white);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xl);
+      transition: all var(--transition-base);
+    }
+
+    .contact-method:hover {
+      border-color: var(--color-amber-300);
+      box-shadow: var(--shadow-md);
+    }
+
+    .contact-method-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--color-amber-50);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .contact-method h4 {
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      margin-bottom: 2px;
+    }
+
+    .contact-method p {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    .contact-method a {
+      font-size: var(--text-sm);
+      color: var(--color-amber-600);
+      font-weight: var(--font-medium);
+      transition: color var(--transition-fast);
+    }
+
+    .contact-method a:hover { color: var(--color-amber-700); }
+
+    /* Pricing cards */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-6);
+    }
+
+    .pricing-card {
+      background: var(--color-white);
+      border: 2px solid var(--border-default);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-8);
+      position: relative;
+      transition: all var(--transition-base);
+    }
+
+    .pricing-card.featured {
+      border-color: var(--color-amber-400);
+      box-shadow: 0 0 0 4px rgba(245,158,11,0.1), var(--shadow-lg);
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--color-amber-500), var(--color-amber-600));
+      color: var(--color-gray-900);
+      font-size: var(--text-xs);
+      font-weight: var(--font-bold);
+      padding: 4px 16px;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+    }
+
+    .pricing-name {
+      font-size: var(--text-lg);
+      font-weight: var(--font-bold);
+      margin-bottom: var(--space-2);
+    }
+
+    .pricing-fleet {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      margin-bottom: var(--space-6);
+    }
+
+    .pricing-commission {
+      font-size: var(--text-4xl);
+      font-weight: var(--font-black);
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .pricing-commission-label {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-bottom: var(--space-6);
+    }
+
+    .pricing-features {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      margin-bottom: var(--space-8);
+    }
+
+    .pricing-feature {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    .pricing-feature .check {
+      color: var(--color-success);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .form-success {
+      display: none;
+      text-align: center;
+      padding: var(--space-10);
+    }
+
+    .form-success .success-icon {
+      font-size: 56px;
+      margin-bottom: var(--space-4);
+    }
+
+    @media (max-width: 1024px) {
+      .contact-grid { grid-template-columns: 1fr; }
+      .contact-info-panel { display: grid; grid-template-columns: 1fr 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin-inline: auto; }
+    }
+
+    @media (max-width: 640px) {
+      .contact-info-panel { grid-template-columns: 1fr; }
+      .contact-form-card { padding: var(--space-6); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo" aria-label="Shipping Wish LLC Home">
+      <div class="nav-logo-mark" aria-hidden="true">SW</div>
+      <div class="nav-logo-text">Shipping <span>Wish</span></div>
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="/">Home</a></li>
+      <li class="nav-item-dropdown">
+        <a href="/services.html">Services ▾</a>
+        <div class="nav-dropdown-menu" role="menu">
+          <div class="dropdown-label">Dispatch</div>
+          <a href="/services.html#dispatch" role="menuitem">Freight Dispatch</a>
+          <a href="/services.html#load-booking" role="menuitem">Load Booking</a>
+          <a href="/services.html#fleet" role="menuitem">Fleet & Driver Support</a>
+          <div class="dropdown-label">Financial</div>
+          <a href="/factoring.html" role="menuitem">Factoring Assistance</a>
+          <a href="/insurance.html" role="menuitem">Insurance Services</a>
+          <div class="dropdown-label">Technology</div>
+          <a href="/eld.html" role="menuitem">ELD & Telematics</a>
+          <a href="/dot-compliance.html" role="menuitem">DOT Compliance</a>
+        </div>
+      </li>
+      <li><a href="/about.html">About</a></li>
+      <li><a href="/contact.html#pricing">Pricing</a></li>
+      <li><a href="/contact.html" class="active" aria-current="page">Contact</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
+      <a href="/contact.html" class="btn btn-primary btn-sm" id="nav-cta-btn">Get Started</a>
+    </div>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="nav-mobile" id="nav-mobile" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+  <a href="/">Home</a><a href="/services.html">Services</a><a href="/about.html">About</a>
+  <a href="/factoring.html">Factoring</a><a href="/insurance.html">Insurance</a><a href="/eld.html">ELD</a>
+  <div style="margin-top:24px;display:flex;flex-direction:column;gap:12px;">
+    <a href="/login.html" class="btn btn-light btn-lg btn-block">Sign In</a>
+    <a href="/contact.html" class="btn btn-primary btn-lg btn-block">Get Started →</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="contact-hero" aria-labelledby="contact-heading">
+  <div class="contact-hero-inner">
+    <div class="section-eyebrow" style="color:var(--color-amber-400);justify-content:center;margin-bottom:var(--space-4);">Free Consultation</div>
+    <h1 id="contact-heading" style="font-size:clamp(2rem,4.5vw,3.25rem);font-weight:900;color:#fff;letter-spacing:-0.025em;line-height:1.1;margin-bottom:var(--space-5);">
+      Let's Talk About<br>Your Fleet's Next Move
+    </h1>
+    <p style="font-size:var(--text-xl);color:rgba(255,255,255,0.65);max-width:520px;margin:0 auto var(--space-6);line-height:1.6;">
+      No setup fees. No long-term contracts. Tell us about your operation and
+      we'll show you exactly how Shipping Wish can put your trucks to work.
+    </p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:var(--space-6);flex-wrap:wrap;">
+      <a href="tel:+19177370021" style="display:flex;align-items:center;gap:var(--space-2);color:rgba(255,255,255,0.7);font-size:var(--text-sm);text-decoration:none;" id="hero-phone-link">
+        <span>📞</span> +1 917 737 0021
+      </a>
+      <a href="mailto:billing@shippingwish.com" style="display:flex;align-items:center;gap:var(--space-2);color:rgba(255,255,255,0.7);font-size:var(--text-sm);text-decoration:none;" id="hero-email-link">
+        <span>✉️</span> billing@shippingwish.com
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT FORM + INFO -->
+<section class="section" aria-labelledby="form-section-heading">
+  <div class="container">
+    <h2 class="visually-hidden" id="form-section-heading">Service Request Form</h2>
+    <div class="contact-grid">
+
+      <!-- Form -->
+      <div class="contact-form-card reveal">
+        <h2 style="font-size:var(--text-2xl);font-weight:800;margin-bottom:var(--space-2);">Request Dispatch Services</h2>
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-8);">Fill out the form below and a dispatcher will contact you within 2 business hours.</p>
+
+        <div id="form-success" class="form-success">
+          <div class="success-icon" aria-hidden="true">✅</div>
+          <h3 style="font-size:var(--text-xl);font-weight:700;margin-bottom:var(--space-3);">Request Received!</h3>
+          <p style="color:var(--text-secondary);">A Shipping Wish dispatcher will contact you at the number provided within 2 business hours. For urgent matters, call us directly at <strong>+1 917 737 0021</strong>.</p>
+        </div>
+
+        <form id="contact-form" novalidate>
+          <div style="display:flex;flex-direction:column;gap:var(--space-5);">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="cf-name">Full Name</label>
+                <input class="form-input" id="cf-name" name="name" type="text" placeholder="John Martinez" required autocomplete="name">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="cf-company">Company / Carrier Name</label>
+                <input class="form-input" id="cf-company" name="company" type="text" placeholder="Martinez Trucking LLC" autocomplete="organization">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required" for="cf-phone">Phone Number</label>
+                <input class="form-input" id="cf-phone" name="phone" type="tel" placeholder="+1 (555) 000-0000" required autocomplete="tel">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="cf-email">Email Address</label>
+                <input class="form-input" id="cf-email" name="email" type="email" placeholder="john@yourcompany.com" required autocomplete="email">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="cf-role">Your Role</label>
+                <select class="form-select" id="cf-role" name="role">
+                  <option value="">Select role...</option>
+                  <option value="owner_operator">Owner-Operator (1 truck)</option>
+                  <option value="small_fleet">Small Fleet Owner (2-5 trucks)</option>
+                  <option value="fleet_owner">Fleet Owner (6+ trucks)</option>
+                  <option value="driver">Driver</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cf-service">Service Interested In</label>
+                <select class="form-select" id="cf-service" name="serviceType">
+                  <option value="">Select service...</option>
+                  <option value="dispatch">Freight Dispatch</option>
+                  <option value="factoring">Factoring Setup</option>
+                  <option value="insurance">Insurance Coordination</option>
+                  <option value="eld">ELD & Telematics</option>
+                  <option value="compliance">DOT Compliance</option>
+                  <option value="full_service">Full Service Package</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cf-equipment">Equipment Type & Load Details</label>
+              <input class="form-input" id="cf-equipment" name="loadDetails" type="text" placeholder="e.g. 53ft Dry Van, prefer SE/NE lanes, min $2.20/mile">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cf-message">Additional Information</label>
+              <textarea class="form-textarea" id="cf-message" name="message" rows="3" placeholder="Tell us about your fleet, preferred routes, any current challenges..."></textarea>
+            </div>
+
+            <div id="form-error" style="display:none;padding:var(--space-3) var(--space-4);background:#fef2f2;border:1px solid #fca5a5;border-radius:var(--radius-md);color:#991b1b;font-size:var(--text-sm);" role="alert"></div>
+
+            <button type="submit" class="btn btn-primary btn-lg btn-block" id="form-submit-btn">
+              Send Service Request →
+            </button>
+            <p style="text-align:center;font-size:var(--text-xs);color:var(--text-muted);">
+              By submitting, you agree to be contacted by Shipping Wish LLC. We respect your privacy.
+            </p>
+          </div>
+        </form>
+      </div>
+
+      <!-- Contact Info -->
+      <div class="contact-info-panel reveal animate-delay-200">
+        <div class="contact-method">
+          <div class="contact-method-icon" aria-hidden="true">📞</div>
+          <div>
+            <h4>Call Us Directly</h4>
+            <a href="tel:+19177370021" id="contact-phone-link">+1 917 737 0021</a>
+            <p>Available for dispatch inquiries</p>
+          </div>
+        </div>
+
+        <div class="contact-method">
+          <div class="contact-method-icon" aria-hidden="true">✉️</div>
+          <div>
+            <h4>Email Billing & Inquiries</h4>
+            <a href="mailto:billing@shippingwish.com" id="contact-email-link">billing@shippingwish.com</a>
+            <p>Invoice questions, onboarding</p>
+          </div>
+        </div>
+
+        <div class="contact-method">
+          <div class="contact-method-icon" aria-hidden="true">📍</div>
+          <div>
+            <h4>Company Address</h4>
+            <p style="color:var(--text-primary);">19266 Coastal Hwy<br>Rehoboth Beach, DE 19971<br>United States</p>
+          </div>
+        </div>
+
+        <div class="contact-method">
+          <div class="contact-method-icon" aria-hidden="true">🌐</div>
+          <div>
+            <h4>Website</h4>
+            <a href="https://www.shippingwish.com" id="contact-web-link">www.shippingwish.com</a>
+            <p>Full platform and carrier portal</p>
+          </div>
+        </div>
+
+        <div class="contact-method">
+          <div class="contact-method-icon" aria-hidden="true">⏰</div>
+          <div>
+            <h4>Operating Hours</h4>
+            <p><strong style="color:var(--text-primary);">Dispatch:</strong> 24/7 for active loads</p>
+            <p><strong style="color:var(--text-primary);">Office:</strong> Mon–Fri 8AM–8PM ET</p>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(135deg,var(--color-amber-50),var(--color-amber-100));border:1px solid var(--color-amber-200);border-radius:var(--radius-xl);padding:var(--space-5);">
+          <h4 style="font-size:var(--text-sm);font-weight:700;color:var(--color-amber-700);margin-bottom:var(--space-2);">⚡ Quick Response Guarantee</h4>
+          <p style="font-size:var(--text-sm);color:var(--color-amber-700);">Submit this form and a dispatcher will reach out within 2 business hours. Urgent? Call us directly.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section section-subtle" id="pricing" aria-labelledby="pricing-heading">
+  <div class="container">
+    <div class="section-header center reveal">
+      <div class="section-eyebrow">Transparent Pricing</div>
+      <h2 id="pricing-heading" class="section-title">Commission-Only. No Hidden Fees.</h2>
+      <p class="section-subtitle">
+        We earn a percentage of gross load revenue — only on loads we actually book for you.
+        No monthly subscription. No setup fee. No minimum volume commitment.
+      </p>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="pricing-card reveal" id="pricing-starter">
+        <div class="pricing-name">Starter</div>
+        <div class="pricing-fleet">1 Truck · Owner-Operator</div>
+        <div class="pricing-commission">10%</div>
+        <div class="pricing-commission-label">of gross load rate per booking</div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><span class="check">✓</span> Dedicated dispatcher</div>
+          <div class="pricing-feature"><span class="check">✓</span> Load board search (DAT, 123LB)</div>
+          <div class="pricing-feature"><span class="check">✓</span> Rate negotiation</div>
+          <div class="pricing-feature"><span class="check">✓</span> Document management</div>
+          <div class="pricing-feature"><span class="check">✓</span> Weekly invoice</div>
+          <div class="pricing-feature"><span class="check">✓</span> Carrier TMS portal access</div>
+          <div class="pricing-feature"><span class="check">✓</span> 24/7 load support</div>
+        </div>
+        <a href="/contact.html#contact-form" class="btn btn-light btn-block btn-lg" id="pricing-starter-btn">Get Started →</a>
+      </div>
+
+      <div class="pricing-card featured reveal animate-delay-100" id="pricing-growth">
+        <div class="pricing-badge">Most Popular</div>
+        <div class="pricing-name">Growth</div>
+        <div class="pricing-fleet">2–5 Trucks · Small Fleet</div>
+        <div class="pricing-commission">7–8%</div>
+        <div class="pricing-commission-label">negotiated rate based on volume</div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><span class="check">✓</span> Everything in Starter</div>
+          <div class="pricing-feature"><span class="check">✓</span> Dedicated dispatcher team</div>
+          <div class="pricing-feature"><span class="check">✓</span> Multi-truck load planning</div>
+          <div class="pricing-feature"><span class="check">✓</span> Driver management portal</div>
+          <div class="pricing-feature"><span class="check">✓</span> Factoring setup assistance</div>
+          <div class="pricing-feature"><span class="check">✓</span> IFTA mileage tracking</div>
+          <div class="pricing-feature"><span class="check">✓</span> Performance reporting</div>
+        </div>
+        <a href="/contact.html#contact-form" class="btn btn-primary btn-block btn-lg" id="pricing-growth-btn">Get Started →</a>
+      </div>
+
+      <div class="pricing-card reveal animate-delay-200" id="pricing-fleet">
+        <div class="pricing-name">Fleet</div>
+        <div class="pricing-fleet">6+ Trucks · Fleet Owner</div>
+        <div class="pricing-commission">5–7%</div>
+        <div class="pricing-commission-label">custom rate based on fleet size</div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><span class="check">✓</span> Everything in Growth</div>
+          <div class="pricing-feature"><span class="check">✓</span> Dedicated account manager</div>
+          <div class="pricing-feature"><span class="check">✓</span> Custom lane strategy</div>
+          <div class="pricing-feature"><span class="check">✓</span> Insurance coordination</div>
+          <div class="pricing-feature"><span class="check">✓</span> ELD telematics setup</div>
+          <div class="pricing-feature"><span class="check">✓</span> Compliance support</div>
+          <div class="pricing-feature"><span class="check">✓</span> Customized TMS setup</div>
+        </div>
+        <a href="/contact.html#contact-form" class="btn btn-dark btn-block btn-lg" id="pricing-fleet-btn">Request Custom Quote →</a>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:var(--space-8);padding:var(--space-6);background:var(--color-white);border:1px solid var(--border-default);border-radius:var(--radius-xl);">
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);">
+        All plans are commission-only. You keep full freight revenue — we only invoice for our dispatch commission weekly.
+        Rates are final gross rate on load, before any factoring fees.
+        <strong><a href="/contact.html#contact-form" style="color:var(--color-amber-600);" id="pricing-contact-link">Contact us to discuss your specific situation.</a></strong>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="/" class="nav-logo">
+          <div class="nav-logo-mark">SW</div>
+          <div class="nav-logo-text">Shipping <span>Wish</span></div>
+        </a>
+        <p>Technology-powered freight dispatch and fleet operations for modern American carriers.</p>
+        <div class="footer-contact">
+          <div class="footer-contact-item"><span>📞</span><a href="tel:+19177370021">+1 917 737 0021</a></div>
+          <div class="footer-contact-item"><span>✉️</span><a href="mailto:billing@shippingwish.com">billing@shippingwish.com</a></div>
+          <div class="footer-contact-item"><span>📍</span><span>19266 Coastal Hwy, Rehoboth, DE 19971</span></div>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="/services.html#dispatch">Freight Dispatch</a></li>
+          <li><a href="/factoring.html">Factoring Assistance</a></li>
+          <li><a href="/insurance.html">Insurance Services</a></li>
+          <li><a href="/eld.html">ELD & Telematics</a></li>
+          <li><a href="/dot-compliance.html">DOT Compliance</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="/login.html">Carrier Portal Login</a></li>
+          <li><a href="/signup.html">Create Account</a></li>
+          <li><a href="/about.html">About Us</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/privacy-policy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Shipping Wish LLC. All rights reserved. Registered in Delaware, USA.</p>
+      <p style="color:rgba(255,255,255,0.2);font-size:var(--text-xs);">Shipping Wish LLC is an independent freight dispatcher, not a licensed freight broker or carrier.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Mobile nav
+  document.getElementById('nav-hamburger').addEventListener('click', function() {
+    const nav = document.getElementById('nav-mobile');
+    const isOpen = nav.classList.toggle('open');
+    this.setAttribute('aria-expanded', isOpen);
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+  });
+
+  // Contact form
+  const form = document.getElementById('contact-form');
+  const submitBtn = document.getElementById('form-submit-btn');
+  const errorDiv = document.getElementById('form-error');
+  const successDiv = document.getElementById('form-success');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorDiv.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+
+    const formData = new FormData(form);
+    const body = Object.fromEntries(formData);
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorDiv.textContent = data.error || 'Something went wrong. Please call us directly.';
+        errorDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Service Request →';
+      } else {
+        form.style.display = 'none';
+        successDiv.style.display = 'block';
+      }
+    } catch (err) {
+      errorDiv.textContent = 'Network error. Please call us at +1 917 737 0021.';
+      errorDiv.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Service Request →';
+    }
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

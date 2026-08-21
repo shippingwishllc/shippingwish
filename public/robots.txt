@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+
+# Block internal/authenticated pages
+Disallow: /admin-dashboard.html
+Disallow: /dispatcher-dashboard.html
+Disallow: /fleet.html
+Disallow: /invoices.html
+Disallow: /sales-dashboard.html
+Disallow: /load-detail.html
+Disallow: /load-planning.html
+Disallow: /documents.html
+Disallow: /ifta.html
+Disallow: /brokers.html
+Disallow: /carrier-overview.html
+Disallow: /dashboard.html
+Disallow: /driver-app.html
+Disallow: /invoices/
+Disallow: /uploads/
+
+# Sitemap
+Sitemap: https://www.shippingwish.com/sitemap.xml

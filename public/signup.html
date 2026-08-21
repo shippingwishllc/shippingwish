@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — Shipping Wish LLC Carrier Portal</title>
+  <meta name="description" content="Create your free Shipping Wish LLC carrier account. Get access to your TMS portal, load management, documents, and dispatch coordination tools.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://www.shippingwish.com/signup.html">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+
+  <style>
+    body { background: var(--color-gray-50); }
+
+    .auth-wrapper {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 560px;
+    }
+
+    .auth-brand-panel {
+      background: var(--color-gray-900);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: var(--space-10);
+    }
+
+    .auth-brand-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 30% 20%, rgba(245,158,11,0.1) 0%, transparent 60%);
+    }
+
+    .auth-brand-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+
+    .auth-brand-content {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: var(--space-8) 0;
+    }
+
+    .auth-brand-tagline {
+      font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-4);
+    }
+
+    .auth-brand-tagline .accent { color: var(--color-amber-400); }
+
+    .auth-brand-sub {
+      font-size: var(--text-base);
+      color: rgba(255,255,255,0.55);
+      line-height: var(--leading-relaxed);
+      max-width: 380px;
+      margin-bottom: var(--space-8);
+    }
+
+    .signup-benefit {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-3);
+    }
+
+    .signup-benefit-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .signup-benefit h5 {
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      color: var(--color-white);
+      margin-bottom: 2px;
+    }
+
+    .signup-benefit p {
+      font-size: var(--text-xs);
+      color: rgba(255,255,255,0.45);
+      line-height: 1.5;
+    }
+
+    .auth-brand-footer {
+      position: relative;
+      z-index: 1;
+      font-size: var(--text-xs);
+      color: rgba(255,255,255,0.25);
+    }
+
+    .auth-form-panel {
+      background: var(--color-white);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: var(--space-10) var(--space-12);
+      border-left: 1px solid var(--border-default);
+      overflow-y: auto;
+    }
+
+    .auth-form-inner {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .form-alert {
+      display: none;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-5);
+    }
+
+    .form-alert.error   { background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; }
+    .form-alert.success { background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; }
+
+    @media (max-width: 900px) {
+      .auth-wrapper { grid-template-columns: 1fr; }
+      .auth-brand-panel { display: none; }
+      .auth-form-panel { padding: var(--space-8) var(--space-4); border-left: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-wrapper">
+  <!-- Brand Panel -->
+  <div class="auth-brand-panel" role="complementary" aria-label="Why create an account">
+    <div class="auth-brand-grid" aria-hidden="true"></div>
+
+    <a href="/" class="nav-logo" style="position:relative;z-index:1;" aria-label="Shipping Wish LLC Home">
+      <div class="nav-logo-mark" aria-hidden="true">SW</div>
+      <div class="nav-logo-text">Shipping <span>Wish</span></div>
+    </a>
+
+    <div class="auth-brand-content">
+      <h1 class="auth-brand-tagline">
+        Start Moving Loads<br>
+        in <span class="accent">24 Hours</span>
+      </h1>
+      <p class="auth-brand-sub">
+        Create your account and get instant access to your carrier portal, load management, and dedicated dispatch team.
+      </p>
+
+      <div class="signup-benefit" role="listitem">
+        <div class="signup-benefit-icon" aria-hidden="true">🚀</div>
+        <div>
+          <h5>No Setup Fee</h5>
+          <p>Create your account and start receiving load offers immediately. Zero upfront cost.</p>
+        </div>
+      </div>
+      <div class="signup-benefit" role="listitem">
+        <div class="signup-benefit-icon" aria-hidden="true">🎯</div>
+        <div>
+          <h5>Dedicated Dispatcher</h5>
+          <p>One dispatcher assigned to your account who knows your lanes, equipment, and rate targets.</p>
+        </div>
+      </div>
+      <div class="signup-benefit" role="listitem">
+        <div class="signup-benefit-icon" aria-hidden="true">💼</div>
+        <div>
+          <h5>Full TMS Access</h5>
+          <p>View every load, document, invoice, and performance metric from your secure portal.</p>
+        </div>
+      </div>
+      <div class="signup-benefit" role="listitem">
+        <div class="signup-benefit-icon" aria-hidden="true">💵</div>
+        <div>
+          <h5>Commission-Only Billing</h5>
+          <p>We only bill you for loads we book. No monthly fee, no minimum commitment.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-brand-footer">
+      Shipping Wish LLC · billing@shippingwish.com · +1 917 737 0021
+    </div>
+  </div>
+
+  <!-- Form Panel -->
+  <main class="auth-form-panel" aria-labelledby="signup-title">
+    <div class="auth-form-inner">
+      <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-8);" aria-hidden="true">
+        <div class="nav-logo-mark">SW</div>
+        <div style="font-weight:700;color:var(--text-primary);">Shipping Wish</div>
+      </div>
+
+      <h2 id="signup-title" style="font-size:var(--text-2xl);font-weight:900;letter-spacing:-0.015em;margin-bottom:var(--space-2);">Create your account</h2>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-8);">Join and get your dedicated dispatcher today.</p>
+
+      <div id="signup-alert" class="form-alert" role="alert" aria-live="polite"></div>
+
+      <form id="signup-form" novalidate>
+        <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required" for="su-name">Full Name</label>
+              <input class="form-input" id="su-name" name="name" type="text" required placeholder="John Martinez" autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="su-company">Company Name</label>
+              <input class="form-input" id="su-company" name="company" type="text" placeholder="Martinez Trucking LLC" autocomplete="organization">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required" for="su-email">Email Address</label>
+            <input class="form-input" id="su-email" name="email" type="email" required placeholder="john@yourcompany.com" autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="su-phone">Phone Number</label>
+            <input class="form-input" id="su-phone" name="phone" type="tel" placeholder="+1 (555) 000-0000" autocomplete="tel">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="su-mc">MC Number</label>
+              <input class="form-input" id="su-mc" name="mcNumber" type="text" placeholder="MC-XXXXXXX">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="su-dot">DOT Number</label>
+              <input class="form-input" id="su-dot" name="dotNumber" type="text" placeholder="XXXXXXX">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required" for="su-password">Password</label>
+            <input class="form-input" id="su-password" name="password" type="password" required placeholder="Choose a strong password (8+ characters)" autocomplete="new-password">
+            <span class="form-hint">Minimum 8 characters. Use letters, numbers, and symbols.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required" for="su-confirm">Confirm Password</label>
+            <input class="form-input" id="su-confirm" type="password" required placeholder="Repeat your password" autocomplete="new-password">
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg btn-block" id="signup-submit-btn">
+            Create Account →
+          </button>
+
+          <p style="text-align:center;font-size:var(--text-xs);color:var(--text-muted);line-height:1.5;">
+            By creating an account you agree to our
+            <a href="/terms.html" style="color:var(--color-amber-600);" id="terms-from-signup-link">Terms of Service</a>
+            and
+            <a href="/privacy-policy.html" style="color:var(--color-amber-600);" id="privacy-from-signup-link">Privacy Policy</a>.
+          </p>
+        </div>
+      </form>
+
+      <div style="margin-top:var(--space-6);text-align:center;padding-top:var(--space-5);border-top:1px solid var(--border-default);">
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);">
+          Already have an account?
+          <a href="/login.html" style="color:var(--color-amber-600);font-weight:600;" id="login-from-signup-link">Sign In</a>
+        </p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const form = document.getElementById('signup-form');
+  const alertBox = document.getElementById('signup-alert');
+  const submitBtn = document.getElementById('signup-submit-btn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    alertBox.style.display = 'none';
+    alertBox.className = 'form-alert';
+
+    const password = document.getElementById('su-password').value;
+    const confirm  = document.getElementById('su-confirm').value;
+
+    if (password.length < 8) {
+      alertBox.textContent = 'Password must be at least 8 characters.';
+      alertBox.className = 'form-alert error';
+      alertBox.style.display = 'block';
+      return;
+    }
+
+    if (password !== confirm) {
+      alertBox.textContent = 'Passwords do not match. Please re-enter.';
+      alertBox.className = 'form-alert error';
+      alertBox.style.display = 'block';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating account...';
+
+    const formData = new FormData(form);
+    const body = Object.fromEntries(formData);
+
+    try {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alertBox.textContent = data.error || 'Could not create account. Please try again.';
+        alertBox.className = 'form-alert error';
+        alertBox.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account →';
+      } else {
+        submitBtn.textContent = 'Redirecting to your portal...';
+        window.location.href = '/carrier-overview.html';
+      }
+    } catch (err) {
+      alertBox.textContent = 'Network error. Please check your connection.';
+      alertBox.className = 'form-alert error';
+      alertBox.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create Account →';
+    }
+  });
+
+  // Already logged in
+  fetch('/api/me', { credentials: 'include' })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && data.user) window.location.href = '/carrier-overview.html';
+    })
+    .catch(() => {});
+</script>
+
+</body>
+</html>

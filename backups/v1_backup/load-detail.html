@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Load Detail | Shipping Wish LLC</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="/" class="brand"><span class="dot"></span> Shipping Wish Load Console</a>
+    <nav class="nav-links">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/brokers.html">Brokers</a>
+      <a href="/fleet.html">Fleet</a>
+      <a href="/documents.html">Documents</a>
+      <a href="/invoices.html">Invoices</a>
+      <a href="/ifta.html">IFTA &amp; Fuel</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="nav-phone" id="user-badge-detail">User</span>
+      <button id="logout-btn" class="btn btn-outline">Log Out</button>
+      <button class="nav-toggle">☰</button>
+    </div>
+  </div>
+</header>
+
+<section class="tms-shell">
+  <div class="container">
+    <div class="tms-topbar">
+      <div>
+        <span class="eyebrow" id="load-num-eyebrow">Load SW-00000</span>
+        <h1 style="font-size:26px;" id="load-route-title">Pickup to Delivery</h1>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <span id="load-status-badge"></span>
+        <button class="btn btn-amber" data-open-modal="accessorial-modal">+ Accessorial Fee / Advance</button>
+      </div>
+    </div>
+
+    <!-- Status Pipeline Buttons -->
+    <div class="tms-panel" id="status-pipeline-panel">
+      <h4 style="margin-bottom:12px;color:var(--text-muted);">Update Load Pipeline Status</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        <button class="btn btn-outline btn-sm" onclick="updateLoadStatus('booked')">Booked</button>
+        <button class="btn btn-outline btn-sm" onclick="updateLoadStatus('dispatched')">Dispatched</button>
+        <button class="btn btn-outline btn-sm" onclick="updateLoadStatus('at_pickup')">At Pickup</button>
+        <button class="btn btn-outline btn-sm" onclick="updateLoadStatus('loaded')">Loaded</button>
+        <button class="btn btn-outline btn-sm" onclick="updateLoadStatus('in_transit')">In Transit</button>
+        <button class="btn btn-outline btn-sm" onclick="updateLoadStatus('at_delivery')">At Delivery</button>
+        <button class="btn btn-outline btn-sm" onclick="updateLoadStatus('delivered')">Delivered</button>
+        <button class="btn btn-outline btn-sm" onclick="updateLoadStatus('pod_uploaded')">POD Uploaded</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;">
+      <!-- Left Column: Load Info & Accessorials -->
+      <div>
+        <div class="tms-panel">
+          <h3>Load Financials &amp; Details</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px;">
+            <div>
+              <p class="muted">Broker Info</p>
+              <p><b id="ld-broker"></b> <span class="muted" id="ld-mc"></span></p>
+              <p class="muted" style="margin-top:10px;">Carrier Company</p>
+              <p><b id="ld-carrier"></b></p>
+              <p class="muted" style="margin-top:10px;">Assigned Driver &amp; Truck</p>
+              <p><b id="ld-driver-truck"></b></p>
+            </div>
+            <div>
+              <p class="muted">Broker Gross Rate</p>
+              <p><b style="font-size:22px;color:var(--amber-primary);" id="ld-rate"></b></p>
+              <p class="muted" style="margin-top:10px;">Carrier Pay</p>
+              <p><b style="font-size:18px;" id="ld-carrier-pay"></b></p>
+              <p class="muted" style="margin-top:10px;">Rate Per Mile (RPM)</p>
+              <p><b id="ld-rpm"></b></p>
+            </div>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border-color);margin:20px 0;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <div>
+              <h4 style="color:var(--amber-primary);">📍 Pickup Location</h4>
+              <p><b id="ld-pickup-loc"></b></p>
+              <p class="muted" id="ld-pickup-date"></p>
+            </div>
+            <div>
+              <h4 style="color:var(--amber-primary);">🎯 Delivery Location</h4>
+              <p><b id="ld-delivery-loc"></b></p>
+              <p class="muted" id="ld-delivery-date"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accessorials & Expenses -->
+        <div class="tms-panel table-scroll">
+          <h3>Accessorials &amp; Extra Fees (Detention / TONU / Layover / Lumper)</h3>
+          <table class="tms-table" id="accessorials-table">
+            <thead><tr><th>Type</th><th>Amount</th><th>Notes</th><th>Approval Status</th></tr></thead>
+            <tbody><tr><td colspan="4" class="muted">Loading accessorials...</td></tr></tbody>
+          </table>
+        </div>
+
+        <!-- State Miles Logging (IFTA) -->
+        <div class="tms-panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h3>IFTA State Miles Breakdown</h3>
+            <button class="btn btn-outline btn-sm" data-open-modal="miles-modal">+ Add State Miles</button>
+          </div>
+          <table class="tms-table" id="miles-table">
+            <thead><tr><th>State</th><th>Miles Driven</th><th>Action</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right Column: Status History & Documents -->
+      <div>
+        <div class="tms-panel">
+          <h3>Attached Load Documents</h3>
+          <div id="load-docs-list" style="margin-top:12px;"></div>
+          <button class="btn btn-amber btn-block btn-sm" style="margin-top:16px;" onclick="document.location.href='/documents.html'">+ Upload Rate Conf / POD</button>
+        </div>
+
+        <div class="tms-panel">
+          <h3>Status Timeline History</h3>
+          <div id="status-history-list" style="margin-top:12px;display:flex;flex-direction:column;gap:12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Add Accessorial Modal -->
+<div class="modal-overlay" id="accessorial-modal">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal>&times;</button>
+    <h3>Request Accessorial Fee / Advance</h3>
+    <form id="accessorial-form">
+      <div class="field">
+        <label>Accessorial Type *</label>
+        <select name="type" required>
+          <option value="detention">Detention (Waiting Time)</option>
+          <option value="tonu">TONU (Truck Ordered Not Used)</option>
+          <option value="layover">Layover</option>
+          <option value="lumper">Lumper Fee</option>
+          <option value="fuel_advance">Fuel Advance</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Amount ($) *</label>
+        <input type="number" step="0.01" name="amount" required placeholder="150.00">
+      </div>
+      <div class="field">
+        <label>Notes / Reason</label>
+        <textarea name="notes" rows="2" placeholder="e.g. Delayed 4 hours at receiver dock"></textarea>
+      </div>
+      <button type="submit" class="btn btn-amber btn-block">Submit Fee Request</button>
+    </form>
+  </div>
+</div>
+
+<!-- Add Miles Modal -->
+<div class="modal-overlay" id="miles-modal">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal>&times;</button>
+    <h3>Add State Miles for IFTA</h3>
+    <form id="miles-form">
+      <div class="field">
+        <label>State (2-letter) *</label>
+        <input type="text" name="state" maxlength="2" required placeholder="e.g. AR">
+      </div>
+      <div class="field">
+        <label>Miles Driven in State *</label>
+        <input type="number" step="0.1" name="miles" required placeholder="240.5">
+      </div>
+      <button type="submit" class="btn btn-amber btn-block">Log Miles</button>
+    </form>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/tms.js"></script>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const loadId = urlParams.get('id');
+  let currentUser = null;
+
+  async function initLoadDetail() {
+    currentUser = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
+    if (!currentUser || !loadId) return;
+
+    document.getElementById('user-badge-detail').textContent = currentUser.name;
+    loadDetailsData();
+  }
+
+  async function loadDetailsData() {
+    const res = await fetch(`/api/loads/${loadId}`);
+    if (!res.ok) return alert('Could not load details.');
+    const data = await res.json();
+    const l = data.load;
+
+    document.getElementById('load-num-eyebrow').textContent = `Load ${l.load_number}`;
+    document.getElementById('load-route-title').textContent = `${l.pickup_location} ➔ ${l.delivery_location}`;
+    document.getElementById('load-status-badge').innerHTML = renderStatusBadge(l.status);
+
+    document.getElementById('ld-broker').textContent = l.broker_name || 'N/A';
+    document.getElementById('ld-mc').textContent = l.broker_mc ? `(MC: ${l.broker_mc})` : '';
+    document.getElementById('ld-carrier').textContent = l.carrier_company || l.carrier_name;
+    document.getElementById('ld-driver-truck').textContent = `${l.driver_name || 'Unassigned'} / Truck #${l.truck_number || 'N/A'}`;
+
+    document.getElementById('ld-rate').textContent = formatCurrency(l.rate);
+    document.getElementById('ld-carrier-pay').textContent = formatCurrency(l.carrier_pay);
+    document.getElementById('ld-rpm').textContent = `$${l.rpm || '0.00'} / mi (${l.miles || 0} miles)`;
+
+    document.getElementById('ld-pickup-loc').textContent = `${l.pickup_company || ''} ${l.pickup_location} (${l.pickup_state || '-'})`;
+    document.getElementById('ld-pickup-date').textContent = `Pickup Date: ${formatDate(l.pickup_date)} ${l.pickup_time || ''}`;
+
+    document.getElementById('ld-delivery-loc').textContent = `${l.delivery_company || ''} ${l.delivery_location} (${l.delivery_state || '-'})`;
+    document.getElementById('ld-delivery-date').textContent = `Delivery Date: ${formatDate(l.delivery_date)} ${l.delivery_time || ''}`;
+
+    // Render Accessorials
+    const accTbody = document.querySelector('#accessorials-table tbody');
+    accTbody.innerHTML = (data.accessorials || []).map(a => `
+      <tr>
+        <td><b>${a.type.toUpperCase().replace('_', ' ')}</b></td>
+        <td>${formatCurrency(a.amount)}</td>
+        <td><small class="muted">${a.notes || '-'}</small></td>
+        <td><span class="badge badge-${a.approved ? 'paid' : 'unpaid'}">${a.approved ? 'Approved' : 'Pending'}</span></td>
+      </tr>
+    `).join('') || `<tr><td colspan="4" class="muted">No accessorial fees added.</td></tr>`;
+
+    // Render Miles
+    const milesTbody = document.querySelector('#miles-table tbody');
+    milesTbody.innerHTML = (data.miles || []).map(m => `
+      <tr>
+        <td><b>${m.state}</b></td>
+        <td>${m.miles} mi</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteMiles(${m.id})">Delete</button></td>
+      </tr>
+    `).join('') || `<tr><td colspan="3" class="muted">No state miles logged.</td></tr>`;
+
+    // Render History Timeline
+    const histEl = document.getElementById('status-history-list');
+    histEl.innerHTML = (data.history || []).map(h => `
+      <div style="border-left:2px solid var(--amber-primary);padding-left:12px;">
+        <p style="font-weight:600;font-size:13px;">${h.status.toUpperCase().replace('_', ' ')}</p>
+        <p class="muted" style="font-size:12px;">By ${h.changed_by_name || 'System'} at ${new Date(h.changed_at).toLocaleString()}</p>
+        ${h.notes ? `<p style="font-size:12px;">${h.notes}</p>` : ''}
+      </div>
+    `).join('');
+
+    // Render Docs
+    const docsEl = document.getElementById('load-docs-list');
+    docsEl.innerHTML = (data.documents || []).map(d => `
+      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:6px;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:600;">${d.original_name}</span>
+        <a href="/api/documents/${d.id}/download" class="btn btn-amber btn-sm" target="_blank">Download</a>
+      </div>
+    `).join('') || `<p class="muted">No documents linked.</p>`;
+  }
+
+  async function updateLoadStatus(newStatus) {
+    await fetch(`/api/loads/${loadId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    loadDetailsData();
+  }
+
+  async function deleteMiles(mileId) {
+    await fetch(`/api/loads/${loadId}/miles/${mileId}`, { method: 'DELETE' });
+    loadDetailsData();
+  }
+
+  document.getElementById('accessorial-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await fetch(`/api/accessorials/load/${loadId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
+    });
+    if (res.ok) {
+      e.target.reset();
+      loadDetailsData();
+      document.getElementById('accessorial-modal').classList.remove('active');
+    }
+  });
+
+  document.getElementById('miles-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await fetch(`/api/loads/${loadId}/miles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
+    });
+    if (res.ok) {
+      e.target.reset();
+      loadDetailsData();
+      document.getElementById('miles-modal').classList.remove('active');
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', initLoadDetail);
+</script>
+</body>
+</html>

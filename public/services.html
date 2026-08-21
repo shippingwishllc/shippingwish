@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freight Dispatch Services — Shipping Wish LLC | Load Booking, Fleet Management, DOT Compliance</title>
+    <meta name="description" content="Complete freight dispatch and fleet operations support for trucking companies. Load booking, DOT compliance, factoring, and ELD management.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/design-system.css">
+    <style>
+        /* Specific styles for the services page to complement design-system.css */
+        .service-layout {
+            max-width: var(--container-2xl);
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+        .service-layout.reversed {
+            direction: rtl;
+        }
+        .service-layout.reversed > * {
+            direction: ltr;
+        }
+        
+        @media (max-width: 900px) {
+            .service-layout, .service-layout.reversed {
+                grid-template-columns: 1fr;
+                direction: ltr;
+                gap: 2rem;
+            }
+        }
+        
+        .service-content h2 {
+            font-size: clamp(1.75rem, 3vw, 2.25rem);
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+        }
+        .service-content ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 2rem;
+        }
+        .service-content li {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+            position: relative;
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+        }
+        .service-content li::before {
+            content: "✓";
+            color: var(--color-amber-500);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .service-image {
+            border-radius: var(--radius-2xl);
+            height: 340px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+        }
+        @media (max-width: 600px) {
+            .service-image {
+                height: 220px;
+            }
+            .service-image svg {
+                transform: scale(0.8);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav class="nav" role="navigation" aria-label="Main navigation">
+      <div class="nav-inner">
+        <a href="/" class="nav-logo" aria-label="Shipping Wish LLC Home">
+          <div class="nav-logo-mark" aria-hidden="true">SW</div>
+          <div class="nav-logo-text">Shipping <span>Wish</span></div>
+        </a>
+
+        <ul class="nav-links" role="list">
+          <li><a href="/">Home</a></li>
+          <li class="nav-item-dropdown">
+            <a href="/services.html" class="active" aria-current="page">Services ▾</a>
+            <div class="nav-dropdown-menu" role="menu">
+              <div class="dropdown-label">Dispatch</div>
+              <a href="/services.html#dispatch" role="menuitem">Freight Dispatch</a>
+              <a href="/services.html#load-booking" role="menuitem">Load Booking</a>
+              <a href="/services.html#fleet" role="menuitem">Fleet & Driver Support</a>
+              <div class="dropdown-label">Financial</div>
+              <a href="/factoring.html" role="menuitem">Factoring Assistance</a>
+              <a href="/insurance.html" role="menuitem">Insurance Services</a>
+              <div class="dropdown-label">Technology</div>
+              <a href="/eld.html" role="menuitem">ELD & Telematics</a>
+              <a href="/dot-compliance.html" role="menuitem">DOT Compliance</a>
+            </div>
+          </li>
+          <li><a href="/about.html">About</a></li>
+          <li><a href="/contact.html#pricing">Pricing</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+
+        <div class="nav-actions">
+          <div class="live-status" aria-live="polite">
+            <span class="live-dot" aria-hidden="true"></span>
+            Dispatch Active
+          </div>
+          <a href="/login.html" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
+          <a href="/contact.html" class="btn btn-primary btn-sm" id="nav-cta-btn">Get Started</a>
+        </div>
+
+        <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile nav -->
+    <div class="nav-mobile" id="nav-mobile" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+      <a href="/">Home</a>
+      <a href="/services.html" class="active">Services</a>
+      <a href="/factoring.html">Factoring Assistance</a>
+      <a href="/insurance.html">Insurance Services</a>
+      <a href="/eld.html">ELD & Telematics</a>
+      <a href="/dot-compliance.html">DOT Compliance</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+      <div style="margin-top:24px;display:flex;flex-direction:column;gap:12px;">
+        <a href="/login.html" class="btn btn-light btn-lg btn-block">Sign In</a>
+        <a href="/contact.html" class="btn btn-primary btn-lg btn-block">Get Started →</a>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <section class="hero">
+        <h1 class="reveal">Complete Dispatch & Fleet Operations Support</h1>
+        <p class="reveal">Focus on driving. We'll handle the loads, negotiations, compliance, and back-office operations to maximize your fleet's profitability.</p>
+        <div class="cta-group reveal">
+            <a href="#dispatch" class="btn-primary" id="hero-cta-services">Explore Services</a>
+            <a href="/contact.html" class="btn-outline" id="hero-cta-contact">Talk to an Expert</a>
+        </div>
+    </section>
+
+    <!-- SERVICES -->
+    <!-- Dispatch -->
+    <section id="dispatch" class="section reveal">
+        <div class="service-layout">
+            <div class="service-content">
+                <h2>Freight Dispatch</h2>
+                <p>Maximize your gross revenue with our experienced dispatchers fighting for the best rates on your behalf.</p>
+                <ul>
+                    <li>24/7 dispatcher support</li>
+                    <li>Dedicated account manager</li>
+                    <li>Customized load approval workflow</li>
+                    <li>Routine check calls with brokers</li>
+                    <li>Aggressive rate negotiation</li>
+                </ul>
+                <a href="/contact.html?service=dispatch" class="btn-primary" id="btn-service-dispatch">Get Dispatch Support</a>
+            </div>
+            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);">
+                <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <!-- Dispatch headset professional icon -->
+                  <circle cx="70" cy="70" r="62" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.15)" stroke-width="1"/>
+                  <circle cx="70" cy="60" r="22" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+                  <path d="M48 60 C48 37 92 37 92 60" stroke="#f59e0b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                  <rect x="38" y="56" width="10" height="18" rx="5" fill="#f59e0b"/>
+                  <rect x="92" y="56" width="10" height="18" rx="5" fill="#f59e0b"/>
+                  <path d="M58 85 C58 97 82 97 82 85" stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <circle cx="70" cy="99" r="6" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                  <!-- signal waves -->
+                  <path d="M100 45 Q110 35 120 45" stroke="rgba(245,158,11,0.4)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <path d="M104 38 Q118 25 130 38" stroke="rgba(245,158,11,0.2)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <!-- status dots -->
+                  <circle cx="55" cy="110" r="4" fill="#10b981"/>
+                  <rect x="63" y="107" width="32" height="6" rx="3" fill="rgba(255,255,255,0.1)"/>
+                  <rect x="63" y="107" width="20" height="6" rx="3" fill="rgba(16,185,129,0.5)"/>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Load Booking -->
+    <section id="load-booking" class="section section-alt reveal">
+        <div class="service-layout reversed">
+            <div class="service-content">
+                <h2>Load Board Management</h2>
+                <p>We leverage industry-leading load boards and our private broker network to keep your trucks moving in profitable lanes.</p>
+                <ul>
+                    <li>Access to DAT, 123Loadboard, and Truckstop</li>
+                    <li>Extensive private broker network connections</li>
+                    <li>Personalized lane preferences</li>
+                    <li>Strict adherence to your rate minimums</li>
+                    <li>Minimized deadhead miles</li>
+                </ul>
+                <a href="/contact.html?service=load-booking" class="btn-primary" id="btn-service-load">Book Better Loads</a>
+            </div>
+            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1a2a4a 100%);">
+                <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <!-- Load board / map routes -->
+                  <circle cx="70" cy="70" r="62" fill="rgba(245,158,11,0.05)" stroke="rgba(245,158,11,0.1)" stroke-width="1"/>
+                  <!-- US map outline simplified -->
+                  <rect x="28" y="38" width="84" height="64" rx="4" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                  <!-- Route lines -->
+                  <circle cx="40" cy="60" r="5" fill="#f59e0b"/>
+                  <circle cx="100" cy="50" r="5" fill="#10b981"/>
+                  <circle cx="55" cy="90" r="4" fill="rgba(245,158,11,0.6)"/>
+                  <circle cx="90" cy="80" r="4" fill="rgba(16,185,129,0.6)"/>
+                  <path d="M40 60 Q60 40 100 50" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="5 3"/>
+                  <path d="M55 90 Q72 70 90 80" stroke="#10b981" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="5 3"/>
+                  <path d="M40 60 L55 90" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                  <path d="M100 50 L90 80" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                  <!-- Truck icon on route -->
+                  <rect x="68" y="52" width="14" height="8" rx="2" fill="#f59e0b"/>
+                  <rect x="64" y="55" width="8" height="6" rx="1" fill="rgba(245,158,11,0.7)"/>
+                  <circle cx="68" cy="61" r="2" fill="#0f172a"/>
+                  <circle cx="79" cy="61" r="2" fill="#0f172a"/>
+                  <!-- Rate label -->
+                  <rect x="100" y="55" width="28" height="12" rx="6" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+                  <text x="114" y="64" font-family="monospace" font-size="6" fill="#10b981" text-anchor="middle">$2.45/mi</text>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fleet Management -->
+    <section id="fleet" class="section reveal">
+        <div class="service-layout">
+            <div class="service-content">
+                <h2>Fleet & Driver Management</h2>
+                <p>Keep your fleet organized and drivers compliant with our comprehensive management solutions.</p>
+                <ul>
+                    <li>Centralized driver qualification files</li>
+                    <li>Real-time truck and trailer tracking</li>
+                    <li>CDL & medical card expiry tracking</li>
+                    <li>Preventative maintenance & inspection reminders</li>
+                    <li>Driver performance monitoring</li>
+                </ul>
+                <a href="/contact.html?service=fleet" class="btn-primary" id="btn-service-fleet">Streamline Your Fleet</a>
+            </div>
+            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);">
+                <svg width="160" height="120" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <!-- Professional semi truck side view -->
+                  <!-- Trailer -->
+                  <rect x="8" y="42" width="88" height="42" rx="4" fill="rgba(245,158,11,0.12)" stroke="rgba(245,158,11,0.4)" stroke-width="1.5"/>
+                  <line x1="28" y1="42" x2="28" y2="84" stroke="rgba(245,158,11,0.2)" stroke-width="1"/>
+                  <line x1="48" y1="42" x2="48" y2="84" stroke="rgba(245,158,11,0.2)" stroke-width="1"/>
+                  <line x1="68" y1="42" x2="68" y2="84" stroke="rgba(245,158,11,0.2)" stroke-width="1"/>
+                  <!-- Cab -->
+                  <rect x="96" y="48" width="46" height="36" rx="6" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+                  <!-- Cab window -->
+                  <rect x="108" y="53" width="22" height="14" rx="3" fill="rgba(59,130,246,0.25)" stroke="rgba(59,130,246,0.4)" stroke-width="1"/>
+                  <!-- Exhaust stacks -->
+                  <rect x="100" y="32" width="4" height="20" rx="2" fill="rgba(255,255,255,0.2)"/>
+                  <rect x="107" y="34" width="4" height="18" rx="2" fill="rgba(255,255,255,0.15)"/>
+                  <!-- Wheels -->
+                  <circle cx="22" cy="88" r="10" fill="#1e293b" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+                  <circle cx="22" cy="88" r="5" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                  <circle cx="60" cy="88" r="10" fill="#1e293b" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+                  <circle cx="60" cy="88" r="5" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                  <circle cx="118" cy="88" r="10" fill="#1e293b" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+                  <circle cx="118" cy="88" r="5" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                  <!-- Status badge -->
+                  <rect x="100" y="22" width="50" height="16" rx="8" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.35)" stroke-width="1"/>
+                  <circle cx="113" cy="30" r="3" fill="#10b981"/>
+                  <text x="128" y="34" font-family="sans-serif" font-size="7" fill="rgba(255,255,255,0.7)" text-anchor="middle">ACTIVE</text>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documents -->
+    <section id="documents" class="section section-alt reveal">
+        <div class="service-layout reversed">
+            <div class="service-content">
+                <h2>Document Management</h2>
+                <p>Never lose a BOL again. We organize all your critical shipping documents for seamless invoicing and audits.</p>
+                <ul>
+                    <li>Rate Confirmations securement</li>
+                    <li>Bill of Lading (BOL) processing</li>
+                    <li>Proof of Delivery (POD) management</li>
+                    <li>Lumper receipts tracking</li>
+                    <li>Organized digital folders per load</li>
+                </ul>
+                <a href="/contact.html?service=documents" class="btn-primary" id="btn-service-docs">Organize Your Docs</a>
+            </div>
+            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1a2a1a 100%);">
+                <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <!-- Documents / BOL stack -->
+                  <rect x="35" y="30" width="64" height="82" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                  <rect x="28" y="24" width="64" height="82" rx="6" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+                  <!-- Front doc -->
+                  <rect x="21" y="18" width="64" height="82" rx="6" fill="#1e293b" stroke="rgba(245,158,11,0.4)" stroke-width="1.5"/>
+                  <!-- Doc header stripe -->
+                  <rect x="21" y="18" width="64" height="14" rx="6" fill="rgba(245,158,11,0.15)"/>
+                  <rect x="21" y="26" width="64" height="6" rx="0" fill="rgba(245,158,11,0.1)"/>
+                  <!-- Text lines -->
+                  <rect x="31" y="42" width="44" height="4" rx="2" fill="rgba(255,255,255,0.25)"/>
+                  <rect x="31" y="52" width="36" height="3" rx="1.5" fill="rgba(255,255,255,0.12)"/>
+                  <rect x="31" y="60" width="40" height="3" rx="1.5" fill="rgba(255,255,255,0.12)"/>
+                  <rect x="31" y="68" width="30" height="3" rx="1.5" fill="rgba(255,255,255,0.12)"/>
+                  <!-- Divider -->
+                  <line x1="31" y1="78" x2="75" y2="78" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                  <rect x="31" y="84" width="20" height="4" rx="2" fill="rgba(245,158,11,0.5)"/>
+                  <rect x="55" y="84" width="20" height="4" rx="2" fill="rgba(16,185,129,0.4)"/>
+                  <!-- Checkmark badge -->
+                  <circle cx="95" cy="85" r="16" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.35)" stroke-width="1.5"/>
+                  <path d="M87 85 L92 91 L103 79" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Factoring -->
+    <section id="factoring" class="section reveal">
+        <div class="service-layout">
+            <div class="service-content">
+                <h2>Factoring Setup Assistance</h2>
+                <p>Get paid faster. We coordinate with top factoring companies so you have the cash flow you need.</p>
+                <ul>
+                    <li>Partnerships with RTS, Apex Capital, and more</li>
+                    <li>Setup for 24-hour quick payments</li>
+                    <li>Non-recourse and recourse options</li>
+                    <li>We process the paperwork, you get paid</li>
+                    <li>Carrier keeps full broker payment (minus factoring fee)</li>
+                </ul>
+                <a href="/contact.html?service=factoring" class="btn-primary" id="btn-service-factoring">Improve Cash Flow</a>
+            </div>
+            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1a2010 100%);">
+                <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <!-- Dollar / Factoring cash flow -->
+                  <circle cx="70" cy="70" r="40" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.2)" stroke-width="1.5"/>
+                  <text x="70" y="80" font-family="Inter,sans-serif" font-size="36" font-weight="900" fill="#f59e0b" text-anchor="middle">$</text>
+                  <!-- Speed arrows -->
+                  <path d="M20 55 L38 55" stroke="rgba(16,185,129,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M32 49 L38 55 L32 61" stroke="rgba(16,185,129,0.6)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  <path d="M20 70 L38 70" stroke="rgba(16,185,129,0.4)" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M32 64 L38 70 L32 76" stroke="rgba(16,185,129,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  <!-- 24hr label -->
+                  <rect x="88" y="40" width="38" height="18" rx="9" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+                  <text x="107" y="53" font-family="Inter,sans-serif" font-size="8" font-weight="700" fill="#10b981" text-anchor="middle">24hr</text>
+                  <!-- Progress bar -->
+                  <rect x="30" y="105" width="80" height="8" rx="4" fill="rgba(255,255,255,0.06)"/>
+                  <rect x="30" y="105" width="65" height="8" rx="4" fill="rgba(245,158,11,0.4)"/>
+                  <text x="35" y="124" font-family="Inter,sans-serif" font-size="7" fill="rgba(255,255,255,0.4)" >Payment Processing</text>
+                  <!-- RTS / APEX labels -->
+                  <rect x="20" y="88" width="22" height="10" rx="5" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.2)" stroke-width="1"/>
+                  <text x="31" y="96" font-family="sans-serif" font-size="6" fill="rgba(245,158,11,0.7)" text-anchor="middle">RTS</text>
+                  <rect x="46" y="88" width="28" height="10" rx="5" fill="rgba(59,130,246,0.1)" stroke="rgba(59,130,246,0.2)" stroke-width="1"/>
+                  <text x="60" y="96" font-family="sans-serif" font-size="6" fill="rgba(59,130,246,0.7)" text-anchor="middle">APEX</text>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Insurance -->
+    <section id="insurance" class="section section-alt reveal">
+        <div class="service-layout reversed">
+            <div class="service-content">
+                <h2>Insurance Coordination</h2>
+                <p>Protect your business with the right coverage at competitive rates.</p>
+                <ul>
+                    <li>Connections with premium insurance providers</li>
+                    <li>Commercial auto liability coverage</li>
+                    <li>Motor truck cargo insurance</li>
+                    <li>Physical damage and bobtail coverage</li>
+                    <li>Quick certificate generation for loads</li>
+                </ul>
+                <a href="/contact.html?service=insurance" class="btn-primary" id="btn-service-insurance">Review Insurance Options</a>
+            </div>
+            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1a1a2e 100%);">
+                <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <!-- Shield / Insurance -->
+                  <path d="M70 22 L105 36 L105 76 C105 98 70 118 70 118 C70 118 35 98 35 76 L35 36 Z" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.35)" stroke-width="2" stroke-linejoin="round"/>
+                  <!-- Shield inner glow -->
+                  <path d="M70 32 L96 43 L96 76 C96 94 70 110 70 110 C70 110 44 94 44 76 L44 43 Z" fill="rgba(245,158,11,0.04)" stroke="rgba(245,158,11,0.15)" stroke-width="1"/>
+                  <!-- Checkmark -->
+                  <path d="M53 70 L64 82 L87 58" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  <!-- Outer glow ring -->
+                  <circle cx="70" cy="70" r="58" fill="none" stroke="rgba(245,158,11,0.05)" stroke-width="8"/>
+                  <!-- DOT indicator -->
+                  <rect x="90" y="20" width="36" height="14" rx="7" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.25)" stroke-width="1"/>
+                  <text x="108" y="30" font-family="sans-serif" font-size="7" font-weight="700" fill="rgba(59,130,246,0.8)" text-anchor="middle">FMCSA</text>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- ELD -->
+    <section id="eld" class="section reveal">
+        <div class="service-layout">
+            <div class="service-content">
+                <h2>ELD & Telematics</h2>
+                <p>Stay compliant with FMCSA regulations using modern ELD solutions.</p>
+                <ul>
+                    <li>Integration with Advance Track systems</li>
+                    <li>Hours of Service (HOS) compliance monitoring</li>
+                    <li>Real-time GPS fleet tracking</li>
+                    <li>User-friendly mobile app for drivers</li>
+                    <li>IFTA mileage data collection</li>
+                </ul>
+                <a href="/contact.html?service=eld" class="btn-primary" id="btn-service-eld">Upgrade Your ELD</a>
+            </div>
+            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#0f1a2e 100%);">
+                <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <!-- ELD device / tablet -->
+                  <rect x="42" y="28" width="56" height="84" rx="8" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+                  <!-- Screen -->
+                  <rect x="47" y="36" width="46" height="60" rx="4" fill="rgba(59,130,246,0.08)" stroke="rgba(59,130,246,0.2)" stroke-width="1"/>
+                  <!-- Status bar -->
+                  <rect x="47" y="36" width="46" height="10" rx="4" fill="rgba(59,130,246,0.15)"/>
+                  <!-- HOS graph bars -->
+                  <rect x="51" y="52" width="6" height="22" rx="2" fill="rgba(16,185,129,0.5)"/>
+                  <rect x="60" y="58" width="6" height="16" rx="2" fill="rgba(16,185,129,0.3)"/>
+                  <rect x="69" y="50" width="6" height="24" rx="2" fill="rgba(245,158,11,0.5)"/>
+                  <rect x="78" y="55" width="6" height="19" rx="2" fill="rgba(245,158,11,0.3)"/>
+                  <rect x="78" y="55" width="6" height="19" rx="2" fill="rgba(245,158,11,0.3)"/>
+                  <rect x="86" y="53" width="4" height="21" rx="2" fill="rgba(239,68,68,0.4)"/>
+                  <!-- HOS label -->
+                  <text x="70" y="88" font-family="monospace" font-size="7" fill="rgba(255,255,255,0.5)" text-anchor="middle">HOS STATUS</text>
+                  <!-- GPS signal waves outside device -->
+                  <path d="M20 55 Q28 45 36 55" stroke="rgba(245,158,11,0.5)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <path d="M14 48 Q26 34 38 48" stroke="rgba(245,158,11,0.3)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <!-- GPS dot -->
+                  <circle cx="28" cy="60" r="4" fill="rgba(245,158,11,0.7)"/>
+                  <!-- ELD text label -->
+                  <rect x="95" y="90" width="32" height="14" rx="7" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.25)" stroke-width="1"/>
+                  <text x="111" y="100" font-family="sans-serif" font-size="7" font-weight="700" fill="rgba(59,130,246,0.8)" text-anchor="middle">ELD ✓</text>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Compliance -->
+    <section id="compliance" class="section section-alt reveal">
+        <div class="service-layout reversed">
+            <div class="service-content">
+                <h2>DOT Compliance Support</h2>
+                <p>Navigate the complex regulatory landscape without the headache. We ensure you are audit-ready.</p>
+                <ul>
+                    <li>MCS-150 biennial updates</li>
+                    <li>IFTA quarterly reporting support</li>
+                    <li>Pre-audit safety reviews</li>
+                    <li>New entrant safety audit preparation</li>
+                    <li>Customized carrier packet creation</li>
+                </ul>
+                <a href="/contact.html?service=compliance" class="btn-primary" id="btn-service-compliance">Get Compliant</a>
+            </div>
+            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#14200a 100%);">
+                <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <!-- Compliance / Clipboard checklist -->
+                  <rect x="30" y="25" width="80" height="95" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+                  <!-- Clipboard top -->
+                  <rect x="50" y="18" width="40" height="16" rx="4" fill="rgba(245,158,11,0.12)" stroke="rgba(245,158,11,0.3)" stroke-width="1.5"/>
+                  <rect x="62" y="21" width="16" height="10" rx="2" fill="rgba(245,158,11,0.2)"/>
+                  <!-- Checklist items -->
+                  <circle cx="46" cy="52" r="5" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.5)" stroke-width="1.5"/>
+                  <path d="M43 52 L45 55 L50 49" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  <rect x="58" y="49" width="38" height="5" rx="2.5" fill="rgba(255,255,255,0.2)"/>
+                  <circle cx="46" cy="70" r="5" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.5)" stroke-width="1.5"/>
+                  <path d="M43 70 L45 73 L50 67" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  <rect x="58" y="67" width="30" height="5" rx="2.5" fill="rgba(255,255,255,0.2)"/>
+                  <circle cx="46" cy="88" r="5" fill="rgba(245,158,11,0.15)" stroke="rgba(245,158,11,0.4)" stroke-width="1.5"/>
+                  <rect x="43" y="86" width="6" height="4" rx="1" fill="rgba(245,158,11,0.6)"/>
+                  <rect x="58" y="85" width="42" height="5" rx="2.5" fill="rgba(255,255,255,0.12)"/>
+                  <circle cx="46" cy="106" r="5" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+                  <rect x="58" y="103" width="34" height="5" rx="2.5" fill="rgba(255,255,255,0.08)"/>
+                  <!-- DOT stamp -->
+                  <circle cx="96" cy="38" r="14" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.25)" stroke-width="1.5" stroke-dasharray="3 2"/>
+                  <text x="96" y="36" font-family="sans-serif" font-size="6" font-weight="700" fill="rgba(245,158,11,0.7)" text-anchor="middle">DOT</text>
+                  <text x="96" y="45" font-family="sans-serif" font-size="5" fill="rgba(245,158,11,0.5)" text-anchor="middle">COMPLIANT</text>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRICING -->
+    <section class="pricing-section reveal">
+        <div class="pricing-header">
+            <h2>Transparent Pricing</h2>
+            <p>Simple, commission-based pricing. We only succeed when you succeed.</p>
+        </div>
+        <div class="pricing-grid">
+            <!-- Starter -->
+            <div class="pricing-card">
+                <h3>Starter</h3>
+                <div class="trucks">1 Truck (Owner-Operator)</div>
+                <div class="price">10%<span>/gross load</span></div>
+                <p>Perfect for solo drivers wanting to focus on the road.</p>
+                <ul>
+                    <li>Full Dispatch Services</li>
+                    <li>Load Board Management</li>
+                    <li>Document Organization</li>
+                    <li>Factoring Assistance</li>
+                    <li>No monthly fees</li>
+                </ul>
+                <a href="/onboarding.html?plan=starter" class="btn-primary" style="width:100%; text-align:center; display:block; box-sizing:border-box;" id="btn-pricing-starter">Select Starter</a>
+            </div>
+
+            <!-- Growth -->
+            <div class="pricing-card featured">
+                <h3>Growth</h3>
+                <div class="trucks">2-5 Trucks</div>
+                <div class="price">7.5%<span>/gross load</span></div>
+                <p>For growing fleets needing comprehensive back-office support.</p>
+                <ul>
+                    <li>Everything in Starter</li>
+                    <li>Dedicated Account Manager</li>
+                    <li>Fleet & Driver Tracking</li>
+                    <li>DOT Compliance Support</li>
+                    <li>No monthly fees</li>
+                </ul>
+                <a href="/onboarding.html?plan=growth" class="btn-primary" style="width:100%; text-align:center; display:block; box-sizing:border-box;" id="btn-pricing-growth">Select Growth</a>
+            </div>
+
+            <!-- Fleet -->
+            <div class="pricing-card">
+                <h3>Fleet</h3>
+                <div class="trucks">6+ Trucks</div>
+                <div class="price">5%<span>/gross load</span></div>
+                <p>Volume discount for established carriers scaling operations.</p>
+                <ul>
+                    <li>Everything in Growth</li>
+                    <li>Priority Load Booking</li>
+                    <li>Advanced Custom Reporting</li>
+                    <li>ELD Management</li>
+                    <li>No monthly fees</li>
+                </ul>
+                <a href="/contact.html?plan=fleet" class="btn-outline" style="width:100%; text-align:center; display:block; color:var(--color-navy); border-color:var(--color-navy); box-sizing:border-box;" id="btn-pricing-fleet">Request Custom Quote</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section reveal">
+        <h2>Ready to optimize your freight operations?</h2>
+        <p style="font-size:1.25rem; margin-bottom:2rem; color:var(--color-gray-300);">Join successful carriers maximizing their profits with Shipping Wish LLC.</p>
+        <a href="/onboarding.html" class="btn-primary" style="font-size:1.1rem; padding:1rem 2rem;" id="bottom-cta">Start Your Journey Today</a>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer" role="contentinfo">
+      <div class="container">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a href="/" class="nav-logo" aria-label="Shipping Wish LLC Home">
+              <div class="nav-logo-mark" aria-hidden="true">SW</div>
+              <div class="nav-logo-text">Shipping <span>Wish</span></div>
+            </a>
+            <p>Technology-powered freight dispatch and fleet operations for modern American carriers. Commission-only. No contracts. Real results.</p>
+            <div class="footer-contact">
+              <div class="footer-contact-item">
+                <span aria-hidden="true">📞</span>
+                <a href="tel:+19177370021" id="footer-phone-link">+1 917 737 0021</a>
+              </div>
+              <div class="footer-contact-item">
+                <span aria-hidden="true">✉️</span>
+                <a href="mailto:billing@shippingwish.com" id="footer-email-link">billing@shippingwish.com</a>
+              </div>
+              <div class="footer-contact-item">
+                <span aria-hidden="true">📍</span>
+                <span>19266 Coastal Hwy, Rehoboth, DE 19971</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-col">
+            <h4>Services</h4>
+            <ul>
+              <li><a href="/services.html#dispatch">Freight Dispatch</a></li>
+              <li><a href="/services.html#load-booking">Load Board Management</a></li>
+              <li><a href="/services.html#fleet">Fleet & Driver Management</a></li>
+              <li><a href="/services.html#documents">Document Management</a></li>
+              <li><a href="/factoring.html">Factoring Assistance</a></li>
+              <li><a href="/insurance.html">Insurance Services</a></li>
+              <li><a href="/eld.html">ELD & Telematics</a></li>
+              <li><a href="/dot-compliance.html">DOT Compliance</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h4>Platform</h4>
+            <ul>
+              <li><a href="/login.html">Carrier Portal Login</a></li>
+              <li><a href="/signup.html">Create Account</a></li>
+              <li><a href="/about.html">About Us</a></li>
+              <li><a href="/contact.html">Contact</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <ul>
+              <li><a href="/privacy-policy.html">Privacy Policy</a></li>
+              <li><a href="/terms.html">Terms of Service</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>© 2026 Shipping Wish LLC. All rights reserved. Registered in Delaware, USA.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+        // Mobile nav toggle
+        const hamburger = document.getElementById('nav-hamburger');
+        const mobileNav = document.getElementById('nav-mobile');
+
+        if (hamburger && mobileNav) {
+            hamburger.addEventListener('click', () => {
+                const isOpen = mobileNav.classList.toggle('open');
+                hamburger.setAttribute('aria-expanded', isOpen);
+                document.body.style.overflow = isOpen ? 'hidden' : '';
+            });
+        }
+
+        // Scroll reveal
+        const reveals = document.querySelectorAll('.reveal');
+        const revealOptions = { threshold: 0.1, rootMargin: "0px 0px -40px 0px" };
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, revealOptions);
+        reveals.forEach(el => revealObserver.observe(el));
+    </script>
+</body>
+</html>

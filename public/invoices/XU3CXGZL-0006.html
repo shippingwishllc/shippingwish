@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice XU3CXGZL-0006 | Shipping Wish LLC</title>
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    body { background: #fff !important; padding: 0 !important; }
+    .invoice-card { box-shadow: none !important; border: none !important; }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f1f5f9;
+    color: #0f172a;
+    line-height: 1.5;
+    padding: 40px 20px;
+  }
+
+  .action-bar {
+    max-width: 800px;
+    margin: 0 auto 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #059669;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .btn:hover { background: #047857; }
+  .btn-outline { background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; }
+  .btn-outline:hover { background: #f8fafc; }
+
+  .invoice-card {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+  }
+
+  .invoice-header {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 32px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .brand-name {
+    font-size: 24px;
+    font-weight: 800;
+    color: #f59e0b;
+    letter-spacing: -0.5px;
+  }
+
+  .brand-sub {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+
+  .brand-contact {
+    font-size: 11px;
+    color: #cbd5e1;
+    margin-top: 8px;
+  }
+
+  .paid-stamp {
+    background: #059669;
+    color: #ffffff;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .invoice-body {
+    padding: 40px;
+  }
+
+  .invoice-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+
+  .invoice-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .invoice-meta {
+    font-size: 13px;
+    color: #64748b;
+    text-align: right;
+  }
+
+  .cols-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 28px;
+  }
+
+  .col-box h4 {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+
+  .col-box p {
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.6;
+  }
+
+  .col-box p.comp-name {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 14px;
+  }
+
+  .meta-grid {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .meta-item .lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  .meta-item .val {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 2px;
+  }
+
+  /* Table */
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 32px;
+  }
+
+  .items-table th {
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 16px;
+    text-align: left;
+  }
+
+  .items-table td {
+    padding: 16px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 14px;
+    color: #0f172a;
+  }
+
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+
+  /* Totals */
+  .totals-section {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 32px;
+  }
+
+  .totals-table {
+    width: 320px;
+    border-collapse: collapse;
+  }
+
+  .totals-table td {
+    padding: 8px 0;
+    font-size: 13px;
+    color: #475569;
+  }
+
+  .totals-table tr.grand-total td {
+    border-top: 2px solid #e2e8f0;
+    border-bottom: 2px solid #059669;
+    padding: 12px 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .memo-box {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 32px;
+  }
+
+  .memo-box h5 {
+    font-size: 11px;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .memo-box p {
+    font-size: 12px;
+    color: #334155;
+  }
+
+  .invoice-footer {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 20px;
+    text-align: center;
+    font-size: 11px;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+
+<div class="action-bar no-print">
+  <a href="/invoices/Invoice_XU3CXGZL-0006.pdf" class="btn" download>📥 Download Vector PDF File</a>
+  <button class="btn btn-outline" onclick="window.print()">🖨️ Print / Save PDF</button>
+</div>
+
+<div class="invoice-card">
+  <!-- Header -->
+  <div class="invoice-header">
+    <div>
+      <div class="brand-name">SHIPPING WISH LLC</div>
+      <div class="brand-sub">Premier US Freight Dispatch &amp; Enterprise Logistics Conglomerate</div>
+      <div class="brand-contact">19266 Coastal Hwy, Rehoboth, DE 19971, USA | +1 917 737 0021 | billing@shippingwish.com | www.shippingwish.com</div>
+    </div>
+    <div class="paid-stamp">PAID IN FULL</div>
+  </div>
+
+  <!-- Body -->
+  <div class="invoice-body">
+    <div class="invoice-title-row">
+      <div>
+        <div class="invoice-title">INVOICE SUMMARY</div>
+        <span style="font-size:13px;color:#64748b;">Payoneer Account Verification Document</span>
+      </div>
+      <div class="invoice-meta">
+        <strong>Invoice Number:</strong> XU3CXGZL-0006<br>
+        <strong>Issue Date:</strong> Aug 12, 2026<br>
+        <strong>Due Date:</strong> Aug 12, 2026
+      </div>
+    </div>
+
+    <!-- Seller vs Customer Grid -->
+    <div class="cols-grid">
+      <div class="col-box">
+        <h4>ISSUED BY (SERVICE PROVIDER)</h4>
+        <p class="comp-name">Shipping Wish LLC</p>
+        <p>19266 Coastal Hwy<br>Rehoboth, DE 19971, USA<br>Phone: +1 917 737 0021<br>Email: billing@shippingwish.com<br>Web: www.shippingwish.com</p>
+      </div>
+      <div class="col-box">
+        <h4>BILLED TO (CLIENT)</h4>
+        <p class="comp-name" style="color:#2563eb;">Halak Logistics</p>
+        <p>15311 GUNDRY AVE 30<br>PARAMOUNT, CA 90723 US<br>Phone: (323) 338-6186<br>Email: halaklogistics@gmail.com</p>
+      </div>
+    </div>
+
+    <!-- Metadata Grid -->
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="lbl">Currency</div>
+        <div class="val">USD - US Dollar</div>
+      </div>
+      <div class="meta-item">
+        <div class="lbl">Billing Method</div>
+        <div class="val">Send invoice</div>
+      </div>
+      <div class="meta-item">
+        <div class="lbl">Tax Calculation</div>
+        <div class="val" style="color:#059669;">No tax rate applied (Tax Exempt)</div>
+      </div>
+    </div>
+
+    <!-- Line Items Table -->
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th class="text-center">Qty</th>
+          <th class="text-right">Unit Price</th>
+          <th class="text-right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Dispatch fee</strong><br><span style="font-size:12px;color:#64748b;">US Freight Dispatching &amp; Carrier Support Services</span></td>
+          <td class="text-center">1</td>
+          <td class="text-right">$135.00</td>
+          <td class="text-right"><strong>$135.00</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Totals Table -->
+    <div class="totals-section">
+      <table class="totals-table">
+        <tr>
+          <td>Subtotal:</td>
+          <td class="text-right">$135.00</td>
+        </tr>
+        <tr>
+          <td>Total excluding tax:</td>
+          <td class="text-right">$135.00</td>
+        </tr>
+        <tr>
+          <td>Customer is tax exempt:</td>
+          <td class="text-right">-</td>
+        </tr>
+        <tr style="border-top:1px solid #e2e8f0;font-weight:700;color:#0f172a;">
+          <td>Total:</td>
+          <td class="text-right">$135.00</td>
+        </tr>
+        <tr style="color:#059669;font-weight:700;">
+          <td>Amount Paid:</td>
+          <td class="text-right">-$135.00</td>
+        </tr>
+        <tr class="grand-total">
+          <td>Amount Remaining:</td>
+          <td class="text-right" style="color:#059669;">$0.00</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Memo & Payment Notes -->
+    <div class="memo-box">
+      <h5>Memo &amp; Payment Notes</h5>
+      <p>Bank transfer payments are accepted using the details provided below.</p>
+      <p style="margin-top:4px;">If you have any questions regarding this invoice, please contact us at billing@shippingwish.com or +1 917 737 0021.</p>
+    </div>
+
+    <!-- Footer Verification Line -->
+    <div class="invoice-footer">
+      <strong>Shipping Wish LLC — Corporate Accounts Receivable &amp; Verification Department</strong><br>
+      Official Payoneer Verification Document | Registered Address: 19266 Coastal Hwy, Rehoboth, DE 19971 US
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

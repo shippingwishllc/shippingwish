@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broker Management | Shipping Wish LLC</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="/" class="brand"><span class="dot"></span> Shipping Wish TMS</a>
+    <nav class="nav-links">
+      <a href="/dispatcher-dashboard.html">Dispatch Board</a>
+      <a href="/brokers.html" class="current">Brokers</a>
+      <a href="/fleet.html">Fleet</a>
+      <a href="/documents.html">Documents</a>
+      <a href="/invoices.html">Invoices</a>
+      <a href="/ifta.html">IFTA &amp; Fuel</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="nav-phone" id="user-badge-broker">User</span>
+      <button id="logout-btn" class="btn btn-outline">Log Out</button>
+      <button class="nav-toggle">☰</button>
+    </div>
+  </div>
+</header>
+
+<section class="tms-shell">
+  <div class="container">
+    <div class="tms-topbar">
+      <div>
+        <span class="eyebrow">Freight Partners</span>
+        <h1 style="font-size:26px;">Broker Directory &amp; Credit Ratings</h1>
+      </div>
+      <button class="btn btn-amber" data-open-modal="new-broker-modal">+ Add New Broker</button>
+    </div>
+
+    <div class="tms-panel">
+      <div style="display:flex;gap:16px;margin-bottom:20px;">
+        <input type="text" id="broker-search" placeholder="Search broker name, MC #, or contact person..." style="flex:1;padding:10px 14px;background:#0f1217;border:1px solid var(--border-color);border-radius:6px;color:#fff;">
+        <button class="btn btn-amber" onclick="loadBrokers()">Search</button>
+      </div>
+
+      <div class="table-scroll">
+        <table class="tms-table" id="brokers-table">
+          <thead>
+            <tr>
+              <th>Company Name</th>
+              <th>MC Number</th>
+              <th>Contact Person</th>
+              <th>Phone / Email</th>
+              <th>Credit Rating</th>
+              <th>Notes</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="7" class="muted" style="text-align:center;">Loading brokers...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- New Broker Modal -->
+<div class="modal-overlay" id="new-broker-modal">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal>&times;</button>
+    <h3>Add Freight Broker</h3>
+    <div id="new-broker-msg" class="form-msg"></div>
+    <form id="new-broker-form">
+      <div class="form-row">
+        <div class="field">
+          <label>Company Name *</label>
+          <input type="text" name="company_name" required placeholder="e.g. TQL / CH Robinson">
+        </div>
+        <div class="field">
+          <label>MC Number</label>
+          <input type="text" name="mc_number" placeholder="MC-123456">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Contact Person</label>
+          <input type="text" name="contact_person" placeholder="John Doe">
+        </div>
+        <div class="field">
+          <label>Phone Number</label>
+          <input type="text" name="phone" placeholder="+1 800 555 0199">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" name="email" placeholder="dispatch@broker.com">
+        </div>
+        <div class="field">
+          <label>Credit Rating</label>
+          <select name="credit_rating">
+            <option value="A+">A+ (Excellent - Quick Pay)</option>
+            <option value="A">A (Good / Standard 30 Days)</option>
+            <option value="B">B (Moderate Credit)</option>
+            <option value="C">C (Caution / High Risk)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Internal Notes / Packet Info</label>
+        <textarea name="notes" rows="2"></textarea>
+      </div>
+      <button type="submit" class="btn btn-amber btn-block">Save Broker</button>
+    </form>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/tms.js"></script>
+<script>
+  async function initBrokers() {
+    const user = await checkAuth(['dispatcher', 'admin', 'super_admin']);
+    if (!user) return;
+    document.getElementById('user-badge-broker').textContent = user.name;
+    loadBrokers();
+  }
+
+  async function loadBrokers() {
+    const search = document.getElementById('broker-search').value;
+    const tbody = document.querySelector('#brokers-table tbody');
+    try {
+      const res = await fetch(`/api/brokers?search=${encodeURIComponent(search)}`);
+      const data = await res.json();
+      const brokers = data.brokers || [];
+
+      if (!brokers.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center;">No brokers found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = brokers.map(b => `
+        <tr>
+          <td><b>${b.company_name}</b></td>
+          <td>${b.mc_number || 'N/A'}</td>
+          <td>${b.contact_person || '-'}</td>
+          <td>${b.phone || ''} ${b.email ? '<br><small class="muted">' + b.email + '</small>' : ''}</td>
+          <td><span class="badge badge-${b.credit_rating.startsWith('A') ? 'paid' : 'booked'}">${b.credit_rating}</span></td>
+          <td><small class="muted">${b.notes || '-'}</small></td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="deleteBroker(${b.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="7" class="muted">Error loading brokers.</td></tr>`;
+    }
+  }
+
+  async function deleteBroker(id) {
+    if (!confirm('Are you sure you want to delete this broker?')) return;
+    await fetch(`/api/brokers/${id}`, { method: 'DELETE' });
+    loadBrokers();
+  }
+
+  document.getElementById('new-broker-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const body = Object.fromEntries(formData.entries());
+    const msg = document.getElementById('new-broker-msg');
+
+    const res = await fetch('/api/brokers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.className = 'form-msg error';
+      msg.textContent = data.error;
+    } else {
+      msg.className = 'form-msg success';
+      msg.textContent = 'Broker added successfully!';
+      e.target.reset();
+      loadBrokers();
+      setTimeout(() => document.getElementById('new-broker-modal').classList.remove('active'), 1500);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', initBrokers);
+</script>
+</body>
+</html>

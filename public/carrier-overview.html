@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrier Fleet Owner Cockpit — Shipping Wish LLC ERP</title>
+  <meta name="description" content="Carrier Fleet Owner Cockpit for Shipping Wish LLC. Live truck tracking, gross revenue telemetry, rate per mile metrics, and driver compliance.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- LEFT SIDEBAR -->
+  <aside class="app-sidebar" role="navigation" aria-label="Carrier Navigation">
+    <div>
+      <a href="/" class="sidebar-brand" style="text-decoration:none;">
+        <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">CARRIER SUITE</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Carrier Operations</div>
+      <a href="javascript:void(0)" class="sidebar-nav-link active" id="nav-tab-cockpit" onclick="switchCarrierTab('cockpit')">
+        <span aria-hidden="true">📊</span> Fleet Cockpit
+      </a>
+      <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-loads" onclick="switchCarrierTab('loads')">
+        <span aria-hidden="true">🚚</span> Active Dispatched Loads
+      </a>
+      <a href="/fleet.html" class="sidebar-nav-link">
+        <span aria-hidden="true">👥</span> Fleet Roster & Trucks
+      </a>
+
+      <div class="sidebar-section-label">Finance & Docs</div>
+      <a href="/invoices.html" class="sidebar-nav-link">
+        <span aria-hidden="true">💳</span> Invoices & Factoring
+      </a>
+      <a href="/documents.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📄</span> Document Vault (POD/BOL)
+      </a>
+      <a href="/driver-app.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📱</span> Mobile Driver App
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-user-card">
+        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="carrier-avatar-initials">CF</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="carrier-name-display">Carrier Portal</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="carrier-mc-display">MC-XXXXXX</div>
+        </div>
+      </div>
+      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);" id="logout-btn">
+        🚪 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Carrier Owner Cockpit</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Fleet revenue telemetry, active dispatches, & driver status</p>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:var(--space-4);">
+        <a href="/driver-app.html" class="btn btn-primary btn-sm" id="btn-open-driver-app">
+          📱 Driver App Console
+        </a>
+
+        <div class="live-status">
+          <span class="live-dot"></span>
+          Dispatch Active
+        </div>
+
+        <!-- Notification Bell Component -->
+        <div id="notif-container"></div>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- ================= TAB 1: COCKPIT OVERVIEW ================= -->
+      <div id="carrier-tab-cockpit" class="carrier-tab-content">
+        <!-- KPI Stat Cards -->
+        <div class="stat-card-grid">
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Gross Freight Revenue</span>
+              <div class="stat-kpi-icon">💰</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-carrier-revenue">$0.00</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Total booked load earnings</div>
+          </div>
+
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Active Loads</span>
+              <div class="stat-kpi-icon">🚚</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-carrier-active">0</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">In-transit & booked loads</div>
+          </div>
+
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Dispatched Miles</span>
+              <div class="stat-kpi-icon">🛣️</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-carrier-miles">0 mi</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Total load miles driven</div>
+          </div>
+
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Net Carrier Payout</span>
+              <div class="stat-kpi-icon">💵</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-carrier-net">$0.00</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Net payout (after dispatch fee)</div>
+          </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="tms-table-card">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Active Dispatched Fleet Loads</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Real-time load pipeline & status updates</p>
+            </div>
+            <div style="display:flex;gap:var(--space-3);align-items:center;">
+              <input type="text" class="form-input" id="carrier-search-input" placeholder="Search load #, location..." style="width:200px;padding:6px 12px;font-size:13px;" onkeyup="filterCarrierLoads()">
+            </div>
+          </div>
+
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Load #</th>
+                  <th>Broker</th>
+                  <th>Pickup</th>
+                  <th>Delivery</th>
+                  <th>Miles</th>
+                  <th>Gross Rate</th>
+                  <th>RPM</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="carrier-loads-tbody">
+                <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">Loading fleet loads...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="/js/notifications-bell.js"></script>
+<script>
+  let carrierLoads = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await checkCarrierAuth();
+    loadCarrierCockpitData();
+  });
+
+  async function checkCarrierAuth() {
+    try {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (!res.ok) { window.location.href = '/login.html'; return; }
+      const data = await res.json();
+      if (!data.user) { window.location.href = '/login.html'; return; }
+      document.getElementById('carrier-name-display').textContent = data.user.company_name || data.user.name;
+      document.getElementById('carrier-mc-display').textContent = data.user.mc_number ? `MC-${data.user.mc_number}` : 'Carrier Client';
+      document.getElementById('carrier-avatar-initials').textContent = (data.user.company_name || data.user.name || 'CF').slice(0, 2).toUpperCase();
+    } catch (e) {
+      window.location.href = '/login.html';
+    }
+  }
+
+  async function loadCarrierCockpitData() {
+    try {
+      const [dashRes, loadsRes] = await Promise.all([
+        fetch('/api/dashboard', { credentials: 'include' }),
+        fetch('/api/loads', { credentials: 'include' })
+      ]);
+
+      if (dashRes.ok) {
+        const dashData = await dashRes.json();
+        const gross = parseFloat(dashData.summary?.totalGrossRevenue || 0);
+        const net = gross * 0.95; // 5% dispatch fee deduction
+        document.getElementById('kpi-carrier-revenue').textContent = `$${gross.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+        document.getElementById('kpi-carrier-active').textContent = dashData.summary?.activeLoadsCount || 0;
+        document.getElementById('kpi-carrier-miles').textContent = `${(dashData.summary?.totalMiles || 0).toLocaleString()} mi`;
+        document.getElementById('kpi-carrier-net').textContent = `$${net.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+      }
+
+      if (loadsRes.ok) {
+        const data = await loadsRes.json();
+        carrierLoads = data.loads || [];
+        renderCarrierLoads(carrierLoads);
+      }
+    } catch (err) {
+      console.error('Carrier cockpit load error:', err);
+    }
+  }
+
+  function renderCarrierLoads(loads) {
+    const tbody = document.getElementById('carrier-loads-tbody');
+    if (!loads || loads.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">No active loads found for your fleet.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = loads.map(l => `
+      <tr>
+        <td><strong style="color:var(--text-primary);">${l.load_number}</strong></td>
+        <td>${escapeHtml(l.broker_name || 'Direct')}</td>
+        <td>${escapeHtml(l.pickup_location)} ${l.pickup_state ? `(${l.pickup_state})` : ''}</td>
+        <td>${escapeHtml(l.delivery_location)} ${l.delivery_state ? `(${l.delivery_state})` : ''}</td>
+        <td>${l.miles || 0} mi</td>
+        <td><strong style="color:var(--color-success);">$${parseFloat(l.rate || 0).toLocaleString()}</strong></td>
+        <td style="font-weight:700;">$${l.rpm || '0.00'}/mi</td>
+        <td><span class="badge ${getStatusBadge(l.status)}">${formatStatus(l.status)}</span></td>
+        <td>
+          <a href="/load-detail.html?id=${l.id}" class="btn btn-secondary btn-sm" id="btn-carrier-view-${l.id}">View Details</a>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function filterCarrierLoads() {
+    const search = document.getElementById('carrier-search-input').value.toLowerCase();
+    const filtered = carrierLoads.filter(l => {
+      return !search ||
+        l.load_number.toLowerCase().includes(search) ||
+        (l.broker_name && l.broker_name.toLowerCase().includes(search)) ||
+        l.pickup_location.toLowerCase().includes(search) ||
+        l.delivery_location.toLowerCase().includes(search);
+    });
+    renderCarrierLoads(filtered);
+  }
+
+  function switchCarrierTab(tab) {
+    // Single tab for now
+  }
+
+  function getStatusBadge(st) {
+    switch(st) {
+      case 'booked': return 'badge-amber';
+      case 'dispatched': return 'badge-blue';
+      case 'in_transit': return 'badge-blue';
+      case 'delivered': return 'badge-green';
+      case 'invoiced': return 'badge-navy';
+      case 'paid': return 'badge-green';
+      default: return 'badge-gray';
+    }
+  }
+
+  function formatStatus(st) {
+    return (st || '').replace('_', ' ').toUpperCase();
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  async function logout() {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/login.html';
+    } catch (e) {
+      window.location.href = '/login.html';
+    }
+  }
+</script>
+</body>
+</html>

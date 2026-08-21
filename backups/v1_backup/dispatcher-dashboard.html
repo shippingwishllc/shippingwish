@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dispatcher Workstation | Shipping Wish LLC</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="/" class="brand"><span class="dot"></span> Shipping Wish Dispatch</a>
+    <nav class="nav-links">
+      <a href="/dispatcher-dashboard.html" class="current">Dispatch Board</a>
+      <a href="/brokers.html">Brokers</a>
+      <a href="/fleet.html">Fleet</a>
+      <a href="/documents.html">Documents</a>
+      <a href="/invoices.html">Invoices</a>
+      <a href="/ifta.html">IFTA &amp; Fuel</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="nav-phone" id="user-name-disp">Dispatcher</span>
+      <button id="logout-btn" class="btn btn-outline">Log Out</button>
+      <button class="nav-toggle">☰</button>
+    </div>
+  </div>
+</header>
+
+<section class="tms-shell">
+  <div class="container">
+    <div class="tms-topbar">
+      <div>
+        <span class="eyebrow">Dispatch Desk</span>
+        <h1 style="font-size:26px;">Live Loads &amp; Operations</h1>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-outline" data-open-modal="ai-loadfinder-modal">🤖 DAT Load Finder &amp; AI Matcher</button>
+        <button class="btn btn-amber" data-open-modal="new-load-modal">+ Book / Create Load</button>
+      </div>
+    </div>
+
+    <!-- Dispatcher Metrics Row -->
+    <div id="disp-stats-row" class="stat-row"></div>
+
+    <div class="tms-panel table-scroll">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3>Active Freight Pipeline</h3>
+      </div>
+      <table class="tms-table" id="dispatcher-loads-table">
+        <thead>
+          <tr>
+            <th>Load #</th>
+            <th>Carrier</th>
+            <th>Broker</th>
+            <th>Pickup</th>
+            <th>Delivery</th>
+            <th>Gross Rate</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="8" class="muted" style="text-align:center;">Loading dispatch board...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- New Load Modal -->
+<div class="modal-overlay" id="new-load-modal">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal>&times;</button>
+    <h3>Book &amp; Create Load</h3>
+    <div id="new-load-msg" class="form-msg"></div>
+    <form id="new-load-form">
+      <div id="reload-suggestion-banner" style="display:none;background:rgba(59,130,246,0.15);border:1px solid var(--accent-blue);padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:13px;color:#93c5fd;">
+        💡 <b>Smart Reload Suggestion:</b> Truck/Driver is emptying at <b id="suggested-loc"></b> (from Load <span id="suggested-prev-load"></span>). Auto-set as Next Pickup Location!
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="carrierId">Assign Carrier Company *</label>
+          <select id="carrierId" name="carrierId" required onchange="checkNextReloadSuggestion()"></select>
+        </div>
+        <div class="field">
+          <label for="brokerId">Registered Broker</label>
+          <select id="brokerId" name="brokerId"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="brokerName">Broker Name (if unlisted)</label>
+          <input type="text" id="brokerName" name="brokerName" placeholder="e.g. C.H. Robinson">
+        </div>
+        <div class="field">
+          <label for="brokerMc">Broker MC #</label>
+          <input type="text" id="brokerMc" name="brokerMc" placeholder="e.g. MC-123456">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="driverId">Assigned Driver</label>
+          <select id="driverId" name="driverId" onchange="checkNextReloadSuggestion()"></select>
+        </div>
+        <div class="field">
+          <label for="truckId">Assigned Truck</label>
+          <select id="truckId" name="truckId"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="pickupLocation">Pickup City, ST *</label>
+          <input type="text" id="pickupLocation" name="pickupLocation" placeholder="Dallas, TX" required>
+        </div>
+        <div class="field">
+          <label for="pickupDate">Pickup Date &amp; Time</label>
+          <input type="date" id="pickupDate" name="pickupDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="deliveryLocation">Delivery City, ST *</label>
+          <input type="text" id="deliveryLocation" name="deliveryLocation" placeholder="Atlanta, GA" required>
+        </div>
+        <div class="field">
+          <label for="deliveryDate">Delivery Date &amp; Time</label>
+          <input type="date" id="deliveryDate" name="deliveryDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="rate">Broker Gross Rate ($) *</label>
+          <input type="number" step="0.01" id="rate" name="rate" placeholder="2800.00" required oninput="calcRpmPreview()">
+        </div>
+        <div class="field">
+          <label for="carrierPay">Carrier Pay ($)</label>
+          <input type="number" step="0.01" id="carrierPay" name="carrierPay" placeholder="2500.00">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="miles">Est. Total Miles</label>
+          <input type="number" id="miles" name="miles" placeholder="780" oninput="calcRpmPreview()">
+        </div>
+        <div class="field">
+          <label for="equipmentType">Equipment Type</label>
+          <input type="text" id="equipmentType" name="equipmentType" placeholder="53ft Dry Van / Reefer">
+        </div>
+      </div>
+      <div style="background:rgba(245,158,11,0.1);padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:13px;color:var(--amber-primary);">
+        <b>Calculated Rate Per Mile (RPM):</b> <span id="rpm-preview">$0.00 / mi</span>
+      </div>
+      <div class="field">
+        <label for="dispatcherNotes">Dispatcher Instructions / Notes</label>
+        <textarea id="dispatcherNotes" name="dispatcherNotes" rows="2"></textarea>
+      </div>
+      <button type="submit" class="btn btn-amber btn-block">Book &amp; Create Load</button>
+    </form>
+  </div>
+<!-- AI DAT Freight Finder Modal -->
+<div class="modal-overlay" id="ai-loadfinder-modal">
+  <div class="modal-box" style="max-width:850px;">
+    <button class="modal-close" data-close-modal>&times;</button>
+    <h3>🤖 AI DAT Freight Finder &amp; Load Matcher</h3>
+    <p class="muted" style="margin-bottom:16px;font-size:13px;">Find optimal DAT live freight loads by origin, destination, equipment, and minimum rate-per-mile (RPM). Send load options directly to Carrier Client for 1-click mobile approval.</p>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Origin City, ST</label>
+        <input type="text" id="ai-origin" placeholder="Dallas, TX" value="Dallas, TX">
+      </div>
+      <div class="field">
+        <label>Destination City, ST</label>
+        <input type="text" id="ai-destination" placeholder="Atlanta, GA" value="Atlanta, GA">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Equipment Type</label>
+        <select id="ai-equipment">
+          <option value="53ft Dry Van">53ft Dry Van</option>
+          <option value="Reefer 53ft">Reefer 53ft</option>
+          <option value="Flatbed 48ft">Flatbed 48ft</option>
+          <option value="Step Deck">Step Deck</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Min Target Rate Per Mile (RPM $)</label>
+        <input type="number" step="0.10" id="ai-min-rpm" placeholder="3.00" value="3.10">
+      </div>
+    </div>
+    <div class="field">
+      <label>Target Carrier Client (for 1-click approval send)</label>
+      <select id="ai-carrier-target"></select>
+    </div>
+    <button class="btn btn-amber btn-block" onclick="runAiDatSearch()" style="margin-bottom:20px;">Search Live DAT Loads &amp; AI Match</button>
+
+    <div id="ai-results-area" style="display:none;">
+      <div id="ai-summary-banner" style="background:rgba(16,185,129,0.15);border:1px solid var(--accent-green);padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:13px;color:#a7f3d0;"></div>
+      <div class="table-scroll">
+        <table class="tms-table" id="ai-loads-results-table">
+          <thead>
+            <tr>
+              <th>Broker / MC</th>
+              <th>Lane (Pickup ➔ Delivery)</th>
+              <th>Equipment</th>
+              <th>Miles</th>
+              <th>Rate / RPM</th>
+              <th>AI Score</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/tms.js"></script>
+<script>
+  let currentUser = null;
+
+  function calcRpmPreview() {
+    const rate = parseFloat(document.getElementById('rate')?.value || 0);
+    const miles = parseFloat(document.getElementById('miles')?.value || 0);
+    const previewEl = document.getElementById('rpm-preview');
+    if (previewEl) {
+      if (miles > 0 && rate > 0) {
+        const rpm = (rate / miles).toFixed(2);
+        previewEl.textContent = `$${rpm} / mi`;
+      } else {
+        previewEl.textContent = `$0.00 / mi`;
+      }
+    }
+  }
+
+  async function checkNextReloadSuggestion() {
+    const carrierId = document.getElementById('carrierId')?.value;
+    const driverId = document.getElementById('driverId')?.value;
+    const banner = document.getElementById('reload-suggestion-banner');
+    const pickupLocInput = document.getElementById('pickupLocation');
+
+    if (!carrierId && !driverId) {
+      if (banner) banner.style.display = 'none';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/loads/last-delivery?carrierId=${carrierId || ''}&driverId=${driverId || ''}`);
+      const data = await res.json();
+      if (data.lastDelivery && data.lastDelivery.delivery_location) {
+        document.getElementById('suggested-loc').textContent = `${data.lastDelivery.delivery_location} (${data.lastDelivery.delivery_state || ''})`;
+        document.getElementById('suggested-prev-load').textContent = data.lastDelivery.load_number;
+        if (banner) banner.style.display = 'block';
+
+        if (pickupLocInput && !pickupLocInput.value) {
+          pickupLocInput.value = data.lastDelivery.delivery_location;
+        }
+      } else {
+        if (banner) banner.style.display = 'none';
+      }
+    } catch (err) {
+      if (banner) banner.style.display = 'none';
+    }
+  }
+
+  let currentAiMatches = [];
+
+  async function populateAiCarrierTarget() {
+    const targetSelect = document.getElementById('ai-carrier-target');
+    if (targetSelect) {
+      const res = await fetch('/api/carriers');
+      const data = await res.json();
+      targetSelect.innerHTML = `<option value="">-- Select Carrier Client --</option>` +
+        (data.carriers || []).map(c => `<option value="${c.id}">${c.company_name || c.name} (${c.mc_number || 'No MC'})</option>`).join('');
+    }
+  }
+
+  async function runAiDatSearch() {
+    const origin = document.getElementById('ai-origin').value;
+    const destination = document.getElementById('ai-destination').value;
+    const equipmentType = document.getElementById('ai-equipment').value;
+    const targetRpm = document.getElementById('ai-min-rpm').value;
+
+    const res = await fetch('/api/loadboard/ai-match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentCity: origin, desiredDestination: destination, equipmentType, targetRpm })
+    });
+    const data = await res.json();
+    currentAiMatches = data.matches || [];
+
+    document.getElementById('ai-results-area').style.display = 'block';
+    document.getElementById('ai-summary-banner').textContent = data.ai_summary || 'AI Match completed.';
+
+    const tbody = document.querySelector('#ai-loads-results-table tbody');
+    tbody.innerHTML = currentAiMatches.map((m, idx) => `
+      <tr>
+        <td><b>${m.broker_name}</b><br><small class="muted">${m.broker_mc}</small></td>
+        <td><b>${m.pickup_location}</b> ➔ <b>${m.delivery_location}</b></td>
+        <td><span class="badge badge-booked">${m.equipment_type}</span></td>
+        <td>${m.miles} mi</td>
+        <td><b style="color:var(--amber-primary);">$${m.rate}</b><br><small class="muted">$${m.rpm}/mi</small></td>
+        <td><span class="badge badge-paid">${m.ai_score}% Match</span></td>
+        <td>
+          <button class="btn btn-amber btn-sm" onclick="sendOfferToCarrier(${idx})">Send to Carrier Client</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function sendOfferToCarrier(matchIndex) {
+    const carrierId = document.getElementById('ai-carrier-target').value;
+    if (!carrierId) return alert('Please select a Target Carrier Client from the dropdown first!');
+
+    const loadData = currentAiMatches[matchIndex];
+    if (!loadData) return;
+
+    const res = await fetch('/api/loadboard/offers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        carrierId,
+        brokerName: loadData.broker_name,
+        brokerMc: loadData.broker_mc,
+        brokerPhone: loadData.broker_phone,
+        pickupLocation: loadData.pickup_location,
+        pickupDate: loadData.pickup_date,
+        deliveryLocation: loadData.delivery_location,
+        deliveryDate: loadData.delivery_date,
+        rate: loadData.rate,
+        miles: loadData.miles,
+        rpm: loadData.rpm,
+        equipmentType: loadData.equipment_type
+      })
+    });
+    if (res.ok) {
+      alert(`Load Option sent to Carrier Client! They can now view and click ACCEPT/DECLINE in their Mobile App / Carrier Portal.`);
+    } else {
+      alert('Could not send offer.');
+    }
+  }
+
+  async function initDispatcher() {
+    currentUser = await checkAuth(['dispatcher', 'admin', 'super_admin']);
+    if (!currentUser) return;
+
+    document.getElementById('user-name-disp').textContent = currentUser.name;
+    loadDashboardStats('disp-stats-row');
+    loadTableLoads('dispatcher-loads-table', true);
+    populateLoadFormDropdowns();
+    populateAiCarrierTarget();
+  }
+
+  document.getElementById('new-load-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const body = Object.fromEntries(formData.entries());
+    const msg = document.getElementById('new-load-msg');
+
+    const res = await fetch('/api/loads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.className = 'form-msg error';
+      msg.textContent = data.error;
+    } else {
+      msg.className = 'form-msg success';
+      msg.textContent = `Load ${data.loadNumber} created successfully!`;
+      e.target.reset();
+      loadDashboardStats('disp-stats-row');
+      loadTableLoads('dispatcher-loads-table', true);
+      setTimeout(() => document.getElementById('new-load-modal').classList.remove('active'), 1500);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', initDispatcher);
+</script>
+</body>
+</html>

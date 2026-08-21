@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carrier Portal | Shipping Wish LLC</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="/" class="brand"><span class="dot"></span> Shipping Wish Carrier</a>
+    <nav class="nav-links">
+      <a href="/dashboard.html" class="current">My Loads</a>
+      <a href="/fleet.html">My Fleet</a>
+      <a href="/documents.html">Documents</a>
+      <a href="/invoices.html">Invoices</a>
+      <a href="/ifta.html">IFTA &amp; Fuel</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="nav-phone" id="carrier-name-nav">Carrier Portal</span>
+      <button id="logout-btn" class="btn btn-outline">Log Out</button>
+      <button class="nav-toggle">☰</button>
+    </div>
+  </div>
+</header>
+
+<section class="tms-shell">
+  <div class="container">
+    <div class="tms-topbar">
+      <div>
+        <span class="eyebrow">Carrier Portal</span>
+        <h1 style="font-size:26px;">Welcome back, <span id="carrier-company-title">…</span></h1>
+        <p class="muted" id="carrier-mc-subtitle"></p>
+      </div>
+      <a href="/contact.html" class="btn btn-amber">Request Extra Dispatch</a>
+    </div>
+
+    <!-- Carrier Metrics -->
+    <div id="carrier-stats-row" class="stat-row"></div>
+
+    <!-- Incoming Load Offers for Client Approval -->
+    <div id="carrier-offers-section" class="tms-panel" style="display:none;background:rgba(59,130,246,0.08);border:1px solid var(--accent-blue);">
+      <h3 style="color:var(--accent-blue);margin-bottom:12px;">📥 Incoming Load Offers (Booking Approval Required)</h3>
+      <p class="muted" style="margin-bottom:16px;font-size:13px;">Your dispatcher sent the following load options for your review. Accept to confirm booking or decline.</p>
+      <div id="carrier-offers-list" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:16px;"></div>
+    </div>
+
+    <div class="tms-panel table-scroll">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3>My Active &amp; Recent Loads</h3>
+      </div>
+      <table class="tms-table" id="carrier-loads-table">
+        <thead>
+          <tr>
+            <th>Load #</th>
+            <th>Broker</th>
+            <th>Pickup</th>
+            <th>Delivery</th>
+            <th>Carrier Pay</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="7" class="muted" style="text-align:center;">Loading your loads...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<script src="/js/main.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/tms.js"></script>
+<script>
+  async function initCarrier() {
+    const user = await checkAuth(['carrier']);
+    if (!user) return;
+
+    document.getElementById('carrier-name-nav').textContent = user.name;
+    document.getElementById('carrier-company-title').textContent = user.company_name || user.name;
+    document.getElementById('carrier-mc-subtitle').textContent = `MC: ${user.mc_number || 'N/A'} · Phone: ${user.phone || 'N/A'}`;
+
+    loadDashboardStats('carrier-stats-row');
+    loadCarrierOffers();
+    loadTableLoads('carrier-loads-table', false);
+  }
+
+  async function loadCarrierOffers() {
+    const section = document.getElementById('carrier-offers-section');
+    const container = document.getElementById('carrier-offers-list');
+    try {
+      const res = await fetch('/api/loadboard/offers');
+      const data = await res.json();
+      const offers = (data.offers || []).filter(o => o.status === 'pending');
+
+      if (!offers.length) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = 'block';
+      container.innerHTML = offers.map(o => `
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);padding:16px;border-radius:10px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <b>${o.broker_name}</b>
+            <span class="badge badge-booked">${o.equipment_type}</span>
+          </div>
+          <p style="font-size:14px;">📍 <b>${o.pickup_location}</b> ➔ 🎯 <b>${o.delivery_location}</b></p>
+          <div style="display:flex;justify-content:space-between;margin:12px 0;">
+            <span>Miles: <b>${o.miles} mi</b></span>
+            <span>Rate: <b style="color:var(--amber-primary);">$${o.rate}</b> ($${o.rpm}/mi)</span>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:12px;">
+            <button class="btn btn-amber btn-sm" style="flex:1;" onclick="respondOffer(${o.id}, 'accepted')">ACCEPT LOAD</button>
+            <button class="btn btn-danger btn-sm" style="flex:1;" onclick="respondOffer(${o.id}, 'declined')">DECLINE</button>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      console.error('Offers error:', err);
+    }
+  }
+
+  async function respondOffer(offerId, response) {
+    if (response === 'accepted' && !confirm('Accept this load? It will be automatically booked in your active loads.')) return;
+    const res = await fetch(`/api/loadboard/offers/${offerId}/respond`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ response })
+    });
+    if (res.ok) {
+      loadCarrierOffers();
+      loadTableLoads('carrier-loads-table', false);
+      loadDashboardStats('carrier-stats-row');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initCarrier);
+</script>
+</body>
+</html>

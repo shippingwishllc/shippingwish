@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dispatcher Workstation — Shipping Wish LLC ERP</title>
+  <meta name="description" content="Dispatcher Workstation for Shipping Wish LLC. Book loads, dispatch drivers, manage carrier fleets, and track freight status.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- LEFT SIDEBAR -->
+  <aside class="app-sidebar" role="navigation" aria-label="Dispatcher Navigation">
+    <div>
+      <a href="/" class="sidebar-brand" style="text-decoration:none;">
+        <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">DISPATCH WORKSTATION</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Dispatch Desk</div>
+      <a href="javascript:void(0)" class="sidebar-nav-link active" id="nav-tab-desk" onclick="switchDeskTab('desk')">
+        <span aria-hidden="true">🎧</span> Active Dispatch Board
+      </a>
+      <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-fleets" onclick="switchDeskTab('fleets')">
+        <span aria-hidden="true">🚛</span> My Assigned Fleets
+      </a>
+      <a href="/load-planning.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📅</span> Driver Reload Planner
+      </a>
+      <a href="/brokers.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🤝</span> Broker Directory
+      </a>
+
+      <div class="sidebar-section-label">Documents & Finance</div>
+      <a href="/documents.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📄</span> Document Vault (POD/BOL)
+      </a>
+      <a href="/invoices.html" class="sidebar-nav-link">
+        <span aria-hidden="true">💳</span> Invoices & Weekly Billing
+      </a>
+      <a href="/ifta.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📊</span> IFTA Fuel Ledger
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-user-card">
+        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="disp-avatar-initials">DS</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="disp-name-display">Dispatcher Desk</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="disp-role-display">Freight Operations</div>
+        </div>
+      </div>
+      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);" id="logout-btn">
+        🚪 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Dispatcher Control Desk</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Manage assigned carriers, book loads, & monitor drivers</p>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:var(--space-4);">
+        <button class="btn btn-primary btn-sm" onclick="openNewLoadModal()" id="btn-open-create-modal">
+          + Book & Create Load
+        </button>
+
+        <div class="live-status">
+          <span class="live-dot"></span>
+          Desk Online
+        </div>
+
+        <!-- Notification Bell Component -->
+        <div id="notif-container"></div>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- ================= TAB 1: DISPATCH BOARD ================= -->
+      <div id="tab-content-desk" class="desk-tab-content">
+        <!-- KPI Stat Cards -->
+        <div class="stat-card-grid">
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Booked Revenue</span>
+              <div class="stat-kpi-icon">💰</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-disp-revenue">$0.00</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Total gross value booked</div>
+          </div>
+
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Loads in Transit</span>
+              <div class="stat-kpi-icon">🚚</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-disp-transit">0</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Dispatched & moving</div>
+          </div>
+
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Assigned Fleets</span>
+              <div class="stat-kpi-icon">🚛</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-disp-fleets">0</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Active carrier clients</div>
+          </div>
+
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Pending PODs</span>
+              <div class="stat-kpi-icon">📄</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-disp-pods">0</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Delivered loads awaiting POD</div>
+          </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="tms-table-card">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Active Assigned Dispatch Board</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Loads booked and dispatched by your workstation</p>
+            </div>
+            <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;">
+              <input type="text" class="form-input" id="disp-search-input" placeholder="Search load #, broker, location..." style="width:220px;padding:6px 12px;font-size:13px;" onkeyup="filterDeskTable()">
+              <select class="form-select" id="disp-filter-status" style="width:140px;padding:6px 12px;font-size:13px;" onchange="filterDeskTable()">
+                <option value="">All Statuses</option>
+                <option value="booked">Booked</option>
+                <option value="dispatched">Dispatched</option>
+                <option value="in_transit">In Transit</option>
+                <option value="delivered">Delivered</option>
+                <option value="invoiced">Invoiced</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2" id="disp-board-table">
+              <thead>
+                <tr>
+                  <th>Load #</th>
+                  <th>Carrier</th>
+                  <th>Broker</th>
+                  <th>Pickup</th>
+                  <th>Delivery</th>
+                  <th>Gross Rate</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="disp-tbody">
+                <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">Loading dispatch board...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 2: ASSIGNED FLEETS ================= -->
+      <div id="tab-content-fleets" class="desk-tab-content" style="display:none;">
+        <div class="tms-table-card">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">My Assigned Carrier Fleets</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Carriers assigned to your dispatch desk</p>
+            </div>
+          </div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Carrier Company</th>
+                  <th>MC / DOT #</th>
+                  <th>Phone & Email</th>
+                  <th>Active Loads</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="fleets-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">Loading assigned fleets...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ================= CREATE NEW LOAD MODAL ================= -->
+<div class="modal-backdrop" id="new-load-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>Book & Create New Load</h2>
+      <button onclick="closeNewLoadModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div id="modal-alert" style="display:none;padding:12px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+
+      <!-- Smart Reload Banner -->
+      <div id="reload-banner" style="display:none;background:var(--color-amber-50);border:1px solid var(--color-amber-200);padding:12px 16px;border-radius:12px;margin-bottom:20px;font-size:13px;color:var(--color-amber-800);">
+        💡 <strong>Smart Reload Suggestion:</strong> Truck is emptying at <strong id="reload-loc"></strong> (from Load <span id="reload-prev"></span>). Auto-set as Next Pickup!
+      </div>
+
+      <form id="create-load-form">
+        <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+
+          <!-- Carrier & Broker Selection -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required" for="cl-carrier">Assign Carrier Fleet</label>
+              <select class="form-select" id="cl-carrier" name="carrierId" required onchange="onCarrierSelectChange()">
+                <option value="">Select carrier...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cl-broker">Registered Broker</label>
+              <select class="form-select" id="cl-broker" name="brokerId">
+                <option value="">Select broker (optional)...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Broker Manual Overrides -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="cl-broker-name">Broker Company Name</label>
+              <input class="form-input" id="cl-broker-name" name="brokerName" type="text" placeholder="e.g. C.H. Robinson, TQL, Echo">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cl-broker-mc">Broker MC #</label>
+              <input class="form-input" id="cl-broker-mc" name="brokerMc" type="text" placeholder="MC-XXXXXX">
+            </div>
+          </div>
+
+          <!-- Driver & Equipment Assignment -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="cl-driver">Assign Driver</label>
+              <select class="form-select" id="cl-driver" name="driverId">
+                <option value="">Select driver (optional)...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cl-equipment">Equipment Type</label>
+              <select class="form-select" id="cl-equipment" name="equipmentType">
+                <option value="53ft Dry Van">53ft Dry Van</option>
+                <option value="53ft Reefer">53ft Reefer</option>
+                <option value="48ft Flatbed">48ft Flatbed</option>
+                <option value="Step Deck">Step Deck</option>
+                <option value="Power Only">Power Only</option>
+                <option value="Box Truck">Box Truck</option>
+              </select>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--border-default);margin:var(--space-2) 0;">
+
+          <!-- Pickup Section -->
+          <div style="font-weight:700;font-size:14px;color:var(--text-primary);">📍 Pickup Details</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="cl-pickup-company">Facility / Shipper Name</label>
+              <input class="form-input" id="cl-pickup-company" name="pickupCompany" type="text" placeholder="Kraft Foods Logistics">
+            </div>
+            <div class="form-group">
+              <label class="form-label required" for="cl-pickup-loc">Pickup City, State</label>
+              <input class="form-input" id="cl-pickup-loc" name="pickupLocation" type="text" required placeholder="Chicago, IL">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="cl-pickup-zip">Pickup ZIP Code</label>
+              <input class="form-input" id="cl-pickup-zip" name="pickupZip" type="text" placeholder="60601">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cl-pickup-date">Pickup Date</label>
+              <input class="form-input" id="cl-pickup-date" name="pickupDate" type="date">
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--border-default);margin:var(--space-2) 0;">
+
+          <!-- Delivery Section -->
+          <div style="font-weight:700;font-size:14px;color:var(--text-primary);">🏁 Delivery Details</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="cl-del-company">Receiver Facility Name</label>
+              <input class="form-input" id="cl-del-company" name="deliveryCompany" type="text" placeholder="Walmart Distribution #402">
+            </div>
+            <div class="form-group">
+              <label class="form-label required" for="cl-del-loc">Delivery City, State</label>
+              <input class="form-input" id="cl-del-loc" name="deliveryLocation" type="text" required placeholder="Atlanta, GA">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="cl-del-zip">Delivery ZIP Code</label>
+              <input class="form-input" id="cl-del-zip" name="deliveryZip" type="text" placeholder="30301">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cl-del-date">Delivery Date</label>
+              <input class="form-input" id="cl-del-date" name="deliveryDate" type="date">
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--border-default);margin:var(--space-2) 0;">
+
+          <!-- Financials & Reference Numbers -->
+          <div style="font-weight:700;font-size:14px;color:var(--text-primary);">💵 Rate & Reference Info</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required" for="cl-rate">Gross Load Rate ($)</label>
+              <input class="form-input" id="cl-rate" name="rate" type="number" step="0.01" required placeholder="2800.00" onkeyup="calcRpm()">
+            </div>
+            <div class="form-group">
+              <label class="form-label required" for="cl-miles">Total Miles</label>
+              <input class="form-input" id="cl-miles" name="miles" type="number" required placeholder="715" onkeyup="calcRpm()">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="cl-ref">Broker Reference #</label>
+              <input class="form-input" id="cl-ref" name="referenceNumber" type="text" placeholder="REF-98402">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cl-bol">BOL #</label>
+              <input class="form-input" id="cl-bol" name="bolNumber" type="text" placeholder="BOL-10492">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="cl-notes">Dispatcher Notes</label>
+            <textarea class="form-textarea" id="cl-notes" name="dispatcherNotes" rows="2" placeholder="Strict 2hr detention policy, check call every morning at 8AM..."></textarea>
+          </div>
+
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button onclick="closeNewLoadModal()" class="btn btn-light">Cancel</button>
+      <button onclick="submitNewLoadForm()" class="btn btn-primary" id="btn-submit-new-load">Book & Create Load →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LOAD CHAT MODAL ================= -->
+<div class="modal-backdrop" id="chat-modal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <div>
+        <h2 id="chat-modal-title">Load Chat</h2>
+        <div style="font-size:12px;color:var(--text-muted);" id="chat-modal-sub">Dispatcher ↔ Carrier ↔ Driver Messaging</div>
+      </div>
+      <button onclick="closeChatModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+
+    <div class="modal-body" style="padding-bottom:0;">
+      <div id="chat-messages-box" style="height:320px;overflow-y:auto;background:var(--color-gray-50);border:1px solid var(--border-default);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+        <div style="text-align:center;color:var(--text-muted);font-size:13px;margin:auto;">Loading messages...</div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding:16px 24px 24px;">
+      <form id="chat-send-form" style="display:flex;gap:8px;width:100%;" onsubmit="sendChatMessage(event)">
+        <input type="text" class="form-input" id="chat-text-input" placeholder="Type a message..." style="flex:1;" required autocomplete="off">
+        <button type="submit" class="btn btn-primary" id="btn-send-chat">Send</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/js/notifications-bell.js"></script>
+<script>
+  let deskLoads = [];
+  let currentChatLoadId = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await checkAuth();
+    loadDeskData();
+  });
+
+  async function checkAuth() {
+    try {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (!res.ok) { window.location.href = '/login.html'; return; }
+      const data = await res.json();
+      if (!data.user || !['dispatcher', 'admin', 'super_admin'].includes(data.user.role)) {
+        window.location.href = '/login.html';
+        return;
+      }
+      document.getElementById('disp-name-display').textContent = data.user.name || 'Dispatcher';
+      document.getElementById('disp-role-display').textContent = (data.user.role || 'Dispatcher').toUpperCase();
+      document.getElementById('disp-avatar-initials').textContent = (data.user.name || 'DS').slice(0, 2).toUpperCase();
+    } catch (err) {
+      window.location.href = '/login.html';
+    }
+  }
+
+  function switchDeskTab(tab) {
+    document.querySelectorAll('.desk-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.sidebar-nav-link').forEach(el => el.classList.remove('active'));
+
+    const activeContent = document.getElementById(`tab-content-${tab}`);
+    const activeNavLink = document.getElementById(`nav-tab-${tab}`);
+    if (activeContent) activeContent.style.display = 'block';
+    if (activeNavLink) activeNavLink.classList.add('active');
+
+    if (tab === 'fleets') loadAssignedFleets();
+  }
+
+  async function loadDeskData() {
+    try {
+      const [dashRes, loadsRes] = await Promise.all([
+        fetch('/api/dashboard', { credentials: 'include' }),
+        fetch('/api/loads', { credentials: 'include' })
+      ]);
+
+      if (dashRes.ok) {
+        const dashData = await dashRes.json();
+        document.getElementById('kpi-disp-revenue').textContent = `$${parseFloat(dashData.summary?.totalGrossRevenue || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+        document.getElementById('kpi-disp-transit').textContent = dashData.summary?.activeLoadsCount || 0;
+        document.getElementById('kpi-disp-fleets').textContent = dashData.summary?.totalCarriers || 0;
+        document.getElementById('kpi-disp-pods').textContent = dashData.summary?.deliveredPendingPod || 0;
+      }
+
+      if (loadsRes.ok) {
+        const data = await loadsRes.json();
+        deskLoads = data.loads || [];
+        renderDeskTable(deskLoads);
+      }
+    } catch (err) {
+      console.error('Load desk error:', err);
+    }
+  }
+
+  function renderDeskTable(loads) {
+    const tbody = document.getElementById('disp-tbody');
+    if (!loads || loads.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">No loads on your dispatch desk. Click "+ Book & Create Load" to start.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = loads.map(l => `
+      <tr>
+        <td><strong style="color:var(--text-primary);">${l.load_number}</strong></td>
+        <td>${escapeHtml(l.carrier_company || l.carrier_name || '-')}</td>
+        <td>${escapeHtml(l.broker_name || '-')}</td>
+        <td>${escapeHtml(l.pickup_location)} ${l.pickup_state ? `(${l.pickup_state})` : ''}</td>
+        <td>${escapeHtml(l.delivery_location)} ${l.delivery_state ? `(${l.delivery_state})` : ''}</td>
+        <td><strong style="color:var(--color-success);">$${parseFloat(l.rate || 0).toLocaleString()}</strong></td>
+        <td>
+          <select class="form-select" style="padding:4px 8px;font-size:12px;width:130px;" onchange="updateLoadStatus('${l.id}', this.value)">
+            ${['booked','dispatched','at_pickup','loaded','in_transit','at_delivery','delivered','pod_uploaded','invoiced','paid','cancelled'].map(st => `
+              <option value="${st}" ${l.status === st ? 'selected' : ''}>${st.replace('_', ' ').toUpperCase()}</option>
+            `).join('')}
+          </select>
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <a href="/load-detail.html?id=${l.id}" class="btn btn-secondary btn-sm" id="btn-detail-${l.id}">Detail</a>
+            <button onclick="openChatModal('${l.id}', '${l.load_number}')" class="btn btn-light btn-sm" title="Load Chat" id="btn-chat-${l.id}">💬</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function filterDeskTable() {
+    const search = document.getElementById('disp-search-input').value.toLowerCase();
+    const status = document.getElementById('disp-filter-status').value;
+
+    const filtered = deskLoads.filter(l => {
+      const matchesSearch = !search ||
+        l.load_number.toLowerCase().includes(search) ||
+        (l.broker_name && l.broker_name.toLowerCase().includes(search)) ||
+        l.pickup_location.toLowerCase().includes(search) ||
+        l.delivery_location.toLowerCase().includes(search);
+      const matchesStatus = !status || l.status === status;
+      return matchesSearch && matchesStatus;
+    });
+
+    renderDeskTable(filtered);
+  }
+
+  async function updateLoadStatus(loadId, newStatus) {
+    try {
+      const res = await fetch(`/api/loads/${loadId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (!res.ok) { alert('Could not update load status.'); return; }
+      loadDeskData();
+    } catch (err) {
+      alert('Network error updating status.');
+    }
+  }
+
+  // Create Load Modal handling
+  async function openNewLoadModal() {
+    document.getElementById('new-load-modal').classList.add('open');
+    document.getElementById('modal-alert').style.display = 'none';
+    populateCarriersAndBrokersDropdowns();
+  }
+
+  function closeNewLoadModal() {
+    document.getElementById('new-load-modal').classList.remove('open');
+    document.getElementById('create-load-form').reset();
+  }
+
+  async function populateCarriersAndBrokersDropdowns() {
+    try {
+      const [cRes, bRes] = await Promise.all([
+        fetch('/api/carriers', { credentials: 'include' }),
+        fetch('/api/brokers', { credentials: 'include' })
+      ]);
+
+      if (cRes.ok) {
+        const cData = await cRes.json();
+        const select = document.getElementById('cl-carrier');
+        select.innerHTML = '<option value="">Select carrier fleet...</option>' + (cData.carriers || []).map(c => `
+          <option value="${c.id}">${escapeHtml(c.company_name || c.name)} (MC: ${c.mc_number || 'N/A'})</option>
+        `).join('');
+      }
+
+      if (bRes.ok) {
+        const bData = await bRes.json();
+        const select = document.getElementById('cl-broker');
+        select.innerHTML = '<option value="">Select registered broker (optional)...</option>' + (bData.brokers || []).map(b => `
+          <option value="${b.id}">${escapeHtml(b.company_name)} (MC: ${b.mc_number || 'N/A'})</option>
+        `).join('');
+      }
+    } catch (e) {}
+  }
+
+  async function onCarrierSelectChange() {
+    const carrierId = document.getElementById('cl-carrier').value;
+    if (!carrierId) return;
+
+    try {
+      // Check last delivery for smart reload suggestion
+      const res = await fetch(`/api/loads/last-delivery/${carrierId}`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.lastDelivery) {
+          document.getElementById('reload-banner').style.display = 'block';
+          document.getElementById('reload-loc').textContent = data.lastDelivery.delivery_location;
+          document.getElementById('reload-prev').textContent = data.lastDelivery.load_number;
+          document.getElementById('cl-pickup-loc').value = data.lastDelivery.delivery_location;
+          document.getElementById('cl-pickup-state').value = data.lastDelivery.delivery_state || '';
+        } else {
+          document.getElementById('reload-banner').style.display = 'none';
+        }
+      }
+
+      // Populate drivers for selected carrier
+      const drRes = await fetch(`/api/fleet/drivers?carrierId=${carrierId}`, { credentials: 'include' });
+      if (drRes.ok) {
+        const drData = await drRes.json();
+        const drSelect = document.getElementById('cl-driver');
+        drSelect.innerHTML = '<option value="">Select driver (optional)...</option>' + (drData.drivers || []).map(d => `
+          <option value="${d.id}">${escapeHtml(d.name)} (${d.phone || 'No phone'})</option>
+        `).join('');
+      }
+    } catch (e) {}
+  }
+
+  function calcRpm() {
+    const miles = parseFloat(document.getElementById('cl-miles').value || 0);
+    const rate = parseFloat(document.getElementById('cl-rate').value || 0);
+    if (miles > 0 && rate > 0) {
+      const rpm = (rate / miles).toFixed(2);
+    }
+  }
+
+  async function submitNewLoadForm() {
+    const form = document.getElementById('create-load-form');
+    const alertDiv = document.getElementById('modal-alert');
+    alertDiv.style.display = 'none';
+
+    const formData = new FormData(form);
+    const body = Object.fromEntries(formData);
+
+    if (!body.carrierId || !body.pickupLocation || !body.deliveryLocation || !body.rate || !body.miles) {
+      alertDiv.textContent = 'Please fill out all required fields marked with *';
+      alertDiv.style.background = '#fef2f2';
+      alertDiv.style.color = '#991b1b';
+      alertDiv.style.display = 'block';
+      return;
+    }
+
+    const submitBtn = document.getElementById('btn-submit-new-load');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Booking Load...';
+
+    try {
+      const res = await fetch('/api/loads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alertDiv.textContent = data.error || 'Could not create load.';
+        alertDiv.style.background = '#fef2f2';
+        alertDiv.style.color = '#991b1b';
+        alertDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Book & Create Load →';
+      } else {
+        closeNewLoadModal();
+        loadDeskData();
+      }
+    } catch (err) {
+      alertDiv.textContent = 'Network error booking load.';
+      alertDiv.style.background = '#fef2f2';
+      alertDiv.style.color = '#991b1b';
+      alertDiv.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Book & Create Load →';
+    }
+  }
+
+  // Load Chat Modal Handling
+  async function openChatModal(loadId, loadNumber) {
+    currentChatLoadId = loadId;
+    document.getElementById('chat-modal-title').textContent = `Chat for Load #${loadNumber}`;
+    document.getElementById('chat-modal').classList.add('open');
+    await fetchChatMessages();
+  }
+
+  function closeChatModal() {
+    document.getElementById('chat-modal').classList.remove('open');
+    currentChatLoadId = null;
+  }
+
+  async function fetchChatMessages() {
+    if (!currentChatLoadId) return;
+    const box = document.getElementById('chat-messages-box');
+    try {
+      const res = await fetch(`/api/messages/load/${currentChatLoadId}`, { credentials: 'include' });
+      if (!res.ok) { box.innerHTML = '<div style="color:var(--text-muted);margin:auto;">No messages yet.</div>'; return; }
+      const data = await res.json();
+      const msgs = data.messages || [];
+
+      if (msgs.length === 0) {
+        box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;margin:auto;text-align:center;">No messages yet on this load.<br>Type below to send a message to driver/carrier.</div>';
+        return;
+      }
+
+      box.innerHTML = msgs.map(m => `
+        <div style="background:#fff;border:1px solid var(--border-default);padding:10px 14px;border-radius:10px;align-self:flex-start;max-width:85%;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:2px;">${escapeHtml(m.sender_name)} <span style="color:var(--text-muted);font-weight:normal;">(${m.sender_role})</span></div>
+          <div style="font-size:13px;color:var(--text-secondary);">${escapeHtml(m.message)}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      `).join('');
+      box.scrollTop = box.scrollHeight;
+    } catch (e) {
+      box.innerHTML = '<div style="color:var(--text-muted);margin:auto;">Error loading messages.</div>';
+    }
+  }
+
+  async function sendChatMessage(e) {
+    e.preventDefault();
+    const input = document.getElementById('chat-text-input');
+    const message = input.value.trim();
+    if (!message || !currentChatLoadId) return;
+
+    try {
+      const res = await fetch(`/api/messages/load/${currentChatLoadId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message })
+      });
+      if (res.ok) {
+        input.value = '';
+        fetchChatMessages();
+      }
+    } catch (err) {}
+  }
+
+  async function loadAssignedFleets() {
+    const tbody = document.getElementById('fleets-tbody');
+    try {
+      const res = await fetch('/api/carriers', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const carriers = data.carriers || [];
+
+      if (carriers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">No assigned carrier fleets.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = carriers.map(c => `
+        <tr>
+          <td><strong>${escapeHtml(c.company_name || c.name)}</strong></td>
+          <td>MC: ${escapeHtml(c.mc_number || 'N/A')}<br>DOT: ${escapeHtml(c.dot_number || 'N/A')}</td>
+          <td>${escapeHtml(c.phone || '-')}<br>${escapeHtml(c.email)}</td>
+          <td><span class="badge badge-amber">${c.active_loads || 0} active</span></td>
+          <td><a href="/contact.html" class="btn btn-secondary btn-sm" id="btn-fleet-detail-${c.id}">View Fleet</a></td>
+        </tr>
+      `).join('');
+    } catch (e) {}
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  async function logout() {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/login.html';
+    } catch (e) {
+      window.location.href = '/login.html';
+    }
+  }
+</script>
+</body>
+</html>

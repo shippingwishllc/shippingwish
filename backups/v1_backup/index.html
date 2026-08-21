@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shipping Wish LLC | Enterprise Freight Dispatch &amp; TMS Platform USA</title>
+<meta name="description" content="Shipping Wish LLC is a premier US truck dispatching service and enterprise TMS platform for owner operators and carrier fleets across North America. DAT AI load matching, 24/7 dispatch desk, no upfront fees.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FreightDispatcher",
+  "name": "Shipping Wish LLC",
+  "url": "https://shippingwish.com",
+  "logo": "https://shippingwish.com/favicon.svg",
+  "description": "Full-service US truck dispatching company and enterprise TMS software platform providing DAT AI load matching, rate-per-mile optimization, and 24/7 dedicated dispatch desks for carrier fleets.",
+  "telephone": "+1-917-737-0021",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "19266 Coastal Hwy",
+    "addressLocality": "Rehoboth",
+    "addressRegion": "DE",
+    "postalCode": "19971",
+    "addressCountry": "US"
+  },
+  "areaServed": "US",
+  "priceRange": "$$"
+}
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="/" class="brand"><span class="dot"></span> Shipping Wish LLC</a>
+    <nav class="nav-links">
+      <a href="/index.html" class="current">Home</a>
+      <a href="/services.html">Services</a>
+      <a href="/about.html">About Us</a>
+      <a href="/contact.html">Request Dispatch</a>
+      <a href="/login.html">TMS Login</a>
+      <a href="/signup.html">Carrier Sign Up</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="nav-phone">📞 +1 917 737 0021</span>
+      <a href="/contact.html" class="btn btn-amber">Get Dispatched</a>
+      <button class="nav-toggle" aria-label="Menu">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- USA Freight Market Live Updates Bar -->
+<section class="market-ticker-banner">
+  <div class="container">
+    <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+      <span class="eyebrow" style="margin-bottom:0;">📈 Live USA Freight Market Analytics</span>
+      <span class="muted" style="font-size:12px;">Updated Real-Time via DAT &amp; USDA Fuel Index</span>
+    </div>
+    <div class="market-grid">
+      <div class="market-card">
+        <div>
+          <span class="muted" style="font-size:12px;">53ft Dry Van National Avg</span><br>
+          <div class="val">$2.85 / mi</div>
+        </div>
+        <span class="badge badge-paid">▲ +3.2%</span>
+      </div>
+      <div class="market-card">
+        <div>
+          <span class="muted" style="font-size:12px;">53ft Reefer National Avg</span><br>
+          <div class="val">$3.45 / mi</div>
+        </div>
+        <span class="badge badge-paid">▲ +4.1%</span>
+      </div>
+      <div class="market-card">
+        <div>
+          <span class="muted" style="font-size:12px;">48ft Flatbed National Avg</span><br>
+          <div class="val">$3.75 / mi</div>
+        </div>
+        <span class="badge badge-paid">▲ +2.8%</span>
+      </div>
+      <div class="market-card">
+        <div>
+          <span class="muted" style="font-size:12px;">US Diesel Fuel Index</span><br>
+          <div class="val">$3.84 / gal</div>
+        </div>
+        <span class="badge badge-booked">▼ -0.04</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Hero Section -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">⚡ Premier US Freight Dispatch &amp; TMS Conglomerate</span>
+      <h1>We Keep Your <span>Wheels Loaded</span> &amp; Profits Rolling 24/7.</h1>
+      <p class="lead">Shipping Wish LLC empowers owner-operators, drivers, and enterprise carrier fleets with DAT AI-powered load matching, top-rate broker negotiation, automated PDF invoicing, and dedicated 24/7 dispatch desks.</p>
+      
+      <div class="hero-actions">
+        <a href="/signup.html" class="btn btn-amber">Partner With Us — Free Setup</a>
+        <a href="/contact.html" class="btn btn-outline">Request Custom Rate Quote</a>
+      </div>
+      
+      <div class="badge-row">
+        <span><span class="chip"></span> 0% Upfront Setup Fees</span>
+        <span><span class="chip"></span> 24/7/365 Dedicated Dispatchers</span>
+        <span><span class="chip"></span> All 48 US States + Canada</span>
+      </div>
+    </div>
+
+    <!-- Dispatch Board HUD & Live Radar -->
+    <div class="dispatch-board">
+      <div class="board-title">
+        <span><span class="pulse"></span> Live Dispatch Command Radar</span>
+        <span class="badge badge-paid">DAT Live Connected</span>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <span class="kpi-label">Loads Booked Today</span>
+          <div class="odometer" id="counter-loads">48</div>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Active Carrier Fleets</span>
+          <div class="odometer" id="counter-carriers">218</div>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">On-Time Delivery Rate</span>
+          <div class="odometer" id="counter-ontime">99</div><span class="suffix">%</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Avg. Rate Per Mile</span>
+          <div class="odometer" id="counter-rpm">3.45</div><span class="suffix">$</span>
+        </div>
+      </div>
+
+      <!-- Live Route Ticker HUD -->
+      <div class="live-ticker-box">
+        <div>
+          <span class="muted" style="font-size:11px;text-transform:uppercase;">Latest Matched Route:</span><br>
+          <b>Dallas, TX ➔ Atlanta, GA</b> (53ft Reefer)
+        </div>
+        <div style="text-align:right;">
+          <b style="color:var(--amber-primary);">$3,450.00 Gross</b><br>
+          <span class="badge badge-booked">$4.42 / mi</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="route-divider"><span class="truck-mark">🚛</span></div>
+
+<!-- Interactive Live Freight Rate & RPM Estimator Widget -->
+<section class="section" style="padding-top:0;">
+  <div class="container">
+    <div class="rate-estimator-panel">
+      <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <span class="eyebrow" style="margin-bottom:6px;">Instant Freight Tool</span>
+          <h3 style="font-size:24px;font-weight:800;">Live Market Rate &amp; RPM Estimator</h3>
+        </div>
+        <span class="badge badge-paid">Real-Time DAT Market Data</span>
+      </div>
+
+      <div class="estimator-grid">
+        <div class="field">
+          <label>Pickup Location</label>
+          <input type="text" id="est-origin" placeholder="e.g. Dallas, TX" value="Dallas, TX">
+        </div>
+        <div class="field">
+          <label>Delivery Location</label>
+          <input type="text" id="est-destination" placeholder="e.g. Atlanta, GA" value="Atlanta, GA">
+        </div>
+        <div class="field">
+          <label>Equipment Type</label>
+          <select id="est-equipment">
+            <option value="dryvan">53ft Dry Van ($3.10/mi avg)</option>
+            <option value="reefer" selected>53ft Reefer ($3.65/mi avg)</option>
+            <option value="flatbed">48ft Flatbed ($3.80/mi avg)</option>
+            <option value="stepdeck">Step Deck ($4.10/mi avg)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Est. Miles</label>
+          <input type="number" id="est-miles" placeholder="780" value="780" oninput="calcRateEstimate()">
+        </div>
+        <div>
+          <button class="btn btn-amber" onclick="calcRateEstimate()">Calculate Payout</button>
+        </div>
+      </div>
+
+      <div id="est-result-box" style="margin-top:20px;background:rgba(245,158,11,0.12);border:1px solid var(--border-glow);padding:16px 20px;border-radius:var(--radius-md);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+        <div>
+          <span class="muted" style="font-size:12px;text-transform:uppercase;">Estimated Gross Payout:</span><br>
+          <span style="font-size:28px;font-weight:800;color:var(--amber-primary);" id="est-gross-val">$2,847.00</span>
+        </div>
+        <div>
+          <span class="muted" style="font-size:12px;text-transform:uppercase;">Rate Per Mile (RPM):</span><br>
+          <span style="font-size:24px;font-weight:800;color:#fff;" id="est-rpm-val">$3.65 / mi</span>
+        </div>
+        <a href="/signup.html" class="btn btn-blue btn-sm">Book Load With Us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Corporate Services Grid -->
+<section class="section" style="background:rgba(20,24,32,0.4);">
+  <div class="container">
+    <div class="section-title">
+      <span class="eyebrow">Enterprise Logistics Capabilities</span>
+      <h2>End-to-End Freight Management Designed for Maximum Profitability</h2>
+      <p>We don't just book loads — we manage your entire trucking business operational workflow from DAT load searching to instant Stripe freight invoicing.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card-hover">
+        <div class="card-icon">🤖</div>
+        <h3>DAT AI-Powered Load Matching</h3>
+        <p>Direct REST API integration with DAT Freight &amp; 123Loadboard fetches top market rates automatically tailored to your truck's equipment and destination preferences.</p>
+      </div>
+
+      <div class="card-hover">
+        <div class="card-icon">📱</div>
+        <h3>1-Click Mobile Carrier Approval</h3>
+        <p>No phone tag required. Load offers are sent straight to carrier smartphones for instant 1-click mobile acceptance or declining.</p>
+      </div>
+
+      <div class="card-hover">
+        <div class="card-icon">💳</div>
+        <h3>Automated Freight Invoicing &amp; Stripe</h3>
+        <p>Generate itemized PDF Freight Invoices with gross linehaul, detention, and lumper fees. Send direct Stripe credit card &amp; ACH payment links to brokers.</p>
+      </div>
+
+      <div class="card-hover">
+        <div class="card-icon">💡</div>
+        <h3>Smart Reload &amp; Continuous Chaining</h3>
+        <p>Eliminate empty deadhead miles! Our smart reload algorithm automatically auto-sets the next pickup location at your driver's exact delivery destination.</p>
+      </div>
+
+      <div class="card-hover">
+        <div class="card-icon">📁</div>
+        <h3>Document Vault &amp; Carrier Packets</h3>
+        <p>Secure cloud vault for Rate Confirmations, BOLs, PODs, W-9s, MC Certificates, and Certificates of Insurance with instant PDF downloads.</p>
+      </div>
+
+      <div class="card-hover">
+        <div class="card-icon">📊</div>
+        <h3>Quarterly IFTA Tax Automation</h3>
+        <p>Automated fuel purchase logging and state-by-state mileage tracking for accurate, stress-free quarterly IFTA tax returns.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Corporate Fleet Equipment Showcase -->
+<section class="section">
+  <div class="container">
+    <div class="section-title">
+      <span class="eyebrow">Equipment We Dispatch</span>
+      <h2>Tailored Freight Dispatch Across All Major Equipment Types</h2>
+    </div>
+
+    <div class="grid-4">
+      <div class="card-hover" style="text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">📦</div>
+        <h3>53ft Dry Van</h3>
+        <p class="muted" style="font-size:13px;margin-bottom:12px;">High-Volume Palletized Freight</p>
+        <span class="badge badge-booked">Avg. $2.80 – $3.40 / mi</span>
+      </div>
+
+      <div class="card-hover" style="text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">🧊</div>
+        <h3>53ft Reefer</h3>
+        <p class="muted" style="font-size:13px;margin-bottom:12px;">Temperature-Controlled Cold Chain</p>
+        <span class="badge badge-paid">Avg. $3.30 – $4.20 / mi</span>
+      </div>
+
+      <div class="card-hover" style="text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">🚜</div>
+        <h3>Flatbed &amp; Step Deck</h3>
+        <p class="muted" style="font-size:13px;margin-bottom:12px;">Heavy Machinery &amp; Building Supplies</p>
+        <span class="badge badge-paid">Avg. $3.50 – $4.60 / mi</span>
+      </div>
+
+      <div class="card-hover" style="text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">⚡</div>
+        <h3>Power Only &amp; Dedicated</h3>
+        <p class="muted" style="font-size:13px;margin-bottom:12px;">Drop &amp; Hook Dedicated Contracts</p>
+        <span class="badge badge-booked">Consistent Weekly Revenue</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Trust Seals & Security Compliance -->
+<section class="section" style="background:rgba(20,24,32,0.6);border-top:1px solid var(--border-color);border-bottom:1px solid var(--border-color);">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:30px;">
+      <div>
+        <span class="eyebrow" style="margin-bottom:8px;">Enterprise Compliance</span>
+        <h3 style="font-size:28px;font-weight:800;">Trusted By 200+ Carrier Fleets Across the USA</h3>
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div style="background:var(--bg-main);border:1px solid var(--border-glow);padding:14px 20px;border-radius:var(--radius-md);text-align:center;">
+          <b style="color:var(--amber-primary);font-size:18px;">$250,000</b><br>
+          <span class="muted" style="font-size:12px;">Broker Credit Protection</span>
+        </div>
+        <div style="background:var(--bg-main);border:1px solid var(--border-glow);padding:14px 20px;border-radius:var(--radius-md);text-align:center;">
+          <b style="color:var(--accent-green);font-size:18px;">100% US DOT</b><br>
+          <span class="muted" style="font-size:12px;">Compliant Dispatching</span>
+        </div>
+        <div style="background:var(--bg-main);border:1px solid var(--border-glow);padding:14px 20px;border-radius:var(--radius-md);text-align:center;">
+          <b style="color:var(--accent-blue);font-size:18px;">24/7/365</b><br>
+          <span class="muted" style="font-size:12px;">Dedicated Dispatch Desk</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="brand"><span class="dot"></span> Shipping Wish LLC</a>
+        <p>Shipping Wish LLC is a full-service truck dispatch company and enterprise TMS software platform empowering independent carriers, owner-operators, and fleets across the United States &amp; Canada.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="/index.html">Home</a></li>
+          <li><a href="/services.html">Services</a></li>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/contact.html">Request Dispatch</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>TMS Portals</h4>
+        <ul>
+          <li><a href="/login.html">Super Admin Desk</a></li>
+          <li><a href="/dispatcher-dashboard.html">Dispatcher Console</a></li>
+          <li><a href="/dashboard.html">Carrier Client Portal</a></li>
+          <li><a href="/signup.html">New Carrier Sign Up</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Corporate Head Office</h4>
+        <p style="color:var(--text-muted);font-size:14px;line-height:1.7;">
+          19266 Coastal Hwy,<br>
+          Rehoboth, DE 19971, USA<br>
+          📞 Phone: +1 917 737 0021<br>
+          ✉️ Email: info@shippingwish.com
+        </p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 Shipping Wish LLC. All Rights Reserved. Truck Transportation &amp; Enterprise Logistics TMS System.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+<script>
+  function calcRateEstimate() {
+    const miles = parseFloat(document.getElementById('est-miles').value || 0);
+    const eq = document.getElementById('est-equipment').value;
+
+    let rpm = 3.10;
+    if (eq === 'reefer') rpm = 3.65;
+    else if (eq === 'flatbed') rpm = 3.80;
+    else if (eq === 'stepdeck') rpm = 4.10;
+
+    const gross = (miles * rpm).toFixed(2);
+
+    document.getElementById('est-gross-val').textContent = `$${parseFloat(gross).toLocaleString('en-US', {minimumFractionDigits:2})}`;
+    document.getElementById('est-rpm-val').textContent = `$${rpm.toFixed(2)} / mi`;
+  }
+</script>
+</body>
+</html>

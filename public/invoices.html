@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoicing &amp; Payments | Shipping Wish LLC</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="/" class="brand"><span class="dot"></span> Shipping Wish Accounting</a>
+    <nav class="nav-links">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/brokers.html">Brokers</a>
+      <a href="/fleet.html">Fleet</a>
+      <a href="/documents.html">Documents</a>
+      <a href="/invoices.html" class="current">Invoices</a>
+      <a href="/ifta.html">IFTA &amp; Fuel</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="nav-phone" id="user-badge-inv">User</span>
+      <button id="logout-btn" class="btn btn-outline">Log Out</button>
+      <button class="nav-toggle">☰</button>
+    </div>
+  </div>
+</header>
+
+<section class="tms-shell">
+  <div class="container">
+    <div class="tms-topbar">
+      <div>
+        <span class="eyebrow">Billing &amp; Factoring</span>
+        <h1 style="font-size:26px;">Freight Invoices &amp; Payment Ledger</h1>
+      </div>
+      <button class="btn btn-amber" id="generate-inv-btn" data-open-modal="new-inv-modal" style="display:none;">+ Generate Freight Invoice</button>
+    </div>
+
+    <div class="tms-panel table-scroll">
+      <table class="tms-table" id="invoices-table">
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>Load #</th>
+            <th>Carrier / Customer</th>
+            <th>Issued Date</th>
+            <th>Total Amount</th>
+            <th>Factoring Status</th>
+            <th>Payment Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="8" class="muted" style="text-align:center;">Loading invoices...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Generate Invoice Modal -->
+<div class="modal-overlay" id="new-inv-modal">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal>&times;</button>
+    <h3>Generate Freight Invoice</h3>
+    <div id="new-inv-msg" class="form-msg"></div>
+    <form id="new-inv-form">
+      <div class="field">
+        <label>Select Delivered Load *</label>
+        <select id="loadId" name="loadId" required></select>
+      </div>
+      <div class="field">
+        <label>Factoring Option</label>
+        <select name="factoringStatus">
+          <option value="direct_pay">Direct Pay (Broker QuickPay / Standard)</option>
+          <option value="factored">Factored (Factoring Company Remittance)</option>
+          <option value="pending_factoring">Pending Factoring Approval</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-amber btn-block">Generate &amp; Compile PDF Invoice</button>
+    </form>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/tms.js"></script>
+<script>
+  let currentUser = null;
+
+  async function initInvoices() {
+    currentUser = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
+    if (!currentUser) return;
+
+    document.getElementById('user-badge-inv').textContent = currentUser.name;
+
+    if (currentUser.role !== 'carrier') {
+      document.getElementById('generate-inv-btn').style.display = 'inline-flex';
+      populateDeliveredLoadsSelect();
+    }
+
+    loadInvoicesList();
+  }
+
+  async function loadInvoicesList() {
+    const tbody = document.querySelector('#invoices-table tbody');
+    try {
+      const res = await fetch('/api/invoices');
+      const data = await res.json();
+      const invoices = data.invoices || [];
+
+      if (!invoices.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="muted" style="text-align:center;">No freight invoices found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = invoices.map(i => `
+        <tr>
+          <td><b>${i.invoice_number}</b></td>
+          <td><a href="/load-detail.html?id=${i.load_id}" style="color:var(--amber-primary);">${i.load_number}</a></td>
+          <td>${i.carrier_company || i.carrier_name || '-'}</td>
+          <td>${formatDate(i.issued_date)}</td>
+          <td><b style="color:var(--amber-primary);">${formatCurrency(i.total_amount || i.amount)}</b></td>
+          <td><span class="badge badge-booked">${(i.factoring_status || 'direct_pay').replace('_', ' ')}</span></td>
+          <td>${renderStatusBadge(i.status)}</td>
+          <td style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <a href="/api/invoices/${i.id}/pdf" class="btn btn-amber btn-sm" target="_blank">PDF</a>
+            ${currentUser.role !== 'carrier' ? `
+              <button class="btn btn-outline btn-sm" onclick="sendStripeInvoice(${i.id}, '${i.invoice_number}')">💳 Send Stripe Email</button>
+              <button class="btn btn-outline btn-sm" onclick="togglePaidStatus(${i.id}, '${i.status === 'paid' ? 'unpaid' : 'paid'}')">
+                ${i.status === 'paid' ? 'Mark Pending' : 'Mark Paid'}
+              </button>
+            ` : ''}
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="8" class="muted">Error loading invoices.</td></tr>`;
+    }
+  }
+
+  async function sendStripeInvoice(id, invNumber) {
+    const email = prompt(`Send Stripe Invoice #${invNumber} directly to customer email:`, 'billing@shippingwish.com');
+    if (!email) return;
+
+    try {
+      const res = await fetch(`/api/invoices/${id}/send-stripe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipientEmail: email })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`${data.message}\n\nStripe Payment Link: ${data.hosted_url || 'N/A'}`);
+        loadInvoicesList();
+      } else {
+        alert(data.error || 'Could not send Stripe invoice.');
+      }
+    } catch (err) {
+      alert('Error sending Stripe invoice.');
+    }
+  }
+
+  async function populateDeliveredLoadsSelect() {
+    const select = document.getElementById('loadId');
+    const res = await fetch('/api/loads');
+    const data = await res.json();
+    const deliveredLoads = (data.loads || []).filter(l => ['delivered', 'pod_uploaded', 'invoiced', 'paid'].includes(l.status));
+
+    select.innerHTML = `<option value="">-- Select Delivered Load --</option>` +
+      deliveredLoads.map(l => `<option value="${l.id}">Load ${l.load_number} - ${l.pickup_location} to ${l.delivery_location} (${formatCurrency(l.rate)})</option>`).join('');
+  }
+
+  async function togglePaidStatus(id, newStatus) {
+    await fetch(`/api/invoices/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    loadInvoicesList();
+  }
+
+  document.getElementById('new-inv-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('new-inv-msg');
+    const body = Object.fromEntries(new FormData(e.target));
+
+    const res = await fetch('/api/invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.className = 'form-msg error';
+      msg.textContent = data.error;
+    } else {
+      msg.className = 'form-msg success';
+      msg.textContent = `Invoice ${data.invoiceNumber} generated successfully!`;
+      e.target.reset();
+      loadInvoicesList();
+      setTimeout(() => document.getElementById('new-inv-modal').classList.remove('active'), 1500);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', initInvoices);
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Management | Shipping Wish LLC</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="/" class="brand"><span class="dot"></span> Shipping Wish Vault</a>
+    <nav class="nav-links">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/brokers.html">Brokers</a>
+      <a href="/fleet.html">Fleet</a>
+      <a href="/documents.html" class="current">Documents</a>
+      <a href="/invoices.html">Invoices</a>
+      <a href="/ifta.html">IFTA &amp; Fuel</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="nav-phone" id="user-badge-docs">User</span>
+      <button id="logout-btn" class="btn btn-outline">Log Out</button>
+      <button class="nav-toggle">☰</button>
+    </div>
+  </div>
+</header>
+
+<section class="tms-shell">
+  <div class="container">
+    <div class="tms-topbar">
+      <div>
+        <span class="eyebrow">Document Management Vault</span>
+        <h1 style="font-size:26px;">Rate Confirmations, BOLs, PODs &amp; Compliance</h1>
+      </div>
+      <button class="btn btn-amber" data-open-modal="upload-doc-modal">+ Upload Document</button>
+    </div>
+
+    <div class="tms-panel table-scroll">
+      <table class="tms-table" id="documents-table">
+        <thead>
+          <tr>
+            <th>Document Name</th>
+            <th>Category</th>
+            <th>Uploaded By</th>
+            <th>Uploaded Date</th>
+            <th>File Size</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="6" class="muted" style="text-align:center;">Loading documents...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Upload Document Modal -->
+<div class="modal-overlay" id="upload-doc-modal">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal>&times;</button>
+    <h3>Upload Document</h3>
+    <div id="upload-doc-msg" class="form-msg"></div>
+    <form id="upload-doc-form" enctype="multipart/form-data">
+      <div class="field">
+        <label>Document Category *</label>
+        <select name="category" required>
+          <option value="rate_confirmation">Rate Confirmation</option>
+          <option value="bol">Bill of Lading (BOL)</option>
+          <option value="pod">Proof of Delivery (POD)</option>
+          <option value="carrier_packet">Carrier Packet</option>
+          <option value="insurance">Insurance Certificate</option>
+          <option value="w9">W-9 Form</option>
+          <option value="mc_certificate">MC Authority Certificate</option>
+          <option value="invoice">Freight Invoice</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Select File (PDF, PNG, JPG, DOCX) *</label>
+        <input type="file" name="file" required style="padding:8px;">
+      </div>
+      <button type="submit" class="btn btn-amber btn-block">Upload File</button>
+    </form>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/tms.js"></script>
+<script>
+  async function initDocuments() {
+    const user = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
+    if (!user) return;
+    document.getElementById('user-badge-docs').textContent = user.name;
+    loadDocumentsList();
+  }
+
+  async function loadDocumentsList() {
+    const tbody = document.querySelector('#documents-table tbody');
+    try {
+      const res = await fetch('/api/documents');
+      const data = await res.json();
+      const docs = data.documents || [];
+
+      if (!docs.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center;">No documents uploaded yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = docs.map(d => `
+        <tr>
+          <td><b>${d.original_name}</b></td>
+          <td><span class="badge badge-booked">${d.category.replace('_', ' ')}</span></td>
+          <td>${d.uploader_name || 'System'}</td>
+          <td>${formatDate(d.uploaded_at)}</td>
+          <td>${(d.file_size / 1024).toFixed(1)} KB</td>
+          <td>
+            <a href="/api/documents/${d.id}/download" class="btn btn-amber btn-sm" target="_blank">Download</a>
+            <button class="btn btn-danger btn-sm" onclick="deleteDoc(${d.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="6" class="muted">Error loading documents.</td></tr>`;
+    }
+  }
+
+  async function deleteDoc(id) {
+    if (!confirm('Delete this document?')) return;
+    await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+    loadDocumentsList();
+  }
+
+  document.getElementById('upload-doc-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const msg = document.getElementById('upload-doc-msg');
+
+    const res = await fetch('/api/documents/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.className = 'form-msg error';
+      msg.textContent = data.error;
+    } else {
+      msg.className = 'form-msg success';
+      msg.textContent = 'Document uploaded successfully!';
+      e.target.reset();
+      loadDocumentsList();
+      setTimeout(() => document.getElementById('upload-doc-modal').classList.remove('active'), 1500);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', initDocuments);
+</script>
+</body>
+</html>

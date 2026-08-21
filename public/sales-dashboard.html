@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Carrier Acquisition CRM — Shipping Wish LLC ERP</title>
+  <meta name="description" content="Sales & Carrier Acquisition CRM Dashboard for Shipping Wish LLC representatives. Lead pipeline, OpenPhone VOIP click-to-call, and Resend email packets.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .sales-grid {
+      display: grid;
+      grid-template-columns: 2.2fr 1fr;
+      gap: var(--space-6);
+      align-items: start;
+    }
+
+    .task-side-card {
+      background: var(--color-white);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .task-item-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--text-sm);
+    }
+    .task-item-row:last-child { border-bottom: none; }
+    .task-item-row.done { opacity: 0.5; text-decoration: line-through; }
+
+    @media (max-width: 1100px) {
+      .sales-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- LEFT SIDEBAR -->
+  <aside class="app-sidebar" role="navigation" aria-label="Sales Navigation">
+    <div>
+      <a href="/" class="sidebar-brand" style="text-decoration:none;">
+        <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">CARRIER ACQUISITION CRM</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Sales Operations</div>
+      <a href="javascript:void(0)" class="sidebar-nav-link active" id="nav-tab-leads" onclick="switchSalesTab('leads')">
+        <span aria-hidden="true">🎯</span> Lead Pipeline
+      </a>
+      <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-tasks" onclick="switchSalesTab('tasks')">
+        <span aria-hidden="true">📋</span> Today's Follow-up Tasks
+      </a>
+      <a href="/shipping_wish_sales_manual.md" target="_blank" class="sidebar-nav-link">
+        <span aria-hidden="true">📗</span> Sales Playbook
+      </a>
+
+      <div class="sidebar-section-label">Operations & Admin</div>
+      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎧</span> Dispatcher Desk
+      </a>
+      <a href="/admin-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📊</span> Admin Command Center
+      </a>
+      <a href="/invoices.html" class="sidebar-nav-link">
+        <span aria-hidden="true">💳</span> Invoices & Finance
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-user-card">
+        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="sales-avatar-initials">SR</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="user-display-name">Sales Representative</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);">Outreach Team</div>
+        </div>
+      </div>
+      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);" id="logout-btn">
+        🚪 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Carrier Sourcing & Acquisition CRM</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Convert carrier leads, send email packets, & track VOIP calls</p>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:var(--space-4);">
+        <button class="btn btn-primary btn-sm" onclick="openAddLeadModal()" id="btn-open-add-lead">
+          + Add Carrier Lead
+        </button>
+
+        <a href="/shipping_wish_sales_manual.md" target="_blank" class="btn btn-secondary btn-sm" id="btn-sales-manual">
+          📗 Sales Manual
+        </a>
+
+        <div class="live-status">
+          <span class="live-dot"></span>
+          CRM Online
+        </div>
+
+        <!-- Notification Bell Component -->
+        <div id="notif-container"></div>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- KPI Stat Cards -->
+      <div class="stat-card-grid">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Total Carrier Leads</span>
+            <div class="stat-kpi-icon">🎯</div>
+          </div>
+          <div class="stat-kpi-val" id="stat-total">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Total leads in CRM</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">New Uncontacted</span>
+            <div class="stat-kpi-icon">🆕</div>
+          </div>
+          <div class="stat-kpi-val" id="stat-new" style="color:var(--color-amber-500);">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Awaiting first contact</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Interested Prospects</span>
+            <div class="stat-kpi-icon">⭐</div>
+          </div>
+          <div class="stat-kpi-val" id="stat-interested" style="color:var(--color-accent-blue);">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">High-intent carrier leads</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Active Dispatched Fleets</span>
+            <div class="stat-kpi-icon">✅</div>
+          </div>
+          <div class="stat-kpi-val" id="stat-active" style="color:var(--color-success);">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Converted carrier clients</div>
+        </div>
+      </div>
+
+      <!-- Main CRM Split Grid -->
+      <div class="sales-grid">
+        
+        <!-- Left: Carrier Leads Table -->
+        <div class="tms-table-card">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Carrier Lead Pipeline</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Manage stages, click-to-call, & send email packets</p>
+            </div>
+
+            <!-- Stage Filter Pills -->
+            <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
+              <button class="btn btn-secondary btn-sm filter-pill active" onclick="filterLeads('all', this)">All</button>
+              <button class="btn btn-secondary btn-sm filter-pill" onclick="filterLeads('new', this)">New</button>
+              <button class="btn btn-secondary btn-sm filter-pill" onclick="filterLeads('contacted', this)">Contacted</button>
+              <button class="btn btn-secondary btn-sm filter-pill" onclick="filterLeads('interested', this)">Interested</button>
+              <button class="btn btn-secondary btn-sm filter-pill" onclick="filterLeads('packet_sent', this)">Packet Sent</button>
+              <button class="btn btn-secondary btn-sm filter-pill" onclick="filterLeads('active', this)">Active</button>
+            </div>
+          </div>
+
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Company / Owner</th>
+                  <th>Contact Info</th>
+                  <th>MC / DOT</th>
+                  <th>Equipment</th>
+                  <th>Stage</th>
+                  <th>Outreach Actions</th>
+                </tr>
+              </thead>
+              <tbody id="leads-table-body">
+                <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">Loading carrier leads...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: Daily Tasks Checklist -->
+        <div class="task-side-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">📋 Today's Follow-Ups</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Automated daily outreach tasks</p>
+            </div>
+            <span class="badge badge-amber">Auto-Scheduled</span>
+          </div>
+
+          <div id="tasks-list-container">
+            <p style="font-size:var(--text-xs);color:var(--text-muted);text-align:center;padding:20px;">Loading tasks...</p>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ================= ADD CARRIER LEAD MODAL ================= -->
+<div class="modal-backdrop" id="add-lead-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>+ Add New Carrier Lead</h2>
+      <button onclick="closeAddLeadModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="add-lead-form">
+        <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required" for="new-comp-name">Company Name</label>
+              <input class="form-input" type="text" id="new-comp-name" required placeholder="Apex Transport LLC">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="new-owner-name">Owner / Contact Person</label>
+              <input class="form-input" type="text" id="new-owner-name" placeholder="Marcus Vance">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required" for="new-phone">Phone Number</label>
+              <input class="form-input" type="tel" id="new-phone" required placeholder="+1 (917) 000-0000">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="new-email">Email Address</label>
+              <input class="form-input" type="email" id="new-email" placeholder="marcus@apextransport.com">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="new-mc">MC Number</label>
+              <input class="form-input" type="text" id="new-mc" placeholder="MC-984012">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="new-equipment">Equipment Type</label>
+              <select class="form-select" id="new-equipment">
+                <option value="53ft Dry Van">53ft Dry Van</option>
+                <option value="53ft Reefer">53ft Reefer</option>
+                <option value="48ft Flatbed / Stepdeck">48ft Flatbed / Stepdeck</option>
+                <option value="Power Only">Power Only</option>
+                <option value="Box Truck">Box Truck</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="new-notes">Preferred Lanes & Notes</label>
+            <textarea class="form-textarea" id="new-notes" rows="2" placeholder="Runs TX to Midwest, looking for $3.50+ RPM..."></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button onclick="closeAddLeadModal()" class="btn btn-light">Cancel</button>
+      <button type="submit" form="add-lead-form" class="btn btn-primary" id="btn-save-lead">Save Lead & Schedule Task →</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/notifications-bell.js"></script>
+<script src="/js/sales.js"></script>
+</body>
+</html>

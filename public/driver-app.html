@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Driver Mobile Console — Shipping Wish LLC</title>
+  <meta name="description" content="Driver Mobile Console for Shipping Wish LLC. 1-tap GPS location pings, trip status updates, POD camera upload, and dispatcher messaging.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    body { background: var(--color-gray-900); color: var(--color-white); padding-bottom: 40px; }
+    
+    .driver-header {
+      background: rgba(15,23,42,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: var(--space-4) var(--space-5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .driver-card {
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-6);
+      margin-bottom: var(--space-5);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .route-visual {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      margin: var(--space-6) 0;
+      padding: 0 var(--space-2);
+    }
+
+    .route-visual::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 40px;
+      right: 40px;
+      height: 2px;
+      border-top: 2px dashed rgba(245,158,11,0.4);
+      z-index: 1;
+    }
+
+    .route-node {
+      position: relative;
+      z-index: 2;
+      background: #0f172a;
+      border: 2px solid var(--color-amber-500);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      text-align: center;
+    }
+
+    .status-btn-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+    }
+
+    .status-btn {
+      padding: var(--space-3);
+      font-size: var(--text-xs);
+      font-weight: var(--font-bold);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+    }
+
+    .status-btn:hover, .status-btn.active {
+      background: var(--color-amber-500);
+      color: var(--color-gray-900);
+      border-color: var(--color-amber-500);
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="driver-header">
+  <div style="display:flex;align-items:center;gap:var(--space-3);">
+    <div class="nav-logo-mark" style="width:32px;height:32px;font-size:14px;">SW</div>
+    <div>
+      <div style="font-weight:800;font-size:14px;color:#fff;" id="driver-name-head">Driver Console</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.5);" id="driver-truck-head">Truck #--</div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:var(--space-3);">
+    <a href="tel:+19177370021" class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:11px;" id="btn-sos-call">
+      🚨 24/7 SOS
+    </a>
+    <button onclick="logout()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:18px;cursor:pointer;" title="Sign Out">🚪</button>
+  </div>
+</header>
+
+<main class="container" style="max-width:560px;padding:var(--space-5) var(--space-4);">
+
+  <!-- ACTIVE LOAD CARD -->
+  <div class="driver-card" id="load-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <span class="badge badge-amber" id="load-number-badge">LOAD #---</span>
+      <span class="badge badge-green" id="load-rate-badge">$0.00</span>
+    </div>
+
+    <!-- Route Line -->
+    <div class="route-visual">
+      <div class="route-node">
+        <span style="font-size:10px;color:var(--text-muted);display:block;text-transform:uppercase;">Pickup</span>
+        <strong style="color:#fff;font-size:14px;" id="pickup-city">--</strong>
+      </div>
+      <div style="z-index:2;background:#0f172a;padding:4px 10px;border-radius:12px;border:1px solid rgba(245,158,11,0.3);font-size:11px;color:var(--color-amber-400);font-weight:700;" id="miles-badge">
+        🚚 -- Mi
+      </div>
+      <div class="route-node">
+        <span style="font-size:10px;color:var(--text-muted);display:block;text-transform:uppercase;">Delivery</span>
+        <strong style="color:#fff;font-size:14px;" id="delivery-city">--</strong>
+      </div>
+    </div>
+
+    <!-- Trip Info Details -->
+    <div style="background:rgba(15,23,42,0.6);padding:var(--space-4);border-radius:var(--radius-xl);margin-bottom:var(--space-5);font-size:var(--text-xs);line-height:1.6;color:rgba(255,255,255,0.8);">
+      <div><strong>Broker:</strong> <span id="info-broker">--</span></div>
+      <div><strong>Commodity / Weight:</strong> <span id="info-cargo">--</span></div>
+      <div><strong>Ref # / BOL #:</strong> <span id="info-refs">--</span></div>
+      <div><strong>Pickup Time:</strong> <span id="info-pickup-time">--</span></div>
+      <div><strong>Delivery Time:</strong> <span id="info-delivery-time">--</span></div>
+    </div>
+
+    <!-- GPS Ping Action Button -->
+    <button class="btn btn-primary btn-block btn-lg" onclick="sendGpsPing()" id="btn-gps-ping" style="margin-bottom:var(--space-4);">
+      📡 Send 1-Tap GPS Location Ping
+    </button>
+    <div id="gps-status-msg" style="text-align:center;font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:var(--space-5);"></div>
+
+    <!-- Status Stepper Buttons -->
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:var(--space-2);">Update Trip Progress</div>
+    <div class="status-btn-grid">
+      <button class="status-btn" onclick="setTripStatus('at_pickup')" id="sbtn-at_pickup">📍 Arrived Pickup</button>
+      <button class="status-btn" onclick="setTripStatus('loaded')" id="sbtn-loaded">📦 Loaded & Sealed</button>
+      <button class="status-btn" onclick="setTripStatus('in_transit')" id="sbtn-in_transit">🚚 In Transit</button>
+      <button class="status-btn" onclick="setTripStatus('at_delivery')" id="sbtn-at_delivery">🏢 Arrived Receiver</button>
+    </div>
+    <button class="status-btn active" onclick="setTripStatus('delivered')" id="sbtn-delivered" style="width:100%;margin-top:var(--space-3);background:var(--color-success);color:#fff;border-color:var(--color-success);">
+      ✅ Mark Delivered
+    </button>
+  </div>
+
+  <!-- POD & DOCUMENT UPLOAD CARD -->
+  <div class="driver-card">
+    <h3 style="font-size:var(--text-base);font-weight:800;color:#fff;margin-bottom:var(--space-2);">📷 Upload Signed POD / BOL</h3>
+    <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.6);margin-bottom:var(--space-4);">Snap a photo of the signed delivery receipt to process billing immediately.</p>
+
+    <div style="border:2px dashed rgba(245,158,11,0.4);background:rgba(15,23,42,0.5);padding:var(--space-6);border-radius:var(--radius-xl);text-align:center;cursor:pointer;" onclick="document.getElementById('pod-file-input').click()">
+      <div style="font-size:36px;margin-bottom:var(--space-2);">📸</div>
+      <div style="font-size:var(--text-sm);font-weight:700;color:var(--color-amber-400);">Tap to Snap Photo or Choose File</div>
+      <div style="font-size:var(--text-xs);color:rgba(255,255,255,0.4);margin-top:4px;">Supports JPG, PNG, PDF</div>
+      <input type="file" id="pod-file-input" accept="image/*,application/pdf" style="display:none;" onchange="handlePodFileUpload(this)">
+    </div>
+    <div id="pod-upload-alert" style="margin-top:12px;font-size:12px;text-align:center;"></div>
+  </div>
+
+  <!-- LOAD CHAT CARD -->
+  <div class="driver-card">
+    <h3 style="font-size:var(--text-base);font-weight:800;color:#fff;margin-bottom:var(--space-3);">💬 Dispatcher & Carrier Chat</h3>
+    <div id="driver-chat-box" style="height:200px;overflow-y:auto;background:#0f172a;border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-lg);padding:var(--space-3);display:flex;flex-direction:column;gap:8px;margin-bottom:var(--space-3);">
+      <div style="text-align:center;color:rgba(255,255,255,0.4);font-size:12px;margin:auto;">Loading messages...</div>
+    </div>
+    <form style="display:flex;gap:var(--space-2);" onsubmit="sendDriverMessage(event)">
+      <input type="text" class="form-input" id="driver-chat-input" placeholder="Type a message to dispatcher..." style="flex:1;background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);" required>
+      <button type="submit" class="btn btn-primary btn-sm" id="btn-driver-send-msg">Send</button>
+    </form>
+  </div>
+
+</main>
+
+<script>
+  let activeLoad = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await checkDriverAuth();
+    loadActiveDriverLoad();
+  });
+
+  async function checkDriverAuth() {
+    try {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (!res.ok) { window.location.href = '/login.html'; return; }
+      const data = await res.json();
+      if (!data.user) { window.location.href = '/login.html'; return; }
+      document.getElementById('driver-name-head').textContent = data.user.name || 'Driver';
+      document.getElementById('driver-truck-head').textContent = data.user.company_name ? data.user.company_name : 'Driver App';
+    } catch (e) {
+      window.location.href = '/login.html';
+    }
+  }
+
+  async function loadActiveDriverLoad() {
+    try {
+      const res = await fetch('/api/loads?limit=1', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const loads = data.loads || [];
+
+      if (loads.length === 0) {
+        document.getElementById('load-card').innerHTML = `
+          <div style="text-align:center;padding:30px;color:rgba(255,255,255,0.6);">
+            <div style="font-size:36px;margin-bottom:8px;">🚛</div>
+            <h3>No Active Load Assigned</h3>
+            <p style="font-size:12px;">Contact your dispatcher to receive your next load dispatch.</p>
+          </div>
+        `;
+        return;
+      }
+
+      activeLoad = loads[0];
+      renderActiveLoad(activeLoad);
+      fetchDriverChatMessages();
+    } catch (e) {
+      console.error('Load driver load error:', e);
+    }
+  }
+
+  function renderActiveLoad(l) {
+    document.getElementById('load-number-badge').textContent = `LOAD #${l.load_number}`;
+    document.getElementById('load-rate-badge').textContent = `$${parseFloat(l.rate || 0).toLocaleString()}`;
+    document.getElementById('pickup-city').textContent = `${l.pickup_location} ${l.pickup_state ? `(${l.pickup_state})` : ''}`;
+    document.getElementById('delivery-city').textContent = `${l.delivery_location} ${l.delivery_state ? `(${l.delivery_state})` : ''}`;
+    document.getElementById('miles-badge').textContent = `🚚 ${l.miles || 0} Mi`;
+
+    document.getElementById('info-broker').textContent = `${l.broker_name || 'Direct Client'} ${l.broker_mc ? `(MC: ${l.broker_mc})` : ''}`;
+    document.getElementById('info-cargo').textContent = `${l.commodity || 'General Freight'} / ${l.weight ? l.weight + ' lbs' : 'N/A'}`;
+    document.getElementById('info-refs').textContent = `Ref: ${l.reference_number || 'N/A'} | BOL: ${l.bol_number || 'N/A'}`;
+    document.getElementById('info-pickup-time').textContent = `${l.pickup_date || 'TBD'} ${l.pickup_time || ''}`;
+    document.getElementById('info-delivery-time').textContent = `${l.delivery_date || 'TBD'} ${l.delivery_time || ''}`;
+
+    // Highlight active status button
+    document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById(`sbtn-${l.status}`);
+    if (activeBtn) activeBtn.classList.add('active');
+  }
+
+  async function setTripStatus(newStatus) {
+    if (!activeLoad) return;
+    try {
+      const res = await fetch(`/api/loads/${activeLoad.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        activeLoad.status = newStatus;
+        renderActiveLoad(activeLoad);
+        sendGpsPing(newStatus);
+      }
+    } catch (e) {}
+  }
+
+  function sendGpsPing(overrideStatus = null) {
+    const msgDiv = document.getElementById('gps-status-msg');
+    msgDiv.textContent = 'Acquiring GPS coordinates...';
+
+    if (!navigator.geolocation) {
+      msgDiv.textContent = 'Geolocation not supported by browser.';
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const latitude = pos.coords.latitude;
+        const longitude = pos.coords.longitude;
+        msgDiv.textContent = `GPS Captured: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}. Sending...`;
+
+        try {
+          const res = await fetch('/api/tracking/ping', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              loadId: activeLoad ? activeLoad.id : null,
+              latitude,
+              longitude,
+              status: overrideStatus || (activeLoad ? activeLoad.status : 'in_transit'),
+              locationName: `GPS Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}`
+            })
+          });
+          if (res.ok) {
+            msgDiv.textContent = `✓ GPS Ping Sent Successfully (${new Date().toLocaleTimeString()})`;
+          } else {
+            msgDiv.textContent = 'Could not record GPS ping.';
+          }
+        } catch (err) {
+          msgDiv.textContent = 'Network error sending GPS ping.';
+        }
+      },
+      (err) => {
+        msgDiv.textContent = `GPS Access Error: ${err.message}`;
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  async function handlePodFileUpload(input) {
+    if (!input.files || input.files.length === 0 || !activeLoad) return;
+    const file = input.files[0];
+    const alertDiv = document.getElementById('pod-upload-alert');
+    alertDiv.textContent = 'Uploading POD document...';
+    alertDiv.style.color = 'var(--color-amber-400)';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('loadId', activeLoad.id);
+    formData.append('category', 'pod');
+
+    try {
+      const res = await fetch('/api/documents/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alertDiv.textContent = data.error || 'Upload failed.';
+        alertDiv.style.color = '#fca5a5';
+      } else {
+        alertDiv.textContent = '✓ POD Uploaded Successfully! Dispatcher notified.';
+        alertDiv.style.color = '#a7f3d0';
+      }
+    } catch (err) {
+      alertDiv.textContent = 'Network error uploading POD.';
+      alertDiv.style.color = '#fca5a5';
+    }
+  }
+
+  async function fetchDriverChatMessages() {
+    if (!activeLoad) return;
+    const box = document.getElementById('driver-chat-box');
+    try {
+      const res = await fetch(`/api/messages/load/${activeLoad.id}`, { credentials: 'include' });
+      if (!res.ok) { box.innerHTML = '<div style="color:rgba(255,255,255,0.4);margin:auto;">No messages.</div>'; return; }
+      const data = await res.json();
+      const msgs = data.messages || [];
+
+      if (msgs.length === 0) {
+        box.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:12px;margin:auto;text-align:center;">No messages yet.<br>Type below to contact your dispatcher.</div>';
+        return;
+      }
+
+      box.innerHTML = msgs.map(m => `
+        <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);padding:8px 12px;border-radius:10px;align-self:flex-start;max-width:90%;">
+          <div style="font-size:11px;font-weight:700;color:var(--color-amber-400);margin-bottom:2px;">${escapeHtml(m.sender_name)} <span style="color:rgba(255,255,255,0.4);font-weight:normal;">(${m.sender_role})</span></div>
+          <div style="font-size:12px;color:#fff;">${escapeHtml(m.message)}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px;">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      `).join('');
+      box.scrollTop = box.scrollHeight;
+    } catch (e) {}
+  }
+
+  async function sendDriverMessage(e) {
+    e.preventDefault();
+    const input = document.getElementById('driver-chat-input');
+    const message = input.value.trim();
+    if (!message || !activeLoad) return;
+
+    try {
+      const res = await fetch(`/api/messages/load/${activeLoad.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message })
+      });
+      if (res.ok) {
+        input.value = '';
+        fetchDriverChatMessages();
+      }
+    } catch (e) {}
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  async function logout() {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/login.html';
+    } catch (e) {
+      window.location.href = '/login.html';
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Shipping Wish LLC Carrier Portal</title>
+  <meta name="description" content="Sign in to your Shipping Wish LLC carrier portal to view loads, documents, invoices, and fleet management.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://www.shippingwish.com/login.html">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+
+  <style>
+    body { background: var(--color-gray-50); }
+
+    .auth-wrapper {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 520px;
+    }
+
+    /* Left panel */
+    .auth-brand-panel {
+      background: var(--color-gray-900);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: var(--space-10);
+    }
+
+    .auth-brand-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse 70% 50% at 30% 20%, rgba(245,158,11,0.1) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 80% 90%, rgba(29,78,216,0.07) 0%, transparent 55%);
+    }
+
+    .auth-brand-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+
+    .auth-brand-content {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: var(--space-8) 0;
+    }
+
+    .auth-brand-tagline {
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: var(--font-extrabold);
+      color: var(--color-white);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-4);
+      text-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    }
+
+    .auth-brand-tagline .accent { color: var(--color-amber-400); filter: drop-shadow(0 0 8px rgba(245,158,11,0.5)); }
+
+    .auth-brand-sub {
+      font-size: var(--text-base);
+      color: rgba(255,255,255,0.88);
+      line-height: var(--leading-relaxed);
+      max-width: 380px;
+      margin-bottom: var(--space-10);
+    }
+
+    .auth-feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .auth-feature-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--text-sm);
+      color: rgba(255,255,255,0.88);
+      font-weight: var(--font-medium);
+    }
+
+    .auth-feature-item span:first-child {
+      width: 28px;
+      height: 28px;
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .auth-brand-footer {
+      position: relative;
+      z-index: 1;
+      font-size: var(--text-xs);
+      color: rgba(255,255,255,0.5);
+      font-weight: var(--font-medium);
+    }
+
+    /* Right panel — form */
+    .auth-form-panel {
+      background: var(--color-white);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-10) var(--space-12);
+      border-left: 1px solid var(--border-default);
+      overflow-y: auto;
+    }
+
+    .auth-form-inner {
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .auth-form-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-10);
+    }
+
+    .auth-form-title {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-extrabold);
+      margin-bottom: var(--space-2);
+      letter-spacing: -0.015em;
+    }
+
+    .auth-form-subtitle {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      margin-bottom: var(--space-8);
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      margin-block: var(--space-6);
+    }
+
+    .auth-divider span {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-default);
+    }
+
+    .auth-footer-link {
+      text-align: center;
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      margin-top: var(--space-6);
+    }
+
+    .auth-footer-link a {
+      color: var(--color-amber-600);
+      font-weight: var(--font-medium);
+    }
+
+    .auth-footer-link a:hover { color: var(--color-amber-700); }
+
+    .form-alert {
+      display: none;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-5);
+    }
+
+    .form-alert.error { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+    .form-alert.success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      margin-top: var(--space-4);
+    }
+
+    @media (max-width: 900px) {
+      .auth-wrapper { grid-template-columns: 1fr; }
+      .auth-brand-panel { display: none; }
+      .auth-form-panel { padding: var(--space-10) var(--space-6); border-left: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-wrapper">
+  <!-- Brand Panel -->
+  <div class="auth-brand-panel" role="complementary" aria-label="Platform information">
+    <div class="auth-brand-grid" aria-hidden="true"></div>
+
+    <a href="/" class="nav-logo" style="position:relative;z-index:1;" aria-label="Shipping Wish LLC Home">
+      <div class="nav-logo-mark" aria-hidden="true">SW</div>
+      <div class="nav-logo-text">Shipping <span>Wish</span></div>
+    </a>
+
+    <div class="auth-brand-content">
+      <h1 class="auth-brand-tagline">
+        Your Fleet's<br>
+        Operations <span class="accent">Hub</span>
+      </h1>
+      <p class="auth-brand-sub">
+        Access your carrier portal to view loads, manage drivers, track documents,
+        and monitor revenue — all in one place.
+      </p>
+
+      <div class="auth-feature-list" aria-label="Platform features">
+        <div class="auth-feature-item">
+          <span aria-hidden="true">🚛</span>
+          <span>Real-time load status and tracking</span>
+        </div>
+        <div class="auth-feature-item">
+          <span aria-hidden="true">📄</span>
+          <span>Rate confirmations, BOL, and POD vault</span>
+        </div>
+        <div class="auth-feature-item">
+          <span aria-hidden="true">📊</span>
+          <span>Revenue analytics and RPM tracking</span>
+        </div>
+        <div class="auth-feature-item">
+          <span aria-hidden="true">💵</span>
+          <span>Invoice history and payment records</span>
+        </div>
+        <div class="auth-feature-item">
+          <span aria-hidden="true">👥</span>
+          <span>Driver and truck management</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-brand-footer">
+      Shipping Wish LLC · 19266 Coastal Hwy, Rehoboth, DE 19971 · +1 917 737 0021
+    </div>
+  </div>
+
+  <!-- Form Panel -->
+  <main class="auth-form-panel" aria-labelledby="login-title">
+    <div class="auth-form-inner">
+      <div class="auth-form-logo" aria-hidden="true">
+        <div class="nav-logo-mark">SW</div>
+        <div style="font-weight:700;color:var(--text-primary);">Shipping Wish</div>
+      </div>
+
+      <h2 id="login-title" class="auth-form-title">Welcome back</h2>
+      <p class="auth-form-subtitle">Sign in to your carrier portal</p>
+
+      <div id="login-alert" class="form-alert" role="alert" aria-live="polite"></div>
+
+      <form id="login-form" novalidate>
+        <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+          <div class="form-group">
+            <label class="form-label required" for="login-email">Email Address</label>
+            <input
+              class="form-input"
+              id="login-email"
+              name="email"
+              type="email"
+              placeholder="you@yourcompany.com"
+              required
+              autocomplete="email"
+            >
+          </div>
+
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2);">
+              <label class="form-label" for="login-password" style="margin-bottom:0;">Password</label>
+              <a href="/contact.html" style="font-size:var(--text-xs);color:var(--color-amber-600);" id="forgot-password-link">Forgot password?</a>
+            </div>
+            <input
+              class="form-input"
+              id="login-password"
+              name="password"
+              type="password"
+              placeholder="Your password"
+              required
+              autocomplete="current-password"
+            >
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg btn-block" id="login-submit-btn">
+            Sign In →
+          </button>
+        </div>
+      </form>
+
+      <div class="auth-divider"><span>No account yet?</span></div>
+
+      <a href="/signup.html" class="btn btn-light btn-lg btn-block" id="signup-from-login-btn">
+        Create Carrier Account
+      </a>
+
+      <p class="auth-footer-link">
+        Or <a href="/contact.html" id="contact-from-login-link">contact our dispatch team</a> to get started.
+      </p>
+
+      <div id="login-role-display" style="display:none;text-align:center;margin-top:var(--space-4);">
+        <span class="badge" id="login-role-badge"></span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const form = document.getElementById('login-form');
+  const alertBox = document.getElementById('login-alert');
+  const submitBtn = document.getElementById('login-submit-btn');
+
+  const ROLE_MAP = {
+    super_admin: { label: 'Super Admin', badge: 'badge-amber' },
+    admin: { label: 'Admin', badge: 'badge-amber' },
+    dispatcher: { label: 'Dispatcher', badge: 'badge-blue' },
+    sales_rep: { label: 'Sales Rep', badge: 'badge-green' },
+    carrier: { label: 'Carrier', badge: 'badge-gray' },
+    driver: { label: 'Driver', badge: 'badge-navy' }
+  };
+
+  const ROLE_REDIRECT = {
+    super_admin: '/admin-dashboard.html',
+    admin: '/admin-dashboard.html',
+    dispatcher: '/dispatcher-dashboard.html',
+    sales_rep: '/sales-dashboard.html',
+    carrier: '/carrier-overview.html',
+    driver: '/driver-app.html'
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    alertBox.style.display = 'none';
+    alertBox.className = 'form-alert';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in...';
+
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alertBox.textContent = data.error || 'Login failed. Please try again.';
+        alertBox.className = 'form-alert error';
+        alertBox.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In →';
+      } else {
+        const role = data.user?.role || 'carrier';
+        submitBtn.textContent = 'Redirecting...';
+        window.location.href = ROLE_REDIRECT[role] || '/carrier-overview.html';
+      }
+    } catch (err) {
+      alertBox.textContent = 'Network error. Please check your connection and try again.';
+      alertBox.className = 'form-alert error';
+      alertBox.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign In →';
+    }
+  });
+
+  // If already logged in, redirect
+  fetch('/api/me', { credentials: 'include' })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && data.user) {
+        const role = data.user.role;
+        window.location.href = ROLE_REDIRECT[role] || '/carrier-overview.html';
+      }
+    })
+    .catch(() => {});
+</script>
+
+</body>
+</html>

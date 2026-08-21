@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safety & DOT Audit Defense | Shipping Wish LLC</title>
+<meta name="description" content="Safety & DOT Audit Defense Compliance Packages. MCS-150 biennial updates, automated IFTA tax fuel ledger, and FMCSA safety score protection.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/design-system.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo" aria-label="Shipping Wish LLC Home">
+      <div class="nav-logo-mark" aria-hidden="true">SW</div>
+      <div class="nav-logo-text">Shipping <span>Wish</span></div>
+    </a>
+
+    <ul class="nav-links" role="list">
+      <li><a href="/">Home</a></li>
+      <li class="nav-item-dropdown">
+        <a href="/services.html" class="active">Services ▾</a>
+        <div class="nav-dropdown-menu" role="menu">
+          <div class="dropdown-label">Dispatch</div>
+          <a href="/services.html#dispatch" role="menuitem">Freight Dispatch</a>
+          <a href="/services.html#load-booking" role="menuitem">Load Booking</a>
+          <a href="/services.html#fleet" role="menuitem">Fleet & Driver Support</a>
+          <div class="dropdown-label">Financial</div>
+          <a href="/factoring.html" role="menuitem">Factoring Assistance</a>
+          <a href="/insurance.html" role="menuitem">Insurance Services</a>
+          <div class="dropdown-label">Technology</div>
+          <a href="/eld.html" role="menuitem">ELD & Telematics</a>
+          <a href="/dot-compliance.html" role="menuitem">DOT Compliance</a>
+        </div>
+      </li>
+      <li><a href="/about.html">About</a></li>
+      <li><a href="/contact.html#pricing">Pricing</a></li>
+      <li><a href="/contact.html">Contact</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <div class="live-status" aria-live="polite">
+        <span class="live-dot" aria-hidden="true"></span>
+        Dispatch Active
+      </div>
+      <a href="/login.html" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
+      <a href="/contact.html" class="btn btn-primary btn-sm" id="nav-cta-btn">Get Started</a>
+    </div>
+
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile nav -->
+<div class="nav-mobile" id="nav-mobile" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+  <a href="/">Home</a>
+  <a href="/services.html">Services</a>
+  <a href="/factoring.html">Factoring Assistance</a>
+  <a href="/insurance.html">Insurance Services</a>
+  <a href="/eld.html">ELD & Telematics</a>
+  <a href="/dot-compliance.html" class="active">DOT Compliance</a>
+  <a href="/about.html">About</a>
+  <a href="/contact.html">Contact</a>
+  <div style="margin-top:24px;display:flex;flex-direction:column;gap:12px;">
+    <a href="/login.html" class="btn btn-light btn-lg btn-block">Sign In</a>
+    <a href="/contact.html" class="btn btn-primary btn-lg btn-block">Get Started →</a>
+  </div>
+</div>
+
+<section class="section" style="padding-top:40px;">
+  <div class="container">
+    <div class="hero-grid" style="align-items:center;">
+      <div>
+        <span class="eyebrow" style="margin-bottom:12px;">Full FMCSA Audit Protection</span>
+        <h1 style="font-size:42px;font-weight:800;line-height:1.2;margin-bottom:16px;">Safety &amp; DOT Audit Defense Packages</h1>
+        <p class="muted" style="font-size:16px;margin-bottom:24px;">Protect your carrier MC/USDOT authority from FMCSA fines and audit shutdowns. Complete <b>MCS-150 Biennial Updates</b>, <b>Quarterly IFTA Fuel Tax Filings</b>, Driver Qualification (DQ) Files, and FMCSA Safety Score Defense.</p>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+          <span class="badge badge-paid">🛡️ 100% FMCSA Audit Defense</span>
+          <span class="badge badge-booked">📊 Automated IFTA Mileage Ledger</span>
+          <span class="badge badge-paid">📄 Driver Qualification Files</span>
+        </div>
+        <a href="/ifta.html" class="btn btn-amber">📊 Open IFTA Fuel Ledger</a>
+      </div>
+
+      <!-- Compliance Request Form Box -->
+      <div class="card-hover" style="background:#ffffff;border:1px solid var(--border-light-color);padding:28px;border-radius:var(--radius-lg);box-shadow:var(--shadow-light-card);">
+        <h3 style="font-size:22px;color:var(--text-dark-main);margin-bottom:6px;">Request Safety Audit Package</h3>
+        <p class="muted" style="font-size:13px;margin-bottom:20px;">Keep your carrier safety score clean and compliant.</p>
+
+        <form id="compliance-form">
+          <div class="form-row">
+            <div class="field">
+              <label>Company Name *</label>
+              <input type="text" id="comp-name" required placeholder="Apex Express LLC">
+            </div>
+            <div class="field">
+              <label>Contact Name *</label>
+              <input type="text" id="comp-owner" required placeholder="John Doe">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label>Phone Number *</label>
+              <input type="tel" id="comp-phone" required placeholder="+1 (555) 000-0000">
+            </div>
+            <div class="field">
+              <label>USDOT Number *</label>
+              <input type="text" id="comp-dot" required placeholder="DOT-1234567">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-blue btn-block">Get Safety &amp; DOT Compliance Consultation</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="brand"><span class="dot"></span> Shipping Wish LLC</a>
+        <p>Shipping Wish LLC is a full-service truck dispatch company, safety auditor, and enterprise logistics conglomerate.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="/index.html">Home</a></li>
+          <li><a href="/services.html">Services</a></li>
+          <li><a href="/dot-compliance.html">DOT Compliance</a></li>
+          <li><a href="/ifta.html">IFTA Tax</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Carrier &amp; Staff Portals</h4>
+        <ul>
+          <li><a href="/dashboard.html">Carrier Client Portal</a></li>
+          <li><a href="/signup.html">New Carrier Sign Up</a></li>
+          <li><a href="/login.html">Staff &amp; Carrier Login</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Corporate Head Office</h4>
+        <p style="color:var(--text-muted);font-size:14px;line-height:1.7;">
+          19266 Coastal Hwy,<br>Rehoboth, DE 19971, USA<br>📞 Phone: +1 917 737 0021
+        </p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Shipping Wish LLC. Safety &amp; Regulatory Compliance Division.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+<script>
+  document.getElementById('compliance-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    alert('✅ Safety Compliance Request Received! A safety auditor will call you at ' + document.getElementById('comp-phone').value + ' within 15 minutes.');
+    e.target.reset();
+  });
+</script>
+<script>
+  const hamburger = document.getElementById('nav-hamburger');
+  const mobileNav = document.getElementById('nav-mobile');
+  if (hamburger && mobileNav) {
+    hamburger.addEventListener('click', () => {
+      const isOpen = mobileNav.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', isOpen);
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    });
+  }
+</script>
+</body>
+</html>

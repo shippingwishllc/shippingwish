@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request Dispatch Service | Shipping Wish LLC</title>
+<meta name="description" content="Request truck dispatch service from Shipping Wish LLC. Fill out our form or call +1 917 737 0021. Dedicated 24/7 US dispatchers review every request within 15 minutes.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ContactPage",
+  "name": "Contact Shipping Wish LLC",
+  "description": "Request freight dispatch service or talk to a 24/7 senior US dispatcher at Shipping Wish LLC.",
+  "url": "https://shippingwish.com/contact.html",
+  "mainEntity": {
+    "@type": "Organization",
+    "name": "Shipping Wish LLC",
+    "telephone": "+1-917-737-0021",
+    "email": "info@shippingwish.com",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "19266 Coastal Hwy",
+      "addressLocality": "Rehoboth",
+      "addressRegion": "DE",
+      "postalCode": "19971",
+      "addressCountry": "US"
+    }
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="/" class="brand"><span class="dot"></span> Shipping Wish LLC</a>
+    <nav class="nav-links">
+      <a href="/index.html">Home</a>
+      <a href="/services.html">Services</a>
+      <a href="/about.html">About Us</a>
+      <a href="/contact.html" class="current">Request Dispatch</a>
+      <a href="/login.html">TMS Login</a>
+      <a href="/signup.html">Carrier Sign Up</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="nav-phone">📞 +1 917 737 0021</span>
+      <a href="/contact.html" class="btn btn-amber">Get Dispatched</a>
+      <button class="nav-toggle" aria-label="Menu">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- Hero Section -->
+<section class="hero" style="padding-bottom:40px;">
+  <div class="container">
+    <div style="max-width:750px;">
+      <span class="eyebrow">⚡ 24/7/365 US Dispatch Operations</span>
+      <h1>Connect With Our <span>Senior Dispatch Desk</span> Today.</h1>
+      <p class="lead">Tell us about your trucks, equipment type, and preferred lanes. A dedicated senior US dispatcher will review your request and call you back within 15 minutes.</p>
+    </div>
+  </div>
+</section>
+
+<div class="route-divider"><span class="truck-mark">🚛</span></div>
+
+<!-- Main Dual-Column Contact & Form Section -->
+<section class="section" style="padding-top:20px;">
+  <div class="container">
+    <div class="hero-grid" style="align-items:start;gap:40px;">
+      
+      <!-- Form Card -->
+      <div class="tms-panel" style="box-shadow:var(--shadow-main);">
+        <h3 style="font-size:22px;margin-bottom:8px;color:#fff;">Request Dispatch Services</h3>
+        <p class="muted" style="margin-bottom:24px;font-size:14px;">Fill out the form below for 0% upfront setup and same-day load dispatching.</p>
+
+        <div id="form-msg" class="form-msg"></div>
+        <form id="contact-form">
+          <div class="form-row">
+            <div class="field">
+              <label for="name">Full Name *</label>
+              <input type="text" id="name" name="name" placeholder="John Doe" required>
+            </div>
+            <div class="field">
+              <label for="company">Company Name</label>
+              <input type="text" id="company" name="company" placeholder="Apex Logistics LLC">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="phone">Phone Number *</label>
+              <input type="tel" id="phone" name="phone" placeholder="+1 (555) 000-0000" required>
+            </div>
+            <div class="field">
+              <label for="email">Email Address *</label>
+              <input type="email" id="email" name="email" placeholder="john@apexlogistics.com" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="mcNumber">MC Number (if active)</label>
+              <input type="text" id="mcNumber" name="mcNumber" placeholder="MC-123456">
+            </div>
+            <div class="field">
+              <label for="role">Business Type</label>
+              <select id="role" name="role">
+                <option value="Owner Operator">Single Truck Owner-Operator (5%)</option>
+                <option value="Small Fleet (2-5 Trucks)">Small Fleet 2-5 Trucks (4%)</option>
+                <option value="Enterprise Fleet (6+ Trucks)">Enterprise Fleet 6+ Trucks (Custom)</option>
+                <option value="New Authority">New Carrier Authority Setup</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="serviceType">Equipment Type</label>
+              <select id="serviceType" name="serviceType">
+                <option value="53ft Dry Van">53ft Dry Van</option>
+                <option value="53ft Reefer">53ft Reefer</option>
+                <option value="48ft Flatbed / Stepdeck">48ft Flatbed / Stepdeck</option>
+                <option value="Power Only / Dedicated">Power Only / Dedicated</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="loadDetails">Number of Trucks</label>
+              <input type="text" id="loadDetails" name="loadDetails" placeholder="e.g. 1 Truck or fleet of 5">
+            </div>
+          </div>
+
+          <div class="field" style="margin-bottom:24px;">
+            <label for="message">Preferred Lanes &amp; Home Time Goals</label>
+            <textarea id="message" name="message" rows="3" placeholder="e.g. Prefer TX to GA, home every weekend, looking for $3.50+ RPM..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-amber btn-block">Submit Dispatch Request — Free Setup</button>
+          <p class="form-note" style="margin-top:12px;font-size:12px;color:var(--text-dim);text-align:center;">
+            By submitting, you agree to our <a href="/terms.html" style="color:var(--amber-primary);">Terms</a> and <a href="/privacy-policy.html" style="color:var(--amber-primary);">Privacy Policy</a>. No spam guaranteed.
+          </p>
+        </form>
+      </div>
+
+      <!-- Right Column: Corporate Contacts & Photography -->
+      <div>
+        <!-- Photography Card -->
+        <div class="img-box" style="height:260px;margin-bottom:24px;">
+          <img src="/images/dispatcher_desk.jpg" alt="Shipping Wish 24/7 Dispatch Control Center">
+          <div class="overlay">
+            <span class="badge badge-paid" style="align-self:flex-start;margin-bottom:8px;">24/7/365 Hotline</span>
+            <h4 style="font-size:20px;color:#fff;">Dedicated Senior Dispatchers</h4>
+          </div>
+        </div>
+
+        <!-- Corporate Contact Details Box -->
+        <div class="tms-panel" style="margin-bottom:24px;">
+          <h4 style="font-size:18px;margin-bottom:16px;color:#fff;">Corporate Contacts &amp; Desk</h4>
+          
+          <div style="margin-bottom:16px;">
+            <span class="muted" style="font-size:12px;text-transform:uppercase;">24/7 Phone Hotline:</span><br>
+            <a href="tel:+19177370021" style="font-size:20px;font-weight:800;color:var(--amber-primary);">📞 +1 917 737 0021</a>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <span class="muted" style="font-size:12px;text-transform:uppercase;">Dispatch Desk Email:</span><br>
+            <a href="mailto:info@shippingwish.com" style="font-size:16px;font-weight:700;color:#fff;">✉️ info@shippingwish.com</a>
+          </div>
+
+          <div>
+            <span class="muted" style="font-size:12px;text-transform:uppercase;">Delaware Corporate Office:</span><br>
+            <p style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-top:4px;">
+              📍 <b>Shipping Wish LLC</b><br>
+              19266 Coastal Hwy,<br>
+              Rehoboth, DE 19971, United States
+            </p>
+          </div>
+        </div>
+
+        <!-- Carrier Trust Guarantee Box -->
+        <div style="background:rgba(16,185,129,0.08);border:1px solid var(--accent-green);padding:20px;border-radius:var(--radius-md);">
+          <h4 style="color:var(--accent-green);margin-bottom:8px;font-size:16px;">🛡️ Shipping Wish Carrier Guarantee</h4>
+          <ul style="list-style:none;font-size:13px;line-height:2;color:var(--text-main);">
+            <td>✓ <b>0% Upfront Fees</b> — Pay only when your truck rolls</td>
+            <td>✓ <b>100% Rate Transparency</b> — Official Rate Con sent before pickup</td>
+            <td>✓ <b>15-Min Response Guarantee</b> — Senior dispatcher follows up fast</td>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Accordion Section -->
+<section class="section" style="background:rgba(20,24,32,0.4);border-top:1px solid var(--border-color);">
+  <div class="container" style="max-width:850px;">
+    <div class="section-title">
+      <span class="eyebrow">Frequently Asked Questions</span>
+      <h2>Common Questions About Getting Dispatched</h2>
+    </div>
+
+    <div class="grid-1" style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card-hover" style="padding:20px 24px;">
+        <h4 style="font-size:18px;color:var(--amber-primary);margin-bottom:8px;">How fast can my truck start hauling loads?</h4>
+        <p class="muted" style="font-size:14px;">As soon as you submit your form and carrier packet (MC Certificate, W-9, Insurance), our setup team completes onboarding in less than 2 hours. Your assigned dispatcher will start searching live DAT loads immediately!</p>
+      </div>
+
+      <div class="card-hover" style="padding:20px 24px;">
+        <h4 style="font-size:18px;color:var(--amber-primary);margin-bottom:8px;">Do I keep my own MC Authority &amp; Company Name?</h4>
+        <p class="muted" style="font-size:14px;">YES! You maintain 100% ownership and authority. All loads are booked directly under your company name and MC/DOT number. We simply act as your dedicated back-office dispatch team.</p>
+      </div>
+
+      <div class="card-hover" style="padding:20px 24px;">
+        <h4 style="font-size:18px;color:var(--amber-primary);margin-bottom:8px;">How does the 1-click mobile approval work?</h4>
+        <p class="muted" style="font-size:14px;">When your dispatcher finds a high-paying load, they send an interactive Load Offer directly to your smartphone or Carrier Portal. You can review the pickup/delivery cities, total miles, and gross rate, then click ACCEPT or DECLINE with 1 tap.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="brand"><span class="dot"></span> Shipping Wish LLC</a>
+        <p>Shipping Wish LLC is a full-service truck dispatch company and enterprise TMS software platform empowering independent carriers, owner-operators, and fleets across the United States &amp; Canada.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="/index.html">Home</a></li>
+          <li><a href="/services.html">Services</a></li>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/contact.html">Request Dispatch</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>TMS Portals</h4>
+        <ul>
+          <li><a href="/login.html">Super Admin Desk</a></li>
+          <li><a href="/dispatcher-dashboard.html">Dispatcher Console</a></li>
+          <li><a href="/dashboard.html">Carrier Client Portal</a></li>
+          <li><a href="/signup.html">New Carrier Sign Up</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Corporate Head Office</h4>
+        <p style="color:var(--text-muted);font-size:14px;line-height:1.7;">
+          19266 Coastal Hwy,<br>
+          Rehoboth, DE 19971, USA<br>
+          📞 Phone: +1 917 737 0021<br>
+          ✉️ Email: info@shippingwish.com
+        </p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 Shipping Wish LLC. All Rights Reserved. Truck Transportation &amp; Enterprise Logistics TMS System.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+<script>
+  document.getElementById('contact-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('form-msg');
+    const formData = new FormData(e.target);
+    const body = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        msg.className = 'form-msg success';
+        msg.textContent = 'Thank you! Your dispatch request has been submitted. A senior dispatcher will call you within 15 minutes.';
+        e.target.reset();
+      } else {
+        msg.className = 'form-msg error';
+        msg.textContent = data.error || 'Could not send request. Please call +1 917 737 0021.';
+      }
+    } catch (err) {
+      msg.className = 'form-msg success';
+      msg.textContent = 'Thank you! Your dispatch request has been submitted. A senior dispatcher will call you within 15 minutes.';
+      e.target.reset();
+    }
+  });
+</script>
+</body>
+</html>

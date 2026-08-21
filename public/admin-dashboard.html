@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Command Center — Shipping Wish LLC ERP</title>
+  <meta name="description" content="Super Admin ERP Command Center for Shipping Wish LLC. Monitor operations, active loads, carrier clients, dispatchers, finance, and audit logs.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- LEFT SIDEBAR -->
+  <aside class="app-sidebar" role="navigation" aria-label="Admin Navigation">
+    <div>
+      <a href="/" class="sidebar-brand" style="text-decoration:none;">
+        <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">ENTERPRISE ERP</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Operations</div>
+      <a href="javascript:void(0)" class="sidebar-nav-link active" id="nav-tab-loads" onclick="switchAdminTab('loads')">
+        <span aria-hidden="true">📊</span> Overview & Loads
+      </a>
+      <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-carriers" onclick="switchAdminTab('carriers')">
+        <span aria-hidden="true">🚛</span> Carriers & Clients
+      </a>
+      <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-dispatchers" onclick="switchAdminTab('dispatchers')">
+        <span aria-hidden="true">📡</span> Dispatchers & Matrix
+      </a>
+      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎧</span> Dispatch Desk
+      </a>
+
+      <div class="sidebar-section-label">Management</div>
+      <a href="/fleet.html" class="sidebar-nav-link">
+        <span aria-hidden="true">👥</span> Fleet & Drivers
+      </a>
+      <a href="/invoices.html" class="sidebar-nav-link">
+        <span aria-hidden="true">💳</span> Invoices & Finance
+      </a>
+      <a href="/load-planning.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📅</span> Load Planning
+      </a>
+
+      <div class="sidebar-section-label">Security & System</div>
+      <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-audit" onclick="switchAdminTab('audit')">
+        <span aria-hidden="true">🛡️</span> Security Audit Logs
+      </a>
+      <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-users" onclick="switchAdminTab('users')">
+        <span aria-hidden="true">👤</span> Users & Roles
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-user-card">
+        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="user-avatar-initials">SA</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="user-name-display">Super Admin</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="user-role-display">System HQ</div>
+        </div>
+      </div>
+      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);" id="logout-btn">
+        🚪 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;" id="page-title">Command Center Overview</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Real-time freight dispatch, fleet tracking, & business metrics</p>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:var(--space-4);">
+        <div class="live-status">
+          <span class="live-dot"></span>
+          Dispatch Active
+        </div>
+
+        <!-- Notification Bell Component -->
+        <div id="notif-container"></div>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- ================= TAB 1: OVERVIEW & LOADS ================= -->
+      <div id="admin-tab-loads" class="admin-tab-content">
+        <!-- KPI Stat Cards -->
+        <div class="stat-card-grid">
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Gross Revenue</span>
+              <div class="stat-kpi-icon">💰</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-gross-revenue">$0.00</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Total booked load value</div>
+          </div>
+
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Active Loads</span>
+              <div class="stat-kpi-icon">🚛</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-active-loads">0</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">In-transit & booked loads</div>
+          </div>
+
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Carrier Clients</span>
+              <div class="stat-kpi-icon">🏢</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-carrier-count">0</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Active registered fleets</div>
+          </div>
+
+          <div class="stat-kpi-card">
+            <div class="stat-kpi-top">
+              <span class="stat-kpi-title">Pending Invoices</span>
+              <div class="stat-kpi-icon">📄</div>
+            </div>
+            <div class="stat-kpi-val" id="kpi-pending-invoices">$0.00</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Unpaid dispatch commission</div>
+          </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="tms-table-card">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">All Active Freight Loads</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Manage and track all company dispatch operations</p>
+            </div>
+            <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;">
+              <input type="text" class="form-input" id="search-loads-input" placeholder="Search load #, broker, city..." style="width:220px;padding:6px 12px;font-size:13px;" onkeyup="filterLoadsTable()">
+              <select class="form-select" id="filter-status-select" style="width:140px;padding:6px 12px;font-size:13px;" onchange="filterLoadsTable()">
+                <option value="">All Statuses</option>
+                <option value="booked">Booked</option>
+                <option value="dispatched">Dispatched</option>
+                <option value="in_transit">In Transit</option>
+                <option value="delivered">Delivered</option>
+                <option value="invoiced">Invoiced</option>
+                <option value="paid">Paid</option>
+              </select>
+              <a href="/dispatcher-dashboard.html" class="btn btn-primary btn-sm" id="btn-create-load-admin">+ Book New Load</a>
+            </div>
+          </div>
+
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2" id="loads-admin-table">
+              <thead>
+                <tr>
+                  <th>Load #</th>
+                  <th>Carrier</th>
+                  <th>Dispatcher</th>
+                  <th>Broker</th>
+                  <th>Pickup</th>
+                  <th>Delivery</th>
+                  <th>Rate</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="loads-tbody">
+                <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">Loading system loads...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 2: CARRIERS ================= -->
+      <div id="admin-tab-carriers" class="admin-tab-content" style="display:none;">
+        <div class="tms-table-card">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Registered Carrier Fleets</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Trucking companies dispatched by Shipping Wish</p>
+            </div>
+          </div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2" id="carriers-admin-table">
+              <thead>
+                <tr>
+                  <th>Carrier / Company</th>
+                  <th>MC / DOT #</th>
+                  <th>Phone & Email</th>
+                  <th>Assigned Dispatcher</th>
+                  <th>Joined Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="carriers-tbody">
+                <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading carrier clients...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 3: DISPATCHERS & MATRIX ================= -->
+      <div id="admin-tab-dispatchers" class="admin-tab-content" style="display:none;">
+        <div class="tms-table-card">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Dispatcher Team & Client Matrix</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Manage dispatcher carrier assignments</p>
+            </div>
+          </div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Dispatcher Name</th>
+                  <th>Email</th>
+                  <th>Assigned Fleets</th>
+                  <th>Active Loads</th>
+                  <th>Total Revenue Booked</th>
+                </tr>
+              </thead>
+              <tbody id="dispatchers-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">Loading dispatcher matrix...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 4: AUDIT LOGS ================= -->
+      <div id="admin-tab-audit" class="admin-tab-content" style="display:none;">
+        <div class="tms-table-card">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">System Security Audit Trail</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Real-time logging of system events, logins, and updates</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadAuditLogs()">🔄 Refresh Audit Trail</button>
+          </div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th>IP Address</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="audit-tbody">
+                <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">Loading security audit trail...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 5: USERS & ROLES ================= -->
+      <div id="admin-tab-users" class="admin-tab-content" style="display:none;">
+        <div class="tms-table-card">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">All System Users & Access Roles</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Manage user accounts, roles, and access status</p>
+            </div>
+          </div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>User Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Company</th>
+                  <th>Created Date</th>
+                  <th>Account Status</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody">
+                <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">Loading system users...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="/js/notifications-bell.js"></script>
+<script>
+  let allLoads = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await checkAuth();
+    loadDashboardData();
+  });
+
+  async function checkAuth() {
+    try {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (!res.ok) { window.location.href = '/login.html'; return; }
+      const data = await res.json();
+      if (!data.user || !['super_admin', 'admin'].includes(data.user.role)) {
+        window.location.href = '/login.html';
+        return;
+      }
+      document.getElementById('user-name-display').textContent = data.user.name || 'Admin';
+      document.getElementById('user-role-display').textContent = (data.user.role || 'Admin').toUpperCase();
+      document.getElementById('user-avatar-initials').textContent = (data.user.name || 'SA').slice(0, 2).toUpperCase();
+    } catch (err) {
+      window.location.href = '/login.html';
+    }
+  }
+
+  function switchAdminTab(tabName) {
+    document.querySelectorAll('.admin-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.sidebar-nav-link').forEach(el => el.classList.remove('active'));
+
+    const activeTab = document.getElementById(`admin-tab-${tabName}`);
+    const activeNavLink = document.getElementById(`nav-tab-${tabName}`);
+    if (activeTab) activeTab.style.display = 'block';
+    if (activeNavLink) activeNavLink.classList.add('active');
+
+    const pageTitleMap = {
+      loads: 'Command Center Overview',
+      carriers: 'Registered Carrier Fleets',
+      dispatchers: 'Dispatcher Team & Matrix',
+      audit: 'System Security Audit Trail',
+      users: 'System Users & Access Control'
+    };
+    document.getElementById('page-title').textContent = pageTitleMap[tabName] || 'Super Admin Command Center';
+
+    if (tabName === 'audit') loadAuditLogs();
+    if (tabName === 'carriers') loadCarriersData();
+    if (tabName === 'dispatchers') loadDispatchersData();
+    if (tabName === 'users') loadUsersData();
+  }
+
+  async function loadDashboardData() {
+    try {
+      const [dashRes, loadsRes] = await Promise.all([
+        fetch('/api/dashboard', { credentials: 'include' }),
+        fetch('/api/loads', { credentials: 'include' })
+      ]);
+
+      if (dashRes.ok) {
+        const dashData = await dashRes.json();
+        document.getElementById('kpi-gross-revenue').textContent = `$${parseFloat(dashData.summary?.totalGrossRevenue || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+        document.getElementById('kpi-active-loads').textContent = dashData.summary?.activeLoadsCount || 0;
+        document.getElementById('kpi-carrier-count').textContent = dashData.summary?.totalCarriers || 0;
+        document.getElementById('kpi-pending-invoices').textContent = `$${parseFloat(dashData.summary?.unpaidInvoicesSum || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+      }
+
+      if (loadsRes.ok) {
+        const loadsData = await loadsRes.json();
+        allLoads = loadsData.loads || [];
+        renderLoadsTable(allLoads);
+      }
+    } catch (err) {
+      console.error('Load dashboard data error:', err);
+    }
+  }
+
+  function renderLoadsTable(loads) {
+    const tbody = document.getElementById('loads-tbody');
+    if (!loads || loads.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">No loads found.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = loads.map(l => `
+      <tr>
+        <td><strong style="color:var(--text-primary);">${l.load_number}</strong></td>
+        <td>${escapeHtml(l.carrier_company || l.carrier_name || '-')}</td>
+        <td>${escapeHtml(l.dispatcher_name || 'Unassigned')}</td>
+        <td>${escapeHtml(l.broker_name || '-')}</td>
+        <td>${escapeHtml(l.pickup_location)} ${l.pickup_state ? `(${l.pickup_state})` : ''}</td>
+        <td>${escapeHtml(l.delivery_location)} ${l.delivery_state ? `(${l.delivery_state})` : ''}</td>
+        <td><strong style="color:var(--color-success);">$${parseFloat(l.rate || 0).toLocaleString()}</strong></td>
+        <td><span class="badge ${getStatusBadge(l.status)}">${formatStatus(l.status)}</span></td>
+        <td>
+          <a href="/load-detail.html?id=${l.id}" class="btn btn-secondary btn-sm" id="btn-view-load-${l.id}">View Detail</a>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function filterLoadsTable() {
+    const search = document.getElementById('search-loads-input').value.toLowerCase();
+    const status = document.getElementById('filter-status-select').value;
+
+    const filtered = allLoads.filter(l => {
+      const matchesSearch = !search ||
+        l.load_number.toLowerCase().includes(search) ||
+        (l.broker_name && l.broker_name.toLowerCase().includes(search)) ||
+        l.pickup_location.toLowerCase().includes(search) ||
+        l.delivery_location.toLowerCase().includes(search);
+
+      const matchesStatus = !status || l.status === status;
+      return matchesSearch && matchesStatus;
+    });
+
+    renderLoadsTable(filtered);
+  }
+
+  async function loadAuditLogs() {
+    const tbody = document.getElementById('audit-tbody');
+    try {
+      const res = await fetch('/api/audit-logs?limit=40', { credentials: 'include' });
+      if (!res.ok) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--color-error);">Could not load audit logs.</td></tr>`; return; }
+      const data = await res.json();
+      const logs = data.logs || [];
+
+      if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No security audit events recorded yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = logs.map(log => `
+        <tr>
+          <td style="font-size:12px;color:var(--text-muted);">${new Date(log.created_at).toLocaleString()}</td>
+          <td><strong>${escapeHtml(log.user_name || 'System')}</strong> <span style="font-size:11px;color:var(--text-muted);">(${log.user_role || '-'})</span></td>
+          <td><span class="badge badge-navy">${escapeHtml(log.action)}</span></td>
+          <td>${log.entity_type ? `${log.entity_type} #${log.entity_id || ''}` : '-'}</td>
+          <td style="font-family:monospace;font-size:12px;">${escapeHtml(log.ip_address || '-')}</td>
+          <td style="font-size:12px;color:var(--text-secondary);max-width:260px;" class="truncate">${log.payload ? escapeHtml(JSON.stringify(log.payload)) : '-'}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--color-error);">Error loading audit trail.</td></tr>`;
+    }
+  }
+
+  async function loadCarriersData() {
+    const tbody = document.getElementById('carriers-tbody');
+    try {
+      const res = await fetch('/api/carriers', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const carriers = data.carriers || [];
+
+      if (carriers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">No carrier clients registered.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = carriers.map(c => `
+        <tr>
+          <td><strong>${escapeHtml(c.company_name || c.name)}</strong><br><span style="font-size:12px;color:var(--text-muted);">${escapeHtml(c.name)}</span></td>
+          <td>MC: ${escapeHtml(c.mc_number || 'N/A')}<br>DOT: ${escapeHtml(c.dot_number || 'N/A')}</td>
+          <td>${escapeHtml(c.phone || '-')}<br>${escapeHtml(c.email)}</td>
+          <td>${escapeHtml(c.dispatcher_name || 'Unassigned')}</td>
+          <td>${new Date(c.created_at).toLocaleDateString()}</td>
+          <td><span class="badge ${c.is_suspended ? 'badge-red' : 'badge-green'}">${c.is_suspended ? 'Suspended' : 'Active'}</span></td>
+          <td>
+            <a href="/contact.html" class="btn btn-secondary btn-sm" id="btn-edit-carrier-${c.id}">Manage</a>
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {}
+  }
+
+  async function loadDispatchersData() {
+    const tbody = document.getElementById('dispatchers-tbody');
+    try {
+      const res = await fetch('/api/users', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const dispatchers = (data.users || []).filter(u => u.role === 'dispatcher' || u.role === 'admin' || u.role === 'super_admin');
+
+      tbody.innerHTML = dispatchers.map(d => `
+        <tr>
+          <td><strong>${escapeHtml(d.name)}</strong></td>
+          <td>${escapeHtml(d.email)}</td>
+          <td>${d.assigned_carriers_count || 0} fleets</td>
+          <td>${d.active_loads_count || 0} active</td>
+          <td><strong style="color:var(--color-success);">$${parseFloat(d.total_revenue || 0).toLocaleString()}</strong></td>
+        </tr>
+      `).join('');
+    } catch (err) {}
+  }
+
+  async function loadUsersData() {
+    const tbody = document.getElementById('users-tbody');
+    try {
+      const res = await fetch('/api/users', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const users = data.users || [];
+
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td><strong>${escapeHtml(u.name)}</strong></td>
+          <td>${escapeHtml(u.email)}</td>
+          <td><span class="badge badge-navy">${escapeHtml(u.role)}</span></td>
+          <td>${escapeHtml(u.company_name || '-')}</td>
+          <td>${new Date(u.created_at).toLocaleDateString()}</td>
+          <td><span class="badge ${u.is_suspended ? 'badge-red' : 'badge-green'}">${u.is_suspended ? 'Suspended' : 'Active'}</span></td>
+        </tr>
+      `).join('');
+    } catch (err) {}
+  }
+
+  function getStatusBadge(st) {
+    switch(st) {
+      case 'booked': return 'badge-amber';
+      case 'dispatched': return 'badge-blue';
+      case 'in_transit': return 'badge-blue';
+      case 'delivered': return 'badge-green';
+      case 'invoiced': return 'badge-navy';
+      case 'paid': return 'badge-green';
+      case 'cancelled': return 'badge-red';
+      default: return 'badge-gray';
+    }
+  }
+
+  function formatStatus(st) {
+    return (st || '').replace('_', ' ').toUpperCase();
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  async function logout() {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/login.html';
+    } catch (e) {
+      window.location.href = '/login.html';
+    }
+  }
+</script>
+</body>
+</html>
