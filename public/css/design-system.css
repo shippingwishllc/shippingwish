@@ -458,11 +458,18 @@ h1, h2, h3, h4, h5, h6 {
 .nav-hamburger {
   display: none;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 5px;
   cursor: pointer;
   padding: var(--space-2);
   background: none;
   border: none;
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  height: 44px !important;
+  flex-shrink: 0 !important;
 }
 
 .nav-hamburger span {
