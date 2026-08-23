@@ -2696,7 +2696,11 @@ h1, h2, h3, h4, h5, h6 {
     padding-block: var(--space-12) !important;
   }
 
-  .form-card-dark {
-    padding: var(--space-5) !important;
-  }
+.social-icon-btn {
+  transition: all 0.25s ease !important;
+}
+.social-icon-btn:hover {
+  transform: translateY(-3px) scale(1.1);
+  background: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
