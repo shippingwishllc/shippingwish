@@ -305,11 +305,13 @@ h1, h2, h3, h4, h5, h6 {
 .nav {
   position: sticky;
   top: 0;
-  z-index: 100;
-  background-color: rgba(15, 23, 42, 0.97);
+  z-index: 1000;
+  background-color: rgba(15, 23, 42, 0.98);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .nav-inner {
@@ -470,6 +472,23 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--color-white);
   border-radius: 2px;
   transition: all var(--transition-base);
+}
+
+@media (max-width: 992px) {
+  .nav-links {
+    display: none !important;
+  }
+  .nav-actions .live-status,
+  .nav-actions #nav-login-btn {
+    display: none !important;
+  }
+  .nav-actions #nav-cta-btn {
+    font-size: 11px !important;
+    padding: 6px 12px !important;
+  }
+  .nav-hamburger {
+    display: flex !important;
+  }
 }
 
 .nav-mobile {

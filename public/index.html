@@ -469,10 +469,14 @@
       .platform-table-row.header { display: none; }
     }
 
+    @media (max-width: 992px) {
+      .hero-content    { grid-template-columns: 1fr !important; padding: 40px var(--space-4) 40px !important; gap: var(--space-8) !important; }
+      .hero-visual-card { justify-self: center !important; max-width: 100% !important; }
+    }
+
     @media (max-width: 768px) {
-      .hero-content    { padding: 80px var(--space-4) 72px; }
-      .hero-headline   { font-size: 2.25rem; }
-      .hero-metrics    { gap: var(--space-6); }
+      .hero-headline   { font-size: clamp(1.85rem, 6vw, 2.5rem); line-height: 1.12; }
+      .hero-metrics    { gap: var(--space-6); grid-template-columns: repeat(2, 1fr) !important; }
       .hero-divider    { display: none; }
       .services-grid   { grid-template-columns: 1fr; }
       .process-grid    { grid-template-columns: 1fr; }
