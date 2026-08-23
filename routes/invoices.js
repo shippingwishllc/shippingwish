@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
@@ -9,412 +9,341 @@ const router = express.Router();
 const PUBLIC_INVOICE_DIR = path.join(__dirname, '..', 'public', 'invoices');
 if (!fs.existsSync(PUBLIC_INVOICE_DIR)) fs.mkdirSync(PUBLIC_INVOICE_DIR, { recursive: true });
 
-function generateInvoiceHtml({ invoiceNumber, clientName, clientEmail, clientPhone, clientAddress, description, amount, status, issueDate, dueDate, memo }) {
-  const isPaid = status === 'paid';
-  const paidBadge = isPaid ? '<div class="paid-stamp">PAID IN FULL</div>' : '<div class="paid-stamp" style="background:#d97706;">PAYMENT DUE</div>';
-  const amountPaidStr = isPaid ? `-$${parseFloat(amount).toFixed(2)}` : '$0.00';
-  const amountRemainingStr = isPaid ? '$0.00' : `$${parseFloat(amount).toFixed(2)}`;
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invoice ${invoiceNumber} | Shipping Wish LLC</title>
+// ============================================================
+// BATCH WEEKLY INVOICE GENERATOR - HTML
+// Carrier pays US a commission % on TOTAL of all loads in period
+// ============================================================
+function generateBatchInvoiceHtml({ invoiceNumber, periodLabel, carrierName, carrierCompany, carrierPhone, carrierEmail, carrierMc, loads, feePercent, status, issueDate, dueDate, billingNotes, equipLabel }) {
+  const isPaid     = status === 'paid';
+  const grossTotal = loads.reduce((s, l) => s + parseFloat(l.rate || 0), 0);
+  const commAmt    = parseFloat(((grossTotal * feePercent) / 100).toFixed(2));
+  const carrierPay = parseFloat((grossTotal - commAmt).toFixed(2));
+  const badge      = isPaid ? '<div class="badge paid">&#x2713; PAID IN FULL</div>' : '<div class="badge due">&#x26A1; PAYMENT DUE</div>';
+  const loadRows   = loads.map((l, i) => `<tr class="${i%2===0?'row-even':'row-odd'}"><td><strong>${l.load_number}</strong></td><td>${(l.pickup_date||'').toString().slice(0,10)}</td><td>${l.pickup_location||'-'}</td><td>${l.delivery_location||'-'}</td><td>${l.broker_name||'-'}</td><td>${l.equipment_type||'-'}</td><td class="amt">$${parseFloat(l.rate||0).toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>`).join('');
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Invoice ${invoiceNumber} | Shipping Wish LLC</title>
 <style>
-  @media print { .no-print { display: none !important; } body { background: #fff !important; padding: 0 !important; } .invoice-card { box-shadow: none !important; border: none !important; } }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; color: #0f172a; line-height: 1.5; padding: 40px 20px; }
-  .action-bar { max-width: 800px; margin: 0 auto 20px; display: flex; justify-content: space-between; align-items: center; }
-  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #059669; color: #fff; font-weight: 700; font-size: 14px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; }
-  .btn:hover { background: #047857; }
-  .btn-outline { background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; }
-  .btn-outline:hover { background: #f8fafc; }
-  .invoice-card { max-width: 800px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08); overflow: hidden; }
-  .invoice-header { background: #0f172a; color: #ffffff; padding: 32px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
-  .brand-name { font-size: 24px; font-weight: 800; color: #f59e0b; letter-spacing: -0.5px; }
-  .brand-sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
-  .brand-contact { font-size: 11px; color: #cbd5e1; margin-top: 8px; }
-  .paid-stamp { background: #059669; color: #ffffff; padding: 8px 18px; border-radius: 6px; font-weight: 800; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; }
-  .invoice-body { padding: 40px; }
-  .invoice-title-row { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 24px; }
-  .invoice-title { font-size: 22px; font-weight: 800; color: #0f172a; }
-  .invoice-meta { font-size: 13px; color: #64748b; text-align: right; }
-  .cols-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 28px; }
-  .col-box h4 { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 8px; }
-  .col-box p { font-size: 13px; color: #334155; line-height: 1.6; }
-  .col-box p.comp-name { font-weight: 700; color: #0f172a; font-size: 14px; }
-  .meta-grid { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-  .meta-item .lbl { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
-  .meta-item .val { font-size: 13px; font-weight: 700; color: #0f172a; margin-top: 2px; }
-  .items-table { width: 100%; border-collapse: collapse; margin-bottom: 32px; }
-  .items-table th { background: #0f172a; color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; text-align: left; }
-  .items-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; }
-  .text-right { text-align: right; }
-  .text-center { text-align: center; }
-  .totals-section { display: flex; justify-content: flex-end; margin-bottom: 32px; }
-  .totals-table { width: 320px; border-collapse: collapse; }
-  .totals-table td { padding: 8px 0; font-size: 13px; color: #475569; }
-  .totals-table tr.grand-total td { border-top: 2px solid #e2e8f0; border-bottom: 2px solid #059669; padding: 12px 0; font-size: 16px; font-weight: 800; color: #0f172a; }
-  .memo-box { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px 20px; margin-bottom: 32px; }
-  .memo-box h5 { font-size: 11px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 6px; }
-  .memo-box p { font-size: 12px; color: #334155; }
-  .invoice-footer { border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 11px; color: #94a3b8; }
-</style>
-</head>
-<body>
-<div class="action-bar no-print">
-  <a href="/invoices/Invoice_${invoiceNumber}.pdf" class="btn" download>📥 Download Vector PDF File</a>
-  <button class="btn btn-outline" onclick="window.print()">🖨️ Print / Save PDF</button>
+@media print{.no-print{display:none!important}body{background:#fff!important;padding:0!important}.card{box-shadow:none!important}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f1f5f9;color:#0f172a;padding:32px 16px}
+.topbar{max-width:880px;margin:0 auto 16px;display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:#059669;color:#fff;font-weight:700;font-size:13px;border:none;border-radius:6px;cursor:pointer;text-decoration:none}
+.btn:hover{background:#047857}.btn-out{background:#fff;color:#0f172a;border:1px solid #cbd5e1}.btn-out:hover{background:#f8fafc}
+.card{max-width:880px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.1);overflow:hidden}
+.inv-header{background:#0f172a;padding:28px 40px;display:flex;justify-content:space-between;align-items:flex-start}
+.brand{color:#f59e0b;font-size:22px;font-weight:800}.brand-sub{color:#94a3b8;font-size:11px;margin-top:4px}.brand-contact{color:#cbd5e1;font-size:10px;margin-top:8px;line-height:1.7}
+.badge{padding:9px 20px;border-radius:8px;font-weight:800;font-size:13px;letter-spacing:.5px}.badge.paid{background:#059669;color:#fff}.badge.due{background:#f59e0b;color:#0f172a}
+.body{padding:36px 40px}
+.title-row{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #f1f5f9;padding-bottom:18px;margin-bottom:24px}
+.inv-title{font-size:20px;font-weight:800}.inv-subtitle{color:#64748b;font-size:12px;margin-top:3px}
+.period-badge{display:inline-block;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;margin-top:8px}
+.inv-meta{text-align:right;font-size:12px;color:#475569;line-height:2}.inv-meta strong{color:#0f172a}
+.bill-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.bill-box h4{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:8px}
+.bill-box .name{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px}.bill-box .bname{color:#2563eb}
+.bill-box p{font-size:12px;color:#475569;line-height:1.8}
+.mc-badge{display:inline-block;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;margin-top:2px}
+.meta-bar{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;display:grid;grid-template-columns:repeat(4,1fr);margin-bottom:28px}
+.meta-cell{padding:12px 16px;border-right:1px solid #e2e8f0}.meta-cell:last-child{border-right:none}
+.meta-cell .lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:3px}
+.meta-cell .val{font-size:12px;font-weight:700;color:#0f172a}
+.section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:10px}
+.loads-table{width:100%;border-collapse:collapse;margin-bottom:0;font-size:12px}
+.loads-table thead tr{background:#0f172a}.loads-table thead th{padding:10px 12px;color:#fff;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;text-align:left}
+.loads-table th.amt,.loads-table td.amt{text-align:right}
+.row-even{background:#fff}.row-odd{background:#f8fafc}
+.loads-table tbody td{padding:11px 12px;border-bottom:1px solid #e2e8f0;color:#334155}
+.loads-table tbody tr:last-child td{border-bottom:none}
+.totals-wrap{border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-top:0}
+.tot-table{width:100%;border-collapse:collapse}
+.tot-table td{padding:12px 20px;font-size:13px;border-bottom:1px solid #e2e8f0;color:#475569}
+.tot-table td:last-child{text-align:right;font-weight:700;color:#0f172a}
+.tot-table .comm td{background:#fffbeb;color:#92400e;border-color:#fde68a}.tot-table .comm td:last-child{color:#b45309;font-size:15px}
+.tot-table .cpay td{background:#f0fdf4;color:#166534;border-color:#bbf7d0}.tot-table .cpay td:last-child{color:#15803d}
+.tot-table .grand td{background:#0f172a;color:#fff;font-size:15px;font-weight:800;border:none}.tot-table .grand td:last-child{color:#f59e0b;font-size:18px}
+.memo{background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;padding:16px 20px;margin-top:24px}
+.memo h5{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:6px}.memo p{font-size:12px;color:#334155;line-height:1.7}
+.inv-footer{border-top:1px solid #e2e8f0;margin-top:24px;padding-top:16px;text-align:center;font-size:11px;color:#94a3b8;line-height:1.8}.inv-footer strong{color:#475569}
+</style></head><body>
+<div class="topbar no-print">
+  <a href="/invoices/Invoice_${invoiceNumber}.pdf" class="btn" download>&#x1F4E5; Download PDF</a>
+  <button class="btn btn-out" onclick="window.print()">&#x1F5A8;&#xFE0F; Print Invoice</button>
 </div>
-<div class="invoice-card">
-  <div class="invoice-header">
+<div class="card">
+  <div class="inv-header">
     <div>
-      <div class="brand-name">SHIPPING WISH LLC</div>
-      <div class="brand-sub">Premier US Freight Dispatch &amp; Enterprise Logistics Conglomerate</div>
+      <div class="brand">SHIPPING WISH LLC</div>
+      <div class="brand-sub">Premier US Freight Dispatch &amp; Enterprise Logistics</div>
       <div class="brand-contact">19266 Coastal Hwy, Rehoboth, DE 19971, USA | +1 917 737 0021 | billing@shippingwish.com | www.shippingwish.com</div>
     </div>
-    ${paidBadge}
+    ${badge}
   </div>
-  <div class="invoice-body">
-    <div class="invoice-title-row">
+  <div class="body">
+    <div class="title-row">
       <div>
-        <div class="invoice-title">INVOICE SUMMARY</div>
-        <span style="font-size:13px;color:#64748b;">Official Shipping Wish LLC Corporate Invoice</span>
+        <div class="inv-title">DISPATCH COMMISSION INVOICE</div>
+        <div class="inv-subtitle">Official Shipping Wish LLC Billing Statement</div>
+        <div class="period-badge">&#x1F4C5; Period: ${periodLabel}</div>
       </div>
-      <div class="invoice-meta">
-        <strong>Invoice Number:</strong> ${invoiceNumber}<br>
+      <div class="inv-meta">
+        <strong>Invoice #:</strong> ${invoiceNumber}<br>
         <strong>Issue Date:</strong> ${issueDate}<br>
         <strong>Due Date:</strong> ${dueDate}
       </div>
     </div>
-    <div class="cols-grid">
-      <div class="col-box">
-        <h4>ISSUED BY (SERVICE PROVIDER)</h4>
-        <p class="comp-name">Shipping Wish LLC</p>
-        <p>19266 Coastal Hwy<br>Rehoboth, DE 19971, USA<br>Phone: +1 917 737 0021<br>Email: billing@shippingwish.com<br>Web: www.shippingwish.com</p>
+    <div class="bill-grid">
+      <div class="bill-box">
+        <h4>Issued By (Service Provider)</h4>
+        <div class="name">Shipping Wish LLC</div>
+        <p>19266 Coastal Hwy, Rehoboth, DE 19971<br>USA | LLC Registered, Delaware<br>Phone: +1 917 737 0021<br>Email: billing@shippingwish.com</p>
       </div>
-      <div class="col-box">
-        <h4>BILLED TO (CLIENT)</h4>
-        <p class="comp-name" style="color:#2563eb;">${clientName}</p>
-        <p>${clientAddress || ''}<br>Phone: ${clientPhone || 'N/A'}<br>Email: ${clientEmail || 'N/A'}</p>
+      <div class="bill-box">
+        <h4>Billed To (Carrier / Client)</h4>
+        <div class="name bname">${carrierCompany || carrierName}</div>
+        <p>Owner/Operator: ${carrierName}<br>Phone: ${carrierPhone || 'N/A'}<br>Email: ${carrierEmail || 'N/A'}<br>${carrierMc ? `<span class="mc-badge">MC# ${carrierMc}</span>` : ''}</p>
       </div>
     </div>
-    <div class="meta-grid">
-      <div class="meta-item"><div class="lbl">Currency</div><div class="val">USD - US Dollar</div></div>
-      <div class="meta-item"><div class="lbl">Billing Method</div><div class="val">Send invoice</div></div>
-      <div class="meta-item"><div class="lbl">Tax Calculation</div><div class="val" style="color:#059669;">No tax rate applied (Tax Exempt)</div></div>
+    <div class="meta-bar">
+      <div class="meta-cell"><div class="lbl">Currency</div><div class="val">USD</div></div>
+      <div class="meta-cell"><div class="lbl">Equipment</div><div class="val">${equipLabel}</div></div>
+      <div class="meta-cell"><div class="lbl">Commission Rate</div><div class="val" style="color:#b45309">${feePercent}%</div></div>
+      <div class="meta-cell"><div class="lbl">Tax</div><div class="val" style="color:#059669">Tax Exempt</div></div>
     </div>
-    <table class="items-table">
-      <thead><tr><th>Description</th><th class="text-center">Qty</th><th class="text-right">Unit Price</th><th class="text-right">Amount</th></tr></thead>
-      <tbody>
-        <tr>
-          <td><strong>${description || 'Dispatch fee'}</strong><br><span style="font-size:12px;color:#64748b;">US Freight Dispatching &amp; Carrier Support Services</span></td>
-          <td class="text-center">1</td>
-          <td class="text-right">$${parseFloat(amount).toFixed(2)}</td>
-          <td class="text-right"><strong>$${parseFloat(amount).toFixed(2)}</strong></td>
-        </tr>
-      </tbody>
+    <div class="section-title">&#x1F4E6; Load Summary — All Dispatched Loads This Period</div>
+    <table class="loads-table">
+      <thead><tr><th>Load #</th><th>Pickup Date</th><th>Origin</th><th>Destination</th><th>Broker</th><th>Equipment</th><th class="amt">Gross Rate</th></tr></thead>
+      <tbody>${loadRows}</tbody>
     </table>
-    <div class="totals-section">
-      <table class="totals-table">
-        <tr><td>Subtotal:</td><td class="text-right">$${parseFloat(amount).toFixed(2)}</td></tr>
-        <tr><td>Total excluding tax:</td><td class="text-right">$${parseFloat(amount).toFixed(2)}</td></tr>
-        <tr><td>Customer is tax exempt:</td><td class="text-right">-</td></tr>
-        <tr style="border-top:1px solid #e2e8f0;font-weight:700;color:#0f172a;"><td>Total:</td><td class="text-right">$${parseFloat(amount).toFixed(2)}</td></tr>
-        <tr style="color:#059669;font-weight:700;"><td>Amount Paid:</td><td class="text-right">${amountPaidStr}</td></tr>
-        <tr class="grand-total"><td>Amount Remaining:</td><td class="text-right" style="color:#059669;">${amountRemainingStr}</td></tr>
+    <div class="totals-wrap" style="margin-top:0;border-top:none;border-radius:0 0 8px 8px">
+      <table class="tot-table">
+        <tr><td>Total Loads: <strong>${loads.length}</strong></td><td>Gross Freight Total</td><td>$${grossTotal.toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>
+        <tr class="comm"><td colspan="2">&#x1F4B0; Dispatch Commission (${feePercent}% of $${grossTotal.toLocaleString('en-US',{minimumFractionDigits:2})}) — Amount Carrier Pays Shipping Wish</td><td>$${commAmt.toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>
+        <tr class="cpay"><td colspan="2">&#x1F69B; Carrier Net Earnings (After ${feePercent}% Commission Deducted)</td><td>$${carrierPay.toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>
+        <tr class="grand"><td colspan="2">&#x26A1; TOTAL AMOUNT DUE TO SHIPPING WISH LLC</td><td>$${commAmt.toLocaleString('en-US',{minimumFractionDigits:2})}</td></tr>
       </table>
     </div>
-    <div class="memo-box">
-      <h5>Memo &amp; Payment Notes</h5>
-      <p>${memo || 'Bank transfer payments are accepted using the details provided below.'}</p>
-      <p style="margin-top:4px;">If you have any questions regarding this invoice, please contact us at billing@shippingwish.com or +1 917 737 0021.</p>
+    <div class="memo">
+      <h5>&#x1F4DD; Memo &amp; Payment Instructions</h5>
+      <p>${billingNotes || `Dispatch commission invoice covering ${loads.length} load(s) completed during the period: ${periodLabel}. Commission rate of ${feePercent}% applies to gross freight as per dispatch service agreement.`}</p>
+      <p style="margin-top:6px">Please remit <strong>$${commAmt.toLocaleString('en-US',{minimumFractionDigits:2})}</strong> within 7 days. Contact: billing@shippingwish.com | +1 917 737 0021</p>
     </div>
-    <div class="invoice-footer">
-      <strong>Shipping Wish LLC — Corporate Accounts Receivable &amp; Verification Department</strong><br>
-      Official Verification Document | Registered Address: 19266 Coastal Hwy, Rehoboth, DE 19971 US
+    <div class="inv-footer">
+      <strong>Shipping Wish LLC — Accounts Receivable &amp; Billing Department</strong><br>
+      Official Dispatch Commission Invoice | LLC Registered in Delaware | 19266 Coastal Hwy, Rehoboth, DE 19971, USA
     </div>
   </div>
-</div>
-</body>
-</html>`;
+</div></body></html>`;
 }
 
-function generateInvoicePdf({ invoiceNumber, clientName, clientEmail, clientPhone, clientAddress, description, amount, status, issueDate, dueDate, memo }) {
-  return new Promise((resolve, reject) => {
-    const filename = `Invoice_${invoiceNumber}.pdf`;
-    const filepath = path.join(PUBLIC_INVOICE_DIR, filename);
-    const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
-    const stream = fs.createWriteStream(filepath);
-    doc.pipe(stream);
-
-    const isPaid = status === 'paid';
-    const numAmount = parseFloat(amount || 0);
-
-    // Header Banner
-    doc.rect(0, 0, 612, 110).fill('#0f172a');
-    doc.fillColor('#f59e0b').font('Helvetica-Bold').fontSize(24).text('SHIPPING WISH LLC', 40, 30);
-    doc.fillColor('#94a3b8').font('Helvetica').fontSize(10).text('Premier US Freight Dispatch & Enterprise Logistics Conglomerate', 40, 58);
-    doc.fillColor('#ffffff').fontSize(9).text('www.shippingwish.com | billing@shippingwish.com | +1 917 737 0021', 40, 74);
-
-    // Badge
-    doc.save();
-    doc.roundedRect(440, 30, 132, 36, 6).fill(isPaid ? '#059669' : '#d97706');
-    doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(13).text(isPaid ? 'PAID IN FULL' : 'PAYMENT DUE', 450, 41, { width: 112, align: 'center' });
-    doc.restore();
-
-    // Title
-    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(18).text('INVOICE', 40, 130);
-    doc.fillColor('#64748b').font('Helvetica').fontSize(10).text(`Invoice Number: ${invoiceNumber}`, 40, 152);
-    doc.text(`Issue Date: ${issueDate} | Due Date: ${dueDate}`, 40, 166);
-
-    doc.moveTo(40, 185).lineTo(572, 185).strokeColor('#e2e8f0').lineWidth(1).stroke();
-
-    const colY = 200;
-
-    // Seller
-    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(11).text('ISSUED BY:', 40, colY);
-    doc.font('Helvetica-Bold').fontSize(10).fillColor('#1e293b').text('Shipping Wish LLC', 40, colY + 16);
-    doc.font('Helvetica').fontSize(9).fillColor('#475569')
-       .text('19266 Coastal Hwy', 40, colY + 30)
-       .text('Rehoboth, DE 19971, USA', 40, colY + 42)
-       .text('Phone: +1 917 737 0021', 40, colY + 54)
-       .text('Email: billing@shippingwish.com', 40, colY + 66)
-       .text('Web: www.shippingwish.com', 40, colY + 78);
-
-    // Customer
-    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(11).text('BILLED TO:', 320, colY);
-    doc.font('Helvetica-Bold').fontSize(10).fillColor('#2563eb').text(clientName || 'Valued Client', 320, colY + 16);
-    doc.font('Helvetica').fontSize(9).fillColor('#475569')
-       .text(clientAddress || 'USA', 320, colY + 30)
-       .text(`Phone: ${clientPhone || 'N/A'}`, 320, colY + 42)
-       .text(`Email: ${clientEmail || 'N/A'}`, 320, colY + 54);
-
-    // Meta Grid Box
-    doc.rect(40, colY + 100, 532, 45).fill('#f8fafc');
-    doc.rect(40, colY + 100, 532, 45).stroke('#e2e8f0');
-
-    doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b')
-       .text('CURRENCY', 55, colY + 108)
-       .text('BILLING METHOD', 185, colY + 108)
-       .text('TAX CALCULATION', 345, colY + 108);
-
-    doc.font('Helvetica-Bold').fontSize(9).fillColor('#0f172a')
-       .text('USD - US Dollar', 55, colY + 122)
-       .text('Send invoice', 185, colY + 122)
-       .text('No tax rate applied (Tax Exempt)', 345, colY + 122);
-
-    // Table Header
-    const tableY = colY + 165;
-    doc.rect(40, tableY, 532, 26).fill('#0f172a');
-
-    doc.font('Helvetica-Bold').fontSize(9).fillColor('#ffffff')
-       .text('DESCRIPTION', 52, tableY + 8)
-       .text('QTY', 340, tableY + 8, { width: 50, align: 'center' })
-       .text('UNIT PRICE', 400, tableY + 8, { width: 70, align: 'right' })
-       .text('AMOUNT', 485, tableY + 8, { width: 75, align: 'right' });
-
-    // Table Row
-    const rowY = tableY + 26;
-    doc.rect(40, rowY, 532, 32).fill('#ffffff');
-    doc.rect(40, rowY, 532, 32).stroke('#e2e8f0');
-
-    doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a')
-       .text(description || 'Dispatch fee', 52, rowY + 10);
-    doc.font('Helvetica').fontSize(9).fillColor('#475569')
-       .text('1', 340, rowY + 10, { width: 50, align: 'center' })
-       .text(`$${numAmount.toFixed(2)}`, 400, rowY + 10, { width: 70, align: 'right' })
-       .font('Helvetica-Bold').fillColor('#0f172a')
-       .text(`$${numAmount.toFixed(2)}`, 485, rowY + 10, { width: 75, align: 'right' });
-
-    // Totals
-    const totalY = rowY + 45;
-    const labelX = 360;
-    const valueX = 485;
-
-    doc.font('Helvetica').fontSize(9).fillColor('#64748b').text('Subtotal:', labelX, totalY);
-    doc.font('Helvetica').fontSize(9).fillColor('#0f172a').text(`$${numAmount.toFixed(2)}`, valueX, totalY, { width: 75, align: 'right' });
-
-    doc.font('Helvetica').fontSize(9).fillColor('#64748b').text('Total excluding tax:', labelX, totalY + 16);
-    doc.font('Helvetica').fontSize(9).fillColor('#0f172a').text(`$${numAmount.toFixed(2)}`, valueX, totalY + 16, { width: 75, align: 'right' });
-
-    doc.font('Helvetica').fontSize(9).fillColor('#64748b').text('Customer is tax exempt:', labelX, totalY + 32);
-    doc.font('Helvetica').fontSize(9).fillColor('#0f172a').text('-', valueX, totalY + 32, { width: 75, align: 'right' });
-
-    doc.moveTo(labelX, totalY + 48).lineTo(572, totalY + 48).strokeColor('#e2e8f0').lineWidth(1).stroke();
-
-    doc.font('Helvetica-Bold').fontSize(11).fillColor('#0f172a').text('Total:', labelX, totalY + 54);
-    doc.font('Helvetica-Bold').fontSize(11).fillColor('#0f172a').text(`$${numAmount.toFixed(2)}`, valueX, totalY + 54, { width: 75, align: 'right' });
-
-    doc.font('Helvetica').fontSize(10).fillColor('#059669').text('Amount Paid:', labelX, totalY + 72);
-    doc.font('Helvetica-Bold').fontSize(10).fillColor('#059669').text(isPaid ? `-$${numAmount.toFixed(2)}` : '$0.00', valueX, totalY + 72, { width: 75, align: 'right' });
-
-    doc.moveTo(labelX, totalY + 88).lineTo(572, totalY + 88).strokeColor('#059669').lineWidth(1.5).stroke();
-
-    doc.font('Helvetica-Bold').fontSize(11).fillColor('#0f172a').text('Amount Remaining:', labelX, totalY + 94);
-    doc.font('Helvetica-Bold').fontSize(12).fillColor('#059669').text(isPaid ? '$0.00' : `$${numAmount.toFixed(2)}`, valueX, totalY + 94, { width: 75, align: 'right' });
-
-    // Memo
-    const memoY = totalY + 125;
-    doc.rect(40, memoY, 532, 55).fill('#f1f5f9');
-    doc.rect(40, memoY, 532, 55).stroke('#cbd5e1');
-
-    doc.font('Helvetica-Bold').fontSize(9).fillColor('#0f172a').text('MEMO & PAYMENT NOTES', 52, memoY + 10);
-    doc.font('Helvetica').fontSize(8.5).fillColor('#334155')
-       .text(memo || 'Bank transfer payments are accepted using the details provided below.', 52, memoY + 24)
-       .text('If you have any questions regarding this invoice, please contact us at billing@shippingwish.com or +1 917 737 0021.', 52, memoY + 36);
-
-    // Footer Signature
-    const footY = memoY + 75;
-    doc.moveTo(40, footY).lineTo(572, footY).strokeColor('#e2e8f0').lineWidth(1).stroke();
-
-    doc.font('Helvetica-Bold').fontSize(9).fillColor('#0f172a').text('Shipping Wish LLC — Accounts Receivable & Verification Department', 40, footY + 10);
-    doc.font('Helvetica').fontSize(8).fillColor('#94a3b8').text('Official Verification Document | Registered Corporate Address: 19266 Coastal Hwy, Rehoboth, DE 19971 US', 40, footY + 22);
-
-    doc.end();
-    stream.on('finish', () => resolve(filename));
-    stream.on('error', reject);
-  });
-}
-
-// Generate invoice for a load — dispatcher, admin, super_admin
-router.post('/', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
-  const { loadId, factoringStatus } = req.body;
-  if (!loadId) return res.status(400).json({ error: 'loadId is required.' });
+// ============================================================
+// BATCH WEEKLY INVOICE - POST /api/invoices/batch
+// Body: { carrierId, loadIds: [1,2,3], periodLabel: 'Aug 18-24 2026' }
+// Dispatcher selects carrier + multiple delivered loads → system
+// calculates total → applies carrier's commission % → generates invoice
+// ============================================================
+router.post('/batch', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
+  const { carrierId, loadIds, periodLabel, dueDate } = req.body;
+  if (!carrierId || !Array.isArray(loadIds) || loadIds.length === 0) {
+    return res.status(400).json({ error: 'carrierId and loadIds[] are required.' });
+  }
 
   try {
-    const loadResult = await pool.query(
-      `SELECT l.*,
-              u.name AS carrier_name, u.company_name AS carrier_company,
-              u.phone AS carrier_phone, u.mc_number, u.email AS carrier_email,
-              u.dispatch_fee_percent, u.equipment_category, u.billing_notes,
-              dr.name AS driver_name, t.truck_number
-       FROM loads l
-       JOIN users u ON u.id = l.carrier_id
-       LEFT JOIN drivers dr ON dr.id = l.driver_id
-       LEFT JOIN trucks t ON t.id = l.truck_id
-       WHERE l.id = $1`,
-      [loadId]
+    // 1. Get carrier info + commission rate
+    const carrierRes = await pool.query(
+      `SELECT id, name, company_name, phone, email, mc_number,
+              dispatch_fee_percent, equipment_category, billing_notes
+       FROM users WHERE id = $1 AND role = 'carrier'`,
+      [carrierId]
     );
-    if (!loadResult.rows.length) return res.status(404).json({ error: 'Load not found.' });
-    const load = loadResult.rows[0];
+    if (!carrierRes.rows.length) return res.status(404).json({ error: 'Carrier not found.' });
+    const carrier = carrierRes.rows[0];
 
-    const existing = await pool.query('SELECT id FROM invoices WHERE load_id = $1', [loadId]);
-    if (existing.rows.length) return res.status(409).json({ error: 'An invoice already exists for this load.' });
+    // 2. Get all loads
+    const loadsRes = await pool.query(
+      `SELECT id, load_number, pickup_location, delivery_location, pickup_date, delivery_date,
+              broker_name, equipment_type, rate, status, carrier_id
+       FROM loads
+       WHERE id = ANY($1::int[]) AND carrier_id = $2`,
+      [loadIds, carrierId]
+    );
+    if (!loadsRes.rows.length) return res.status(404).json({ error: 'No loads found for this carrier.' });
+    const loads = loadsRes.rows;
 
-    // Fetch approved accessorials
-    const accResult = await pool.query('SELECT * FROM load_accessorials WHERE load_id = $1 AND approved = true', [loadId]);
-    const accessorials = accResult.rows;
+    // 3. Check none already invoiced
+    const alreadyInvoiced = await pool.query(
+      `SELECT load_id FROM invoices WHERE load_id = ANY($1::int[])`,
+      [loadIds]
+    );
+    if (alreadyInvoiced.rows.length > 0) {
+      const ids = alreadyInvoiced.rows.map(r => r.load_id).join(', ');
+      return res.status(409).json({ error: `Loads already invoiced: ${ids}. Remove them from the batch.` });
+    }
 
-    const freightAmount = parseFloat(load.rate || 0);
-    const accessorialAmount = accessorials.reduce((sum, a) => sum + parseFloat(a.amount || 0), 0);
-    const grossTotal = freightAmount + accessorialAmount;
+    const feePercent  = parseFloat(carrier.dispatch_fee_percent || 5.00);
+    const grossTotal  = loads.reduce((s, l) => s + parseFloat(l.rate || 0), 0);
+    const commAmt     = parseFloat(((grossTotal * feePercent) / 100).toFixed(2));
+    const carrierPay  = parseFloat((grossTotal - commAmt).toFixed(2));
+    const equipLabel  = { box_truck:'Box Truck', dry_van:'Dry Van (53ft)', reefer:'Refrigerated (Reefer)', flatbed:'Flatbed', other:'Other' }[carrier.equipment_category] || carrier.equipment_category || 'Dry Van';
+    const period      = periodLabel || `${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})} Invoice`;
+    const issueDate   = new Date().toISOString().slice(0, 10);
+    const due         = dueDate || new Date(Date.now() + 7*86400000).toISOString().slice(0, 10);
+    const invoiceNum  = `SW-COMM-${carrier.id}-${Date.now().toString().slice(-6)}`;
 
-    // ============================================================
-    // PER-CARRIER CUSTOM COMMISSION CALCULATION
-    // dispatch_fee_percent stored on user record (set by admin)
-    // Default rates by category:
-    //   box_truck → 5% - 7%  (default 6%)
-    //   dry_van   → 2% - 4%  (default 3%)
-    //   reefer    → 2% - 4%  (default 3%)
-    //   flatbed   → 3% - 5%  (default 4%)
-    // ============================================================
-    const feePercent = parseFloat(load.dispatch_fee_percent || 5.00);
-    const dispatchFeeAmount = parseFloat(((grossTotal * feePercent) / 100).toFixed(2));
-    const carrierPayAmount  = parseFloat((grossTotal - dispatchFeeAmount).toFixed(2));
-    const equipCategory     = load.equipment_category || 'dry_van';
+    const htmlData = {
+      invoiceNumber: invoiceNum, periodLabel: period,
+      carrierName: carrier.name, carrierCompany: carrier.company_name,
+      carrierPhone: carrier.phone, carrierEmail: carrier.email, carrierMc: carrier.mc_number,
+      loads, feePercent, status: 'unpaid', issueDate, dueDate: due,
+      billingNotes: carrier.billing_notes, equipLabel
+    };
 
-    const equipLabel = {
-      box_truck: 'Box Truck',
-      dry_van:   'Dry Van (53ft)',
-      reefer:    'Refrigerated (Reefer)',
-      flatbed:   'Flatbed',
-      other:     'Other Equipment'
-    }[equipCategory] || equipCategory;
+    // 4. Generate HTML
+    const htmlContent = generateBatchInvoiceHtml(htmlData);
+    fs.writeFileSync(path.join(PUBLIC_INVOICE_DIR, `${invoiceNum}.html`), htmlContent);
 
-    const invoiceNumber = `INV-${load.load_number}`;
-    const issueDate     = new Date().toISOString().slice(0, 10);
-    const dueDate       = issueDate;
-    const factOpt       = factoringStatus || 'direct_pay';
+    // 5. Generate PDF using PDFKit (simplified for batch)
+    const pdfFilename = await new Promise((resolve, reject) => {
+      const fname  = `Invoice_${invoiceNum}.pdf`;
+      const fpath  = path.join(PUBLIC_INVOICE_DIR, fname);
+      const doc    = new PDFDocument({ margin: 40, size: 'LETTER' });
+      const stream = fs.createWriteStream(fpath);
+      doc.pipe(stream);
 
-    // Build line-item description
-    const description = [
-      `Dispatch Fee for Load #${load.load_number}`,
-      `Equipment: ${equipLabel}`,
-      `Route: ${load.pickup_location || ''} ➔ ${load.delivery_location || ''}`,
-      `Gross Freight Rate: $${freightAmount.toFixed(2)}`,
-      ...(accessorialAmount > 0 ? [`Approved Accessorials: +$${accessorialAmount.toFixed(2)}`] : []),
-      `Dispatch Commission: ${feePercent}% of $${grossTotal.toFixed(2)} = $${dispatchFeeAmount.toFixed(2)}`,
-      `Carrier Net Pay: $${carrierPayAmount.toFixed(2)}`
-    ].join('\n');
+      const L = 40, R = 572;
+      // Header
+      doc.rect(0, 0, 612, 108).fill('#0f172a');
+      doc.fillColor('#f59e0b').font('Helvetica-Bold').fontSize(20).text('SHIPPING WISH LLC', L, 26);
+      doc.fillColor('#94a3b8').font('Helvetica').fontSize(9).text('Premier US Freight Dispatch & Enterprise Logistics', L, 50);
+      doc.fillColor('#cbd5e1').fontSize(8).text('www.shippingwish.com | billing@shippingwish.com | +1 917 737 0021', L, 64);
+      const bColor = '#f59e0b';
+      doc.roundedRect(440, 26, 132, 32, 6).fill(bColor);
+      doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(11).text('PAYMENT DUE', 440, 35, { width: 132, align: 'center' });
 
-    const memo = load.billing_notes ||
-      `Dispatch commission invoice for Load #${load.load_number}. ` +
-      `Carrier net pay after ${feePercent}% commission: $${carrierPayAmount.toFixed(2)}. ` +
-      `Payment due within 7 days of delivery.`;
+      let y = 122;
+      doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(16).text('DISPATCH COMMISSION INVOICE', L, y);
+      doc.fillColor('#64748b').font('Helvetica').fontSize(9).text('Official Shipping Wish LLC Billing Statement', L, y + 18);
+      doc.fillColor('#475569').fontSize(8.5)
+         .text(`Invoice #: ${invoiceNum}`, 380, y, { width: 192, align: 'right' })
+         .text(`Period: ${period}`, 380, y + 13, { width: 192, align: 'right' })
+         .text(`Issue: ${issueDate}  Due: ${due}`, 380, y + 26, { width: 192, align: 'right' });
 
-    const htmlContent = generateInvoiceHtml({
-      invoiceNumber,
-      clientName:    load.carrier_company || load.carrier_name,
-      clientEmail:   load.carrier_email   || 'billing@shippingwish.com',
-      clientPhone:   load.carrier_phone   || 'N/A',
-      clientAddress: `${load.pickup_location || ''} ➔ ${load.delivery_location || ''}`,
-      description,
-      amount:    dispatchFeeAmount,   // We bill the carrier ONLY the dispatch fee amount
-      status:    'unpaid',
-      issueDate,
-      dueDate,
-      memo
+      doc.moveTo(L, y + 48).lineTo(R, y + 48).strokeColor('#e2e8f0').lineWidth(1).stroke();
+      y += 62;
+
+      // Bill to/from
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#94a3b8').text('ISSUED BY', L, y);
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a').text('Shipping Wish LLC', L, y + 12);
+      doc.font('Helvetica').fontSize(8).fillColor('#475569').text('19266 Coastal Hwy, Rehoboth, DE 19971 | billing@shippingwish.com', L, y + 24);
+
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#94a3b8').text('BILLED TO (CARRIER)', 320, y);
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#2563eb').text(carrier.company_name || carrier.name, 320, y + 12);
+      doc.font('Helvetica').fontSize(8).fillColor('#475569')
+         .text(`${carrier.name} | ${carrier.phone || 'N/A'}`, 320, y + 24)
+         .text(`${carrier.email || 'N/A'}${carrier.mc_number ? ' | MC# ' + carrier.mc_number : ''}`, 320, y + 35);
+
+      y += 58;
+      // Meta bar
+      doc.rect(L, y, 532, 28).fill('#f8fafc').stroke('#e2e8f0');
+      doc.font('Helvetica-Bold').fontSize(7).fillColor('#94a3b8')
+         .text('EQUIPMENT', L+8, y+5).text('COMMISSION RATE', 200, y+5).text('TOTAL LOADS', 360, y+5).text('TAX', 480, y+5);
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#0f172a')
+         .text(equipLabel, L+8, y+15)
+         .text(`${feePercent}%`, 200, y+15, { fillColor: '#b45309' });
+      doc.fillColor('#b45309').text(`${feePercent}%`, 200, y+15);
+      doc.fillColor('#0f172a').text(`${loads.length} Loads`, 360, y+15);
+      doc.fillColor('#059669').text('Tax Exempt', 480, y+15);
+      y += 40;
+
+      // Table header
+      doc.rect(L, y, 532, 20).fill('#0f172a');
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#ffffff')
+         .text('LOAD #', L+4, y+6, { width: 65 })
+         .text('DATE', L+70, y+6, { width: 52 })
+         .text('ORIGIN', L+124, y+6, { width: 90 })
+         .text('DESTINATION', L+216, y+6, { width: 90 })
+         .text('BROKER', L+308, y+6, { width: 90 })
+         .text('GROSS RATE', L+400, y+6, { width: 120, align: 'right' });
+      y += 20;
+
+      loads.forEach((l, i) => {
+        if (y > 680) { doc.addPage(); y = 40; }
+        doc.rect(L, y, 532, 18).fill(i%2===0?'#ffffff':'#f8fafc').stroke('#e2e8f0');
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#0f172a').text(l.load_number||'-', L+4, y+5, { width: 65 });
+        doc.font('Helvetica').fontSize(7).fillColor('#475569')
+           .text((l.pickup_date||'').toString().slice(0,10), L+70, y+5, { width: 52 })
+           .text((l.pickup_location||'-').slice(0,18), L+124, y+5, { width: 90 })
+           .text((l.delivery_location||'-').slice(0,18), L+216, y+5, { width: 90 })
+           .text((l.broker_name||'-').slice(0,18), L+308, y+5, { width: 90 });
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a')
+           .text('$'+parseFloat(l.rate||0).toLocaleString('en-US',{minimumFractionDigits:2}), L+400, y+5, { width: 120, align: 'right' });
+        y += 18;
+      });
+
+      y += 8;
+      // Totals
+      [
+        { lbl: `Gross Freight Total (${loads.length} Loads)`, val: '$'+grossTotal.toLocaleString('en-US',{minimumFractionDigits:2}), bg:'#f8fafc', fc:'#0f172a' },
+        { lbl: `Dispatch Commission ${feePercent}% — Payable to Shipping Wish LLC`, val: '$'+commAmt.toLocaleString('en-US',{minimumFractionDigits:2}), bg:'#fffbeb', fc:'#b45309' },
+        { lbl: `Carrier Net Earnings After ${feePercent}% Commission`, val: '$'+carrierPay.toLocaleString('en-US',{minimumFractionDigits:2}), bg:'#f0fdf4', fc:'#15803d' },
+      ].forEach(r => {
+        doc.rect(L, y, 532, 20).fill(r.bg).stroke('#e2e8f0');
+        doc.font('Helvetica').fontSize(8.5).fillColor('#475569').text(r.lbl, L+8, y+6, { width: 370 });
+        doc.font('Helvetica-Bold').fontSize(9).fillColor(r.fc).text(r.val, L+378, y+6, { width: 142, align: 'right' });
+        y += 20;
+      });
+      // Grand total
+      doc.rect(L, y, 532, 26).fill('#0f172a');
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#ffffff').text('TOTAL AMOUNT DUE TO SHIPPING WISH LLC', L+8, y+8, { width: 350 });
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#f59e0b').text('$'+commAmt.toLocaleString('en-US',{minimumFractionDigits:2}), L+358, y+7, { width: 162, align: 'right' });
+      y += 40;
+
+      // Memo
+      doc.rect(L, y, 532, 46).fill('#f1f5f9').stroke('#cbd5e1');
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a').text('MEMO & PAYMENT INSTRUCTIONS', L+8, y+7);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#334155')
+         .text(carrier.billing_notes || `Commission for ${loads.length} load(s) | Period: ${period} | Rate: ${feePercent}%`, L+8, y+20, { width: 510 })
+         .text('Please remit within 7 days. Contact: billing@shippingwish.com | +1 917 737 0021', L+8, y+33, { width: 510 });
+      y += 58;
+
+      doc.moveTo(L, y).lineTo(R, y).strokeColor('#e2e8f0').lineWidth(1).stroke();
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a').text('Shipping Wish LLC — Accounts Receivable', L, y+8);
+      doc.font('Helvetica').fontSize(7).fillColor('#94a3b8').text('Official Dispatch Commission Invoice | LLC Registered Delaware | 19266 Coastal Hwy, Rehoboth, DE 19971 USA', L, y+20);
+
+      doc.end();
+      stream.on('finish', () => resolve(fname));
+      stream.on('error', reject);
     });
-    fs.writeFileSync(path.join(PUBLIC_INVOICE_DIR, `${invoiceNumber}.html`), htmlContent);
 
-    const pdfFilename = await generateInvoicePdf({
-      invoiceNumber,
-      clientName:    load.carrier_company || load.carrier_name,
-      clientEmail:   load.carrier_email   || 'billing@shippingwish.com',
-      clientPhone:   load.carrier_phone   || 'N/A',
-      clientAddress: `${load.pickup_location || ''} ➔ ${load.delivery_location || ''}`,
-      description,
-      amount:    dispatchFeeAmount,
-      status:    'unpaid',
-      issueDate,
-      dueDate,
-      memo
-    });
-
+    // 6. Save to DB (one invoice record, stores all load IDs as JSON)
     const insert = await pool.query(
       `INSERT INTO invoices (
          load_id, invoice_number,
          amount, freight_amount, accessorial_amount, total_amount,
          status, factoring_status, issued_date, pdf_filename
-       ) VALUES ($1, $2, $3, $4, $5, $6, 'unpaid', $7, $8, $9) RETURNING id`,
-      [loadId, invoiceNumber,
-       dispatchFeeAmount, freightAmount, accessorialAmount, grossTotal,
-       factOpt, issueDate, pdfFilename]
+       ) VALUES ($1, $2, $3, $4, $5, $6, 'unpaid', 'direct_pay', $7, $8) RETURNING id`,
+      [loads[0].id, invoiceNum, commAmt, grossTotal, 0, grossTotal, issueDate, pdfFilename]
     );
 
-    await pool.query(`UPDATE loads SET status = 'invoiced', updated_at = now() WHERE id = $1`, [loadId]);
+    // 7. Mark all loads as invoiced
     await pool.query(
-      `INSERT INTO load_status_history (load_id, status, changed_by, notes)
-       VALUES ($1, 'invoiced', $2, $3)`,
-      [loadId, req.user.id,
-       `Invoice generated — ${feePercent}% dispatch fee ($${dispatchFeeAmount}) on gross $${grossTotal}`]
+      `UPDATE loads SET status = 'invoiced', updated_at = now() WHERE id = ANY($1::int[])`,
+      [loadIds]
     );
 
     res.json({
       ok: true,
-      id: insert.rows[0].id,
-      invoiceNumber,
-      grossAmount:       grossTotal,
-      dispatchFeePercent: feePercent,
-      dispatchFeeAmount,
-      carrierPayAmount,
-      equipmentCategory: equipCategory
+      invoiceNumber: invoiceNum,
+      invoiceId: insert.rows[0].id,
+      totalLoads: loads.length,
+      grossTotal: grossTotal.toFixed(2),
+      commissionPercent: feePercent,
+      commissionAmount: commAmt.toFixed(2),
+      carrierNetPay: carrierPay.toFixed(2),
+      htmlUrl: `/invoices/${invoiceNum}.html`,
+      pdfUrl: `/invoices/Invoice_${invoiceNum}.pdf`
     });
   } catch (err) {
-    console.error('Generate invoice error:', err);
-    res.status(500).json({ error: 'Could not generate invoice.' });
+    console.error('Batch invoice error:', err);
+    res.status(500).json({ error: 'Could not generate batch invoice.' });
   }
 });
 
@@ -462,7 +391,7 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// Update paid / pending status — dispatcher, admin, super_admin
+// Update paid / pending status â€” dispatcher, admin, super_admin
 router.patch('/:id', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
   const { status } = req.body; // 'paid' or 'unpaid'
   if (!['paid', 'unpaid', 'pending'].includes(status)) return res.status(400).json({ error: 'Invalid status.' });
@@ -552,7 +481,7 @@ router.post('/:id/send-stripe', requireAuth, requireRole('dispatcher', 'admin', 
         customer: customer.id,
         amount: Math.round(parseFloat(inv.total_amount) * 100), // convert to cents
         currency: 'usd',
-        description: `Shipping Wish Freight Invoice #${inv.invoice_number} (Load ${inv.load_number}: ${inv.pickup_location} ➔ ${inv.delivery_location})`
+        description: `Shipping Wish Freight Invoice #${inv.invoice_number} (Load ${inv.load_number}: ${inv.pickup_location} âž” ${inv.delivery_location})`
       });
 
       // 3. Create & Send Stripe Invoice
@@ -666,3 +595,4 @@ router.post('/create-custom', requireAuth, requireRole('dispatcher', 'admin', 's
 });
 
 module.exports = router;
+
