@@ -353,6 +353,37 @@
             </div>
           </div>
 
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="cl-commodity">Commodity Description</label>
+              <input class="form-input" id="cl-commodity" name="commodity" type="text" placeholder="Foodstuff, Palletized Goods, General Freight">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cl-freight-class">LTL Freight Class</label>
+              <select class="form-select" id="cl-freight-class" name="freightClass">
+                <option value="">N/A (Full Truckload / FTL)</option>
+                <option value="50">Class 50 (Clean Freight, >50 lbs/cu.ft)</option>
+                <option value="55">Class 55 (35-50 lbs/cu.ft)</option>
+                <option value="60">Class 60 (30-35 lbs/cu.ft)</option>
+                <option value="65">Class 65 (15-30 lbs/cu.ft)</option>
+                <option value="70">Class 70 (12-15 lbs/cu.ft)</option>
+                <option value="77.5">Class 77.5 (10.5-12 lbs/cu.ft)</option>
+                <option value="85">Class 85 (9-10.5 lbs/cu.ft)</option>
+                <option value="92.5">Class 92.5 (8-9 lbs/cu.ft)</option>
+                <option value="100">Class 100 (7-8 lbs/cu.ft)</option>
+                <option value="110">Class 110 (6-7 lbs/cu.ft)</option>
+                <option value="125">Class 125 (5-6 lbs/cu.ft)</option>
+                <option value="150">Class 150 (4-5 lbs/cu.ft)</option>
+                <option value="175">Class 175 (3-4 lbs/cu.ft)</option>
+                <option value="200">Class 200 (2-3 lbs/cu.ft)</option>
+                <option value="250">Class 250 (1-2 lbs/cu.ft)</option>
+                <option value="300">Class 300 (High density / fragile)</option>
+                <option value="400">Class 400 (High value / fragile)</option>
+                <option value="500">Class 500 (Low density / highest risk)</option>
+              </select>
+            </div>
+          </div>
+
           <div class="form-group">
             <label class="form-label" for="cl-notes">Dispatcher Notes</label>
             <textarea class="form-textarea" id="cl-notes" name="dispatcherNotes" rows="2" placeholder="Strict 2hr detention policy, check call every morning at 8AM..."></textarea>

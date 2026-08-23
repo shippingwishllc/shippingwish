@@ -1,100 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Document Management | Shipping Wish LLC</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Vault &amp; Legal Compliance — Shipping Wish LLC ERP</title>
+  <meta name="description" content="Official Document Vault for Shipping Wish LLC freight operations. Upload, view, download, & replace Rate Confirmations, BOLs, PODs, & Carrier Packets.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
 </head>
 <body>
 
-<header class="site-header">
-  <div class="container nav-row">
-    <a href="/" class="brand"><span class="dot"></span> Shipping Wish Vault</a>
-    <nav class="nav-links">
-      <a href="/dashboard.html">Dashboard</a>
-      <a href="/brokers.html">Brokers</a>
-      <a href="/fleet.html">Fleet</a>
-      <a href="/documents.html" class="current">Documents</a>
-      <a href="/invoices.html">Invoices</a>
-      <a href="/ifta.html">IFTA &amp; Fuel</a>
-    </nav>
-    <div class="nav-cta">
-      <span class="nav-phone" id="user-badge-docs">User</span>
-      <button id="logout-btn" class="btn btn-outline">Log Out</button>
-      <button class="nav-toggle">☰</button>
-    </div>
-  </div>
-</header>
+<div class="app-shell">
+  <!-- LEFT SIDEBAR -->
+  <aside class="app-sidebar" role="navigation" aria-label="Documents Navigation">
+    <div>
+      <a href="/" class="sidebar-brand" style="text-decoration:none;">
+        <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">DOCUMENT VAULT</div>
+        </div>
+      </a>
 
-<section class="tms-shell">
-  <div class="container">
-    <div class="tms-topbar">
+      <div class="sidebar-section-label">Document Repository</div>
+      <a href="/documents.html" class="sidebar-nav-link active">
+        <span aria-hidden="true">📄</span> Document Vault (POD/BOL)
+      </a>
+      <a href="/invoices.html" class="sidebar-nav-link">
+        <span aria-hidden="true">💳</span> Invoices &amp; Billing
+      </a>
+      <a href="/ifta.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📊</span> IFTA Fuel Ledger
+      </a>
+
+      <div class="sidebar-section-label">Operations Workstations</div>
+      <a href="/sales-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎯</span> Carrier Sourcing CRM
+      </a>
+      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎧</span> Dispatcher Desk
+      </a>
+      <a href="/admin-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📊</span> Admin HQ
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-user-card">
+        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="doc-avatar">DV</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="user-badge-docs">Vault User</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);">Compliance Dept</div>
+        </div>
+      </div>
+      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);" id="logout-btn">
+        🚪 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
+    <header class="app-header">
       <div>
-        <span class="eyebrow">Document Management Vault</span>
-        <h1 style="font-size:26px;">Rate Confirmations, BOLs, PODs &amp; Compliance</h1>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Rate Confirmations, BOLs, PODs &amp; Legal Compliance</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Secure repository for Rate Cons, Bills of Lading, Proof of Delivery, &amp; Carrier Packets</p>
       </div>
-      <button class="btn btn-amber" data-open-modal="upload-doc-modal">+ Upload Document</button>
-    </div>
 
-    <div class="tms-panel table-scroll">
-      <table class="tms-table" id="documents-table">
-        <thead>
-          <tr>
-            <th>Document Name</th>
-            <th>Category</th>
-            <th>Uploaded By</th>
-            <th>Uploaded Date</th>
-            <th>File Size</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody><tr><td colspan="6" class="muted" style="text-align:center;">Loading documents...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</section>
+      <div style="display:flex;align-items:center;gap:var(--space-4);">
+        <button class="btn btn-primary btn-sm" onclick="openUploadModal()">
+          + Upload Legal Document
+        </button>
+        <div class="live-status">
+          <span class="live-dot"></span>
+          Vault Secure
+        </div>
+        <div id="notif-container"></div>
+      </div>
+    </header>
 
-<!-- Upload Document Modal -->
-<div class="modal-overlay" id="upload-doc-modal">
-  <div class="modal-box">
-    <button class="modal-close" data-close-modal>&times;</button>
-    <h3>Upload Document</h3>
-    <div id="upload-doc-msg" class="form-msg"></div>
-    <form id="upload-doc-form" enctype="multipart/form-data">
-      <div class="field">
-        <label>Document Category *</label>
-        <select name="category" required>
-          <option value="rate_confirmation">Rate Confirmation</option>
-          <option value="bol">Bill of Lading (BOL)</option>
-          <option value="pod">Proof of Delivery (POD)</option>
-          <option value="carrier_packet">Carrier Packet</option>
-          <option value="insurance">Insurance Certificate</option>
-          <option value="w9">W-9 Form</option>
-          <option value="mc_certificate">MC Authority Certificate</option>
-          <option value="invoice">Freight Invoice</option>
-          <option value="other">Other</option>
-        </select>
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- ================= PENDING REPLACEMENT APPROVAL WIDGET (ADMIN) ================= -->
+      <div id="doc-approval-widget" style="display:none;background:linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);border:1.5px solid #6366f1;border-radius:var(--radius-2xl);padding:var(--space-6);color:#fff;margin-bottom:var(--space-6);box-shadow:0 12px 30px rgba(99,102,241,0.2);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px;">
+          <div>
+            <div style="font-size:var(--text-base);font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+              ⚠️ Document Edit / Replacement Approval Requests
+              <span class="badge" style="background:#ef4444;color:#fff;font-weight:800;" id="cnt-doc-approvals">0</span>
+            </div>
+            <p style="font-size:12px;color:#cbd5e1;margin-top:2px;">User requested to replace an official freight document. Review and approve or reject.</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadPendingDocApprovals()">🔄 Refresh</button>
+        </div>
+        <div id="doc-approvals-list" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
-      <div class="field">
-        <label>Select File (PDF, PNG, JPG, DOCX) *</label>
-        <input type="file" name="file" required style="padding:8px;">
+
+      <!-- Main Table Card -->
+      <div class="tms-table-card">
+        <div class="toolbar-filter-bar">
+          <div class="search-input-group">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="doc-search-input" placeholder="Search document name, category, uploader..." oninput="renderFilteredDocs()">
+          </div>
+
+          <div class="filter-tabs-group">
+            <button class="filter-tab-pill active" onclick="setDocFilter('all', this)">All Vault Docs</button>
+            <button class="filter-tab-pill" onclick="setDocFilter('rate_confirmation', this)">Rate Cons</button>
+            <button class="filter-tab-pill" onclick="setDocFilter('bol', this)">BOLs</button>
+            <button class="filter-tab-pill" onclick="setDocFilter('pod', this)">PODs</button>
+            <button class="filter-tab-pill" onclick="setDocFilter('carrier_packet', this)">Packets</button>
+          </div>
+        </div>
+
+        <div class="tms-table-wrapper">
+          <table class="tms-table-v2" id="documents-table">
+            <thead>
+              <tr>
+                <th>Document File Name</th>
+                <th>Category</th>
+                <th>Uploaded By</th>
+                <th>Uploaded Date</th>
+                <th>File Size</th>
+                <th>Approval Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading vault documents...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <button type="submit" class="btn btn-amber btn-block">Upload File</button>
-    </form>
+
+    </main>
   </div>
 </div>
 
+<!-- UPLOAD DOCUMENT MODAL -->
+<div class="modal-backdrop" id="upload-doc-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>+ Upload Legal Document</h2>
+      <button onclick="closeUploadModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="upload-doc-form" enctype="multipart/form-data">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label required" for="cat-select">Document Category</label>
+          <select class="form-select" id="cat-select" name="category" required>
+            <option value="rate_confirmation">📄 Rate Confirmation (Rate Con)</option>
+            <option value="bol">🧾 Bill of Lading (BOL Receipt)</option>
+            <option value="pod">📦 Proof of Delivery (Signed POD)</option>
+            <option value="lumper">🏷️ Lumper Fee Receipt</option>
+            <option value="carrier_packet">📑 Carrier Packet &amp; Certificate</option>
+            <option value="insurance">🛡️ COI Insurance Certificate</option>
+            <option value="w9">📜 W-9 Tax Form</option>
+            <option value="mc_certificate">📋 MC Authority Certificate</option>
+            <option value="other">📎 Other Document</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label required">Select File (PDF, PNG, JPG)</label>
+          <input type="file" class="form-input" name="file" required>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeUploadModal()" class="btn btn-light">Cancel</button>
+      <button type="submit" form="upload-doc-form" class="btn btn-primary">Upload to Vault →</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPLACE / EDIT DOCUMENT MODAL -->
+<div class="modal-backdrop" id="replace-doc-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>✏️ Replace / Update Document</h2>
+      <button onclick="closeReplaceModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="replace-doc-form" enctype="multipart/form-data">
+        <input type="hidden" id="replace-doc-id" name="docId">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label required" for="replace-reason">Reason for Replacement / Update</label>
+          <textarea class="form-textarea" id="replace-reason" name="reason" rows="2" required placeholder="e.g. Uploaded wrong page 2, replacing with signed BOL..."></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label required">Select New Replacement File</label>
+          <input type="file" class="form-input" name="file" required>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeReplaceModal()" class="btn btn-light">Cancel</button>
+      <button type="submit" form="replace-doc-form" class="btn btn-primary">Submit Replacement →</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/notifications-bell.js"></script>
 <script src="/js/main.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/tms.js"></script>
 <script>
+  let currentUser = null;
+  let rawDocs = [];
+  let currentCategoryFilter = 'all';
+
   async function initDocuments() {
-    const user = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
-    if (!user) return;
-    document.getElementById('user-badge-docs').textContent = user.name;
+    currentUser = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
+    if (!currentUser) return;
+
+    document.getElementById('user-badge-docs').textContent = `${currentUser.name} (${currentUser.role})`;
+    if (document.getElementById('doc-avatar')) {
+      document.getElementById('doc-avatar').textContent = (currentUser.name||'DV').slice(0,2).toUpperCase();
+    }
+
     loadDocumentsList();
+    if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
+      loadPendingDocApprovals();
+    }
   }
 
   async function loadDocumentsList() {
@@ -102,46 +232,150 @@
     try {
       const res = await fetch('/api/documents');
       const data = await res.json();
-      const docs = data.documents || [];
-
-      if (!docs.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center;">No documents uploaded yet.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = docs.map(d => `
-        <tr>
-          <td><b>${d.original_name}</b></td>
-          <td><span class="badge badge-booked">${d.category.replace('_', ' ')}</span></td>
-          <td>${d.uploader_name || 'System'}</td>
-          <td>${formatDate(d.uploaded_at)}</td>
-          <td>${(d.file_size / 1024).toFixed(1)} KB</td>
-          <td>
-            <a href="/api/documents/${d.id}/download" class="btn btn-amber btn-sm" target="_blank">Download</a>
-            <button class="btn btn-danger btn-sm" onclick="deleteDoc(${d.id})">Delete</button>
-          </td>
-        </tr>
-      `).join('');
+      rawDocs = data.documents || [];
+      renderFilteredDocs();
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="6" class="muted">Error loading documents.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">Error loading documents.</td></tr>`;
     }
   }
 
-  async function deleteDoc(id) {
-    if (!confirm('Delete this document?')) return;
-    await fetch(`/api/documents/${id}`, { method: 'DELETE' });
-    loadDocumentsList();
+  function setDocFilter(cat, btn) {
+    currentCategoryFilter = cat;
+    document.querySelectorAll('.filter-tab-pill').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderFilteredDocs();
+  }
+
+  function renderFilteredDocs() {
+    const tbody = document.querySelector('#documents-table tbody');
+    const q = (document.getElementById('doc-search-input').value || '').toLowerCase().trim();
+
+    let filtered = currentCategoryFilter === 'all'
+      ? rawDocs
+      : rawDocs.filter(d => d.category === currentCategoryFilter);
+
+    if (q) {
+      filtered = filtered.filter(d =>
+        (d.original_name||'').toLowerCase().includes(q) ||
+        (d.category||'').toLowerCase().includes(q) ||
+        (d.uploader_name||'').toLowerCase().includes(q)
+      );
+    }
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">No documents found matching criteria.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(d => {
+      const isPending = d.approval_status === 'pending_approval';
+      const catLabel  = d.category.toUpperCase().replace('_', ' ');
+
+      const statusBadge = isPending
+        ? `<span class="badge-status dispatched" title="Reason: ${escapeHtml(d.edit_reason||'')}">⚠️ Edit Pending Admin Approval</span>`
+        : `<span class="badge-status active">✓ Verified</span>`;
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);font-size:14px;">${escapeHtml(d.original_name)}</div>
+            ${isPending ? `<div style="font-size:10px;color:var(--color-amber-600);margin-top:2px;">Pending file: ${escapeHtml(d.pending_original_name)}</div>` : ''}
+          </td>
+          <td><span class="equip-tag">${escapeHtml(catLabel)}</span></td>
+          <td><div style="font-size:13px;font-weight:600;">👤 ${escapeHtml(d.uploader_name || 'System')}</div></td>
+          <td><div style="font-size:12px;color:var(--text-muted);">${formatDate(d.uploaded_at)}</div></td>
+          <td><div style="font-size:12px;">${(d.file_size / 1024).toFixed(1)} KB</div></td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display:flex;gap:4px;flex-wrap:nowrap;">
+              <a href="/api/documents/${d.id}/view" class="btn-table-action primary" target="_blank" title="View PDF/Image in Browser">👁️ View</a>
+              <a href="/api/documents/${d.id}/download" class="btn-table-action" target="_blank" title="Download File">📥 Download</a>
+              <button onclick="openReplaceModal(${d.id})" class="btn-table-action sms" title="Edit/Replace File">✏️ Edit Doc</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Admin Pending Approvals
+  async function loadPendingDocApprovals() {
+    const widget = document.getElementById('doc-approval-widget');
+    const listEl = document.getElementById('doc-approvals-list');
+    const cntBadge = document.getElementById('cnt-doc-approvals');
+    if (!widget || !listEl) return;
+
+    try {
+      const res = await fetch('/api/documents/pending-approvals');
+      const data = await res.json();
+      const reqs = data.requests || [];
+      cntBadge.textContent = reqs.length;
+
+      if (reqs.length === 0) {
+        widget.style.display = 'none';
+        return;
+      }
+
+      widget.style.display = 'block';
+      listEl.innerHTML = reqs.map(d => `
+        <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:800;font-size:14px;color:#fff;">
+              Replace Document: "${escapeHtml(d.original_name)}" ➔ New: "${escapeHtml(d.pending_original_name)}"
+            </div>
+            <div style="font-size:12px;color:#fbbf24;margin-top:4px;font-weight:600;">
+              Reason: "${escapeHtml(d.edit_reason || 'No reason provided')}"
+            </div>
+            <div style="font-size:11px;color:#cbd5e1;margin-top:2px;">
+              Requested By: 👤 ${escapeHtml(d.requested_by_name || 'User')} (${escapeHtml(d.requested_by_email || '')})
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;">
+            <a href="/api/documents/${d.id}/view" class="btn btn-secondary btn-sm" target="_blank">👁️ Preview Original</a>
+            <button class="btn btn-primary btn-sm" onclick="approveDocEdit(${d.id}, 'approve')">✅ Approve Replacement</button>
+            <button class="btn btn-danger btn-sm" onclick="approveDocEdit(${d.id}, 'reject')">❌ Reject Request</button>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {}
+  }
+
+  async function approveDocEdit(docId, action) {
+    try {
+      const res = await fetch(`/api/documents/${docId}/approve-edit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`✅ ${data.message}`);
+        loadDocumentsList();
+        loadPendingDocApprovals();
+      } else {
+        alert(data.error || 'Action failed');
+      }
+    } catch (e) {
+      alert('Error processing document approval.');
+    }
+  }
+
+  function openUploadModal() { document.getElementById('upload-doc-modal').classList.add('open'); }
+  function closeUploadModal() { document.getElementById('upload-doc-modal').classList.remove('open'); }
+
+  function openReplaceModal(docId) {
+    document.getElementById('replace-doc-id').value = docId;
+    document.getElementById('replace-doc-modal').classList.add('open');
+  }
+  function closeReplaceModal() {
+    document.getElementById('replace-doc-modal').classList.remove('open');
+    document.getElementById('replace-doc-form').reset();
   }
 
   document.getElementById('upload-doc-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const msg = document.getElementById('upload-doc-msg');
-
-    const res = await fetch('/api/documents/upload', {
-      method: 'POST',
-      body: formData
-    });
     const data = await res.json();
 
     if (!res.ok) {

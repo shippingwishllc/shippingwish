@@ -211,6 +211,15 @@ ALTER TABLE loads ADD COLUMN IF NOT EXISTS organization_id INTEGER;
 ALTER TABLE loads ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
 ALTER TABLE loads ADD COLUMN IF NOT EXISTS cancellation_requested_by INTEGER REFERENCES users(id);
 ALTER TABLE loads ADD COLUMN IF NOT EXISTS cancellation_requested_at TIMESTAMPTZ;
+ALTER TABLE loads ADD COLUMN IF NOT EXISTS freight_class TEXT;
+
+-- Document Approval & Replacement Columns
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'approved';
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS pending_filepath TEXT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS pending_filename TEXT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS pending_original_name TEXT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS edit_reason TEXT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS edit_requested_by INTEGER REFERENCES users(id);
 
 -- Load Status History Table
 CREATE TABLE IF NOT EXISTS load_status_history (

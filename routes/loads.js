@@ -51,7 +51,7 @@ router.post('/', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'),
     driverId, truckId, trailerId, equipmentType,
     pickupCompany, pickupLocation, pickupState, pickupZip, pickupTz, pickupDate, pickupTime,
     deliveryCompany, deliveryLocation, deliveryState, deliveryZip, deliveryTz, deliveryDate, deliveryTime,
-    commodity, weight, miles, rate, carrierPay, referenceNumber, bolNumber,
+    commodity, weight, miles, rate, carrierPay, referenceNumber, bolNumber, freightClass,
     dispatcherNotes, internalNotes
   } = req.body;
 
@@ -73,20 +73,20 @@ router.post('/', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'),
         driver_id, truck_id, trailer_id, equipment_type,
         pickup_company, pickup_location, pickup_state, pickup_zip, pickup_tz, pickup_date, pickup_time,
         delivery_company, delivery_location, delivery_state, delivery_zip, delivery_tz, delivery_date, delivery_time,
-        commodity, weight, miles, rate, rpm, carrier_pay, reference_number, bol_number, status,
+        commodity, weight, miles, rate, rpm, carrier_pay, reference_number, bol_number, freight_class, status,
         dispatcher_notes, internal_notes
       ) VALUES (
         'TEMP', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
         $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
         $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-        $31, $32, 'booked', $33, $34
+        $31, $32, $33, 'booked', $34, $35
       ) RETURNING id`,
       [
         carrierId, req.user.id, brokerId || null, brokerName || null, brokerMc || null, brokerContact || null,
         driverId || null, truckId || null, trailerId || null, equipmentType || null,
         pickupCompany || null, pickupLocation, pickupState || null, pickupZip || null, pickupTz || 'America/New_York', pickupDate || null, pickupTime || null,
         deliveryCompany || null, deliveryLocation, deliveryState || null, deliveryZip || null, deliveryTz || 'America/New_York', deliveryDate || null, deliveryTime || null,
-        commodity || null, weight || 0, numMiles, numRate, rpm, numCarrierPay, referenceNumber || null, bolNumber || null,
+        commodity || null, weight || 0, numMiles, numRate, rpm, numCarrierPay, referenceNumber || null, bolNumber || null, freightClass || null,
         dispatcherNotes || null, internalNotes || null
       ]
     );
