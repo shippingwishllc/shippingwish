@@ -161,25 +161,57 @@
         </div>
       </div>
 
+      <!-- ================= FMCSA LIVE CARRIER SOURCING WIDGET ================= -->
+      <div class="fmcsa-widget-card">
+        <div class="fmcsa-widget-top">
+          <div>
+            <div class="fmcsa-widget-title">
+              🔍 Live US Carrier Finder &amp; Sourcing Engine
+              <span class="gov-badge">FMCSA DOT Official API</span>
+            </div>
+            <p style="font-size:12px;color:#94a3b8;margin-top:2px;">Search 600,000+ active US trucking companies by MC#, DOT#, or Company Name — import directly to CRM with duplicate protection</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openAddLeadModal()">+ Manual Lead Entry</button>
+        </div>
+
+        <div class="fmcsa-search-bar-inner">
+          <input type="text" id="fmcsa-query-input" class="fmcsa-search-input" placeholder="Enter MC# (e.g. 882341), DOT#, or Company Name..." onkeyup="if(event.key==='Enter') searchFMCSA()">
+          <button class="btn btn-primary btn-sm" onclick="searchFMCSA()" id="btn-fmcsa-search">
+            🔎 Search US Carriers
+          </button>
+        </div>
+
+        <!-- FMCSA Results Container -->
+        <div id="fmcsa-results-container" style="display:none;margin-top:16px;background:rgba(0,0,0,0.3);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.1);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span style="font-size:13px;font-weight:700;color:#fbbf24;" id="fmcsa-results-title">FMCSA Database Results</span>
+            <button onclick="closeFMCSAResults()" style="background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:14px;">✕ Close</button>
+          </div>
+          <div id="fmcsa-results-list" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:12px;"></div>
+        </div>
+      </div>
+
       <!-- Main CRM Split Grid -->
       <div class="sales-grid">
         
-        <!-- Left: Carrier Leads Table -->
+        <!-- Left: Carrier Leads Table Card -->
         <div class="tms-table-card">
-          <div class="tms-table-header">
-            <div>
-              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Carrier Lead Pipeline</h3>
-              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Manage stages, click-to-call, & send email packets</p>
+          
+          <!-- Unified Search & Filter Toolbar -->
+          <div class="toolbar-filter-bar">
+            <div class="search-input-group">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="lead-search-input" placeholder="Search company, owner, phone, email, MC#..." oninput="onLeadSearchInput()">
             </div>
 
             <!-- Stage Filter Pills -->
-            <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
-              <button class="btn btn-secondary btn-sm filter-pill active" onclick="filterLeads('all', this)">All</button>
-              <button class="btn btn-secondary btn-sm filter-pill" onclick="filterLeads('new', this)">New</button>
-              <button class="btn btn-secondary btn-sm filter-pill" onclick="filterLeads('contacted', this)">Contacted</button>
-              <button class="btn btn-secondary btn-sm filter-pill" onclick="filterLeads('interested', this)">Interested</button>
-              <button class="btn btn-secondary btn-sm filter-pill" onclick="filterLeads('packet_sent', this)">Packet Sent</button>
-              <button class="btn btn-secondary btn-sm filter-pill" onclick="filterLeads('active', this)">Active</button>
+            <div class="filter-tabs-group">
+              <button class="filter-tab-pill active" onclick="filterLeads('all', this)">All <span class="count-badge" id="cnt-all">0</span></button>
+              <button class="filter-tab-pill" onclick="filterLeads('new', this)">New <span class="count-badge" id="cnt-new">0</span></button>
+              <button class="filter-tab-pill" onclick="filterLeads('contacted', this)">Contacted <span class="count-badge" id="cnt-contacted">0</span></button>
+              <button class="filter-tab-pill" onclick="filterLeads('interested', this)">Interested <span class="count-badge" id="cnt-interested">0</span></button>
+              <button class="filter-tab-pill" onclick="filterLeads('packet_sent', this)">Packet Sent <span class="count-badge" id="cnt-packet">0</span></button>
+              <button class="filter-tab-pill" onclick="filterLeads('active', this)">Active <span class="count-badge" id="cnt-active">0</span></button>
             </div>
           </div>
 
@@ -187,16 +219,17 @@
             <table class="tms-table-v2">
               <thead>
                 <tr>
-                  <th>Company / Owner</th>
-                  <th>Contact Info</th>
+                  <th>Company &amp; Owner</th>
+                  <th>Contact Information</th>
                   <th>MC / DOT</th>
-                  <th>Equipment</th>
-                  <th>Stage</th>
+                  <th>Equipment &amp; Fleet</th>
+                  <th>Owner Rep</th>
+                  <th>Stage Status</th>
                   <th>Outreach Actions</th>
                 </tr>
               </thead>
               <tbody id="leads-table-body">
-                <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">Loading carrier leads...</td></tr>
+                <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading carrier leads...</td></tr>
               </tbody>
             </table>
           </div>

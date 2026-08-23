@@ -133,23 +133,24 @@
 
         <!-- Table Card -->
         <div class="tms-table-card">
-          <div class="tms-table-header">
-            <div>
-              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Active Assigned Dispatch Board</h3>
-              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Loads booked and dispatched by your workstation</p>
+          <!-- Unified Toolbar -->
+          <div class="toolbar-filter-bar">
+            <div class="search-input-group">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="disp-search-input" placeholder="Search load #, carrier, broker, location..." onkeyup="filterDeskTable()">
             </div>
-            <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;">
-              <input type="text" class="form-input" id="disp-search-input" placeholder="Search load #, broker, location..." style="width:220px;padding:6px 12px;font-size:13px;" onkeyup="filterDeskTable()">
-              <select class="form-select" id="disp-filter-status" style="width:140px;padding:6px 12px;font-size:13px;" onchange="filterDeskTable()">
-                <option value="">All Statuses</option>
-                <option value="booked">Booked</option>
-                <option value="dispatched">Dispatched</option>
-                <option value="in_transit">In Transit</option>
-                <option value="delivered">Delivered</option>
-                <option value="invoiced">Invoiced</option>
-                <option value="paid">Paid</option>
-              </select>
+
+            <!-- Status Filter Pills -->
+            <div class="filter-tabs-group">
+              <button class="filter-tab-pill active" onclick="setDeskFilter('', this)">All</button>
+              <button class="filter-tab-pill" onclick="setDeskFilter('booked', this)">Booked</button>
+              <button class="filter-tab-pill" onclick="setDeskFilter('dispatched', this)">Dispatched</button>
+              <button class="filter-tab-pill" onclick="setDeskFilter('in_transit', this)">In Transit</button>
+              <button class="filter-tab-pill" onclick="setDeskFilter('delivered', this)">Delivered</button>
+              <button class="filter-tab-pill" onclick="setDeskFilter('invoiced', this)">Invoiced</button>
+              <button class="filter-tab-pill" onclick="setDeskFilter('paid', this)">Paid</button>
             </div>
+            <input type="hidden" id="disp-filter-status" value="">
           </div>
 
           <div class="tms-table-wrapper">
@@ -157,11 +158,11 @@
               <thead>
                 <tr>
                   <th>Load #</th>
-                  <th>Carrier</th>
+                  <th>Carrier &amp; Equipment</th>
                   <th>Broker</th>
-                  <th>Pickup</th>
-                  <th>Delivery</th>
-                  <th>Gross Rate</th>
+                  <th>Pickup Location</th>
+                  <th>Delivery Location</th>
+                  <th>Gross Freight</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -458,36 +459,78 @@
     }
   }
 
+  function setDeskFilter(statusVal, btnElement) {
+    document.getElementById('disp-filter-status').value = statusVal;
+    document.querySelectorAll('.filter-tab-pill').forEach(el => el.classList.remove('active'));
+    if (btnElement) btnElement.classList.add('active');
+    filterDeskTable();
+  }
+
   function renderDeskTable(loads) {
     const tbody = document.getElementById('disp-tbody');
     if (!loads || loads.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">No loads on your dispatch desk. Click "+ Book & Create Load" to start.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;" class="text-muted">No loads on your dispatch desk. Click "+ Book & Create Load" to start.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = loads.map(l => `
-      <tr>
-        <td><strong style="color:var(--text-primary);">${l.load_number}</strong></td>
-        <td>${escapeHtml(l.carrier_company || l.carrier_name || '-')}</td>
-        <td>${escapeHtml(l.broker_name || '-')}</td>
-        <td>${escapeHtml(l.pickup_location)} ${l.pickup_state ? `(${l.pickup_state})` : ''}</td>
-        <td>${escapeHtml(l.delivery_location)} ${l.delivery_state ? `(${l.delivery_state})` : ''}</td>
-        <td><strong style="color:var(--color-success);">$${parseFloat(l.rate || 0).toLocaleString()}</strong></td>
-        <td>
-          <select class="form-select" style="padding:4px 8px;font-size:12px;width:130px;" onchange="updateLoadStatus('${l.id}', this.value)">
-            ${['booked','dispatched','at_pickup','loaded','in_transit','at_delivery','delivered','pod_uploaded','invoiced','paid','cancelled'].map(st => `
-              <option value="${st}" ${l.status === st ? 'selected' : ''}>${st.replace('_', ' ').toUpperCase()}</option>
-            `).join('')}
-          </select>
-        </td>
-        <td>
-          <div style="display:flex;gap:6px;">
-            <a href="/load-detail.html?id=${l.id}" class="btn btn-secondary btn-sm" id="btn-detail-${l.id}">Detail</a>
-            <button onclick="openChatModal('${l.id}', '${l.load_number}')" class="btn btn-light btn-sm" title="Load Chat" id="btn-chat-${l.id}">💬</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = loads.map(l => {
+      const isDelivered = l.status === 'delivered' || l.status === 'pod_uploaded';
+      const equipLabel  = l.equipment_type || '53ft Dry Van';
+      const feePercent  = l.dispatch_fee_percent || 5.0;
+
+      return `
+        <tr>
+          <td><strong style="color:var(--text-primary);font-size:14px;">${l.load_number}</strong></td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);font-size:13px;">${escapeHtml(l.carrier_company || l.carrier_name || 'Carrier')}</div>
+            <div style="margin-top:2px;">
+              <span class="equip-tag">${escapeHtml(equipLabel)}</span>
+              <span style="font-size:10px;color:var(--color-amber-600);font-weight:700;">(${feePercent}% Fee)</span>
+            </div>
+          </td>
+          <td><span style="font-weight:600;font-size:13px;">${escapeHtml(l.broker_name || 'N/A')}</span></td>
+          <td><div style="font-size:13px;font-weight:600;">📍 ${escapeHtml(l.pickup_location)}</div></td>
+          <td><div style="font-size:13px;font-weight:600;">🏁 ${escapeHtml(l.delivery_location)}</div></td>
+          <td><strong style="color:var(--color-success);font-size:14px;">$${parseFloat(l.rate || 0).toLocaleString('en-US',{minimumFractionDigits:2})}</strong></td>
+          <td>
+            <select class="form-select" style="padding:3px 20px 3px 8px;font-size:11px;font-weight:700;border-radius:12px;width:125px;" onchange="updateLoadStatus('${l.id}', this.value)">
+              ${['booked','dispatched','at_pickup','loaded','in_transit','at_delivery','delivered','pod_uploaded','invoiced','paid','cancelled'].map(st => `
+                <option value="${st}" ${l.status === st ? 'selected' : ''}>${st.replace('_', ' ').toUpperCase()}</option>
+              `).join('')}
+            </select>
+          </td>
+          <td>
+            <div style="display:flex;gap:4px;flex-wrap:nowrap;">
+              <a href="/load-detail.html?id=${l.id}" class="btn-table-action" id="btn-detail-${l.id}">View Detail</a>
+              <button onclick="openChatModal('${l.id}', '${l.load_number}')" class="btn-table-action sms" title="Load Chat" id="btn-chat-${l.id}">💬</button>
+              ${isDelivered ? `<button onclick="quickBatchInvoice('${l.carrier_id}', [${l.id}])" class="btn-table-action primary" title="Generate Weekly Invoice">💳 Invoice</button>` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  async function quickBatchInvoice(carrierId, loadIds) {
+    if (!confirm('Generate Dispatch Commission Invoice for this carrier load now?')) return;
+    try {
+      const res = await fetch('/api/invoices/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ carrierId, loadIds })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`✅ Batch Invoice ${data.invoiceNumber} Generated!\nCommission Due: $${data.commissionAmount} (${data.commissionPercent}%)`);
+        window.open(data.htmlUrl, '_blank');
+        loadDeskData();
+      } else {
+        alert(data.error || 'Failed to generate invoice');
+      }
+    } catch (e) {
+      alert('Error generating invoice');
+    }
   }
 
   function filterDeskTable() {
@@ -497,6 +540,7 @@
     const filtered = deskLoads.filter(l => {
       const matchesSearch = !search ||
         l.load_number.toLowerCase().includes(search) ||
+        (l.carrier_company && l.carrier_company.toLowerCase().includes(search)) ||
         (l.broker_name && l.broker_name.toLowerCase().includes(search)) ||
         l.pickup_location.toLowerCase().includes(search) ||
         l.delivery_location.toLowerCase().includes(search);

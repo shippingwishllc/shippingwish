@@ -108,21 +108,83 @@ async function loadCarriersTab() {
     const data = await res.json();
     const carriers = data.carriers || [];
 
-    tbody.innerHTML = carriers.map(c => `
-      <tr>
-        <td><b>${escapeHtml(c.company_name || c.name)}</b></td>
-        <td>${escapeHtml(c.name)}</td>
-        <td>${escapeHtml(c.mc_number || 'N/A')}</td>
-        <td>${escapeHtml(c.dot_number || 'N/A')}</td>
-        <td>${escapeHtml(c.phone || '')} ${c.email ? '<br><small class="muted">' + escapeHtml(c.email) + '</small>' : ''}</td>
-        <td><span class="badge badge-booked">Active Fleet</span></td>
-        <td>
-          <button class="btn btn-amber btn-sm" onclick="viewSingleCarrierLoads(${c.id})">View Loads &amp; Reports</button>
-        </td>
-      </tr>
-    `).join('') || `<tr><td colspan="7">No carrier companies registered.</td></tr>`;
+    if (carriers.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;" class="muted">No carrier companies registered.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = carriers.map(c => {
+      const equip = c.equipment_category || 'dry_van';
+      const fee   = parseFloat(c.dispatch_fee_percent || 5.00);
+      const equipLabel = { box_truck:'Box Truck', dry_van:'Dry Van', reefer:'Reefer', flatbed:'Flatbed', other:'Other' }[equip] || equip;
+
+      return `
+        <tr>
+          <td>
+            <b style="color:var(--text-primary);font-size:14px;">${escapeHtml(c.company_name || c.name)}</b>
+            <div style="font-size:11px;color:var(--text-muted);">Owner: ${escapeHtml(c.name)}</div>
+          </td>
+          <td>
+            <span class="equip-tag" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe;">MC: ${escapeHtml(c.mc_number || 'N/A')}</span>
+            ${c.dot_number ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">DOT: ${escapeHtml(c.dot_number)}</div>` : ''}
+          </td>
+          <td>
+            <span class="equip-tag">${escapeHtml(equipLabel)}</span>
+          </td>
+          <td>
+            <strong style="color:var(--color-amber-600);font-size:14px;">${fee}% Fee</strong>
+            ${c.billing_notes ? `<div style="font-size:10px;color:var(--text-muted);">${escapeHtml(c.billing_notes)}</div>` : ''}
+          </td>
+          <td>
+            <div style="font-size:13px;font-weight:600;">📞 ${escapeHtml(c.phone || '-')}</div>
+            <div style="font-size:11px;color:var(--text-muted);">✉️ ${escapeHtml(c.email || '-')}</div>
+          </td>
+          <td><span class="badge-status active">Active Client</span></td>
+          <td>
+            <div style="display:flex;gap:4px;">
+              <button class="btn-table-action primary" onclick="editCarrierCommission(${c.id}, ${fee}, '${equip}', '${escapeHtml(c.billing_notes||'')}')">✏️ Edit Fee %</button>
+              <button class="btn-table-action" onclick="viewSingleCarrierLoads(${c.id})">📊 Loads</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="7">Error loading carriers.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8">Error loading carriers.</td></tr>`;
+  }
+}
+
+async function editCarrierCommission(carrierId, currentFee, currentEquip, currentNotes) {
+  const feeStr = prompt(`Set Custom Dispatch Commission Rate (%) for carrier ID #${carrierId}:`, currentFee);
+  if (feeStr === null) return;
+  const newFee = parseFloat(feeStr);
+  if (isNaN(newFee) || newFee < 0 || newFee > 50) {
+    alert('Please enter a valid percentage between 0 and 50.');
+    return;
+  }
+
+  const equipStr = prompt(`Set Equipment Type (box_truck, dry_van, reefer, flatbed, other):`, currentEquip) || currentEquip;
+  const notesStr = prompt(`Billing notes (e.g. Agreed contract rate):`, currentNotes) || '';
+
+  try {
+    const res = await fetch(`/api/carriers/${carrierId}/commission`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        dispatch_fee_percent: newFee,
+        equipment_category: equipStr,
+        billing_notes: notesStr
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(`✅ ${data.message}`);
+      loadCarriersTab();
+    } else {
+      alert(data.error || 'Failed to update commission rate');
+    }
+  } catch (e) {
+    alert('Error updating carrier commission rate.');
   }
 }
 

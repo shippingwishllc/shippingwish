@@ -1,98 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invoicing &amp; Payments | Shipping Wish LLC</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoices &amp; Financial Ledger — Shipping Wish LLC ERP</title>
+  <meta name="description" content="Invoicing & Financial Ledger for Shipping Wish LLC freight operations. Generate batch weekly commission invoices, Stripe payment links, and factoring remittance.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
 </head>
 <body>
 
-<header class="site-header">
-  <div class="container nav-row">
-    <a href="/" class="brand"><span class="dot"></span> Shipping Wish Accounting</a>
-    <nav class="nav-links">
-      <a href="/dashboard.html">Dashboard</a>
-      <a href="/brokers.html">Brokers</a>
-      <a href="/fleet.html">Fleet</a>
-      <a href="/documents.html">Documents</a>
-      <a href="/invoices.html" class="current">Invoices</a>
-      <a href="/ifta.html">IFTA &amp; Fuel</a>
-    </nav>
-    <div class="nav-cta">
-      <span class="nav-phone" id="user-badge-inv">User</span>
-      <button id="logout-btn" class="btn btn-outline">Log Out</button>
-      <button class="nav-toggle">☰</button>
-    </div>
-  </div>
-</header>
+<div class="app-shell">
+  <!-- LEFT SIDEBAR -->
+  <aside class="app-sidebar" role="navigation" aria-label="Finance Navigation">
+    <div>
+      <a href="/" class="sidebar-brand" style="text-decoration:none;">
+        <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">FINANCE &amp; BILLING</div>
+        </div>
+      </a>
 
-<section class="tms-shell">
-  <div class="container">
-    <div class="tms-topbar">
+      <div class="sidebar-section-label">Financial Ledger</div>
+      <a href="/invoices.html" class="sidebar-nav-link active">
+        <span aria-hidden="true">💳</span> Invoices &amp; Statements
+      </a>
+      <a href="/ifta.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📊</span> IFTA Fuel Ledger
+      </a>
+      <a href="/documents.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📄</span> Document Vault (POD/BOL)
+      </a>
+
+      <div class="sidebar-section-label">Operations Workstations</div>
+      <a href="/sales-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎯</span> Carrier Sourcing CRM
+      </a>
+      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎧</span> Dispatcher Desk
+      </a>
+      <a href="/admin-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📊</span> Admin HQ
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-user-card">
+        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="inv-avatar">FI</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="user-badge-inv">Finance User</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);">Accounts Department</div>
+        </div>
+      </div>
+      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);" id="logout-btn">
+        🚪 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
+    <header class="app-header">
       <div>
-        <span class="eyebrow">Billing &amp; Factoring</span>
-        <h1 style="font-size:26px;">Freight Invoices &amp; Payment Ledger</h1>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Invoices &amp; Accounts Receivable Ledger</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Manage weekly carrier commission invoices, Stripe links, &amp; factoring remittance</p>
       </div>
-      <button class="btn btn-amber" id="generate-inv-btn" data-open-modal="new-inv-modal" style="display:none;">+ Generate Freight Invoice</button>
-    </div>
 
-    <div class="tms-panel table-scroll">
-      <table class="tms-table" id="invoices-table">
-        <thead>
-          <tr>
-            <th>Invoice #</th>
-            <th>Load #</th>
-            <th>Carrier / Customer</th>
-            <th>Issued Date</th>
-            <th>Total Amount</th>
-            <th>Factoring Status</th>
-            <th>Payment Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody><tr><td colspan="8" class="muted" style="text-align:center;">Loading invoices...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</section>
+      <div style="display:flex;align-items:center;gap:var(--space-4);">
+        <button class="btn btn-primary btn-sm" id="generate-inv-btn" onclick="openNewInvModal()" style="display:none;">
+          + Create Weekly Commission Invoice
+        </button>
+        <div class="live-status">
+          <span class="live-dot"></span>
+          Ledger Synced
+        </div>
+        <div id="notif-container"></div>
+      </div>
+    </header>
 
-<!-- Generate Invoice Modal -->
-<div class="modal-overlay" id="new-inv-modal">
-  <div class="modal-box">
-    <button class="modal-close" data-close-modal>&times;</button>
-    <h3>Generate Freight Invoice</h3>
-    <div id="new-inv-msg" class="form-msg"></div>
-    <form id="new-inv-form">
-      <div class="field">
-        <label>Select Delivered Load *</label>
-        <select id="loadId" name="loadId" required></select>
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- KPI Stat Cards -->
+      <div class="stat-card-grid">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Total Invoiced</span>
+            <div class="stat-kpi-icon">💰</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-inv-total">$0.00</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Total dispatch commission billed</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Paid Receipts</span>
+            <div class="stat-kpi-icon">✅</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-inv-paid" style="color:var(--color-success);">$0.00</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Collected payments</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Outstanding Due</span>
+            <div class="stat-kpi-icon">⚡</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-inv-due" style="color:var(--color-amber-600);">$0.00</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Awaiting carrier payment</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Stripe Integration</span>
+            <div class="stat-kpi-icon">💳</div>
+          </div>
+          <div class="stat-kpi-val" style="font-size:var(--text-xl);color:var(--color-blue-600);font-weight:800;">Active API</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Stripe 1-Click Payment Links</div>
+        </div>
       </div>
-      <div class="field">
-        <label>Factoring Option</label>
-        <select name="factoringStatus">
-          <option value="direct_pay">Direct Pay (Broker QuickPay / Standard)</option>
-          <option value="factored">Factored (Factoring Company Remittance)</option>
-          <option value="pending_factoring">Pending Factoring Approval</option>
-        </select>
+
+      <!-- Main Table Card -->
+      <div class="tms-table-card">
+        <div class="toolbar-filter-bar">
+          <div class="search-input-group">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="inv-search-input" placeholder="Search invoice #, carrier, load #..." oninput="renderFilteredInvoices()">
+          </div>
+
+          <div class="filter-tabs-group">
+            <button class="filter-tab-pill active" onclick="setInvFilter('all', this)">All Invoices</button>
+            <button class="filter-tab-pill" onclick="setInvFilter('unpaid', this)">Payment Due</button>
+            <button class="filter-tab-pill" onclick="setInvFilter('paid', this)">Paid in Full</button>
+          </div>
+        </div>
+
+        <div class="tms-table-wrapper">
+          <table class="tms-table-v2" id="invoices-table">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Load # / Statement</th>
+                <th>Carrier Company</th>
+                <th>Issued Date</th>
+                <th>Commission Billed</th>
+                <th>Factoring Status</th>
+                <th>Payment Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">Loading freight invoices...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <button type="submit" class="btn btn-amber btn-block">Generate &amp; Compile PDF Invoice</button>
-    </form>
+
+    </main>
   </div>
 </div>
 
+<!-- GENERATE INVOICE MODAL -->
+<div class="modal-backdrop" id="new-inv-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>+ Create Weekly Commission Invoice</h2>
+      <button onclick="closeNewInvModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="new-inv-form">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label required" for="loadId">Select Delivered Load</label>
+          <select class="form-select" id="loadId" name="loadId" required></select>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="factoringStatus">Factoring &amp; Payment Method</label>
+          <select class="form-select" id="factoringStatus" name="factoringStatus">
+            <option value="direct_pay">Direct Carrier Remittance (Standard)</option>
+            <option value="factored">Factored (RTS / Apex Capital Remittance)</option>
+            <option value="pending_factoring">Pending Factoring Approval</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeNewInvModal()" class="btn btn-light">Cancel</button>
+      <button type="submit" form="new-inv-form" class="btn btn-primary">Generate &amp; Compile PDF Invoice →</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/notifications-bell.js"></script>
 <script src="/js/main.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/tms.js"></script>
 <script>
   let currentUser = null;
+  let rawInvoices = [];
+  let currentInvFilter = 'all';
 
   async function initInvoices() {
     currentUser = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
     if (!currentUser) return;
 
-    document.getElementById('user-badge-inv').textContent = currentUser.name;
+    document.getElementById('user-badge-inv').textContent = `${currentUser.name} (${currentUser.role})`;
+    if (document.getElementById('inv-avatar')) {
+      document.getElementById('inv-avatar').textContent = (currentUser.name||'FI').slice(0,2).toUpperCase();
+    }
 
     if (currentUser.role !== 'carrier') {
       document.getElementById('generate-inv-btn').style.display = 'inline-flex';
@@ -107,40 +224,100 @@
     try {
       const res = await fetch('/api/invoices');
       const data = await res.json();
-      const invoices = data.invoices || [];
+      rawInvoices = data.invoices || [];
 
-      if (!invoices.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="muted" style="text-align:center;">No freight invoices found.</td></tr>`;
-        return;
-      }
+      // Calculate stats
+      let tot = 0, paid = 0, due = 0;
+      rawInvoices.forEach(i => {
+        const amt = parseFloat(i.amount || i.total_amount || 0);
+        tot += amt;
+        if (i.status === 'paid') paid += amt;
+        else due += amt;
+      });
 
-      tbody.innerHTML = invoices.map(i => `
-        <tr>
-          <td><b>${i.invoice_number}</b></td>
-          <td><a href="/load-detail.html?id=${i.load_id}" style="color:var(--amber-primary);">${i.load_number}</a></td>
-          <td>${i.carrier_company || i.carrier_name || '-'}</td>
-          <td>${formatDate(i.issued_date)}</td>
-          <td><b style="color:var(--amber-primary);">${formatCurrency(i.total_amount || i.amount)}</b></td>
-          <td><span class="badge badge-booked">${(i.factoring_status || 'direct_pay').replace('_', ' ')}</span></td>
-          <td>${renderStatusBadge(i.status)}</td>
-          <td style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-            <a href="/api/invoices/${i.id}/pdf" class="btn btn-amber btn-sm" target="_blank">PDF</a>
-            ${currentUser.role !== 'carrier' ? `
-              <button class="btn btn-outline btn-sm" onclick="sendStripeInvoice(${i.id}, '${i.invoice_number}')">💳 Send Stripe Email</button>
-              <button class="btn btn-outline btn-sm" onclick="togglePaidStatus(${i.id}, '${i.status === 'paid' ? 'unpaid' : 'paid'}')">
-                ${i.status === 'paid' ? 'Mark Pending' : 'Mark Paid'}
-              </button>
-            ` : ''}
-          </td>
-        </tr>
-      `).join('');
+      document.getElementById('kpi-inv-total').textContent = `$${tot.toLocaleString('en-US',{minimumFractionDigits:2})}`;
+      document.getElementById('kpi-inv-paid').textContent  = `$${paid.toLocaleString('en-US',{minimumFractionDigits:2})}`;
+      document.getElementById('kpi-inv-due').textContent   = `$${due.toLocaleString('en-US',{minimumFractionDigits:2})}`;
+
+      renderFilteredInvoices();
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="8" class="muted">Error loading invoices.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="text-muted">Error loading invoices.</td></tr>`;
     }
   }
 
+  function setInvFilter(st, btn) {
+    currentInvFilter = st;
+    document.querySelectorAll('.filter-tab-pill').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderFilteredInvoices();
+  }
+
+  function renderFilteredInvoices() {
+    const tbody = document.querySelector('#invoices-table tbody');
+    const q = (document.getElementById('inv-search-input').value || '').toLowerCase().trim();
+
+    let filtered = currentInvFilter === 'all'
+      ? rawInvoices
+      : rawInvoices.filter(i => i.status === currentInvFilter);
+
+    if (q) {
+      filtered = filtered.filter(i =>
+        (i.invoice_number||'').toLowerCase().includes(q) ||
+        (i.load_number||'').toLowerCase().includes(q) ||
+        (i.carrier_company||'').toLowerCase().includes(q) ||
+        (i.carrier_name||'').toLowerCase().includes(q)
+      );
+    }
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;" class="text-muted">No invoices found matching criteria.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(i => {
+      const isPaid = i.status === 'paid';
+      const statusBadge = isPaid
+        ? `<span class="badge-status paid">✓ Paid in Full</span>`
+        : `<span class="badge-status dispatched">⚡ Payment Due</span>`;
+
+      return `
+        <tr>
+          <td><strong style="color:var(--text-primary);font-size:14px;">${escapeHtml(i.invoice_number)}</strong></td>
+          <td><a href="/load-detail.html?id=${i.load_id}" style="color:var(--color-amber-600);font-weight:700;">${escapeHtml(i.load_number || 'Batch Invoice')}</a></td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(i.carrier_company || i.carrier_name || 'Carrier Client')}</div>
+          </td>
+          <td><div style="font-size:12px;color:var(--text-muted);">${formatDate(i.issued_date)}</div></td>
+          <td><strong style="color:var(--color-success);font-size:14px;">$${parseFloat(i.amount || i.total_amount || 0).toLocaleString('en-US',{minimumFractionDigits:2})}</strong></td>
+          <td><span class="equip-tag" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe;">${(i.factoring_status || 'direct_pay').replace('_', ' ').toUpperCase()}</span></td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display:flex;gap:4px;flex-wrap:nowrap;">
+              <a href="/invoices/${i.invoice_number}.html" class="btn-table-action" target="_blank">🌐 View HTML</a>
+              <a href="/api/invoices/${i.id}/pdf" class="btn-table-action" target="_blank">📄 PDF</a>
+              ${currentUser.role !== 'carrier' ? `
+                <button class="btn-table-action sms" onclick="sendStripeInvoice(${i.id}, '${i.invoice_number}')">💳 Stripe Link</button>
+                <button class="btn-table-action primary" onclick="togglePaidStatus(${i.id}, '${i.status === 'paid' ? 'unpaid' : 'paid'}')">
+                  ${i.status === 'paid' ? 'Unmark' : '✓ Paid'}
+                </button>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function openNewInvModal() {
+    document.getElementById('new-inv-modal').classList.add('open');
+  }
+
+  function closeNewInvModal() {
+    document.getElementById('new-inv-modal').classList.remove('open');
+  }
+
   async function sendStripeInvoice(id, invNumber) {
-    const email = prompt(`Send Stripe Invoice #${invNumber} directly to customer email:`, 'billing@shippingwish.com');
+    const email = prompt(`Send Stripe Invoice #${invNumber} link to customer email:`, 'billing@shippingwish.com');
     if (!email) return;
 
     try {
@@ -151,7 +328,7 @@
       });
       const data = await res.json();
       if (res.ok) {
-        alert(`${data.message}\n\nStripe Payment Link: ${data.hosted_url || 'N/A'}`);
+        alert(`✅ ${data.message}\n\nStripe Payment Link: ${data.hosted_url || 'N/A'}`);
         loadInvoicesList();
       } else {
         alert(data.error || 'Could not send Stripe invoice.');
@@ -168,7 +345,7 @@
     const deliveredLoads = (data.loads || []).filter(l => ['delivered', 'pod_uploaded', 'invoiced', 'paid'].includes(l.status));
 
     select.innerHTML = `<option value="">-- Select Delivered Load --</option>` +
-      deliveredLoads.map(l => `<option value="${l.id}">Load ${l.load_number} - ${l.pickup_location} to ${l.delivery_location} (${formatCurrency(l.rate)})</option>`).join('');
+      deliveredLoads.map(l => `<option value="${l.id}">Load ${l.load_number} - ${l.pickup_location} ➔ ${l.delivery_location} ($${parseFloat(l.rate||0).toFixed(2)})</option>`).join('');
   }
 
   async function togglePaidStatus(id, newStatus) {
@@ -182,7 +359,6 @@
 
   document.getElementById('new-inv-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const msg = document.getElementById('new-inv-msg');
     const body = Object.fromEntries(new FormData(e.target));
 
     const res = await fetch('/api/invoices', {
@@ -193,14 +369,12 @@
     const data = await res.json();
 
     if (!res.ok) {
-      msg.className = 'form-msg error';
-      msg.textContent = data.error;
+      alert(data.error || 'Could not generate invoice.');
     } else {
-      msg.className = 'form-msg success';
-      msg.textContent = `Invoice ${data.invoiceNumber} generated successfully!`;
+      closeNewInvModal();
       e.target.reset();
       loadInvoicesList();
-      setTimeout(() => document.getElementById('new-inv-modal').classList.remove('active'), 1500);
+      alert(`✅ Invoice ${data.invoiceNumber} generated!`);
     }
   });
 
@@ -208,3 +382,4 @@
 </script>
 </body>
 </html>
+
