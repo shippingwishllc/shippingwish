@@ -534,6 +534,41 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 0 !important;
 }
 
+.nav-mobile-cta-group {
+  margin-top: 24px;
+  margin-bottom: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nav-mobile-cta-group .btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 14px 20px !important;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-base) !important;
+  border-bottom: none !important;
+  margin: 0 !important;
+  text-decoration: none !important;
+}
+
+.nav-mobile-cta-group .btn-secondary-glass {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.nav-mobile-cta-group .btn-primary-amber {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35) !important;
+}
+
 /* --------------------------------------------------------------------------- */
 /* BUTTONS                                                                      */
 /* --------------------------------------------------------------------------- */
