@@ -21,7 +21,7 @@ router.get('/load/:loadId', requireAuth, async (req, res) => {
 router.post('/load/:loadId', requireAuth, async (req, res) => {
   const { loadId } = req.params;
   const { type, amount, notes } = req.body;
-  const validTypes = ['detention', 'tonu', 'layover', 'lumper', 'fuel_advance', 'other'];
+  const validTypes = ['detention', 'layover', 'lumper', 'liftgate', 'driver_assist', 'tonu', 'fuel_advance', 'other'];
 
   if (!type || !validTypes.includes(type) || !amount) {
     return res.status(400).json({ error: 'Valid type and amount are required.' });
