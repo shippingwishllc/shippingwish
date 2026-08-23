@@ -8,11 +8,22 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
   <style>
+    html, body {
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+    }
+
     .factoring-grid {
       display: grid;
       grid-template-columns: 1.1fr 0.9fr;
       gap: var(--space-12);
       align-items: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .factoring-grid > div {
+      min-width: 0;
       width: 100%;
       box-sizing: border-box;
     }
@@ -25,11 +36,30 @@
       box-shadow: var(--shadow-2xl);
       width: 100%;
       box-sizing: border-box;
+      overflow: hidden;
     }
 
     .form-input, .form-group, input, button {
       box-sizing: border-box;
       max-width: 100%;
+      width: 100%;
+    }
+
+    .factoring-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: var(--space-6);
+      max-width: 100%;
+    }
+    
+    .factoring-badges .badge {
+      white-space: normal !important;
+      word-break: break-word !important;
+      text-align: left;
+      max-width: 100%;
+      line-height: 1.3 !important;
+      padding: 6px 12px !important;
     }
 
     @media (max-width: 992px) {
@@ -45,17 +75,24 @@
     }
 
     @media (max-width: 768px) {
+      .container {
+        padding-inline: 14px !important;
+      }
       .form-card-dark {
-        padding: 20px 16px !important;
+        padding: 20px 14px !important;
       }
       h1 {
-        font-size: clamp(1.65rem, 5.5vw, 2.25rem) !important;
+        font-size: clamp(1.4rem, 5vw, 2.1rem) !important;
         line-height: 1.15 !important;
         word-break: break-word !important;
         overflow-wrap: break-word !important;
       }
+      p {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+      }
       .factoring-hero-section {
-        padding: 40px 0 !important;
+        padding: 24px 0 !important;
       }
     }
   </style>
@@ -124,69 +161,69 @@
 </div>
 
 <!-- HERO SECTION -->
-<section class="section factoring-hero-section" style="background:var(--color-gray-900);border-bottom:1px solid rgba(255,255,255,0.08);">
-  <div class="container" style="max-width:var(--container-xl);">
+<section class="section factoring-hero-section" style="background:var(--color-gray-900);border-bottom:1px solid rgba(255,255,255,0.08);overflow:hidden;">
+  <div class="container" style="max-width:var(--container-xl);box-sizing:border-box;">
     <div class="factoring-grid">
       
       <!-- Left Column: Copy -->
-      <div>
+      <div style="min-width:0;width:100%;box-sizing:border-box;">
         <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-amber-400);margin-bottom:var(--space-3);">Instant Cash Flow & Same-Day Payouts</div>
-        <h1 style="font-size:clamp(2.25rem, 5vw, 3.5rem);font-weight:900;color:#fff;line-height:1.1;margin-bottom:var(--space-4);">
+        <h1 style="font-size:clamp(1.75rem, 4.5vw, 3.25rem);font-weight:900;color:#fff;line-height:1.15;margin-bottom:var(--space-4);word-break:break-word;overflow-wrap:break-word;">
           1-Day Freight Factoring Setup<br><span style="color:var(--color-amber-400);">Turn Rates Confirms Into Cash</span>
         </h1>
-        <p style="font-size:var(--text-base);color:rgba(255,255,255,0.7);line-height:1.6;margin-bottom:var(--space-6);">
+        <p style="font-size:var(--text-base);color:rgba(255,255,255,0.7);line-height:1.6;margin-bottom:var(--space-6);word-break:break-word;overflow-wrap:break-word;">
           Don't wait 30 to 60 days to get paid by brokers. Partnered with <strong>RTS Financial</strong>, <strong>Apex Capital</strong>, and <strong>TriumphPay</strong>. Get same-day funding for your Rate Confirmations & BOLs with rates as low as <strong>0.99%</strong>.
         </p>
 
-        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-6);">
+        <div class="factoring-badges">
           <span class="badge badge-amber">⚡ Same-Day Fuel Advances</span>
           <span class="badge badge-green">💳 Rates As Low As 0.99%</span>
           <span class="badge badge-blue">🛡️ Non-Recourse Credit Protection</span>
         </div>
 
-        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:var(--space-4);display:flex;align-items:center;gap:var(--space-4);">
-          <div style="font-size:24px;">🤝</div>
-          <div style="font-size:var(--text-xs);color:rgba(255,255,255,0.7);">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:var(--space-4);display:flex;align-items:center;gap:var(--space-4);max-width:100%;box-sizing:border-box;">
+          <div style="font-size:24px;flex-shrink:0;">🤝</div>
+          <div style="font-size:var(--text-xs);color:rgba(255,255,255,0.7);line-height:1.5;min-width:0;word-break:break-word;overflow-wrap:break-word;">
             <strong style="color:#fff;">Carriers keep 100% of broker payouts.</strong> Shipping Wish does NOT deduct commission from factoring. You receive direct funding to your bank account.
           </div>
         </div>
       </div>
 
       <!-- Right Column: Application Form -->
-      <div class="form-card-dark">
+      <div class="form-card-dark" style="min-width:0;width:100%;box-sizing:border-box;">
         <h3 style="font-size:var(--text-xl);font-weight:800;color:#fff;margin-bottom:4px;">Apply For 1-Day Factoring Setup</h3>
         <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.6);margin-bottom:var(--space-5);">Zero setup fees. Submit your carrier info to get approved for same-day funding.</p>
 
-        <form id="factoring-form">
-          <div style="display:flex;flex-direction:column;gap:var(--space-4);">
-            <div class="form-row">
-              <div class="form-group">
+        <form id="factoring-form" style="width:100%;box-sizing:border-box;">
+          <div style="display:flex;flex-direction:column;gap:var(--space-4);width:100%;box-sizing:border-box;">
+            <div class="form-row" style="width:100%;box-sizing:border-box;">
+              <div class="form-group" style="width:100%;box-sizing:border-box;">
                 <label class="form-label required" for="fact-comp" style="color:rgba(255,255,255,0.9);">Company Name</label>
-                <input class="form-input" type="text" id="fact-comp" required placeholder="Apex Express LLC" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);">
+                <input class="form-input" type="text" id="fact-comp" required placeholder="Apex Express LLC" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);width:100%;box-sizing:border-box;">
               </div>
-              <div class="form-group">
+              <div class="form-group" style="width:100%;box-sizing:border-box;">
                 <label class="form-label required" for="fact-name" style="color:rgba(255,255,255,0.9);">Contact Full Name</label>
-                <input class="form-input" type="text" id="fact-name" required placeholder="John Doe" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);">
+                <input class="form-input" type="text" id="fact-name" required placeholder="John Doe" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);width:100%;box-sizing:border-box;">
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
+            <div class="form-row" style="width:100%;box-sizing:border-box;">
+              <div class="form-group" style="width:100%;box-sizing:border-box;">
                 <label class="form-label required" for="fact-phone" style="color:rgba(255,255,255,0.9);">Phone Number</label>
-                <input class="form-input" type="tel" id="fact-phone" required placeholder="+1 (917) 000-0000" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);">
+                <input class="form-input" type="tel" id="fact-phone" required placeholder="+1 (917) 000-0000" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);width:100%;box-sizing:border-box;">
               </div>
-              <div class="form-group">
+              <div class="form-group" style="width:100%;box-sizing:border-box;">
                 <label class="form-label required" for="fact-mc" style="color:rgba(255,255,255,0.9);">MC / USDOT Number</label>
-                <input class="form-input" type="text" id="fact-mc" required placeholder="MC-123456" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);">
+                <input class="form-input" type="text" id="fact-mc" required placeholder="MC-123456" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);width:100%;box-sizing:border-box;">
               </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" style="width:100%;box-sizing:border-box;">
               <label class="form-label" for="fact-rev" style="color:rgba(255,255,255,0.9);">Estimated Monthly Revenue ($)</label>
-              <input class="form-input" type="number" id="fact-rev" placeholder="25000" value="25000" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);">
+              <input class="form-input" type="number" id="fact-rev" placeholder="25000" value="25000" style="background:#0f172a;color:#fff;border-color:rgba(255,255,255,0.2);width:100%;box-sizing:border-box;">
             </div>
 
-            <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-submit-factoring" style="margin-top:var(--space-2);">
+            <button type="submit" class="btn btn-primary btn-lg btn-block" id="btn-submit-factoring" style="margin-top:var(--space-2);width:100%;box-sizing:border-box;white-space:normal;word-break:break-word;">
               Submit Factoring Application (Same-Day Approval) →
             </button>
           </div>
