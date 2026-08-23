@@ -39,6 +39,7 @@ app.use('/api/notifications', require('./routes/notifications')); // In-app user
 app.use('/api/tracking', require('./routes/tracking'));           // Driver GPS pings & load tracking history
 app.use('/api/audit-logs', require('./routes/audit'));            // System security audit log viewer
 app.use('/api/messages', require('./routes/messages'));            // Load chat & dispatcher-driver messaging
+app.use('/api/routes', require('./routes/routes'));              // Google Route Optimization API, Truck Miles, RPM & Fuel Calculator
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

@@ -72,9 +72,13 @@
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Manage assigned carriers, book loads, & monitor drivers</p>
       </div>
 
-      <div style="display:flex;align-items:center;gap:var(--space-4);">
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <button class="btn btn-secondary btn-sm" onclick="openRouteOptimizerModal()" id="btn-open-route-optimizer" style="border-color:var(--color-amber-500);color:var(--color-amber-600);font-weight:700;">
+          🗺️ Route &amp; RPM Optimizer
+        </button>
+
         <button class="btn btn-primary btn-sm" onclick="openNewLoadModal()" id="btn-open-create-modal">
-          + Book & Create Load
+          + Book &amp; Create Load
         </button>
 
         <div class="live-status">
@@ -834,12 +838,146 @@
       .replace(/"/g, '&quot;');
   }
 
-  async function logout() {
+<!-- ================= ROUTE & RPM OPTIMIZER MODAL ================= -->
+<div class="modal-overlay" id="routeOptimizerModal" style="display:none;" onclick="if(event.target===this) closeRouteOptimizerModal()">
+  <div class="modal-card" style="max-width:700px;background:#0f172a;color:#fff;border:1px solid rgba(245,158,11,0.3);box-shadow:0 25px 50px rgba(0,0,0,0.6);">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">🗺️</span>
+        <div>
+          <h3 style="margin:0;font-size:18px;font-weight:800;color:#fff;">Google Route &amp; Rate Optimizer</h3>
+          <p style="margin:0;font-size:12px;color:#94a3b8;">Commercial Truck Miles, Hours of Service &amp; Fuel Net Profit Engine</p>
+        </div>
+      </div>
+      <button onclick="closeRouteOptimizerModal()" style="background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;">&times;</button>
+    </div>
+
+    <form id="route-optimizer-form" onsubmit="calculateRouteOptimization(event)" style="margin-top:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#fbbf24;margin-bottom:4px;">PROPOSED PICKUP (ORIGIN)</label>
+          <input type="text" id="route-orig" placeholder="e.g. Chicago, IL" required style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#fbbf24;margin-bottom:4px;">DELIVERY LOCATION (DESTINATION)</label>
+          <input type="text" id="route-dest" placeholder="e.g. Atlanta, GA" required style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:4px;">DEADHEAD ORIGIN (TRUCK CURRENT LOCATION)</label>
+          <input type="text" id="route-dh-orig" placeholder="e.g. Milwaukee, WI (Optional)" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#34d399;margin-bottom:4px;">GROSS BROKER PAY ($)</label>
+          <input type="number" step="0.01" id="route-pay" placeholder="e.g. 2850.00" required style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg" style="background:linear-gradient(135deg, #f59e0b, #d97706);color:#0f172a;font-weight:800;" id="btn-calc-route">
+        ⚡ Calculate Route, RPM &amp; Profitability →
+      </button>
+    </form>
+
+    <!-- Optimization Results Display -->
+    <div id="route-results-container" style="display:none;margin-top:20px;padding:16px;background:rgba(30,41,59,0.7);border-radius:12px;border:1px solid rgba(255,255,255,0.1);">
+      <div id="route-rec-banner" style="padding:8px 12px;border-radius:8px;font-weight:800;font-size:13px;text-align:center;margin-bottom:12px;"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:12px;text-align:center;">
+        <div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;">
+          <div style="font-size:10px;color:#94a3b8;">TOTAL MILES</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;" id="res-total-miles">0 mi</div>
+          <div style="font-size:9px;color:#fbbf24;" id="res-dh-miles">+0 mi deadhead</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;">
+          <div style="font-size:10px;color:#94a3b8;">DRIVE TIME</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;" id="res-drive-hours">0 hrs</div>
+          <div style="font-size:9px;color:#6ee7b7;" id="res-hos-breaks">0 breaks</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;">
+          <div style="font-size:10px;color:#94a3b8;">ALL-IN RPM</div>
+          <div style="font-size:18px;font-weight:800;color:#34d399;" id="res-all-rpm">$0.00</div>
+          <div style="font-size:9px;color:#94a3b8;" id="res-loaded-rpm">Loaded: $0.00</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);padding:10px;border-radius:8px;">
+          <div style="font-size:10px;color:#94a3b8;">EST. FUEL COST</div>
+          <div style="font-size:18px;font-weight:800;color:#ef4444;" id="res-fuel-cost">$0.00</div>
+          <div style="font-size:9px;color:#94a3b8;" id="res-fuel-gal">0 gal</div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:8px;">
+        <span style="font-size:12px;color:#e2e8f0;">ESTIMATED CARRIER NET PROFIT (After Fuel):</span>
+        <strong style="font-size:18px;color:#34d399;" id="res-net-profit">$0.00</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openRouteOptimizerModal() {
+    document.getElementById('routeOptimizerModal').style.display = 'flex';
+  }
+
+  function closeRouteOptimizerModal() {
+    document.getElementById('routeOptimizerModal').style.display = 'none';
+  }
+
+  async function calculateRouteOptimization(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-calc-route');
+    btn.disabled = true;
+    btn.innerText = '⏳ Calculating Route & Profitability...';
+
+    const origin = document.getElementById('route-orig').value;
+    const destination = document.getElementById('route-dest').value;
+    const deadhead_origin = document.getElementById('route-dh-orig').value;
+    const gross_pay = document.getElementById('route-pay').value;
+
     try {
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-      window.location.href = '/login.html';
-    } catch (e) {
-      window.location.href = '/login.html';
+      const res = await fetch('/api/routes/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ origin, destination, deadhead_origin, gross_pay })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to optimize route');
+
+      document.getElementById('route-results-container').style.display = 'block';
+      document.getElementById('res-total-miles').innerText = `${data.route.total_miles} mi`;
+      document.getElementById('res-dh-miles').innerText = `+${data.route.deadhead_miles} mi deadhead`;
+      document.getElementById('res-drive-hours').innerText = `${data.route.est_drive_hours} hrs`;
+      document.getElementById('res-hos-breaks').innerText = `${data.route.required_hos_breaks} rest breaks`;
+      document.getElementById('res-all-rpm').innerText = `$${data.financials.all_in_rpm.toFixed(2)}`;
+      document.getElementById('res-loaded-rpm').innerText = `Loaded: $${data.financials.loaded_rpm.toFixed(2)}`;
+      document.getElementById('res-fuel-cost').innerText = `$${data.financials.estimated_fuel_cost.toFixed(2)}`;
+      document.getElementById('res-fuel-gal').innerText = `~${data.financials.estimated_fuel_gallons} gal`;
+      document.getElementById('res-net-profit').innerText = `$${data.financials.estimated_net_profit.toFixed(2)} (${data.financials.profit_margin_percent}% margin)`;
+
+      const banner = document.getElementById('route-rec-banner');
+      banner.innerText = data.recommended_action;
+      if (data.financials.all_in_rpm >= 2.20) {
+        banner.style.background = 'rgba(16,185,129,0.2)';
+        banner.style.color = '#34d399';
+        banner.style.border = '1px solid rgba(16,185,129,0.4)';
+      } else if (data.financials.all_in_rpm >= 1.85) {
+        banner.style.background = 'rgba(245,158,11,0.2)';
+        banner.style.color = '#fbbf24';
+        banner.style.border = '1px solid rgba(245,158,11,0.4)';
+      } else {
+        banner.style.background = 'rgba(239,68,68,0.2)';
+        banner.style.color = '#f87171';
+        banner.style.border = '1px solid rgba(239,68,68,0.4)';
+      }
+
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerText = '⚡ Calculate Route, RPM & Profitability →';
     }
   }
 </script>
