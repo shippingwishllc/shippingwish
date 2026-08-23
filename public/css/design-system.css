@@ -2251,16 +2251,89 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
 }
 
-@media (max-width: 992px) {
-  .pricing-grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-8);
+/* --------------------------------------------------------------------------- */
+/* CTA BANNER SECTION (ENTERPRISE HERO CTA)                                   */
+/* --------------------------------------------------------------------------- */
+.cta-section {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-2xl);
+  padding: 56px 32px;
+  text-align: center;
+  margin: var(--space-12) auto;
+  max-width: 1140px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 350px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0) 70%);
+  pointer-events: none;
+}
+
+.cta-section h2 {
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: #ffffff !important;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-3);
+}
+
+.cta-section p {
+  font-size: var(--text-base);
+  color: #cbd5e1 !important;
+  max-width: 620px;
+  margin: 0 auto var(--space-8);
+  line-height: 1.6;
+}
+
+.cta-btn-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.cta-trust-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-6);
+  margin-top: var(--space-8);
+  font-size: var(--text-xs);
+  color: #94a3b8;
+  flex-wrap: wrap;
+}
+
+.cta-trust-row span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 768px) {
+  .cta-section {
+    padding: 40px 20px;
+    margin: var(--space-8) var(--space-4);
   }
-  .pricing-card.featured {
-    transform: none;
+  .cta-section h2 {
+    font-size: var(--text-xl);
   }
-  .pricing-card.featured:hover {
-    transform: translateY(-4px);
+  .cta-btn-group {
+    flex-direction: column;
+    width: 100%;
+  }
+  .cta-btn-group .btn {
+    width: 100%;
   }
 }
 
