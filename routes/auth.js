@@ -214,22 +214,71 @@ router.get('/carriers', requireAuth, requireRole('dispatcher', 'admin', 'super_a
   try {
     let query, params;
     if (req.user.role === 'dispatcher') {
-      // Return carriers assigned to this dispatcher, or unassigned ones
       query = `
-        SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number
+        SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
+               u.dispatch_fee_percent, u.equipment_category, u.billing_notes
         FROM users u
         LEFT JOIN dispatcher_carriers dc ON dc.carrier_id = u.id
         WHERE u.role = 'carrier' AND (dc.dispatcher_id = $1 OR dc.dispatcher_id IS NULL)
         ORDER BY u.name`;
       params = [req.user.id];
     } else {
-      query = `SELECT id, name, company_name, phone, email, mc_number, dot_number FROM users WHERE role = 'carrier' ORDER BY name`;
+      query = `SELECT id, name, company_name, phone, email, mc_number, dot_number,
+               dispatch_fee_percent, equipment_category, billing_notes
+               FROM users WHERE role = 'carrier' ORDER BY name`;
       params = [];
     }
     const result = await pool.query(query, params);
     res.json({ carriers: result.rows });
   } catch (err) {
     res.status(500).json({ error: 'Could not load carriers.' });
+  }
+});
+
+// ADMIN: Set per-carrier dispatch commission rate
+// PATCH /api/carriers/:id/commission
+// Body: { dispatch_fee_percent: 5.5, equipment_category: 'box_truck', billing_notes: 'Negotiated rate' }
+router.patch('/carriers/:id/commission', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  const { dispatch_fee_percent, equipment_category, billing_notes } = req.body;
+  const carrierId = req.params.id;
+
+  if (dispatch_fee_percent === undefined || dispatch_fee_percent === null) {
+    return res.status(400).json({ error: 'dispatch_fee_percent is required.' });
+  }
+
+  const feeNum = parseFloat(dispatch_fee_percent);
+  if (isNaN(feeNum) || feeNum < 0 || feeNum > 50) {
+    return res.status(400).json({ error: 'dispatch_fee_percent must be a number between 0 and 50.' });
+  }
+
+  // Validate equipment_category
+  const validCategories = ['box_truck', 'dry_van', 'reefer', 'flatbed', 'other'];
+  const cat = equipment_category || 'dry_van';
+  if (!validCategories.includes(cat)) {
+    return res.status(400).json({ error: `equipment_category must be one of: ${validCategories.join(', ')}` });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET dispatch_fee_percent = $1, equipment_category = $2, billing_notes = $3
+       WHERE id = $4 AND role = 'carrier'
+       RETURNING id, name, company_name, dispatch_fee_percent, equipment_category, billing_notes`,
+      [feeNum, cat, billing_notes || null, carrierId]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'Carrier not found.' });
+    }
+
+    res.json({
+      ok: true,
+      message: `Commission rate updated to ${feeNum}% for ${result.rows[0].company_name || result.rows[0].name}`,
+      carrier: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Update commission error:', err);
+    res.status(500).json({ error: 'Could not update commission rate.' });
   }
 });
 
@@ -248,6 +297,21 @@ router.post('/dispatcher-assignments', requireAuth, requireSuperAdmin, async (re
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Could not assign carrier to dispatcher.' });
+  }
+});
+
+// GET /api/carriers/:id/commission — Get a carrier's current commission rate
+router.get('/carriers/:id/commission', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, company_name, mc_number, dispatch_fee_percent, equipment_category, billing_notes
+       FROM users WHERE id = $1 AND role = 'carrier'`,
+      [req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Carrier not found.' });
+    res.json({ carrier: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch carrier commission.' });
   }
 });
 

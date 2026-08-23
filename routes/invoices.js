@@ -286,7 +286,9 @@ router.post('/', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'),
   try {
     const loadResult = await pool.query(
       `SELECT l.*,
-              u.name AS carrier_name, u.company_name AS carrier_company, u.phone AS carrier_phone, u.mc_number,
+              u.name AS carrier_name, u.company_name AS carrier_company,
+              u.phone AS carrier_phone, u.mc_number, u.email AS carrier_email,
+              u.dispatch_fee_percent, u.equipment_category, u.billing_notes,
               dr.name AS driver_name, t.truck_number
        FROM loads l
        JOIN users u ON u.id = l.carrier_id
@@ -307,55 +309,109 @@ router.post('/', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'),
 
     const freightAmount = parseFloat(load.rate || 0);
     const accessorialAmount = accessorials.reduce((sum, a) => sum + parseFloat(a.amount || 0), 0);
-    const totalAmount = freightAmount + accessorialAmount;
+    const grossTotal = freightAmount + accessorialAmount;
+
+    // ============================================================
+    // PER-CARRIER CUSTOM COMMISSION CALCULATION
+    // dispatch_fee_percent stored on user record (set by admin)
+    // Default rates by category:
+    //   box_truck → 5% - 7%  (default 6%)
+    //   dry_van   → 2% - 4%  (default 3%)
+    //   reefer    → 2% - 4%  (default 3%)
+    //   flatbed   → 3% - 5%  (default 4%)
+    // ============================================================
+    const feePercent = parseFloat(load.dispatch_fee_percent || 5.00);
+    const dispatchFeeAmount = parseFloat(((grossTotal * feePercent) / 100).toFixed(2));
+    const carrierPayAmount  = parseFloat((grossTotal - dispatchFeeAmount).toFixed(2));
+    const equipCategory     = load.equipment_category || 'dry_van';
+
+    const equipLabel = {
+      box_truck: 'Box Truck',
+      dry_van:   'Dry Van (53ft)',
+      reefer:    'Refrigerated (Reefer)',
+      flatbed:   'Flatbed',
+      other:     'Other Equipment'
+    }[equipCategory] || equipCategory;
 
     const invoiceNumber = `INV-${load.load_number}`;
-    const issueDate = new Date().toISOString().slice(0, 10);
-    const dueDate = issueDate;
-    const factOpt = factoringStatus || 'direct_pay';
+    const issueDate     = new Date().toISOString().slice(0, 10);
+    const dueDate       = issueDate;
+    const factOpt       = factoringStatus || 'direct_pay';
+
+    // Build line-item description
+    const description = [
+      `Dispatch Fee for Load #${load.load_number}`,
+      `Equipment: ${equipLabel}`,
+      `Route: ${load.pickup_location || ''} ➔ ${load.delivery_location || ''}`,
+      `Gross Freight Rate: $${freightAmount.toFixed(2)}`,
+      ...(accessorialAmount > 0 ? [`Approved Accessorials: +$${accessorialAmount.toFixed(2)}`] : []),
+      `Dispatch Commission: ${feePercent}% of $${grossTotal.toFixed(2)} = $${dispatchFeeAmount.toFixed(2)}`,
+      `Carrier Net Pay: $${carrierPayAmount.toFixed(2)}`
+    ].join('\n');
+
+    const memo = load.billing_notes ||
+      `Dispatch commission invoice for Load #${load.load_number}. ` +
+      `Carrier net pay after ${feePercent}% commission: $${carrierPayAmount.toFixed(2)}. ` +
+      `Payment due within 7 days of delivery.`;
 
     const htmlContent = generateInvoiceHtml({
       invoiceNumber,
-      clientName: load.carrier_company || load.carrier_name,
-      clientEmail: load.carrier_email || 'billing@shippingwish.com',
-      clientPhone: load.carrier_phone || 'N/A',
+      clientName:    load.carrier_company || load.carrier_name,
+      clientEmail:   load.carrier_email   || 'billing@shippingwish.com',
+      clientPhone:   load.carrier_phone   || 'N/A',
       clientAddress: `${load.pickup_location || ''} ➔ ${load.delivery_location || ''}`,
-      description: `Dispatch fee for Load #${load.load_number}`,
-      amount: totalAmount,
-      status: 'unpaid',
+      description,
+      amount:    dispatchFeeAmount,   // We bill the carrier ONLY the dispatch fee amount
+      status:    'unpaid',
       issueDate,
       dueDate,
-      memo: `Freight Dispatch Services for Load #${load.load_number}.`
+      memo
     });
     fs.writeFileSync(path.join(PUBLIC_INVOICE_DIR, `${invoiceNumber}.html`), htmlContent);
 
     const pdfFilename = await generateInvoicePdf({
       invoiceNumber,
-      clientName: load.carrier_company || load.carrier_name,
-      clientEmail: load.carrier_email || 'billing@shippingwish.com',
-      clientPhone: load.carrier_phone || 'N/A',
+      clientName:    load.carrier_company || load.carrier_name,
+      clientEmail:   load.carrier_email   || 'billing@shippingwish.com',
+      clientPhone:   load.carrier_phone   || 'N/A',
       clientAddress: `${load.pickup_location || ''} ➔ ${load.delivery_location || ''}`,
-      description: `Dispatch fee for Load #${load.load_number}`,
-      amount: totalAmount,
-      status: 'unpaid',
+      description,
+      amount:    dispatchFeeAmount,
+      status:    'unpaid',
       issueDate,
       dueDate,
-      memo: `Freight Dispatch Services for Load #${load.load_number}.`
+      memo
     });
 
     const insert = await pool.query(
-      `INSERT INTO invoices (load_id, invoice_number, amount, freight_amount, accessorial_amount, total_amount, status, factoring_status, issued_date, pdf_filename)
-       VALUES ($1, $2, $3, $4, $5, $6, 'unpaid', $7, $8, $9) RETURNING id`,
-      [loadId, invoiceNumber, totalAmount, freightAmount, accessorialAmount, totalAmount, factOpt, issueDate, pdfFilename]
+      `INSERT INTO invoices (
+         load_id, invoice_number,
+         amount, freight_amount, accessorial_amount, total_amount,
+         status, factoring_status, issued_date, pdf_filename
+       ) VALUES ($1, $2, $3, $4, $5, $6, 'unpaid', $7, $8, $9) RETURNING id`,
+      [loadId, invoiceNumber,
+       dispatchFeeAmount, freightAmount, accessorialAmount, grossTotal,
+       factOpt, issueDate, pdfFilename]
     );
 
     await pool.query(`UPDATE loads SET status = 'invoiced', updated_at = now() WHERE id = $1`, [loadId]);
     await pool.query(
-      `INSERT INTO load_status_history (load_id, status, changed_by, notes) VALUES ($1, 'invoiced', $2, 'Freight invoice generated')`,
-      [loadId, req.user.id]
+      `INSERT INTO load_status_history (load_id, status, changed_by, notes)
+       VALUES ($1, 'invoiced', $2, $3)`,
+      [loadId, req.user.id,
+       `Invoice generated — ${feePercent}% dispatch fee ($${dispatchFeeAmount}) on gross $${grossTotal}`]
     );
 
-    res.json({ ok: true, id: insert.rows[0].id, invoiceNumber, totalAmount });
+    res.json({
+      ok: true,
+      id: insert.rows[0].id,
+      invoiceNumber,
+      grossAmount:       grossTotal,
+      dispatchFeePercent: feePercent,
+      dispatchFeeAmount,
+      carrierPayAmount,
+      equipmentCategory: equipCategory
+    });
   } catch (err) {
     console.error('Generate invoice error:', err);
     res.status(500).json({ error: 'Could not generate invoice.' });

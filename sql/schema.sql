@@ -66,6 +66,14 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_ip TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS user_agent TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_id INTEGER;
 
+-- Per-Carrier Custom Commission Rate Fields
+-- dispatch_fee_percent: The % we charge this carrier (e.g. 5 = 5%, 3 = 3%)
+-- equipment_category: 'box_truck' | 'dry_van' | 'reefer' | 'flatbed' | 'other'
+-- billing_notes: Internal admin notes about this carrier billing agreement
+ALTER TABLE users ADD COLUMN IF NOT EXISTS dispatch_fee_percent NUMERIC(5,2) DEFAULT 5.00;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS equipment_category TEXT DEFAULT 'dry_van';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_notes TEXT;
+
 -- Dispatcher to Carrier Assignment Mapping
 CREATE TABLE IF NOT EXISTS dispatcher_carriers (
   id SERIAL PRIMARY KEY,

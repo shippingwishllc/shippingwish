@@ -47,7 +47,7 @@ router.post('/click-to-call', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/voip/send-sms - Trigger 1-Click SMS Pitch
+// POST /api/voip/send-sms - Trigger 1-Click SMS (via Twilio when configured, else log only)
 router.post('/send-sms', requireAuth, async (req, res) => {
   try {
     const { lead_id, to_number, message, provider } = req.body;
@@ -56,22 +56,49 @@ router.post('/send-sms', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Target phone number and SMS text are required' });
     }
 
-    const voipProvider = provider || process.env.VOIP_PROVIDER || 'OpenPhone';
+    const voipProvider = provider || 'Twilio';
+    let smsStatus = 'logged';
+    let twilioSid = null;
+
+    // -------------------------------------------------------
+    // TWILIO SMS — Real API Call
+    // Fires when TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN are set
+    // -------------------------------------------------------
+    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+      try {
+        const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        const twilioMsg = await twilio.messages.create({
+          from: process.env.TWILIO_FROM_NUMBER || '+19177370021',
+          to: to_number,
+          body: message
+        });
+        twilioSid = twilioMsg.sid;
+        smsStatus = 'sent';
+      } catch (twilioErr) {
+        console.error('Twilio SMS error:', twilioErr.message);
+        smsStatus = 'twilio_error';
+      }
+    } else {
+      console.log('[DEV] Twilio not configured — SMS logged only:', { to_number, message });
+    }
 
     const result = await pool.query(
       `INSERT INTO voip_call_logs (
         lead_id, sales_rep_id, voip_provider, call_type, to_number, disposition, notes
-      ) VALUES ($1, $2, $3, 'sms', $4, 'sent', $5)
+      ) VALUES ($1, $2, $3, 'sms', $4, $5, $6)
       RETURNING *`,
-      [lead_id || null, req.user.id, voipProvider, to_number, `SMS: ${message}`]
+      [lead_id || null, req.user.id, voipProvider, to_number, smsStatus,
+       `SMS: ${message}${twilioSid ? ' | Twilio SID: ' + twilioSid : ''}`]
     );
 
     res.json({
-      message: `SMS sent via ${voipProvider}`,
+      message: smsStatus === 'sent' ? `SMS sent via Twilio to ${to_number}` : `SMS logged (Twilio not configured)`,
+      status: smsStatus,
+      twilio_sid: twilioSid,
       sms_log: result.rows[0]
     });
   } catch (err) {
-    console.error('Error sending VOIP SMS:', err);
+    console.error('Error sending SMS:', err);
     res.status(500).json({ error: 'Failed to send SMS' });
   }
 });
