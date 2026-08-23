@@ -2621,3 +2621,63 @@ h1, h2, h3, h4, h5, h6 {
     text-align: center;
   }
 }
+
+/* --------------------------------------------------------------------------- */
+/* SUB-PAGE RESPONSIVE GRID SYSTEM (FACTORING, INSURANCE, ELD, DOT, DISPATCH) */
+/* --------------------------------------------------------------------------- */
+.responsive-grid-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+.responsive-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+@media (max-width: 992px) {
+  .responsive-grid-3col {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-4) !important;
+  }
+
+  .responsive-grid-2col {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-4) !important;
+  }
+
+  .factoring-grid, .insurance-grid, .eld-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-8) !important;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-3) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: clamp(1.75rem, 6vw, 2.5rem) !important;
+    line-height: 1.15 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .section {
+    padding-block: var(--space-12) !important;
+  }
+
+  .form-card-dark {
+    padding: var(--space-5) !important;
+  }
+}
