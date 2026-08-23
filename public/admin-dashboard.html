@@ -135,6 +135,21 @@
           </div>
         </div>
 
+        <!-- ================= LOAD CANCELLATION APPROVAL WIDGET ================= -->
+        <div id="cancellation-approval-widget" style="display:none;background:linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);border:1.5px solid #6366f1;border-radius:var(--radius-2xl);padding:var(--space-6);color:#fff;margin-bottom:var(--space-6);box-shadow:0 12px 30px rgba(99,102,241,0.2);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px;">
+            <div>
+              <div style="font-size:var(--text-base);font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+                ⚠️ Pending Load Cancellation Approval Requests
+                <span class="badge" style="background:#ef4444;color:#fff;font-weight:800;" id="cnt-cancellation-requests">0</span>
+              </div>
+              <p style="font-size:12px;color:#cbd5e1;margin-top:2px;">Dispatchers requested load cancellation. Review reason and approve or reject.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadCancellationRequests()">🔄 Refresh Requests</button>
+          </div>
+          <div id="cancellation-requests-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+
         <!-- Table Card -->
         <div class="tms-table-card">
           <div class="tms-table-header">

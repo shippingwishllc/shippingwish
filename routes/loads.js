@@ -8,7 +8,8 @@ const router = express.Router();
 
 const STATUS_FLOW = [
   'new', 'booked', 'dispatched', 'at_pickup', 'loaded',
-  'in_transit', 'at_delivery', 'delivered', 'pod_uploaded', 'invoiced', 'paid', 'cancelled'
+  'in_transit', 'at_delivery', 'delivered', 'pod_uploaded', 'invoiced', 'paid',
+  'cancellation_requested', 'cancelled'
 ];
 
 // Endpoint: Fetch last delivery location & date for next load / reload suggestion
@@ -343,13 +344,178 @@ router.post('/:id/miles', requireAuth, async (req, res) => {
   }
 });
 
-// Delete load — admin/super_admin
-router.delete('/:id', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+// ============================================================
+// LOAD CANCELLATION WORKFLOW
+// 1. Dispatcher submits cancellation request + reason
+// 2. Admin approves (status -> cancelled) or rejects (status -> booked)
+// 3. Admin can also cancel directly anytime
+// ============================================================
+
+// GET /api/loads/pending-cancellations — List pending cancellation requests (Admin)
+router.get('/pending-cancellations', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
-    await pool.query('DELETE FROM loads WHERE id = $1', [req.params.id]);
-    res.json({ ok: true });
+    const result = await pool.query(`
+      SELECT l.id, l.load_number, l.pickup_location, l.delivery_location, l.rate, l.status,
+             l.cancellation_reason, l.cancellation_requested_at,
+             u.company_name AS carrier_name,
+             disp.name AS dispatcher_name
+      FROM loads l
+      JOIN users u ON u.id = l.carrier_id
+      LEFT JOIN users disp ON disp.id = l.cancellation_requested_by
+      WHERE l.status = 'cancellation_requested'
+      ORDER BY l.cancellation_requested_at DESC
+    `);
+    res.json({ requests: result.rows });
   } catch (err) {
-    res.status(500).json({ error: 'Could not delete load.' });
+    res.status(500).json({ error: 'Could not fetch cancellation requests.' });
+  }
+});
+
+// POST /api/loads/:id/request-cancellation — Trigger cancellation request with reason
+router.post('/:id/request-cancellation', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+
+  if (!reason || !reason.trim()) {
+    return res.status(400).json({ error: 'Cancellation reason is required.' });
+  }
+
+  try {
+    const loadRes = await pool.query(
+      `SELECT l.id, l.load_number, l.status, l.carrier_id, l.dispatcher_id,
+              u.company_name AS carrier_name
+       FROM loads l JOIN users u ON u.id = l.carrier_id
+       WHERE l.id = $1`,
+      [id]
+    );
+    if (!loadRes.rows.length) return res.status(404).json({ error: 'Load not found.' });
+    const load = loadRes.rows[0];
+
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin';
+
+    if (isAdmin) {
+      // Admin directly cancels load without needing approval
+      await pool.query(
+        `UPDATE loads
+         SET status = 'cancelled', cancellation_reason = $1,
+             cancellation_requested_by = $2, cancellation_requested_at = now(), updated_at = now()
+         WHERE id = $3`,
+        [reason, req.user.id, id]
+      );
+      await pool.query(
+        `INSERT INTO load_status_history (load_id, status, changed_by, notes)
+         VALUES ($1, 'cancelled', $2, $3)`,
+        [id, req.user.id, `Direct Admin Cancellation: ${reason}`]
+      );
+      return res.json({ ok: true, directCancelled: true, message: `Load #${load.load_number} has been cancelled.` });
+    }
+
+    // Dispatcher submits cancellation request for Admin approval
+    await pool.query(
+      `UPDATE loads
+       SET status = 'cancellation_requested', cancellation_reason = $1,
+           cancellation_requested_by = $2, cancellation_requested_at = now(), updated_at = now()
+       WHERE id = $3`,
+      [reason, req.user.id, id]
+    );
+    await pool.query(
+      `INSERT INTO load_status_history (load_id, status, changed_by, notes)
+       VALUES ($1, 'cancellation_requested', $2, $3)`,
+      [id, req.user.id, `Cancellation Request Submitted: ${reason}`]
+    );
+
+    // Create Admin Notifications
+    const admins = await pool.query(`SELECT id FROM users WHERE role IN ('admin', 'super_admin')`);
+    for (const a of admins.rows) {
+      await createNotification(
+        a.id,
+        `⚠️ Cancellation Requested: Load #${load.load_number}`,
+        `Dispatcher ${req.user.name} requested cancellation for Load #${load.load_number}. Reason: ${reason}`,
+        'warning',
+        `/admin-dashboard.html`
+      );
+    }
+
+    res.json({
+      ok: true,
+      pendingApproval: true,
+      message: `Cancellation request for Load #${load.load_number} submitted to Admin for approval.`
+    });
+  } catch (err) {
+    console.error('Cancellation request error:', err);
+    res.status(500).json({ error: 'Could not submit cancellation request.' });
+  }
+});
+
+// POST /api/loads/:id/approve-cancellation — Admin approves or rejects request
+router.post('/:id/approve-cancellation', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  const { id } = req.params;
+  const { action, notes } = req.body; // action: 'approve' | 'reject'
+
+  if (!['approve', 'reject'].includes(action)) {
+    return res.status(400).json({ error: 'Action must be "approve" or "reject".' });
+  }
+
+  try {
+    const loadRes = await pool.query(
+      `SELECT l.id, l.load_number, l.status, l.carrier_id, l.dispatcher_id, l.cancellation_requested_by
+       FROM loads l WHERE l.id = $1`,
+      [id]
+    );
+    if (!loadRes.rows.length) return res.status(404).json({ error: 'Load not found.' });
+    const load = loadRes.rows[0];
+
+    if (action === 'approve') {
+      await pool.query(
+        `UPDATE loads SET status = 'cancelled', updated_at = now() WHERE id = $1`,
+        [id]
+      );
+      await pool.query(
+        `INSERT INTO load_status_history (load_id, status, changed_by, notes)
+         VALUES ($1, 'cancelled', $2, $3)`,
+        [id, req.user.id, `Admin Approved Cancellation: ${notes || 'Cancellation approved'}`]
+      );
+
+      // Notify dispatcher
+      if (load.dispatcher_id) {
+        await createNotification(
+          load.dispatcher_id,
+          `✅ Cancellation Approved: Load #${load.load_number}`,
+          `Admin approved cancellation for Load #${load.load_number}.`,
+          'info',
+          `/dispatcher-dashboard.html`
+        );
+      }
+
+      return res.json({ ok: true, status: 'cancelled', message: `Load #${load.load_number} cancellation APPROVED.` });
+    } else {
+      // Reject — revert status to booked
+      await pool.query(
+        `UPDATE loads SET status = 'booked', updated_at = now() WHERE id = $1`,
+        [id]
+      );
+      await pool.query(
+        `INSERT INTO load_status_history (load_id, status, changed_by, notes)
+         VALUES ($1, 'booked', $2, $3)`,
+        [id, req.user.id, `Admin Rejected Cancellation: ${notes || 'Cancellation request rejected'}`]
+      );
+
+      // Notify dispatcher
+      if (load.dispatcher_id) {
+        await createNotification(
+          load.dispatcher_id,
+          `❌ Cancellation Rejected: Load #${load.load_number}`,
+          `Admin rejected cancellation for Load #${load.load_number}. Load remains active.`,
+          'warning',
+          `/dispatcher-dashboard.html`
+        );
+      }
+
+      return res.json({ ok: true, status: 'booked', message: `Load #${load.load_number} cancellation REJECTED.` });
+    }
+  } catch (err) {
+    console.error('Approve cancellation error:', err);
+    res.status(500).json({ error: 'Could not process cancellation approval.' });
   }
 });
 

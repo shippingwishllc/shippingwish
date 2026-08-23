@@ -9,11 +9,77 @@ async function initAdmin() {
   loadDashboardStats('admin-stats-row');
   populateCarrierFilter();
   fetchAdminLoads();
+  loadCancellationRequests();
   loadCarriersTab();
   loadEmployeesTab();
   loadAssignmentsTab();
   loadUsersList();
   loadPerformanceTables();
+}
+
+async function loadCancellationRequests() {
+  const widget = document.getElementById('cancellation-approval-widget');
+  const listEl = document.getElementById('cancellation-requests-list');
+  const cntBadge = document.getElementById('cnt-cancellation-requests');
+  if (!widget || !listEl) return;
+
+  try {
+    const res = await fetch('/api/loads/pending-cancellations');
+    const data = await res.json();
+    const reqs = data.requests || [];
+
+    cntBadge.textContent = reqs.length;
+
+    if (reqs.length === 0) {
+      widget.style.display = 'none';
+      return;
+    }
+
+    widget.style.display = 'block';
+    listEl.innerHTML = reqs.map(r => `
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:800;font-size:14px;color:#fff;">
+            Load #${escapeHtml(r.load_number)} (${escapeHtml(r.carrier_name)}) — Rate: $${parseFloat(r.rate||0).toFixed(2)}
+          </div>
+          <div style="font-size:12px;color:#fbbf24;margin-top:4px;font-weight:600;">
+            Reason: "${escapeHtml(r.cancellation_reason || 'No reason provided')}"
+          </div>
+          <div style="font-size:11px;color:#cbd5e1;margin-top:2px;">
+            Requested By: 👤 ${escapeHtml(r.dispatcher_name || 'Dispatcher')} | 📍 ${escapeHtml(r.pickup_location)} ➔ ${escapeHtml(r.delivery_location)}
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="processCancellation(${r.id}, 'approve')">✅ Approve Cancellation</button>
+          <button class="btn btn-secondary btn-sm" onclick="processCancellation(${r.id}, 'reject')">❌ Reject &amp; Keep Active</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('Error loading cancellation requests:', e);
+  }
+}
+
+async function processCancellation(loadId, action) {
+  const notes = prompt(`Enter note for ${action.toUpperCase()} cancellation (optional):`, '');
+  try {
+    const res = await fetch(`/api/loads/${loadId}/approve-cancellation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, notes })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(`✅ ${data.message}`);
+      loadCancellationRequests();
+      fetchAdminLoads();
+    } else {
+      alert(data.error || 'Action failed');
+    }
+  } catch (e) {
+    alert('Error processing cancellation approval.');
+  }
 }
 
 function switchAdminTab(tabName) {

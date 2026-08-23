@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
@@ -140,7 +140,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 // Dispatcher selects carrier + multiple delivered loads → system
 // calculates total → applies carrier's commission % → generates invoice
 // ============================================================
-router.post('/batch', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
+// Restrict invoice generation to Admin & Super Admin (Finance Dept only)
+router.post('/batch', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   const { carrierId, loadIds, periodLabel, dueDate } = req.body;
   if (!carrierId || !Array.isArray(loadIds) || loadIds.length === 0) {
     return res.status(400).json({ error: 'carrierId and loadIds[] are required.' });

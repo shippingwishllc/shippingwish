@@ -475,8 +475,24 @@
 
     tbody.innerHTML = loads.map(l => {
       const isDelivered = l.status === 'delivered' || l.status === 'pod_uploaded';
+      const isPendingCancel = l.status === 'cancellation_requested';
+      const isCancelled = l.status === 'cancelled';
       const equipLabel  = l.equipment_type || '53ft Dry Van';
       const feePercent  = l.dispatch_fee_percent || 5.0;
+
+      let statusUi = `
+        <select class="form-select" style="padding:3px 20px 3px 8px;font-size:11px;font-weight:700;border-radius:12px;width:125px;" onchange="updateLoadStatus('${l.id}', this.value)">
+          ${['booked','dispatched','at_pickup','loaded','in_transit','at_delivery','delivered','pod_uploaded','invoiced','paid'].map(st => `
+            <option value="${st}" ${l.status === st ? 'selected' : ''}>${st.replace('_', ' ').toUpperCase()}</option>
+          `).join('')}
+        </select>
+      `;
+
+      if (isPendingCancel) {
+        statusUi = `<span class="badge-status dispatched" title="Reason: ${escapeHtml(l.cancellation_reason||'')}">⚠️ Pending Admin Cancel</span>`;
+      } else if (isCancelled) {
+        statusUi = `<span class="badge-status dead" title="Reason: ${escapeHtml(l.cancellation_reason||'')}">🚫 Cancelled</span>`;
+      }
 
       return `
         <tr>
@@ -492,18 +508,12 @@
           <td><div style="font-size:13px;font-weight:600;">📍 ${escapeHtml(l.pickup_location)}</div></td>
           <td><div style="font-size:13px;font-weight:600;">🏁 ${escapeHtml(l.delivery_location)}</div></td>
           <td><strong style="color:var(--color-success);font-size:14px;">$${parseFloat(l.rate || 0).toLocaleString('en-US',{minimumFractionDigits:2})}</strong></td>
-          <td>
-            <select class="form-select" style="padding:3px 20px 3px 8px;font-size:11px;font-weight:700;border-radius:12px;width:125px;" onchange="updateLoadStatus('${l.id}', this.value)">
-              ${['booked','dispatched','at_pickup','loaded','in_transit','at_delivery','delivered','pod_uploaded','invoiced','paid','cancelled'].map(st => `
-                <option value="${st}" ${l.status === st ? 'selected' : ''}>${st.replace('_', ' ').toUpperCase()}</option>
-              `).join('')}
-            </select>
-          </td>
+          <td>${statusUi}</td>
           <td>
             <div style="display:flex;gap:4px;flex-wrap:nowrap;">
               <a href="/load-detail.html?id=${l.id}" class="btn-table-action" id="btn-detail-${l.id}">View Detail</a>
               <button onclick="openChatModal('${l.id}', '${l.load_number}')" class="btn-table-action sms" title="Load Chat" id="btn-chat-${l.id}">💬</button>
-              ${isDelivered ? `<button onclick="quickBatchInvoice('${l.carrier_id}', [${l.id}])" class="btn-table-action primary" title="Generate Weekly Invoice">💳 Invoice</button>` : ''}
+              ${(!isCancelled && !isPendingCancel) ? `<button onclick="requestCancelModal('${l.id}', '${l.load_number}')" class="btn-table-action call" style="background:#fef2f2;color:#991b1b;border-color:#fecaca;" title="Request Load Cancellation">🚫 Cancel</button>` : ''}
             </div>
           </td>
         </tr>
@@ -511,25 +521,32 @@
     }).join('');
   }
 
-  async function quickBatchInvoice(carrierId, loadIds) {
-    if (!confirm('Generate Dispatch Commission Invoice for this carrier load now?')) return;
+  // Dispatcher requests load cancellation with reason
+  async function requestCancelModal(loadId, loadNumber) {
+    const reasonPreset = prompt(
+      `Request Cancellation for Load #${loadNumber}:\n\n` +
+      `Enter reason for cancellation (e.g. Driver Breakdown, Broker Cancelled Ratecon, Driver Refused Load):`,
+      "Driver breakdown / Equipment issue"
+    );
+
+    if (!reasonPreset || !reasonPreset.trim()) return;
+
     try {
-      const res = await fetch('/api/invoices/batch', {
+      const res = await fetch(`/api/loads/${loadId}/request-cancellation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ carrierId, loadIds })
+        body: JSON.stringify({ reason: reasonPreset.trim() })
       });
       const data = await res.json();
       if (res.ok) {
-        alert(`✅ Batch Invoice ${data.invoiceNumber} Generated!\nCommission Due: $${data.commissionAmount} (${data.commissionPercent}%)`);
-        window.open(data.htmlUrl, '_blank');
+        alert(`⚠️ ${data.message}`);
         loadDeskData();
       } else {
-        alert(data.error || 'Failed to generate invoice');
+        alert(data.error || 'Failed to submit cancellation request');
       }
     } catch (e) {
-      alert('Error generating invoice');
+      alert('Error submitting cancellation request');
     }
   }
 

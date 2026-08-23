@@ -208,6 +208,9 @@ ALTER TABLE loads ADD COLUMN IF NOT EXISTS delivery_tz TEXT DEFAULT 'America/New
 ALTER TABLE loads ADD COLUMN IF NOT EXISTS reference_number TEXT;
 ALTER TABLE loads ADD COLUMN IF NOT EXISTS bol_number TEXT;
 ALTER TABLE loads ADD COLUMN IF NOT EXISTS organization_id INTEGER;
+ALTER TABLE loads ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
+ALTER TABLE loads ADD COLUMN IF NOT EXISTS cancellation_requested_by INTEGER REFERENCES users(id);
+ALTER TABLE loads ADD COLUMN IF NOT EXISTS cancellation_requested_at TIMESTAMPTZ;
 
 -- Load Status History Table
 CREATE TABLE IF NOT EXISTS load_status_history (
