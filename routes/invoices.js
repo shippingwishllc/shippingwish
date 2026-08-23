@@ -73,7 +73,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div>
       <div class="brand">SHIPPING WISH LLC</div>
       <div class="brand-sub">Premier US Freight Dispatch &amp; Enterprise Logistics</div>
-      <div class="brand-contact">19266 Coastal Hwy, Rehoboth, DE 19971, USA | +1 917 737 0021 | billing@shippingwish.com | www.shippingwish.com</div>
+      <div class="brand-contact">19266 Coastal Hwy, Rehoboth, DE 19971, USA | +1 (917) 737-0021 | dispatch@shippingwish.com | www.shippingwish.com</div>
     </div>
     ${badge}
   </div>
@@ -94,7 +94,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div class="bill-box">
         <h4>Issued By (Service Provider)</h4>
         <div class="name">Shipping Wish LLC</div>
-        <p>19266 Coastal Hwy, Rehoboth, DE 19971<br>USA | LLC Registered, Delaware<br>Phone: +1 917 737 0021<br>Email: billing@shippingwish.com</p>
+        <p>19266 Coastal Hwy, Rehoboth, DE 19971<br>USA | LLC Registered, Delaware<br>Phone: +1 (917) 737-0021<br>Email: dispatch@shippingwish.com</p>
       </div>
       <div class="bill-box">
         <h4>Billed To (Carrier / Client)</h4>
@@ -214,7 +214,7 @@ router.post('/batch', requireAuth, requireRole('admin', 'super_admin'), async (r
       doc.rect(0, 0, 612, 108).fill('#0f172a');
       doc.fillColor('#f59e0b').font('Helvetica-Bold').fontSize(20).text('SHIPPING WISH LLC', L, 26);
       doc.fillColor('#94a3b8').font('Helvetica').fontSize(9).text('Premier US Freight Dispatch & Enterprise Logistics', L, 50);
-      doc.fillColor('#cbd5e1').fontSize(8).text('www.shippingwish.com | billing@shippingwish.com | +1 917 737 0021', L, 64);
+      doc.fillColor('#cbd5e1').fontSize(8).text('www.shippingwish.com | dispatch@shippingwish.com | +1 (917) 737-0021', L, 64);
       const bColor = '#f59e0b';
       doc.roundedRect(440, 26, 132, 32, 6).fill(bColor);
       doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(11).text('PAYMENT DUE', 440, 35, { width: 132, align: 'center' });
@@ -233,7 +233,7 @@ router.post('/batch', requireAuth, requireRole('admin', 'super_admin'), async (r
       // Bill to/from
       doc.font('Helvetica-Bold').fontSize(8).fillColor('#94a3b8').text('ISSUED BY', L, y);
       doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a').text('Shipping Wish LLC', L, y + 12);
-      doc.font('Helvetica').fontSize(8).fillColor('#475569').text('19266 Coastal Hwy, Rehoboth, DE 19971 | billing@shippingwish.com', L, y + 24);
+      doc.font('Helvetica').fontSize(8).fillColor('#475569').text('19266 Coastal Hwy, Rehoboth, DE 19971 | dispatch@shippingwish.com', L, y + 24);
 
       doc.font('Helvetica-Bold').fontSize(8).fillColor('#94a3b8').text('BILLED TO (CARRIER)', 320, y);
       doc.font('Helvetica-Bold').fontSize(10).fillColor('#2563eb').text(carrier.company_name || carrier.name, 320, y + 12);
@@ -302,7 +302,7 @@ router.post('/batch', requireAuth, requireRole('admin', 'super_admin'), async (r
       doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a').text('MEMO & PAYMENT INSTRUCTIONS', L+8, y+7);
       doc.font('Helvetica').fontSize(7.5).fillColor('#334155')
          .text(carrier.billing_notes || `Commission for ${loads.length} load(s) | Period: ${period} | Rate: ${feePercent}%`, L+8, y+20, { width: 510 })
-         .text('Please remit within 7 days. Contact: billing@shippingwish.com | +1 917 737 0021', L+8, y+33, { width: 510 });
+         .text('Please remit within 7 days. Contact: dispatch@shippingwish.com | +1 (917) 737-0021', L+8, y+33, { width: 510 });
       y += 58;
 
       doc.moveTo(L, y).lineTo(R, y).strokeColor('#e2e8f0').lineWidth(1).stroke();
@@ -458,7 +458,7 @@ router.post('/:id/send-stripe', requireAuth, requireRole('dispatcher', 'admin', 
     if (!invRes.rows.length) return res.status(404).json({ error: 'Invoice not found.' });
     const inv = invRes.rows[0];
 
-    const targetEmail = recipientEmail || inv.carrier_email || 'billing@shippingwish.com';
+    const targetEmail = recipientEmail || inv.carrier_email || 'dispatch@shippingwish.com';
 
     // If Stripe Secret Key is present, trigger real Stripe API Call
     if (process.env.STRIPE_SECRET_KEY) {

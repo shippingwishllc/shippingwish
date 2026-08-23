@@ -128,7 +128,7 @@ doc.rect(40, memoY, 532, 55).stroke('#cbd5e1');
 doc.font('Helvetica-Bold').fontSize(9).fillColor('#0f172a').text('MEMO & PAYMENT NOTES', 52, memoY + 10);
 doc.font('Helvetica').fontSize(8.5).fillColor('#334155')
    .text('Bank transfer payments are accepted using the details provided below.', 52, memoY + 24)
-   .text('If you have any questions regarding this invoice, please contact us at billing@shippingwish.com or +1 917 737 0021.', 52, memoY + 36);
+   .text('If you have any questions regarding this invoice, please contact us at dispatch@shippingwish.com or +1 (917) 737-0021.', 52, memoY + 36);
 
 // --- Footer Signature Line ---
 const footY = memoY + 75;
