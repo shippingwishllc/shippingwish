@@ -1,173 +1,383 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Broker Management | Shipping Wish LLC</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broker Directory &amp; MC Credit Verification — Shipping Wish LLC ERP</title>
+  <meta name="description" content="Instant Broker MC Credit Score Checker, $75k BMC-84 Surety Bond Verification, &amp; Factoring Approval Directory for Shipping Wish LLC.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
 </head>
 <body>
 
-<header class="site-header">
-  <div class="container nav-row">
-    <a href="/" class="brand"><span class="dot"></span> Shipping Wish TMS</a>
-    <nav class="nav-links">
-      <a href="/dispatcher-dashboard.html">Dispatch Board</a>
-      <a href="/brokers.html" class="current">Brokers</a>
-      <a href="/fleet.html">Fleet</a>
-      <a href="/documents.html">Documents</a>
-      <a href="/invoices.html">Invoices</a>
-      <a href="/ifta.html">IFTA &amp; Fuel</a>
-    </nav>
-    <div class="nav-cta">
-      <span class="nav-phone" id="user-badge-broker">User</span>
-      <button id="logout-btn" class="btn btn-outline">Log Out</button>
-      <button class="nav-toggle">☰</button>
-    </div>
-  </div>
-</header>
+<div class="app-shell">
+  <!-- LEFT SIDEBAR -->
+  <aside class="app-sidebar" role="navigation" aria-label="Brokers Navigation">
+    <div>
+      <a href="/" class="sidebar-brand" style="text-decoration:none;">
+        <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">BROKER DIRECTORY</div>
+        </div>
+      </a>
 
-<section class="tms-shell">
-  <div class="container">
-    <div class="tms-topbar">
+      <div class="sidebar-section-label">Broker &amp; Credit Tools</div>
+      <a href="/brokers.html" class="sidebar-nav-link active">
+        <span aria-hidden="true">🏢</span> Broker Directory &amp; Credit
+      </a>
+      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎧</span> Dispatcher Control Desk
+      </a>
+      <a href="/sales-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎯</span> Carrier Sourcing CRM
+      </a>
+
+      <div class="sidebar-section-label">Financials</div>
+      <a href="/invoices.html" class="sidebar-nav-link">
+        <span aria-hidden="true">💳</span> Invoices &amp; Billing
+      </a>
+      <a href="/documents.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📄</span> Document Vault
+      </a>
+      <a href="/admin-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📊</span> Admin HQ
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-user-card">
+        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="broker-avatar">BD</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="user-badge-broker">Broker Desk</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);">Credit Intelligence</div>
+        </div>
+      </div>
+      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);" id="logout-btn">
+        🚪 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
+    <header class="app-header">
       <div>
-        <span class="eyebrow">Freight Partners</span>
-        <h1 style="font-size:26px;">Broker Directory &amp; Credit Ratings</h1>
-      </div>
-      <button class="btn btn-amber" data-open-modal="new-broker-modal">+ Add New Broker</button>
-    </div>
-
-    <div class="tms-panel">
-      <div style="display:flex;gap:16px;margin-bottom:20px;">
-        <input type="text" id="broker-search" placeholder="Search broker name, MC #, or contact person..." style="flex:1;padding:10px 14px;background:#0f1217;border:1px solid var(--border-color);border-radius:6px;color:#fff;">
-        <button class="btn btn-amber" onclick="loadBrokers()">Search</button>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Freight Brokers &amp; MC Credit Intelligence</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Instant FMCSA Operating Authority, BMC-84 Surety Bond Check, &amp; Factoring Risk Ratings</p>
       </div>
 
-      <div class="table-scroll">
-        <table class="tms-table" id="brokers-table">
-          <thead>
-            <tr>
-              <th>Company Name</th>
-              <th>MC Number</th>
-              <th>Contact Person</th>
-              <th>Phone / Email</th>
-              <th>Credit Rating</th>
-              <th>Notes</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="7" class="muted" style="text-align:center;">Loading brokers...</td></tr></tbody>
-        </table>
+      <div style="display:flex;align-items:center;gap:var(--space-4);">
+        <button class="btn btn-primary btn-sm" onclick="openNewBrokerModal()">
+          + Add New Broker
+        </button>
+        <div class="live-status">
+          <span class="live-dot"></span>
+          Credit Engine Live
+        </div>
+        <div id="notif-container"></div>
       </div>
-    </div>
-  </div>
-</section>
+    </header>
 
-<!-- New Broker Modal -->
-<div class="modal-overlay" id="new-broker-modal">
-  <div class="modal-box">
-    <button class="modal-close" data-close-modal>&times;</button>
-    <h3>Add Freight Broker</h3>
-    <div id="new-broker-msg" class="form-msg"></div>
-    <form id="new-broker-form">
-      <div class="form-row">
-        <div class="field">
-          <label>Company Name *</label>
-          <input type="text" name="company_name" required placeholder="e.g. TQL / CH Robinson">
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- ================= LIVE BROKER MC CREDIT CHECK WIDGET ================= -->
+      <div style="background:var(--color-surface-card);border:1px solid var(--border-default);border-radius:var(--radius-2xl);padding:var(--space-6);margin-bottom:var(--space-6);box-shadow:var(--shadow-md);">
+        <div style="font-size:var(--text-base);font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          ⚡ Instant Broker MC Credit &amp; Surety Bond Checker
         </div>
-        <div class="field">
-          <label>MC Number</label>
-          <input type="text" name="mc_number" placeholder="MC-123456">
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:16px;">Type any Broker MC# or DOT# to verify FMCSA Active Authority, $75,000 BMC-84 Bond, Credit Score, and Days to Pay (DTP).</p>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="search-input-group" style="flex:1;min-width:260px;">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="credit-mc-input" placeholder="Enter Broker MC# or DOT# (e.g. MC-426176 or 426176)..." onkeyup="if(event.key==='Enter') checkBrokerCredit()">
+          </div>
+          <button class="btn btn-primary" onclick="checkBrokerCredit()" id="btn-credit-check">
+            🔍 Perform Credit Check
+          </button>
+        </div>
+
+        <!-- Credit Result Card -->
+        <div id="credit-result-box" style="display:none;margin-top:20px;padding:20px;border-radius:var(--radius-xl);background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);color:#fff;border:1px solid #334155;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:14px;margin-bottom:14px;">
+            <div>
+              <div style="font-size:18px;font-weight:800;color:#fff;" id="cr-name">BROKER COMPANY NAME</div>
+              <div style="font-size:12px;color:#cbd5e1;margin-top:4px;" id="cr-ids">MC-000000 | USDOT-000000 | City, ST</div>
+            </div>
+            <div style="text-align:right;">
+              <span id="cr-badge" style="padding:6px 16px;border-radius:20px;font-weight:800;font-size:14px;background:#10b981;color:#fff;">A+ EXCELLENT</span>
+              <div style="font-size:11px;color:#94a3b8;margin-top:4px;" id="cr-score">Credit Score: 98 / 100</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-bottom:16px;">
+            <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:8px;">
+              <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Authority Status</div>
+              <div style="font-size:13px;font-weight:700;color:#34d399;margin-top:2px;" id="cr-authority">ACTIVE — AUTHORIZED</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:8px;">
+              <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">$75k Surety Bond</div>
+              <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-top:2px;" id="cr-bond">BMC-84 $75,000 ACTIVE</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:8px;">
+              <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Days To Pay (DTP)</div>
+              <div style="font-size:13px;font-weight:700;color:#fbbf24;margin-top:2px;" id="cr-dtp">19 Days Avg</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:8px;">
+              <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Factoring Approval</div>
+              <div style="font-size:13px;font-weight:700;color:#a7f3d0;margin-top:2px;" id="cr-factoring">APPROVED (Apex, RTS)</div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div style="font-size:12px;color:#cbd5e1;">
+              Recommended Credit Limit: <strong style="color:#fff;" id="cr-limit">$150,000 per Carrier</strong>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="importCheckedBroker()">
+              ➕ Save Broker to System Directory
+            </button>
+          </div>
         </div>
       </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Contact Person</label>
-          <input type="text" name="contact_person" placeholder="John Doe">
+
+      <!-- Main Directory Table Card -->
+      <div class="tms-table-card">
+        <div class="toolbar-filter-bar">
+          <div class="search-input-group">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="broker-search-input" placeholder="Search saved broker name, MC#, contact..." oninput="filterBrokersTable()">
+          </div>
         </div>
-        <div class="field">
-          <label>Phone Number</label>
-          <input type="text" name="phone" placeholder="+1 800 555 0199">
+
+        <div class="tms-table-wrapper">
+          <table class="tms-table-v2" id="brokers-table">
+            <thead>
+              <tr>
+                <th>Broker Company Name</th>
+                <th>MC Number</th>
+                <th>Contact Person</th>
+                <th>Phone / Email</th>
+                <th>Credit Rating</th>
+                <th>Notes</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">Loading broker directory...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Email Address</label>
-          <input type="email" name="email" placeholder="dispatch@broker.com">
-        </div>
-        <div class="field">
-          <label>Credit Rating</label>
-          <select name="credit_rating">
-            <option value="A+">A+ (Excellent - Quick Pay)</option>
-            <option value="A">A (Good / Standard 30 Days)</option>
-            <option value="B">B (Moderate Credit)</option>
-            <option value="C">C (Caution / High Risk)</option>
-          </select>
-        </div>
-      </div>
-      <div class="field">
-        <label>Internal Notes / Packet Info</label>
-        <textarea name="notes" rows="2"></textarea>
-      </div>
-      <button type="submit" class="btn btn-amber btn-block">Save Broker</button>
-    </form>
+
+    </main>
   </div>
 </div>
 
+<!-- NEW BROKER MODAL -->
+<div class="modal-backdrop" id="new-broker-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>+ Add Freight Broker</h2>
+      <button onclick="closeNewBrokerModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="new-broker-form">
+        <div class="form-row" style="margin-bottom:16px;">
+          <div class="form-group">
+            <label class="form-label required">Company Name *</label>
+            <input class="form-input" type="text" id="nb-company" name="company_name" required placeholder="e.g. TQL, C.H. Robinson, Echo">
+          </div>
+          <div class="form-group">
+            <label class="form-label">MC Number</label>
+            <input class="form-input" type="text" id="nb-mc" name="mc_number" placeholder="MC-123456">
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:16px;">
+          <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            <input class="form-input" type="text" id="nb-contact" name="contact_person" placeholder="John Smith">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input class="form-input" type="text" id="nb-phone" name="phone" placeholder="+1 (800) 555-0199">
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:16px;">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input class="form-input" type="email" id="nb-email" name="email" placeholder="dispatch@broker.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Credit Rating</label>
+            <select class="form-select" id="nb-rating" name="credit_rating">
+              <option value="A+">A+ (Prime / Quick Pay)</option>
+              <option value="A">A (Good / 21-30 Days)</option>
+              <option value="B">B (Moderate / Standard)</option>
+              <option value="C">C (Caution / Slow Pay)</option>
+              <option value="F">F (High Risk / Do Not Load)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Internal Notes / Packet Info</label>
+          <textarea class="form-textarea" id="nb-notes" name="notes" rows="2" placeholder="Strict payment terms, check call frequency..."></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeNewBrokerModal()" class="btn btn-light">Cancel</button>
+      <button type="submit" form="new-broker-form" class="btn btn-primary">Save Broker →</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/notifications-bell.js"></script>
 <script src="/js/main.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/tms.js"></script>
 <script>
+  let currentUser = null;
+  let rawBrokers = [];
+  let lastCheckedBrokerData = null;
+
   async function initBrokers() {
-    const user = await checkAuth(['dispatcher', 'admin', 'super_admin']);
-    if (!user) return;
-    document.getElementById('user-badge-broker').textContent = user.name;
-    loadBrokers();
+    currentUser = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
+    if (!currentUser) return;
+
+    document.getElementById('user-badge-broker').textContent = `${currentUser.name} (${currentUser.role})`;
+    if (document.getElementById('broker-avatar')) {
+      document.getElementById('broker-avatar').textContent = (currentUser.name||'BD').slice(0,2).toUpperCase();
+    }
+
+    loadBrokersList();
   }
 
-  async function loadBrokers() {
-    const search = document.getElementById('broker-search').value;
+  async function loadBrokersList() {
     const tbody = document.querySelector('#brokers-table tbody');
     try {
-      const res = await fetch(`/api/brokers?search=${encodeURIComponent(search)}`);
+      const res = await fetch('/api/brokers');
       const data = await res.json();
-      const brokers = data.brokers || [];
-
-      if (!brokers.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center;">No brokers found.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = brokers.map(b => `
-        <tr>
-          <td><b>${b.company_name}</b></td>
-          <td>${b.mc_number || 'N/A'}</td>
-          <td>${b.contact_person || '-'}</td>
-          <td>${b.phone || ''} ${b.email ? '<br><small class="muted">' + b.email + '</small>' : ''}</td>
-          <td><span class="badge badge-${b.credit_rating.startsWith('A') ? 'paid' : 'booked'}">${b.credit_rating}</span></td>
-          <td><small class="muted">${b.notes || '-'}</small></td>
-          <td>
-            <button class="btn btn-danger btn-sm" onclick="deleteBroker(${b.id})">Delete</button>
-          </td>
-        </tr>
-      `).join('');
+      rawBrokers = data.brokers || [];
+      renderBrokersTable(rawBrokers);
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="7" class="muted">Error loading brokers.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">Error loading brokers.</td></tr>`;
     }
   }
 
-  async function deleteBroker(id) {
-    if (!confirm('Are you sure you want to delete this broker?')) return;
-    await fetch(`/api/brokers/${id}`, { method: 'DELETE' });
-    loadBrokers();
+  function filterBrokersTable() {
+    const q = (document.getElementById('broker-search-input').value || '').toLowerCase().trim();
+    if (!q) {
+      renderBrokersTable(rawBrokers);
+      return;
+    }
+    const filtered = rawBrokers.filter(b =>
+      (b.company_name||'').toLowerCase().includes(q) ||
+      (b.mc_number||'').toLowerCase().includes(q) ||
+      (b.contact_person||'').toLowerCase().includes(q)
+    );
+    renderBrokersTable(filtered);
   }
+
+  function renderBrokersTable(list) {
+    const tbody = document.querySelector('#brokers-table tbody');
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">No brokers found in directory.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(b => {
+      const rating = b.credit_rating || 'A';
+      let ratingBadgeClass = 'badge-status active';
+      if (rating === 'A+' || rating === 'A') ratingBadgeClass = 'badge-status active';
+      else if (rating === 'B') ratingBadgeClass = 'badge-status dispatched';
+      else ratingBadgeClass = 'badge-status dead';
+
+      return `
+        <tr>
+          <td><strong style="color:var(--text-primary);font-size:14px;">${escapeHtml(b.company_name)}</strong></td>
+          <td><span class="equip-tag">${escapeHtml(b.mc_number || 'N/A')}</span></td>
+          <td><div style="font-size:13px;font-weight:600;">👤 ${escapeHtml(b.contact_person || 'N/A')}</div></td>
+          <td>
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary);">${escapeHtml(b.phone || '')}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(b.email || '')}</div>
+          </td>
+          <td><span class="${ratingBadgeClass}">${escapeHtml(rating)} Rating</span></td>
+          <td><div style="font-size:12px;color:var(--text-muted);">${escapeHtml(b.notes || '-')}</div></td>
+          <td>
+            <button onclick="deleteBroker(${b.id})" class="btn-table-action call" style="color:#ef4444;border-color:#fecaca;" title="Delete Broker">Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Check Broker Credit via API
+  async function checkBrokerCredit() {
+    const input = document.getElementById('credit-mc-input').value.trim();
+    if (!input) return alert('Please enter an MC# or DOT# to check credit.');
+
+    const btn = document.getElementById('btn-credit-check');
+    btn.disabled = true;
+    btn.textContent = '⏳ Checking FMCSA & Credit Engine...';
+
+    try {
+      const res = await fetch(`/api/brokers/credit-check/${encodeURIComponent(input)}`);
+      const data = await res.json();
+      btn.disabled = false;
+      btn.textContent = '🔍 Perform Credit Check';
+
+      if (!res.ok) return alert(data.error || 'Credit check failed');
+
+      lastCheckedBrokerData = data;
+      const box = document.getElementById('credit-result-box');
+      box.style.display = 'block';
+
+      document.getElementById('cr-name').textContent = data.companyName;
+      document.getElementById('cr-ids').textContent = `${data.mcNumber} | ${data.dotNumber} | ${data.cityState}`;
+
+      const badge = document.getElementById('cr-badge');
+      badge.textContent = `${data.creditRating} (${data.riskLevel})`;
+      badge.style.background = data.creditRating.startsWith('A') ? '#059669' : (data.creditRating.startsWith('B') ? '#d97706' : '#dc2626');
+
+      document.getElementById('cr-score').textContent = `Credit Score: ${data.creditScore} / 100`;
+      document.getElementById('cr-authority').textContent = data.authorityStatus;
+      document.getElementById('cr-bond').textContent = data.bondStatus;
+      document.getElementById('cr-dtp').textContent = `${data.daysToPay} Days Avg`;
+      document.getElementById('cr-factoring').textContent = data.factoringStatus;
+      document.getElementById('cr-limit').textContent = `${data.creditLimit}`;
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '🔍 Perform Credit Check';
+      alert('Error connecting to credit check engine.');
+    }
+  }
+
+  function importCheckedBroker() {
+    if (!lastCheckedBrokerData) return;
+    document.getElementById('nb-company').value = lastCheckedBrokerData.companyName;
+    document.getElementById('nb-mc').value = lastCheckedBrokerData.mcNumber;
+    document.getElementById('nb-rating').value = lastCheckedBrokerData.creditRating.slice(0, 2);
+    document.getElementById('nb-notes').value = `Verified via Credit Engine. DTP: ${lastCheckedBrokerData.daysToPay} days. Bond: ${lastCheckedBrokerData.bondStatus}`;
+    openNewBrokerModal();
+  }
+
+  function openNewBrokerModal() { document.getElementById('new-broker-modal').classList.add('open'); }
+  function closeNewBrokerModal() { document.getElementById('new-broker-modal').classList.remove('open'); }
 
   document.getElementById('new-broker-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const body = Object.fromEntries(formData.entries());
-    const msg = document.getElementById('new-broker-msg');
 
     const res = await fetch('/api/brokers', {
       method: 'POST',
@@ -175,16 +385,13 @@
       body: JSON.stringify(body)
     });
     const data = await res.json();
-
-    if (!res.ok) {
-      msg.className = 'form-msg error';
-      msg.textContent = data.error;
-    } else {
-      msg.className = 'form-msg success';
-      msg.textContent = 'Broker added successfully!';
+    if (res.ok) {
+      closeNewBrokerModal();
       e.target.reset();
-      loadBrokers();
-      setTimeout(() => document.getElementById('new-broker-modal').classList.remove('active'), 1500);
+      loadBrokersList();
+      alert('✅ Broker saved successfully to directory!');
+    } else {
+      alert(data.error || 'Failed to save broker');
     }
   });
 
