@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="post-meta-title">Freight Article — Shipping Wish LLC</title>
+  <meta id="post-meta-desc" name="description" content="Read expert freight dispatch, broker credit, and factoring guidance for American truckers from Shipping Wish LLC.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .article-hero {
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+      padding: 60px 0 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: #fff;
+    }
+    .article-container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .article-tag {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-amber-400);
+      margin-bottom: 12px;
+    }
+    .article-title {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 900;
+      line-height: 1.15;
+      color: #ffffff;
+      margin-bottom: 20px;
+    }
+    .article-meta-bar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      flex-wrap: wrap;
+    }
+    .article-cover {
+      width: 100%;
+      max-height: 440px;
+      object-fit: cover;
+      border-radius: var(--radius-2xl);
+      margin: 32px 0;
+      box-shadow: var(--shadow-xl);
+    }
+    .article-body {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #334155;
+      padding: 40px 0 80px;
+    }
+    .article-body h2 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 36px;
+      margin-bottom: 16px;
+    }
+    .article-body h3 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 28px;
+      margin-bottom: 12px;
+    }
+    .article-body p {
+      margin-bottom: 20px;
+    }
+    .article-body ul, .article-body ol {
+      margin-bottom: 24px;
+      padding-left: 24px;
+    }
+    .article-body li {
+      margin-bottom: 8px;
+    }
+    .author-card {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 40px;
+    }
+    .author-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--color-amber-500);
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo" aria-label="Shipping Wish LLC Home">
+      <div class="nav-logo-mark" aria-hidden="true">SW</div>
+      <div class="nav-logo-text">Shipping <span>Wish</span></div>
+    </a>
+
+    <ul class="nav-links" role="list">
+      <li><a href="/">Home</a></li>
+      <li class="nav-item-dropdown">
+        <a href="/services.html">Services ▾</a>
+        <div class="nav-dropdown-menu" role="menu">
+          <div class="dropdown-label">Dispatch</div>
+          <a href="/dispatch.html" role="menuitem">Freight Dispatch</a>
+          <a href="/load-booking.html" role="menuitem">Load Booking</a>
+          <a href="/fleet-support.html" role="menuitem">Fleet &amp; Driver Support</a>
+          <div class="dropdown-label">Financial</div>
+          <a href="/factoring.html" role="menuitem">Factoring Assistance</a>
+          <a href="/insurance.html" role="menuitem">Insurance Services</a>
+          <div class="dropdown-label">Technology</div>
+          <a href="/eld.html" role="menuitem">ELD &amp; Telematics</a>
+          <a href="/dot-compliance.html" role="menuitem">DOT Compliance</a>
+        </div>
+      </li>
+      <li><a href="/about.html">About</a></li>
+      <li><a href="/blog.html" class="active">Blog</a></li>
+      <li><a href="/contact.html">Contact</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <div class="live-status" aria-live="polite">
+        <span class="live-dot" aria-hidden="true"></span>
+        Dispatch Active
+      </div>
+      <a href="/login.html" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
+      <a href="/contact.html" class="btn btn-primary btn-sm" id="nav-cta-btn">Get Started</a>
+    </div>
+
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile nav -->
+<div class="nav-mobile" id="nav-mobile" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+  <a href="/">Home</a>
+  <a href="/services.html">Services Catalog</a>
+  <a href="/factoring.html">Factoring Assistance</a>
+  <a href="/insurance.html">Insurance Services</a>
+  <a href="/eld.html">ELD &amp; Telematics</a>
+  <a href="/dot-compliance.html">DOT Compliance</a>
+  <a href="/about.html">About Us</a>
+  <a href="/blog.html" class="active">Dispatch Blog 📰</a>
+  <a href="/contact.html">Contact Us</a>
+  <div style="margin-top:24px;display:flex;flex-direction:column;gap:12px;">
+    <a href="/login.html" class="btn btn-secondary btn-lg btn-block" style="border-color:rgba(255,255,255,0.25);color:#ffffff;font-weight:700;">🔑 Sign In to Portal</a>
+    <a href="/contact.html" class="btn btn-primary btn-lg btn-block" style="background:linear-gradient(135deg, #f59e0b, #d97706);color:#0f172a;font-weight:800;">Get Started →</a>
+  </div>
+</div>
+
+<!-- ARTICLE HERO -->
+<section class="article-hero">
+  <div class="article-container">
+    <div style="margin-bottom:16px;">
+      <a href="/blog.html" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:14px;font-weight:600;">← Back to Blog Index</a>
+    </div>
+    <div class="article-tag" id="art-category">Freight Dispatch</div>
+    <h1 class="article-title" id="art-title">Loading Article...</h1>
+    <div class="article-meta-bar">
+      <span id="art-author">✍️ Shipping Wish Editorial</span>
+      <span id="art-readtime">⏱️ 5 min read</span>
+      <span id="art-date">📅 August 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN ARTICLE CONTENT -->
+<main class="article-container">
+  <img id="art-cover" src="" alt="Article cover image" class="article-cover" style="display:none;">
+
+  <article id="art-content" class="article-body">
+    <p>Loading full article content...</p>
+  </article>
+
+  <!-- Author Box -->
+  <div class="author-card">
+    <div class="author-avatar">SW</div>
+    <div>
+      <div style="font-weight:800;color:#0f172a;font-size:16px;">Shipping Wish Freight Intelligence Desk</div>
+      <div style="font-size:13px;color:#64748b;line-height:1.5;margin-top:4px;">
+        Published by Shipping Wish LLC dispatchers and logistics specialists. Helping American owner-operators maximize profitability, negotiate top rates, and navigate DOT compliance.
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="/" class="nav-logo" aria-label="Shipping Wish LLC Home">
+          <div class="nav-logo-mark" aria-hidden="true">SW</div>
+          <div class="nav-logo-text">Shipping <span>Wish</span></div>
+        </a>
+        <p>Technology-powered freight dispatch and fleet operations built for modern American carriers. Commission-only model. No monthly subscriptions. Real dispatchers.</p>
+        <div class="footer-contact">
+          <div class="footer-contact-item">
+            <span aria-hidden="true">📞</span>
+            <a href="tel:+19177370021" id="footer-phone-link">+1 (917) 737-0021</a>
+          </div>
+          <div class="footer-contact-item">
+            <span aria-hidden="true">✉️</span>
+            <a href="mailto:info@shippingwish.com" id="footer-email-link">info@shippingwish.com</a>
+          </div>
+          <div class="footer-contact-item">
+            <span aria-hidden="true">📍</span>
+            <span>19266 Coastal Hwy, Rehoboth Beach, DE 19971</span>
+          </div>
+        </div>
+        <div class="footer-social" style="display:flex;gap:12px;margin-top:16px;">
+          <a href="https://linkedin.com/company/shippingwish" target="_blank" rel="noopener" aria-label="LinkedIn" class="social-icon-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;font-weight:bold;font-size:14px;border:1px solid rgba(255,255,255,0.15);">in</a>
+          <a href="https://facebook.com/shippingwish" target="_blank" rel="noopener" aria-label="Facebook" class="social-icon-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;font-weight:bold;font-size:14px;border:1px solid rgba(255,255,255,0.15);">fb</a>
+          <a href="https://x.com/shippingwish" target="_blank" rel="noopener" aria-label="X Twitter" class="social-icon-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;font-weight:bold;font-size:14px;border:1px solid rgba(255,255,255,0.15);">𝕏</a>
+          <a href="https://instagram.com/shippingwish" target="_blank" rel="noopener" aria-label="Instagram" class="social-icon-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;font-weight:bold;font-size:14px;border:1px solid rgba(255,255,255,0.15);">ig</a>
+          <a href="https://youtube.com/@shippingwish" target="_blank" rel="noopener" aria-label="YouTube" class="social-icon-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;font-weight:bold;font-size:14px;border:1px solid rgba(255,255,255,0.15);">yt</a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="/services.html#dispatch">Freight Dispatch</a></li>
+          <li><a href="/services.html#load-booking">Load Board Management</a></li>
+          <li><a href="/services.html#fleet">Fleet &amp; Driver Support</a></li>
+          <li><a href="/factoring.html">Factoring Assistance</a></li>
+          <li><a href="/insurance.html">Insurance Services</a></li>
+          <li><a href="/eld.html">ELD &amp; Telematics</a></li>
+          <li><a href="/dot-compliance.html">DOT Compliance</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Company &amp; Resources</h4>
+        <ul>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/blog.html">Dispatch &amp; Freight Blog 📰</a></li>
+          <li><a href="/contact.html">Contact Us</a></li>
+          <li><a href="/login.html">Carrier Portal Login</a></li>
+          <li><a href="/signup.html">Create Account</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Legal &amp; Compliance</h4>
+        <ul>
+          <li><a href="/privacy-policy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+          <li><span style="font-size:12px;color:rgba(255,255,255,0.5);">LLC Reg: Delaware, USA</span></li>
+          <li><span style="font-size:12px;color:rgba(255,255,255,0.5);">Not a Freight Broker</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 Shipping Wish LLC. All rights reserved. Registered in Delaware, USA.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  async function loadPostDetail() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('slug') || 'owner-operator-freight-dispatch-playbook-2026';
+
+    try {
+      const res = await fetch(`/api/blog/${encodeURIComponent(slug)}`);
+      const data = await res.json();
+      if (!data.post) {
+        document.getElementById('art-title').innerText = 'Article Not Found';
+        document.getElementById('art-content').innerHTML = '<p>The requested blog article could not be found. <a href="/blog.html">Return to Blog Index</a>.</p>';
+        return;
+      }
+
+      const post = data.post;
+      document.title = `${post.title} — Shipping Wish LLC`;
+      document.getElementById('post-meta-title').innerText = `${post.title} — Shipping Wish LLC`;
+      document.getElementById('post-meta-desc').setAttribute('content', post.summary || post.title);
+
+      document.getElementById('art-category').innerText = post.category || 'Freight Dispatch';
+      document.getElementById('art-title').innerText = post.title;
+      document.getElementById('art-author').innerText = `✍️ ${post.author || 'Shipping Wish Editorial'}`;
+      document.getElementById('art-readtime').innerText = `⏱️ ${post.read_time || '5 min read'}`;
+      
+      if (post.created_at) {
+        const d = new Date(post.created_at);
+        document.getElementById('art-date').innerText = `📅 ${d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+      }
+
+      if (post.image_url) {
+        const coverEl = document.getElementById('art-cover');
+        coverEl.src = post.image_url;
+        coverEl.alt = post.title;
+        coverEl.style.display = 'block';
+      }
+
+      document.getElementById('art-content').innerHTML = post.content;
+    } catch (err) {
+      console.error('Failed to load article detail:', err);
+    }
+  }
+
+  // Mobile Nav Toggle
+  const hamburger = document.getElementById('nav-hamburger');
+  const mobileNav = document.getElementById('nav-mobile');
+  if (hamburger && mobileNav) {
+    hamburger.addEventListener('click', () => {
+      const isOpen = mobileNav.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', isOpen);
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    });
+  }
+
+  loadPostDetail();
+</script>
+</body>
+</html>

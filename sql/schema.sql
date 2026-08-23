@@ -504,4 +504,31 @@ CREATE INDEX IF NOT EXISTS idx_load_messages_load ON load_messages(load_id);
 CREATE INDEX IF NOT EXISTS idx_loads_ref ON loads(reference_number);
 CREATE INDEX IF NOT EXISTS idx_loads_bol ON loads(bol_number);
 
+-- Website CMS Settings Table
+CREATE TABLE IF NOT EXISTS site_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Blog Posts Table for SEO & Backlinks
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  summary TEXT NOT NULL,
+  content TEXT NOT NULL,
+  category TEXT DEFAULT 'Freight Dispatch',
+  author TEXT DEFAULT 'Shipping Wish Editorial Desk',
+  read_time TEXT DEFAULT '5 min read',
+  image_url TEXT,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_blog_posts_slug ON blog_posts(slug);
+CREATE INDEX IF NOT EXISTS idx_blog_posts_published ON blog_posts(is_published);
+
+
 

@@ -317,7 +317,7 @@
   }
 
   async function sendStripeInvoice(id, invNumber) {
-    const email = prompt(`Send Stripe Invoice #${invNumber} link to customer email:`, 'billing@shippingwish.com');
+    const email = prompt(`Send Stripe Invoice #${invNumber} link to customer email:`, 'dispatch@shippingwish.com');
     if (!email) return;
 
     try {

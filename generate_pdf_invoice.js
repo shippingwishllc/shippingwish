@@ -18,7 +18,7 @@ doc.rect(0, 0, 612, 110).fill('#0f172a');
 
 doc.fillColor('#f59e0b').font('Helvetica-Bold').fontSize(24).text('SHIPPING WISH LLC', 40, 30);
 doc.fillColor('#94a3b8').font('Helvetica').fontSize(10).text('Premier US Freight Dispatch & Enterprise Logistics Conglomerate', 40, 58);
-doc.fillColor('#ffffff').fontSize(9).text('www.shippingwish.com | billing@shippingwish.com | +1 917 737 0021', 40, 74);
+doc.fillColor('#ffffff').fontSize(9).text('www.shippingwish.com | dispatch@shippingwish.com | +1 917 737 0021', 40, 74);
 
 // PAID Watermark Badge top right
 doc.save();
@@ -43,7 +43,7 @@ doc.font('Helvetica').fontSize(9).fillColor('#475569')
    .text('19266 Coastal Hwy', 40, colY + 30)
    .text('Rehoboth, DE 19971, USA', 40, colY + 42)
    .text('Phone: +1 917 737 0021', 40, colY + 54)
-   .text('Email: billing@shippingwish.com', 40, colY + 66)
+   .text('Email: dispatch@shippingwish.com', 40, colY + 66)
    .text('Web: www.shippingwish.com', 40, colY + 78);
 
 // Customer (Right)

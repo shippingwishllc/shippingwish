@@ -40,6 +40,8 @@ app.use('/api/tracking', require('./routes/tracking'));           // Driver GPS 
 app.use('/api/audit-logs', require('./routes/audit'));            // System security audit log viewer
 app.use('/api/messages', require('./routes/messages'));            // Load chat & dispatcher-driver messaging
 app.use('/api/routes', require('./routes/routes'));              // Google Route Optimization API, Truck Miles, RPM & Fuel Calculator
+app.use('/api/settings', require('./routes/settings'));          // Website CMS Settings & Contact Info
+app.use('/api/blog', require('./routes/blog'));                  // SEO Freight Blog & Admin Articles Manager
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

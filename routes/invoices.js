@@ -124,7 +124,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="memo">
       <h5>&#x1F4DD; Memo &amp; Payment Instructions</h5>
       <p>${billingNotes || `Dispatch commission invoice covering ${loads.length} load(s) completed during the period: ${periodLabel}. Commission rate of ${feePercent}% applies to gross freight as per dispatch service agreement.`}</p>
-      <p style="margin-top:6px">Please remit <strong>$${commAmt.toLocaleString('en-US',{minimumFractionDigits:2})}</strong> within 7 days. Contact: billing@shippingwish.com | +1 917 737 0021</p>
+      <p style="margin-top:6px">Please remit <strong>$${commAmt.toLocaleString('en-US',{minimumFractionDigits:2})}</strong> within 7 days. Contact: dispatch@shippingwish.com | +1 917 737 0021</p>
     </div>
     <div class="inv-footer">
       <strong>Shipping Wish LLC — Accounts Receivable &amp; Billing Department</strong><br>
