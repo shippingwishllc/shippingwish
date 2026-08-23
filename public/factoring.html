@@ -13,6 +13,8 @@
       grid-template-columns: 1.1fr 0.9fr;
       gap: var(--space-12);
       align-items: center;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .form-card-dark {
@@ -21,10 +23,40 @@
       border-radius: var(--radius-2xl);
       padding: var(--space-8);
       box-shadow: var(--shadow-2xl);
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .form-input, .form-group, input, button {
+      box-sizing: border-box;
+      max-width: 100%;
     }
 
     @media (max-width: 992px) {
-      .factoring-grid { grid-template-columns: 1fr; }
+      .factoring-grid {
+        grid-template-columns: 1fr !important;
+        gap: var(--space-8) !important;
+        width: 100% !important;
+      }
+      .form-row {
+        grid-template-columns: 1fr !important;
+        gap: var(--space-3) !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .form-card-dark {
+        padding: 20px 16px !important;
+      }
+      h1 {
+        font-size: clamp(1.65rem, 5.5vw, 2.25rem) !important;
+        line-height: 1.15 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+      }
+      .factoring-hero-section {
+        padding: 40px 0 !important;
+      }
     }
   </style>
 </head>
@@ -91,7 +123,7 @@
 </div>
 
 <!-- HERO SECTION -->
-<section class="section" style="background:var(--color-gray-900);padding:var(--space-20) 0 var(--space-16);border-bottom:1px solid rgba(255,255,255,0.08);">
+<section class="section factoring-hero-section" style="background:var(--color-gray-900);border-bottom:1px solid rgba(255,255,255,0.08);">
   <div class="container" style="max-width:var(--container-xl);">
     <div class="factoring-grid">
       
