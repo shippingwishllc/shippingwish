@@ -860,7 +860,7 @@
 <!-- ===== PLATFORM PREVIEW ===== -->
 <section class="section" id="platform" aria-labelledby="platform-heading">
   <div class="container">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-16);align-items:center;">
+    <div class="platform-grid-container">
       <div class="reveal">
         <div class="section-eyebrow">TMS Platform</div>
         <h2 id="platform-heading" class="section-title">Operations Center Built for Dispatchers</h2>
@@ -873,37 +873,38 @@
             <span style="color:var(--color-success);font-size:18px;">✓</span> Real-time load status pipeline
           </li>
           <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
-            <span style="color:var(--color-success);font-size:18px;">✓</span> Carrier & driver management portal
+            <span style="color:var(--color-success);font-size:18px;">✓</span> Carrier &amp; driver management portal
           </li>
           <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
             <span style="color:var(--color-success);font-size:18px;">✓</span> Corporate invoice generation (PDF)
           </li>
           <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
-            <span style="color:var(--color-success);font-size:18px;">✓</span> Broker directory & credit tracking
+            <span style="color:var(--color-success);font-size:18px;">✓</span> Broker directory &amp; credit tracking
           </li>
           <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
-            <span style="color:var(--color-success);font-size:18px;">✓</span> Performance analytics & IFTA reporting
+            <span style="color:var(--color-success);font-size:18px;">✓</span> Performance analytics &amp; IFTA reporting
           </li>
           <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
             <span style="color:var(--color-success);font-size:18px;">✓</span> DOT document vault
           </li>
         </ul>
-        <a href="/login.html" class="btn btn-dark btn-lg" id="platform-access-btn">Access Your Portal →</a>
+        <a href="/login.html" class="btn btn-primary btn-lg" id="platform-access-btn" style="font-weight:700;">Access Your Portal →</a>
       </div>
 
-      <!-- TMS Preview -->
+      <!-- TMS Preview Mockup -->
       <div class="platform-preview reveal animate-delay-200" role="img" aria-label="TMS platform dashboard preview">
         <div class="platform-topbar">
           <div class="platform-dot" style="background:#ff5f57;"></div>
           <div class="platform-dot" style="background:#ffbd2e;"></div>
           <div class="platform-dot" style="background:#28c840;"></div>
-          <span style="font-size:11px;color:rgba(255,255,255,0.3);margin-left:8px;font-family:var(--font-mono);">Shipping Wish TMS — Operations Center</span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.4);margin-left:8px;font-family:var(--font-mono);font-weight:700;">SW TMS v2.4 — Operations Desk</span>
           <div class="live-status" style="margin-left:auto;">
             <span class="live-dot"></span>
             Live
           </div>
         </div>
 
+        <!-- Stat Row -->
         <div class="platform-stat-row">
           <div class="platform-stat">
             <div class="ps-value">12</div>
@@ -927,45 +928,48 @@
           </div>
         </div>
 
-        <div class="platform-table-row header">
-          <span>LOAD #</span>
-          <span>ORIGIN → DEST</span>
-          <span>DRIVER</span>
-          <span>RATE</span>
-          <span>STATUS</span>
-          <span>RPM</span>
-        </div>
-        <div class="platform-table-row data">
-          <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.4);">#10482</span>
-          <span>Dallas TX → Atlanta GA</span>
-          <span style="color:rgba(255,255,255,0.5);">J. Martinez</span>
-          <span>$2,850</span>
-          <span><span class="platform-badge transit">In Transit</span></span>
-          <span>$2.41</span>
-        </div>
-        <div class="platform-table-row data">
-          <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.4);">#10483</span>
-          <span>Chicago IL → Memphis TN</span>
-          <span style="color:rgba(255,255,255,0.5);">A. Johnson</span>
-          <span>$1,650</span>
-          <span><span class="platform-badge pickup">At Pickup</span></span>
-          <span>$2.08</span>
-        </div>
-        <div class="platform-table-row data">
-          <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.4);">#10481</span>
-          <span>Phoenix AZ → Denver CO</span>
-          <span style="color:rgba(255,255,255,0.5);">R. Williams</span>
-          <span>$3,200</span>
-          <span><span class="platform-badge delivered">Delivered</span></span>
-          <span>$2.67</span>
-        </div>
-        <div class="platform-table-row data">
-          <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.4);">#10484</span>
-          <span>Houston TX → Louisville KY</span>
-          <span style="color:rgba(255,255,255,0.5);">T. Brown</span>
-          <span>$2,400</span>
-          <span><span class="platform-badge booked">Booked</span></span>
-          <span>$2.18</span>
+        <!-- Table Container -->
+        <div class="platform-table-wrapper">
+          <div class="platform-table-row header">
+            <span>LOAD #</span>
+            <span>ORIGIN → DEST</span>
+            <span>DRIVER</span>
+            <span>RATE</span>
+            <span>STATUS</span>
+            <span>RPM</span>
+          </div>
+          <div class="platform-table-row data">
+            <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.5);font-weight:700;">#10482</span>
+            <span style="color:#fff;font-weight:600;">Dallas TX → Atlanta GA</span>
+            <span style="color:rgba(255,255,255,0.6);">J. Martinez</span>
+            <span style="color:#6ee7b7;font-weight:700;">$2,850</span>
+            <span><span class="platform-badge transit">In Transit</span></span>
+            <span style="color:#fbbf24;font-weight:700;">$2.41</span>
+          </div>
+          <div class="platform-table-row data">
+            <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.5);font-weight:700;">#10483</span>
+            <span style="color:#fff;font-weight:600;">Chicago IL → Memphis TN</span>
+            <span style="color:rgba(255,255,255,0.6);">A. Johnson</span>
+            <span style="color:#6ee7b7;font-weight:700;">$1,650</span>
+            <span><span class="platform-badge pickup">At Pickup</span></span>
+            <span style="color:#fbbf24;font-weight:700;">$2.08</span>
+          </div>
+          <div class="platform-table-row data">
+            <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.5);font-weight:700;">#10481</span>
+            <span style="color:#fff;font-weight:600;">Phoenix AZ → Denver CO</span>
+            <span style="color:rgba(255,255,255,0.6);">R. Williams</span>
+            <span style="color:#6ee7b7;font-weight:700;">$3,200</span>
+            <span><span class="platform-badge delivered">Delivered</span></span>
+            <span style="color:#fbbf24;font-weight:700;">$2.67</span>
+          </div>
+          <div class="platform-table-row data">
+            <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.5);font-weight:700;">#10484</span>
+            <span style="color:#fff;font-weight:600;">Houston TX → Louisville KY</span>
+            <span style="color:rgba(255,255,255,0.6);">T. Brown</span>
+            <span style="color:#6ee7b7;font-weight:700;">$2,400</span>
+            <span><span class="platform-badge booked">Booked</span></span>
+            <span style="color:#fbbf24;font-weight:700;">$2.18</span>
+          </div>
         </div>
       </div>
     </div>

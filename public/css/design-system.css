@@ -2431,3 +2431,67 @@ h1, h2, h3, h4, h5, h6 {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* --------------------------------------------------------------------------- */
+/* TMS PLATFORM SHOWCASE (ENTERPRISE MOCKUP)                                  */
+/* --------------------------------------------------------------------------- */
+.platform-grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-12);
+  align-items: center;
+}
+
+.platform-preview {
+  background: linear-gradient(145deg, #0b1120 0%, #0f172a 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-2xl);
+  padding: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 30px rgba(245, 158, 11, 0.1);
+  position: relative;
+}
+
+.platform-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: var(--space-3);
+  border-radius: var(--radius-lg);
+}
+
+.platform-table-wrapper::-webkit-scrollbar {
+  height: 4px;
+}
+
+.platform-table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.4);
+  border-radius: 4px;
+}
+
+@media (max-width: 992px) {
+  .platform-grid-container {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-8) !important;
+  }
+
+  .platform-stat-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-3) !important;
+  }
+
+  .platform-stat {
+    padding: 12px 10px !important;
+  }
+
+  .platform-stat .ps-value {
+    font-size: 1.4rem !important;
+  }
+
+  .platform-table-row {
+    min-width: 580px !important;
+  }
+
+  .platform-preview {
+    padding: 16px 12px !important;
+  }
+}
