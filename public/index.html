@@ -34,22 +34,22 @@
     .hero-content {
       position: relative;
       z-index: 1;
-      padding: 100px var(--space-6) 90px;
-      max-width: var(--container-2xl);
+      padding: 90px var(--space-6) 80px;
+      max-width: 1280px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: var(--space-12);
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-8);
       align-items: center;
     }
 
     .hero-headline {
-      font-size: clamp(2.25rem, 5.5vw, 4rem);
+      font-size: clamp(2.25rem, 5vw, 3.75rem);
       font-weight: var(--font-black);
-      line-height: 1.06;
+      line-height: 1.08;
       letter-spacing: -0.03em;
       color: var(--color-white);
-      max-width: 720px;
+      max-width: 650px;
       margin-bottom: var(--space-6);
     }
 
@@ -62,7 +62,7 @@
       font-size: var(--text-lg);
       color: rgba(255,255,255,0.7);
       line-height: var(--leading-relaxed);
-      max-width: 560px;
+      max-width: 540px;
       margin-bottom: var(--space-8);
     }
 
@@ -74,8 +74,10 @@
       padding: var(--space-6);
       box-shadow: 0 30px 60px -15px rgba(0,0,0,0.6), 0 0 40px rgba(245,158,11,0.1);
       position: relative;
-      overflow: hidden;
       animation: floatCard 6s ease-in-out infinite;
+      width: 100%;
+      max-width: 580px;
+      justify-self: end;
     }
 
     @keyframes floatCard {
@@ -99,7 +101,7 @@
 
     @media (max-width: 1024px) {
       .hero-content { grid-template-columns: 1fr; gap: var(--space-8); padding: 80px var(--space-4) 60px; }
-      .hero-visual-card { max-width: 540px; margin: 0 auto; }
+      .hero-visual-card { max-width: 540px; margin: 0 auto; justify-self: center; }
     }
 
     .hero-actions {
