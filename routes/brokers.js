@@ -58,29 +58,7 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
   }
 
   try {
-    // 1. Check local DB table first
-    const dbRes = await pool.query('SELECT * FROM brokers WHERE lower(mc_number) = lower($1) OR mc_number = $2', [mcInput, `MC-${mcInput}`]);
-    if (dbRes.rows.length) {
-      const b = dbRes.rows[0];
-      return res.json({
-        ok: true,
-        mcNumber: b.mc_number.startsWith('MC-') ? b.mc_number : `MC-${b.mc_number}`,
-        dotNumber: `DOT-${1000000 + parseInt(mcInput, 10)}`,
-        companyName: b.company_name,
-        cityState: 'Dallas, TX',
-        authorityStatus: 'ACTIVE — AUTHORIZED FOR PROPERTY BROKER',
-        creditRating: b.credit_rating || 'A+',
-        creditScore: 97,
-        daysToPay: 20,
-        factoringStatus: 'APPROVED (Apex, RTS, TriumphPay, OTR Solutions)',
-        bondStatus: 'VERIFIED ($75,000 BMC-84 Surety Bond Active)',
-        creditLimit: '$150,000 per Carrier',
-        riskLevel: 'LOW RISK',
-        verifiedAt: new Date().toISOString()
-      });
-    }
-
-    // 2. Check Top Brokers Registry
+    // 1. Check Top Brokers Registry (Real US Top Freight Brokers mapping)
     if (TOP_BROKERS_REGISTRY[mcInput]) {
       const reg = TOP_BROKERS_REGISTRY[mcInput];
       return res.json({
@@ -101,7 +79,7 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
       });
     }
 
-    // 3. Live FMCSA Entity Lookup Engine
+    // 2. Live FMCSA Entity Lookup Engine (CarrierChk)
     try {
       const headers = { 
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -136,6 +114,28 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
       }
     } catch (e) {
       console.log('Live FMCSA CarrierChk lookup fallback exception');
+    }
+
+    // 3. Check local DB table if explicitly saved by user
+    const dbRes = await pool.query('SELECT * FROM brokers WHERE lower(mc_number) = lower($1) OR mc_number = $2', [mcInput, `MC-${mcInput}`]);
+    if (dbRes.rows.length) {
+      const b = dbRes.rows[0];
+      return res.json({
+        ok: true,
+        mcNumber: b.mc_number.startsWith('MC-') ? b.mc_number : `MC-${b.mc_number}`,
+        dotNumber: `DOT-${1000000 + parseInt(mcInput, 10)}`,
+        companyName: b.company_name,
+        cityState: 'Dallas, TX',
+        authorityStatus: 'ACTIVE — AUTHORIZED FOR PROPERTY BROKER',
+        creditRating: b.credit_rating || 'A+',
+        creditScore: 97,
+        daysToPay: 20,
+        factoringStatus: 'APPROVED (Apex, RTS, TriumphPay, OTR Solutions)',
+        bondStatus: 'VERIFIED ($75,000 BMC-84 Surety Bond Active)',
+        creditLimit: '$150,000 per Carrier',
+        riskLevel: 'LOW RISK',
+        verifiedAt: new Date().toISOString()
+      });
     }
 
     // 4. FMCSA dynamic calculation for any custom MC# or DOT#
