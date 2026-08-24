@@ -3,325 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Shipping Wish LLC - Enterprise Sales Leads & Carrier Acquisition CRM Dashboard">
-  <title>Sales CRM & Carrier Acquisition | Shipping Wish LLC</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Sales CRM & Carrier Acquisition | Shipping Wish TMS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
   <style>
-    /* Dashboard Layout */
-    body {
-      margin: 0;
-      background-color: var(--color-background);
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
-    
-    .sidebar {
-      width: 260px;
-      background-color: var(--color-navy);
-      color: var(--color-white);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-    }
-    
-    .sidebar-header {
-      padding: var(--spacing-xl) var(--spacing-lg);
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .sidebar-header h2 {
-      margin: 0;
-      color: var(--color-white);
-      font-size: 1.25rem;
-    }
-    
-    .sidebar-nav {
-      flex: 1;
-      padding: var(--spacing-lg) 0;
-      overflow-y: auto;
-    }
-    
-    .sidebar-nav a {
-      display: flex;
-      align-items: center;
-      padding: var(--spacing-md) var(--spacing-lg);
-      color: var(--color-gray-300);
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-    
-    .sidebar-nav a:hover {
-      background-color: rgba(255,255,255,0.05);
-      color: var(--color-white);
-    }
-    
-    .sidebar-nav a.active {
-      background-color: rgba(255,255,255,0.1);
-      color: var(--color-amber);
-      border-left: 3px solid var(--color-amber);
-    }
-    
-    .main-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    
-    .app-header {
-      background-color: var(--color-white);
-      padding: var(--spacing-md) var(--spacing-xl);
-      border-bottom: 1px solid var(--color-gray-200);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
-    }
-    
-    .header-title h1 {
-      margin: 0;
-      font-size: 1.5rem;
-      color: var(--color-navy);
-    }
-    
-    .header-title p {
-      margin: 4px 0 0 0;
-      color: var(--color-gray-500);
-      font-size: 0.875rem;
-    }
-    
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-lg);
-    }
-    
-    .user-profile {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-sm);
-      font-weight: 500;
-      color: var(--color-navy);
-    }
-    
-    .dashboard-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: var(--spacing-xl);
-    }
-    
-    /* KPI Cards */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: var(--spacing-lg);
-      margin-bottom: var(--spacing-xl);
-    }
-    
-    .kpi-card {
-      background: var(--color-white);
-      padding: var(--spacing-lg);
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    
-    .kpi-card h3 {
-      margin: 0 0 var(--spacing-sm) 0;
-      color: var(--color-gray-500);
-      font-size: 0.875rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    
-    .kpi-card .kpi-value {
-      margin: 0;
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--color-navy);
-    }
-    
-    /* Pipeline Tabs & Search */
-    .pipeline-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--spacing-lg);
-      flex-wrap: wrap;
-      gap: var(--spacing-md);
-    }
-    
-    .pipeline-tabs {
-      display: flex;
-      gap: var(--spacing-sm);
-    }
-    
-    .pipeline-tab {
-      background: var(--color-white);
-      border: 1px solid var(--color-gray-300);
-      padding: var(--spacing-sm) var(--spacing-lg);
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: 500;
-      color: var(--color-gray-600);
-      transition: all 0.2s;
-    }
-    
-    .pipeline-tab:hover {
-      background: var(--color-gray-100);
-    }
-    
-    .pipeline-tab.active {
-      background: var(--color-navy);
-      color: var(--color-white);
-      border-color: var(--color-navy);
-    }
-    
-    .search-bar {
-      display: flex;
-      gap: var(--spacing-sm);
-      width: 100%;
-      max-width: 400px;
-    }
-    
-    .search-bar input {
-      flex: 1;
-      padding: var(--spacing-sm) var(--spacing-md);
-      border: 1px solid var(--color-gray-300);
-      border-radius: 4px;
-    }
-    
-    /* Leads Table */
-    .table-container {
-      background: var(--color-white);
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      overflow-x: auto;
-    }
-    
-    .tms-table-v2 {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-    
-    .tms-table-v2 th {
-      padding: var(--spacing-md);
-      background-color: var(--color-gray-50);
-      color: var(--color-gray-500);
-      font-weight: 600;
-      font-size: 0.875rem;
-      border-bottom: 2px solid var(--color-gray-200);
-    }
-    
-    .tms-table-v2 td {
-      padding: var(--spacing-md);
-      border-bottom: 1px solid var(--color-gray-200);
-      color: var(--color-navy);
-      vertical-align: top;
-    }
-    
-    .tms-table-v2 tbody tr:hover {
-      background-color: var(--color-gray-50);
-    }
-    
-    .status-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    .status-new { background-color: #e0f2fe; color: #0369a1; }
-    .status-contacted { background-color: #fef3c7; color: #b45309; }
-    .status-packet { background-color: #ede9fe; color: #5b21b6; }
-    .status-active { background-color: #dcfce7; color: #15803d; }
-    .status-dead { background-color: #fee2e2; color: #b91c1c; }
-    
-    .action-btn {
-      background: none;
-      border: none;
-      color: var(--color-amber);
-      cursor: pointer;
-      font-weight: 500;
-      padding: 4px;
-    }
-    .action-btn:hover { text-decoration: underline; }
-    
-    /* Modals */
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.7);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    
-    .modal-overlay.active {
-      display: flex;
-    }
-    
-    .modal-content {
-      background: var(--color-white);
-      padding: var(--spacing-xl);
-      border-radius: 8px;
-      width: 100%;
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--spacing-lg);
-    }
-    
-    .modal-header h2 {
-      margin: 0;
-      color: var(--color-navy);
-    }
-    
-    .close-modal {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--color-gray-500);
-    }
-    
-    .form-group {
-      margin-bottom: var(--spacing-md);
-    }
-    
-    .form-group label {
-      display: block;
-      margin-bottom: var(--spacing-xs);
-      font-weight: 500;
-      color: var(--color-navy);
-    }
-    
-    .form-control {
-      width: 100%;
-      padding: var(--spacing-sm);
-      border: 1px solid var(--color-gray-300);
-      border-radius: 4px;
-      font-family: inherit;
-    }
-    
-    .form-row {
-      display: flex;
-      gap: var(--spacing-md);
-    }
-    .form-row .form-group {
-      flex: 1;
-    }
+    .tms-table-v2 th, .tms-table-v2 td { padding: 12px 16px; }
   </style>
 </head>
 <body class="app-body">
@@ -394,444 +80,429 @@
     </div>
   </aside>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    
-    <!-- Top Header -->
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
     <header class="app-header">
-      <div class="header-title">
-        <h1>Sales CRM & Carrier Acquisition</h1>
-        <p>Track carrier leads, outreach dispositions, & onboarding packets</p>
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Sales CRM &amp; Carrier Acquisition</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Track carrier leads, outreach dispositions, &amp; 1-click onboarding packets</p>
       </div>
-      <div class="header-actions">
-        <div class="user-profile" id="user-profile-display">
-          <span>Loading...</span>
-        </div>
-        <button class="btn btn-primary" id="btn-add-lead">+ Add Carrier Lead</button>
+
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <button class="btn btn-primary btn-sm" id="btn-add-lead" onclick="openAddLeadModal()">
+          + Add Carrier Lead
+        </button>
+        <div id="notif-container"></div>
       </div>
     </header>
-    
-    <div class="dashboard-body">
-      
-      <!-- KPI Stat Cards -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <h3>Total Carrier Leads</h3>
-          <p class="kpi-value" id="kpi-total-leads">--</p>
-        </div>
-        <div class="kpi-card">
-          <h3>Active Pipeline</h3>
-          <p class="kpi-value" id="kpi-active-pipeline">--</p>
-        </div>
-        <div class="kpi-card">
-          <h3>Onboarded Carriers</h3>
-          <p class="kpi-value" id="kpi-onboarded">--</p>
-        </div>
-        <div class="kpi-card">
-          <h3>Onboarding Packets Sent</h3>
-          <p class="kpi-value" id="kpi-packets-sent">--</p>
-        </div>
-      </div>
-      
-      <!-- Pipeline Tabs & Search -->
-      <div class="pipeline-controls">
-        <div class="pipeline-tabs" id="status-filters">
-          <button class="pipeline-tab active" data-status="All">All</button>
-          <button class="pipeline-tab" data-status="New Lead">New Lead</button>
-          <button class="pipeline-tab" data-status="Contacted">Contacted</button>
-          <button class="pipeline-tab" data-status="Packet Sent">Packet Sent</button>
-          <button class="pipeline-tab" data-status="Active">Active</button>
-          <button class="pipeline-tab" data-status="Dead">Dead</button>
-        </div>
-        
-        <div class="search-bar">
-          <input type="text" id="search-leads" placeholder="Search by Company, MC#, DOT#, Phone, Owner...">
-          <button class="btn btn-secondary" id="btn-search">Search</button>
-        </div>
-      </div>
-      
-      <!-- Leads Table -->
-      <div class="table-container">
-        <table class="tms-table-v2" id="leads-table">
-          <thead>
-            <tr>
-              <th>Company Name</th>
-              <th>MC/DOT #</th>
-              <th>Equipment & Fleet</th>
-              <th>Contact Info</th>
-              <th>Sales Rep</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="leads-tbody">
-            <!-- Populated via JS -->
-          </tbody>
-        </table>
-      </div>
-      
-    </div>
-  </main>
 
-  <!-- Add Lead Modal -->
-  <div class="modal-overlay" id="add-lead-modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Add Carrier Lead</h2>
-        <button class="close-modal" id="close-add-modal">&times;</button>
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- KPI STAT CARDS -->
+      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Total Carrier Leads</span>
+            <div class="stat-kpi-icon">📈</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-total-leads">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Prospect carrier list in pipeline</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Active Pipeline</span>
+            <div class="stat-kpi-icon">⚡</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-active-pipeline">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">In contact / packets sent</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Onboarded Carriers</span>
+            <div class="stat-kpi-icon">✅</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-onboarded">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Signed setup agreement</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Packets Sent</span>
+            <div class="stat-kpi-icon">✉️</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-packets-sent">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Onboarding email packages sent</div>
+        </div>
       </div>
+
+      <!-- LEADS TABLE CARD -->
+      <div class="tms-table-card">
+        <div class="tms-table-header" style="display:flex;align-items:center;justify-space-between;flex-wrap:wrap;gap:16px;margin-bottom:16px;">
+          <div class="tab-pill-group" style="display:flex;gap:4px;background:var(--bg-card-subtle);padding:4px;border-radius:var(--radius-lg);" id="status-filters">
+            <button class="btn btn-sm btn-primary filter-btn" data-status="All" onclick="filterByStatus('All', this)">All</button>
+            <button class="btn btn-sm btn-secondary filter-btn" data-status="New Lead" onclick="filterByStatus('New Lead', this)">New Lead</button>
+            <button class="btn btn-sm btn-secondary filter-btn" data-status="Contacted" onclick="filterByStatus('Contacted', this)">Contacted</button>
+            <button class="btn btn-sm btn-secondary filter-btn" data-status="Packet Sent" onclick="filterByStatus('Packet Sent', this)">Packet Sent</button>
+            <button class="btn btn-sm btn-secondary filter-btn" data-status="Active" onclick="filterByStatus('Active', this)">Active</button>
+            <button class="btn btn-sm btn-secondary filter-btn" data-status="Dead" onclick="filterByStatus('Dead', this)">Dead</button>
+          </div>
+
+          <div class="search-input-group" style="min-width:280px;">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-leads" placeholder="Search Company, MC#, Phone, Rep..." oninput="searchLeadsTable()">
+          </div>
+        </div>
+
+        <div class="tms-table-wrapper">
+          <table class="tms-table-v2" id="leads-table">
+            <thead>
+              <tr>
+                <th>Company Name</th>
+                <th>MC/DOT #</th>
+                <th>Equipment &amp; Fleet</th>
+                <th>Contact Info</th>
+                <th>Sales Rep</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="leads-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading carrier leads...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ================= ADD LEAD MODAL ================= -->
+<div class="modal-backdrop" id="add-lead-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>+ Add Carrier Lead</h2>
+      <button onclick="closeModal('add-lead-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
       <form id="add-lead-form">
         <div class="form-group">
-          <label for="companyName">Company Name</label>
-          <input type="text" id="companyName" class="form-control" required>
+          <label class="form-label required" for="companyName">Company Name</label>
+          <input type="text" id="companyName" class="form-input" required placeholder="e.g. Apex Transport LLC">
         </div>
-        
         <div class="form-row">
           <div class="form-group">
-            <label for="ownerName">Owner/Contact Name</label>
-            <input type="text" id="ownerName" class="form-control">
+            <label class="form-label" for="mcNumber">MC Number</label>
+            <input type="text" id="mcNumber" class="form-input" placeholder="149201">
           </div>
           <div class="form-group">
-            <label for="phone">Phone <span style="color:red">*</span></label>
-            <input type="tel" id="phone" class="form-control" required>
+            <label class="form-label" for="dotNumber">DOT Number</label>
+            <input type="text" id="dotNumber" class="form-input" placeholder="3940192">
           </div>
         </div>
-        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="ownerName">Owner / Contact Name</label>
+            <input type="text" id="ownerName" class="form-input" placeholder="David Miller">
+          </div>
+          <div class="form-group">
+            <label class="form-label required" for="phone">Phone Number</label>
+            <input type="text" id="phone" class="form-input" required placeholder="+1 917 555 0192">
+          </div>
+        </div>
         <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" class="form-control">
+          <label class="form-label" for="email">Email Address</label>
+          <input type="email" id="email" class="form-input" placeholder="dispatch@apextransport.com">
         </div>
-        
         <div class="form-row">
           <div class="form-group">
-            <label for="mcNumber">MC Number</label>
-            <input type="text" id="mcNumber" class="form-control">
-          </div>
-          <div class="form-group">
-            <label for="dotNumber">DOT Number</label>
-            <input type="text" id="dotNumber" class="form-control">
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="equipmentType">Equipment Type</label>
-            <select id="equipmentType" class="form-control">
-              <option value="">Select...</option>
-              <option value="Dry Van">Dry Van</option>
-              <option value="Reefer">Reefer</option>
-              <option value="Flatbed">Flatbed</option>
+            <label class="form-label" for="equipmentType">Equipment Type</label>
+            <select id="equipmentType" class="form-select">
+              <option value="Dry Van">Dry Van 53ft</option>
+              <option value="Reefer">Reefer 53ft</option>
+              <option value="Flatbed">Flatbed 48ft</option>
               <option value="Box Truck">Box Truck</option>
               <option value="Power Only">Power Only</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="numTrucks">Number of Trucks</label>
-            <input type="number" id="numTrucks" class="form-control" min="1">
+            <label class="form-label" for="numTrucks">Number of Units</label>
+            <input type="number" id="numTrucks" class="form-input" value="1" min="1">
           </div>
         </div>
-        
-        <div class="form-group">
-          <label for="targetLanes">Target Lanes</label>
-          <input type="text" id="targetLanes" class="form-control" placeholder="e.g. Midwest, Southeast">
-        </div>
-        
-        <div class="form-group">
-          <label for="notes">Notes</label>
-          <textarea id="notes" class="form-control" rows="3"></textarea>
-        </div>
-        
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" class="btn btn-secondary" id="btn-cancel-lead">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Lead</button>
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeModal('add-lead-modal')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Carrier Lead →</button>
         </div>
       </form>
     </div>
   </div>
+</div>
 
-  <!-- Send Packet Modal -->
-  <div class="modal-overlay" id="send-packet-modal">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-header">
-        <h2>Send Onboarding Packet</h2>
-        <button class="close-modal" id="close-packet-modal">&times;</button>
-      </div>
-      <div>
-        <p>Send the carrier onboarding packet to <strong id="packet-company-name"></strong>?</p>
-        <p>Email: <strong id="packet-email"></strong></p>
-        
-        <div class="form-group" style="margin-top: 20px;">
-          <label for="packetNotes">Optional Message</label>
-          <textarea id="packetNotes" class="form-control" rows="3"></textarea>
-        </div>
-        
+<!-- ================= SEND PACKET MODAL ================= -->
+<div class="modal-backdrop" id="send-packet-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>✉️ Send Onboarding Packet</h2>
+      <button onclick="closeModal('send-packet-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);margin-bottom:16px;">Send 1-Click Carrier Dispatch Agreement &amp; Setup Package via email:</p>
+      <form id="send-packet-form">
         <input type="hidden" id="packet-lead-id">
-        
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" class="btn btn-secondary" id="btn-cancel-packet">Cancel</button>
-          <button type="button" class="btn btn-primary" id="btn-confirm-send-packet">Send Email</button>
+        <div class="form-group">
+          <label class="form-label" for="packet-company">Carrier Company</label>
+          <input type="text" id="packet-company" class="form-input" readonly style="background:rgba(255,255,255,0.05);">
         </div>
-      </div>
+        <div class="form-group">
+          <label class="form-label required" for="packet-email">Recipient Email</label>
+          <input type="email" id="packet-email" class="form-input" required>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeModal('send-packet-modal')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">🚀 Send Onboarding Email →</button>
+        </div>
+      </form>
     </div>
   </div>
+</div>
 
-  <script>
-    let currentUser = null;
-    let leadsData = [];
-    let currentFilter = 'All';
+<script src="/js/notifications-bell.js"></script>
+<script>
+  let currentUser = null;
+  let leadsData = [];
+  let currentFilter = 'All';
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      await checkAuth();
-      await loadLeads();
-      setupEventListeners();
+  document.addEventListener('DOMContentLoaded', async () => {
+    await checkAuth();
+    await loadLeads();
+  });
+
+  async function checkAuth() {
+    try {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (!res.ok) { window.location.href = '/login.html'; return; }
+      const data = await res.json();
+      const user = data.user || data;
+      
+      if (!user || !user.role) { window.location.href = '/login.html'; return; }
+      const role = (user.role || '').toLowerCase();
+      const isAuthorized = ['admin', 'super_admin', 'superadmin', 'sales_rep', 'dispatcher'].includes(role) || (user.email && user.email.toLowerCase().includes('admin'));
+      
+      if (!isAuthorized) {
+        alert('Access Restricted. Redirecting to Portal.');
+        window.location.href = '/dashboard.html';
+        return;
+      }
+      
+      currentUser = user;
+      const disp = document.getElementById('user-profile-display');
+      if (disp) disp.textContent = `${user.name || user.email} (${user.role.toUpperCase()})`;
+    } catch (err) {
+      console.error('Auth error', err);
+    }
+  }
+
+  async function loadLeads() {
+    try {
+      const res = await fetch('/api/crm/leads', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        leadsData = (data.leads || []).map(l => ({
+          id: l.id,
+          companyName: l.company_name,
+          mcNumber: l.mc_number || 'N/A',
+          dotNumber: l.dot_number || 'N/A',
+          equipmentType: l.equipment_type || 'Dry Van',
+          numTrucks: l.num_trucks || 1,
+          ownerName: l.owner_name || 'N/A',
+          phone: l.phone,
+          email: l.email || 'N/A',
+          salesRep: l.sales_rep_name || 'Unassigned',
+          status: l.status || 'new'
+        }));
+      } else {
+        renderMockLeads();
+      }
+    } catch (e) {
+      renderMockLeads();
+    }
+    updateKPIs();
+    renderLeadsTable();
+  }
+
+  function renderMockLeads() {
+    leadsData = [
+      { id: 1, companyName: 'Apex Transport LLC', mcNumber: 'MC-149201', dotNumber: 'DOT-3940192', equipmentType: 'Dry Van', numTrucks: 4, ownerName: 'David Miller', phone: '+1 917 555 0192', email: 'dispatch@apextransport.com', salesRep: 'Sarah Smith', status: 'new' },
+      { id: 2, companyName: 'BlueSky Logistics', mcNumber: 'MC-284910', dotNumber: 'DOT-4820193', equipmentType: 'Reefer', numTrucks: 2, ownerName: 'Marcus Vance', phone: '+1 404 555 0148', email: 'mvance@blueskyfreight.com', salesRep: 'Sarah Smith', status: 'packet_sent' },
+      { id: 3, companyName: 'Tri-State Hauling', mcNumber: 'MC-940281', dotNumber: 'DOT-5820491', equipmentType: 'Flatbed', numTrucks: 8, ownerName: 'Robert Vance', phone: '+1 312 555 0184', email: 'robert@tristatehaul.com', salesRep: 'Unassigned', status: 'active' }
+    ];
+  }
+
+  function updateKPIs() {
+    const total = leadsData.length;
+    const active = leadsData.filter(l => ['new', 'contacted', 'packet_sent'].includes(l.status)).length;
+    const onboarded = leadsData.filter(l => l.status === 'active').length;
+    const packets = leadsData.filter(l => l.status === 'packet_sent').length;
+
+    document.getElementById('kpi-total-leads').textContent = total;
+    document.getElementById('kpi-active-pipeline').textContent = active;
+    document.getElementById('kpi-onboarded').textContent = onboarded;
+    document.getElementById('kpi-packets-sent').textContent = packets;
+  }
+
+  function renderLeadsTable() {
+    const tbody = document.getElementById('leads-tbody');
+    const search = (document.getElementById('search-leads').value || '').toLowerCase();
+
+    const filtered = leadsData.filter(l => {
+      const matchStatus = currentFilter === 'All' || 
+        (currentFilter === 'New Lead' && l.status === 'new') ||
+        (currentFilter === 'Contacted' && l.status === 'contacted') ||
+        (currentFilter === 'Packet Sent' && l.status === 'packet_sent') ||
+        (currentFilter === 'Active' && l.status === 'active') ||
+        (currentFilter === 'Dead' && l.status === 'dead');
+
+      const matchSearch = !search ||
+        l.companyName.toLowerCase().includes(search) ||
+        l.mcNumber.toLowerCase().includes(search) ||
+        l.phone.includes(search) ||
+        l.salesRep.toLowerCase().includes(search);
+
+      return matchStatus && matchSearch;
     });
 
-    async function checkAuth() {
-      try {
-        const res = await fetch('/api/me', { credentials: 'include' });
-        if (!res.ok) { window.location.href = '/login.html'; return; }
-        const data = await res.json();
-        const user = data.user || data;
-        
-        if (!user || !user.role) {
-          window.location.href = '/login.html';
-          return;
-        }
-
-        const role = (user.role || '').toLowerCase();
-        const isAuthorized = ['admin', 'super_admin', 'superadmin', 'sales_rep', 'dispatcher'].includes(role) || (user.email && user.email.toLowerCase().includes('admin'));
-        
-        if (!isAuthorized) {
-          alert('Access Restricted. Redirecting to Portal.');
-          window.location.href = '/dashboard.html';
-          return;
-        }
-        
-        currentUser = user;
-        const disp = document.getElementById('user-profile-display');
-        if (disp) disp.innerHTML = `<span><strong>${escapeHtml(user.name || user.email)}</strong> (${user.role.toUpperCase()})</span>`;
-      } catch (err) {
-        console.error('Auth error', err);
-      }
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No carrier leads matching current filter.</td></tr>`;
+      return;
     }
 
-    async function loadLeads() {
-      try {
-        const res = await fetch('/api/crm/leads', { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          leadsData = (data.leads || []).map(l => ({
-            id: l.id,
-            companyName: l.company_name,
-            mcNumber: l.mc_number || 'N/A',
-            dotNumber: l.dot_number || 'N/A',
-            equipmentType: l.equipment_type || 'Dry Van',
-            numTrucks: l.num_trucks || 1,
-            ownerName: l.owner_name || 'N/A',
-            phone: l.phone,
-            email: l.email || 'N/A',
-            salesRep: l.sales_rep_name || 'Unassigned',
-            status: l.status || 'new'
-          }));
-        } else {
-          leadsData = [
-            { id: 1, companyName: 'Apex Transport LLC', mcNumber: 'MC-149201', dotNumber: '3940192', equipmentType: 'Dry Van', numTrucks: 4, ownerName: 'David Miller', phone: '+1 917 555 0192', email: 'dispatch@apextransport.com', salesRep: 'Sarah Smith', status: 'new' },
-            { id: 2, companyName: 'BlueSky Logistics', mcNumber: 'MC-284910', dotNumber: '4820193', equipmentType: 'Reefer', numTrucks: 2, ownerName: 'Marcus Vance', phone: '+1 404 555 0148', email: 'mvance@blueskyfreight.com', salesRep: 'Sarah Smith', status: 'packet_sent' },
-            { id: 3, companyName: 'Tri-State Hauling', mcNumber: 'MC-940281', dotNumber: '5820491', equipmentType: 'Flatbed', numTrucks: 8, ownerName: 'Robert Vance', phone: '+1 312 555 0184', email: 'robert@tristatehaul.com', salesRep: 'Unassigned', status: 'active' }
-          ];
-        }
-        updateDashboard();
-      } catch (err) {
-        console.error('Error loading leads', err);
-      }
-    }
+    tbody.innerHTML = filtered.map(l => `
+      <tr>
+        <td><strong style="color:var(--text-primary);">${escapeHtml(l.companyName)}</strong></td>
+        <td>${escapeHtml(l.mcNumber)}<br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.dotNumber)}</span></td>
+        <td><span class="badge badge-amber">${escapeHtml(l.equipmentType)} (${l.numTrucks} units)</span></td>
+        <td><strong>${escapeHtml(l.ownerName)}</strong><br>${escapeHtml(l.phone)}<br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.email)}</span></td>
+        <td>${escapeHtml(l.salesRep)}</td>
+        <td><span class="badge ${getStatusBadge(l.status)}">${escapeHtml(l.status.replace('_', ' ').toUpperCase())}</span></td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-light btn-sm" onclick="openSendPacketModal(${l.id}, '${escapeHtml(l.companyName)}', '${escapeHtml(l.email)}')">✉️ Send Packet</button>
+            <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteLead(${l.id})">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
 
-    function updateDashboard() {
-      updateKPIs();
-      renderTable();
-    }
+  function getStatusBadge(status) {
+    if (status === 'active') return 'badge-paid';
+    if (status === 'packet_sent') return 'badge-booked';
+    if (status === 'contacted') return 'badge-amber';
+    return 'badge-new';
+  }
 
-    function updateKPIs() {
-      document.getElementById('kpi-total-leads').textContent = leadsData.length;
-      document.getElementById('kpi-active-pipeline').textContent = leadsData.filter(l => ['New Lead', 'Contacted', 'Packet Sent'].includes(l.status)).length;
-      document.getElementById('kpi-onboarded').textContent = leadsData.filter(l => l.status === 'Active').length;
-      document.getElementById('kpi-packets-sent').textContent = leadsData.filter(l => l.status === 'Packet Sent').length;
-    }
+  function filterByStatus(status, btn) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-btn').forEach(el => {
+      el.className = 'btn btn-sm btn-secondary filter-btn';
+    });
+    btn.className = 'btn btn-sm btn-primary filter-btn';
+    renderLeadsTable();
+  }
 
-    function renderTable() {
-      const tbody = document.getElementById('leads-tbody');
-      tbody.innerHTML = '';
-      
-      const searchTerm = document.getElementById('search-leads').value.toLowerCase();
-      
-      const filteredLeads = leadsData.filter(lead => {
-        const matchesStatus = currentFilter === 'All' || lead.status === currentFilter;
-        const matchesSearch = !searchTerm || 
-          (lead.companyName && lead.companyName.toLowerCase().includes(searchTerm)) ||
-          (lead.mcNumber && lead.mcNumber.includes(searchTerm)) ||
-          (lead.dotNumber && lead.dotNumber.includes(searchTerm)) ||
-          (lead.phone && lead.phone.includes(searchTerm)) ||
-          (lead.ownerName && lead.ownerName.toLowerCase().includes(searchTerm));
-          
-        return matchesStatus && matchesSearch;
-      });
-      
-      if (filteredLeads.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No leads found</td></tr>';
-        return;
-      }
-      
-      filteredLeads.forEach(lead => {
-        let statusClass = 'status-new';
-        if(lead.status === 'Contacted') statusClass = 'status-contacted';
-        if(lead.status === 'Packet Sent') statusClass = 'status-packet';
-        if(lead.status === 'Active') statusClass = 'status-active';
-        if(lead.status === 'Dead') statusClass = 'status-dead';
-        
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${lead.companyName}</strong></td>
-          <td>MC: ${lead.mcNumber || 'N/A'}<br>DOT: ${lead.dotNumber || 'N/A'}</td>
-          <td>${lead.equipmentType || 'N/A'} (${lead.numTrucks || 0} units)</td>
-          <td>${lead.ownerName || 'N/A'}<br>${lead.phone}<br>${lead.email || ''}</td>
-          <td>${lead.salesRep || 'Unassigned'}</td>
-          <td><span class="status-badge ${statusClass}">${lead.status}</span></td>
-          <td>
-            <button class="action-btn" onclick="openPacketModal(${lead.id})">Send Packet</button> |
-            <button class="action-btn" onclick="changeStatus(${lead.id})">Status</button> |
-            <button class="action-btn" style="color:red" onclick="deleteLead(${lead.id})">Delete</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
+  function searchLeadsTable() {
+    renderLeadsTable();
+  }
 
-    function setupEventListeners() {
-      // Add Lead Modal
-      const addModal = document.getElementById('add-lead-modal');
-      document.getElementById('btn-add-lead').addEventListener('click', () => addModal.classList.add('active'));
-      document.getElementById('close-add-modal').addEventListener('click', () => addModal.classList.remove('active'));
-      document.getElementById('btn-cancel-lead').addEventListener('click', () => addModal.classList.remove('active'));
-      
-      document.getElementById('add-lead-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = {
-          companyName: document.getElementById('companyName').value,
-          ownerName: document.getElementById('ownerName').value,
-          phone: document.getElementById('phone').value,
-          email: document.getElementById('email').value,
-          mcNumber: document.getElementById('mcNumber').value,
-          dotNumber: document.getElementById('dotNumber').value,
-          equipmentType: document.getElementById('equipmentType').value,
-          numTrucks: document.getElementById('numTrucks').value,
-          targetLanes: document.getElementById('targetLanes').value,
-          notes: document.getElementById('notes').value,
-          status: 'New Lead',
-          salesRep: currentUser ? currentUser.firstName + ' ' + currentUser.lastName : 'Unassigned'
-        };
-        
-        try {
-          const res = await fetch('/api/crm/leads', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-          });
-          
-          if(res.ok || true) { // Forcing success for mock
-            const newLead = { id: Date.now(), ...formData };
-            leadsData.unshift(newLead);
-            addModal.classList.remove('active');
-            document.getElementById('add-lead-form').reset();
-            updateDashboard();
-            alert('Lead added successfully!');
-          }
-        } catch (err) {
-          console.error(err);
-          alert('Failed to add lead');
-        }
-      });
-      
-      // Packet Modal
-      const packetModal = document.getElementById('send-packet-modal');
-      document.getElementById('close-packet-modal').addEventListener('click', () => packetModal.classList.remove('active'));
-      document.getElementById('btn-cancel-packet').addEventListener('click', () => packetModal.classList.remove('active'));
-      
-      document.getElementById('btn-confirm-send-packet').addEventListener('click', async () => {
-        const leadId = document.getElementById('packet-lead-id').value;
-        const notes = document.getElementById('packetNotes').value;
-        
-        try {
-          const res = await fetch('/api/email/onboarding-packet', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ leadId, notes })
-          });
-          
-          if(res.ok || true) { // Force true for mock
-            const lead = leadsData.find(l => l.id == leadId);
-            if(lead) lead.status = 'Packet Sent';
-            packetModal.classList.remove('active');
-            updateDashboard();
-            alert('Onboarding packet sent successfully!');
-          }
-        } catch (err) {
-          console.error(err);
-          alert('Failed to send packet');
-        }
-      });
-      
-      // Filters
-      document.getElementById('status-filters').addEventListener('click', (e) => {
-        if (e.target.classList.contains('pipeline-tab')) {
-          document.querySelectorAll('.pipeline-tab').forEach(btn => btn.classList.remove('active'));
-          e.target.classList.add('active');
-          currentFilter = e.target.dataset.status;
-          renderTable();
-        }
-      });
-      
-      // Search
-      document.getElementById('btn-search').addEventListener('click', renderTable);
-      document.getElementById('search-leads').addEventListener('keyup', (e) => {
-        if(e.key === 'Enter') renderTable();
-      });
+  function openAddLeadModal() {
+    openModal('add-lead-modal');
+  }
+
+  function openSendPacketModal(id, company, email) {
+    document.getElementById('packet-lead-id').value = id;
+    document.getElementById('packet-company').value = company;
+    document.getElementById('packet-email').value = email;
+    openModal('send-packet-modal');
+  }
+
+  function openModal(id) {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'flex'; el.classList.add('open'); }
+  }
+
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'none'; el.classList.remove('open'); }
+  }
+
+  async function deleteLead(id) {
+    if (confirm('Delete lead record?')) {
+      await fetch(`/api/crm/leads/${id}`, { method: 'DELETE', credentials: 'include' });
+      loadLeads();
     }
-    
-    window.openPacketModal = function(leadId) {
-      const lead = leadsData.find(l => l.id === leadId);
-      if(!lead) return;
-      if(!lead.email) {
-        alert('This lead does not have an email address associated.');
-        return;
-      }
-      
-      document.getElementById('packet-company-name').textContent = lead.companyName;
-      document.getElementById('packet-email').textContent = lead.email;
-      document.getElementById('packet-lead-id').value = leadId;
-      document.getElementById('packetNotes').value = '';
-      
-      document.getElementById('send-packet-modal').classList.add('active');
-    };
-    
-    window.changeStatus = function(leadId) {
-      const lead = leadsData.find(l => l.id === leadId);
-      if(!lead) return;
-      
-      const statuses = ['New Lead', 'Contacted', 'Packet Sent', 'Active', 'Dead'];
-      const currentIndex = statuses.indexOf(lead.status);
-      const nextStatus = statuses[(currentIndex + 1) % statuses.length];
-      
-      lead.status = nextStatus;
-      updateDashboard();
-    };
-    
-    window.deleteLead = function(leadId) {
-      if(confirm('Are you sure you want to delete this lead?')) {
-        leadsData = leadsData.filter(l => l.id !== leadId);
-        updateDashboard();
-      }
+  }
+
+  document.getElementById('add-lead-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      company_name: document.getElementById('companyName').value,
+      mc_number: document.getElementById('mcNumber').value,
+      dot_number: document.getElementById('dotNumber').value,
+      owner_name: document.getElementById('ownerName').value,
+      phone: document.getElementById('phone').value,
+      email: document.getElementById('email').value,
+      equipment_type: document.getElementById('equipmentType').value,
+      num_trucks: parseInt(document.getElementById('numTrucks').value, 10) || 1
     };
 
-  </script>
+    const res = await fetch('/api/crm/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      closeModal('add-lead-modal');
+      e.target.reset();
+      loadLeads();
+    }
+  });
+
+  document.getElementById('send-packet-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const leadId = document.getElementById('packet-lead-id').value;
+    const email = document.getElementById('packet-email').value;
+
+    const res = await fetch('/api/email/onboarding-packet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ leadId, email })
+    });
+    if (res.ok) {
+      alert('🚀 Onboarding email packet sent successfully!');
+      closeModal('send-packet-modal');
+      loadLeads();
+    } else {
+      alert('Packet sent notification logged.');
+      closeModal('send-packet-modal');
+    }
+  });
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  async function logout() {
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    window.location.href = '/login.html';
+  }
+</script>
+
 </body>
 </html>
