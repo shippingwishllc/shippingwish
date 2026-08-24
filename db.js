@@ -1,8 +1,19 @@
 const { Pool } = require('pg');
 
-// Uses either a single DATABASE_URL, or individual PG* env vars.
-const pool = process.env.DATABASE_URL
-  ? new Pool({ connectionString: process.env.DATABASE_URL })
+const connectionString = 
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.NEON_DATABASE_URL ||
+  process.env.NEON_POSTGRES_URL ||
+  process.env.STORAGE_DATABASE_URL ||
+  process.env.STORAGE_POSTGRES_URL ||
+  process.env.STORAGE_URL;
+
+const pool = connectionString
+  ? new Pool({ 
+      connectionString,
+      ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
+    })
   : new Pool({
       host: process.env.PGHOST || 'localhost',
       port: process.env.PGPORT || 5432,
