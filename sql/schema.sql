@@ -1,188 +1,197 @@
--- Shipping Wish LLC — Enterprise TMS Database Schema (v2)
+-- Shipping Wish LLC — Enterprise TMS Database Schema (v2 - Vercel Single Block Compatible)
 
-DO $$ BEGIN
-  CREATE TYPE user_role AS ENUM ('super_admin', 'admin', 'dispatcher', 'sales_rep', 'carrier', 'driver', 'carrier_admin');
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-END $$;
+DO $$ 
+BEGIN
 
--- Ensure all role ENUM values exist
-DO $$ BEGIN
-  ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'sales_rep';
-  ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'driver';
-  ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'carrier_admin';
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-END $$;
+  -- 1. ENUM TYPES
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+    CREATE TYPE user_role AS ENUM ('super_admin', 'admin', 'dispatcher', 'sales_rep', 'carrier', 'driver', 'carrier_admin');
+  END IF;
 
-DO $$ BEGIN
-  CREATE TYPE load_status AS ENUM (
-    'new', 'booked', 'dispatched', 'at_pickup', 'loaded',
-    'in_transit', 'at_delivery', 'delivered', 'pod_uploaded', 'invoiced', 'paid', 'cancelled'
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'load_status') THEN
+    CREATE TYPE load_status AS ENUM ('new', 'booked', 'dispatched', 'at_pickup', 'loaded', 'in_transit', 'at_delivery', 'delivered', 'pod_uploaded', 'invoiced', 'paid', 'cancelled');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'doc_category') THEN
+    CREATE TYPE doc_category AS ENUM ('rate_confirmation', 'bol', 'pod', 'carrier_packet', 'insurance', 'w9', 'mc_certificate', 'invoice', 'other');
+  END IF;
+
+  -- 2. TABLES
+  CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role user_role NOT NULL DEFAULT 'carrier',
+    company_name TEXT,
+    phone TEXT,
+    mc_number TEXT,
+    dot_number TEXT,
+    address TEXT,
+    is_suspended BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
   );
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-END $$;
 
--- Ensure all load_status ENUM values exist
-DO $$ BEGIN
-  ALTER TYPE load_status ADD VALUE IF NOT EXISTS 'new';
-  ALTER TYPE load_status ADD VALUE IF NOT EXISTS 'pod_uploaded';
-  ALTER TYPE load_status ADD VALUE IF NOT EXISTS 'cancelled';
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-END $$;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS dot_number TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_ip TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS user_agent TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_id INTEGER;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS dispatch_fee_percent NUMERIC(5,2) DEFAULT 5.00;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS equipment_category TEXT DEFAULT 'dry_van';
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_notes TEXT;
 
-DO $$ BEGIN
-  CREATE TYPE doc_category AS ENUM (
-    'rate_confirmation', 'bol', 'pod', 'carrier_packet',
-    'insurance', 'w9', 'mc_certificate', 'invoice', 'other'
+  CREATE TABLE IF NOT EXISTS dispatcher_carriers (
+    id SERIAL PRIMARY KEY,
+    dispatcher_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    carrier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(dispatcher_id, carrier_id)
   );
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
+
+  CREATE TABLE IF NOT EXISTS brokers (
+    id SERIAL PRIMARY KEY,
+    company_name TEXT NOT NULL,
+    mc_number TEXT UNIQUE,
+    contact_person TEXT,
+    email TEXT,
+    phone TEXT,
+    credit_rating TEXT DEFAULT 'A',
+    broker_packet_path TEXT,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS trucks (
+    id SERIAL PRIMARY KEY,
+    carrier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    truck_number TEXT NOT NULL,
+    vin TEXT,
+    plate TEXT,
+    insurance_expiry DATE,
+    registration_expiry DATE,
+    inspection_expiry DATE,
+    mileage NUMERIC(10,2) DEFAULT 0,
+    status TEXT DEFAULT 'active',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS trailers (
+    id SERIAL PRIMARY KEY,
+    carrier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    trailer_number TEXT NOT NULL,
+    type TEXT DEFAULT 'Dry Van',
+    registration_expiry DATE,
+    inspection_expiry DATE,
+    insurance_expiry DATE,
+    status TEXT DEFAULT 'active',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS drivers (
+    id SERIAL PRIMARY KEY,
+    carrier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    phone TEXT,
+    email TEXT,
+    license_number TEXT,
+    cdl_expiry DATE,
+    medical_expiry DATE,
+    assigned_truck_id INTEGER REFERENCES trucks(id) ON DELETE SET NULL,
+    assigned_trailer_id INTEGER REFERENCES trailers(id) ON DELETE SET NULL,
+    status TEXT DEFAULT 'available',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS loads (
+    id SERIAL PRIMARY KEY,
+    load_number TEXT UNIQUE NOT NULL,
+    carrier_id INTEGER REFERENCES users(id),
+    dispatcher_id INTEGER REFERENCES users(id),
+    broker_id INTEGER REFERENCES brokers(id),
+    driver_id INTEGER REFERENCES drivers(id),
+    truck_id INTEGER REFERENCES trucks(id),
+    trailer_id INTEGER REFERENCES trailers(id),
+    broker_name TEXT,
+    broker_mc TEXT,
+    broker_contact TEXT,
+    pickup_company TEXT,
+    pickup_location TEXT NOT NULL,
+    pickup_state CHAR(2),
+    pickup_date DATE,
+    pickup_time TEXT,
+    delivery_company TEXT,
+    delivery_location TEXT NOT NULL,
+    delivery_state CHAR(2),
+    delivery_date DATE,
+    delivery_time TEXT,
+    commodity TEXT,
+    weight NUMERIC(10,2),
+    miles NUMERIC(8,2) DEFAULT 0,
+    rate NUMERIC(10,2) DEFAULT 0,
+    rpm NUMERIC(6,2) DEFAULT 0,
+    carrier_pay NUMERIC(10,2) DEFAULT 0,
+    equipment_type TEXT,
+    status load_status NOT NULL DEFAULT 'new',
+    dispatcher_notes TEXT,
+    internal_notes TEXT,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS documents (
+    id SERIAL PRIMARY KEY,
+    load_id INTEGER REFERENCES loads(id) ON DELETE CASCADE,
+    carrier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    category doc_category NOT NULL,
+    filename TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    filepath TEXT NOT NULL,
+    file_size INTEGER,
+    uploaded_by INTEGER REFERENCES users(id),
+    uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS invoices (
+    id SERIAL PRIMARY KEY,
+    load_id INTEGER UNIQUE REFERENCES loads(id),
+    invoice_number TEXT UNIQUE NOT NULL,
+    amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+    freight_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+    accessorial_amount NUMERIC(10,2) DEFAULT 0,
+    total_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'unpaid',
+    factoring_status TEXT DEFAULT 'direct_pay',
+    issued_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    paid_date DATE,
+    pdf_filename TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS site_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS blog_posts (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    summary TEXT NOT NULL,
+    content TEXT NOT NULL,
+    category TEXT DEFAULT 'Freight Dispatch',
+    author TEXT DEFAULT 'Shipping Wish Editorial Desk',
+    read_time TEXT DEFAULT '5 min read',
+    image_url TEXT,
+    is_published BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  );
+
 END $$;
-
--- Users Table
-CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
-  role user_role NOT NULL DEFAULT 'carrier',
-  company_name TEXT,
-  phone TEXT,
-  mc_number TEXT,
-  dot_number TEXT,
-  address TEXT,
-  is_suspended BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- Ensure optional columns exist on users if table already existed
-ALTER TABLE users ADD COLUMN IF NOT EXISTS dot_number TEXT;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_ip TEXT;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS user_agent TEXT;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_id INTEGER;
-
--- Per-Carrier Custom Commission Rate Fields
--- dispatch_fee_percent: The % we charge this carrier (e.g. 5 = 5%, 3 = 3%)
--- equipment_category: 'box_truck' | 'dry_van' | 'reefer' | 'flatbed' | 'other'
--- billing_notes: Internal admin notes about this carrier billing agreement
-ALTER TABLE users ADD COLUMN IF NOT EXISTS dispatch_fee_percent NUMERIC(5,2) DEFAULT 5.00;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS equipment_category TEXT DEFAULT 'dry_van';
-ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_notes TEXT;
-
--- Dispatcher to Carrier Assignment Mapping
-CREATE TABLE IF NOT EXISTS dispatcher_carriers (
-  id SERIAL PRIMARY KEY,
-  dispatcher_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  carrier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(dispatcher_id, carrier_id)
-);
-
--- Brokers Table
-CREATE TABLE IF NOT EXISTS brokers (
-  id SERIAL PRIMARY KEY,
-  company_name TEXT NOT NULL,
-  mc_number TEXT UNIQUE,
-  contact_person TEXT,
-  email TEXT,
-  phone TEXT,
-  credit_rating TEXT DEFAULT 'A',
-  broker_packet_path TEXT,
-  notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- Trucks Table
-CREATE TABLE IF NOT EXISTS trucks (
-  id SERIAL PRIMARY KEY,
-  carrier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  truck_number TEXT NOT NULL,
-  vin TEXT,
-  plate TEXT,
-  insurance_expiry DATE,
-  registration_expiry DATE,
-  inspection_expiry DATE,
-  mileage NUMERIC(10,2) DEFAULT 0,
-  status TEXT DEFAULT 'active',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- Trailers Table
-CREATE TABLE IF NOT EXISTS trailers (
-  id SERIAL PRIMARY KEY,
-  carrier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  trailer_number TEXT NOT NULL,
-  type TEXT DEFAULT 'Dry Van',
-  registration_expiry DATE,
-  inspection_expiry DATE,
-  insurance_expiry DATE,
-  status TEXT DEFAULT 'active',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- Drivers Table
-CREATE TABLE IF NOT EXISTS drivers (
-  id SERIAL PRIMARY KEY,
-  carrier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  phone TEXT,
-  email TEXT,
-  license_number TEXT,
-  cdl_expiry DATE,
-  medical_expiry DATE,
-  assigned_truck_id INTEGER REFERENCES trucks(id) ON DELETE SET NULL,
-  assigned_trailer_id INTEGER REFERENCES trailers(id) ON DELETE SET NULL,
-  status TEXT DEFAULT 'available',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- Loads Table
-CREATE TABLE IF NOT EXISTS loads (
-  id SERIAL PRIMARY KEY,
-  load_number TEXT UNIQUE NOT NULL,
-  carrier_id INTEGER REFERENCES users(id),
-  dispatcher_id INTEGER REFERENCES users(id),
-  broker_id INTEGER REFERENCES brokers(id),
-  driver_id INTEGER REFERENCES drivers(id),
-  truck_id INTEGER REFERENCES trucks(id),
-  trailer_id INTEGER REFERENCES trailers(id),
-  
-  broker_name TEXT,
-  broker_mc TEXT,
-  broker_contact TEXT,
-  
-  pickup_company TEXT,
-  pickup_location TEXT NOT NULL,
-  pickup_state CHAR(2),
-  pickup_date DATE,
-  pickup_time TEXT,
-  
-  delivery_company TEXT,
-  delivery_location TEXT NOT NULL,
-  delivery_state CHAR(2),
-  delivery_date DATE,
-  delivery_time TEXT,
-  
-  commodity TEXT,
-  weight NUMERIC(10,2),
-  miles NUMERIC(8,2) DEFAULT 0,
-  rate NUMERIC(10,2) DEFAULT 0,
-  rpm NUMERIC(6,2) DEFAULT 0,
-  carrier_pay NUMERIC(10,2) DEFAULT 0,
-  equipment_type TEXT,
-  
-  status load_status NOT NULL DEFAULT 'new',
-  dispatcher_notes TEXT,
-  internal_notes TEXT,
-  notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
 
 -- Alter table loads for any missing columns if loads already existed
 ALTER TABLE loads ADD COLUMN IF NOT EXISTS broker_id INTEGER REFERENCES brokers(id);
