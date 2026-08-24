@@ -25,6 +25,8 @@ function rateLimit(maxAttempts = 10, windowMs = 60000) {
     }
     next();
   };
+}
+
 router.get('/debug-db', async (req, res) => {
   const envKeys = Object.keys(process.env).filter(k => 
     k.toLowerCase().includes('postg') || 
