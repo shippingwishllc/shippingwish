@@ -1,13 +1,17 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const PDFDocument = require('pdfkit');
+const os = require('os');
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
-const PUBLIC_INVOICE_DIR = path.join(__dirname, '..', 'public', 'invoices');
-if (!fs.existsSync(PUBLIC_INVOICE_DIR)) fs.mkdirSync(PUBLIC_INVOICE_DIR, { recursive: true });
+const PUBLIC_INVOICE_DIR = process.env.VERCEL ? path.join(os.tmpdir(), 'invoices') : path.join(__dirname, '..', 'public', 'invoices');
+try {
+  if (!fs.existsSync(PUBLIC_INVOICE_DIR)) fs.mkdirSync(PUBLIC_INVOICE_DIR, { recursive: true });
+} catch (e) {
+  console.warn('[WARN] Could not create invoices directory:', e.message);
+}
 
 // ============================================================
 // BATCH WEEKLY INVOICE GENERATOR - HTML
@@ -205,6 +209,7 @@ router.post('/batch', requireAuth, requireRole('admin', 'super_admin'), async (r
     const pdfFilename = await new Promise((resolve, reject) => {
       const fname  = `Invoice_${invoiceNum}.pdf`;
       const fpath  = path.join(PUBLIC_INVOICE_DIR, fname);
+      const PDFDocument = require('pdfkit');
       const doc    = new PDFDocument({ margin: 40, size: 'LETTER' });
       const stream = fs.createWriteStream(fpath);
       doc.pipe(stream);
