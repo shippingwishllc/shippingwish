@@ -103,7 +103,7 @@ router.post('/login', rateLimit(10, 60000), async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Could not sign in right now.' });
+    res.status(500).json({ error: err.message || 'Could not sign in right now.' });
   }
 });
 
