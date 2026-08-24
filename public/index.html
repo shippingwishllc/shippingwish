@@ -34,11 +34,59 @@
     .hero-content {
       position: relative;
       z-index: 1;
-      padding: 24px var(--space-6) 40px;
+      padding: 16px var(--space-6) 36px;
       max-width: 1280px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
+    }
+
+    /* Hero Live Telemetry Marquee Ticker */
+    .hero-ticker-bar {
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.18);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 9px 0;
+      overflow: hidden;
+      white-space: nowrap;
+      position: relative;
+      z-index: 10;
+    }
+    .ticker-track {
+      display: inline-flex;
+      align-items: center;
+      gap: 40px;
+      animation: tickerScroll 40s linear infinite;
+    }
+    @keyframes tickerScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .ticker-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.88);
+    }
+    .ticker-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      display: inline-block;
+    }
+    .ticker-dot-amber {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #f59e0b;
+      box-shadow: 0 0 10px #f59e0b;
+      display: inline-block;
     }
 
     .hero-grid-2col {
@@ -591,6 +639,26 @@
 
 <!-- ===== HERO ===== -->
 <section class="hero" aria-labelledby="hero-heading">
+  <!-- Live Enterprise Telemetry Ticker Bar -->
+  <div class="hero-ticker-bar">
+    <div class="ticker-track">
+      <div class="ticker-item"><span class="ticker-dot"></span> LIVE DISPATCH DESK ACTIVE (24/7 SUPPORT)</div>
+      <div class="ticker-item"><span class="ticker-dot-amber"></span> DAT & TRUCKSTOP FREIGHT RATE MATCHING: TOP 5% RPM</div>
+      <div class="ticker-item"><span class="ticker-dot"></span> $850K+ GROSS FREIGHT BOOKED</div>
+      <div class="ticker-item"><span class="ticker-dot-amber"></span> 99.4% ON-TIME CARRIER DELIVERY RATE</div>
+      <div class="ticker-item"><span class="ticker-dot"></span> 100% FACTORING NON-RECOURSE PAYMENT PROTECTED</div>
+      <div class="ticker-item"><span class="ticker-dot-amber"></span> 420+ LOADS DISPATCHED THIS MONTH</div>
+
+      <!-- Duplicate for smooth continuous scroll loop -->
+      <div class="ticker-item"><span class="ticker-dot"></span> LIVE DISPATCH DESK ACTIVE (24/7 SUPPORT)</div>
+      <div class="ticker-item"><span class="ticker-dot-amber"></span> DAT & TRUCKSTOP FREIGHT RATE MATCHING: TOP 5% RPM</div>
+      <div class="ticker-item"><span class="ticker-dot"></span> $850K+ GROSS FREIGHT BOOKED</div>
+      <div class="ticker-item"><span class="ticker-dot-amber"></span> 99.4% ON-TIME CARRIER DELIVERY RATE</div>
+      <div class="ticker-item"><span class="ticker-dot"></span> 100% FACTORING NON-RECOURSE PAYMENT PROTECTED</div>
+      <div class="ticker-item"><span class="ticker-dot-amber"></span> 420+ LOADS DISPATCHED THIS MONTH</div>
+    </div>
+  </div>
+
   <div class="hero-grid-lines" aria-hidden="true"></div>
   <div class="hero-content">
     
