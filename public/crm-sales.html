@@ -136,6 +136,31 @@
           </div>
           <div class="stat-kpi-val" id="kpi-packets-sent">0</div>
           <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Onboarding email packages sent</div>
+      </div>
+
+      <!-- FMCSA CARRIER LEADS SCRAPER WIDGET -->
+      <div class="tms-table-card" style="margin-bottom:var(--space-6);background:linear-gradient(135deg, rgba(15,23,42,0.03) 0%, rgba(30,41,59,0.06) 100%);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+          <div>
+            <h3 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0;">⚡ Live FMCSA Carrier Lead Finder &amp; Scraper</h3>
+            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0 0;">Search US Motor Carrier records by State (TX, FL, GA), MC#, USDOT#, or Company Name and 1-Click Import directly into your Sales Pipeline!</p>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="search-input-group" style="flex:1;min-width:280px;">
+            <span class="search-icon">🔎</span>
+            <input type="text" id="fmcsa-search-query" placeholder="Type State (e.g. TX, FL), MC#, DOT#, or Carrier Name..." onkeyup="if(event.key==='Enter') searchFmcsacarriers()">
+          </div>
+          <button class="btn btn-primary" id="btn-fmcsa-search" onclick="searchFmcsacarriers()">
+            🔍 Scrape Carrier Leads
+          </button>
+        </div>
+
+        <!-- Scraped Results Box -->
+        <div id="fmcsa-results-box" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border-default);">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.04em;">Scraped FMCSA Prospects</div>
+          <div id="fmcsa-results-list" style="display:flex;flex-direction:column;gap:10px;"></div>
         </div>
       </div>
 
@@ -493,6 +518,87 @@
       closeModal('send-packet-modal');
     }
   });
+
+  async function searchFmcsacarriers() {
+    const q = document.getElementById('fmcsa-search-query').value.trim();
+    if (!q) return alert('Enter MC#, DOT#, Company Name, or State (e.g. TX) to scrape carrier leads.');
+
+    const btn = document.getElementById('btn-fmcsa-search');
+    btn.disabled = true;
+    btn.textContent = '⏳ Scraping FMCSA Records...';
+
+    const resultsBox = document.getElementById('fmcsa-results-box');
+    const container = document.getElementById('fmcsa-results-list');
+    resultsBox.style.display = 'block';
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">Querying FMCSA public registry...</div>';
+
+    try {
+      const res = await fetch(`/api/crm/fmcsa/search?name=${encodeURIComponent(q)}&mc=${encodeURIComponent(q)}`, { credentials: 'include' });
+      const data = await res.json();
+      btn.disabled = false;
+      btn.textContent = '🔍 Scrape Carrier Leads';
+
+      const carriers = data.carriers || [];
+      if (!carriers.length) {
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">No carriers found matching query. Try a state (e.g. TX, FL) or MC#.</div>';
+        return;
+      }
+
+      container.innerHTML = carriers.map(c => `
+        <div style="background:var(--bg-card-subtle);padding:14px 18px;border-radius:var(--radius-md);border:1px solid var(--border-default);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-weight:800;font-size:15px;color:var(--text-primary);">${escapeHtml(c.company_name)}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+              ${escapeHtml(c.mc_number || 'MC-N/A')} | DOT: ${escapeHtml(c.dot_number || 'N/A')} | 📍 ${escapeHtml(c.address || 'US')}
+            </div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">
+              👤 <strong>${escapeHtml(c.owner_name || 'Owner')}</strong> &bull; 📞 ${escapeHtml(c.phone || 'N/A')} &bull; ✉️ ${escapeHtml(c.email || 'N/A')}
+            </div>
+          </div>
+          <div>
+            ${c.already_in_crm ? 
+              `<span class="badge badge-paid">✅ Already in Pipeline</span>` :
+              `<button class="btn btn-primary btn-sm" onclick="importScrapedCarrier('${escapeHtml(c.company_name)}', '${escapeHtml(c.mc_number)}', '${escapeHtml(c.dot_number)}', '${escapeHtml(c.owner_name)}', '${escapeHtml(c.phone)}', '${escapeHtml(c.email)}', '${escapeHtml(c.equipment_type)}', ${c.num_trucks || 1})">
+                ➕ Import to CRM
+              </button>`
+            }
+          </div>
+        </div>
+      `).join('');
+
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = '🔍 Scrape Carrier Leads';
+      container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--color-red-500);">Error connecting to FMCSA Scraper Engine.</div>';
+    }
+  }
+
+  async function importScrapedCarrier(company, mc, dot, owner, phone, email, equip, trucks) {
+    const payload = {
+      company_name: company,
+      mc_number: mc,
+      dot_number: dot,
+      owner_name: owner,
+      phone: phone,
+      email: email,
+      equipment_type: equip || '53ft Dry Van',
+      num_trucks: trucks || 1
+    };
+
+    const res = await fetch('/api/crm/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      alert(`🚀 ${company} successfully imported into your Sales Pipeline!`);
+      loadLeads();
+    } else {
+      alert('Error importing carrier lead.');
+    }
+  }
 
   function escapeHtml(str) {
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
