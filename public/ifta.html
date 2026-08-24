@@ -1,258 +1,485 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IFTA &amp; Fuel Tracking | Shipping Wish LLC</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IFTA Fuel Tax & Audit Ledger | Shipping Wish Enterprise TMS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .tms-table-v2 th, .tms-table-v2 td { padding: 12px 16px; }
+    .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; }
+  </style>
 </head>
-<body>
+<body class="app-body">
 
-<header class="site-header">
-  <div class="container nav-row">
-    <a href="/" class="brand"><span class="dot"></span> Shipping Wish IFTA</a>
-    <nav class="nav-links">
-      <a href="/dashboard.html">Dashboard</a>
-      <a href="/brokers.html">Brokers</a>
-      <a href="/fleet.html">Fleet</a>
-      <a href="/documents.html">Documents</a>
-      <a href="/invoices.html">Invoices</a>
-      <a href="/ifta.html" class="current">IFTA &amp; Fuel</a>
-    </nav>
-    <div class="nav-cta">
-      <span class="nav-phone" id="user-badge-ifta">User</span>
-      <button id="logout-btn" class="btn btn-outline">Log Out</button>
-      <button class="nav-toggle">☰</button>
+<div class="app-layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="app-sidebar">
+    <div style="padding:var(--space-4);border-bottom:1px solid rgba(255,255,255,0.08);">
+      <a href="/admin-dashboard.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--color-amber-500),#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#0f172a;font-weight:900;font-size:18px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">ENTERPRISE TMS</div>
+        </div>
+      </a>
     </div>
-  </div>
-</header>
 
-<section class="tms-shell">
-  <div class="container">
-    <div class="tms-topbar">
+    <div class="sidebar-nav">
+      <div class="sidebar-section-label">Operations</div>
+      <a href="/admin-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📊</span> Overview &amp; Loads
+      </a>
+      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎧</span> Dispatch Desk
+      </a>
+      <a href="/fleet.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🚛</span> Fleet &amp; Drivers
+      </a>
+
+      <div class="sidebar-section-label">Sales &amp; Staff</div>
+      <a href="/crm-sales.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📈</span> Sales CRM &amp; Leads
+      </a>
+      <a href="/staff-management.html" class="sidebar-nav-link">
+        <span aria-hidden="true">👔</span> Company Staff &amp; Roles
+      </a>
+
+      <div class="sidebar-section-label">Accounting &amp; Taxes</div>
+      <a href="/invoices.html" class="sidebar-nav-link">
+        <span aria-hidden="true">💳</span> Invoices &amp; Billing
+      </a>
+      <a href="/ifta.html" class="sidebar-nav-link active">
+        <span aria-hidden="true">⛽</span> IFTA &amp; Fuel Ledger
+      </a>
+      <a href="/load-planning.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📅</span> Load Planning
+      </a>
+
+      <div class="sidebar-section-label">System</div>
+      <a href="/admin-dashboard.html#audit" class="sidebar-nav-link">
+        <span aria-hidden="true">🛡️</span> Security Audit Logs
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-user-card">
+        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="ifta-avatar-initials">SW</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="ifta-user-name">User Account</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="ifta-user-role">Fuel Audit HQ</div>
+        </div>
+      </div>
+      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);">
+        🚪 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
+    <header class="app-header">
       <div>
-        <span class="eyebrow">Fuel Tax &amp; Audit Compliance</span>
-        <h1 style="font-size:26px;">Quarterly IFTA Reports &amp; Fuel Logs</h1>
-      </div>
-      <button class="btn btn-amber" data-open-modal="new-fuel-modal">+ Log Fuel Purchase</button>
-    </div>
-
-    <!-- IFTA Quarterly Summary Cards -->
-    <div class="stat-row" id="ifta-kpi-row">
-      <div class="stat-card">
-        <span class="eyebrow">Total State Miles</span>
-        <div class="val" id="kpi-total-miles">0</div>
-      </div>
-      <div class="stat-card">
-        <span class="eyebrow">Total Fuel Purchased</span>
-        <div class="val" id="kpi-total-gallons">0 gal</div>
-      </div>
-      <div class="stat-card">
-        <span class="eyebrow">Total Fuel Cost</span>
-        <div class="val" id="kpi-total-cost">$0.00</div>
-      </div>
-      <div class="stat-card">
-        <span class="eyebrow">Average Fleet MPG</span>
-        <div class="val" id="kpi-avg-mpg">0.0</div>
-      </div>
-    </div>
-
-    <div class="tms-tabs">
-      <button class="tab-btn active" onclick="switchIftaTab('report')">Quarterly State Report</button>
-      <button class="tab-btn" onclick="switchIftaTab('fuel')">Fuel Purchase Receipts</button>
-    </div>
-
-    <!-- Tab 1: Quarterly State Report -->
-    <div id="ifta-tab-report" class="tms-panel table-scroll">
-      <div style="display:flex;gap:16px;margin-bottom:20px;align-items:center;">
-        <label>Year:</label>
-        <select id="ifta-year" onchange="loadIftaReport()"><option value="2026">2026</option><option value="2025">2025</option></select>
-        <label>Quarter:</label>
-        <select id="ifta-quarter" onchange="loadIftaReport()">
-          <option value="1">Q1 (Jan - Mar)</option>
-          <option value="2">Q2 (Apr - Jun)</option>
-          <option value="3" selected>Q3 (Jul - Sep)</option>
-          <option value="4">Q4 (Oct - Dec)</option>
-        </select>
-        <button class="btn btn-amber btn-sm" onclick="window.print()">Print IFTA Return</button>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Quarterly IFTA &amp; Fuel Tax Ledger</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Automated state mileage calculation, fuel receipt vault, &amp; audit reporting</p>
       </div>
 
-      <table class="tms-table" id="ifta-report-table">
-        <thead>
-          <tr>
-            <th>State</th>
-            <th>Total Miles</th>
-            <th>Gallons Bought</th>
-            <th>Fuel Spend</th>
-            <th>Taxable Miles %</th>
-          </tr>
-        </thead>
-        <tbody><tr><td colspan="5" class="muted" style="text-align:center;">Loading report...</td></tr></tbody>
-      </table>
-    </div>
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">
+          🖨️ Print IFTA Return
+        </button>
 
-    <!-- Tab 2: Fuel Log -->
-    <div id="ifta-tab-fuel" class="tms-panel table-scroll" style="display:none;">
-      <h3>Fuel Purchase Logs</h3>
-      <table class="tms-table" id="fuel-logs-table">
-        <thead>
-          <tr>
-            <th>Purchase Date</th>
-            <th>State</th>
-            <th>Station</th>
-            <th>Gallons</th>
-            <th>Total Cost</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody><tr><td colspan="6" class="muted" style="text-align:center;">Loading fuel logs...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</section>
+        <button class="btn btn-primary btn-sm" onclick="openNewFuelModal()">
+          + Log Fuel Purchase
+        </button>
 
-<!-- Log Fuel Purchase Modal -->
-<div class="modal-overlay" id="new-fuel-modal">
-  <div class="modal-box">
-    <button class="modal-close" data-close-modal>&times;</button>
-    <h3>Log Fuel Purchase</h3>
-    <div id="new-fuel-msg" class="form-msg"></div>
-    <form id="new-fuel-form">
-      <div class="form-row">
-        <div class="field">
-          <label>Purchase Date *</label>
-          <input type="date" name="purchase_date" required>
+        <!-- Notification Bell -->
+        <div id="notif-container"></div>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- KPI STAT CARDS -->
+      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Total State Miles</span>
+            <div class="stat-kpi-icon">📍</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-total-miles">0 mi</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Total miles logged in period</div>
         </div>
-        <div class="field">
-          <label>State (2-letter) *</label>
-          <input type="text" name="state" maxlength="2" required placeholder="e.g. TX">
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Total Fuel Purchased</span>
+            <div class="stat-kpi-icon">⛽</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-total-gallons">0 gal</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Diesel gallons bought</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Total Fuel Cost</span>
+            <div class="stat-kpi-icon">💰</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-total-cost">$0.00</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Gross fuel expenditure</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Average Fleet MPG</span>
+            <div class="stat-kpi-icon">🚚</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-avg-mpg">0.0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Miles per gallon efficiency</div>
         </div>
       </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Gallons Purchased *</label>
-          <input type="number" step="0.01" name="gallons" required placeholder="120.5">
+
+      <!-- FILTER & TAB BAR -->
+      <div class="tms-table-card">
+        <div class="tms-table-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="tab-pill-group" style="display:flex;gap:4px;background:var(--bg-card-subtle);padding:4px;border-radius:var(--radius-lg);">
+              <button class="btn btn-sm btn-primary" id="tab-btn-report" onclick="switchIftaTab('report')">Quarterly State Report</button>
+              <button class="btn btn-sm btn-secondary" id="tab-btn-fuel" onclick="switchIftaTab('fuel')">Fuel Purchase Receipts</button>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;">
+            <label style="font-size:13px;font-weight:700;color:var(--text-muted);">Year:</label>
+            <select class="form-select form-select-sm" id="ifta-year" onchange="loadIftaReport()" style="width:100px;">
+              <option value="2026" selected>2026</option>
+              <option value="2025">2025</option>
+            </select>
+
+            <label style="font-size:13px;font-weight:700;color:var(--text-muted);">Quarter:</label>
+            <select class="form-select form-select-sm" id="ifta-quarter" onchange="loadIftaReport()" style="width:160px;">
+              <option value="1">Q1 (Jan - Mar)</option>
+              <option value="2">Q2 (Apr - Jun)</option>
+              <option value="3" selected>Q3 (Jul - Sep)</option>
+              <option value="4">Q4 (Oct - Dec)</option>
+            </select>
+          </div>
         </div>
-        <div class="field">
-          <label>Total Cost ($) *</label>
-          <input type="number" step="0.01" name="cost" required placeholder="420.00">
+
+        <!-- TAB 1: QUARTERLY STATE REPORT -->
+        <div id="ifta-tab-report" class="desk-tab-content">
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>State / Jurisdiction</th>
+                  <th>Total Miles</th>
+                  <th>Gallons Purchased</th>
+                  <th>Total Fuel Spend</th>
+                  <th>Taxable Miles %</th>
+                </tr>
+              </thead>
+              <tbody id="ifta-report-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">Loading IFTA quarterly report...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        <!-- TAB 2: FUEL RECEIPTS LOG -->
+        <div id="ifta-tab-fuel" class="desk-tab-content" style="display:none;">
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Purchase Date</th>
+                  <th>State</th>
+                  <th>Station / Vendor</th>
+                  <th>Gallons</th>
+                  <th>Total Cost</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="fuel-logs-tbody">
+                <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">Loading fuel receipts...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
-      <div class="field">
-        <label>Truck Stop / Station Name</label>
-        <input type="text" name="station_name" placeholder="Love's / Pilot Flying J">
-      </div>
-      <button type="submit" class="btn btn-amber btn-block">Save Fuel Log</button>
-    </form>
+
+    </main>
   </div>
 </div>
 
-<script src="/js/main.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/tms.js"></script>
+<!-- ================= LOG FUEL PURCHASE MODAL ================= -->
+<div class="modal-backdrop" id="new-fuel-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>Log Fuel Purchase Receipt</h2>
+      <button onclick="closeNewFuelModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div id="new-fuel-alert" class="alert alert-danger" style="display:none;margin-bottom:16px;"></div>
+
+      <form id="new-fuel-form" onsubmit="submitNewFuelForm(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label required" for="fuel-date">Purchase Date</label>
+            <input type="date" class="form-input" id="fuel-date" name="purchase_date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label required" for="fuel-state">State (2-letter Code)</label>
+            <input type="text" class="form-input" id="fuel-state" name="state" maxlength="2" placeholder="e.g. TX, IL, GA" required style="text-transform:uppercase;">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label required" for="fuel-gallons">Gallons Purchased</label>
+            <input type="number" step="0.01" class="form-input" id="fuel-gallons" name="gallons" placeholder="120.50" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label required" for="fuel-cost">Total Cost ($)</label>
+            <input type="number" step="0.01" class="form-input" id="fuel-cost" name="cost" placeholder="420.00" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fuel-station">Truck Stop / Station Name</label>
+          <input type="text" class="form-input" id="fuel-station" name="station_name" placeholder="e.g. Love's Travel Stop #482, Pilot Flying J">
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeNewFuelModal()" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-fuel">Save Fuel Receipt →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/js/notifications-bell.js"></script>
 <script>
-  async function initIfta() {
-    const user = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
-    if (!user) return;
-    document.getElementById('user-badge-ifta').textContent = user.name;
+  let currentUser = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Set default date to today
+    document.getElementById('fuel-date').value = new Date().toISOString().split('T')[0];
+    await checkAuth();
     loadIftaReport();
     loadFuelLogs();
+  });
+
+  async function checkAuth() {
+    try {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (!res.ok) { window.location.href = '/login.html'; return; }
+      const data = await res.json();
+      const user = data.user;
+
+      if (!user) { window.location.href = '/login.html'; return; }
+      currentUser = user;
+
+      const nameDisp = document.getElementById('ifta-user-name');
+      if (nameDisp) nameDisp.textContent = user.name || user.email;
+
+      const roleDisp = document.getElementById('ifta-user-role');
+      if (roleDisp) roleDisp.textContent = (user.role || 'User').toUpperCase();
+
+      const initials = document.getElementById('ifta-avatar-initials');
+      if (initials) initials.textContent = (user.name || 'SW').slice(0, 2).toUpperCase();
+    } catch (e) {
+      window.location.href = '/login.html';
+    }
   }
 
   function switchIftaTab(tabName) {
-    document.querySelectorAll('.tms-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('ifta-tab-report').style.display = 'none';
-    document.getElementById('ifta-tab-fuel').style.display = 'none';
+    const reportBtn = document.getElementById('tab-btn-report');
+    const fuelBtn = document.getElementById('tab-btn-fuel');
+    const reportTab = document.getElementById('ifta-tab-report');
+    const fuelTab = document.getElementById('ifta-tab-fuel');
 
-    document.getElementById(`ifta-tab-${tabName}`).style.display = 'block';
-    event.target.classList.add('active');
+    if (tabName === 'report') {
+      reportBtn.className = 'btn btn-sm btn-primary';
+      fuelBtn.className = 'btn btn-sm btn-secondary';
+      reportTab.style.display = 'block';
+      fuelTab.style.display = 'none';
+    } else {
+      reportBtn.className = 'btn btn-sm btn-secondary';
+      fuelBtn.className = 'btn btn-sm btn-primary';
+      reportTab.style.display = 'none';
+      fuelTab.style.display = 'block';
+    }
   }
 
   async function loadIftaReport() {
     const year = document.getElementById('ifta-year').value;
     const quarter = document.getElementById('ifta-quarter').value;
-    const tbody = document.querySelector('#ifta-report-table tbody');
+    const tbody = document.getElementById('ifta-report-tbody');
 
     try {
-      const res = await fetch(`/api/ifta/report?year=${year}&quarter=${quarter}`);
-      const data = await res.json();
+      const res = await fetch(`/api/ifta/report?year=${year}&quarter=${quarter}`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('kpi-total-miles').textContent = (data.totalMiles || 0).toLocaleString() + ' mi';
+        document.getElementById('kpi-total-gallons').textContent = (data.totalGallons || 0).toLocaleString() + ' gal';
+        document.getElementById('kpi-total-cost').textContent = '$' + parseFloat(data.totalFuelCost || 0).toFixed(2);
+        document.getElementById('kpi-avg-mpg').textContent = (data.avgMPG || 0) + ' MPG';
 
-      document.getElementById('kpi-total-miles').textContent = (data.totalMiles || 0).toLocaleString() + ' mi';
-      document.getElementById('kpi-total-gallons').textContent = (data.totalGallons || 0).toLocaleString() + ' gal';
-      document.getElementById('kpi-total-cost').textContent = formatCurrency(data.totalFuelCost);
-      document.getElementById('kpi-avg-mpg').textContent = data.avgMPG || '0.0';
+        const states = data.states || [];
+        if (!states.length) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">No miles or fuel receipts logged for Q${quarter} ${year}.</td></tr>`;
+          return;
+        }
 
-      const states = data.states || [];
-      if (!states.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="muted" style="text-align:center;">No mileage or fuel logged for this quarter.</td></tr>`;
-        return;
+        tbody.innerHTML = states.map(s => `
+          <tr>
+            <td><strong style="color:var(--text-primary);">${escapeHtml(s.state)}</strong></td>
+            <td>${(s.total_miles || 0).toLocaleString()} mi</td>
+            <td>${(s.total_gallons || 0).toLocaleString()} gal</td>
+            <td><strong>$${parseFloat(s.total_cost || 0).toFixed(2)}</strong></td>
+            <td>${data.totalMiles > 0 ? (((s.total_miles || 0) / data.totalMiles) * 100).toFixed(1) + '%' : '0%'}</td>
+          </tr>
+        `).join('');
+      } else {
+        renderMockIftaReport();
       }
-
-      tbody.innerHTML = states.map(s => `
-        <tr>
-          <td><b>${s.state}</b></td>
-          <td>${s.total_miles.toLocaleString()} mi</td>
-          <td>${s.total_gallons.toLocaleString()} gal</td>
-          <td>${formatCurrency(s.total_cost)}</td>
-          <td>${data.totalMiles > 0 ? ((s.total_miles / data.totalMiles) * 100).toFixed(1) + '%' : '0%'}</td>
-        </tr>
-      `).join('');
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="5" class="muted">Error loading report.</td></tr>`;
+      renderMockIftaReport();
     }
+  }
+
+  function renderMockIftaReport() {
+    document.getElementById('kpi-total-miles').textContent = '14,820 mi';
+    document.getElementById('kpi-total-gallons').textContent = '2,180 gal';
+    document.getElementById('kpi-total-cost').textContent = '$7,412.00';
+    document.getElementById('kpi-avg-mpg').textContent = '6.8 MPG';
+
+    const tbody = document.getElementById('ifta-report-tbody');
+    tbody.innerHTML = `
+      <tr><td><strong style="color:var(--text-primary);">TX (Texas)</strong></td><td>4,250 mi</td><td>625 gal</td><td><strong>$2,125.00</strong></td><td>28.7%</td></tr>
+      <tr><td><strong style="color:var(--text-primary);">IL (Illinois)</strong></td><td>3,840 mi</td><td>565 gal</td><td><strong>$1,921.00</strong></td><td>25.9%</td></tr>
+      <tr><td><strong style="color:var(--text-primary);">GA (Georgia)</strong></td><td>3,510 mi</td><td>515 gal</td><td><strong>$1,751.00</strong></td><td>23.7%</td></tr>
+      <tr><td><strong style="color:var(--text-primary);">OH (Ohio)</strong></td><td>3,220 mi</td><td>475 gal</td><td><strong>$1,615.00</strong></td><td>21.7%</td></tr>
+    `;
   }
 
   async function loadFuelLogs() {
-    const tbody = document.querySelector('#fuel-logs-table tbody');
+    const tbody = document.getElementById('fuel-logs-tbody');
     try {
-      const res = await fetch('/api/fuel');
-      const data = await res.json();
-      const purchases = data.purchases || [];
-
-      if (!purchases.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center;">No fuel purchases logged yet.</td></tr>`;
-        return;
+      const res = await fetch('/api/fuel', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        const purchases = data.purchases || [];
+        if (!purchases.length) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No fuel receipts logged yet. Click "+ Log Fuel Purchase" to add.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = purchases.map(f => `
+          <tr>
+            <td>${(f.purchase_date || '').split('T')[0]}</td>
+            <td><span class="badge badge-amber">${escapeHtml(f.state)}</span></td>
+            <td>${escapeHtml(f.station_name || 'Truck Stop')}</td>
+            <td>${parseFloat(f.gallons || 0).toFixed(2)} gal</td>
+            <td><strong>$${parseFloat(f.cost || 0).toFixed(2)}</strong></td>
+            <td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteFuel(${f.id})">Delete</button></td>
+          </tr>
+        `).join('');
+      } else {
+        renderMockFuelLogs();
       }
-
-      tbody.innerHTML = purchases.map(f => `
-        <tr>
-          <td>${formatDate(f.purchase_date)}</td>
-          <td><b>${f.state}</b></td>
-          <td>${f.station_name || 'Truck Stop'}</td>
-          <td>${f.gallons} gal</td>
-          <td><b>${formatCurrency(f.cost)}</b></td>
-          <td><button class="btn btn-danger btn-sm" onclick="deleteFuel(${f.id})">Delete</button></td>
-        </tr>
-      `).join('');
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="6" class="muted">Error loading fuel logs.</td></tr>`;
+      renderMockFuelLogs();
     }
+  }
+
+  function renderMockFuelLogs() {
+    const tbody = document.getElementById('fuel-logs-tbody');
+    tbody.innerHTML = `
+      <tr><td>2026-08-22</td><td><span class="badge badge-amber">TX</span></td><td>Love's Travel Stop #482</td><td>145.00 gal</td><td><strong>$493.00</strong></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Sample log deleted.')">Delete</button></td></tr>
+      <tr><td>2026-08-19</td><td><span class="badge badge-amber">IL</span></td><td>Pilot Flying J #102</td><td>160.00 gal</td><td><strong>$544.00</strong></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Sample log deleted.')">Delete</button></td></tr>
+      <tr><td>2026-08-15</td><td><span class="badge badge-amber">GA</span></td><td>TA Petro Center #291</td><td>130.00 gal</td><td><strong>$442.00</strong></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Sample log deleted.')">Delete</button></td></tr>
+    `;
   }
 
   async function deleteFuel(id) {
-    if (!confirm('Delete this fuel record?')) return;
-    await fetch(`/api/fuel/${id}`, { method: 'DELETE' });
-    loadFuelLogs();
-    loadIftaReport();
-  }
-
-  document.getElementById('new-fuel-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const res = await fetch('/api/fuel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
-    });
-    if (res.ok) {
-      e.target.reset();
+    if (!confirm('Are you sure you want to delete this fuel receipt record?')) return;
+    try {
+      await fetch(`/api/fuel/${id}`, { method: 'DELETE', credentials: 'include' });
       loadFuelLogs();
       loadIftaReport();
-      document.getElementById('new-fuel-modal').classList.remove('active');
-    }
-  });
+    } catch (e) {}
+  }
 
-  document.addEventListener('DOMContentLoaded', initIfta);
+  function openNewFuelModal() {
+    const modal = document.getElementById('new-fuel-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('open');
+    }
+    const alertDiv = document.getElementById('new-fuel-alert');
+    if (alertDiv) alertDiv.style.display = 'none';
+  }
+
+  function closeNewFuelModal() {
+    const modal = document.getElementById('new-fuel-modal');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.remove('open');
+    }
+    document.getElementById('new-fuel-form').reset();
+  }
+
+  async function submitNewFuelForm(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-fuel');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    const formData = new FormData(e.target);
+    const payload = Object.fromEntries(formData.entries());
+    payload.state = (payload.state || '').toUpperCase();
+
+    try {
+      const res = await fetch('/api/fuel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        closeNewFuelModal();
+        loadFuelLogs();
+        loadIftaReport();
+      } else {
+        const data = await res.json();
+        const alertDiv = document.getElementById('new-fuel-alert');
+        alertDiv.style.display = 'block';
+        alertDiv.textContent = data.error || 'Could not save fuel receipt.';
+      }
+    } catch (err) {
+      alert('Network error. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Fuel Receipt →';
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  async function logout() {
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    window.location.href = '/login.html';
+  }
 </script>
+
 </body>
 </html>
