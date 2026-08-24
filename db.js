@@ -1,9 +1,9 @@
 const { Pool } = require('pg');
 
 function findConnectionString() {
-  const envKeys = [
-    'DATABASE_URL',
+  const keys = [
     'POSTGRES_URL',
+    'DATABASE_URL',
     'POSTGRES_PRISMA_URL',
     'POSTGRES_URL_NON_POOLING',
     'DATABASE_URL_UNPOOLED',
@@ -13,7 +13,7 @@ function findConnectionString() {
     'STORAGE_URL'
   ];
 
-  for (const k of envKeys) {
+  for (const k of keys) {
     if (process.env[k] && typeof process.env[k] === 'string' && process.env[k].trim()) {
       return process.env[k].trim();
     }
@@ -23,7 +23,7 @@ function findConnectionString() {
     if (value && typeof value === 'string') {
       const val = value.trim();
       if (val.startsWith('postgres://') || val.startsWith('postgresql://')) {
-        console.log(`[DB] Auto-detected Postgres connection string in env variable: ${key}`);
+        console.log(`[DB] Auto-detected Postgres URL in env var: ${key}`);
         return val;
       }
     }
@@ -46,7 +46,7 @@ if (global._pgPool) {
       ssl: isLocal ? false : { rejectUnauthorized: false },
       max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000
+      connectionTimeoutMillis: 3000
     });
   } else {
     pool = new Pool({
@@ -54,10 +54,11 @@ if (global._pgPool) {
       port: process.env.PGPORT || 5432,
       user: process.env.PGUSER || 'postgres',
       password: process.env.PGPASSWORD || '',
-      database: process.env.PGDATABASE || 'shippingwish'
+      database: process.env.PGDATABASE || 'shippingwish',
+      connectionTimeoutMillis: 2000
     });
   }
-  
+
   global._pgPool = pool;
 }
 
