@@ -18,6 +18,40 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ---------- Health & DB Diagnostic Endpoint ----------
+app.get('/api/health', async (req, res) => {
+  const pool = require('./db');
+  const envKeys = Object.keys(process.env).filter(k => 
+    k.toUpperCase().includes('POSTGRES') || 
+    k.toUpperCase().includes('DATABASE') || 
+    k.toUpperCase().includes('NEON') || 
+    k.toUpperCase().includes('STORAGE') || 
+    k.toUpperCase().includes('PG')
+  );
+
+  let dbStatus = 'connecting';
+  let dbError = null;
+  let userCount = 0;
+
+  try {
+    const qRes = await pool.query('SELECT count(*) FROM users');
+    userCount = parseInt(qRes.rows[0].count, 10);
+    dbStatus = 'connected';
+  } catch (err) {
+    dbStatus = 'error';
+    dbError = err.message;
+  }
+
+  res.json({
+    status: 'ok',
+    db_status: dbStatus,
+    db_error: dbError,
+    users_in_db: userCount,
+    env_keys_found: envKeys,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // ---------- Enterprise TMS API Routes ----------
 app.use('/api', require('./routes/auth'));                // /api/signup, /api/login, /api/me, /api/users, /api/carriers
 app.use('/api/loads', require('./routes/loads'));         // Load CRUD, status pipeline, accessorials, state miles
