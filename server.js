@@ -138,6 +138,10 @@ async function seedAdminUsers() {
 }
 seedAdminUsers();
 
-app.listen(PORT, () => {
-  console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

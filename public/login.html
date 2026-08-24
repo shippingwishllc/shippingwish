@@ -373,10 +373,13 @@
         credentials: 'include',
         body: JSON.stringify({ email, password })
       });
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (e) {}
 
       if (!res.ok) {
-        alertBox.textContent = data.error || 'Login failed. Please try again.';
+        alertBox.textContent = data.error || `Login failed (${res.status}). Please check credentials or try again.`;
         alertBox.className = 'form-alert error';
         alertBox.style.display = 'block';
         submitBtn.disabled = false;
