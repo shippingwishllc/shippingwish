@@ -126,6 +126,7 @@
             <div>
               <div style="font-size:18px;font-weight:800;color:#fff;" id="cr-name">BROKER COMPANY NAME</div>
               <div style="font-size:12px;color:#cbd5e1;margin-top:4px;" id="cr-ids">MC-000000 | USDOT-000000 | City, ST</div>
+              <div id="cr-note" style="display:none;margin-top:6px;font-size:11px;color:#cbd5e1;background:rgba(59,130,246,0.15);padding:6px 10px;border-radius:6px;border:1px solid rgba(59,130,246,0.3);"></div>
             </div>
             <div style="text-align:right;">
               <span id="cr-badge" style="padding:6px 16px;border-radius:20px;font-weight:800;font-size:14px;background:#10b981;color:#fff;">A+ EXCELLENT</span>
@@ -363,6 +364,14 @@
 
       document.getElementById('cr-name').textContent = data.companyName;
       document.getElementById('cr-ids').textContent = `${data.mcNumber} | ${data.dotNumber} | ${data.cityState}`;
+
+      const noteEl = document.getElementById('cr-note');
+      if (data.entityNote) {
+        noteEl.textContent = data.entityNote;
+        noteEl.style.display = 'block';
+      } else {
+        noteEl.style.display = 'none';
+      }
 
       const badge = document.getElementById('cr-badge');
       badge.textContent = `${data.creditRating} (${data.riskLevel})`;

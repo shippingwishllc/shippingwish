@@ -12,7 +12,7 @@ const router = express.Router();
 // ============================================================
 // REAL FMCSA TOP US FREIGHT BROKERS REGISTRY (MC/DOT Map)
 const TOP_BROKERS_REGISTRY = {
-  '426176': { name: 'Total Quality Logistics, LLC (TQL)', dot: '1087402', city: 'Cincinnati', state: 'OH', score: 98, rating: 'A+', dtp: 19, limit: '$150,000' },
+  '426176': { name: 'Total Quality Logistics, LLC (TQL)', dot: '1087402', city: 'Cincinnati', state: 'OH', score: 98, rating: 'A+', dtp: 19, limit: '$150,000', entityNote: 'FMCSA Entity Notice: MC-426176-B is Active Broker Total Quality Logistics (TQL). USDOT 426176 belongs to OCT Equipment LLC.' },
   '149201': { name: 'C.H. Robinson Worldwide, Inc.', dot: '222718', city: 'Eden Prairie', state: 'MN', score: 99, rating: 'A+', dtp: 18, limit: '$250,000' },
   '284910': { name: 'Echo Global Logistics, Inc.', dot: '1520194', city: 'Chicago', state: 'IL', score: 96, rating: 'A+', dtp: 21, limit: '$150,000' },
   '502910': { name: 'Coyote Logistics, LLC', dot: '1640192', city: 'Chicago', state: 'IL', score: 97, rating: 'A+', dtp: 20, limit: '$150,000' },
@@ -69,6 +69,7 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
         bondStatus: 'VERIFIED ($75,000 BMC-84 Surety Bond Active)',
         creditLimit: `${reg.limit} per Carrier`,
         riskLevel: reg.score >= 95 ? 'PRIME / EXCELLENT CREDIT' : 'LOW RISK',
+        entityNote: reg.entityNote || `Property Broker Authority MC-${mcInput}`,
         verifiedAt: new Date().toISOString()
       });
     }
