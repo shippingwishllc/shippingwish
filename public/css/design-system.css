@@ -1409,11 +1409,17 @@ h1, h2, h3, h4, h5, h6 {
 /* --------------------------------------------------------------------------- */
 /* DASHBOARD & TMS APP SHELL                                                    */
 /* --------------------------------------------------------------------------- */
-.app-shell {
+.app-shell, .app-layout {
   display: grid;
   grid-template-columns: 260px 1fr;
   min-height: 100vh;
   background: var(--color-gray-50);
+}
+
+html, body.app-body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 
 .app-sidebar {
