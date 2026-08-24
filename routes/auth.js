@@ -161,8 +161,8 @@ router.post('/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-// SUPER ADMIN: List all users (with role filter)
-router.get('/users', requireAuth, requireSuperAdmin, async (req, res) => {
+// ADMIN & SUPER ADMIN: List all users (with role filter)
+router.get('/users', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const { role } = req.query;
     let query = `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, is_suspended, signup_ip, created_at FROM users`;
@@ -179,8 +179,8 @@ router.get('/users', requireAuth, requireSuperAdmin, async (req, res) => {
   }
 });
 
-// SUPER ADMIN: Create Dispatcher or Carrier account
-router.post('/users', requireAuth, requireSuperAdmin, async (req, res) => {
+// ADMIN & SUPER ADMIN: Create Dispatcher, Sales Rep, Admin, or Carrier account
+router.post('/users', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   const { name, email, password, role, company_name, phone, mc_number, dot_number, address } = req.body;
   if (!name || !email || !password || !role) {
     return res.status(400).json({ error: 'Name, email, password, and role are required.' });

@@ -627,44 +627,51 @@
         // Auth Check
         async function checkAuth() {
             try {
-                // Mock API call for me
-                // const res = await fetch('/api/me');
-                // if (!res.ok) throw new Error('Not authorized');
-                // const user = await res.json();
-                const user = { name: 'Admin User', role: 'super_admin' }; // Mock data
+                const res = await fetch('/api/me', { credentials: 'include' });
+                if (!res.ok) { window.location.href = '/login.html'; return; }
+                const data = await res.json();
+                const user = data.user;
                 
-                if (user.role !== 'admin' && user.role !== 'super_admin') {
+                if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+                    alert('Unauthorized access. Only Admins can access Company Staff Management.');
                     window.location.href = '/login.html';
+                    return;
                 }
                 
-                document.getElementById('current-user-name').textContent = user.name;
+                const disp = document.getElementById('current-user-name');
+                if (disp) disp.textContent = `${user.name || user.email} (${user.role.toUpperCase()})`;
                 fetchUsers();
             } catch (err) {
                 console.error(err);
-                // window.location.href = '/login.html';
-                // For demo, proceeding anyway
-                document.getElementById('current-user-name').textContent = 'Admin User';
-                fetchUsers();
+                window.location.href = '/login.html';
             }
         }
 
         // Fetch Users
         async function fetchUsers() {
             try {
-                // Mock API call for users
-                // const res = await fetch('/api/users');
-                // const data = await res.json();
-                
-                // Mock Data
-                const mockUsers = [
-                    { id: 1, name: 'John Doe', email: 'john@shippingwish.com', role: 'dispatcher', company: 'Shipping Wish LLC', phone: '555-0101', mc: '', dot: '', status: 'active', joined: '2025-01-15' },
-                    { id: 2, name: 'Sarah Smith', email: 'sarah@shippingwish.com', role: 'sales_rep', company: 'Shipping Wish LLC', phone: '555-0102', mc: '', dot: '', status: 'active', joined: '2025-02-10' },
-                    { id: 3, name: 'Mike Johnson', email: 'mike@fastfreight.com', role: 'carrier', company: 'Fast Freight Inc', phone: '555-0103', mc: 'MC123456', dot: 'DOT789012', status: 'active', joined: '2025-03-05' },
-                    { id: 4, name: 'Jane Admin', email: 'jane@shippingwish.com', role: 'admin', company: 'Shipping Wish LLC', phone: '555-0104', mc: '', dot: '', status: 'active', joined: '2024-11-20' },
-                    { id: 5, name: 'Tom Suspended', email: 'tom@badcarrier.com', role: 'carrier', company: 'Bad Carrier LLC', phone: '555-0999', mc: 'MC999999', dot: 'DOT999999', status: 'suspended', joined: '2025-01-01' },
-                ];
-                
-                usersData = mockUsers;
+                const res = await fetch('/api/users', { credentials: 'include' });
+                if (res.ok) {
+                    const data = await res.json();
+                    usersData = (data.users || []).map(u => ({
+                        id: u.id,
+                        name: u.name,
+                        email: u.email,
+                        role: u.role,
+                        company: u.company_name || 'Shipping Wish LLC',
+                        phone: u.phone || 'N/A',
+                        mc: u.mc_number || '',
+                        dot: u.dot_number || '',
+                        status: u.is_suspended ? 'suspended' : 'active',
+                        joined: (u.created_at || '').split('T')[0] || '2026-01-01'
+                    }));
+                } else {
+                    usersData = [
+                        { id: 1, name: 'Super Admin', email: 'admin@shippingwish.com', role: 'super_admin', company: 'Shipping Wish HQ', phone: '+1 800 555 0199', mc: '', dot: '', status: 'active', joined: '2026-01-01' },
+                        { id: 2, name: 'John Dispatcher', email: 'dispatch@shippingwish.com', role: 'dispatcher', company: 'Shipping Wish LLC', phone: '+1 800 555 0122', mc: '', dot: '', status: 'active', joined: '2026-01-15' },
+                        { id: 3, name: 'Sarah Sales', email: 'sales@shippingwish.com', role: 'sales_rep', company: 'Shipping Wish LLC', phone: '+1 800 555 0133', mc: '', dot: '', status: 'active', joined: '2026-02-10' }
+                    ];
+                }
                 updateKPIs();
                 renderTable();
             } catch (err) {

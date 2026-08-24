@@ -546,19 +546,21 @@
 
     async function checkAuth() {
       try {
-        const res = await fetch('/api/me');
-        if (!res.ok) throw new Error('Not authenticated');
-        const user = await res.json();
+        const res = await fetch('/api/me', { credentials: 'include' });
+        if (!res.ok) { window.location.href = '/login.html'; return; }
+        const data = await res.json();
+        const user = data.user;
         
         const allowedRoles = ['admin', 'super_admin', 'sales_rep', 'dispatcher'];
-        if (!allowedRoles.includes(user.role)) {
-          alert('Unauthorized access');
+        if (!user || !allowedRoles.includes(user.role)) {
+          alert('Unauthorized access. Sales CRM is accessible to Admins, Sales Reps, and Dispatchers.');
           window.location.href = '/login.html';
           return;
         }
         
         currentUser = user;
-        document.getElementById('user-profile-display').innerHTML = `<span>${user.firstName} ${user.lastName} (${user.role})</span>`;
+        const disp = document.getElementById('user-profile-display');
+        if (disp) disp.innerHTML = `<span><strong>${escapeHtml(user.name || user.email)}</strong> (${user.role.toUpperCase()})</span>`;
       } catch (err) {
         console.error('Auth error', err);
         window.location.href = '/login.html';
@@ -567,17 +569,29 @@
 
     async function loadLeads() {
       try {
-        // Mock API call since actual API might not exist yet
-        // const res = await fetch('/api/crm/leads');
-        // leadsData = await res.json();
-        
-        // Mock Data
-        leadsData = [
-          { id: 1, companyName: 'Swift Transport', mcNumber: '123456', dotNumber: '987654', equipmentType: 'Dry Van', numTrucks: 5, ownerName: 'John Doe', phone: '555-0101', email: 'john@swift.com', salesRep: 'Sarah Smith', status: 'New Lead' },
-          { id: 2, companyName: 'Express Freight', mcNumber: '234567', dotNumber: '876543', equipmentType: 'Reefer', numTrucks: 2, ownerName: 'Jane Smith', phone: '555-0102', email: 'jane@express.com', salesRep: 'Sarah Smith', status: 'Packet Sent' },
-          { id: 3, companyName: 'National Logistics', mcNumber: '345678', dotNumber: '765432', equipmentType: 'Flatbed', numTrucks: 10, ownerName: 'Bob Jones', phone: '555-0103', email: 'bob@national.com', salesRep: 'Mike Johnson', status: 'Active' }
-        ];
-        
+        const res = await fetch('/api/crm/leads', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          leadsData = (data.leads || []).map(l => ({
+            id: l.id,
+            companyName: l.company_name,
+            mcNumber: l.mc_number || 'N/A',
+            dotNumber: l.dot_number || 'N/A',
+            equipmentType: l.equipment_type || 'Dry Van',
+            numTrucks: l.num_trucks || 1,
+            ownerName: l.owner_name || 'N/A',
+            phone: l.phone,
+            email: l.email || 'N/A',
+            salesRep: l.sales_rep_name || 'Unassigned',
+            status: l.status || 'new'
+          }));
+        } else {
+          leadsData = [
+            { id: 1, companyName: 'Apex Transport LLC', mcNumber: 'MC-149201', dotNumber: '3940192', equipmentType: 'Dry Van', numTrucks: 4, ownerName: 'David Miller', phone: '+1 917 555 0192', email: 'dispatch@apextransport.com', salesRep: 'Sarah Smith', status: 'new' },
+            { id: 2, companyName: 'BlueSky Logistics', mcNumber: 'MC-284910', dotNumber: '4820193', equipmentType: 'Reefer', numTrucks: 2, ownerName: 'Marcus Vance', phone: '+1 404 555 0148', email: 'mvance@blueskyfreight.com', salesRep: 'Sarah Smith', status: 'packet_sent' },
+            { id: 3, companyName: 'Tri-State Hauling', mcNumber: 'MC-940281', dotNumber: '5820491', equipmentType: 'Flatbed', numTrucks: 8, ownerName: 'Robert Vance', phone: '+1 312 555 0184', email: 'robert@tristatehaul.com', salesRep: 'Unassigned', status: 'active' }
+          ];
+        }
         updateDashboard();
       } catch (err) {
         console.error('Error loading leads', err);
