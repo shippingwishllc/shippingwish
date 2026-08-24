@@ -36,6 +36,9 @@
       <a href="/brokers.html" class="sidebar-nav-link">
         <span aria-hidden="true">🤝</span> Broker Directory
       </a>
+      <a href="/crm-sales.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📈</span> Sales CRM &amp; Leads
+      </a>
 
       <div class="sidebar-section-label">Documents & Finance</div>
       <a href="/documents.html" class="sidebar-nav-link">
@@ -619,16 +622,29 @@
   }
 
   // Create Load Modal handling
-  async function openNewLoadModal() {
-    document.getElementById('new-load-modal').classList.add('open');
-    document.getElementById('modal-alert').style.display = 'none';
+  function openNewLoadModal() {
+    const modal = document.getElementById('new-load-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('open');
+    }
+    const alertDiv = document.getElementById('modal-alert');
+    if (alertDiv) alertDiv.style.display = 'none';
     populateCarriersAndBrokersDropdowns();
   }
 
   function closeNewLoadModal() {
-    document.getElementById('new-load-modal').classList.remove('open');
-    document.getElementById('create-load-form').reset();
+    const modal = document.getElementById('new-load-modal');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.remove('open');
+    }
+    const form = document.getElementById('create-load-form');
+    if (form) form.reset();
   }
+
+  window.openNewLoadModal = openNewLoadModal;
+  window.closeNewLoadModal = closeNewLoadModal;
 
   async function populateCarriersAndBrokersDropdowns() {
     try {
