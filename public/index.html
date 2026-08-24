@@ -30,17 +30,23 @@
     /* ===== PAGE-SPECIFIC STYLES ===== */
 
     /* Hero */
-    /* Hero 2-Column Grid */
+    /* Hero Container & Layout Grid */
     .hero-content {
       position: relative;
       z-index: 1;
-      padding: 90px var(--space-6) 80px;
+      padding: 70px var(--space-6) 60px;
       max-width: 1280px;
       margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero-grid-2col {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-8);
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: var(--space-10);
       align-items: center;
+      width: 100%;
     }
 
     .hero-headline {
@@ -100,8 +106,24 @@
     }
 
     @media (max-width: 1024px) {
-      .hero-content { grid-template-columns: 1fr; gap: var(--space-8); padding: 80px var(--space-4) 60px; }
+      .hero-content { padding: 60px var(--space-4) 40px; }
+      .hero-grid-2col { grid-template-columns: 1fr; gap: var(--space-8); }
       .hero-visual-card { max-width: 540px; margin: 0 auto; justify-self: center; }
+      .hero-metrics {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: var(--space-6) !important;
+        margin-top: var(--space-10) !important;
+        padding-top: var(--space-8) !important;
+      }
+      .hero-divider { display: none !important; }
+    }
+
+    @media (max-width: 640px) {
+      .hero-metrics {
+        grid-template-columns: 1fr !important;
+        gap: var(--space-4) !important;
+      }
     }
 
     .hero-actions {
@@ -114,11 +136,13 @@
     .hero-metrics {
       display: flex;
       align-items: center;
-      gap: var(--space-8);
-      flex-wrap: wrap;
-      margin-top: var(--space-16);
-      padding-top: var(--space-12);
-      border-top: 1px solid rgba(255,255,255,0.07);
+      justify-content: space-between;
+      gap: var(--space-6);
+      margin-top: 56px;
+      padding-top: 36px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .hero-metric-item {
@@ -569,136 +593,141 @@
 <section class="hero" aria-labelledby="hero-heading">
   <div class="hero-grid-lines" aria-hidden="true"></div>
   <div class="hero-content">
-    <!-- LEFT COLUMN: Copy & Action Buttons -->
-    <div>
-      <div class="hero-eyebrow" aria-label="US Freight Technology Platform" style="display:inline-flex;align-items:center;gap:var(--space-2);background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-full);padding:6px 16px;font-size:var(--text-xs);font-weight:var(--font-semibold);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-amber-400);margin-bottom:var(--space-6);">
-        <span aria-hidden="true">🇺🇸</span> US Freight Technology Platform
+    
+    <!-- 2-COLUMN SPLIT GRID -->
+    <div class="hero-grid-2col">
+      <!-- LEFT COLUMN: Copy & Action Buttons -->
+      <div>
+        <div class="hero-eyebrow" aria-label="US Freight Technology Platform" style="display:inline-flex;align-items:center;gap:var(--space-2);background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-full);padding:6px 16px;font-size:var(--text-xs);font-weight:var(--font-semibold);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-amber-400);margin-bottom:var(--space-6);">
+          <span aria-hidden="true">🇺🇸</span> US Freight Technology Platform
+        </div>
+
+        <h1 id="hero-heading" class="hero-headline">
+          Smarter Dispatch.<br>
+          Better Operations.<br>
+          <span class="accent">Stronger Fleets.</span>
+        </h1>
+
+        <p class="hero-subheadline">
+          Technology-powered dispatch and fleet operations built for modern American carriers.
+          Real dispatchers. Real TMS platform. Real results.
+        </p>
+
+        <div class="hero-actions">
+          <a href="/contact.html" class="btn btn-primary btn-xl" id="hero-cta-primary">
+            Get Started →
+          </a>
+          <a href="/services.html" class="btn btn-secondary btn-xl" id="hero-cta-secondary">
+            Explore Services
+          </a>
+        </div>
       </div>
 
-      <h1 id="hero-heading" class="hero-headline">
-        Smarter Dispatch.<br>
-        Better Operations.<br>
-        <span class="accent">Stronger Fleets.</span>
-      </h1>
-
-      <p class="hero-subheadline">
-        Technology-powered dispatch and fleet operations built for modern American carriers.
-        Real dispatchers. Real TMS platform. Real results.
-      </p>
-
-      <div class="hero-actions">
-        <a href="/contact.html" class="btn btn-primary btn-xl" id="hero-cta-primary">
-          Get Started →
-        </a>
-        <a href="/services.html" class="btn btn-secondary btn-xl" id="hero-cta-secondary">
-          Explore Services
-        </a>
-      </div>
-
-      <!-- ANIMATED HERO METRICS -->
-      <div class="hero-metrics" aria-label="Shipping Wish Performance Telemetry">
-        <div class="hero-metric-item">
-          <span class="hero-metric-value" style="color:var(--color-amber-400);">$<span class="stat-counter" data-target="850" data-decimal="0">0</span>K+</span>
-          <span class="hero-metric-label">Gross Freight Dispatched</span>
+      <!-- RIGHT COLUMN: Interactive 2026 TMS Dispatch Radar Visual -->
+      <div style="position:relative;">
+        <!-- Floating Badge 1 -->
+        <div class="hero-floating-badge" style="top:-15px;right:-10px;">
+          <span style="color:var(--color-amber-400);">⚡ DAT Rate Match:</span> Top Tier 5%
         </div>
-        <div class="hero-divider" aria-hidden="true"></div>
-        <div class="hero-metric-item">
-          <span class="hero-metric-value"><span class="stat-counter" data-target="420" data-decimal="0">0</span>+</span>
-          <span class="hero-metric-label">Loads Booked Across USA</span>
+
+        <!-- Floating Badge 2 -->
+        <div class="hero-floating-badge" style="bottom:-15px;left:-10px;">
+          <span style="color:#6ee7b7;">🛡️ Non-Recourse:</span> 100% Protected
         </div>
-        <div class="hero-divider" aria-hidden="true"></div>
-        <div class="hero-metric-item">
-          <span class="hero-metric-value"><span class="stat-counter" data-target="99.4" data-decimal="1">0.0</span>%</span>
-          <span class="hero-metric-label">On-Time Delivery & Check Calls</span>
-        </div>
-        <div class="hero-divider" aria-hidden="true"></div>
-        <div class="hero-metric-item">
-          <span class="hero-metric-value" style="color:#6ee7b7;">24/7 LIVE</span>
-          <span class="hero-metric-label">Dedicated Dispatch Desk</span>
+
+        <div class="hero-visual-card">
+          <!-- Visual Card Topbar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:var(--space-3);margin-bottom:var(--space-4);border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex;align-items:center;gap:var(--space-2);">
+              <div style="width:10px;height:10px;border-radius:50%;background:#ef4444;"></div>
+              <div style="width:10px;height:10px;border-radius:50%;background:#f59e0b;"></div>
+              <div style="width:10px;height:10px;border-radius:50%;background:#10b981;"></div>
+              <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);margin-left:6px;">SW TMS Live Dispatch Radar</span>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:#10b981;display:flex;align-items:center;gap:4px;">
+              <span class="live-dot" style="width:6px;height:6px;"></span> 12 Dispatchers Online
+            </div>
+          </div>
+
+          <!-- Active Load Card -->
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:var(--space-4);margin-bottom:var(--space-4);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2);">
+              <span class="badge badge-amber">ACTIVE LOAD #SW-98401</span>
+              <span style="font-size:16px;font-weight:900;color:#10b981;">$3,450.00 <span style="font-size:10px;color:rgba(255,255,255,0.5); font-weight:normal;">($4.82/mi)</span></span>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin:var(--space-3) 0;font-size:12px;">
+              <div>
+                <span style="font-size:9px;color:rgba(255,255,255,0.4);display:block;text-transform:uppercase;">Pickup</span>
+                <strong style="color:#fff;">Chicago, IL</strong>
+              </div>
+              <div style="font-size:10px;color:var(--color-amber-400);background:rgba(245,158,11,0.12);padding:2px 8px;border-radius:8px;font-weight:700;">
+                🚚 715 Mi
+              </div>
+              <div style="text-align:right;">
+                <span style="font-size:9px;color:rgba(255,255,255,0.4);display:block;text-transform:uppercase;">Delivery</span>
+                <strong style="color:#fff;">Atlanta, GA</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graphic Truck Illustration with Animated Radar Waves -->
+          <div style="background:rgba(0,0,0,0.3);border-radius:var(--radius-xl);padding:var(--space-4);text-align:center;position:relative;">
+            <svg width="220" height="90" viewBox="0 0 220 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin:0 auto;display:block;">
+              <!-- Road Line -->
+              <line x1="10" y1="75" x2="210" y2="75" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="8 6"/>
+              <!-- Semi Truck Body -->
+              <rect x="25" y="32" width="110" height="36" rx="4" fill="rgba(245,158,11,0.18)" stroke="#f59e0b" stroke-width="1.5"/>
+              <line x1="55" y1="32" x2="55" y2="68" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
+              <line x1="85" y1="32" x2="85" y2="68" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
+              <!-- Cab -->
+              <rect x="135" y="38" width="48" height="30" rx="5" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+              <rect x="150" y="42" width="22" height="12" rx="3" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" stroke-width="1"/>
+              <!-- Wheels -->
+              <circle cx="42" cy="72" r="8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+              <circle cx="82" cy="72" r="8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+              <circle cx="158" cy="72" r="8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+              <!-- Headlight Ray Animation -->
+              <polygon points="183,52 215,44 215,62" fill="url(#headlight-gradient)" opacity="0.7"/>
+              <defs>
+                <linearGradient id="headlight-gradient" x1="183" y1="52" x2="215" y2="52" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#f59e0b" stop-opacity="0.8"/>
+                  <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div style="font-size:11px;font-weight:700;color:#6ee7b7;margin-top:4px;">
+              📡 Real-Time Telemetry Active · GPS Tracked & Verified
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: Interactive 2026 TMS Dispatch Radar Visual -->
-    <div style="position:relative;">
-      <!-- Floating Badge 1 -->
-      <div class="hero-floating-badge" style="top:-15px;right:-10px;">
-        <span style="color:var(--color-amber-400);">⚡ DAT Rate Match:</span> Top Tier 5%
+    <!-- FULL-WIDTH HERO PERFORMANCE TELEMETRY BAR -->
+    <div class="hero-metrics" aria-label="Shipping Wish Performance Telemetry">
+      <div class="hero-metric-item">
+        <span class="hero-metric-value" style="color:var(--color-amber-400);">$<span class="stat-counter" data-target="850" data-decimal="0">0</span>K+</span>
+        <span class="hero-metric-label">Gross Freight Dispatched</span>
       </div>
-
-      <!-- Floating Badge 2 -->
-      <div class="hero-floating-badge" style="bottom:-15px;left:-10px;">
-        <span style="color:#6ee7b7;">🛡️ Non-Recourse:</span> 100% Protected
+      <div class="hero-divider" aria-hidden="true"></div>
+      <div class="hero-metric-item">
+        <span class="hero-metric-value"><span class="stat-counter" data-target="420" data-decimal="0">0</span>+</span>
+        <span class="hero-metric-label">Loads Booked Across USA</span>
       </div>
-
-      <div class="hero-visual-card">
-        <!-- Visual Card Topbar -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:var(--space-3);margin-bottom:var(--space-4);border-bottom:1px solid rgba(255,255,255,0.08);">
-          <div style="display:flex;align-items:center;gap:var(--space-2);">
-            <div style="width:10px;height:10px;border-radius:50%;background:#ef4444;"></div>
-            <div style="width:10px;height:10px;border-radius:50%;background:#f59e0b;"></div>
-            <div style="width:10px;height:10px;border-radius:50%;background:#10b981;"></div>
-            <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);margin-left:6px;">SW TMS Live Dispatch Radar</span>
-          </div>
-          <div style="font-size:11px;font-weight:700;color:#10b981;display:flex;align-items:center;gap:4px;">
-            <span class="live-dot" style="width:6px;height:6px;"></span> 12 Dispatchers Online
-          </div>
-        </div>
-
-        <!-- Active Load Card -->
-        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:var(--space-4);margin-bottom:var(--space-4);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2);">
-            <span class="badge badge-amber">ACTIVE LOAD #SW-98401</span>
-            <span style="font-size:16px;font-weight:900;color:#10b981;">$3,450.00 <span style="font-size:10px;color:rgba(255,255,255,0.5); font-weight:normal;">($4.82/mi)</span></span>
-          </div>
-
-          <div style="display:flex;align-items:center;justify-content:space-between;margin:var(--space-3) 0;font-size:12px;">
-            <div>
-              <span style="font-size:9px;color:rgba(255,255,255,0.4);display:block;text-transform:uppercase;">Pickup</span>
-              <strong style="color:#fff;">Chicago, IL</strong>
-            </div>
-            <div style="font-size:10px;color:var(--color-amber-400);background:rgba(245,158,11,0.12);padding:2px 8px;border-radius:8px;font-weight:700;">
-              🚚 715 Mi
-            </div>
-            <div style="text-align:right;">
-              <span style="font-size:9px;color:rgba(255,255,255,0.4);display:block;text-transform:uppercase;">Delivery</span>
-              <strong style="color:#fff;">Atlanta, GA</strong>
-            </div>
-          </div>
-        </div>
-
-        <!-- Graphic Truck Illustration with Animated Radar Waves -->
-        <div style="background:rgba(0,0,0,0.3);border-radius:var(--radius-xl);padding:var(--space-4);text-align:center;position:relative;">
-          <svg width="220" height="90" viewBox="0 0 220 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin:0 auto;display:block;">
-            <!-- Road Line -->
-            <line x1="10" y1="75" x2="210" y2="75" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="8 6"/>
-            <!-- Semi Truck Body -->
-            <rect x="25" y="32" width="110" height="36" rx="4" fill="rgba(245,158,11,0.18)" stroke="#f59e0b" stroke-width="1.5"/>
-            <line x1="55" y1="32" x2="55" y2="68" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
-            <line x1="85" y1="32" x2="85" y2="68" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
-            <!-- Cab -->
-            <rect x="135" y="38" width="48" height="30" rx="5" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-            <rect x="150" y="42" width="22" height="12" rx="3" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" stroke-width="1"/>
-            <!-- Wheels -->
-            <circle cx="42" cy="72" r="8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
-            <circle cx="82" cy="72" r="8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
-            <circle cx="158" cy="72" r="8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
-            <!-- Headlight Ray Animation -->
-            <polygon points="183,52 215,44 215,62" fill="url(#headlight-gradient)" opacity="0.7"/>
-            <defs>
-              <linearGradient id="headlight-gradient" x1="183" y1="52" x2="215" y2="52" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#f59e0b" stop-opacity="0.8"/>
-                <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-          </svg>
-          <div style="font-size:11px;font-weight:700;color:#6ee7b7;margin-top:4px;">
-            📡 Real-Time Telemetry Active · GPS Tracked & Verified
-          </div>
-        </div>
-
+      <div class="hero-divider" aria-hidden="true"></div>
+      <div class="hero-metric-item">
+        <span class="hero-metric-value"><span class="stat-counter" data-target="99.4" data-decimal="1">0.0</span>%</span>
+        <span class="hero-metric-label">On-Time Delivery & Check Calls</span>
+      </div>
+      <div class="hero-divider" aria-hidden="true"></div>
+      <div class="hero-metric-item">
+        <span class="hero-metric-value" style="color:#6ee7b7;">24/7 LIVE</span>
+        <span class="hero-metric-label">Dedicated Dispatch Desk</span>
       </div>
     </div>
+
   </div>
 
 </section>
