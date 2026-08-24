@@ -113,6 +113,31 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
+// Automatic Super Admin Account Initializer
+async function seedAdminUsers() {
+  try {
+    const pool = require('./db');
+    const bcrypt = require('bcryptjs');
+    const adminCheck = await pool.query("SELECT id FROM users WHERE role IN ('super_admin', 'admin') LIMIT 1");
+    if (adminCheck.rows.length === 0) {
+      const superPass = process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin2026!';
+      const hash = await bcrypt.hash(superPass, 10);
+      await pool.query(
+        `INSERT INTO users (name, email, password_hash, role, company_name, phone)
+         VALUES 
+          ('Super Admin', 'admin@shippingwish.com', $1, 'super_admin', 'Shipping Wish HQ', '+1 (917) 737-0021'),
+          ('Company Owner', 'owner@shippingwish.com', $1, 'super_admin', 'Shipping Wish HQ', '+1 (917) 737-0021')
+         ON CONFLICT (email) DO NOTHING`,
+        [hash]
+      );
+      console.log('[SEED] Default Super Admin accounts created: admin@shippingwish.com & owner@shippingwish.com');
+    }
+  } catch (err) {
+    console.error('[SEED] Admin seed check:', err.message);
+  }
+}
+seedAdminUsers();
+
 app.listen(PORT, () => {
   console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
 });
