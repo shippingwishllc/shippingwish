@@ -1,126 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Load Planning & Driver Availability | Shipping Wish LLC</title>
-<meta name="description" content="Advanced Load Planning & Driver Availability Schedule Module for Shipping Wish LLC. Schedule upcoming driver reload dates and preferred pickup locations.">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver Reload Planning & Availability Schedule | Shipping Wish TMS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .tms-table-v2 th, .tms-table-v2 td { padding: 12px 16px; }
+  </style>
 </head>
-<body>
+<body class="app-body">
 
-<header class="site-header">
-  <div class="container nav-row">
-    <a href="/" class="brand"><span class="dot"></span> Shipping Wish LLC — Load Planner</a>
-    <nav class="nav-links">
-      <a href="/load-planning.html" class="current">Load Planning</a>
-      <a href="/admin-dashboard.html">Admin Panel</a>
-      <a href="/dispatcher-dashboard.html">Dispatcher Console</a>
-      <a href="/fleet.html">Fleet Roster</a>
-    </nav>
-    <div class="nav-cta">
-      <span id="user-display-name" class="nav-phone">Admin Planner</span>
-      <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+<div class="app-shell">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="app-sidebar">
+    <div style="padding:var(--space-4);border-bottom:1px solid rgba(255,255,255,0.08);">
+      <a href="/admin-dashboard.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--color-amber-500),#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#0f172a;font-weight:900;font-size:18px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">ENTERPRISE TMS</div>
+        </div>
+      </a>
     </div>
-  </div>
-</header>
 
-<section class="section">
-  <div class="container">
-    
-    <!-- Top Header & Action Button -->
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+    <div class="sidebar-nav">
+      <div class="sidebar-section-label">Operations</div>
+      <a href="/admin-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📊</span> Overview &amp; Loads
+      </a>
+      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎧</span> Dispatch Desk
+      </a>
+      <a href="/fleet.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🚛</span> Fleet &amp; Drivers
+      </a>
+
+      <div class="sidebar-section-label">Sales &amp; Staff</div>
+      <a href="/crm-sales.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📈</span> Sales CRM &amp; Leads
+      </a>
+      <a href="/staff-management.html" class="sidebar-nav-link">
+        <span aria-hidden="true">👔</span> Company Staff &amp; Roles
+      </a>
+
+      <div class="sidebar-section-label">Accounting &amp; Taxes</div>
+      <a href="/invoices.html" class="sidebar-nav-link">
+        <span aria-hidden="true">💳</span> Invoices &amp; Billing
+      </a>
+      <a href="/ifta.html" class="sidebar-nav-link">
+        <span aria-hidden="true">⛽</span> IFTA &amp; Fuel Ledger
+      </a>
+      <a href="/load-planning.html" class="sidebar-nav-link active">
+        <span aria-hidden="true">📅</span> Load Planning
+      </a>
+
+      <div class="sidebar-section-label">System</div>
+      <a href="/admin-dashboard.html#audit" class="sidebar-nav-link">
+        <span aria-hidden="true">🛡️</span> Security Audit Logs
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-user-card">
+        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="lp-avatar-initials">LP</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="user-display-name">Planner Console</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="lp-user-role">Operations HQ</div>
+        </div>
+      </div>
+      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);">
+        🚪 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
+    <header class="app-header">
       <div>
-        <span class="eyebrow" style="margin-bottom:4px;">Advanced Dispatch ERP</span>
-        <h2 style="font-size:30px;font-weight:800;">Driver Availability &amp; Load Planning Schedule</h2>
-      </div>
-      <button class="btn btn-amber" onclick="openAddPlanModal()">+ Schedule Driver Availability</button>
-    </div>
-
-    <!-- Info Banner -->
-    <div style="background:rgba(245,158,11,0.08);border:1px solid var(--border-glow);padding:16px 20px;border-radius:var(--radius-md);margin-bottom:24px;display:flex;align-items:center;gap:14px;">
-      <span style="font-size:24px;">📅</span>
-      <div style="font-size:13px;line-height:1.6;color:#e2e8f0;">
-        <b>Driver Reload Planning Rule:</b> When a driver delivers at Point B and goes home for 1-2 days, schedule their future available date and preferred pickup region below. The system automatically alerts the assigned dispatcher to book freight out of that city on that date!
-      </div>
-    </div>
-
-    <!-- Plans Table -->
-    <div class="tms-panel">
-      <div style="overflow-x:auto;">
-        <table class="tms-table" style="width:100%;">
-          <thead>
-            <tr>
-              <th>Driver &amp; Truck</th>
-              <th>Available Date</th>
-              <th>Pickup Location</th>
-              <th>Delivery Preference</th>
-              <th>Planner Notes</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="plans-table-body">
-            <tr><td colspan="7" style="text-align:center;padding:30px;" class="muted">Loading driver availability schedules...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- Add Load Availability Plan Modal -->
-<div id="add-plan-modal" class="modal-overlay" style="display:none;">
-  <div class="modal-box" style="max-width:550px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h3 style="font-size:20px;color:#fff;">+ Schedule Driver Availability</h3>
-      <button class="btn btn-outline btn-sm" onclick="closeAddPlanModal()">✕</button>
-    </div>
-
-    <form id="add-plan-form">
-      <div class="field" style="margin-bottom:14px;">
-        <label>Select Driver *</label>
-        <select id="plan-driver-id" required>
-          <option value="">-- Choose Driver --</option>
-        </select>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Driver Availability &amp; Load Planning Schedule</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Schedule upcoming driver reload dates &amp; target pickup regions for dispatchers</p>
       </div>
 
-      <div class="field" style="margin-bottom:14px;">
-        <label>Select Truck *</label>
-        <select id="plan-truck-id" required>
-          <option value="">-- Choose Truck --</option>
-        </select>
-      </div>
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <button class="btn btn-primary btn-sm" onclick="openAddPlanModal()">
+          + Schedule Driver Availability
+        </button>
 
-      <div class="form-row">
-        <div class="field">
-          <label>Available Pickup Date *</label>
-          <input type="date" id="plan-date" required>
-        </div>
-        <div class="field">
-          <label>Preferred Pickup City / State *</label>
-          <input type="text" id="plan-pickup" required placeholder="Dallas, TX">
+        <!-- Notification Bell -->
+        <div id="notif-container"></div>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- INFO RULE BANNER -->
+      <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);padding:16px 20px;border-radius:var(--radius-xl);margin-bottom:var(--space-6);display:flex;align-items:center;gap:14px;">
+        <span style="font-size:24px;">📅</span>
+        <div style="font-size:13px;line-height:1.6;color:var(--text-primary);">
+          <strong style="color:var(--color-amber-400);">Driver Reload Planning Rule:</strong> When a driver delivers at Point B and takes time off, schedule their future available date and preferred pickup region below. The system automatically alerts the assigned dispatcher to book freight out of that city on that date!
         </div>
       </div>
 
-      <div class="field" style="margin-bottom:14px;">
-        <label>Target Delivery Region (Optional)</label>
-        <input type="text" id="plan-delivery-pref" placeholder="Atlanta, GA or Midwest Region">
+      <!-- KPI STAT CARDS -->
+      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Scheduled Reloads</span>
+            <div class="stat-kpi-icon">📅</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-scheduled-count">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Upcoming driver availability entries</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Ready Today</span>
+            <div class="stat-kpi-icon">⚡</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-ready-today">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Drivers available for dispatch today</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Covered Fleets</span>
+            <div class="stat-kpi-icon">🚚</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-covered-fleets">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Active carrier fleets scheduled</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Avg Lead Days</span>
+            <div class="stat-kpi-icon">⏱️</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-lead-days">2.5 Days</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Advance dispatch planning notice</div>
+        </div>
       </div>
 
-      <div class="field" style="margin-bottom:20px;">
-        <label>Planner Notes / Home-Stay Instructions</label>
-        <textarea id="plan-notes" rows="2" placeholder="Driver taking weekend off, ready for Monday morning pickup..."></textarea>
+      <!-- PLANS TABLE CARD -->
+      <div class="tms-table-card">
+        <div class="tms-table-header" style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Driver Availability Schedule</h3>
+            <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Upcoming driver reload dates, pickup regions, and dispatcher notes</p>
+          </div>
+        </div>
+
+        <div class="tms-table-wrapper">
+          <table class="tms-table-v2">
+            <thead>
+              <tr>
+                <th>Driver &amp; Truck</th>
+                <th>Available Date</th>
+                <th>Pickup Location</th>
+                <th>Delivery Preference</th>
+                <th>Planner Notes</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="plans-table-body">
+              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading driver availability schedules...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <button type="submit" class="btn btn-amber btn-block">Save Driver Load Schedule</button>
-    </form>
+    </main>
   </div>
 </div>
 
-<script src="/js/main.js"></script>
+<!-- ================= SCHEDULE DRIVER AVAILABILITY MODAL ================= -->
+<div class="modal-backdrop" id="add-plan-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>+ Schedule Driver Availability</h2>
+      <button onclick="closeAddPlanModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div id="plan-alert" class="alert alert-danger" style="display:none;margin-bottom:16px;"></div>
+
+      <form id="add-plan-form">
+        <div class="form-group">
+          <label class="form-label required" for="plan-driver-id">Select Driver</label>
+          <select class="form-select" id="plan-driver-id" required>
+            <option value="">Select driver...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label required" for="plan-truck-id">Select Assigned Truck</label>
+          <select class="form-select" id="plan-truck-id" required>
+            <option value="">Select truck...</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label required" for="plan-date">Available Pickup Date</label>
+            <input type="date" class="form-input" id="plan-date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label required" for="plan-pickup">Preferred Pickup City / State</label>
+            <input type="text" class="form-input" id="plan-pickup" required placeholder="e.g. Dallas, TX">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="plan-delivery-pref">Target Delivery Region (Optional)</label>
+          <input type="text" class="form-input" id="plan-delivery-pref" placeholder="e.g. Atlanta, GA or Midwest Region">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="plan-notes">Planner Notes / Instructions</label>
+          <textarea class="form-input" id="plan-notes" rows="2" placeholder="Driver taking weekend off, ready for Monday morning pickup..."></textarea>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeAddPlanModal()" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-plan">Save Availability Schedule →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/js/notifications-bell.js"></script>
 <script src="/js/load-planning.js"></script>
+<script>
+  async function logout() {
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    window.location.href = '/login.html';
+  }
+</script>
 </body>
 </html>

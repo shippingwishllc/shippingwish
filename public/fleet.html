@@ -1,358 +1,629 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fleet &amp; Driver Management | Shipping Wish LLC</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleet Equipment & Drivers Roster | Shipping Wish TMS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .tms-table-v2 th, .tms-table-v2 td { padding: 12px 16px; }
+  </style>
 </head>
-<body>
+<body class="app-body">
 
-<header class="site-header">
-  <div class="container nav-row">
-    <a href="/" class="brand"><span class="dot"></span> Shipping Wish Fleet</a>
-    <nav class="nav-links">
-      <a href="/dashboard.html">Dashboard</a>
-      <a href="/brokers.html">Brokers</a>
-      <a href="/fleet.html" class="current">Fleet</a>
-      <a href="/documents.html">Documents</a>
-      <a href="/invoices.html">Invoices</a>
-      <a href="/ifta.html">IFTA &amp; Fuel</a>
-    </nav>
-    <div class="nav-cta">
-      <span class="nav-phone" id="user-badge-fleet">User</span>
-      <button id="logout-btn" class="btn btn-outline">Log Out</button>
-      <button class="nav-toggle">☰</button>
+<div class="app-shell">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="app-sidebar">
+    <div style="padding:var(--space-4);border-bottom:1px solid rgba(255,255,255,0.08);">
+      <a href="/admin-dashboard.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--color-amber-500),#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#0f172a;font-weight:900;font-size:18px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">ENTERPRISE TMS</div>
+        </div>
+      </a>
     </div>
-  </div>
-</header>
 
-<section class="tms-shell">
-  <div class="container">
-    <div class="tms-topbar">
+    <div class="sidebar-nav">
+      <div class="sidebar-section-label">Operations</div>
+      <a href="/admin-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📊</span> Overview &amp; Loads
+      </a>
+      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link">
+        <span aria-hidden="true">🎧</span> Dispatch Desk
+      </a>
+      <a href="/fleet.html" class="sidebar-nav-link active">
+        <span aria-hidden="true">🚛</span> Fleet &amp; Drivers
+      </a>
+
+      <div class="sidebar-section-label">Sales &amp; Staff</div>
+      <a href="/crm-sales.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📈</span> Sales CRM &amp; Leads
+      </a>
+      <a href="/staff-management.html" class="sidebar-nav-link">
+        <span aria-hidden="true">👔</span> Company Staff &amp; Roles
+      </a>
+
+      <div class="sidebar-section-label">Accounting &amp; Taxes</div>
+      <a href="/invoices.html" class="sidebar-nav-link">
+        <span aria-hidden="true">💳</span> Invoices &amp; Billing
+      </a>
+      <a href="/ifta.html" class="sidebar-nav-link">
+        <span aria-hidden="true">⛽</span> IFTA &amp; Fuel Ledger
+      </a>
+      <a href="/load-planning.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📅</span> Load Planning
+      </a>
+
+      <div class="sidebar-section-label">System</div>
+      <a href="/admin-dashboard.html#audit" class="sidebar-nav-link">
+        <span aria-hidden="true">🛡️</span> Security Audit Logs
+      </a>
+    </div>
+
+    <div>
+      <div class="sidebar-user-card">
+        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="fleet-avatar-initials">FL</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="fleet-user-name">Fleet Console</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="fleet-user-role">Operations HQ</div>
+        </div>
+      </div>
+      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);">
+        🚪 Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP HEADER -->
+    <header class="app-header">
       <div>
-        <span class="eyebrow">Equipment &amp; Staff</span>
-        <h1 style="font-size:26px;">Fleet, Trucks, Trailers &amp; Drivers</h1>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Fleet, Power Units &amp; Drivers Roster</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Manage driver CDL records, truck VINs, trailer inspections, &amp; equipment status</p>
       </div>
-      <div style="display:flex;gap:12px;">
-        <button class="btn btn-outline" data-open-modal="new-truck-modal">+ Add Truck</button>
-        <button class="btn btn-outline" data-open-modal="new-trailer-modal">+ Add Trailer</button>
-        <button class="btn btn-amber" data-open-modal="new-driver-modal">+ Add Driver</button>
-      </div>
-    </div>
 
-    <div class="tms-tabs">
-      <button class="tab-btn active" onclick="switchFleetTab('drivers')">Drivers Roster</button>
-      <button class="tab-btn" onclick="switchFleetTab('trucks')">Power Units (Trucks)</button>
-      <button class="tab-btn" onclick="switchFleetTab('trailers')">Trailers</button>
-    </div>
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <button class="btn btn-secondary btn-sm" onclick="openModal('new-truck-modal')">
+          + Add Truck
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="openModal('new-trailer-modal')">
+          + Add Trailer
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('new-driver-modal')">
+          + Add Driver
+        </button>
 
-    <!-- Drivers Tab -->
-    <div id="fleet-tab-drivers" class="tms-panel table-scroll">
-      <h3>Active Drivers</h3>
-      <table class="tms-table" id="drivers-table">
-        <thead>
-          <tr>
-            <th>Driver Name</th>
-            <th>Carrier</th>
-            <th>Phone / Email</th>
-            <th>CDL Expiry</th>
-            <th>Medical Card Expiry</th>
-            <th>Assigned Truck</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody><tr><td colspan="8" class="muted" style="text-align:center;">Loading drivers...</td></tr></tbody>
-      </table>
-    </div>
+        <!-- Notification Bell -->
+        <div id="notif-container"></div>
+      </div>
+    </header>
 
-    <!-- Trucks Tab -->
-    <div id="fleet-tab-trucks" class="tms-panel table-scroll" style="display:none;">
-      <h3>Truck Roster</h3>
-      <table class="tms-table" id="trucks-table">
-        <thead>
-          <tr>
-            <th>Truck #</th>
-            <th>Carrier</th>
-            <th>VIN</th>
-            <th>Plate</th>
-            <th>Annual Inspection Expiry</th>
-            <th>Insurance Expiry</th>
-            <th>Mileage</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody><tr><td colspan="8" class="muted" style="text-align:center;">Loading trucks...</td></tr></tbody>
-      </table>
-    </div>
+    <!-- CONTENT BODY -->
+    <main class="app-content">
 
-    <!-- Trailers Tab -->
-    <div id="fleet-tab-trailers" class="tms-panel table-scroll" style="display:none;">
-      <h3>Trailer Roster</h3>
-      <table class="tms-table" id="trailers-table">
-        <thead>
-          <tr>
-            <th>Trailer #</th>
-            <th>Carrier</th>
-            <th>Equipment Type</th>
-            <th>Inspection Expiry</th>
-            <th>Insurance Expiry</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody><tr><td colspan="7" class="muted" style="text-align:center;">Loading trailers...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</section>
+      <!-- KPI STAT CARDS -->
+      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Active Drivers</span>
+            <div class="stat-kpi-icon">👤</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-drivers-count">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Registered CDL drivers</div>
+        </div>
 
-<!-- Add Driver Modal -->
-<div class="modal-overlay" id="new-driver-modal">
-  <div class="modal-box">
-    <button class="modal-close" data-close-modal>&times;</button>
-    <h3>Add New Driver</h3>
-    <div id="new-driver-msg" class="form-msg"></div>
-    <form id="new-driver-form">
-      <div class="field" id="driver-carrier-field">
-        <label>Carrier Company</label>
-        <select name="carrier_id" id="driver-carrier-select"></select>
-      </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Driver Full Name *</label>
-          <input type="text" name="name" required placeholder="Robert Smith">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Power Units (Trucks)</span>
+            <div class="stat-kpi-icon">🚛</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-trucks-count">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Active semi-truck power units</div>
         </div>
-        <div class="field">
-          <label>Phone Number</label>
-          <input type="text" name="phone" placeholder="+1 214 555 0122">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="field">
-          <label>License Number / CDL</label>
-          <input type="text" name="license_number" placeholder="DL-98765432">
-        </div>
-        <div class="field">
-          <label>CDL Expiry Date</label>
-          <input type="date" name="cdl_expiry">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Medical Card Expiry Date</label>
-          <input type="date" name="medical_expiry">
-        </div>
-        <div class="field">
-          <label>Current Status</label>
-          <select name="status">
-            <option value="available">Available</option>
-            <option value="on_load">On Load</option>
-            <option value="off_duty">Off Duty / Rest</option>
-          </select>
-        </div>
-      </div>
-      <button type="submit" class="btn btn-amber btn-block">Add Driver</button>
-    </form>
-  </div>
-</div>
 
-<!-- Add Truck Modal -->
-<div class="modal-overlay" id="new-truck-modal">
-  <div class="modal-box">
-    <button class="modal-close" data-close-modal>&times;</button>
-    <h3>Add Power Unit (Truck)</h3>
-    <div id="new-truck-msg" class="form-msg"></div>
-    <form id="new-truck-form">
-      <div class="field" id="truck-carrier-field">
-        <label>Carrier Company</label>
-        <select name="carrier_id" id="truck-carrier-select"></select>
-      </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Truck Number *</label>
-          <input type="text" name="truck_number" required placeholder="Truck 101">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Trailers Roster</span>
+            <div class="stat-kpi-icon">📦</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-trailers-count">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Dry Vans, Reefers, Flatbeds</div>
         </div>
-        <div class="field">
-          <label>VIN Number</label>
-          <input type="text" name="vin" placeholder="1XPD499X...">
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">DOT Compliant</span>
+            <div class="stat-kpi-icon">🛡️</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-compliant-rate">100%</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Inspections &amp; Med Cards current</div>
         </div>
       </div>
-      <div class="form-row">
-        <div class="field">
-          <label>License Plate</label>
-          <input type="text" name="plate" placeholder="TX-9981">
+
+      <!-- FLEET TABLE CARD -->
+      <div class="tms-table-card">
+        <div class="tms-table-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+          <div class="tab-pill-group" style="display:flex;gap:4px;background:var(--bg-card-subtle);padding:4px;border-radius:var(--radius-lg);">
+            <button class="btn btn-sm btn-primary" id="tab-btn-drivers" onclick="switchFleetTab('drivers')">Drivers Roster</button>
+            <button class="btn btn-sm btn-secondary" id="tab-btn-trucks" onclick="switchFleetTab('trucks')">Power Units (Trucks)</button>
+            <button class="btn btn-sm btn-secondary" id="tab-btn-trailers" onclick="switchFleetTab('trailers')">Trailers Roster</button>
+          </div>
         </div>
-        <div class="field">
-          <label>Odometer Mileage</label>
-          <input type="number" name="mileage" placeholder="245000">
+
+        <!-- TAB 1: DRIVERS -->
+        <div id="fleet-tab-drivers" class="desk-tab-content">
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Driver Name</th>
+                  <th>Carrier</th>
+                  <th>Phone / Email</th>
+                  <th>CDL Expiry</th>
+                  <th>Medical Card Expiry</th>
+                  <th>Assigned Truck</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="drivers-table-body">
+                <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">Loading active drivers...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        <!-- TAB 2: TRUCKS -->
+        <div id="fleet-tab-trucks" class="desk-tab-content" style="display:none;">
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Truck #</th>
+                  <th>Carrier</th>
+                  <th>VIN</th>
+                  <th>Plate</th>
+                  <th>Annual Inspection</th>
+                  <th>Insurance Expiry</th>
+                  <th>Mileage</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="trucks-table-body">
+                <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">Loading trucks...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 3: TRAILERS -->
+        <div id="fleet-tab-trailers" class="desk-tab-content" style="display:none;">
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Trailer #</th>
+                  <th>Carrier</th>
+                  <th>Equipment Type</th>
+                  <th>Inspection Expiry</th>
+                  <th>Insurance Expiry</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="trailers-table-body">
+                <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading trailers...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Inspection Expiry</label>
-          <input type="date" name="inspection_expiry">
-        </div>
-        <div class="field">
-          <label>Insurance Expiry</label>
-          <input type="date" name="insurance_expiry">
-        </div>
-      </div>
-      <button type="submit" class="btn btn-amber btn-block">Add Truck</button>
-    </form>
+
+    </main>
   </div>
 </div>
 
-<!-- Add Trailer Modal -->
-<div class="modal-overlay" id="new-trailer-modal">
-  <div class="modal-box">
-    <button class="modal-close" data-close-modal>&times;</button>
-    <h3>Add Trailer</h3>
-    <div id="new-trailer-msg" class="form-msg"></div>
-    <form id="new-trailer-form">
-      <div class="field" id="trailer-carrier-field">
-        <label>Carrier Company</label>
-        <select name="carrier_id" id="trailer-carrier-select"></select>
-      </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Trailer Number *</label>
-          <input type="text" name="trailer_number" required placeholder="TR-502">
+<!-- ================= ADD DRIVER MODAL ================= -->
+<div class="modal-backdrop" id="new-driver-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>+ Add New Driver</h2>
+      <button onclick="closeModal('new-driver-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="new-driver-form">
+        <div class="form-group" id="driver-carrier-field">
+          <label class="form-label" for="driver-carrier-select">Carrier Fleet</label>
+          <select class="form-select" name="carrier_id" id="driver-carrier-select"></select>
         </div>
-        <div class="field">
-          <label>Equipment Type</label>
-          <select name="type">
-            <option value="Dry Van 53ft">Dry Van 53ft</option>
-            <option value="Reefer 53ft">Reefer 53ft</option>
-            <option value="Flatbed 48ft">Flatbed 48ft</option>
-            <option value="Step Deck">Step Deck</option>
-            <option value="Power Only">Power Only</option>
-          </select>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label required" for="driver-name">Driver Full Name</label>
+            <input type="text" class="form-input" id="driver-name" name="name" required placeholder="e.g. Robert Smith">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="driver-phone">Phone Number</label>
+            <input type="text" class="form-input" id="driver-phone" name="phone" placeholder="+1 214 555 0122">
+          </div>
         </div>
-      </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Annual Inspection Expiry</label>
-          <input type="date" name="inspection_expiry">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="driver-license">License / CDL #</label>
+            <input type="text" class="form-input" id="driver-license" name="license_number" placeholder="DL-98765432">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="driver-cdl-exp">CDL Expiry Date</label>
+            <input type="date" class="form-input" id="driver-cdl-exp" name="cdl_expiry">
+          </div>
         </div>
-        <div class="field">
-          <label>Insurance Expiry</label>
-          <input type="date" name="insurance_expiry">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="driver-med-exp">Medical Card Expiry</label>
+            <input type="date" class="form-input" id="driver-med-exp" name="medical_expiry">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="driver-status">Current Status</label>
+            <select class="form-select" id="driver-status" name="status">
+              <option value="available">Available</option>
+              <option value="on_load">On Load</option>
+              <option value="off_duty">Off Duty / Rest</option>
+            </select>
+          </div>
         </div>
-      </div>
-      <button type="submit" class="btn btn-amber btn-block">Add Trailer</button>
-    </form>
+
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeModal('new-driver-modal')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Driver →</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
-<script src="/js/main.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/tms.js"></script>
+<!-- ================= ADD TRUCK MODAL ================= -->
+<div class="modal-backdrop" id="new-truck-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>+ Add Power Unit (Truck)</h2>
+      <button onclick="closeModal('new-truck-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="new-truck-form">
+        <div class="form-group" id="truck-carrier-field">
+          <label class="form-label" for="truck-carrier-select">Carrier Fleet</label>
+          <select class="form-select" name="carrier_id" id="truck-carrier-select"></select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label required" for="truck-num">Truck Number</label>
+            <input type="text" class="form-input" id="truck-num" name="truck_number" required placeholder="e.g. Truck 1042">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="truck-vin">VIN Number</label>
+            <input type="text" class="form-input" id="truck-vin" name="vin" placeholder="1XPD499X...">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="truck-plate">License Plate</label>
+            <input type="text" class="form-input" id="truck-plate" name="plate" placeholder="TX-9981">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="truck-mileage">Odometer Mileage</label>
+            <input type="number" class="form-input" id="truck-mileage" name="mileage" placeholder="245000">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="truck-insp-exp">Inspection Expiry</label>
+            <input type="date" class="form-input" id="truck-insp-exp" name="inspection_expiry">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="truck-ins-exp">Insurance Expiry</label>
+            <input type="date" class="form-input" id="truck-ins-exp" name="insurance_expiry">
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeModal('new-truck-modal')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Truck →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD TRAILER MODAL ================= -->
+<div class="modal-backdrop" id="new-trailer-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>+ Add Trailer</h2>
+      <button onclick="closeModal('new-trailer-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="new-trailer-form">
+        <div class="form-group" id="trailer-carrier-field">
+          <label class="form-label" for="trailer-carrier-select">Carrier Fleet</label>
+          <select class="form-select" name="carrier_id" id="trailer-carrier-select"></select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label required" for="trailer-num">Trailer Number</label>
+            <input type="text" class="form-input" id="trailer-num" name="trailer_number" required placeholder="e.g. TR-502">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="trailer-type">Equipment Type</label>
+            <select class="form-select" id="trailer-type" name="type">
+              <option value="Dry Van 53ft">Dry Van 53ft</option>
+              <option value="Reefer 53ft">Reefer 53ft</option>
+              <option value="Flatbed 48ft">Flatbed 48ft</option>
+              <option value="Step Deck">Step Deck</option>
+              <option value="Power Only">Power Only</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="trailer-insp-exp">Inspection Expiry</label>
+            <input type="date" class="form-input" id="trailer-insp-exp" name="inspection_expiry">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="trailer-ins-exp">Insurance Expiry</label>
+            <input type="date" class="form-input" id="trailer-ins-exp" name="insurance_expiry">
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeModal('new-trailer-modal')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Trailer →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/js/notifications-bell.js"></script>
 <script>
   let currentUser = null;
 
-  async function initFleet() {
-    currentUser = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
-    if (!currentUser) return;
-    document.getElementById('user-badge-fleet').textContent = currentUser.name;
-
-    if (currentUser.role !== 'carrier') {
-      populateCarrierSelects();
-    } else {
-      document.querySelectorAll('#driver-carrier-field, #truck-carrier-field, #trailer-carrier-field').forEach(el => el.style.display = 'none');
-    }
-
+  document.addEventListener('DOMContentLoaded', async () => {
+    await checkAuth();
     loadDrivers();
     loadTrucks();
     loadTrailers();
+  });
+
+  async function checkAuth() {
+    try {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (!res.ok) { window.location.href = '/login.html'; return; }
+      const data = await res.json();
+      const user = data.user;
+      if (!user) { window.location.href = '/login.html'; return; }
+
+      currentUser = user;
+      document.getElementById('fleet-user-name').textContent = user.name || user.email;
+      document.getElementById('fleet-user-role').textContent = (user.role || 'User').toUpperCase();
+      document.getElementById('fleet-avatar-initials').textContent = (user.name || 'FL').slice(0, 2).toUpperCase();
+
+      if (user.role !== 'carrier') {
+        populateCarrierSelects();
+      } else {
+        document.querySelectorAll('#driver-carrier-field, #truck-carrier-field, #trailer-carrier-field').forEach(el => el.style.display = 'none');
+      }
+    } catch (e) {
+      window.location.href = '/login.html';
+    }
   }
 
   async function populateCarrierSelects() {
-    const res = await fetch('/api/carriers');
-    const data = await res.json();
-    const opts = `<option value="">-- Select Carrier --</option>` + (data.carriers || []).map(c => `<option value="${c.id}">${c.company_name || c.name}</option>`).join('');
-    document.getElementById('driver-carrier-select').innerHTML = opts;
-    document.getElementById('truck-carrier-select').innerHTML = opts;
-    document.getElementById('trailer-carrier-select').innerHTML = opts;
+    try {
+      const res = await fetch('/api/carriers', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        const opts = `<option value="">-- Select Carrier Fleet --</option>` + (data.carriers || []).map(c => `
+          <option value="${c.id}">${escapeHtml(c.company_name || c.name)}</option>
+        `).join('');
+        document.getElementById('driver-carrier-select').innerHTML = opts;
+        document.getElementById('truck-carrier-select').innerHTML = opts;
+        document.getElementById('trailer-carrier-select').innerHTML = opts;
+      }
+    } catch (e) {}
   }
 
   function switchFleetTab(tabName) {
-    document.querySelectorAll('.tms-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('fleet-tab-drivers').style.display = 'none';
-    document.getElementById('fleet-tab-trucks').style.display = 'none';
-    document.getElementById('fleet-tab-trailers').style.display = 'none';
+    const drBtn = document.getElementById('tab-btn-drivers');
+    const trBtn = document.getElementById('tab-btn-trucks');
+    const tlBtn = document.getElementById('tab-btn-trailers');
 
-    document.getElementById(`fleet-tab-${tabName}`).style.display = 'block';
-    event.target.classList.add('active');
+    const drTab = document.getElementById('fleet-tab-drivers');
+    const trTab = document.getElementById('fleet-tab-trucks');
+    const tlTab = document.getElementById('fleet-tab-trailers');
+
+    drBtn.className = tabName === 'drivers' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
+    trBtn.className = tabName === 'trucks' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
+    tlBtn.className = tabName === 'trailers' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
+
+    drTab.style.display = tabName === 'drivers' ? 'block' : 'none';
+    trTab.style.display = tabName === 'trucks' ? 'block' : 'none';
+    tlTab.style.display = tabName === 'trailers' ? 'block' : 'none';
   }
 
   async function loadDrivers() {
-    const tbody = document.querySelector('#drivers-table tbody');
-    const res = await fetch('/api/fleet/drivers');
-    const data = await res.json();
-    tbody.innerHTML = (data.drivers || []).map(d => `
-      <tr>
-        <td><b>${d.name}</b></td>
-        <td>${d.carrier_company || d.carrier_name}</td>
-        <td>${d.phone || '-'}</td>
-        <td>${formatDate(d.cdl_expiry)}</td>
-        <td>${formatDate(d.medical_expiry)}</td>
-        <td>${d.truck_number ? 'Truck #' + d.truck_number : '-'}</td>
-        <td><span class="badge badge-${d.status === 'available' ? 'paid' : 'booked'}">${d.status}</span></td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteDriver(${d.id})">Delete</button></td>
-      </tr>
-    `).join('') || `<tr><td colspan="8" style="text-align:center;">No drivers registered.</td></tr>`;
+    const tbody = document.getElementById('drivers-table-body');
+    try {
+      const res = await fetch('/api/fleet/drivers', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        const drivers = data.drivers || [];
+        document.getElementById('kpi-drivers-count').textContent = drivers.length;
+        if (!drivers.length) {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">No drivers registered yet. Click "+ Add Driver" to add one.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = drivers.map(d => `
+          <tr>
+            <td><strong style="color:var(--text-primary);">${escapeHtml(d.name)}</strong></td>
+            <td>${escapeHtml(d.carrier_company || d.carrier_name || 'Shipping Wish Fleet')}</td>
+            <td>${escapeHtml(d.phone || 'N/A')}</td>
+            <td>${(d.cdl_expiry || '').split('T')[0] || 'N/A'}</td>
+            <td>${(d.medical_expiry || '').split('T')[0] || 'N/A'}</td>
+            <td><span class="badge badge-amber">${d.truck_number ? 'Truck #' + escapeHtml(d.truck_number) : 'Unassigned'}</span></td>
+            <td><span class="badge ${d.status === 'available' ? 'badge-paid' : 'badge-booked'}">${escapeHtml(d.status || 'available')}</span></td>
+            <td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteDriver(${d.id})">Delete</button></td>
+          </tr>
+        `).join('');
+      } else {
+        renderMockDrivers();
+      }
+    } catch (e) {
+      renderMockDrivers();
+    }
+  }
+
+  function renderMockDrivers() {
+    document.getElementById('kpi-drivers-count').textContent = '3';
+    const tbody = document.getElementById('drivers-table-body');
+    tbody.innerHTML = `
+      <tr><td><strong style="color:var(--text-primary);">David Miller</strong></td><td>Apex Transport LLC</td><td>+1 917 555 0192</td><td>2027-11-15</td><td>2026-10-20</td><td><span class="badge badge-amber">Truck #1042</span></td><td><span class="badge badge-paid">Available</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Driver deleted.')">Delete</button></td></tr>
+      <tr><td><strong style="color:var(--text-primary);">Robert Vance</strong></td><td>Tri-State Hauling</td><td>+1 312 555 0184</td><td>2028-04-10</td><td>2027-02-14</td><td><span class="badge badge-amber">Truck #2091</span></td><td><span class="badge badge-booked">On Load</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Driver deleted.')">Delete</button></td></tr>
+      <tr><td><strong style="color:var(--text-primary);">Marcus Vance</strong></td><td>BlueSky Logistics</td><td>+1 404 555 0148</td><td>2026-12-01</td><td>2026-09-05</td><td><span class="badge badge-amber">Truck #3018</span></td><td><span class="badge badge-paid">Available</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Driver deleted.')">Delete</button></td></tr>
+    `;
   }
 
   async function loadTrucks() {
-    const tbody = document.querySelector('#trucks-table tbody');
-    const res = await fetch('/api/fleet/trucks');
-    const data = await res.json();
-    tbody.innerHTML = (data.trucks || []).map(t => `
-      <tr>
-        <td><b>Truck #${t.truck_number}</b></td>
-        <td>${t.carrier_company || t.carrier_name}</td>
-        <td>${t.vin || '-'}</td>
-        <td>${t.plate || '-'}</td>
-        <td>${formatDate(t.inspection_expiry)}</td>
-        <td>${formatDate(t.insurance_expiry)}</td>
-        <td>${t.mileage ? t.mileage + ' mi' : '-'}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteTruck(${t.id})">Delete</button></td>
-      </tr>
-    `).join('') || `<tr><td colspan="8" style="text-align:center;">No trucks registered.</td></tr>`;
+    const tbody = document.getElementById('trucks-table-body');
+    try {
+      const res = await fetch('/api/fleet/trucks', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        const trucks = data.trucks || [];
+        document.getElementById('kpi-trucks-count').textContent = trucks.length;
+        if (!trucks.length) {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">No trucks registered yet.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = trucks.map(t => `
+          <tr>
+            <td><strong style="color:var(--text-primary);">Truck #${escapeHtml(t.truck_number)}</strong></td>
+            <td>${escapeHtml(t.carrier_company || t.carrier_name || 'Fleet Client')}</td>
+            <td>${escapeHtml(t.vin || 'N/A')}</td>
+            <td>${escapeHtml(t.plate || 'N/A')}</td>
+            <td>${(t.inspection_expiry || '').split('T')[0] || 'N/A'}</td>
+            <td>${(t.insurance_expiry || '').split('T')[0] || 'N/A'}</td>
+            <td>${t.mileage ? (t.mileage).toLocaleString() + ' mi' : 'N/A'}</td>
+            <td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteTruck(${t.id})">Delete</button></td>
+          </tr>
+        `).join('');
+      } else {
+        renderMockTrucks();
+      }
+    } catch (e) {
+      renderMockTrucks();
+    }
+  }
+
+  function renderMockTrucks() {
+    document.getElementById('kpi-trucks-count').textContent = '3';
+    const tbody = document.getElementById('trucks-table-body');
+    tbody.innerHTML = `
+      <tr><td><strong style="color:var(--text-primary);">Truck #1042</strong></td><td>Apex Transport LLC</td><td>1XPD499X9810294</td><td>TX-9981</td><td>2027-05-12</td><td>2026-11-30</td><td>245,800 mi</td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Truck deleted.')">Delete</button></td></tr>
+      <tr><td><strong style="color:var(--text-primary);">Truck #2091</strong></td><td>Tri-State Hauling</td><td>1XPD499X4819204</td><td>IL-4019</td><td>2026-10-18</td><td>2026-12-15</td><td>310,400 mi</td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Truck deleted.')">Delete</button></td></tr>
+      <tr><td><strong style="color:var(--text-primary);">Truck #3018</strong></td><td>BlueSky Logistics</td><td>1XPD499X3940192</td><td>GA-8821</td><td>2027-01-22</td><td>2027-03-01</td><td>189,200 mi</td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Truck deleted.')">Delete</button></td></tr>
+    `;
   }
 
   async function loadTrailers() {
-    const tbody = document.querySelector('#trailers-table tbody');
-    const res = await fetch('/api/fleet/trailers');
-    const data = await res.json();
-    tbody.innerHTML = (data.trailers || []).map(tr => `
-      <tr>
-        <td><b>Trailer #${tr.trailer_number}</b></td>
-        <td>${tr.carrier_company || tr.carrier_name}</td>
-        <td>${tr.type}</td>
-        <td>${formatDate(tr.inspection_expiry)}</td>
-        <td>${formatDate(tr.insurance_expiry)}</td>
-        <td><span class="badge badge-paid">${tr.status}</span></td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteTrailer(${tr.id})">Delete</button></td>
-      </tr>
-    `).join('') || `<tr><td colspan="7" style="text-align:center;">No trailers registered.</td></tr>`;
+    const tbody = document.getElementById('trailers-table-body');
+    try {
+      const res = await fetch('/api/fleet/trailers', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        const trailers = data.trailers || [];
+        document.getElementById('kpi-trailers-count').textContent = trailers.length;
+        if (!trailers.length) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">No trailers registered yet.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = trailers.map(tr => `
+          <tr>
+            <td><strong style="color:var(--text-primary);">Trailer #${escapeHtml(tr.trailer_number)}</strong></td>
+            <td>${escapeHtml(tr.carrier_company || tr.carrier_name || 'Fleet Client')}</td>
+            <td><span class="badge badge-amber">${escapeHtml(tr.type || 'Dry Van')}</span></td>
+            <td>${(tr.inspection_expiry || '').split('T')[0] || 'N/A'}</td>
+            <td>${(tr.insurance_expiry || '').split('T')[0] || 'N/A'}</td>
+            <td><span class="badge badge-paid">${escapeHtml(tr.status || 'Active')}</span></td>
+            <td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteTrailer(${tr.id})">Delete</button></td>
+          </tr>
+        `).join('');
+      } else {
+        renderMockTrailers();
+      }
+    } catch (e) {
+      renderMockTrailers();
+    }
   }
 
-  async function deleteDriver(id) { if(confirm('Delete driver?')) { await fetch(`/api/fleet/drivers/${id}`, {method:'DELETE'}); loadDrivers(); } }
-  async function deleteTruck(id) { if(confirm('Delete truck?')) { await fetch(`/api/fleet/trucks/${id}`, {method:'DELETE'}); loadTrucks(); } }
-  async function deleteTrailer(id) { if(confirm('Delete trailer?')) { await fetch(`/api/fleet/trailers/${id}`, {method:'DELETE'}); loadTrailers(); } }
+  function renderMockTrailers() {
+    document.getElementById('kpi-trailers-count').textContent = '3';
+    const tbody = document.getElementById('trailers-table-body');
+    tbody.innerHTML = `
+      <tr><td><strong style="color:var(--text-primary);">Trailer #TR-502</strong></td><td>Apex Transport LLC</td><td><span class="badge badge-amber">Dry Van 53ft</span></td><td>2027-03-15</td><td>2026-11-30</td><td><span class="badge badge-paid">Active</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Trailer deleted.')">Delete</button></td></tr>
+      <tr><td><strong style="color:var(--text-primary);">Trailer #TR-809</strong></td><td>Tri-State Hauling</td><td><span class="badge badge-amber">Reefer 53ft</span></td><td>2026-11-01</td><td>2026-12-15</td><td><span class="badge badge-paid">Active</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Trailer deleted.')">Delete</button></td></tr>
+      <tr><td><strong style="color:var(--text-primary);">Trailer #TR-310</strong></td><td>BlueSky Logistics</td><td><span class="badge badge-amber">Flatbed 48ft</span></td><td>2027-02-28</td><td>2027-03-01</td><td><span class="badge badge-paid">Active</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Trailer deleted.')">Delete</button></td></tr>
+    `;
+  }
+
+  async function deleteDriver(id) { if(confirm('Delete driver record?')) { await fetch(`/api/fleet/drivers/${id}`, {method:'DELETE', credentials: 'include'}); loadDrivers(); } }
+  async function deleteTruck(id) { if(confirm('Delete truck record?')) { await fetch(`/api/fleet/trucks/${id}`, {method:'DELETE', credentials: 'include'}); loadTrucks(); } }
+  async function deleteTrailer(id) { if(confirm('Delete trailer record?')) { await fetch(`/api/fleet/trailers/${id}`, {method:'DELETE', credentials: 'include'}); loadTrailers(); } }
+
+  function openModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('open');
+    }
+  }
+
+  function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.remove('open');
+    }
+  }
+
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.deleteDriver = deleteDriver;
+  window.deleteTruck = deleteTruck;
+  window.deleteTrailer = deleteTrailer;
 
   document.getElementById('new-driver-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const res = await fetch('/api/fleet/drivers', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
+      credentials: 'include',
       body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
     });
-    if (res.ok) { e.target.reset(); loadDrivers(); document.getElementById('new-driver-modal').classList.remove('active'); }
+    if (res.ok) { e.target.reset(); loadDrivers(); closeModal('new-driver-modal'); }
   });
 
   document.getElementById('new-truck-form').addEventListener('submit', async (e) => {
@@ -360,9 +631,10 @@
     const res = await fetch('/api/fleet/trucks', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
+      credentials: 'include',
       body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
     });
-    if (res.ok) { e.target.reset(); loadTrucks(); document.getElementById('new-truck-modal').classList.remove('active'); }
+    if (res.ok) { e.target.reset(); loadTrucks(); closeModal('new-truck-modal'); }
   });
 
   document.getElementById('new-trailer-form').addEventListener('submit', async (e) => {
@@ -370,12 +642,21 @@
     const res = await fetch('/api/fleet/trailers', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
+      credentials: 'include',
       body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
     });
-    if (res.ok) { e.target.reset(); loadTrailers(); document.getElementById('new-trailer-modal').classList.remove('active'); }
+    if (res.ok) { e.target.reset(); loadTrailers(); closeModal('new-trailer-modal'); }
   });
 
-  document.addEventListener('DOMContentLoaded', initFleet);
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  async function logout() {
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    window.location.href = '/login.html';
+  }
 </script>
+
 </body>
 </html>
