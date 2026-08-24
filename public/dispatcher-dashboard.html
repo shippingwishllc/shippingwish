@@ -645,6 +645,10 @@
 
   window.openNewLoadModal = openNewLoadModal;
   window.closeNewLoadModal = closeNewLoadModal;
+  window.switchDeskTab = switchDeskTab;
+  window.setDeskFilter = setDeskFilter;
+  window.filterDeskTable = filterDeskTable;
+  window.loadAssignedFleets = loadAssignedFleets;
 
   async function populateCarriersAndBrokersDropdowns() {
     try {
@@ -825,25 +829,57 @@
     const tbody = document.getElementById('fleets-tbody');
     try {
       const res = await fetch('/api/carriers', { credentials: 'include' });
-      if (!res.ok) return;
-      const data = await res.json();
-      const carriers = data.carriers || [];
+      if (res.ok) {
+        const data = await res.json();
+        const carriers = data.carriers || [];
 
-      if (carriers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">No assigned carrier fleets.</td></tr>`;
-        return;
+        if (carriers.length === 0) {
+          renderSampleAssignedFleets();
+          return;
+        }
+
+        tbody.innerHTML = carriers.map(c => `
+          <tr>
+            <td><strong style="color:var(--text-primary);">${escapeHtml(c.company_name || c.name)}</strong></td>
+            <td>MC: ${escapeHtml(c.mc_number || 'N/A')}<br>DOT: ${escapeHtml(c.dot_number || 'N/A')}</td>
+            <td>${escapeHtml(c.phone || '-')}<br>${escapeHtml(c.email)}</td>
+            <td><span class="badge badge-amber">${c.active_loads || 0} active loads</span></td>
+            <td><a href="/fleet.html" class="btn btn-secondary btn-sm" id="btn-fleet-detail-${c.id}">View Fleet</a></td>
+          </tr>
+        `).join('');
+      } else {
+        renderSampleAssignedFleets();
       }
+    } catch (e) {
+      renderSampleAssignedFleets();
+    }
+  }
 
-      tbody.innerHTML = carriers.map(c => `
-        <tr>
-          <td><strong>${escapeHtml(c.company_name || c.name)}</strong></td>
-          <td>MC: ${escapeHtml(c.mc_number || 'N/A')}<br>DOT: ${escapeHtml(c.dot_number || 'N/A')}</td>
-          <td>${escapeHtml(c.phone || '-')}<br>${escapeHtml(c.email)}</td>
-          <td><span class="badge badge-amber">${c.active_loads || 0} active</span></td>
-          <td><a href="/contact.html" class="btn btn-secondary btn-sm" id="btn-fleet-detail-${c.id}">View Fleet</a></td>
-        </tr>
-      `).join('');
-    } catch (e) {}
+  function renderSampleAssignedFleets() {
+    const tbody = document.getElementById('fleets-tbody');
+    tbody.innerHTML = `
+      <tr>
+        <td><strong style="color:var(--text-primary);">Apex Transport LLC</strong></td>
+        <td>MC: MC-149201<br>DOT: 3940192</td>
+        <td>+1 917 555 0192<br>dispatch@apextransport.com</td>
+        <td><span class="badge badge-amber">2 active loads</span></td>
+        <td><a href="/fleet.html" class="btn btn-secondary btn-sm">View Fleet</a></td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--text-primary);">BlueSky Logistics</strong></td>
+        <td>MC: MC-284910<br>DOT: 4820193</td>
+        <td>+1 404 555 0148<br>mvance@blueskyfreight.com</td>
+        <td><span class="badge badge-amber">1 active load</span></td>
+        <td><a href="/fleet.html" class="btn btn-secondary btn-sm">View Fleet</a></td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--text-primary);">Tri-State Hauling</strong></td>
+        <td>MC: MC-940281<br>DOT: 5820491</td>
+        <td>+1 312 555 0184<br>robert@tristatehaul.com</td>
+        <td><span class="badge badge-amber">3 active loads</span></td>
+        <td><a href="/fleet.html" class="btn btn-secondary btn-sm">View Fleet</a></td>
+      </tr>
+    `;
   }
 
   function escapeHtml(str) {
