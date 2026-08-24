@@ -149,7 +149,7 @@ router.get('/me', requireAuth, async (req, res) => {
       [req.user.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'User not found.' });
-    res.json({ user: result.rows[0] });
+    res.json({ ok: true, user: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: 'Could not load account.' });
   }

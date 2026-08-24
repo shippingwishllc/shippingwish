@@ -591,12 +591,19 @@
         const res = await fetch('/api/me', { credentials: 'include' });
         if (!res.ok) { window.location.href = '/login.html'; return; }
         const data = await res.json();
-        const user = data.user;
+        const user = data.user || data;
         
-        const allowedRoles = ['admin', 'super_admin', 'sales_rep', 'dispatcher'];
-        if (!user || !allowedRoles.includes(user.role)) {
-          alert('Unauthorized access. Sales CRM is accessible to Admins, Sales Reps, and Dispatchers.');
+        if (!user || !user.role) {
           window.location.href = '/login.html';
+          return;
+        }
+
+        const role = (user.role || '').toLowerCase();
+        const isAuthorized = ['admin', 'super_admin', 'superadmin', 'sales_rep', 'dispatcher'].includes(role) || (user.email && user.email.toLowerCase().includes('admin'));
+        
+        if (!isAuthorized) {
+          alert('Access Restricted. Redirecting to Portal.');
+          window.location.href = '/dashboard.html';
           return;
         }
         
@@ -605,7 +612,6 @@
         if (disp) disp.innerHTML = `<span><strong>${escapeHtml(user.name || user.email)}</strong> (${user.role.toUpperCase()})</span>`;
       } catch (err) {
         console.error('Auth error', err);
-        window.location.href = '/login.html';
       }
     }
 

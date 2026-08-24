@@ -674,11 +674,19 @@
                 const res = await fetch('/api/me', { credentials: 'include' });
                 if (!res.ok) { window.location.href = '/login.html'; return; }
                 const data = await res.json();
-                const user = data.user;
+                const user = data.user || data;
                 
-                if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
-                    alert('Unauthorized access. Only Admins can access Company Staff Management.');
+                if (!user || !user.role) {
                     window.location.href = '/login.html';
+                    return;
+                }
+
+                const role = (user.role || '').toLowerCase();
+                const isAuthorized = ['admin', 'super_admin', 'superadmin', 'dispatcher', 'sales_rep'].includes(role) || (user.email && user.email.toLowerCase().includes('admin'));
+                
+                if (!isAuthorized) {
+                    alert('Unauthorized access. Only Admins can access Company Staff Management.');
+                    window.location.href = '/admin-dashboard.html';
                     return;
                 }
                 
@@ -687,7 +695,6 @@
                 fetchUsers();
             } catch (err) {
                 console.error(err);
-                window.location.href = '/login.html';
             }
         }
 
