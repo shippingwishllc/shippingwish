@@ -136,7 +136,6 @@ async function seedAdminUsers() {
     console.error('[SEED] Admin seed check:', err.message);
   }
 }
-seedAdminUsers();
 
 if (require.main === module) {
   app.listen(PORT, () => {
