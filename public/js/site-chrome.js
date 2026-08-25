@@ -69,22 +69,22 @@
         <a href="/login" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
         <a href="/pricing" class="btn btn-primary btn-sm" id="nav-cta-btn">Start Free Week</a>
       </div>
-      <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+      <button type="button" class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="nav-mobile"><span></span><span></span><span></span></button>
     </div>`;
   }
 
   function mobileHtml() {
     return `
-      <a href="/">Home</a>
-      <a href="/services">Services</a>
-      <a href="/dispatch">Fleet Operations</a>
-      <a href="/pricing">Pricing</a>
-      <a href="/about">About</a>
-      <a href="/blog">Insights</a>
-      <a href="/contact">Contact</a>
+      <a href="/" data-nav-close>Home</a>
+      <a href="/services" data-nav-close>Services</a>
+      <a href="/dispatch" data-nav-close>Fleet Operations</a>
+      <a href="/pricing" data-nav-close>Pricing</a>
+      <a href="/about" data-nav-close>About</a>
+      <a href="/blog" data-nav-close>Insights</a>
+      <a href="/contact" data-nav-close>Contact</a>
       <div class="nav-mobile-cta-group">
-        <a href="/login" class="btn btn-secondary-glass">Sign In</a>
-        <a href="/pricing" class="btn btn-primary-amber">Start Free Week →</a>
+        <a href="/login" class="btn btn-secondary-glass" data-nav-close>Sign In</a>
+        <a href="/pricing" class="btn btn-primary-amber" data-nav-close>Start Free Week →</a>
       </div>`;
   }
 
@@ -139,15 +139,52 @@
   </div>`;
   }
 
-  function bindNav(nav, mobile) {
-    const hamburger = nav.querySelector('#nav-hamburger');
-    if (hamburger && mobile) {
-      hamburger.addEventListener('click', () => {
-        const open = mobile.classList.toggle('open');
-        hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
-        document.body.style.overflow = open ? 'hidden' : '';
-      });
+  function setMenuOpen(open) {
+    const hamburger = document.getElementById('nav-hamburger');
+    const mobile = document.getElementById('nav-mobile');
+    if (!mobile) return;
+    mobile.classList.toggle('open', open);
+    document.body.classList.toggle('nav-open', open);
+    document.documentElement.classList.toggle('nav-open', open);
+    if (hamburger) {
+      hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      hamburger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
     }
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+
+  function isMenuOpen() {
+    const mobile = document.getElementById('nav-mobile');
+    return !!(mobile && mobile.classList.contains('open'));
+  }
+
+  function bindGlobalNavOnce() {
+    if (window.__swNavBound) return;
+    window.__swNavBound = true;
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest && e.target.closest('#nav-hamburger, .nav-hamburger');
+      if (btn) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setMenuOpen(!isMenuOpen());
+        return;
+      }
+      if (e.target.closest && e.target.closest('[data-nav-close]')) {
+        setMenuOpen(false);
+      }
+    }, true);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 992) setMenuOpen(false);
+    });
+  }
+
+  function bindLoggedIn() {
     fetch('/api/me', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -160,6 +197,26 @@
         }
       })
       .catch(() => {});
+  }
+
+  function bindReveals() {
+    const nodes = document.querySelectorAll('.reveal');
+    const show = () => nodes.forEach((el) => el.classList.add('visible'));
+    if (!nodes.length) return;
+    if (!('IntersectionObserver' in window)) {
+      show();
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
+    nodes.forEach((el) => io.observe(el));
+    setTimeout(show, 2200);
   }
 
   function init() {
@@ -180,10 +237,15 @@
       mobile = document.createElement('div');
       mobile.className = 'nav-mobile';
       mobile.id = 'nav-mobile';
+      mobile.setAttribute('role', 'dialog');
+      mobile.setAttribute('aria-modal', 'true');
+      mobile.setAttribute('aria-label', 'Mobile navigation');
       nav.after(mobile);
     }
     mobile.innerHTML = mobileHtml();
-    bindNav(nav, mobile);
+    bindGlobalNavOnce();
+    bindLoggedIn();
+    bindReveals();
 
     let footer = document.querySelector('footer.footer');
     if (!footer) {

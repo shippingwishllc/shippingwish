@@ -306,7 +306,7 @@ h1, h2, h3, h4, h5, h6 {
 .nav {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 3000;
   background-color: rgba(15, 23, 42, 0.98);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -458,6 +458,8 @@ h1, h2, h3, h4, h5, h6 {
 /* Mobile menu */
 .nav-hamburger {
   display: none;
+  position: relative;
+  z-index: 3001;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -471,6 +473,8 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 44px !important;
   height: 44px !important;
   flex-shrink: 0 !important;
+  -webkit-tap-highlight-color: rgba(245, 158, 11, 0.25);
+  touch-action: manipulation;
 }
 
 .nav-hamburger span {
@@ -479,7 +483,17 @@ h1, h2, h3, h4, h5, h6 {
   height: 2px;
   background: var(--color-white);
   border-radius: 2px;
-  transition: all var(--transition-base);
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.nav-hamburger[aria-expanded="true"] span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.nav-hamburger[aria-expanded="true"] span:nth-child(2) {
+  opacity: 0;
+}
+.nav-hamburger[aria-expanded="true"] span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 @media (max-width: 992px) {
@@ -500,29 +514,39 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-mobile {
-  display: none;
+  display: flex;
+  flex-direction: column;
   position: fixed;
   inset: 0;
-  top: 68px;
-  background: linear-gradient(180deg, #0f172a 0%, #080d17 100%);
-  z-index: 99;
+  top: 0;
+  padding: 84px 22px 32px;
+  background: #ffffff;
+  z-index: 2500;
   overflow-y: auto;
-  padding: var(--space-6);
-  backdrop-filter: blur(20px);
+  -webkit-overflow-scrolling: touch;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-12px);
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
 }
 
 .nav-mobile.open {
-  display: block;
+  display: flex;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .nav-mobile a {
   display: block;
   padding: var(--space-4) var(--space-2);
   font-size: var(--text-lg);
-  color: rgba(255,255,255,0.9) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .nav-mobile a.active {
@@ -564,9 +588,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-mobile-cta-group .btn-secondary-glass {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
-  color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
   font-weight: 700 !important;
 }
 
