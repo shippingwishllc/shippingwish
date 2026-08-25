@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const https = require('https');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { searchFmcsa } = require('../utils/fmcsa');
 
 // ============================================================
 // FMCSA API — Search US Carriers by Name, MC#, or DOT#
@@ -11,130 +11,51 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 //          address, equipment type, number of trucks, state
 // Set FMCSA_API_KEY in .env (register free at ai.fmcsa.dot.gov)
 // ============================================================
-router.get('/fmcsa/search', requireAuth, async (req, res) => {
-  const { mc, dot, name } = req.query;
-
-  if (!mc && !dot && !name) {
-    return res.status(400).json({ error: 'Provide mc, dot, or name to search.' });
-  }
-
-  const apiKey = process.env.FMCSA_API_KEY;
-
-  // --- LIVE FMCSA API ---
-  if (apiKey) {
-    try {
-      let fmcsaUrl = '';
-      if (mc) {
-        fmcsaUrl = `https://mobile.fmcsa.dot.gov/qc/services/carriers/docket-number/${encodeURIComponent(mc)}?webKey=${apiKey}`;
-      } else if (dot) {
-        fmcsaUrl = `https://mobile.fmcsa.dot.gov/qc/services/carriers/${encodeURIComponent(dot)}?webKey=${apiKey}`;
-      } else {
-        fmcsaUrl = `https://mobile.fmcsa.dot.gov/qc/services/carriers/name/${encodeURIComponent(name)}?webKey=${apiKey}`;
-      }
-
-      const data = await new Promise((resolve, reject) => {
-        https.get(fmcsaUrl, (resp) => {
-          let body = '';
-          resp.on('data', d => body += d);
-          resp.on('end', () => {
-            try { resolve(JSON.parse(body)); } catch(e) { reject(e); }
-          });
-        }).on('error', reject);
-      });
-
-      // Normalize FMCSA response into our carrier lead format
-      const carriers = (data.content || (data.carrier ? [data] : [])).map(c => {
-        const carrier = c.carrier || c;
-        return {
-          company_name:   carrier.legalName  || carrier.dbaName || '',
-          owner_name:     carrier.dbaName    || '',
-          mc_number:      carrier.dotNumber  ? '' : (mc || ''),
-          dot_number:     carrier.dotNumber  || dot || '',
-          phone:          carrier.telephone  || '',
-          email:          carrier.email      || '',
-          address:        `${carrier.phyCity || ''}, ${carrier.phyState || ''} ${carrier.phyZipcode || ''}`.trim(),
-          equipment_type: carrier.carrierOperation || '53ft Dry Van',
-          num_trucks:     carrier.totalTrucks || 1,
-          state:          carrier.phyState   || '',
-          // Check if already in our CRM
-          already_in_crm: false
-        };
-      });
-
-      // Check which ones are already in CRM (by MC or phone)
-      for (const c of carriers) {
-        if (c.mc_number || c.phone) {
-          const exists = await pool.query(
-            `SELECT id, sales_rep_id, status,
-                    (SELECT name FROM users WHERE id = crm_leads.sales_rep_id) AS owned_by
-             FROM crm_leads
-             WHERE mc_number = $1 OR phone = $2 LIMIT 1`,
-            [c.mc_number || '', c.phone || '']
-          );
-          if (exists.rows.length) {
-            c.already_in_crm = true;
-            c.crm_lead_id    = exists.rows[0].id;
-            c.crm_status     = exists.rows[0].status;
-            c.owned_by       = exists.rows[0].owned_by || 'Unassigned';
-          }
-        }
-      }
-
-      return res.json({ source: 'FMCSA Live API', carriers });
-    } catch (fmcsaErr) {
-      console.warn('FMCSA API error, using fallback:', fmcsaErr.message);
-    }
-  }
-
-  // --- FALLBACK: Simulated demo data when no API key ---
-  const mockCarriers = [
-    { company_name: 'Eagle Transport LLC',    owner_name: 'James Rodriguez', mc_number: 'MC-882341', dot_number: '3841220', phone: '+12145550192', email: 'james@eagletransport.com', address: 'Dallas, TX 75201',   equipment_type: '53ft Dry Van',  num_trucks: 3, state: 'TX', already_in_crm: false },
-    { company_name: 'BlueStar Freight Inc',   owner_name: 'Maria Chen',      mc_number: 'MC-774511', dot_number: '3729100', phone: '+17135550384', email: 'maria@bluestarfreight.com', address: 'Houston, TX 77001',  equipment_type: 'Box Truck',     num_trucks: 1, state: 'TX', already_in_crm: false },
-    { company_name: 'Alpha Reefer Solutions', owner_name: 'Kevin Brown',     mc_number: 'MC-991203', dot_number: '4012887', phone: '+14695550821', email: 'kevin@alphareefer.com',    address: 'Atlanta, GA 30301',  equipment_type: 'Reefer',        num_trucks: 2, state: 'GA', already_in_crm: false },
-    { company_name: 'Rio Grande Trucking',    owner_name: 'Carlos Vasquez',  mc_number: 'MC-663478', dot_number: '3560021', phone: '+12105550673', email: 'carlos@riogrande.com',    address: 'San Antonio, TX 78201', equipment_type: 'Flatbed',      num_trucks: 4, state: 'TX', already_in_crm: false },
-    { company_name: 'Apex Road Carriers',     owner_name: 'Linda Park',      mc_number: 'MC-558829', dot_number: '3301447', phone: '+13125550149', email: 'linda@apexroad.com',      address: 'Chicago, IL 60601',  equipment_type: '53ft Dry Van',  num_trucks: 2, state: 'IL', already_in_crm: false },
-  ].filter(c =>
-    !name || c.company_name.toLowerCase().includes(name.toLowerCase()) ||
-    c.owner_name.toLowerCase().includes(name.toLowerCase())
-  );
-
-  // Check CRM duplicates even for mock data
-  for (const c of mockCarriers) {
+async function tagCrmDuplicates(carriers) {
+  for (const c of carriers) {
+    if (!c.mc_number && !c.phone && !c.email && !c.dot_number) continue;
     const exists = await pool.query(
-      `SELECT id, status, (SELECT name FROM users WHERE id = crm_leads.sales_rep_id) AS owned_by
-       FROM crm_leads WHERE mc_number = $1 OR phone = $2 LIMIT 1`,
-      [c.mc_number, c.phone]
+      `SELECT id, sales_rep_id, status,
+              (SELECT name FROM users WHERE id = crm_leads.sales_rep_id) AS owned_by
+       FROM crm_leads
+       WHERE ($1 <> '' AND mc_number = $1)
+          OR ($2 <> '' AND phone = $2)
+          OR ($3 <> '' AND lower(email) = lower($3))
+          OR ($4 <> '' AND dot_number = $4)
+       LIMIT 1`,
+      [c.mc_number || '', c.phone || '', c.email || '', c.dot_number || '']
     );
     if (exists.rows.length) {
       c.already_in_crm = true;
-      c.crm_lead_id    = exists.rows[0].id;
-      c.crm_status     = exists.rows[0].status;
-      c.owned_by       = exists.rows[0].owned_by || 'Unassigned';
+      c.crm_lead_id = exists.rows[0].id;
+      c.crm_status = exists.rows[0].status;
+      c.owned_by = exists.rows[0].owned_by || 'Unassigned';
     }
   }
+  return carriers;
+}
 
-  res.json({
-    source: 'Demo Data (Add FMCSA_API_KEY in Vercel to get live US carrier data)',
-    carriers: mockCarriers
-  });
-});
-
-// GET /api/crm/fmcsa/carrier/:mc - Get single carrier full details by MC#
-router.get('/fmcsa/carrier/:mc', requireAuth, async (req, res) => {
-  const mc = req.params.mc.replace(/[^0-9]/g, ''); // strip 'MC-' prefix
-  const apiKey = process.env.FMCSA_API_KEY;
-  if (!apiKey) return res.json({ message: 'FMCSA_API_KEY not configured. Add it in Vercel ENV.' });
+router.get('/fmcsa/search', requireAuth, async (req, res) => {
+  const q = (req.query.q || req.query.name || req.query.mc || req.query.dot || '').trim();
+  if (!q) {
+    return res.status(400).json({ error: 'Provide q, name, mc, or dot to search.' });
+  }
 
   try {
-    const data = await new Promise((resolve, reject) => {
-      const url = `https://mobile.fmcsa.dot.gov/qc/services/carriers/docket-number/${mc}?webKey=${apiKey}`;
-      https.get(url, (resp) => {
-        let body = '';
-        resp.on('data', d => body += d);
-        resp.on('end', () => { try { resolve(JSON.parse(body)); } catch(e) { reject(e); } });
-      }).on('error', reject);
-    });
-    res.json(data);
+    const result = await searchFmcsa(q);
+    result.carriers = await tagCrmDuplicates(result.carriers || []);
+    res.json(result);
+  } catch (err) {
+    console.error('FMCSA search error:', err);
+    res.status(500).json({ error: 'FMCSA search failed: ' + err.message });
+  }
+});
+
+router.get('/fmcsa/carrier/:mc', requireAuth, async (req, res) => {
+  try {
+    const result = await searchFmcsa(req.params.mc);
+    result.carriers = await tagCrmDuplicates(result.carriers || []);
+    res.json(result.carriers[0] || result);
   } catch (err) {
     res.status(500).json({ error: 'FMCSA lookup failed: ' + err.message });
   }
@@ -251,21 +172,47 @@ router.post('/leads', requireAuth, async (req, res) => {
     // No duplicate — safe to create
     const sales_rep_id = req.body.sales_rep_id || (req.user.role === 'sales_rep' ? req.user.id : null);
 
-    const result = await pool.query(
-      `INSERT INTO crm_leads (
-        company_name, owner_name, phone, email, mc_number, dot_number,
-        equipment_type, num_trucks, target_lanes, status, sales_rep_id, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new', $10, $11)
-      RETURNING *`,
-      [
-        company_name, owner_name || '', phone,
-        email ? email.toLowerCase() : '',
-        mc_number || '', dot_number || '',
-        equipment_type || '53ft Dry Van',
-        num_trucks || 1, target_lanes || '',
-        sales_rep_id, notes || ''
-      ]
-    );
+    const baseVals = [
+      company_name, owner_name || '', phone,
+      email ? email.toLowerCase() : '',
+      mc_number || '', dot_number || '',
+      equipment_type || '53ft Dry Van',
+      num_trucks || 1, target_lanes || '',
+      sales_rep_id, notes || ''
+    ];
+
+    let result;
+    try {
+      result = await pool.query(
+        `INSERT INTO crm_leads (
+          company_name, owner_name, phone, email, mc_number, dot_number,
+          equipment_type, num_trucks, target_lanes, status, sales_rep_id, notes,
+          phy_address, phy_city, phy_state, phy_zip, officer_name, safety_rating,
+          authority_status, num_drivers
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new', $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        RETURNING *`,
+        [
+          ...baseVals,
+          req.body.phy_address || req.body.address || '',
+          req.body.phy_city || '',
+          req.body.phy_state || req.body.state || '',
+          req.body.phy_zip || '',
+          req.body.officer_name || '',
+          req.body.safety_rating || '',
+          req.body.authority_status || '',
+          req.body.num_drivers || null
+        ]
+      );
+    } catch (colErr) {
+      result = await pool.query(
+        `INSERT INTO crm_leads (
+          company_name, owner_name, phone, email, mc_number, dot_number,
+          equipment_type, num_trucks, target_lanes, status, sales_rep_id, notes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new', $10, $11)
+        RETURNING *`,
+        baseVals
+      );
+    }
 
     // Auto-create initial follow-up task
     await pool.query(
@@ -287,7 +234,7 @@ router.post('/leads', requireAuth, async (req, res) => {
 // Body: { carriers: [...], sales_rep_id: 5 }
 // Skips duplicates automatically
 // ============================================================
-router.post('/leads/import-fmcsa', requireAuth, requireRole('admin', 'super_admin', 'dispatcher'), async (req, res) => {
+router.post('/leads/import-fmcsa', requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
   const { carriers, sales_rep_id } = req.body;
   if (!Array.isArray(carriers) || carriers.length === 0) {
     return res.status(400).json({ error: 'carriers[] array is required.' });
@@ -298,7 +245,8 @@ router.post('/leads/import-fmcsa', requireAuth, requireRole('admin', 'super_admi
   const skipReasons = [];
 
   for (const c of carriers) {
-    if (!c.company_name || !c.phone) { skipped++; continue; }
+    if (!c.company_name) { skipped++; continue; }
+    if (!c.phone) c.phone = 'unknown';
 
     // Duplicate check
     const dup = await pool.query(
@@ -311,11 +259,27 @@ router.post('/leads/import-fmcsa', requireAuth, requireRole('admin', 'super_admi
       continue;
     }
 
-    const ins = await pool.query(
-      `INSERT INTO crm_leads (company_name, owner_name, phone, email, mc_number, dot_number, equipment_type, num_trucks, status, sales_rep_id, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'new',$9,$10) RETURNING id`,
-      [c.company_name, c.owner_name||'', c.phone, (c.email||'').toLowerCase(), c.mc_number||'', c.dot_number||'', c.equipment_type||'53ft Dry Van', c.num_trucks||1, repId, `Imported from FMCSA. State: ${c.state||'N/A'}. Address: ${c.address||'N/A'}`]
-    );
+    let ins;
+    try {
+      ins = await pool.query(
+        `INSERT INTO crm_leads (company_name, owner_name, phone, email, mc_number, dot_number, equipment_type, num_trucks, status, sales_rep_id, notes,
+          phy_address, phy_city, phy_state, phy_zip, officer_name, safety_rating, authority_status, num_drivers)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'new',$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING id`,
+        [
+          c.company_name, c.owner_name || '', c.phone || 'unknown', (c.email || '').toLowerCase(),
+          c.mc_number || '', c.dot_number || '', c.equipment_type || '53ft Dry Van', c.num_trucks || 1, repId,
+          `Imported from FMCSA. State: ${c.state || 'N/A'}. Address: ${c.address || c.phy_address || 'N/A'}. Safety: ${c.safety_rating || 'N/A'}. Authority: ${c.authority_status || 'N/A'}`,
+          c.phy_address || c.address || '', c.phy_city || '', c.phy_state || c.state || '', c.phy_zip || '',
+          c.officer_name || '', c.safety_rating || '', c.authority_status || '', c.num_drivers || null
+        ]
+      );
+    } catch (colErr) {
+      ins = await pool.query(
+        `INSERT INTO crm_leads (company_name, owner_name, phone, email, mc_number, dot_number, equipment_type, num_trucks, status, sales_rep_id, notes)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'new',$9,$10) RETURNING id`,
+        [c.company_name, c.owner_name || '', c.phone, (c.email || '').toLowerCase(), c.mc_number || '', c.dot_number || '', c.equipment_type || '53ft Dry Van', c.num_trucks || 1, repId, `Imported from FMCSA. State: ${c.state || 'N/A'}`]
+      );
+    }
     await pool.query(
       `INSERT INTO lead_tasks (lead_id, assigned_to, task_title, due_date) VALUES ($1,$2,$3,CURRENT_DATE)`,
       [ins.rows[0].id, repId, `Cold Call & Intro Email to ${c.company_name}`]
@@ -427,7 +391,106 @@ router.get('/leads/ownership-report', requireAuth, requireRole('admin', 'super_a
   }
 });
 
-module.exports = router;
+router.put('/leads/:id/status', requireAuth, async (req, res) => {
+  const { status } = req.body;
+  const allowed = ['new', 'contacted', 'interested', 'packet_sent', 'active', 'dead'];
+  if (!allowed.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+  try {
+    const result = await pool.query(
+      `UPDATE crm_leads SET status = $1 WHERE id = $2 RETURNING *`,
+      [status, req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Lead not found' });
+    res.json({ ok: true, lead: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not update status' });
+  }
+});
+
+router.delete('/leads/:id', requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
+  try {
+    await pool.query('DELETE FROM crm_leads WHERE id = $1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not delete lead' });
+  }
+});
+
+router.get('/leads/:id/activity', requireAuth, async (req, res) => {
+  try {
+    const emails = await pool.query(
+      `SELECT * FROM email_logs WHERE lead_id = $1 ORDER BY sent_at DESC LIMIT 50`,
+      [req.params.id]
+    );
+    let inbound = { rows: [] };
+    try {
+      inbound = await pool.query(
+        `SELECT * FROM email_inbound WHERE lead_id = $1 ORDER BY created_at DESC LIMIT 50`,
+        [req.params.id]
+      );
+    } catch { /* schema not applied */ }
+    const calls = await pool.query(
+      `SELECT * FROM voip_call_logs WHERE lead_id = $1 ORDER BY created_at DESC LIMIT 50`,
+      [req.params.id]
+    );
+    res.json({ emails: emails.rows, inbound: inbound.rows, calls: calls.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load activity' });
+  }
+});
+
+router.get('/tasks', requireAuth, async (req, res) => {
+  try {
+    const params = [];
+    let where = '';
+    if (req.user.role === 'sales_rep') {
+      params.push(req.user.id);
+      where = 'WHERE t.assigned_to = $1';
+    }
+    const result = await pool.query(
+      `SELECT t.*, l.company_name
+       FROM lead_tasks t
+       LEFT JOIN crm_leads l ON l.id = t.lead_id
+       ${where}
+       ORDER BY t.is_completed ASC, t.due_date ASC
+       LIMIT 100`,
+      params
+    );
+    res.json({ tasks: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load tasks' });
+  }
+});
+
+router.put('/tasks/:id/toggle', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE lead_tasks SET is_completed = NOT is_completed WHERE id = $1 RETURNING *`,
+      [req.params.id]
+    );
+    res.json({ ok: true, task: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not toggle task' });
+  }
+});
+
+router.get('/script', requireAuth, (req, res) => {
+  res.json({
+    call_openers: [
+      'Hi, this is {name} with Shipping Wish LLC in Delaware. I am not calling to book a random load. We place a Dedicated Fleet Operations Manager with small carriers — someone who works your trucks only. Do you already have that person in-house?',
+      'Quick question — who currently books freight for your trucks, you or a dedicated manager?',
+      'I will be brief. We invoice a small weekly retainer. You keep 100% of the broker pay. Would that model even be useful, or are you fully covered?'
+    ],
+    never_say: [
+      'We are a dispatch company',
+      'I can get you high-paying loads',
+      'No upfront fees / 0% setup',
+      'DAT AI / $4.00 per mile'
+    ],
+    email_subject: 'Dedicated Operations Manager for {company} — Shipping Wish LLC',
+    sms_note: 'Do not cold-SMS without consent. TCPA fines are severe. Use email first; SMS after they reply YES.'
+  });
+});
 
 module.exports = router;
 

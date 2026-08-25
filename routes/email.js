@@ -2,133 +2,115 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { sendBrandedEmail, isUnsubscribed } = require('../utils/mailer');
+const { buildTemplate, verifyUnsubscribeToken, COMPANY } = require('../utils/email-templates');
+const { notifyAdmins, createNotification } = require('../utils/notifications');
 
-// POST /api/email/send-outreach - 1-Click Branded Outreach & Onboarding Email via Resend
-router.post('/send-outreach', requireAuth, async (req, res) => {
+async function markLeadContacted(leadId, statusIfNew) {
+  if (!leadId) return;
+  await pool.query(
+    `UPDATE crm_leads
+     SET status = CASE WHEN status = 'new' THEN $2 ELSE status END,
+         last_contacted_at = now()
+     WHERE id = $1`,
+    [leadId, statusIfNew || 'contacted']
+  );
+}
+
+async function handleSendOutreach(req, res) {
   try {
-    const { lead_id, recipient_email, owner_name, company_name, email_type } = req.body;
+    const {
+      lead_id,
+      recipient_email,
+      owner_name,
+      company_name,
+      email_type,
+      template_key,
+      billing_url,
+      load_summary,
+      also_sms
+    } = req.body;
 
     if (!recipient_email) {
       return res.status(400).json({ error: 'Recipient email is required' });
     }
 
-    const carrierName = owner_name || 'Carrier Partner';
-    const compName = company_name || 'Your Fleet';
-    const isPacket = email_type === 'onboarding_packet';
+    if (await isUnsubscribed(recipient_email)) {
+      return res.status(400).json({ error: 'This address is unsubscribed. Do not email them.' });
+    }
 
-    const subject = isPacket
-      ? `Welcome to Shipping Wish LLC — Your Onboarding Dispatch Packet for ${compName}`
-      : `High-Paying US Freight Dispatch Opportunity for ${compName} | Shipping Wish LLC`;
+    let lead = { owner_name, company_name, phone: null, email: recipient_email };
+    if (lead_id) {
+      const lr = await pool.query('SELECT * FROM crm_leads WHERE id = $1', [lead_id]);
+      if (lr.rows.length) lead = { ...lr.rows[0], ...lead };
+    }
 
-    const htmlBody = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #0b0f17; color: #e2e8f0; margin: 0; padding: 20px; }
-          .card { max-width: 600px; margin: 0 auto; background-color: #12161d; border: 1px solid #2a3241; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-          .brand { color: #f59e0b; font-size: 24px; font-weight: 800; text-decoration: none; display: inline-block; margin-bottom: 20px; }
-          .dot { height: 10px; width: 10px; background-color: #f59e0b; border-radius: 50%; display: inline-block; margin-right: 6px; }
-          h2 { color: #ffffff; font-size: 22px; margin-top: 0; }
-          p { font-size: 15px; line-height: 1.6; color: #cbd5e1; }
-          .feature-box { background: rgba(245, 158, 11, 0.08); border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px; }
-          .feature-box ul { margin: 0; padding-left: 20px; }
-          .feature-box li { margin-bottom: 8px; color: #f1f5f9; }
-          .btn-container { text-align: center; margin: 30px 0; }
-          .btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff !important; font-weight: 800; padding: 16px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-size: 16px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); }
-          .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #2a3241; font-size: 12px; color: #64748b; text-align: center; line-height: 1.5; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <a href="https://shippingwish.com" class="brand"><span class="dot"></span> Shipping Wish LLC</a>
-          
-          <h2>Hello ${carrierName},</h2>
-          
-          <p>We are reaching out from <strong>Shipping Wish LLC</strong> to introduce our dedicated US truck dispatch services for <strong>${compName}</strong>.</p>
-          
-          <div class="feature-box">
-            <h4 style="margin: 0 0 10px 0; color: #f59e0b;">Why US Carriers Partner With Shipping Wish:</h4>
-            <ul>
-              <li><strong>0% Upfront Setup Fees</strong> — Pay only when your truck moves.</li>
-              <li><strong>Average $3.20 to $4.00+ Rate Per Mile</strong> via DAT AI load matching.</li>
-              <li><strong>100% Rate Transparency</strong> — Official Rate Cons sent before pickup.</li>
-              <li><strong>1-Click Mobile Approvals</strong> right on your smartphone.</li>
-              <li><strong>Smart Reload Chaining</strong> to eliminate empty deadhead miles.</li>
-            </ul>
-          </div>
+    const key = template_key || email_type || 'dedicated_manager';
+    const tpl = buildTemplate(key, {
+      ownerName: owner_name || lead.owner_name,
+      companyName: company_name || lead.company_name,
+      recipientEmail: recipient_email,
+      billingUrl: billing_url,
+      loadSummary: load_summary
+    });
 
-          <p>${isPacket 
-            ? 'Attached is your official 1-page Carrier Dispatch Welcome Packet. Fill out your info to get assigned a dedicated 1-on-1 dispatcher today!' 
-            : 'Our 24/7 US dispatch desk has high-paying Dry Van, Reefer, and Flatbed loads ready for your equipment.'}</p>
+    const result = await sendBrandedEmail({
+      to: recipient_email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      leadId: lead_id,
+      sentBy: req.user.id,
+      emailType: key,
+      templateKey: key
+    });
 
-          <div class="btn-container">
-            <a href="https://shippingwish.com/signup.html" class="btn">👉 Register For Dedicated Dispatch Service (0% Upfront)</a>
-          </div>
+    const isPacket = key === 'onboarding_packet' || key === 'onboarding';
+    await markLeadContacted(lead_id, isPacket ? 'packet_sent' : 'contacted');
 
-          <p style="font-size: 13px; color: #94a3b8;">Have questions? Call our 24/7 hotline directly at <strong>+1 917 737 0021</strong> or reply to this email.</p>
-
-          <div class="footer">
-            <p><strong>Shipping Wish LLC — Enterprise Logistics &amp; Freight Dispatch</strong><br>
-            19266 Coastal Hwy, Rehoboth, DE 19971, USA | 📞 +1 917 737 0021<br>
-            ✉️ info@shippingwish.com | <a href="https://shippingwish.com/privacy-policy.html" style="color:#f59e0b;">Privacy Policy</a></p>
-            <p style="font-size: 11px;">CAN-SPAM Compliant. If you wish to stop receiving freight updates, click <a href="#" style="color:#64748b;">Unsubscribe</a>.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    let resendId = 'simulated_' + Date.now();
-
-    // If RESEND_API_KEY exists in env, trigger live Resend API
-    if (process.env.RESEND_API_KEY) {
+    let sms = null;
+    if (also_sms && lead.phone) {
       try {
-        const { Resend } = require('resend');
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        const sendResult = await resend.emails.send({
-          from: 'Shipping Wish LLC <dispatch@shippingwish.com>',
-          to: [recipient_email],
-          subject: subject,
-          html: htmlBody
-        });
-        if (sendResult && sendResult.id) {
-          resendId = sendResult.id;
+        const voip = require('./voip');
+        if (typeof voip.sendTemplatedSms === 'function') {
+          sms = await voip.sendTemplatedSms({
+            lead_id,
+            to_number: lead.phone,
+            template_key: key,
+            company_name: lead.company_name,
+            user: req.user,
+            load_summary
+          });
         }
-      } catch (apiErr) {
-        console.warn('Resend API call fallback to logged send:', apiErr.message);
+      } catch (smsErr) {
+        sms = { error: smsErr.message };
       }
     }
 
-    // Log sent email to database
-    const logResult = await pool.query(
-      `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by)
-       VALUES ($1, $2, $3, $4, 'sent', $5, $6)
-       RETURNING *`,
-      [lead_id || null, recipient_email, subject, email_type || 'outreach', resendId, req.user.id]
-    );
-
-    // Update lead status to 'contacted' or 'packet_sent'
-    if (lead_id) {
-      const newStatus = isPacket ? 'packet_sent' : 'contacted';
-      await pool.query(
-        `UPDATE crm_leads SET status = $1, last_contacted_at = now() WHERE id = $2`,
-        [newStatus, lead_id]
-      );
-    }
-
     res.json({
-      message: `Branded email successfully sent to ${recipient_email}`,
-      email_log: logResult.rows[0]
+      ok: true,
+      message: result.skipped
+        ? `Skipped: ${result.reason}`
+        : `Email sent to ${recipient_email}`,
+      email: result,
+      sms
     });
   } catch (err) {
     console.error('Error sending outreach email:', err);
-    res.status(500).json({ error: 'Failed to send outreach email' });
+    res.status(500).json({ error: err.message || 'Failed to send outreach email' });
   }
+}
+
+router.post('/send-outreach', requireAuth, handleSendOutreach);
+
+router.post('/onboarding-packet', requireAuth, (req, res) => {
+  req.body.template_key = req.body.template_key || 'onboarding';
+  req.body.lead_id = req.body.lead_id || req.body.leadId;
+  req.body.recipient_email = req.body.recipient_email || req.body.email;
+  return handleSendOutreach(req, res);
 });
 
-// GET /api/email/logs - Get email history
+// GET /api/email/logs
 router.get('/logs', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -136,7 +118,7 @@ router.get('/logs', requireAuth, async (req, res) => {
        FROM email_logs e
        LEFT JOIN users u ON e.sent_by = u.id
        ORDER BY e.sent_at DESC
-       LIMIT 50`
+       LIMIT 100`
     );
     res.json({ email_logs: result.rows });
   } catch (err) {
@@ -145,4 +127,163 @@ router.get('/logs', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/email/inbox — inbound replies for admin / sales
+router.get('/inbox', requireAuth, async (req, res) => {
+  try {
+    const unreadOnly = req.query.unread === '1';
+    const result = await pool.query(
+      `SELECT i.*, l.company_name, l.owner_name, l.phone, l.mc_number, l.sales_rep_id,
+              u.name AS sales_rep_name
+       FROM email_inbound i
+       LEFT JOIN crm_leads l ON l.id = i.lead_id
+       LEFT JOIN users u ON u.id = l.sales_rep_id
+       ${unreadOnly ? 'WHERE i.is_read = FALSE' : ''}
+       ORDER BY i.created_at DESC
+       LIMIT 150`
+    );
+    const unread = await pool.query(`SELECT COUNT(*) FROM email_inbound WHERE is_read = FALSE`);
+    res.json({ messages: result.rows, unread: parseInt(unread.rows[0].count, 10) });
+  } catch (err) {
+    console.error('Inbox fetch error:', err);
+    res.status(500).json({ error: 'Could not load inbox. Apply v3 growth schema first.' });
+  }
+});
+
+router.post('/inbox/:id/read', requireAuth, async (req, res) => {
+  try {
+    await pool.query('UPDATE email_inbound SET is_read = TRUE WHERE id = $1', [req.params.id]);
+    const row = await pool.query('SELECT lead_id FROM email_inbound WHERE id = $1', [req.params.id]);
+    if (row.rows[0] && row.rows[0].lead_id) {
+      await pool.query(
+        `UPDATE crm_leads SET unread_replies = GREATEST(COALESCE(unread_replies,0) - 1, 0) WHERE id = $1`,
+        [row.rows[0].lead_id]
+      );
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not mark read' });
+  }
+});
+
+function extractLeadIdFromAddress(toEmail) {
+  const m = String(toEmail || '').match(/replies\+(\d+)@/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, resendId }) {
+  const from = String(fromEmail || '').trim().toLowerCase();
+  if (!from) return { ok: false, error: 'missing from' };
+
+  let leadId = extractLeadIdFromAddress(toEmail);
+  if (!leadId) {
+    const match = await pool.query(
+      `SELECT id, sales_rep_id, company_name FROM crm_leads WHERE lower(email) = $1 ORDER BY last_contacted_at DESC NULLS LAST LIMIT 1`,
+      [from]
+    );
+    if (match.rows.length) leadId = match.rows[0].id;
+  }
+
+  const ins = await pool.query(
+    `INSERT INTO email_inbound (lead_id, from_email, to_email, subject, body_text, body_html, resend_email_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+    [leadId, from, toEmail || '', subject || '(no subject)', bodyText || '', bodyHtml || '', resendId || null]
+  );
+
+  if (leadId) {
+    await pool.query(
+      `UPDATE crm_leads
+       SET last_reply_at = now(),
+           unread_replies = COALESCE(unread_replies,0) + 1,
+           status = CASE WHEN status IN ('new','contacted','packet_sent') THEN 'interested' ELSE status END
+       WHERE id = $1`,
+      [leadId]
+    );
+    const lead = (await pool.query('SELECT company_name, sales_rep_id FROM crm_leads WHERE id = $1', [leadId])).rows[0];
+    const title = `Carrier replied: ${lead ? lead.company_name : from}`;
+    const msg = `${from} — ${(subject || '').slice(0, 120)}`;
+    await notifyAdmins(title, msg, 'success', '/inbox.html');
+    if (lead && lead.sales_rep_id) {
+      await createNotification(lead.sales_rep_id, title, msg, 'success', '/inbox.html');
+    }
+    try {
+      await pool.query(`UPDATE email_logs SET reply_received = TRUE WHERE lead_id = $1`, [leadId]);
+    } catch {
+      // column may not exist yet
+    }
+  } else {
+    await notifyAdmins(`Unmatched inbound email from ${from}`, (subject || '').slice(0, 140), 'warning', '/inbox.html');
+  }
+
+  return { ok: true, inbound: ins.rows[0], lead_id: leadId };
+}
+
+// POST /api/email/inbound — Resend inbound / generic webhook (no auth; verify secret)
+router.post('/inbound', async (req, res) => {
+  const secret = process.env.RESEND_INBOUND_SECRET || process.env.INBOUND_WEBHOOK_SECRET;
+  if (secret) {
+    const hdr = req.headers['x-inbound-secret'] || req.headers['x-webhook-secret'] || req.query.secret;
+    if (hdr !== secret) return res.status(401).json({ error: 'Invalid inbound secret' });
+  }
+
+  try {
+    const data = req.body.data || req.body;
+    const fromEmail = data.from || data.from_email || (data.from && data.from.address) ||
+      (Array.isArray(data.from) ? data.from[0] : null) ||
+      (data.email && data.email.from);
+    const toEmail = data.to || data.to_email || (Array.isArray(data.to) ? data.to[0] : '') || '';
+    const subject = data.subject || '';
+    const bodyText = data.text || data.body_text || data.text_body || '';
+    const bodyHtml = data.html || data.body_html || data.html_body || '';
+    const resendId = data.email_id || data.id || null;
+
+    const fromStr = typeof fromEmail === 'object' ? (fromEmail.address || fromEmail.email || '') : fromEmail;
+    const toStr = typeof toEmail === 'object' ? (toEmail.address || toEmail.email || '') : toEmail;
+
+    const result = await ingestInbound({
+      fromEmail: fromStr,
+      toEmail: toStr,
+      subject,
+      bodyText,
+      bodyHtml,
+      resendId
+    });
+    res.json(result);
+  } catch (err) {
+    console.error('Inbound email error:', err);
+    res.status(500).json({ error: 'Failed to ingest inbound email' });
+  }
+});
+
+// Public unsubscribe
+router.get('/unsubscribe', async (req, res) => {
+  const token = req.query.t || req.query.token;
+  const email = verifyUnsubscribeToken(token) || (req.query.email || '').trim().toLowerCase();
+  if (!email) return res.status(400).json({ error: 'Invalid unsubscribe link' });
+  try {
+    await pool.query(
+      `INSERT INTO unsubscribes (email) VALUES ($1) ON CONFLICT (email) DO NOTHING`,
+      [email]
+    );
+    res.json({ ok: true, email, message: 'You have been unsubscribed.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not unsubscribe' });
+  }
+});
+
+router.post('/unsubscribe', async (req, res) => {
+  const token = req.body.t || req.body.token || req.query.t;
+  const email = verifyUnsubscribeToken(token) || (req.body.email || '').trim().toLowerCase();
+  if (!email) return res.status(400).json({ error: 'Invalid unsubscribe' });
+  try {
+    await pool.query(
+      `INSERT INTO unsubscribes (email, reason) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING`,
+      [email, req.body.reason || 'one-click']
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not unsubscribe' });
+  }
+});
+
 module.exports = router;
+module.exports.ingestInbound = ingestInbound;

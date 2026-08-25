@@ -72,6 +72,7 @@
 
   --border-default:   var(--color-gray-200);
   --border-strong:    var(--color-gray-300);
+  --border-subtle:    var(--color-gray-100);
 
   --accent-primary:   var(--color-amber-500);
   --accent-hover:     var(--color-amber-600);
@@ -2745,6 +2746,7 @@ html, body.app-body {
   .section {
     padding-block: var(--space-12) !important;
   }
+}
 
 .social-icon-btn {
   transition: all 0.25s ease !important;
@@ -2754,3 +2756,433 @@ html, body.app-body {
   background: rgba(255, 255, 255, 0.18) !important;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
+
+/* =============================================================================
+   UI LOCK — one size, one chrome, every page
+   ============================================================================= */
+body.app-body,
+body:has(.app-shell) {
+  background: var(--color-gray-50);
+  font-size: 14px;
+}
+
+.app-shell,
+.app-layout {
+  grid-template-columns: 248px 1fr;
+}
+
+.app-sidebar {
+  width: 248px;
+  padding: 12px 8px 16px;
+  overflow-x: hidden;
+}
+
+.sidebar-brand {
+  padding: 8px 10px 12px;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
+.sidebar-brand .nav-logo-mark,
+.app-sidebar .nav-logo-mark {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 13px !important;
+  border-radius: 8px;
+}
+
+.sidebar-brand-name {
+  font-weight: 800;
+  font-size: 14px !important;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.sidebar-brand-tag {
+  font-size: 10px !important;
+  color: var(--color-amber-400);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sidebar-section-label {
+  font-size: 10px;
+  margin: 14px 0 4px 10px;
+}
+
+.sidebar-nav-link {
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 1px;
+  gap: 8px;
+}
+
+.sidebar-nav-link span[aria-hidden] {
+  width: 18px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.sidebar-user-card {
+  padding: 10px;
+  margin-top: 12px;
+  border-radius: 12px;
+  gap: 10px;
+}
+
+.sidebar-user-card .avatar,
+.app-sidebar .avatar {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 12px !important;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.app-sidebar .btn-block {
+  margin-top: 8px !important;
+  height: 36px;
+  font-size: 12px;
+  background: rgba(255,255,255,0.06) !important;
+  color: rgba(255,255,255,0.85) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+.app-header {
+  height: 64px;
+  min-height: 64px;
+  padding: 0 24px;
+  gap: 16px;
+}
+
+.app-header h1,
+.app-header-title {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: var(--text-primary) !important;
+  margin: 0 !important;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.app-header p,
+.app-header-sub {
+  font-size: 12px !important;
+  color: var(--text-muted) !important;
+  margin: 2px 0 0 !important;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.app-header .live-status {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.app-content {
+  padding: 24px;
+}
+
+.stat-card-grid {
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-kpi-card {
+  padding: 18px 20px;
+  border-radius: 16px;
+}
+
+.stat-kpi-icon {
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+  border-radius: 10px;
+}
+
+.stat-kpi-title {
+  font-size: 11px;
+}
+
+.stat-kpi-val {
+  font-size: 26px;
+  margin-top: 4px;
+}
+
+.tms-table-card {
+  border-radius: 16px;
+}
+
+.tms-table-header {
+  padding: 14px 16px;
+}
+
+.tms-table-v2 {
+  font-size: 13px;
+}
+
+.tms-table-v2 th,
+.tms-table-v2 td {
+  padding: 12px 16px !important;
+}
+
+.app-shell .btn,
+.app-content .btn,
+.app-header .btn {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.app-shell .btn-sm,
+.app-content .btn-sm,
+.app-header .btn-sm {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+body .btn.btn-primary,
+a.btn.btn-primary {
+  background: var(--color-amber-500);
+  color: var(--color-gray-900);
+  border: 1px solid transparent;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+body .btn.btn-secondary,
+a.btn.btn-secondary {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.14);
+}
+
+.app-header .btn.btn-secondary,
+.app-content .btn.btn-secondary,
+.app-body .btn.btn-secondary {
+  background: #fff;
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+
+.btn-table-action {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.form-input, .form-select, input.form-input, select.form-select, textarea.form-input {
+  height: 40px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+textarea.form-input { height: auto; min-height: 88px; }
+
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.app-mobile-bar {
+  display: none;
+  height: 56px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--color-gray-900);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 120;
+}
+
+.app-mobile-bar strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.app-mobile-toggle {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.app-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.45);
+  z-index: 190;
+}
+
+.page-hero {
+  background: var(--color-gray-900);
+  padding: 72px 0 64px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.page-hero .container {
+  max-width: var(--container-xl);
+}
+
+.page-hero .eyebrow,
+.page-hero-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-amber-400);
+  margin-bottom: 12px;
+}
+
+.page-hero h1 {
+  font-size: clamp(1.85rem, 4vw, 2.6rem) !important;
+  font-weight: 800 !important;
+  color: #fff !important;
+  letter-spacing: -0.03em;
+  line-height: 1.15 !important;
+  max-width: 720px;
+  margin: 0;
+}
+
+.page-hero p {
+  font-size: 16px !important;
+  color: rgba(255,255,255,0.7) !important;
+  max-width: 560px;
+  line-height: 1.65;
+  margin-top: 16px;
+  font-weight: 400;
+}
+
+.legal-doc {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.legal-doc h2 {
+  font-size: 18px;
+  margin: 28px 0 10px;
+}
+
+.legal-doc ul {
+  list-style: disc;
+  padding-left: 20px;
+  margin: 8px 0 16px;
+}
+
+.nav-inner {
+  height: 64px;
+}
+
+.nav-links a {
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+.nav-actions .btn {
+  height: 36px;
+}
+
+.live-status {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body .container {
+  width: 100%;
+  max-width: var(--container-2xl);
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+
+@media (max-width: 1024px) {
+  .app-shell,
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+  .app-mobile-bar { display: flex; }
+  .app-sidebar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 200;
+    transform: translateX(-100%);
+    width: 248px;
+    transition: transform 0.2s ease;
+  }
+  .app-sidebar.is-open { transform: translateX(0); }
+  .app-sidebar-backdrop.is-open { display: block; }
+  .app-header { padding: 0 16px; height: auto; min-height: 64px; padding-top: 10px; padding-bottom: 10px; }
+}
+
+@media (max-width: 640px) {
+  .app-content { padding: 16px; }
+  .app-header { flex-wrap: wrap; height: auto; }
+  .stat-kpi-val { font-size: 22px; }
+}
+
+.tms-panel {
+  background: #fff;
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.tms-panel h3,
+.tms-panel h4 {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+
+.app-shell .btn-amber,
+.app-content .btn-amber,
+.btn.btn-amber {
+  background: var(--color-amber-500);
+  color: var(--color-gray-900);
+  border: 1px solid transparent;
+}
+
+.app-shell .btn-outline,
+.app-content .btn-outline,
+.btn.btn-outline {
+  background: #fff;
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+
+

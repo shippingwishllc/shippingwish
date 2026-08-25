@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrier Replies Inbox | Shipping Wish TMS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div>
+      <a href="/admin-dashboard.html" class="sidebar-brand" style="text-decoration:none;">
+        <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
+          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">ENTERPRISE TMS</div>
+        </div>
+      </a>
+      <div class="sidebar-section-label">Operations</div>
+      <a href="/admin-dashboard.html" class="sidebar-nav-link"><span aria-hidden="true">📊</span> Overview &amp; Loads</a>
+      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link"><span aria-hidden="true">🎧</span> Dispatch Desk</a>
+      <a href="/brokers.html" class="sidebar-nav-link"><span aria-hidden="true">🤝</span> Broker Directory &amp; Credit</a>
+      <a href="/fleet.html" class="sidebar-nav-link"><span aria-hidden="true">🚛</span> Fleet &amp; Drivers</a>
+      <div class="sidebar-section-label">Sales &amp; Staff</div>
+      <a href="/crm-sales.html" class="sidebar-nav-link"><span aria-hidden="true">📈</span> Sales CRM &amp; Leads</a>
+      <a href="/inbox.html" class="sidebar-nav-link active"><span aria-hidden="true">📬</span> Carrier Replies</a>
+      <a href="/staff-management.html" class="sidebar-nav-link"><span aria-hidden="true">👔</span> Company Staff &amp; Roles</a>
+      <div class="sidebar-section-label">Accounting &amp; Taxes</div>
+      <a href="/invoices.html" class="sidebar-nav-link"><span aria-hidden="true">💳</span> Invoices &amp; Billing</a>
+      <a href="/ifta.html" class="sidebar-nav-link"><span aria-hidden="true">⛽</span> IFTA &amp; Fuel Ledger</a>
+      <a href="/documents.html" class="sidebar-nav-link"><span aria-hidden="true">📄</span> Document Vault (POD/BOL)</a>
+      <a href="/load-planning.html" class="sidebar-nav-link"><span aria-hidden="true">📅</span> Load Planning</a>
+      <div class="sidebar-section-label">Security &amp; System</div>
+      <a href="/admin-dashboard.html#audit" class="sidebar-nav-link"><span aria-hidden="true">🛡️</span> Security Audit Logs</a>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Carrier Replies Inbox</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">When a carrier replies to outreach, it lands here for admin and sales.</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="loadInbox(true)">Unread only</button>
+        <button class="btn btn-primary btn-sm" onclick="loadInbox(false)">All replies</button>
+      </div>
+    </header>
+    <main class="app-content">
+      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Unread replies</span><div class="stat-kpi-icon">📬</div></div>
+          <div class="stat-kpi-val" id="kpi-unread">0</div>
+        </div>
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Loaded messages</span><div class="stat-kpi-icon">✉️</div></div>
+          <div class="stat-kpi-val" id="kpi-total">0</div>
+        </div>
+      </div>
+      <div class="tms-table-card">
+        <div id="inbox-list" style="display:flex;flex-direction:column;gap:12px;">
+          <p class="text-muted" style="padding:24px;text-align:center;">Loading inbox…</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script>
+  async function checkAuth() {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) window.location.href = '/login.html';
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function loadInbox(unreadOnly) {
+    const res = await fetch('/api/email/inbox' + (unreadOnly ? '?unread=1' : ''), { credentials: 'include' });
+    const data = await res.json();
+    document.getElementById('kpi-unread').textContent = data.unread || 0;
+    document.getElementById('kpi-total').textContent = (data.messages || []).length;
+    const list = document.getElementById('inbox-list');
+    const msgs = data.messages || [];
+    if (!msgs.length) {
+      list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No carrier replies yet. When a carrier replies to operations@ or your outreach, it will appear here.</p>';
+      return;
+    }
+    list.innerHTML = msgs.map(m => `
+      <div style="border:1px solid var(--border-default);border-radius:12px;padding:16px;background:${m.is_read ? 'transparent' : 'rgba(245,158,11,0.06)'};">
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:800;">${escapeHtml(m.company_name || m.from_email)}</div>
+            <div style="font-size:12px;color:var(--text-muted);">${escapeHtml(m.from_email)} · ${escapeHtml(m.subject || '')}</div>
+            <div style="font-size:12px;margin-top:4px;">${m.sales_rep_name ? 'Rep: ' + escapeHtml(m.sales_rep_name) : 'Unassigned'} · ${m.phone ? escapeHtml(m.phone) : ''} · ${m.mc_number ? escapeHtml(m.mc_number) : ''}</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</div>
+        </div>
+        <p style="margin:12px 0 0;white-space:pre-wrap;font-size:14px;line-height:1.5;">${escapeHtml((m.body_text || '').slice(0, 800))}</p>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          ${m.is_read ? '' : `<button class="btn btn-primary btn-sm" onclick="markRead(${m.id})">Mark read</button>`}
+          <a class="btn btn-secondary btn-sm" href="/crm-sales.html">Open CRM</a>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function markRead(id) {
+    await fetch('/api/email/inbox/' + id + '/read', { method: 'POST', credentials: 'include' });
+    loadInbox(false);
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await checkAuth();
+    await loadInbox(false);
+  });
+</script>
+<script src="/js/app-shell.js"></script>
+</body>
+</html>

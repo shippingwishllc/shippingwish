@@ -2,6 +2,70 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { SMS_TEMPLATES } = require('../utils/email-templates');
+
+async function sendTwilioSms(toNumber, message) {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+    return { status: 'logged', sid: null };
+  }
+  const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  const twilioMsg = await twilio.messages.create({
+    from: process.env.TWILIO_FROM_NUMBER || '+19177370021',
+    to: toNumber,
+    body: message
+  });
+  return { status: 'sent', sid: twilioMsg.sid };
+}
+
+async function sendTemplatedSms({ lead_id, to_number, template_key, company_name, user, load_summary }) {
+  const key = template_key || 'dedicated_manager';
+  const builder = SMS_TEMPLATES[key] || SMS_TEMPLATES.dedicated_manager;
+  const message = builder({ companyName: company_name, loadSummary: load_summary });
+  let smsStatus = 'logged';
+  let twilioSid = null;
+  try {
+    const sent = await sendTwilioSms(to_number, message);
+    smsStatus = sent.status;
+    twilioSid = sent.sid;
+  } catch (twilioErr) {
+    console.error('Twilio SMS error:', twilioErr.message);
+    smsStatus = 'twilio_error';
+  }
+
+  const result = await pool.query(
+    `INSERT INTO voip_call_logs (
+      lead_id, sales_rep_id, voip_provider, call_type, to_number, disposition, notes
+    ) VALUES ($1, $2, 'Twilio', 'sms', $3, $4, $5)
+    RETURNING *`,
+    [lead_id || null, user && user.id, to_number, smsStatus,
+     `SMS: ${message}${twilioSid ? ' | Twilio SID: ' + twilioSid : ''}`]
+  );
+
+  try {
+    await pool.query(
+      `INSERT INTO outreach_sends (lead_id, channel, template_key, recipient, subject, body_preview, provider_id, status, sent_by)
+       VALUES ($1, 'sms', $2, $3, $4, $5, $6, $7, $8)`,
+      [lead_id || null, key, to_number, 'SMS', message.slice(0, 280), twilioSid, smsStatus, user && user.id]
+    );
+  } catch {
+    // schema may not be applied yet
+  }
+
+  if (lead_id) {
+    await pool.query(
+      `UPDATE crm_leads SET last_contacted_at = now(), status = CASE WHEN status = 'new' THEN 'contacted' ELSE status END WHERE id = $1`,
+      [lead_id]
+    );
+  }
+
+  return {
+    message: smsStatus === 'sent' ? `SMS sent via Twilio to ${to_number}` : `SMS logged (${smsStatus})`,
+    status: smsStatus,
+    twilio_sid: twilioSid,
+    sms_log: result.rows[0],
+    body: message
+  };
+}
 
 // POST /api/voip/click-to-call - Trigger 1-Click OpenPhone / MightyCall Call
 router.post('/click-to-call', requireAuth, async (req, res) => {
@@ -60,26 +124,16 @@ router.post('/send-sms', requireAuth, async (req, res) => {
     let smsStatus = 'logged';
     let twilioSid = null;
 
-    // -------------------------------------------------------
-    // TWILIO SMS — Real API Call
-    // Fires when TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN are set
-    // -------------------------------------------------------
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-      try {
-        const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-        const twilioMsg = await twilio.messages.create({
-          from: process.env.TWILIO_FROM_NUMBER || '+19177370021',
-          to: to_number,
-          body: message
-        });
-        twilioSid = twilioMsg.sid;
-        smsStatus = 'sent';
-      } catch (twilioErr) {
-        console.error('Twilio SMS error:', twilioErr.message);
-        smsStatus = 'twilio_error';
+    try {
+      const sent = await sendTwilioSms(to_number, message);
+      smsStatus = sent.status;
+      twilioSid = sent.sid;
+      if (smsStatus === 'logged') {
+        console.log('[DEV] Twilio not configured — SMS logged only:', { to_number, message });
       }
-    } else {
-      console.log('[DEV] Twilio not configured — SMS logged only:', { to_number, message });
+    } catch (twilioErr) {
+      console.error('Twilio SMS error:', twilioErr.message);
+      smsStatus = 'twilio_error';
     }
 
     const result = await pool.query(
@@ -151,4 +205,24 @@ router.get('/logs', requireAuth, async (req, res) => {
   }
 });
 
+router.post('/send-template-sms', requireAuth, async (req, res) => {
+  try {
+    const { lead_id, to_number, template_key, company_name, load_summary } = req.body;
+    if (!to_number) return res.status(400).json({ error: 'Phone number is required' });
+    const result = await sendTemplatedSms({
+      lead_id,
+      to_number,
+      template_key,
+      company_name,
+      load_summary,
+      user: req.user
+    });
+    res.json(result);
+  } catch (err) {
+    console.error('Template SMS error:', err);
+    res.status(500).json({ error: 'Failed to send SMS' });
+  }
+});
+
 module.exports = router;
+module.exports.sendTemplatedSms = sendTemplatedSms;

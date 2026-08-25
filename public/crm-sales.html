@@ -6,9 +6,7 @@
   <title>Sales CRM & Carrier Acquisition | Shipping Wish TMS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
-  <style>
-    .tms-table-v2 th, .tms-table-v2 td { padding: 12px 16px; }
-  </style>
+  
 </head>
 <body class="app-body">
 
@@ -41,6 +39,9 @@
       <div class="sidebar-section-label">Sales &amp; Staff</div>
       <a href="/crm-sales.html" class="sidebar-nav-link active">
         <span aria-hidden="true">📈</span> Sales CRM &amp; Leads
+      </a>
+      <a href="/inbox.html" class="sidebar-nav-link">
+        <span aria-hidden="true">📬</span> Carrier Replies
       </a>
       <a href="/staff-management.html" class="sidebar-nav-link">
         <span aria-hidden="true">👔</span> Company Staff &amp; Roles
@@ -86,10 +87,11 @@
     <header class="app-header">
       <div>
         <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Sales CRM &amp; Carrier Acquisition</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Track carrier leads, outreach dispositions, &amp; 1-click onboarding packets</p>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">U.S. motor carriers only. Dedicated Operations Manager outreach — not a cold “dispatch” pitch.</p>
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <a href="/inbox.html" class="btn btn-secondary btn-sm" id="inbox-link">📬 Replies <span id="inbox-unread">0</span></a>
         <button class="btn btn-primary btn-sm" id="btn-add-lead" onclick="openAddLeadModal()">
           + Add Carrier Lead
         </button>
@@ -136,14 +138,25 @@
           </div>
           <div class="stat-kpi-val" id="kpi-packets-sent">0</div>
           <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Onboarding email packages sent</div>
+        </div>
+      </div>
+
+      <div class="tms-table-card" style="margin-bottom:var(--space-6);border-left:4px solid #0f172a;">
+        <h3 style="margin:0 0 8px;font-size:15px;font-weight:800;">Call track — never lead with “dispatch”</h3>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);line-height:1.55;">Carriers hang up on “dispatch companies.” Open as a Delaware LLC offering a <strong>Dedicated Fleet Operations Manager</strong> / Dedicated Dispatcher for their trucks. Weekly retainer. They keep broker pay.</p>
+        <ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.6;color:var(--text-secondary);">
+          <li>“Hi, this is ___ with Shipping Wish LLC in Delaware. I’m not calling to dump loads. We place a Dedicated Operations Manager with small fleets. Do you already have that person in-house?”</li>
+          <li>If they pause: “Small weekly Stripe invoice. You collect 100% of freight from the broker. We find and book. Useful, or are you covered?”</li>
+          <li>If they say they got burned: “Understood. This is a named manager, not a call center. I can email the one-pager — no pressure.”</li>
+        </ol>
       </div>
 
       <!-- FMCSA CARRIER LEADS SCRAPER WIDGET -->
       <div class="tms-table-card" style="margin-bottom:var(--space-6);background:linear-gradient(135deg, rgba(15,23,42,0.03) 0%, rgba(30,41,59,0.06) 100%);">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
           <div>
-            <h3 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0;">⚡ Live FMCSA Carrier Lead Finder &amp; Scraper</h3>
-            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0 0;">Search US Motor Carrier records by State (TX, FL, GA), MC#, USDOT#, or Company Name and 1-Click Import directly into your Sales Pipeline!</p>
+            <h3 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0;">U.S. FMCSA Carrier Finder</h3>
+            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0 0;">Search live FMCSA records by MC#, USDOT, company name, or 2-letter state (TX, FL, GA). Import complete profile into CRM.</p>
           </div>
         </div>
 
@@ -305,6 +318,7 @@
   document.addEventListener('DOMContentLoaded', async () => {
     await checkAuth();
     await loadLeads();
+    await loadInboxCount();
   });
 
   async function checkAuth() {
@@ -346,26 +360,35 @@
           numTrucks: l.num_trucks || 1,
           ownerName: l.owner_name || 'N/A',
           phone: l.phone,
-          email: l.email || 'N/A',
+          email: l.email || '',
           salesRep: l.sales_rep_name || 'Unassigned',
-          status: l.status || 'new'
+          status: l.status || 'new',
+          unread: l.unread_replies || 0,
+          phyState: l.phy_state || '',
+          safety: l.safety_rating || ''
         }));
       } else {
-        renderMockLeads();
+        leadsData = [];
       }
     } catch (e) {
-      renderMockLeads();
+      leadsData = [];
     }
     updateKPIs();
     renderLeadsTable();
   }
 
+  async function loadInboxCount() {
+    try {
+      const res = await fetch('/api/email/inbox?unread=1', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const el = document.getElementById('inbox-unread');
+      if (el) el.textContent = data.unread || 0;
+    } catch (e) {}
+  }
+
   function renderMockLeads() {
-    leadsData = [
-      { id: 1, companyName: 'Apex Transport LLC', mcNumber: 'MC-149201', dotNumber: 'DOT-3940192', equipmentType: 'Dry Van', numTrucks: 4, ownerName: 'David Miller', phone: '+1 917 555 0192', email: 'dispatch@apextransport.com', salesRep: 'Sarah Smith', status: 'new' },
-      { id: 2, companyName: 'BlueSky Logistics', mcNumber: 'MC-284910', dotNumber: 'DOT-4820193', equipmentType: 'Reefer', numTrucks: 2, ownerName: 'Marcus Vance', phone: '+1 404 555 0148', email: 'mvance@blueskyfreight.com', salesRep: 'Sarah Smith', status: 'packet_sent' },
-      { id: 3, companyName: 'Tri-State Hauling', mcNumber: 'MC-940281', dotNumber: 'DOT-5820491', equipmentType: 'Flatbed', numTrucks: 8, ownerName: 'Robert Vance', phone: '+1 312 555 0184', email: 'robert@tristatehaul.com', salesRep: 'Unassigned', status: 'active' }
-    ];
+    leadsData = [];
   }
 
   function updateKPIs() {
@@ -408,15 +431,18 @@
 
     tbody.innerHTML = filtered.map(l => `
       <tr>
-        <td><strong style="color:var(--text-primary);">${escapeHtml(l.companyName)}</strong></td>
+        <td><strong style="color:var(--text-primary);">${escapeHtml(l.companyName)}</strong>${l.unread ? ` <span class="badge badge-new">${l.unread} reply</span>` : ''}${l.phyState ? `<div style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.phyState)}${l.safety ? ' · ' + escapeHtml(l.safety) : ''}</div>` : ''}</td>
         <td>${escapeHtml(l.mcNumber)}<br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.dotNumber)}</span></td>
         <td><span class="badge badge-amber">${escapeHtml(l.equipmentType)} (${l.numTrucks} units)</span></td>
-        <td><strong>${escapeHtml(l.ownerName)}</strong><br>${escapeHtml(l.phone)}<br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.email)}</span></td>
+        <td><strong>${escapeHtml(l.ownerName)}</strong><br>${escapeHtml(l.phone)}<br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.email || 'No email')}</span></td>
         <td>${escapeHtml(l.salesRep)}</td>
         <td><span class="badge ${getStatusBadge(l.status)}">${escapeHtml(l.status.replace('_', ' ').toUpperCase())}</span></td>
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-light btn-sm" onclick="openSendPacketModal(${l.id}, '${escapeHtml(l.companyName)}', '${escapeHtml(l.email)}')">✉️ Send Packet</button>
+            <button class="btn btn-primary btn-sm" onclick="sendOutreach(${l.id}, '${escapeJs(l.email)}', '${escapeJs(l.ownerName)}', '${escapeJs(l.companyName)}', 'dedicated_manager')">✉️ Email</button>
+            <button class="btn btn-light btn-sm" onclick="sendSms(${l.id}, '${escapeJs(l.phone)}', '${escapeJs(l.companyName)}')">📱 SMS</button>
+            <button class="btn btn-light btn-sm" onclick="sendWeeklyLink(${l.id})">💳 Weekly Stripe</button>
+            <button class="btn btn-light btn-sm" onclick="openSendPacketModal(${l.id}, '${escapeJs(l.companyName)}', '${escapeJs(l.email)}')">Packet</button>
             <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteLead(${l.id})">Delete</button>
           </div>
         </td>
@@ -507,15 +533,15 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ leadId, email })
+      body: JSON.stringify({ leadId, email, template_key: 'onboarding' })
     });
     if (res.ok) {
-      alert('🚀 Onboarding email packet sent successfully!');
+      alert('Setup email sent.');
       closeModal('send-packet-modal');
       loadLeads();
     } else {
-      alert('Packet sent notification logged.');
-      closeModal('send-packet-modal');
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || 'Could not send email. Check RESEND_API_KEY and MAIL_FROM.');
     }
   });
 
@@ -533,38 +559,44 @@
     container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">Querying FMCSA public registry...</div>';
 
     try {
-      const res = await fetch(`/api/crm/fmcsa/search?name=${encodeURIComponent(q)}&mc=${encodeURIComponent(q)}`, { credentials: 'include' });
+      const res = await fetch(`/api/crm/fmcsa/search?q=${encodeURIComponent(q)}`, { credentials: 'include' });
       const data = await res.json();
       btn.disabled = false;
       btn.textContent = '🔍 Scrape Carrier Leads';
 
       const carriers = data.carriers || [];
+      if (data.source === 'unconfigured') {
+        container.innerHTML = `<div style="padding:20px;color:var(--text-muted);">${escapeHtml(data.message || 'Add FMCSA_API_KEY to search live carriers.')}</div>`;
+        return;
+      }
       if (!carriers.length) {
-        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">No carriers found matching query. Try a state (e.g. TX, FL) or MC#.</div>';
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">No carriers found. Try a company name, MC#, USDOT, or state (TX).</div>';
         return;
       }
 
-      container.innerHTML = carriers.map(c => `
-        <div style="background:var(--bg-card-subtle);padding:14px 18px;border-radius:var(--radius-md);border:1px solid var(--border-default);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      container.innerHTML = carriers.map((c, idx) => `
+        <div style="background:var(--bg-card-subtle);padding:14px 18px;border-radius:var(--radius-md);border:1px solid var(--border-default);display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
           <div>
             <div style="font-weight:800;font-size:15px;color:var(--text-primary);">${escapeHtml(c.company_name)}</div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
-              ${escapeHtml(c.mc_number || 'MC-N/A')} | DOT: ${escapeHtml(c.dot_number || 'N/A')} | 📍 ${escapeHtml(c.address || 'US')}
+              ${escapeHtml(c.mc_number || 'MC-N/A')} · USDOT ${escapeHtml(c.dot_number || 'N/A')} · ${escapeHtml(c.phy_address || c.address || 'US')}
             </div>
             <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">
-              👤 <strong>${escapeHtml(c.owner_name || 'Owner')}</strong> &bull; 📞 ${escapeHtml(c.phone || 'N/A')} &bull; ✉️ ${escapeHtml(c.email || 'N/A')}
+              ${escapeHtml(c.officer_name || c.owner_name || '—')} · ${escapeHtml(c.phone || 'No phone')} · ${escapeHtml(c.email || 'No email on FMCSA')}
+              · ${c.num_trucks || 0} trucks${c.num_drivers ? ' · ' + c.num_drivers + ' drivers' : ''}
+              ${c.safety_rating ? ' · Safety: ' + escapeHtml(c.safety_rating) : ''}
+              ${c.authority_status ? ' · Authority: ' + escapeHtml(c.authority_status) : ''}
             </div>
           </div>
           <div>
-            ${c.already_in_crm ? 
-              `<span class="badge badge-paid">✅ Already in Pipeline</span>` :
-              `<button class="btn btn-primary btn-sm" onclick="importScrapedCarrier('${escapeHtml(c.company_name)}', '${escapeHtml(c.mc_number)}', '${escapeHtml(c.dot_number)}', '${escapeHtml(c.owner_name)}', '${escapeHtml(c.phone)}', '${escapeHtml(c.email)}', '${escapeHtml(c.equipment_type)}', ${c.num_trucks || 1})">
-                ➕ Import to CRM
-              </button>`
+            ${c.already_in_crm ?
+              `<span class="badge badge-paid">Already in CRM</span>` :
+              `<button class="btn btn-primary btn-sm" onclick="importScrapedIndex(${idx})">Import</button>`
             }
           </div>
         </div>
       `).join('');
+      window.__fmcsaResults = carriers;
 
     } catch (err) {
       btn.disabled = false;
@@ -573,16 +605,27 @@
     }
   }
 
-  async function importScrapedCarrier(company, mc, dot, owner, phone, email, equip, trucks) {
+  async function importScrapedIndex(idx) {
+    const c = (window.__fmcsaResults || [])[idx];
+    if (!c) return;
     const payload = {
-      company_name: company,
-      mc_number: mc,
-      dot_number: dot,
-      owner_name: owner,
-      phone: phone,
-      email: email,
-      equipment_type: equip || '53ft Dry Van',
-      num_trucks: trucks || 1
+      company_name: c.company_name,
+      mc_number: c.mc_number,
+      dot_number: c.dot_number,
+      owner_name: c.officer_name || c.owner_name,
+      phone: c.phone || 'unknown',
+      email: c.email,
+      equipment_type: c.equipment_type || '53ft Dry Van',
+      num_trucks: c.num_trucks || 1,
+      phy_address: c.phy_address || c.address,
+      phy_city: c.phy_city,
+      phy_state: c.phy_state || c.state,
+      phy_zip: c.phy_zip,
+      officer_name: c.officer_name,
+      safety_rating: c.safety_rating,
+      authority_status: c.authority_status,
+      num_drivers: c.num_drivers,
+      notes: c.email ? '' : 'FMCSA had no email. Find email before sending outreach.'
     };
 
     const res = await fetch('/api/crm/leads', {
@@ -593,15 +636,82 @@
     });
 
     if (res.ok) {
-      alert(`🚀 ${company} successfully imported into your Sales Pipeline!`);
+      alert(c.company_name + ' imported.');
       loadLeads();
     } else {
-      alert('Error importing carrier lead.');
+      const data = await res.json().catch(() => ({}));
+      alert(data.message || data.error || 'Error importing carrier lead.');
     }
   }
 
   function escapeHtml(str) {
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function escapeJs(str) {
+    return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  }
+
+  async function sendOutreach(leadId, email, ownerName, companyName, templateKey) {
+    if (!email) {
+      alert('This lead has no email. Add an email first. FMCSA often does not publish emails.');
+      return;
+    }
+    if (!confirm('Send Dedicated Operations Manager email to ' + email + '?')) return;
+    const res = await fetch('/api/email/send-outreach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        lead_id: leadId,
+        recipient_email: email,
+        owner_name: ownerName,
+        company_name: companyName,
+        template_key: templateKey || 'dedicated_manager'
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    alert(data.message || data.error || 'Send finished');
+    loadLeads();
+  }
+
+  async function sendSms(leadId, phone, companyName) {
+    if (!phone || phone === 'unknown') {
+      alert('No phone number on this lead.');
+      return;
+    }
+    if (!confirm('SMS only after they asked, or you have consent. Send Dedicated Manager SMS to ' + phone + '?')) return;
+    const res = await fetch('/api/voip/send-template-sms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        lead_id: leadId,
+        to_number: phone,
+        template_key: 'dedicated_manager',
+        company_name: companyName
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    alert(data.message || data.error || 'SMS finished');
+    loadLeads();
+  }
+
+  async function sendWeeklyLink(leadId) {
+    if (!confirm('Create a weekly Stripe billing link and email it to this carrier?')) return;
+    const res = await fetch('/api/billing/weekly-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ lead_id: leadId, plan_key: 'solo_weekly', send_email: true })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.url) {
+      alert((data.message || 'Link ready') + '\n\n' + data.url);
+    } else {
+      alert(data.error || 'Could not create billing link');
+    }
+    loadLeads();
   }
 
   async function logout() {
@@ -610,5 +720,6 @@
   }
 </script>
 
+<script src="/js/app-shell.js"></script>
 </body>
 </html>

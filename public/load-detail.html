@@ -5,41 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Load Detail | Shipping Wish LLC</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/design-system.css">
 </head>
-<body>
-
-<header class="site-header">
-  <div class="container nav-row">
-    <a href="/" class="brand"><span class="dot"></span> Shipping Wish Load Console</a>
-    <nav class="nav-links">
-      <a href="/dashboard.html">Dashboard</a>
-      <a href="/brokers.html">Brokers</a>
-      <a href="/fleet.html">Fleet</a>
-      <a href="/documents.html">Documents</a>
-      <a href="/invoices.html">Invoices</a>
-      <a href="/ifta.html">IFTA &amp; Fuel</a>
-    </nav>
-    <div class="nav-cta">
-      <span class="nav-phone" id="user-badge-detail">User</span>
-      <button id="logout-btn" class="btn btn-outline">Log Out</button>
-      <button class="nav-toggle">☰</button>
-    </div>
-  </div>
-</header>
-
-<section class="tms-shell">
-  <div class="container">
-    <div class="tms-topbar">
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar"></aside>
+  <div class="app-main">
+    <header class="app-header">
       <div>
-        <span class="eyebrow" id="load-num-eyebrow">Load SW-00000</span>
-        <h1 style="font-size:26px;" id="load-route-title">Pickup to Delivery</h1>
+        <h1 id="load-route-title">Load detail</h1>
+        <p id="load-num-eyebrow">Load SW-00000</p>
       </div>
-      <div style="display:flex;gap:12px;">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
         <span id="load-status-badge"></span>
-        <button class="btn btn-amber" data-open-modal="accessorial-modal">+ Accessorial Fee / Advance</button>
+        <button class="btn btn-primary btn-sm" data-open-modal="accessorial-modal">+ Accessorial</button>
       </div>
-    </div>
+    </header>
+    <main class="app-content">
 
     <!-- Status Pipeline Buttons -->
     <div class="tms-panel" id="status-pipeline-panel">
@@ -131,7 +113,9 @@
       </div>
     </div>
   </div>
-</section>
+    </main>
+  </div>
+</div>
 
 <!-- Add Accessorial Modal -->
 <div class="modal-overlay" id="accessorial-modal">
@@ -309,5 +293,6 @@
 
   document.addEventListener('DOMContentLoaded', initLoadDetail);
 </script>
+<script src="/js/app-shell.js"></script>
 </body>
 </html>

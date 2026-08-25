@@ -3,16 +3,21 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const { Resend } = require('resend');
+const { sendBrandedEmail } = require('./utils/mailer');
+const { buildTemplate, COMPANY } = require('./utils/email-templates');
+const { ensureGrowthSchema } = require('./utils/ensure-growth-schema');
+const { webhookHandler } = require('./routes/billing');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const MAIL_FROM = process.env.MAIL_FROM || 'Shipping Wish <onboarding@resend.dev>';
 const ADMIN_EMAILS = [process.env.ADMIN_EMAIL_1, process.env.ADMIN_EMAIL_2].filter(Boolean);
 
-app.use(express.json());
+// Stripe signatures require the raw body. These must be registered BEFORE express.json().
+app.post('/api/billing/stripe-webhook', express.raw({ type: 'application/json' }), webhookHandler);
+app.post('/api/invoices/stripe-webhook', express.raw({ type: 'application/json' }), webhookHandler);
+
+app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -65,8 +70,9 @@ app.use('/api/invoices', require('./routes/invoices'));   // Itemized PDF Freigh
 app.use('/api/dashboard', require('./routes/dashboard')); // Real-time metrics for Super Admin, Dispatcher, Carrier
 app.use('/api/loadboard', require('./routes/loadboard')); // DAT Load Finder, OpenAI Matcher & Carrier Offers Approval Flow
 app.use('/api/crm', require('./routes/crm'));             // CRM Carrier Leads, Dispositions & Daily Tasks
-app.use('/api/email', require('./routes/email'));         // Resend 1-Click Branded Outreach & Onboarding Email Packets
-app.use('/api/voip', require('./routes/voip'));           // OpenPhone & MightyCall 1-Click Call, SMS & Webhook Logger
+app.use('/api/email', require('./routes/email'));         // 1-Click branded outreach, inbound replies, unsubscribe
+app.use('/api/billing', require('./routes/billing'));     // Weekly Stripe retainers + checkout links
+app.use('/api/voip', require('./routes/voip'));           // Click-to-call, Twilio SMS, webhooks
 app.use('/api/employees', require('./routes/employees')); // Admin HR Employee Management, Salaries & Multi-Dispatcher Assignment
 app.use('/api/load-planning', require('./routes/load_planning')); // Driver Availability & Load Planning Schedule
 app.use('/api/notifications', require('./routes/notifications')); // In-app user notifications & bell counter
@@ -94,7 +100,7 @@ app.post('/api/contact', async (req, res) => {
   }
 
   const adminHtml = `
-    <h2>New Service Request — Shipping Wish</h2>
+    <h2>New operations request — Shipping Wish LLC</h2>
     <table cellpadding="6" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;">
       <tr><td><b>Name</b></td><td>${escapeHtml(name)}</td></tr>
       <tr><td><b>Company</b></td><td>${escapeHtml(company || '-')}</td></tr>
@@ -107,43 +113,46 @@ app.post('/api/contact', async (req, res) => {
     </table>
   `;
 
-  const customerHtml = `
-    <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;">
-      <h2 style="color:#14181F;">Thanks, ${escapeHtml(name)} — we've received your dispatch request.</h2>
-      <p style="color:#333;line-height:1.6;">
-        A Shipping Wish dispatcher will contact you at <b>${escapeHtml(phone)}</b> shortly to go over available freight and setup details.
-        If urgent, call us directly at <b>+1 917 737 0021</b>.
-      </p>
-      <p style="color:#333;line-height:1.6;">— The Shipping Wish LLC Dispatch Team</p>
-      <hr style="border:none;border-top:1px solid #ddd;margin:24px 0;">
-      <p style="color:#888;font-size:12px;">Shipping Wish LLC · info@shippingwish.com · +1 917 737 0021</p>
-    </div>
-  `;
+  const ack = buildTemplate('contact_ack', { name, recipientEmail: email });
 
   try {
-    if (resend && ADMIN_EMAILS.length) {
-      await resend.emails.send({
-        from: MAIL_FROM,
-        to: ADMIN_EMAILS,
-        reply_to: email,
-        subject: `New Service Request — ${name}${company ? ' (' + company + ')' : ''}`,
-        html: adminHtml
+    if (ADMIN_EMAILS.length) {
+      await sendBrandedEmail({
+        to: ADMIN_EMAILS[0],
+        cc: ADMIN_EMAILS.slice(1),
+        subject: `New operations request — ${name}${company ? ' (' + company + ')' : ''}`,
+        html: adminHtml,
+        text: `${name} / ${company} / ${phone} / ${email} / ${serviceType || ''} / ${message || ''}`,
+        emailType: 'internal_lead',
+        templateKey: 'internal_lead'
       });
+    }
 
-      await resend.emails.send({
-        from: MAIL_FROM,
-        to: email,
-        subject: 'We received your request — Shipping Wish LLC',
-        html: customerHtml
-      });
-    } else {
-      console.log('[DEV MODE] RESEND_API_KEY missing — email notification logged:', req.body);
+    await sendBrandedEmail({
+      to: email,
+      subject: ack.subject,
+      html: ack.html,
+      text: ack.text,
+      emailType: 'contact_ack',
+      templateKey: 'contact_ack'
+    });
+
+    try {
+      const pool = require('./db');
+      await pool.query(
+        `INSERT INTO crm_leads (company_name, owner_name, phone, email, notes, status)
+         VALUES ($1,$2,$3,$4,$5,'new')
+         ON CONFLICT DO NOTHING`,
+        [company || name, name, phone, email.toLowerCase(), `Website form. Service: ${serviceType || '-'}. ${message || ''}`]
+      );
+    } catch (crmErr) {
+      console.warn('[CONTACT] CRM insert skipped:', crmErr.message);
     }
 
     res.json({ ok: true, message: 'Request received.' });
   } catch (err) {
-    console.error('Resend error:', err);
-    res.status(500).json({ error: 'Could not send request right now. Please call +1 917 737 0021.' });
+    console.error('Contact email error:', err);
+    res.status(500).json({ error: `Could not send request right now. Please call ${COMPANY.phone}.` });
   }
 });
 
@@ -172,9 +181,14 @@ async function seedAdminUsers() {
 }
 
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
+  ensureGrowthSchema().then(seedAdminUsers).then(() => {
+    app.listen(PORT, () => {
+      console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
+    });
   });
+} else {
+  ensureGrowthSchema().catch((err) => console.warn('[GROWTH] schema:', err.message));
+  seedAdminUsers();
 }
 
 module.exports = app;
