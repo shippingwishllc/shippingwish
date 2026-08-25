@@ -128,7 +128,7 @@
     const home = carrier ? '/dashboard.html' : '/admin-dashboard.html';
     const links = carrier ? CARRIER_LINKS : STAFF_LINKS.concat(extraLinks());
     return `
-      <div>
+      <div class="sidebar-nav-scroll">
         <a href="${home}" class="sidebar-brand">
           <div class="nav-logo-mark">SW</div>
           <div>
@@ -138,7 +138,7 @@
         </a>
         ${renderLinks(links, active)}
       </div>
-      <div>
+      <div class="sidebar-foot">
         <div class="sidebar-user-card">
           <div class="avatar" id="user-avatar-initials" style="background:var(--color-amber-500);color:#0f172a;font-weight:800;">SW</div>
           <div style="flex:1;min-width:0;">
