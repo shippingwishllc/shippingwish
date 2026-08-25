@@ -1,146 +1,117 @@
 const express = require('express');
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { lookupCensusRow, digits } = require('../utils/fmcsa');
 
 const router = express.Router();
 
-// ============================================================
-// LIVE BROKER MC CREDIT CHECK & AUTHORITY VERIFICATION API
-// Searches FMCSA Public Database by MC# or DOT#
-// Returns Authority Standing, BMC-84 $75k Bond Status,
-// Credit Rating (A+, A, B, C, F), Days to Pay (DTP), & Factoring Approval Status
-// ============================================================
-// REAL FMCSA TOP US FREIGHT BROKERS REGISTRY (MC/DOT Map)
-const TOP_BROKERS_REGISTRY = {
-  '426176': { name: 'Total Quality Logistics, LLC (TQL)', dot: '1087402', city: 'Cincinnati', state: 'OH', score: 98, rating: 'A+', dtp: 19, limit: '$150,000', entityNote: 'FMCSA Entity Notice: MC-426176-B is Active Broker Total Quality Logistics (TQL). USDOT 426176 belongs to OCT Equipment LLC.' },
-  '149201': { name: 'C.H. Robinson Worldwide, Inc.', dot: '222718', city: 'Eden Prairie', state: 'MN', score: 99, rating: 'A+', dtp: 18, limit: '$250,000' },
-  '284910': { name: 'Echo Global Logistics, Inc.', dot: '1520194', city: 'Chicago', state: 'IL', score: 96, rating: 'A+', dtp: 21, limit: '$150,000' },
-  '502910': { name: 'Coyote Logistics, LLC', dot: '1640192', city: 'Chicago', state: 'IL', score: 97, rating: 'A+', dtp: 20, limit: '$150,000' },
-  '162810': { name: 'Landstar System, Inc.', dot: '389104', city: 'Jacksonville', state: 'FL', score: 98, rating: 'A+', dtp: 19, limit: '$200,000' },
-  '940281': { name: 'RXO Capacity Solutions, LLC', dot: '2810492', city: 'Charlotte', state: 'NC', score: 95, rating: 'A+', dtp: 22, limit: '$150,000' },
-  '104920': { name: 'J.B. Hunt Transport Services, Inc.', dot: '128401', city: 'Lowell', state: 'AR', score: 99, rating: 'A+', dtp: 17, limit: '$250,000' },
-  '394019': { name: 'XPO Freight Logistics, Inc.', dot: '1920481', city: 'Greenwich', state: 'CT', score: 97, rating: 'A+', dtp: 20, limit: '$175,000' },
-  '482019': { name: 'Worldwide Express Logistics, LLC', dot: '1829401', city: 'Dallas', state: 'TX', score: 95, rating: 'A+', dtp: 22, limit: '$150,000' },
-  '682049': { name: 'Mode Transportation Services, LLC', dot: '2019482', city: 'Dallas', state: 'TX', score: 96, rating: 'A+', dtp: 21, limit: '$150,000' },
-  '782019': { name: 'Arrive Logistics, LLC', dot: '2490192', city: 'Austin', state: 'TX', score: 97, rating: 'A+', dtp: 20, limit: '$150,000' },
-  '582049': { name: 'Nolan Transportation Group, LLC (NTG)', dot: '2104928', city: 'Atlanta', state: 'GA', score: 96, rating: 'A+', dtp: 21, limit: '$150,000' },
-  '882019': { name: 'Schneider Logistics Freight, Inc.', dot: '1492019', city: 'Green Bay', state: 'WI', score: 98, rating: 'A+', dtp: 19, limit: '$200,000' },
-  '992018': { name: 'Uber Freight LLC', dot: '2940192', city: 'San Francisco', state: 'CA', score: 95, rating: 'A+', dtp: 22, limit: '$150,000' },
-  '381049': { name: 'MegaCorp Logistics LLC', dot: '1840192', city: 'Wilmington', state: 'NC', score: 96, rating: 'A+', dtp: 21, limit: '$150,000' },
-  '281049': { name: 'GlobalTranz Enterprises, LLC', dot: '1592018', city: 'Scottsdale', state: 'AZ', score: 96, rating: 'A+', dtp: 21, limit: '$150,000' },
-  '194028': { name: 'Trinity Logistics, Inc.', dot: '1049201', city: 'Seaford', state: 'DE', score: 96, rating: 'A+', dtp: 22, limit: '$150,000' },
-  '492018': { name: 'Allen Lund Company, LLC', dot: '1820491', city: 'La Cañada Flintridge', state: 'CA', score: 98, rating: 'A+', dtp: 19, limit: '$150,000' },
-  '692014': { name: 'England Logistics, Inc.', dot: '2194018', city: 'Salt Lake City', state: 'UT', score: 95, rating: 'A+', dtp: 22, limit: '$150,000' },
-  '792018': { name: 'Armstrong Transport Group, LLC', dot: '2401928', city: 'Charlotte', state: 'NC', score: 96, rating: 'A+', dtp: 21, limit: '$150,000' },
-  '892015': { name: 'BlueGrace Logistics LLC', dot: '2591028', city: 'Riverview', state: 'FL', score: 95, rating: 'A+', dtp: 22, limit: '$150,000' },
-  '319401': { name: 'Priority1, Inc.', dot: '1940192', city: 'Little Rock', state: 'AR', score: 95, rating: 'A+', dtp: 22, limit: '$150,000' },
-  '592018': { name: 'Sunset Transportation, Inc.', dot: '1720491', city: 'St. Louis', state: 'MO', score: 96, rating: 'A+', dtp: 21, limit: '$150,000' },
-  '694019': { name: 'Spot Freight, Inc.', dot: '2194019', city: 'Indianapolis', state: 'IN', score: 96, rating: 'A+', dtp: 21, limit: '$150,000' },
-  '123456': { name: 'Apex Freight Systems LLC', dot: '1123456', city: 'Dallas', state: 'TX', score: 96, rating: 'A+', dtp: 20, limit: '$150,000' },
-  '987654': { name: 'Tri-State Logistics Solutions Inc', dot: '1987654', city: 'Chicago', state: 'IL', score: 95, rating: 'A+', dtp: 22, limit: '$150,000' },
-  '555555': { name: 'Pinnacle Express Freight Corp', dot: '1555555', city: 'Atlanta', state: 'GA', score: 97, rating: 'A+', dtp: 19, limit: '$150,000' },
-  '777777': { name: 'Summit Cargo Logistics Inc', dot: '1777777', city: 'Houston', state: 'TX', score: 96, rating: 'A+', dtp: 21, limit: '$150,000' },
-  '111111': { name: 'Vanguard Freight Services LLC', dot: '1111111', city: 'Memphis', state: 'TN', score: 95, rating: 'A+', dtp: 22, limit: '$150,000' },
-  '222222': { name: 'Meridian Logistics Network Inc', dot: '1222222', city: 'Denver', state: 'CO', score: 96, rating: 'A+', dtp: 20, limit: '$150,000' }
-};
+function formatPhone(value) {
+  const d = digits(value);
+  if (d.length === 10) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  return String(value || '').trim();
+}
+
+function formatCensusDate(raw) {
+  const d = String(raw || '').replace(/\D/g, '');
+  if (d.length < 8) return '';
+  return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+}
+
+function entityTypes(carship) {
+  const map = { C: 'Carrier', B: 'Broker', S: 'Shipper', F: 'Freight Forwarder' };
+  return String(carship || '')
+    .split(/[;,/]/)
+    .map((part) => map[part.trim().toUpperCase()] || '')
+    .filter(Boolean);
+}
+
+function censusBrokerPayload(row) {
+  const mc = digits(row.docket1);
+  const prefix = String(row.docket1prefix || 'MC').toUpperCase();
+  const types = entityTypes(row.carship);
+  const usdotActive = String(row.status_code || '').toUpperCase() === 'A';
+  const docketActive = String(row.docket1_status_code || '').toUpperCase() === 'A';
+  const isBroker = types.includes('Broker');
+  const cityState = [row.phy_city, row.phy_state, row.phy_zip].filter(Boolean).join(', ');
+  const address = [row.phy_street, cityState].filter(Boolean).join(', ');
+  const authorityBits = [];
+  authorityBits.push(usdotActive ? 'USDOT ACTIVE' : 'USDOT INACTIVE');
+  if (row.docket1_status_code) {
+    authorityBits.push(`${prefix} docket ${docketActive ? 'ACTIVE' : row.docket1_status_code}`);
+  }
+  if (row.classdef) authorityBits.push(row.classdef);
+  if (types.length) authorityBits.push(types.join(' + '));
+
+  return {
+    ok: true,
+    authentic: true,
+    source: 'FMCSA Census',
+    mcNumber: mc ? `${prefix}-${mc}` : '',
+    dotNumber: String(row.dot_number || ''),
+    companyName: row.legal_name || row.dba_name || 'Unknown',
+    cityState: cityState || 'US',
+    address,
+    phone: formatPhone(row.phone),
+    email: String(row.email_address || '').toLowerCase(),
+    officer: String(row.company_officer_1 || '').replace(/\s+/g, ' ').trim(),
+    entityTypes: types.join(', ') || 'Not listed',
+    authorityStatus: authorityBits.join(' — '),
+    usdotActive,
+    isBroker,
+    addDate: formatCensusDate(row.add_date),
+    bondStatus: 'Not in FMCSA census. Confirm BMC-84/BMC-85 on FMCSA L&I.',
+    bondUrl: row.dot_number
+      ? `https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&query_string=${encodeURIComponent(row.dot_number)}`
+      : 'https://safer.fmcsa.dot.gov/',
+    creditRating: 'N/A',
+    creditScore: null,
+    daysToPay: null,
+    factoringStatus: 'Not published by FMCSA. Check Highway, DAT, or your factor.',
+    creditLimit: 'Not published by FMCSA',
+    riskLevel: usdotActive ? 'FMCSA ACTIVE' : 'FMCSA INACTIVE',
+    entityNote: isBroker
+      ? 'FMCSA lists broker authority on this docket. Credit score / days-to-pay are not government data.'
+      : 'FMCSA does not list Broker on this docket (carrier/shipper only). Credit score is not government data.',
+    verifiedAt: new Date().toISOString()
+  };
+}
 
 router.get('/credit-check/:mc', requireAuth, async (req, res) => {
-  const rawInput = req.params.mc.trim();
-  const mcInput = rawInput.replace(/\D/g, ''); // strip non-numeric
-  if (!mcInput) {
+  const rawInput = String(req.params.mc || '').trim();
+  if (!rawInput) {
     return res.status(400).json({ error: 'Valid MC or DOT number is required.' });
   }
 
   try {
-    // 1. Check Top Brokers Registry (Exact MC match)
-    if (TOP_BROKERS_REGISTRY[mcInput]) {
-      const reg = TOP_BROKERS_REGISTRY[mcInput];
-      return res.json({
-        ok: true,
-        mcNumber: `MC-${mcInput}`,
-        dotNumber: `DOT-${reg.dot}`,
-        companyName: reg.name,
-        cityState: `${reg.city}, ${reg.state}`,
-        authorityStatus: 'ACTIVE — AUTHORIZED FOR PROPERTY BROKER',
-        creditRating: reg.rating,
-        creditScore: reg.score,
-        daysToPay: reg.dtp,
-        factoringStatus: 'APPROVED (Apex, RTS, TriumphPay, OTR Solutions)',
-        bondStatus: 'VERIFIED ($75,000 BMC-84 Surety Bond Active)',
-        creditLimit: `${reg.limit} per Carrier`,
-        riskLevel: reg.score >= 95 ? 'PRIME / EXCELLENT CREDIT' : 'LOW RISK',
-        entityNote: reg.entityNote || `Property Broker Authority MC-${mcInput}`,
-        verifiedAt: new Date().toISOString()
+    const row = await lookupCensusRow(rawInput);
+    if (!row) {
+      return res.status(404).json({
+        error: `No FMCSA census record for ${rawInput}. Check the MC/DOT, or search the legal name.`
       });
     }
 
-    // 2. Check local DB table if explicitly saved by user
-    const dbRes = await pool.query('SELECT * FROM brokers WHERE lower(mc_number) = lower($1) OR mc_number = $2 OR lower(mc_number) = lower($3)', [mcInput, `MC-${mcInput}`, rawInput]);
-    if (dbRes.rows.length) {
-      const b = dbRes.rows[0];
-      return res.json({
-        ok: true,
-        mcNumber: b.mc_number.startsWith('MC-') ? b.mc_number : `MC-${b.mc_number}`,
-        dotNumber: `DOT-${1000000 + parseInt(mcInput, 10)}`,
-        companyName: b.company_name,
-        cityState: 'Dallas, TX',
-        authorityStatus: 'ACTIVE — AUTHORIZED FOR PROPERTY BROKER',
-        creditRating: b.credit_rating || 'A+',
-        creditScore: 97,
-        daysToPay: 20,
-        factoringStatus: 'APPROVED (Apex, RTS, TriumphPay, OTR Solutions)',
-        bondStatus: 'VERIFIED ($75,000 BMC-84 Surety Bond Active)',
-        creditLimit: '$150,000 per Carrier',
-        riskLevel: 'LOW RISK',
-        verifiedAt: new Date().toISOString()
-      });
+    const payload = censusBrokerPayload(row);
+    const mcDigits = digits(payload.mcNumber);
+    try {
+      const saved = await pool.query(
+        `SELECT id, credit_rating, notes FROM brokers
+         WHERE regexp_replace(coalesce(mc_number,''), '[^0-9]', '', 'g') = $1
+         LIMIT 1`,
+        [mcDigits]
+      );
+      if (saved.rows.length) {
+        payload.alreadySaved = true;
+        payload.directoryId = saved.rows[0].id;
+        payload.directoryRating = saved.rows[0].credit_rating || '';
+      }
+    } catch {
+      // directory lookup is optional
     }
 
-    // 3. FMCSA Verification & Credit Calculation
-    const mcNumInt = parseInt(mcInput, 10);
-    const formattedMc = `MC-${mcInput}`;
-    const generatedDot = `DOT-${1500000 + (mcNumInt % 900000)}`;
-    const cleanBrokerName = `Freight Broker Operations (MC-${mcInput})`;
-    
-    let score = 92;
-    let rating = 'A';
-    let daysToPay = 24;
-    let limit = '$100,000 per Carrier';
-    let riskLevel = 'LOW RISK';
-
-    if (mcNumInt > 1500000) {
-      score = 83;
-      rating = 'B+';
-      daysToPay = 31;
-      limit = '$35,000 per Carrier';
-      riskLevel = 'MODERATE RISK (New Authority)';
-    } else if (mcNumInt < 300000) {
-      score = 98;
-      rating = 'A+';
-      daysToPay = 19;
-      limit = '$200,000 per Carrier';
-      riskLevel = 'PRIME / EXCELLENT CREDIT';
-    }
-
-    res.json({
-      ok: true,
-      mcNumber: formattedMc,
-      dotNumber: generatedDot,
-      companyName: cleanBrokerName,
-      cityState: 'US',
-      authorityStatus: 'ACTIVE — AUTHORIZED FOR PROPERTY BROKER',
-      creditRating: rating,
-      creditScore: score,
-      daysToPay,
-      factoringStatus: 'APPROVED (Apex, RTS, TriumphPay, OTR Solutions)',
-      bondStatus: 'VERIFIED ($75,000 BMC-84 Surety Bond Active)',
-      creditLimit: limit,
-      riskLevel,
-      verifiedAt: new Date().toISOString()
-    });
+    return res.json(payload);
   } catch (err) {
     console.error('Credit check error:', err);
-    res.status(500).json({ error: 'Could not perform credit check.' });
+    res.status(500).json({ error: 'Could not look up FMCSA census for this broker.' });
   }
 });
 
@@ -178,7 +149,7 @@ router.post('/', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'),
       `INSERT INTO brokers (company_name, mc_number, contact_person, email, phone, credit_rating, notes)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [company_name, mc_number || null, contact_person || null, email || null, phone || null, credit_rating || 'A', notes || null]
+      [company_name, mc_number || null, contact_person || null, email || null, phone || null, credit_rating || 'Unrated', notes || null]
     );
     res.json({ ok: true, broker: result.rows[0] });
   } catch (err) {

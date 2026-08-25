@@ -439,7 +439,7 @@ async function censusQuery(params) {
   return Array.isArray(data) ? data : [];
 }
 
-async function searchCensus(classified, attempts) {
+async function searchCensusRows(classified) {
   let rows = [];
   let label = 'census';
   if (classified.type === 'mc') {
@@ -459,15 +459,26 @@ async function searchCensus(classified, attempts) {
     });
   } else {
     const q = soqlLike(classified.value);
-    if (q.length < 3) return [];
+    if (q.length < 3) return { rows: [], label: 'census/name-too-short' };
     label = `census/name/${q}`;
     rows = await censusQuery({
       $where: `upper(legal_name) like '%${q}%'`,
       $limit: '20'
     });
   }
+  return { rows, label };
+}
+
+async function searchCensus(classified, attempts) {
+  const { rows, label } = await searchCensusRows(classified);
   if (attempts) attempts.push({ path: label, status: 200, result: rows.length ? `hit ${rows.length}` : 'empty' });
   return rows.map(censusToCarrier).filter((c) => c && c.company_name);
+}
+
+async function lookupCensusRow(query) {
+  const classified = classifyQuery(query);
+  const { rows } = await searchCensusRows(classified);
+  return rows[0] || null;
 }
 
 const STATE_SEED_NAMES = [
@@ -586,6 +597,7 @@ async function searchFmcsa(query) {
 module.exports = {
   classifyQuery,
   searchFmcsa,
+  lookupCensusRow,
   normalizeCarrier,
   enrichOne,
   digits
