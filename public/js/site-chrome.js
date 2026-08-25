@@ -97,7 +97,7 @@
           <div class="nav-logo-mark">SW</div>
           <div class="nav-logo-text">Shipping <span>Wish</span></div>
         </a>
-        <p>Delaware LLC. Dedicated fleet operations managers for U.S. motor carriers. Flat weekly subscription. You keep 100% of freight pay. TMS included.</p>
+        <p>Dedicated fleet operations managers for motor carriers. Flat weekly subscription. You keep 100% of freight pay. TMS included.</p>
         <div class="footer-contact">
           <div class="footer-contact-item">+1 (917) 737-0021</div>
           <div class="footer-contact-item">info@shippingwish.com</div>
@@ -133,7 +133,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© ${new Date().getFullYear()} Shipping Wish LLC. Registered in Delaware, USA. Independent operations support — not a freight broker or motor carrier.</p>
+      <p>© ${new Date().getFullYear()} Shipping Wish LLC. Independent operations support — not a freight broker or motor carrier.</p>
       <p>Secure checkout by Stripe. Visa, Mastercard, American Express, and Discover accepted.</p>
     </div>
   </div>`;

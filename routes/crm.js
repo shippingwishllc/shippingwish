@@ -487,7 +487,7 @@ router.put('/tasks/:id/toggle', requireAuth, async (req, res) => {
 router.get('/script', requireAuth, (req, res) => {
   res.json({
     call_openers: [
-      'Hi, this is {name} with Shipping Wish LLC in Delaware. I am not calling to book a random load. We place a Dedicated Fleet Operations Manager with small carriers — someone who works your trucks only. Do you already have that person in-house?',
+      'Hi, this is {name} with Shipping Wish LLC. I am not calling to book a random load. We place a Dedicated Fleet Operations Manager with small carriers — someone who works your trucks only. Do you already have that person in-house?',
       'Quick question — who currently books freight for your trucks, you or a dedicated manager?',
       'I will be brief. We invoice a small weekly retainer. You keep 100% of the broker pay. Would that model even be useful, or are you fully covered?'
     ],

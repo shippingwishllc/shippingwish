@@ -61,7 +61,7 @@ function wrapCorporateEmail({ preheader, heading, bodyHtml, ctaLabel, ctaUrl, re
           <tr>
             <td style="background:#0f172a;padding:18px 28px;">
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#f59e0b;font-weight:700;">Shipping Wish LLC</p>
-              <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#cbd5e1;">Delaware · U.S. Motor Carrier Operations Support</p>
+              <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#cbd5e1;">Fleet operations · Load booking · TMS</p>
             </td>
           </tr>
           <tr>
@@ -107,8 +107,8 @@ function dedicatedManagerEmail({ ownerName, companyName, recipientEmail }) {
   const bodyHtml = `
     <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">Hello ${escapeHtml(name)},</p>
     <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
-      I am writing from <strong>Shipping Wish LLC</strong>, a Delaware company that places a
-      <strong>Dedicated Fleet Operations Manager</strong> with small U.S. motor carriers.
+      I am writing from <strong>Shipping Wish LLC</strong>. We place a
+      <strong>Dedicated Fleet Operations Manager</strong> with small motor carriers.
     </p>
     <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
       That person works your trucks only: finding freight, talking to brokers, booking loads you approve,
@@ -129,7 +129,7 @@ function dedicatedManagerEmail({ ownerName, companyName, recipientEmail }) {
   `;
   const text = `Hello ${name},
 
-I am writing from Shipping Wish LLC, a Delaware company that places a Dedicated Fleet Operations Manager with small U.S. motor carriers.
+I am writing from Shipping Wish LLC. We place a Dedicated Fleet Operations Manager with small motor carriers.
 
 That person works your trucks only: finding freight, talking to brokers, booking loads you approve, and handling paperwork. You collect freight pay from the broker. We invoice a small weekly amount for the manager — not a cut of your load.
 
