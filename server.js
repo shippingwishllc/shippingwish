@@ -20,7 +20,23 @@ app.post('/api/invoices/stripe-webhook', express.raw({ type: 'application/json' 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+
+function requestQuery(req) {
+  const q = req.url.indexOf('?');
+  return q >= 0 ? req.url.slice(q) : '';
+}
+
+// /login.html → /login (and /index.html → /). Static files stay as .html on disk.
+app.use((req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  const p = req.path;
+  if (p.startsWith('/api') || p.startsWith('/uploads')) return next();
+  if (p === '/index.html') return res.redirect(301, '/' + requestQuery(req));
+  if (p.endsWith('.html')) return res.redirect(301, p.slice(0, -5) + requestQuery(req));
+  next();
+});
+
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ---------- Health & DB Diagnostic Endpoint ----------

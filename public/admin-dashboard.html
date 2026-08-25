@@ -27,35 +27,35 @@
       <a href="javascript:void(0)" class="sidebar-nav-link active" id="nav-tab-loads" onclick="switchAdminTab('loads')">
         <span aria-hidden="true">📊</span> Overview &amp; Loads
       </a>
-      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link">
+      <a href="/dispatcher-dashboard" class="sidebar-nav-link">
         <span aria-hidden="true">🎧</span> Dispatch Desk
       </a>
-      <a href="/brokers.html" class="sidebar-nav-link">
+      <a href="/brokers" class="sidebar-nav-link">
         <span aria-hidden="true">🤝</span> Broker Directory &amp; Credit
       </a>
-      <a href="/fleet.html" class="sidebar-nav-link">
+      <a href="/fleet" class="sidebar-nav-link">
         <span aria-hidden="true">🚛</span> Fleet &amp; Drivers
       </a>
 
       <div class="sidebar-section-label">Sales &amp; Staff</div>
-      <a href="/crm-sales.html" class="sidebar-nav-link">
+      <a href="/crm-sales" class="sidebar-nav-link">
         <span aria-hidden="true">📈</span> Sales CRM &amp; Leads
       </a>
-      <a href="/staff-management.html" class="sidebar-nav-link">
+      <a href="/staff-management" class="sidebar-nav-link">
         <span aria-hidden="true">👔</span> Company Staff &amp; Roles
       </a>
 
       <div class="sidebar-section-label">Accounting &amp; Taxes</div>
-      <a href="/invoices.html" class="sidebar-nav-link">
+      <a href="/invoices" class="sidebar-nav-link">
         <span aria-hidden="true">💳</span> Invoices &amp; Billing
       </a>
-      <a href="/ifta.html" class="sidebar-nav-link">
+      <a href="/ifta" class="sidebar-nav-link">
         <span aria-hidden="true">⛽</span> IFTA &amp; Fuel Ledger
       </a>
-      <a href="/documents.html" class="sidebar-nav-link">
+      <a href="/documents" class="sidebar-nav-link">
         <span aria-hidden="true">📄</span> Document Vault (POD/BOL)
       </a>
-      <a href="/load-planning.html" class="sidebar-nav-link">
+      <a href="/load-planning" class="sidebar-nav-link">
         <span aria-hidden="true">📅</span> Load Planning
       </a>
 
@@ -184,7 +184,7 @@
                 <option value="invoiced">Invoiced</option>
                 <option value="paid">Paid</option>
               </select>
-              <a href="/dispatcher-dashboard.html" class="btn btn-primary btn-sm" id="btn-create-load-admin">+ Book New Load</a>
+              <a href="/dispatcher-dashboard" class="btn btn-primary btn-sm" id="btn-create-load-admin">+ Book New Load</a>
             </div>
           </div>
 
@@ -434,10 +434,10 @@
   async function checkAuth() {
     try {
       const res = await fetch('/api/me', { credentials: 'include' });
-      if (!res.ok) { window.location.href = '/login.html'; return; }
+      if (!res.ok) { window.location.href = '/login'; return; }
       const data = await res.json();
       if (!data.user || !['super_admin', 'admin'].includes(data.user.role)) {
-        window.location.href = '/login.html';
+        window.location.href = '/login';
         return;
       }
       const nameEl = document.getElementById('user-name-display');
@@ -447,7 +447,7 @@
       if (roleEl) roleEl.textContent = (data.user.role || 'Admin').toUpperCase();
       if (avEl) avEl.textContent = (data.user.name || 'SA').slice(0, 2).toUpperCase();
     } catch (err) {
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     }
   }
 
@@ -531,7 +531,7 @@
         <td><strong style="color:var(--color-success);">$${parseFloat(l.rate || 0).toLocaleString()}</strong></td>
         <td><span class="badge ${getStatusBadge(l.status)}">${formatStatus(l.status)}</span></td>
         <td>
-          <a href="/load-detail.html?id=${l.id}" class="btn btn-secondary btn-sm" id="btn-view-load-${l.id}">View Detail</a>
+          <a href="/load-detail?id=${l.id}" class="btn btn-secondary btn-sm" id="btn-view-load-${l.id}">View Detail</a>
         </td>
       </tr>
     `).join('');
@@ -605,7 +605,7 @@
           <td>${new Date(c.created_at).toLocaleDateString()}</td>
           <td><span class="badge ${c.is_suspended ? 'badge-red' : 'badge-green'}">${c.is_suspended ? 'Suspended' : 'Active'}</span></td>
           <td>
-            <a href="/contact.html" class="btn btn-secondary btn-sm" id="btn-edit-carrier-${c.id}">Manage</a>
+            <a href="/contact" class="btn btn-secondary btn-sm" id="btn-edit-carrier-${c.id}">Manage</a>
           </td>
         </tr>
       `).join('');
@@ -790,9 +790,9 @@
   async function logout() {
     try {
       await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     } catch (e) {
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     }
   }
 </script>

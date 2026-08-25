@@ -24,7 +24,7 @@
       </a>
 
       <div class="sidebar-section-label">Operations</div>
-      <a href="/admin-dashboard.html" class="sidebar-nav-link">
+      <a href="/admin-dashboard" class="sidebar-nav-link">
         <span aria-hidden="true">📊</span> Overview &amp; Loads
       </a>
       <a href="javascript:void(0)" class="sidebar-nav-link active" id="nav-tab-desk" onclick="switchDeskTab('desk')">
@@ -33,37 +33,37 @@
       <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-fleets" onclick="switchDeskTab('fleets')">
         <span aria-hidden="true">🚛</span> My Assigned Fleets
       </a>
-      <a href="/brokers.html" class="sidebar-nav-link">
+      <a href="/brokers" class="sidebar-nav-link">
         <span aria-hidden="true">🤝</span> Broker Directory &amp; Credit
       </a>
-      <a href="/fleet.html" class="sidebar-nav-link">
+      <a href="/fleet" class="sidebar-nav-link">
         <span aria-hidden="true">🚛</span> Fleet &amp; Drivers
       </a>
 
       <div class="sidebar-section-label">Sales &amp; Staff</div>
-      <a href="/crm-sales.html" class="sidebar-nav-link">
+      <a href="/crm-sales" class="sidebar-nav-link">
         <span aria-hidden="true">📈</span> Sales CRM &amp; Leads
       </a>
-      <a href="/staff-management.html" class="sidebar-nav-link">
+      <a href="/staff-management" class="sidebar-nav-link">
         <span aria-hidden="true">👔</span> Company Staff &amp; Roles
       </a>
 
       <div class="sidebar-section-label">Accounting &amp; Taxes</div>
-      <a href="/invoices.html" class="sidebar-nav-link">
+      <a href="/invoices" class="sidebar-nav-link">
         <span aria-hidden="true">💳</span> Invoices &amp; Billing
       </a>
-      <a href="/ifta.html" class="sidebar-nav-link">
+      <a href="/ifta" class="sidebar-nav-link">
         <span aria-hidden="true">⛽</span> IFTA &amp; Fuel Ledger
       </a>
-      <a href="/documents.html" class="sidebar-nav-link">
+      <a href="/documents" class="sidebar-nav-link">
         <span aria-hidden="true">📄</span> Document Vault (POD/BOL)
       </a>
-      <a href="/load-planning.html" class="sidebar-nav-link">
+      <a href="/load-planning" class="sidebar-nav-link">
         <span aria-hidden="true">📅</span> Load Planning
       </a>
 
       <div class="sidebar-section-label">Security &amp; System</div>
-      <a href="/admin-dashboard.html#audit" class="sidebar-nav-link">
+      <a href="/admin-dashboard#audit" class="sidebar-nav-link">
         <span aria-hidden="true">🛡️</span> Security Audit Logs
       </a>
     </div>
@@ -462,10 +462,10 @@
   async function checkAuth() {
     try {
       const res = await fetch('/api/me', { credentials: 'include' });
-      if (!res.ok) { window.location.href = '/login.html'; return; }
+      if (!res.ok) { window.location.href = '/login'; return; }
       const data = await res.json();
       if (!data.user || !['dispatcher', 'admin', 'super_admin'].includes(data.user.role)) {
-        window.location.href = '/login.html';
+        window.location.href = '/login';
         return;
       }
       const nameEl = document.getElementById('disp-name-display') || document.getElementById('user-name-display');
@@ -475,7 +475,7 @@
       if (roleEl) roleEl.textContent = (data.user.role || 'Dispatcher').toUpperCase();
       if (avEl) avEl.textContent = (data.user.name || 'DS').slice(0, 2).toUpperCase();
     } catch (err) {
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     }
   }
 
@@ -576,7 +576,7 @@
           <td>${statusUi}</td>
           <td>
             <div style="display:flex;gap:4px;flex-wrap:nowrap;">
-              <a href="/load-detail.html?id=${l.id}" class="btn-table-action" id="btn-detail-${l.id}">View Detail</a>
+              <a href="/load-detail?id=${l.id}" class="btn-table-action" id="btn-detail-${l.id}">View Detail</a>
               <button onclick="openChatModal('${l.id}', '${l.load_number}')" class="btn-table-action sms" title="Load Chat" id="btn-chat-${l.id}">💬</button>
               ${(!isCancelled && !isPendingCancel) ? `<button onclick="requestCancelModal('${l.id}', '${l.load_number}')" class="btn-table-action call" style="background:#fef2f2;color:#991b1b;border-color:#fecaca;" title="Request Load Cancellation">🚫 Cancel</button>` : ''}
             </div>
@@ -871,7 +871,7 @@
             <td>MC: ${escapeHtml(c.mc_number || 'N/A')}<br>DOT: ${escapeHtml(c.dot_number || 'N/A')}</td>
             <td>${escapeHtml(c.phone || '-')}<br>${escapeHtml(c.email)}</td>
             <td><span class="badge badge-amber">${c.active_loads || 0} active loads</span></td>
-            <td><a href="/fleet.html" class="btn btn-secondary btn-sm" id="btn-fleet-detail-${c.id}">View Fleet</a></td>
+            <td><a href="/fleet" class="btn btn-secondary btn-sm" id="btn-fleet-detail-${c.id}">View Fleet</a></td>
           </tr>
         `).join('');
       } else {
@@ -890,21 +890,21 @@
         <td>MC: MC-149201<br>DOT: 3940192</td>
         <td>+1 917 555 0192<br>dispatch@apextransport.com</td>
         <td><span class="badge badge-amber">2 active loads</span></td>
-        <td><a href="/fleet.html" class="btn btn-secondary btn-sm">View Fleet</a></td>
+        <td><a href="/fleet" class="btn btn-secondary btn-sm">View Fleet</a></td>
       </tr>
       <tr>
         <td><strong style="color:var(--text-primary);">BlueSky Logistics</strong></td>
         <td>MC: MC-284910<br>DOT: 4820193</td>
         <td>+1 404 555 0148<br>mvance@blueskyfreight.com</td>
         <td><span class="badge badge-amber">1 active load</span></td>
-        <td><a href="/fleet.html" class="btn btn-secondary btn-sm">View Fleet</a></td>
+        <td><a href="/fleet" class="btn btn-secondary btn-sm">View Fleet</a></td>
       </tr>
       <tr>
         <td><strong style="color:var(--text-primary);">Tri-State Hauling</strong></td>
         <td>MC: MC-940281<br>DOT: 5820491</td>
         <td>+1 312 555 0184<br>robert@tristatehaul.com</td>
         <td><span class="badge badge-amber">3 active loads</span></td>
-        <td><a href="/fleet.html" class="btn btn-secondary btn-sm">View Fleet</a></td>
+        <td><a href="/fleet" class="btn btn-secondary btn-sm">View Fleet</a></td>
       </tr>
     `;
   }

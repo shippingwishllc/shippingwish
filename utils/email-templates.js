@@ -40,11 +40,11 @@ function verifyUnsubscribeToken(token) {
 }
 
 function unsubscribeUrl(email) {
-  return `${APP_URL}/unsubscribe.html?t=${encodeURIComponent(unsubscribeToken(email))}`;
+  return `${APP_URL}/unsubscribe?t=${encodeURIComponent(unsubscribeToken(email))}`;
 }
 
 function wrapCorporateEmail({ preheader, heading, bodyHtml, ctaLabel, ctaUrl, recipientEmail }) {
-  const unsub = recipientEmail ? unsubscribeUrl(recipientEmail) : `${APP_URL}/unsubscribe.html`;
+  const unsub = recipientEmail ? unsubscribeUrl(recipientEmail) : `${APP_URL}/unsubscribe`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -249,7 +249,7 @@ function loadBookedEmail({ ownerName, companyName, recipientEmail, loadSummary }
       heading,
       bodyHtml,
       ctaLabel: 'Open carrier portal',
-      ctaUrl: `${APP_URL}/login.html`,
+      ctaUrl: `${APP_URL}/login`,
       recipientEmail
     }),
     text

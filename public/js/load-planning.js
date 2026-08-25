@@ -7,10 +7,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function checkAuth() {
   try {
     const res = await fetch('/api/me', { credentials: 'include' });
-    if (!res.ok) { window.location.href = '/login.html'; return; }
+    if (!res.ok) { window.location.href = '/login'; return; }
     const data = await res.json();
     const user = data.user;
-    if (!user) { window.location.href = '/login.html'; return; }
+    if (!user) { window.location.href = '/login'; return; }
 
     const disp = document.getElementById('user-display-name');
     if (disp) disp.textContent = user.name || user.email;
@@ -21,7 +21,7 @@ async function checkAuth() {
     const initials = document.getElementById('lp-avatar-initials');
     if (initials) initials.textContent = (user.name || 'LP').slice(0, 2).toUpperCase();
   } catch (err) {
-    window.location.href = '/login.html';
+    window.location.href = '/login';
   }
 }
 

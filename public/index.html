@@ -3,1552 +3,302 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shipping Wish LLC — Technology-Powered Freight Dispatch & Fleet Operations</title>
-  <meta name="description" content="Shipping Wish LLC provides technology-powered freight dispatch, fleet management, and carrier operations support for US trucking companies. 24/7 dispatch, load booking, document management, and more.">
-  <meta name="keywords" content="truck dispatch service, freight dispatch, carrier dispatch, trucking TMS, fleet management, load booking, driver tracking, trucking technology">
+  <title>Dedicated Fleet Operations Manager for Trucking Companies | Shipping Wish LLC</title>
+  <meta name="description" content="Hire a 24/7 dedicated fleet operations manager for your motor carrier. Weekly subscription from $149. TMS included. We book freight so you do not need DAT. $0 due this week. You keep 100% of broker pay.">
+  <meta name="keywords" content="dedicated fleet operations manager, hire trucking company manager, owner operator TMS, small fleet management service, book freight without DAT, high RPM less deadhead, motor carrier back office, 24/7 fleet operations desk, weekly trucking operations subscription, Delaware trucking operations LLC, freight load booking service, carrier TMS portal, owner operator back office, trucking company staff for hire">
   <link rel="canonical" href="https://www.shippingwish.com/">
-
-  <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.shippingwish.com/">
-  <meta property="og:title" content="Shipping Wish LLC — Technology-Powered Freight Dispatch">
-  <meta property="og:description" content="Technology-powered dispatch and fleet operations built for modern American carriers. 24/7 support, full TMS platform, professional dispatch team.">
+  <meta property="og:title" content="Hire a Dedicated Fleet Operations Manager | Shipping Wish LLC">
+  <meta property="og:description" content="A named operations manager works as staff for your company. Weekly plan. TMS included. First week free.">
   <meta property="og:image" content="https://www.shippingwish.com/images/og-image.png">
-
-  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Shipping Wish LLC — Freight Dispatch & Fleet Operations">
-  <meta name="twitter:description" content="Technology-powered dispatch and fleet operations for US carriers.">
-
-  <!-- Favicon -->
+  <meta name="twitter:title" content="Dedicated Fleet Operations Manager | Shipping Wish LLC">
+  <meta name="twitter:description" content="Weekly subscription. TMS included. We book the freight. You keep the pay.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-
-  <!-- Design System -->
   <link rel="stylesheet" href="/css/design-system.css">
-
-  <style>
-    /* ===== PAGE-SPECIFIC STYLES ===== */
-
-    /* Hero */
-    /* Hero Container & Layout Grid */
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      padding: 0px var(--space-6) 28px;
-      max-width: 1280px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Hero Live Telemetry Marquee Ticker */
-    .hero-ticker-bar {
-      background: rgba(15, 23, 42, 0.95);
-      border-bottom: 1px solid rgba(245, 158, 11, 0.18);
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-      padding: 9px 0;
-      overflow: hidden;
-      white-space: nowrap;
-      position: relative;
-      z-index: 10;
-    }
-    .ticker-track {
-      display: inline-flex;
-      align-items: center;
-      gap: 40px;
-      animation: tickerScroll 40s linear infinite;
-    }
-    @keyframes tickerScroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-    .ticker-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.88);
-    }
-    .ticker-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 10px #10b981;
-      display: inline-block;
-    }
-    .ticker-dot-amber {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #f59e0b;
-      box-shadow: 0 0 10px #f59e0b;
-      display: inline-block;
-    }
-
-    .hero-grid-2col {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: var(--space-10);
-      align-items: center;
-      width: 100%;
-    }
-
-    .hero-headline {
-      font-size: clamp(2.25rem, 5vw, 3.75rem);
-      font-weight: var(--font-black);
-      line-height: 1.08;
-      letter-spacing: -0.03em;
-      color: var(--color-white);
-      max-width: 650px;
-      margin-bottom: var(--space-6);
-    }
-
-    .hero-headline .accent {
-      color: var(--color-amber-400);
-      position: relative;
-    }
-
-    .hero-subheadline {
-      font-size: var(--text-lg);
-      color: rgba(255,255,255,0.7);
-      line-height: var(--leading-relaxed);
-      max-width: 540px;
-      margin-bottom: var(--space-8);
-    }
-
-    /* Hero Right Visual Animation Card */
-    .hero-visual-card {
-      background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,41,59,0.9) 100%);
-      border: 1px solid rgba(245,158,11,0.25);
-      border-radius: var(--radius-2xl);
-      padding: var(--space-6);
-      box-shadow: 0 30px 60px -15px rgba(0,0,0,0.6), 0 0 40px rgba(245,158,11,0.1);
-      position: relative;
-      animation: floatCard 6s ease-in-out infinite;
-      width: 100%;
-      max-width: 580px;
-      justify-self: end;
-    }
-
-    @keyframes floatCard {
-      0%, 100% { transform: translateY(0px); }
-      50%      { transform: translateY(-8px); }
-    }
-
-    .hero-floating-badge {
-      position: absolute;
-      background: rgba(15,23,42,0.95);
-      border: 1px solid rgba(255,255,255,0.15);
-      padding: 8px 14px;
-      border-radius: var(--radius-xl);
-      font-size: 11px;
-      font-weight: 700;
-      color: #fff;
-      box-shadow: var(--shadow-xl);
-      z-index: 10;
-      backdrop-filter: blur(12px);
-    }
-
-    @media (max-width: 1024px) {
-      .hero-content { padding: 60px var(--space-4) 40px; }
-      .hero-grid-2col { grid-template-columns: 1fr; gap: var(--space-8); }
-      .hero-visual-card { max-width: 540px; margin: 0 auto; justify-self: center; }
-      .hero-metrics {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: var(--space-6) !important;
-        margin-top: var(--space-10) !important;
-        padding-top: var(--space-8) !important;
+  <link rel="stylesheet" href="/css/marketing.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "name": "Shipping Wish LLC",
+        "url": "https://www.shippingwish.com",
+        "email": "info@shippingwish.com",
+        "telephone": "+1-917-737-0021",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "19266 Coastal Hwy",
+          "addressLocality": "Rehoboth Beach",
+          "addressRegion": "DE",
+          "postalCode": "19971",
+          "addressCountry": "US"
+        },
+        "description": "Delaware LLC providing dedicated fleet operations managers, load booking, and TMS software for U.S. motor carriers on a weekly subscription."
+      },
+      {
+        "@type": "WebSite",
+        "name": "Shipping Wish LLC",
+        "url": "https://www.shippingwish.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.shippingwish.com/blog",
+          "query-input": "required name=search_term_string"
+        }
       }
-      .hero-divider { display: none !important; }
-    }
-
-    @media (max-width: 640px) {
-      .hero-metrics {
-        grid-template-columns: 1fr !important;
-        gap: var(--space-4) !important;
-      }
-    }
-
-    .hero-actions {
-      display: flex;
-      align-items: center;
-      gap: var(--space-4);
-      flex-wrap: wrap;
-    }
-
-    .hero-metrics {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--space-6);
-      margin-top: 56px;
-      padding-top: 36px;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .hero-metric-item {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .hero-metric-value {
-      font-size: var(--text-3xl);
-      font-weight: var(--font-black);
-      color: var(--color-white);
-      letter-spacing: -0.025em;
-      line-height: 1;
-    }
-
-    .hero-metric-label {
-      font-size: var(--text-xs);
-      color: rgba(255,255,255,0.4);
-      font-weight: var(--font-medium);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .hero-divider {
-      width: 1px;
-      height: 40px;
-      background: rgba(255,255,255,0.1);
-    }
-
-    /* Live status bar */
-    .live-status {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: var(--text-xs);
-      color: rgba(255,255,255,0.5);
-    }
-
-    .live-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--color-success);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.4; }
-    }
-
-    /* Services grid */
-    .services-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-6);
-    }
-
-    .service-card {
-      padding: var(--space-8);
-      background: var(--color-white);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-xl);
-      transition: all var(--transition-base);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .service-card::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--color-amber-500), var(--color-amber-300));
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform var(--transition-base);
-    }
-
-    .service-card:hover {
-      box-shadow: var(--shadow-lg);
-      transform: translateY(-3px);
-      border-color: var(--color-amber-200);
-    }
-
-    .service-card:hover::after { transform: scaleX(1); }
-
-    .service-card h3 {
-      font-size: var(--text-lg);
-      font-weight: var(--font-bold);
-      color: var(--text-primary);
-      margin: var(--space-4) 0 var(--space-2);
-    }
-
-    .service-card p {
-      font-size: var(--text-sm);
-      color: var(--text-secondary);
-      line-height: var(--leading-relaxed);
-      margin-bottom: var(--space-4);
-    }
-
-    .service-card .service-link {
-      font-size: var(--text-sm);
-      font-weight: var(--font-semibold);
-      color: var(--color-amber-600);
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1);
-      transition: gap var(--transition-fast);
-    }
-
-    .service-card:hover .service-link {
-      gap: var(--space-2);
-    }
-
-    /* Process */
-    .process-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--space-6);
-      position: relative;
-    }
-
-    .process-grid::before {
-      content: '';
-      position: absolute;
-      top: 20px;
-      left: calc(12.5% + 20px);
-      right: calc(12.5% + 20px);
-      height: 1px;
-      background: repeating-linear-gradient(90deg, var(--border-default) 0, var(--border-default) 4px, transparent 4px, transparent 12px);
-    }
-
-    .process-step {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: var(--space-4);
-    }
-
-    .process-num {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--color-gray-900);
-      color: var(--color-white);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: var(--text-sm);
-      font-weight: var(--font-bold);
-      font-family: var(--font-mono);
-      flex-shrink: 0;
-      position: relative;
-      z-index: 1;
-    }
-
-    .process-step h3 {
-      font-size: var(--text-base);
-      font-weight: var(--font-semibold);
-    }
-
-    .process-step p {
-      font-size: var(--text-sm);
-      color: var(--text-secondary);
-      line-height: var(--leading-relaxed);
-    }
-
-    /* Platform preview */
-    .platform-preview {
-      background: var(--color-gray-900);
-      border-radius: var(--radius-2xl);
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: var(--space-6);
-      box-shadow: 0 40px 80px -20px rgba(0,0,0,0.4);
-    }
-
-    .platform-topbar {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      margin-bottom: var(--space-5);
-      padding-bottom: var(--space-4);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-    }
-
-    .platform-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-    }
-
-    .platform-stat-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--space-3);
-      margin-bottom: var(--space-4);
-    }
-
-    .platform-stat {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: var(--radius-lg);
-      padding: var(--space-4);
-    }
-
-    .platform-stat .ps-value {
-      font-size: var(--text-2xl);
-      font-weight: var(--font-black);
-      color: var(--color-white);
-      letter-spacing: -0.025em;
-    }
-
-    .platform-stat .ps-label {
-      font-size: var(--text-xs);
-      color: rgba(255,255,255,0.4);
-      margin-top: 2px;
-    }
-
-    .platform-stat .ps-change {
-      font-size: var(--text-xs);
-      color: var(--color-success);
-      margin-top: var(--space-1);
-    }
-
-    .platform-table-row {
-      display: grid;
-      grid-template-columns: 100px 1fr 1fr 80px 90px 80px;
-      align-items: center;
-      gap: var(--space-3);
-      padding: var(--space-3) var(--space-4);
-      border-radius: var(--radius-md);
-      font-size: var(--text-xs);
-    }
-
-    .platform-table-row.header {
-      color: rgba(255,255,255,0.35);
-      font-weight: var(--font-semibold);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .platform-table-row.data {
-      background: rgba(255,255,255,0.03);
-      color: rgba(255,255,255,0.75);
-      margin-top: var(--space-1);
-      border: 1px solid rgba(255,255,255,0.04);
-    }
-
-    .platform-badge {
-      padding: 2px 8px;
-      border-radius: var(--radius-full);
-      font-size: 10px;
-      font-weight: var(--font-semibold);
-      white-space: nowrap;
-    }
-
-    .platform-badge.transit  { background: rgba(59,130,246,0.15); color: #93c5fd; }
-    .platform-badge.pickup   { background: rgba(245,158,11,0.15); color: #fcd34d; }
-    .platform-badge.delivered { background: rgba(16,185,129,0.15); color: #6ee7b7; }
-    .platform-badge.booked   { background: rgba(168,85,247,0.15); color: #d8b4fe; }
-
-    /* Why choose us */
-    .why-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-6);
-    }
-
-    .why-item {
-      display: flex;
-      align-items: flex-start;
-      gap: var(--space-4);
-      padding: var(--space-6);
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: var(--radius-xl);
-    }
-
-    .why-item-icon {
-      width: 44px;
-      height: 44px;
-      background: rgba(245,158,11,0.12);
-      border: 1px solid rgba(245,158,11,0.2);
-      border-radius: var(--radius-lg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
-    }
-
-    .why-item h4 {
-      font-size: var(--text-sm);
-      font-weight: var(--font-semibold);
-      color: var(--color-white);
-      margin-bottom: 4px;
-    }
-
-    .why-item p {
-      font-size: var(--text-sm);
-      color: rgba(255,255,255,0.5);
-      line-height: var(--leading-relaxed);
-    }
-
-    /* CTA section */
-    .cta-section {
-      background: linear-gradient(135deg, var(--color-gray-900) 0%, #1a2a4a 100%);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .cta-section::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 70% 70% at 50% 50%, rgba(245,158,11,0.08) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .cta-inner {
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      padding: var(--space-24) var(--space-6);
-      max-width: var(--container-2xl);
-      margin: 0 auto;
-    }
-
-    /* FAQ */
-    .faq-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0 var(--space-16);
-    }
-
-    /* Responsive overrides */
-    @media (max-width: 1024px) {
-      .services-grid   { grid-template-columns: 1fr 1fr; }
-      .process-grid    { grid-template-columns: 1fr 1fr; gap: var(--space-8); }
-      .process-grid::before { display: none; }
-      .platform-stat-row { grid-template-columns: 1fr 1fr; }
-      .platform-table-row { display: none; }
-      .platform-table-row.header { display: none; }
-    }
-
-    @media (max-width: 992px) {
-      .hero-content    { grid-template-columns: 1fr !important; padding: 40px var(--space-4) 40px !important; gap: var(--space-8) !important; }
-      .hero-visual-card { justify-self: center !important; max-width: 100% !important; }
-    }
-
-    @media (max-width: 768px) {
-      .hero-headline   { font-size: clamp(1.85rem, 6vw, 2.5rem); line-height: 1.12; }
-      .hero-metrics    { gap: var(--space-6); grid-template-columns: repeat(2, 1fr) !important; }
-      .hero-divider    { display: none; }
-      .services-grid   { grid-template-columns: 1fr; }
-      .process-grid    { grid-template-columns: 1fr; }
-      .why-grid        { grid-template-columns: 1fr; }
-      .faq-grid        { grid-template-columns: 1fr; }
-      .platform-preview { display: none; }
-      .trust-bar-grid  { gap: var(--space-6); }
-    }
-
-    .kpi-hover-card:hover {
-      border-color: rgba(245,158,11,0.4) !important;
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5) !important;
-    }
-
-    @media (max-width: 1024px) {
-      .kpi-cards-responsive { grid-template-columns: repeat(2, 1fr) !important; }
-    }
-
-    @media (max-width: 640px) {
-      .kpi-cards-responsive { grid-template-columns: 1fr !important; }
-    }
-  </style>
+    ]
+  }
+  </script>
 </head>
-<body>
+<body class="marketing">
+<nav class="nav" role="navigation" aria-label="Main navigation"></nav>
 
-<!-- ===== NAVIGATION ===== -->
-<nav class="nav" role="navigation" aria-label="Main navigation">
-  <div class="nav-inner">
-    <a href="/" class="nav-logo" aria-label="Shipping Wish LLC Home">
-      <div class="nav-logo-mark" aria-hidden="true">SW</div>
-      <div class="nav-logo-text">Shipping <span>Wish</span></div>
-    </a>
-
-    <ul class="nav-links" role="list">
-      <li><a href="/" class="active" aria-current="page">Home</a></li>
-      <li class="nav-item-dropdown">
-        <a href="/services.html">Services ▾</a>
-        <div class="nav-dropdown-menu" role="menu">
-          <div class="dropdown-label">Dispatch</div>
-          <a href="/dispatch.html" role="menuitem">Freight Dispatch</a>
-          <a href="/load-booking.html" role="menuitem">Load Booking</a>
-          <a href="/fleet-support.html" role="menuitem">Fleet & Driver Support</a>
-          <div class="dropdown-label">Financial</div>
-          <a href="/factoring.html" role="menuitem">Factoring Assistance</a>
-          <a href="/insurance.html" role="menuitem">Insurance Services</a>
-          <div class="dropdown-label">Technology</div>
-          <a href="/eld.html" role="menuitem">ELD & Telematics</a>
-          <a href="/dot-compliance.html" role="menuitem">DOT Compliance</a>
-        </div>
-      </li>
-      <li><a href="/about.html">About</a></li>
-      <li><a href="/blog.html">Blog</a></li>
-      <li><a href="/contact.html#pricing">Pricing</a></li>
-      <li><a href="/contact.html">Contact</a></li>
-    </ul>
-
-    <div class="nav-actions">
-      <div class="live-status" aria-live="polite">
-        <span class="live-dot" aria-hidden="true"></span>
-        Operations Desk
-      </div>
-      <a href="/login.html" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
-      <a href="/contact.html" class="btn btn-primary btn-sm" id="nav-cta-btn">Get Started</a>
-    </div>
-
-    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</nav>
-
-<!-- Mobile nav -->
-<div class="nav-mobile" id="nav-mobile" role="dialog" aria-modal="true" aria-label="Mobile navigation">
-  <a href="/" class="active">Home</a>
-  <a href="/services.html">Services</a>
-  <a href="/factoring.html">Factoring</a>
-  <a href="/insurance.html">Insurance</a>
-  <a href="/eld.html">ELD</a>
-  <a href="/dot-compliance.html">DOT Compliance</a>
-  <a href="/about.html">About</a>
-  <a href="/contact.html">Contact</a>
-  <div class="nav-mobile-cta-group">
-    <a href="/login.html" class="btn btn-secondary-glass">🔑 Sign In to Portal</a>
-    <a href="/contact.html" class="btn btn-primary-amber">Get Started →</a>
-  </div>
-</div>
-
-<!-- ===== HERO ===== -->
-<section class="hero" aria-labelledby="hero-heading">
-  <!-- Live Enterprise Telemetry Ticker Bar -->
-  <div class="hero-ticker-bar">
-    <div class="ticker-track">
-      <div class="ticker-item"><span class="ticker-dot"></span> DELAWARE LLC · U.S. MOTOR CARRIERS ONLY</div>
-      <div class="ticker-item"><span class="ticker-dot-amber"></span> DEDICATED FLEET OPERATIONS MANAGER</div>
-      <div class="ticker-item"><span class="ticker-dot"></span> WEEKLY STRIPE RETAINER · YOU KEEP BROKER PAY</div>
-      <div class="ticker-item"><span class="ticker-dot-amber"></span> LOAD FINDING, BOOKING &amp; BROKER HANDLING</div>
-      <div class="ticker-item"><span class="ticker-dot"></span> FMCSA-AWARE CARRIER SETUP</div>
-      <div class="ticker-item"><span class="ticker-dot-amber"></span> 48-STATE COVERAGE</div>
-
-      <!-- Duplicate for smooth continuous scroll loop -->
-      <div class="ticker-item"><span class="ticker-dot"></span> DELAWARE LLC · U.S. MOTOR CARRIERS ONLY</div>
-      <div class="ticker-item"><span class="ticker-dot-amber"></span> DEDICATED FLEET OPERATIONS MANAGER</div>
-      <div class="ticker-item"><span class="ticker-dot"></span> WEEKLY STRIPE RETAINER · YOU KEEP BROKER PAY</div>
-      <div class="ticker-item"><span class="ticker-dot-amber"></span> LOAD FINDING, BOOKING &amp; BROKER HANDLING</div>
-      <div class="ticker-item"><span class="ticker-dot"></span> FMCSA-AWARE CARRIER SETUP</div>
-      <div class="ticker-item"><span class="ticker-dot-amber"></span> 48-STATE COVERAGE</div>
-    </div>
-  </div>
-
-  <div class="hero-grid-lines" aria-hidden="true"></div>
-  <div class="hero-content">
-    
-    <!-- 2-COLUMN SPLIT GRID -->
-    <div class="hero-grid-2col">
-      <!-- LEFT COLUMN: Copy & Action Buttons -->
-      <div>
-        <div class="hero-eyebrow" aria-label="US Freight Technology Platform" style="display:inline-flex;align-items:center;gap:var(--space-2);background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-full);padding:6px 16px;font-size:var(--text-xs);font-weight:var(--font-semibold);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-amber-400);margin-bottom:12px;margin-top:8px;">
-          <span aria-hidden="true">🇺🇸</span> Delaware LLC · U.S. Motor Carriers
-        </div>
-
-        <h1 id="hero-heading" class="hero-headline">
-          A Dedicated Operations<br>
-          Manager for Your Trucks.<br>
-          <span class="accent">You Keep the Freight Pay.</span>
-        </h1>
-
-        <p class="hero-subheadline">
-          Shipping Wish LLC is a Delaware company that places a named Fleet Operations Manager with small U.S. motor carriers.
-          We find loads, talk to brokers, and book freight you approve. You invoice the broker. We bill a small weekly retainer.
-        </p>
-
-        <div class="hero-actions">
-          <a href="/contact.html" class="btn btn-primary btn-xl" id="hero-cta-primary">
-            Request a Dedicated Manager →
-          </a>
-          <a href="/contact.html#pricing" class="btn btn-secondary btn-xl" id="hero-cta-secondary">
-            Weekly Pricing
-          </a>
-        </div>
-      </div>
-
-      <!-- RIGHT COLUMN: Interactive 2026 TMS Dispatch Radar Visual -->
-      <div style="position:relative;">
-        <!-- Floating Badge 1 -->
-        <div class="hero-floating-badge" style="top:-15px;right:-10px;">
-          <span style="color:var(--color-amber-400);">⚡ DAT Rate Match:</span> Top Tier 5%
-        </div>
-
-        <!-- Floating Badge 2 -->
-        <div class="hero-floating-badge" style="bottom:-15px;left:-10px;">
-          <span style="color:#6ee7b7;">🛡️ Non-Recourse:</span> 100% Protected
-        </div>
-
-        <div class="hero-visual-card">
-          <!-- Visual Card Topbar -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:var(--space-3);margin-bottom:var(--space-4);border-bottom:1px solid rgba(255,255,255,0.08);">
-            <div style="display:flex;align-items:center;gap:var(--space-2);">
-              <div style="width:10px;height:10px;border-radius:50%;background:#ef4444;"></div>
-              <div style="width:10px;height:10px;border-radius:50%;background:#f59e0b;"></div>
-              <div style="width:10px;height:10px;border-radius:50%;background:#10b981;"></div>
-              <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);margin-left:6px;">Carrier Operations Portal</span>
-            </div>
-            <div style="font-size:11px;font-weight:700;color:#10b981;display:flex;align-items:center;gap:4px;">
-              <span class="live-dot" style="width:6px;height:6px;"></span> Operations Desk
-            </div>
-          </div>
-
-          <!-- Active Load Card -->
-          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-xl);padding:var(--space-4);margin-bottom:var(--space-4);">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2);">
-              <span class="badge badge-amber">ACTIVE LOAD #SW-98401</span>
-              <span style="font-size:16px;font-weight:900;color:#10b981;">$3,450.00 <span style="font-size:10px;color:rgba(255,255,255,0.5); font-weight:normal;">($4.82/mi)</span></span>
-            </div>
-
-            <div style="display:flex;align-items:center;justify-content:space-between;margin:var(--space-3) 0;font-size:12px;">
-              <div>
-                <span style="font-size:9px;color:rgba(255,255,255,0.4);display:block;text-transform:uppercase;">Pickup</span>
-                <strong style="color:#fff;">Chicago, IL</strong>
-              </div>
-              <div style="font-size:10px;color:var(--color-amber-400);background:rgba(245,158,11,0.12);padding:2px 8px;border-radius:8px;font-weight:700;">
-                🚚 715 Mi
-              </div>
-              <div style="text-align:right;">
-                <span style="font-size:9px;color:rgba(255,255,255,0.4);display:block;text-transform:uppercase;">Delivery</span>
-                <strong style="color:#fff;">Atlanta, GA</strong>
-              </div>
-            </div>
-          </div>
-
-          <!-- Graphic Truck Illustration with Animated Radar Waves -->
-          <div style="background:rgba(0,0,0,0.3);border-radius:var(--radius-xl);padding:var(--space-4);text-align:center;position:relative;">
-            <svg width="220" height="90" viewBox="0 0 220 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin:0 auto;display:block;">
-              <!-- Road Line -->
-              <line x1="10" y1="75" x2="210" y2="75" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="8 6"/>
-              <!-- Semi Truck Body -->
-              <rect x="25" y="32" width="110" height="36" rx="4" fill="rgba(245,158,11,0.18)" stroke="#f59e0b" stroke-width="1.5"/>
-              <line x1="55" y1="32" x2="55" y2="68" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
-              <line x1="85" y1="32" x2="85" y2="68" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
-              <!-- Cab -->
-              <rect x="135" y="38" width="48" height="30" rx="5" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-              <rect x="150" y="42" width="22" height="12" rx="3" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" stroke-width="1"/>
-              <!-- Wheels -->
-              <circle cx="42" cy="72" r="8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
-              <circle cx="82" cy="72" r="8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
-              <circle cx="158" cy="72" r="8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
-              <!-- Headlight Ray Animation -->
-              <polygon points="183,52 215,44 215,62" fill="url(#headlight-gradient)" opacity="0.7"/>
-              <defs>
-                <linearGradient id="headlight-gradient" x1="183" y1="52" x2="215" y2="52" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#f59e0b" stop-opacity="0.8"/>
-                  <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            <div style="font-size:11px;font-weight:700;color:#6ee7b7;margin-top:4px;">
-              📡 Real-Time Telemetry Active · GPS Tracked & Verified
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- FULL-WIDTH HERO PERFORMANCE TELEMETRY BAR -->
-    <div class="hero-metrics" aria-label="Shipping Wish Performance Telemetry">
-      <div class="hero-metric-item">
-        <span class="hero-metric-value" style="color:var(--color-amber-400);">DE LLC</span>
-        <span class="hero-metric-label">Registered Delaware Company</span>
-      </div>
-      <div class="hero-divider" aria-hidden="true"></div>
-      <div class="hero-metric-item">
-        <span class="hero-metric-value">48</span>
-        <span class="hero-metric-label">U.S. States We Cover</span>
-      </div>
-      <div class="hero-divider" aria-hidden="true"></div>
-      <div class="hero-metric-item">
-        <span class="hero-metric-value">Weekly</span>
-        <span class="hero-metric-label">Stripe Retainer Billing</span>
-      </div>
-      <div class="hero-divider" aria-hidden="true"></div>
-      <div class="hero-metric-item">
-        <span class="hero-metric-value" style="color:#6ee7b7;">Named</span>
-        <span class="hero-metric-label">Dedicated Operations Manager</span>
-      </div>
-    </div>
-
-  </div>
-
-</section>
-
-<!-- ===== HIGH-END ENTERPRISE KPI FEATURE CARDS ===== -->
-<section style="background:linear-gradient(180deg, #090d16 0%, #0f172a 100%);padding:var(--space-12) 0;border-bottom:1px solid rgba(255,255,255,0.08);">
-  <div class="container">
-    <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:var(--space-6);" class="kpi-cards-responsive">
-
-      <!-- KPI Card 1 -->
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-2xl);padding:var(--space-6);transition:all var(--transition-base);box-shadow:var(--shadow-md);" class="kpi-hover-card">
-        <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
-          <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;">⚡</div>
-          <div>
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-amber-400);">Load Board Integration</div>
-            <h4 style="font-size:var(--text-base);font-weight:800;color:#fff;margin:0;">DAT & 123Loadboard</h4>
-          </div>
-        </div>
-        <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.65);line-height:1.6;margin:0;">Direct access to top load boards and nationwide broker networks to book your preferred lanes quickly.</p>
-      </div>
-
-      <!-- KPI Card 2 -->
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-2xl);padding:var(--space-6);transition:all var(--transition-base);box-shadow:var(--shadow-md);" class="kpi-hover-card">
-        <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
-          <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;">📈</div>
-          <div>
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#93c5fd;">High Rate Per Mile</div>
-            <h4 style="font-size:var(--text-base);font-weight:800;color:#fff;margin:0;">Rate Negotiation</h4>
-          </div>
-        </div>
-        <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.65);line-height:1.6;margin:0;">Aggressive rate negotiation with top brokers to maximize gross RPM and keep your trucks profitable.</p>
-      </div>
-
-      <!-- KPI Card 3 -->
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-2xl);padding:var(--space-6);transition:all var(--transition-base);box-shadow:var(--shadow-md);" class="kpi-hover-card">
-        <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
-          <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;">💳</div>
-          <div>
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6ee7b7;">Transparent Billing</div>
-            <h4 style="font-size:var(--text-base);font-weight:800;color:#fff;margin:0;">Stripe Invoicing</h4>
-          </div>
-        </div>
-        <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.65);line-height:1.6;margin:0;">Carriers collect 100% load payments directly. We issue weekly Stripe invoices only for our dispatch commission.</p>
-      </div>
-
-      <!-- KPI Card 4 -->
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-2xl);padding:var(--space-6);transition:all var(--transition-base);box-shadow:var(--shadow-md);" class="kpi-hover-card">
-        <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);">
-          <div style="width:40px;height:40px;border-radius:var(--radius-xl);background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🛡️</div>
-          <div>
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#d8b4fe;">FMCSA Compliance</div>
-            <h4 style="font-size:var(--text-base);font-weight:800;color:#fff;margin:0;">Safety & Carrier Packets</h4>
-          </div>
-        </div>
-        <p style="font-size:var(--text-xs);color:rgba(255,255,255,0.65);line-height:1.6;margin:0;">Complete carrier packet setup, COI certificate management, and DOT compliance review per load.</p>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ===== SERVICES ===== -->
-<section class="section" id="services" aria-labelledby="services-heading">
-  <div class="container">
-    <div class="section-header center reveal">
-      <div class="section-eyebrow">What We Do</div>
-      <h2 id="services-heading" class="section-title">Everything Your Fleet Needs to Move More, Earn More</h2>
-      <p class="section-subtitle">
-        From finding loads and negotiating rates to managing documents and tracking performance —
-        we handle the back-office so your trucks keep running.
+<section class="mkt-hero">
+  <div class="mkt-wrap mkt-hero-grid">
+    <div>
+      <div class="mkt-kicker">Delaware LLC · U.S. motor carriers</div>
+      <h1 class="mkt-h1">Hire a manager for your trucking company. <em>We work as your staff.</em></h1>
+      <p class="mkt-lede">
+        Shipping Wish places a named Fleet Operations Manager inside your company — 24/7 load booking, broker handling, and a full TMS.
+        You keep every dollar the broker pays. Flat weekly subscription. No DAT board to buy. First week is free.
       </p>
-    </div>
-
-    <div class="services-grid">
-      <article class="service-card reveal" id="service-dispatch">
-        <div class="icon-box icon-box-amber icon-box-lg" aria-hidden="true">🚛</div>
-        <h3>Freight Dispatch</h3>
-        <p>Dedicated dispatchers who find loads, negotiate rates, and manage your load from booking through delivery. We work your lanes, your equipment, your schedule.</p>
-        <a href="/services.html#dispatch" class="service-link" aria-label="Learn more about Freight Dispatch">Learn more →</a>
-      </article>
-
-      <article class="service-card reveal animate-delay-100" id="service-load-booking">
-        <div class="icon-box icon-box-amber icon-box-lg" aria-hidden="true">📋</div>
-        <h3>Load Board Management</h3>
-        <p>We search DAT, 123Loadboard, and broker networks to find loads that match your equipment, preferred lanes, and minimum rate requirements.</p>
-        <a href="/services.html#load-booking" class="service-link">Learn more →</a>
-      </article>
-
-      <article class="service-card reveal animate-delay-200" id="service-documents">
-        <div class="icon-box icon-box-amber icon-box-lg" aria-hidden="true">📄</div>
-        <h3>Document Management</h3>
-        <p>Rate confirmations, BOL, POD, lumper receipts — we track and organize every document for each load. No more chasing paperwork at invoice time.</p>
-        <a href="/services.html#documents" class="service-link">Learn more →</a>
-      </article>
-
-      <article class="service-card reveal" id="service-factoring">
-        <div class="icon-box icon-box-amber icon-box-lg" aria-hidden="true">💵</div>
-        <h3>Factoring Assistance</h3>
-        <p>We help you set up factoring with trusted providers like RTS Financial and Apex Capital so you get paid in 24 hours instead of waiting 30–90 days.</p>
-        <a href="/factoring.html" class="service-link">Learn more →</a>
-      </article>
-
-      <article class="service-card reveal animate-delay-100" id="service-compliance">
-        <div class="icon-box icon-box-amber icon-box-lg" aria-hidden="true">🛡️</div>
-        <h3>DOT Compliance Support</h3>
-        <p>MCS-150 updates, IFTA fuel tax organization, carrier packet preparation, and pre-audit document review — stay compliant and audit-ready.</p>
-        <a href="/dot-compliance.html" class="service-link">Learn more →</a>
-      </article>
-
-      <article class="service-card reveal animate-delay-200" id="service-insurance">
-        <div class="icon-box icon-box-amber icon-box-lg" aria-hidden="true">🔒</div>
-        <h3>Insurance Coordination</h3>
-        <p>We help connect you with commercial truck insurance providers to ensure your fleet has the right coverage at competitive rates for your lanes and cargo.</p>
-        <a href="/insurance.html" class="service-link">Learn more →</a>
-      </article>
-    </div>
-  </div>
-</section>
-
-<!-- ===== HOW IT WORKS ===== -->
-<section class="section section-subtle" id="how-it-works" aria-labelledby="process-heading">
-  <div class="container">
-    <div class="section-header center reveal">
-      <div class="section-eyebrow">How It Works</div>
-      <h2 id="process-heading" class="section-title">Up and Running in 24 Hours</h2>
-      <p class="section-subtitle">
-        Our onboarding is simple. No long-term contracts. No setup fees.
-        Start moving loads in as little as one business day.
-      </p>
-    </div>
-
-    <div class="process-grid">
-      <div class="process-step reveal">
-        <div class="process-num">01</div>
-        <div>
-          <h3>Schedule a Call</h3>
-          <p>Talk to our team about your equipment, preferred lanes, rate targets, and fleet size. We tailor our service to your operation.</p>
-        </div>
+      <div class="mkt-actions">
+        <a href="/pricing" class="btn btn-primary btn-xl">Start 7 days free — $0 today</a>
+        <a href="/about" class="btn btn-secondary btn-xl">See the company</a>
       </div>
-      <div class="process-step reveal animate-delay-100">
-        <div class="process-num">02</div>
-        <div>
-          <h3>Sign & Onboard</h3>
-          <p>Sign a simple dispatcher–carrier agreement. We collect your carrier packet, insurance, and authority documents to start booking loads.</p>
-        </div>
+      <div class="mkt-trust">
+        <span>🔒 Stripe secure checkout</span>
+        <span>✓ Cancel before week two = $0</span>
+        <span>✓ 100+ dedicated operations people</span>
+        <span>✓ High RPM · less deadhead</span>
       </div>
-      <div class="process-step reveal animate-delay-200">
-        <div class="process-num">03</div>
-        <div>
-          <h3>Load Booking Begins</h3>
-          <p>Your dedicated dispatcher starts searching loads, calling brokers, negotiating rates, and sending you load offers for approval — all in your TMS portal.</p>
-        </div>
+    </div>
+    <div class="mkt-panel">
+      <div class="mkt-panel-top">
+        <span>Carrier Operations Portal</span>
+        <span style="color:#059669;">● Live desk</span>
       </div>
-      <div class="process-step reveal animate-delay-300">
-        <div class="process-num">04</div>
-        <div>
-          <h3>Weekly Invoicing</h3>
-          <p>We send one clean invoice per week for our commission on all booked loads. You receive full payment directly from the broker or factoring company.</p>
+      <div class="mkt-load">
+        <div style="display:flex;justify-content:space-between;font-size:12px;opacity:.7;margin-bottom:8px;">
+          <span>LOAD SW-98401</span>
+          <span>715 mi · $4.82 / mi</span>
         </div>
+        <strong>$3,450.00</strong>
+        <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:13px;">
+          <span>Chicago, IL</span>
+          <span>Atlanta, GA</span>
+        </div>
+        <p style="margin:14px 0 0;font-size:12px;opacity:.75;line-height:1.5;">Booked by your operations manager. Freight pay goes to your company. Your weekly plan is billed separately on Stripe.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;font-size:12px;font-weight:700;color:#334155;">
+        <div style="background:#f8fafc;border-radius:12px;padding:12px;">TMS included</div>
+        <div style="background:#f8fafc;border-radius:12px;padding:12px;">No DAT needed</div>
+        <div style="background:#f8fafc;border-radius:12px;padding:12px;">You keep freight pay</div>
+        <div style="background:#f8fafc;border-radius:12px;padding:12px;">$0 due this week</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== PLATFORM PREVIEW ===== -->
-<section class="section" id="platform" aria-labelledby="platform-heading">
-  <div class="container">
-    <div class="platform-grid-container">
-      <div class="reveal">
-        <div class="section-eyebrow">TMS Platform</div>
-        <h2 id="platform-heading" class="section-title">Operations Center Built for Dispatchers</h2>
-        <p class="section-subtitle" style="margin-bottom:var(--space-8);">
-          Your carriers, loads, drivers, and revenue — all in one real-time dashboard.
-          Our TMS gives you complete visibility across every load from booking to payment.
-        </p>
-        <ul style="display:flex;flex-direction:column;gap:var(--space-3);margin-bottom:var(--space-8);">
-          <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
-            <span style="color:var(--color-success);font-size:18px;">✓</span> Real-time load status pipeline
-          </li>
-          <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
-            <span style="color:var(--color-success);font-size:18px;">✓</span> Carrier &amp; driver management portal
-          </li>
-          <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
-            <span style="color:var(--color-success);font-size:18px;">✓</span> Corporate invoice generation (PDF)
-          </li>
-          <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
-            <span style="color:var(--color-success);font-size:18px;">✓</span> Broker directory &amp; credit tracking
-          </li>
-          <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
-            <span style="color:var(--color-success);font-size:18px;">✓</span> Performance analytics &amp; IFTA reporting
-          </li>
-          <li style="display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);">
-            <span style="color:var(--color-success);font-size:18px;">✓</span> DOT document vault
-          </li>
+<section class="mkt-section alt">
+  <div class="mkt-wrap mkt-center">
+    <div class="mkt-eyebrow">A different model</div>
+    <h2 class="mkt-h2">Not a load-board pitch. A company desk that books for you.</h2>
+    <p class="mkt-sub">Carriers do not need another “find your own freight” product. They need people who already work the phones, the brokers, and the paperwork — as if they were on your payroll.</p>
+    <table class="mkt-compare">
+      <thead>
+        <tr>
+          <th>What most carriers are sold</th>
+          <th>Shipping Wish weekly plan</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Buy DAT / hunt loads yourself</td>
+          <td>We book freight inside your subscription</td>
+        </tr>
+        <tr>
+          <td>Random after-hours call center</td>
+          <td>Named manager who knows your lanes and RPM floor</td>
+        </tr>
+        <tr>
+          <td>Cut of every load, surprise extras</td>
+          <td>One weekly rate. No hidden fees. You keep broker pay</td>
+        </tr>
+        <tr>
+          <td>Separate software bill</td>
+          <td>TMS portal included on every plan</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="mkt-section" id="included">
+  <div class="mkt-wrap">
+    <div class="mkt-eyebrow">What’s in the plan</div>
+    <h2 class="mkt-h2">Everything your company needs to stay loaded.</h2>
+    <div class="mkt-cards">
+      <article class="mkt-card">
+        <h3>Hire a manager, 24/7</h3>
+        <p>Your operations manager works as an employee of your company would: lanes, equipment, appointment windows, and broker follow-up around the clock.</p>
+      </article>
+      <article class="mkt-card">
+        <h3>TMS software included</h3>
+        <p>Loads, documents, rate cons, BOLs, PODs, and status in one carrier portal. No second software invoice.</p>
+      </article>
+      <article class="mkt-card">
+        <h3>We book. You don’t buy DAT.</h3>
+        <p>Load boards stay on our desk. You approve freight. We handle packets, credit checks, and booking.</p>
+      </article>
+      <article class="mkt-card">
+        <h3>High RPM, less deadhead</h3>
+        <p>Reload planning before you empty. Lane strategy built to lift revenue per mile and cut empty miles.</p>
+      </article>
+      <article class="mkt-card">
+        <h3>You keep freight pay</h3>
+        <p>Brokers and factors pay your company. Our only charge is the weekly Stripe subscription.</p>
+      </article>
+      <article class="mkt-card">
+        <h3>No hidden charges</h3>
+        <p>No setup fee. No extras for after-hours. Cancel in Stripe before the trial ends and you pay nothing.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="mkt-section ink">
+  <div class="mkt-wrap mkt-center">
+    <div class="mkt-eyebrow">Company capacity</div>
+    <h2 class="mkt-h2">100+ dedicated people managing your work.</h2>
+    <p class="mkt-sub">A Delaware operations company built to run as an extension of your motor carrier — booking, paperwork, and profit protection across the Lower 48.</p>
+    <div class="mkt-stats">
+      <div class="mkt-stat"><b>100+</b><span>Dedicated operations staff</span></div>
+      <div class="mkt-stat"><b>24/7</b><span>Coverage on active freight</span></div>
+      <div class="mkt-stat"><b>48</b><span>States we work</span></div>
+      <div class="mkt-stat"><b>$0</b><span>Due during your first week</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="mkt-section alt" id="plans">
+  <div class="mkt-wrap mkt-center">
+    <div class="mkt-eyebrow">Weekly subscription</div>
+    <h2 class="mkt-h2">Pick a desk. Card on file. Charge starts next week.</h2>
+    <p class="mkt-sub">Secure Stripe Checkout. $0 due now. If you cancel before the first charge, the trial ends and you owe nothing.</p>
+    <div class="mkt-price-grid">
+      <article class="price-card">
+        <div class="price-name">Owner Operator</div>
+        <div class="price-trucks">1 truck</div>
+        <div class="price-amt">$149 <small>/ week</small></div>
+        <div class="price-trial">7 days free · $0 today</div>
+        <ul class="price-list">
+          <li>Named operations manager</li>
+          <li>Load booking + TMS</li>
+          <li>You keep freight pay</li>
         </ul>
-        <a href="/login.html" class="btn btn-primary btn-lg" id="platform-access-btn" style="font-weight:700;">Access Your Portal →</a>
-      </div>
-
-      <!-- TMS Preview Mockup -->
-      <div class="platform-preview reveal animate-delay-200" role="img" aria-label="TMS platform dashboard preview">
-        <div class="platform-topbar">
-          <div class="platform-dot" style="background:#ff5f57;"></div>
-          <div class="platform-dot" style="background:#ffbd2e;"></div>
-          <div class="platform-dot" style="background:#28c840;"></div>
-          <span style="font-size:11px;color:rgba(255,255,255,0.4);margin-left:8px;font-family:var(--font-mono);font-weight:700;">SW TMS v2.4 — Operations Desk</span>
-          <div class="live-status" style="margin-left:auto;">
-            <span class="live-dot"></span>
-            Live
-          </div>
-        </div>
-
-        <!-- Stat Row -->
-        <div class="platform-stat-row">
-          <div class="platform-stat">
-            <div class="ps-value">12</div>
-            <div class="ps-label">Active Loads</div>
-            <div class="ps-change">↑ 3 from yesterday</div>
-          </div>
-          <div class="platform-stat">
-            <div class="ps-value">8</div>
-            <div class="ps-label">Drivers En Route</div>
-            <div class="ps-change">2 arriving today</div>
-          </div>
-          <div class="platform-stat">
-            <div class="ps-value">$18.4K</div>
-            <div class="ps-label">This Week Revenue</div>
-            <div class="ps-change">↑ 12% vs last week</div>
-          </div>
-          <div class="platform-stat">
-            <div class="ps-value">$2.31</div>
-            <div class="ps-label">Avg RPM</div>
-            <div class="ps-change">Above target</div>
-          </div>
-        </div>
-
-        <!-- Table Container -->
-        <div class="platform-table-wrapper">
-          <div class="platform-table-row header">
-            <span>LOAD #</span>
-            <span>ORIGIN → DEST</span>
-            <span>DRIVER</span>
-            <span>RATE</span>
-            <span>STATUS</span>
-            <span>RPM</span>
-          </div>
-          <div class="platform-table-row data">
-            <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.5);font-weight:700;">#10482</span>
-            <span style="color:#fff;font-weight:600;">Dallas TX → Atlanta GA</span>
-            <span style="color:rgba(255,255,255,0.6);">J. Martinez</span>
-            <span style="color:#6ee7b7;font-weight:700;">$2,850</span>
-            <span><span class="platform-badge transit">In Transit</span></span>
-            <span style="color:#fbbf24;font-weight:700;">$2.41</span>
-          </div>
-          <div class="platform-table-row data">
-            <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.5);font-weight:700;">#10483</span>
-            <span style="color:#fff;font-weight:600;">Chicago IL → Memphis TN</span>
-            <span style="color:rgba(255,255,255,0.6);">A. Johnson</span>
-            <span style="color:#6ee7b7;font-weight:700;">$1,650</span>
-            <span><span class="platform-badge pickup">At Pickup</span></span>
-            <span style="color:#fbbf24;font-weight:700;">$2.08</span>
-          </div>
-          <div class="platform-table-row data">
-            <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.5);font-weight:700;">#10481</span>
-            <span style="color:#fff;font-weight:600;">Phoenix AZ → Denver CO</span>
-            <span style="color:rgba(255,255,255,0.6);">R. Williams</span>
-            <span style="color:#6ee7b7;font-weight:700;">$3,200</span>
-            <span><span class="platform-badge delivered">Delivered</span></span>
-            <span style="color:#fbbf24;font-weight:700;">$2.67</span>
-          </div>
-          <div class="platform-table-row data">
-            <span style="font-family:var(--font-mono);color:rgba(255,255,255,0.5);font-weight:700;">#10484</span>
-            <span style="color:#fff;font-weight:600;">Houston TX → Louisville KY</span>
-            <span style="color:rgba(255,255,255,0.6);">T. Brown</span>
-            <span style="color:#6ee7b7;font-weight:700;">$2,400</span>
-            <span><span class="platform-badge booked">Booked</span></span>
-            <span style="color:#fbbf24;font-weight:700;">$2.18</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== WHY SHIPPING WISH ===== -->
-<section class="section section-dark" id="why-us" aria-labelledby="why-heading">
-  <div class="container">
-    <div class="section-header center reveal">
-      <div class="section-eyebrow" style="color:var(--color-amber-400);">Why Carriers Choose Us</div>
-      <h2 id="why-heading" class="section-title inverted">Built Around Your Business,<br>Not a Generic Template</h2>
-      <p class="section-subtitle inverted">
-        We are not a load board. We are not a broker. We are a dedicated dispatch and operations partner
-        that treats your fleet like a business — because it is.
-      </p>
-    </div>
-
-    <div class="why-grid">
-      <div class="why-item reveal">
-        <div class="why-item-icon" aria-hidden="true">🎯</div>
-        <div>
-          <h4>Dedicated Dispatcher</h4>
-          <p>One point of contact who knows your lanes, your rates, and your preferences. Not a call center — a real professional assigned to your account.</p>
-        </div>
-      </div>
-      <div class="why-item reveal animate-delay-100">
-        <div class="why-item-icon" aria-hidden="true">💼</div>
-        <div>
-          <h4>Commission-Only Model</h4>
-          <p>We earn when you earn. No monthly retainers. No setup fees. Just a transparent 5–10% commission on loads we book for you. Zero risk to start.</p>
-        </div>
-      </div>
-      <div class="why-item reveal animate-delay-200">
-        <div class="why-item-icon" aria-hidden="true">📱</div>
-        <div>
-          <h4>Technology-Backed Operations</h4>
-          <p>Our TMS platform gives you and your drivers real-time visibility into every load, document, and payment — from any device.</p>
-        </div>
-      </div>
-      <div class="why-item reveal animate-delay-300">
-        <div class="why-item-icon" aria-hidden="true">📊</div>
-        <div>
-          <h4>Weekly Performance Reporting</h4>
-          <p>Revenue per mile, load count, state miles, IFTA data — we track your performance metrics weekly so you always know how your fleet is doing.</p>
-        </div>
-      </div>
-      <div class="why-item reveal">
-        <div class="why-item-icon" aria-hidden="true">🏛️</div>
-        <div>
-          <h4>Compliant & Professional</h4>
-          <p>Registered in Delaware, LLC entity, Stripe billing, professional invoicing. We operate like a real business because we are one.</p>
-        </div>
-      </div>
-      <div class="why-item reveal animate-delay-100">
-        <div class="why-item-icon" aria-hidden="true">⏱️</div>
-        <div>
-          <h4>24/7 Operational Coverage</h4>
-          <p>Loads don't follow business hours. Our team monitors active loads, handles check calls, and addresses delivery issues around the clock.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== SERVICES SNAPSHOT ===== -->
-<section class="section section-subtle" id="additional-services" aria-labelledby="additional-heading">
-  <div class="container">
-    <div class="section-header center reveal">
-      <div class="section-eyebrow">Full Service Catalog</div>
-      <h2 id="additional-heading" class="section-title">Beyond Basic Dispatch</h2>
-      <p class="section-subtitle">A complete operational support ecosystem for growing US trucking companies.</p>
-    </div>
-
-    <div class="catalog-grid-responsive">
-      <div class="catalog-card-item reveal">
-        <div style="font-size:28px;margin-bottom:var(--space-3);" aria-hidden="true">🗺️</div>
-        <h4 style="font-size:var(--text-sm);font-weight:var(--font-semibold);margin-bottom:4px;color:var(--text-primary);">Route Planning</h4>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Deadhead optimization &amp; reload search</p>
-      </div>
-      <div class="catalog-card-item reveal animate-delay-100">
-        <div style="font-size:28px;margin-bottom:var(--space-3);" aria-hidden="true">💰</div>
-        <h4 style="font-size:var(--text-sm);font-weight:var(--font-semibold);margin-bottom:4px;color:var(--text-primary);">Rate Negotiation</h4>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Market rate analysis &amp; broker negotiation</p>
-      </div>
-      <div class="catalog-card-item reveal animate-delay-200">
-        <div style="font-size:28px;margin-bottom:var(--space-3);" aria-hidden="true">⏱️</div>
-        <h4 style="font-size:var(--text-sm);font-weight:var(--font-semibold);margin-bottom:4px;color:var(--text-primary);">Detention Tracking</h4>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Detention, TONU &amp; layover documentation</p>
-      </div>
-      <div class="catalog-card-item reveal animate-delay-300">
-        <div style="font-size:28px;margin-bottom:var(--space-3);" aria-hidden="true">🏪</div>
-        <h4 style="font-size:var(--text-sm);font-weight:var(--font-semibold);margin-bottom:4px;color:var(--text-primary);">Broker Setup</h4>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Broker packet &amp; authority registration</p>
-      </div>
-      <div class="catalog-card-item reveal">
-        <div style="font-size:28px;margin-bottom:var(--space-3);" aria-hidden="true">📡</div>
-        <h4 style="font-size:var(--text-sm);font-weight:var(--font-semibold);margin-bottom:4px;color:var(--text-primary);">ELD Telematics</h4>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">ELD setup, HOS &amp; GPS tracking</p>
-      </div>
-      <div class="catalog-card-item reveal animate-delay-100">
-        <div style="font-size:28px;margin-bottom:var(--space-3);" aria-hidden="true">⛽</div>
-        <h4 style="font-size:var(--text-sm);font-weight:var(--font-semibold);margin-bottom:4px;color:var(--text-primary);">IFTA Reporting</h4>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Quarterly fuel tax mileage tracking</p>
-      </div>
-      <div class="catalog-card-item reveal animate-delay-200">
-        <div style="font-size:28px;margin-bottom:var(--space-3);" aria-hidden="true">👤</div>
-        <h4 style="font-size:var(--text-sm);font-weight:var(--font-semibold);margin-bottom:4px;color:var(--text-primary);">Driver Management</h4>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">CDL tracking, expiry alerts &amp; HR</p>
-      </div>
-      <div class="catalog-card-item reveal animate-delay-300">
-        <div style="font-size:28px;margin-bottom:var(--space-3);" aria-hidden="true">📈</div>
-        <h4 style="font-size:var(--text-sm);font-weight:var(--font-semibold);margin-bottom:4px;color:var(--text-primary);">Revenue Analytics</h4>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">RPM, margin &amp; profitability tracking</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== TESTIMONIALS ===== -->
-<section class="section" id="testimonials" aria-labelledby="testimonials-heading">
-  <div class="container">
-    <div class="section-header center reveal">
-      <div class="section-eyebrow">Carrier Feedback</div>
-      <h2 id="testimonials-heading" class="section-title">What Carriers Say</h2>
-      <p class="section-subtitle">Real feedback from owner-operators and fleet owners working with Shipping Wish.</p>
-    </div>
-
-    <div class="grid-3">
-      <div class="testimonial-card reveal">
-        <div class="testimonial-quote" aria-hidden="true">"</div>
-        <p class="testimonial-text">"Shipping Wish got my truck moving within 2 days of signing up. My dispatcher finds me consistent lanes at rates I'm happy with. The portal keeps everything organized — rate cons, BOL, invoices. Very professional operation."</p>
-        <div class="testimonial-author">
-          <div class="testimonial-avatar" aria-label="Carrier testimonial">HL</div>
-          <div>
-            <div class="testimonial-name">Halak Logistics</div>
-            <div class="testimonial-company">Owner-Operator · California</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="testimonial-card reveal animate-delay-100">
-        <div class="testimonial-quote" aria-hidden="true">"</div>
-        <p class="testimonial-text">"I was spending hours chasing loads myself. Now my dispatcher handles all of that. I just drive. The commission is fair and I'm making more per week than I was doing it solo. Highly recommend for small fleets."</p>
-        <div class="testimonial-author">
-          <div class="testimonial-avatar">JT</div>
-          <div>
-            <div class="testimonial-name">J. Torres Trucking</div>
-            <div class="testimonial-company">2-Truck Fleet · Texas</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="testimonial-card reveal animate-delay-200">
-        <div class="testimonial-quote" aria-hidden="true">"</div>
-        <p class="testimonial-text">"The factoring setup they helped me with changed everything for cash flow. Getting paid within 24 hours instead of waiting 45 days from brokers. That alone was worth signing up with Shipping Wish."</p>
-        <div class="testimonial-author">
-          <div class="testimonial-avatar">MK</div>
-          <div>
-            <div class="testimonial-name">M. Khan Transport</div>
-            <div class="testimonial-company">Owner-Operator · Illinois</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <p style="text-align:center;margin-top:var(--space-6);font-size:var(--text-xs);color:var(--text-muted);">
-      * Testimonials are from actual carriers. Names shared with permission.
-    </p>
-  </div>
-</section>
-
-<!-- ===== FAQ ===== -->
-<section class="section section-subtle" id="faq" aria-labelledby="faq-heading">
-  <div class="container-lg">
-    <div class="section-header center reveal">
-      <div class="section-eyebrow">Common Questions</div>
-      <h2 id="faq-heading" class="section-title">Frequently Asked Questions</h2>
-    </div>
-
-    <div class="faq-grid">
-      <div>
-        <div class="accordion-item reveal">
-          <button class="accordion-trigger" aria-expanded="false">
-            How does the commission-only model work?
-            <span class="accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="accordion-content">
-            We charge a percentage (typically 5–10%) of the gross rate on every load we book for you. We send you a weekly invoice for our commission. You receive full payment from the broker or factoring company directly. No other fees.
-          </div>
-        </div>
-        <div class="accordion-item reveal">
-          <button class="accordion-trigger" aria-expanded="false">
-            What equipment types do you dispatch?
-            <span class="accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="accordion-content">
-            We primarily dispatch Dry Van, Flatbed, Reefer, and Step Deck equipment. If you have specialized equipment, contact us and we will discuss your specific needs.
-          </div>
-        </div>
-        <div class="accordion-item reveal">
-          <button class="accordion-trigger" aria-expanded="false">
-            Do I need to sign a long-term contract?
-            <span class="accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="accordion-content">
-            No long-term contracts. Our dispatcher–carrier agreement is straightforward and can be terminated with proper notice. We earn your continued business by delivering results.
-          </div>
-        </div>
-        <div class="accordion-item reveal">
-          <button class="accordion-trigger" aria-expanded="false">
-            How quickly can I get started?
-            <span class="accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="accordion-content">
-            In most cases, we can complete onboarding and start booking loads within 24–48 hours. We need your carrier packet, authority, insurance, and a signed agreement to begin.
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="accordion-item reveal">
-          <button class="accordion-trigger" aria-expanded="false">
-            What is included in the TMS portal access?
-            <span class="accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="accordion-content">
-            Your carrier portal includes real-time load status, driver management, truck and trailer records, document storage, invoice history, performance analytics, and broker directory access.
-          </div>
-        </div>
-        <div class="accordion-item reveal">
-          <button class="accordion-trigger" aria-expanded="false">
-            Do you offer factoring services directly?
-            <span class="accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="accordion-content">
-            We do not provide factoring directly — we assist you in setting up factoring with established providers like RTS Financial, Apex Capital, and others. The factoring relationship is between you and the provider.
-          </div>
-        </div>
-        <div class="accordion-item reveal">
-          <button class="accordion-trigger" aria-expanded="false">
-            Who do I contact if there's an issue on a load?
-            <span class="accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="accordion-content">
-            Your dedicated dispatcher is your first point of contact. Our team is available 24/7 for active load issues — breakdowns, appointment delays, detention, or broker communication.
-          </div>
-        </div>
-        <div class="accordion-item reveal">
-          <button class="accordion-trigger" aria-expanded="false">
-            How do I pay Shipping Wish for your services?
-            <span class="accordion-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="accordion-content">
-            We send a professional weekly invoice for our commission amount via email. Payment is accepted through Stripe (bank transfer / ACH). We do not hold your freight revenue.
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== CTA ===== -->
-<section class="cta-section" id="get-started" aria-labelledby="cta-heading">
-  <div class="cta-inner">
-    <div class="section-eyebrow" style="color:var(--color-amber-400);justify-content:center;" aria-hidden="true">
-      <span>Ready to Get Moving?</span>
-    </div>
-    <h2 id="cta-heading" class="section-title inverted" style="font-size:clamp(2rem,4vw,3.5rem);max-width:700px;margin-inline:auto;margin-bottom:var(--space-6);">
-      Put a Professional Dispatcher Behind Your Fleet Today
-    </h2>
-    <p class="section-subtitle inverted" style="max-width:520px;margin-inline:auto;margin-bottom:var(--space-10);">
-      No setup fees. No long-term contracts. Just results. 
-      Schedule a quick call and we'll have your trucks moving within 24 hours.
-    </p>
-    <div style="display:flex;align-items:center;justify-content:center;gap:var(--space-4);flex-wrap:wrap;">
-      <a href="/contact.html" class="btn btn-primary btn-xl" id="footer-cta-btn">Schedule a Free Call →</a>
-      <a href="tel:+19177370021" class="btn btn-secondary btn-xl" id="footer-phone-btn">+1 917 737 0021</a>
-    </div>
-    <p style="margin-top:var(--space-8);font-size:var(--text-sm);color:rgba(255,255,255,0.3);">
-      Shipping Wish LLC · 19266 Coastal Hwy, Rehoboth Beach, DE 19971 · info@shippingwish.com
-    </p>
-  </div>
-</section>
-
-<!-- ===== FOOTER ===== -->
-<footer class="footer" role="contentinfo">
-  <div class="container">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <a href="/" class="nav-logo" aria-label="Shipping Wish LLC Home">
-          <div class="nav-logo-mark" aria-hidden="true">SW</div>
-          <div class="nav-logo-text">Shipping <span>Wish</span></div>
-        </a>
-        <p>Technology-powered freight dispatch and fleet operations for modern American carriers. Commission-only. No contracts. Real results.</p>
-        <div class="footer-contact">
-          <div class="footer-contact-item">
-            <span aria-hidden="true">📞</span>
-            <a href="tel:+19177370021" id="footer-phone-link">+1 917 737 0021</a>
-          </div>
-          <div class="footer-contact-item">
-            <span aria-hidden="true">✉️</span>
-            <a href="mailto:info@shippingwish.com" id="footer-email-link">info@shippingwish.com</a>
-          </div>
-          <div class="footer-contact-item">
-            <span aria-hidden="true">📍</span>
-            <span>19266 Coastal Hwy, Rehoboth Beach, DE 19971</span>
-          </div>
-        </div>
-        <div class="footer-social" style="display:flex;gap:12px;margin-top:16px;">
-          <a href="https://linkedin.com/company/shippingwish" target="_blank" rel="noopener" aria-label="LinkedIn" class="social-icon-btn" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.08);display:inline-flex;align-items:center;justify-content:center;color:#0a66c2;border:1px solid rgba(255,255,255,0.15);">
-            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
-          </a>
-          <a href="https://facebook.com/shippingwish" target="_blank" rel="noopener" aria-label="Facebook" class="social-icon-btn" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.08);display:inline-flex;align-items:center;justify-content:center;color:#1877f2;border:1px solid rgba(255,255,255,0.15);">
-            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.99 3.66 9.12 8.44 9.88v-6.99H7.9v-2.89h2.54V9.79c0-2.51 1.49-3.89 3.77-3.89 1.09 0 2.23.19 2.23.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.89h-2.34V21.88C18.34 21.12 22 16.99 22 12z"/></svg>
-          </a>
-          <a href="https://x.com/shippingwish" target="_blank" rel="noopener" aria-label="X Twitter" class="social-icon-btn" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.08);display:inline-flex;align-items:center;justify-content:center;color:#ffffff;border:1px solid rgba(255,255,255,0.15);">
-            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          </a>
-          <a href="https://instagram.com/shippingwish" target="_blank" rel="noopener" aria-label="Instagram" class="social-icon-btn" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.08);display:inline-flex;align-items:center;justify-content:center;color:#e4405f;border:1px solid rgba(255,255,255,0.15);">
-            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-          </a>
-          <a href="https://youtube.com/@shippingwish" target="_blank" rel="noopener" aria-label="YouTube" class="social-icon-btn" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.08);display:inline-flex;align-items:center;justify-content:center;color:#ff0000;border:1px solid rgba(255,255,255,0.15);">
-            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-          </a>
-        </div>
-      </div>
-
-      <div class="footer-col">
-        <h4>Services</h4>
-        <ul>
-          <li><a href="/services.html#dispatch" id="footer-dispatch-link">Freight Dispatch</a></li>
-          <li><a href="/services.html#load-booking" id="footer-loadbook-link">Load Board Management</a></li>
-          <li><a href="/services.html#fleet" id="footer-fleet-link">Fleet & Driver Management</a></li>
-          <li><a href="/services.html#documents" id="footer-docs-link">Document Management</a></li>
-          <li><a href="/factoring.html" id="footer-factoring-link">Factoring Assistance</a></li>
-          <li><a href="/insurance.html" id="footer-insurance-link">Insurance Services</a></li>
-          <li><a href="/eld.html" id="footer-eld-link">ELD & Telematics</a></li>
-          <li><a href="/dot-compliance.html" id="footer-dot-link">DOT Compliance</a></li>
+        <a class="btn btn-primary btn-block" href="/checkout?plan=solo_weekly">Checkout securely</a>
+      </article>
+      <article class="price-card featured">
+        <div class="price-badge">Most fleets</div>
+        <div class="price-name">Small Fleet</div>
+        <div class="price-trucks">2–5 trucks</div>
+        <div class="price-amt">$350 <small>/ week</small></div>
+        <div class="price-trial">7 days free · $0 today</div>
+        <ul class="price-list">
+          <li>Dedicated operations desk</li>
+          <li>Multi-truck planning</li>
+          <li>RPM &amp; deadhead reporting</li>
         </ul>
-      </div>
-
-      <div class="footer-col">
-        <h4>Company & Resources</h4>
-        <ul>
-          <li><a href="/about.html" id="footer-about-link">About Us</a></li>
-          <li><a href="/blog.html">Dispatch & Freight Blog 📰</a></li>
-          <li><a href="/login.html" id="footer-login-link">Carrier Portal Login</a></li>
-          <li><a href="/signup.html" id="footer-signup-link">Create Account</a></li>
-          <li><a href="/contact.html" id="footer-contact-link">Contact</a></li>
+        <a class="btn btn-primary btn-block" href="/checkout?plan=fleet_weekly">Checkout securely</a>
+      </article>
+      <article class="price-card">
+        <div class="price-name">Fleet Command</div>
+        <div class="price-trucks">6+ trucks</div>
+        <div class="price-amt">$500 <small>/ week</small></div>
+        <div class="price-trial">7 days free · $0 today</div>
+        <ul class="price-list">
+          <li>Company operations team</li>
+          <li>Lane strategy + compliance</li>
+          <li>Custom TMS setup</li>
         </ul>
-      </div>
-
-      <div class="footer-col">
-        <h4>Legal</h4>
-        <ul>
-          <li><a href="/privacy-policy.html" id="footer-privacy-link">Privacy Policy</a></li>
-          <li><a href="/terms.html" id="footer-terms-link">Terms of Service</a></li>
-        </ul>
-        <h4 style="margin-top:var(--space-6);">Hours</h4>
-        <ul>
-          <li><span style="color:rgba(255,255,255,0.4);font-size:var(--text-sm);">24/7 Dispatch Operations</span></li>
-          <li><span style="color:rgba(255,255,255,0.4);font-size:var(--text-sm);">Mon–Fri 8AM–8PM ET Office</span></li>
-        </ul>
-      </div>
+        <a class="btn btn-primary btn-block" href="/checkout?plan=command_weekly">Checkout securely</a>
+      </article>
     </div>
-
-    <div class="footer-bottom">
-      <p>© 2026 Shipping Wish LLC. All rights reserved. Registered in Delaware, USA.</p>
-      <p>
-        <span style="color:rgba(255,255,255,0.2);">·</span>
-        Dispatch services are provided by Shipping Wish LLC as an independent dispatcher, not a broker or carrier.
-      </p>
+    <div class="safe-row" style="justify-content:center;margin-top:28px;">
+      <span class="safe-pill">🔒 256-bit Stripe checkout</span>
+      <span class="safe-pill">✓ PCI-DSS via Stripe</span>
+      <span class="safe-pill">Visa · Mastercard · Amex · Discover</span>
     </div>
   </div>
-</footer>
+</section>
 
-<!-- ===== SCRIPTS ===== -->
-<script>
-  // Mobile nav toggle
-  const hamburger = document.getElementById('nav-hamburger');
-  const mobileNav = document.getElementById('nav-mobile');
+<section class="mkt-section">
+  <div class="mkt-wrap">
+    <div class="mkt-eyebrow">How it starts</div>
+    <h2 class="mkt-h2">Three steps. Then your desk is live.</h2>
+    <div class="mkt-cards">
+      <article class="mkt-card">
+        <h3>1. Choose a weekly plan</h3>
+        <p>Enter company details and a payment card on Stripe. Nothing is charged during the free week.</p>
+      </article>
+      <article class="mkt-card">
+        <h3>2. We join your company</h3>
+        <p>Packet, authority, insurance, lanes, and RPM floor. Your manager treats the trucks as in-house work.</p>
+      </article>
+      <article class="mkt-card">
+        <h3>3. Freight starts moving</h3>
+        <p>Offers in your TMS. You approve. We book. Brokers pay you. Weekly Stripe billing begins only after day 7.</p>
+      </article>
+    </div>
+  </div>
+</section>
 
-  hamburger.addEventListener('click', () => {
-    const isOpen = mobileNav.classList.toggle('open');
-    hamburger.setAttribute('aria-expanded', isOpen);
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-  });
+<section class="mkt-section alt">
+  <div class="mkt-wrap">
+    <div class="mkt-center">
+      <div class="mkt-eyebrow">Questions</div>
+      <h2 class="mkt-h2">Clear answers before you put a card on file.</h2>
+    </div>
+    <div class="mkt-faq" style="max-width:760px;margin:28px auto 0;">
+      <details open>
+        <summary>Do you take a cut of my loads?</summary>
+        <p>No. Freight revenue stays with your company. Shipping Wish bills only the weekly subscription on Stripe.</p>
+      </details>
+      <details>
+        <summary>When am I charged?</summary>
+        <p>Today: $0. Your card is saved. The first weekly charge runs after the 7-day trial. Cancel in Stripe before that date and you are not billed.</p>
+      </details>
+      <details>
+        <summary>Do I still need DAT?</summary>
+        <p>No. Load sourcing and booking are part of the plan. You do not purchase a load board to work with us.</p>
+      </details>
+      <details>
+        <summary>Are you a broker?</summary>
+        <p>No. Shipping Wish LLC is an independent operations company. We work for your MC. We do not buy or sell freight.</p>
+      </details>
+      <details>
+        <summary>Can I cancel?</summary>
+        <p>Yes. Cancel anytime in Stripe. If you cancel during the free week, the subscription never bills.</p>
+      </details>
+    </div>
+  </div>
+</section>
 
-  // Accordion
-  document.querySelectorAll('.accordion-trigger').forEach(trigger => {
-    trigger.addEventListener('click', () => {
-      const item = trigger.closest('.accordion-item');
-      const isOpen = item.classList.contains('open');
-      
-      // Close all
-      document.querySelectorAll('.accordion-item.open').forEach(el => {
-        el.classList.remove('open');
-        el.querySelector('.accordion-trigger').setAttribute('aria-expanded', 'false');
-      });
+<section class="mkt-section ink">
+  <div class="mkt-wrap mkt-center">
+    <h2 class="mkt-h2">Put a manager on your company this week.</h2>
+    <p class="mkt-sub">$0 due now. Live operations desk. TMS included. Call +1 (917) 737-0021 if you want a human first.</p>
+    <div class="mkt-actions" style="justify-content:center;margin-top:24px;">
+      <a href="/pricing" class="btn btn-primary btn-xl">See weekly plans</a>
+      <a href="/contact" class="btn btn-secondary btn-xl">Talk to operations</a>
+    </div>
+  </div>
+</section>
 
-      if (!isOpen) {
-        item.classList.add('open');
-        trigger.setAttribute('aria-expanded', 'true');
-      }
-    });
-  });
-
-  // Scroll reveal
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-
-  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-  // Animated Counter Logic
-  function animateCounters() {
-    const counters = document.querySelectorAll('.stat-counter');
-    counters.forEach(counter => {
-      const target = parseFloat(counter.getAttribute('data-target'));
-      const decimals = parseInt(counter.getAttribute('data-decimal') || '0', 10);
-      const duration = 2000; // 2 seconds
-      const startTime = performance.now();
-
-      function update(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        // Ease out quadratic function
-        const easeProgress = 1 - Math.pow(1 - progress, 3);
-        const currentVal = target * easeProgress;
-
-        counter.textContent = currentVal.toFixed(decimals);
-
-        if (progress < 1) {
-          requestAnimationFrame(update);
-        } else {
-          counter.textContent = target.toFixed(decimals);
-        }
-      }
-
-      requestAnimationFrame(update);
-    });
-  }
-
-  // Trigger counters when hero metrics are visible
-  const metricsEl = document.querySelector('.hero-metrics');
-  if (metricsEl) {
-    const counterObserver = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        animateCounters();
-        counterObserver.unobserve(metricsEl);
-      }
-    }, { threshold: 0.2 });
-    counterObserver.observe(metricsEl);
-  }
-
-  // Nav state based on authenticated user
-  fetch('/api/me', { credentials: 'include' })
-    .then(r => r.ok ? r.json() : null)
-    .then(data => {
-      if (data && data.user) {
-        const loginBtn = document.getElementById('nav-login-btn');
-        if (loginBtn) {
-          loginBtn.textContent = 'My Portal';
-          loginBtn.href = '/admin-dashboard.html';
-        }
-      }
-    })
-    .catch(() => {});
-</script>
-
+<footer class="footer" role="contentinfo"></footer>
 <script src="/js/site-chrome.js"></script>
 </body>
 </html>

@@ -149,7 +149,7 @@ function renderAdminLoads(loads) {
 
   tbody.innerHTML = loads.map(l => `
     <tr>
-      <td><a href="/load-detail.html?id=${l.id}" style="color:var(--amber-primary);font-weight:600;">${escapeHtml(l.load_number)}</a></td>
+      <td><a href="/load-detail?id=${l.id}" style="color:var(--amber-primary);font-weight:600;">${escapeHtml(l.load_number)}</a></td>
       <td><b>${escapeHtml(l.carrier_company || l.carrier_name || '-')}</b></td>
       <td>${escapeHtml(l.broker_name || '-')}</td>
       <td>${escapeHtml(l.pickup_location || '-')} (${formatDate(l.pickup_date)})</td>
@@ -160,7 +160,7 @@ function renderAdminLoads(loads) {
       </td>
       <td>${renderStatusBadge(l.status)}</td>
       <td>
-        <a href="/load-detail.html?id=${l.id}" class="btn btn-outline btn-sm">Console</a>
+        <a href="/load-detail?id=${l.id}" class="btn btn-outline btn-sm">Console</a>
       </td>
     </tr>
   `).join('');

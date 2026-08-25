@@ -2,19 +2,35 @@ User-agent: *
 Allow: /
 
 # Block internal/authenticated pages
+Disallow: /admin-dashboard
 Disallow: /admin-dashboard.html
+Disallow: /dispatcher-dashboard
 Disallow: /dispatcher-dashboard.html
+Disallow: /fleet
 Disallow: /fleet.html
+Disallow: /invoices
 Disallow: /invoices.html
+Disallow: /sales-dashboard
 Disallow: /sales-dashboard.html
+Disallow: /load-detail
 Disallow: /load-detail.html
+Disallow: /load-planning
 Disallow: /load-planning.html
+Disallow: /documents
 Disallow: /documents.html
+Disallow: /ifta
 Disallow: /ifta.html
+Disallow: /brokers
 Disallow: /brokers.html
+Disallow: /carrier-overview
 Disallow: /carrier-overview.html
+Disallow: /dashboard
 Disallow: /dashboard.html
+Disallow: /driver-app
 Disallow: /driver-app.html
+Disallow: /crm-sales
+Disallow: /inbox
+Disallow: /staff-management
 Disallow: /invoices/
 Disallow: /uploads/
 

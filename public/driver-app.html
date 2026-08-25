@@ -204,13 +204,13 @@
   async function checkDriverAuth() {
     try {
       const res = await fetch('/api/me', { credentials: 'include' });
-      if (!res.ok) { window.location.href = '/login.html'; return; }
+      if (!res.ok) { window.location.href = '/login'; return; }
       const data = await res.json();
-      if (!data.user) { window.location.href = '/login.html'; return; }
+      if (!data.user) { window.location.href = '/login'; return; }
       document.getElementById('driver-name-head').textContent = data.user.name || 'Driver';
       document.getElementById('driver-truck-head').textContent = data.user.company_name ? data.user.company_name : 'Driver App';
     } catch (e) {
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     }
   }
 
@@ -408,9 +408,9 @@
   async function logout() {
     try {
       await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     } catch (e) {
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     }
   }
 </script>

@@ -5,97 +5,293 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const { sendBrandedEmail } = require('../utils/mailer');
 const { buildTemplate, COMPANY, APP_URL } = require('../utils/email-templates');
 
+const TRIAL_DAYS = parseInt(process.env.STRIPE_TRIAL_DAYS || '7', 10);
+
 function getStripe() {
-  if (!process.env.STRIPE_SECRET_KEY) return null;
-  return require('stripe')(process.env.STRIPE_SECRET_KEY);
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key || !/^sk_(test|live)_/.test(key)) return null;
+  return require('stripe')(key);
 }
 
 const PLANS = {
   solo_weekly: {
     key: 'solo_weekly',
-    name: 'Dedicated Operations Manager — 1 truck',
-    amount_cents: parseInt(process.env.STRIPE_PLAN_SOLO_CENTS || '9900', 10),
-    description: 'Weekly retainer. We find and book freight for one truck. You keep broker pay.'
+    name: 'Owner Operator — Dedicated Fleet Manager',
+    trucks: '1 truck',
+    amount_cents: parseInt(process.env.STRIPE_PLAN_SOLO_CENTS || '14900', 10),
+    price_env: 'STRIPE_PRICE_SOLO',
+    description: 'Named operations manager for one truck. Load booking, broker handling, and TMS included. You keep freight pay.',
+    features: [
+      'Named 24/7 operations manager on your company',
+      'Load finding and booking — no DAT subscription required',
+      'Full TMS portal included',
+      'Broker packets, rate cons, BOL, POD follow-up',
+      'You invoice the broker or factor directly'
+    ]
   },
   fleet_weekly: {
     key: 'fleet_weekly',
-    name: 'Dedicated Operations Manager — 2–5 trucks',
-    amount_cents: parseInt(process.env.STRIPE_PLAN_FLEET_CENTS || '14900', 10),
-    description: 'Weekly retainer for a small fleet. Dedicated manager, load booking, broker handling.'
+    name: 'Small Fleet — Dedicated Operations Desk',
+    trucks: '2–5 trucks',
+    amount_cents: parseInt(process.env.STRIPE_PLAN_FLEET_CENTS || '35000', 10),
+    price_env: 'STRIPE_PRICE_FLEET',
+    description: 'Dedicated desk for a small fleet. Multi-truck planning, higher RPM, less deadhead.',
+    features: [
+      'Everything in Owner Operator',
+      'Multi-truck load planning and reload strategy',
+      'RPM and deadhead reporting',
+      'IFTA mileage support',
+      'Driver and equipment coordination'
+    ]
   },
-  custom_weekly: {
-    key: 'custom_weekly',
-    name: 'Dedicated Operations Manager — custom weekly',
-    amount_cents: parseInt(process.env.STRIPE_PLAN_CUSTOM_CENTS || '19900', 10),
-    description: 'Custom weekly retainer set by Shipping Wish LLC.'
+  command_weekly: {
+    key: 'command_weekly',
+    name: 'Fleet Command — Company Operations Team',
+    trucks: '6+ trucks',
+    amount_cents: parseInt(process.env.STRIPE_PLAN_COMMAND_CENTS || process.env.STRIPE_PLAN_CUSTOM_CENTS || '50000', 10),
+    price_env: 'STRIPE_PRICE_COMMAND',
+    description: 'A full operations team working as staff for your motor carrier. Lane strategy, compliance support, custom TMS.',
+    features: [
+      'Everything in Small Fleet',
+      'Dedicated multi-person operations desk',
+      'Preferred-lane and network strategy',
+      'Compliance and insurance coordination',
+      'Custom TMS setup for your company'
+    ]
   }
 };
 
-router.get('/plans', requireAuth, (req, res) => {
-  res.json({ plans: PLANS, configured: Boolean(process.env.STRIPE_SECRET_KEY) });
-});
+PLANS.custom_weekly = PLANS.command_weekly;
 
-async function createWeeklyCheckout({ email, name, company, planKey, leadId, userId, amountOverride }) {
+function publicPlans() {
+  return ['solo_weekly', 'fleet_weekly', 'command_weekly'].map((key) => {
+    const p = PLANS[key];
+    return {
+      key: p.key,
+      name: p.name,
+      trucks: p.trucks,
+      amount_cents: p.amount_cents,
+      amount_display: `$${(p.amount_cents / 100).toFixed(0)}`,
+      interval: 'week',
+      trial_days: TRIAL_DAYS,
+      description: p.description,
+      features: p.features
+    };
+  });
+}
+
+function lineItemForPlan(plan, amount) {
+  const priceId = process.env[plan.price_env];
+  if (priceId) {
+    return { price: priceId, quantity: 1 };
+  }
+  return {
+    price_data: {
+      currency: 'usd',
+      product_data: {
+        name: plan.name,
+        description: `${plan.description} First ${TRIAL_DAYS} days free. Then billed weekly.`
+      },
+      unit_amount: amount,
+      recurring: { interval: 'week' }
+    },
+    quantity: 1
+  };
+}
+
+async function recordSubscription({ userId, leadId, sessionId, planKey, amount, status }) {
+  try {
+    const ins = await pool.query(
+      `INSERT INTO billing_subscriptions (user_id, lead_id, stripe_checkout_session_id, plan_key, amount_cents, status)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [userId || null, leadId || null, sessionId, planKey, amount, status || 'incomplete']
+    );
+    return ins.rows[0];
+  } catch (err) {
+    console.error('billing_subscriptions insert:', err.message);
+    return null;
+  }
+}
+
+async function createWeeklyCheckout({
+  email,
+  name,
+  company,
+  phone,
+  trucks,
+  mcNumber,
+  usdot,
+  planKey,
+  leadId,
+  userId,
+  amountOverride,
+  successUrl,
+  cancelUrl
+}) {
   const stripe = getStripe();
   const plan = PLANS[planKey] || PLANS.solo_weekly;
   const amount = amountOverride || plan.amount_cents;
-  const success = `${APP_URL}/dashboard.html?billing=success`;
-  const cancel = `${APP_URL}/contact.html?billing=cancel`;
+  const success = successUrl || `${APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}`;
+  const cancel = cancelUrl || `${APP_URL}/checkout?plan=${plan.key}&canceled=1`;
 
   if (!stripe) {
     const fake = `https://checkout.stripe.com/c/pay/cs_test_simulated_${Date.now()}`;
-    const ins = await pool.query(
-      `INSERT INTO billing_subscriptions (user_id, lead_id, plan_key, amount_cents, status, stripe_checkout_session_id)
-       VALUES ($1,$2,$3,$4,'incomplete',$5) RETURNING *`,
-      [userId || null, leadId || null, plan.key, amount, 'sim_' + Date.now()]
-    );
-    return { simulated: true, url: fake, subscription: ins.rows[0] };
+    const row = await recordSubscription({
+      userId,
+      leadId,
+      sessionId: 'sim_' + Date.now(),
+      planKey: plan.key,
+      amount,
+      status: 'incomplete'
+    });
+    return { simulated: true, url: fake, subscription: row };
   }
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     customer_email: email,
-    client_reference_id: String(leadId || userId || ''),
-    line_items: [
-      {
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: plan.name,
-            description: plan.description
-          },
-          unit_amount: amount,
-          recurring: { interval: 'week' }
-        },
-        quantity: 1
-      }
-    ],
+    client_reference_id: String(leadId || userId || email || ''),
+    billing_address_collection: 'required',
+    phone_number_collection: { enabled: true },
+    payment_method_collection: 'always',
+    allow_promotion_codes: true,
+    line_items: [lineItemForPlan(plan, amount)],
     success_url: success,
     cancel_url: cancel,
     metadata: {
       lead_id: leadId ? String(leadId) : '',
       user_id: userId ? String(userId) : '',
       plan_key: plan.key,
-      company: company || ''
+      company: company || '',
+      name: name || '',
+      phone: phone || '',
+      trucks: trucks != null ? String(trucks) : '',
+      mc_number: mcNumber || '',
+      usdot: usdot || ''
     },
     subscription_data: {
+      trial_period_days: TRIAL_DAYS,
+      trial_settings: {
+        end_behavior: { missing_payment_method: 'cancel' }
+      },
       metadata: {
         lead_id: leadId ? String(leadId) : '',
-        plan_key: plan.key
+        plan_key: plan.key,
+        company: company || ''
+      }
+    },
+    custom_text: {
+      submit: {
+        message: `Card is saved securely. $0 due today. Weekly billing starts after a ${TRIAL_DAYS}-day trial. Cancel before then and you are not charged.`
       }
     }
   });
 
-  const ins = await pool.query(
-    `INSERT INTO billing_subscriptions (user_id, lead_id, stripe_checkout_session_id, plan_key, amount_cents, status)
-     VALUES ($1,$2,$3,$4,$5,'incomplete') RETURNING *`,
-    [userId || null, leadId || null, session.id, plan.key, amount]
-  );
+  const row = await recordSubscription({
+    userId,
+    leadId,
+    sessionId: session.id,
+    planKey: plan.key,
+    amount,
+    status: 'incomplete'
+  });
 
-  return { simulated: false, url: session.url, session_id: session.id, subscription: ins.rows[0] };
+  return { simulated: false, url: session.url, session_id: session.id, subscription: row };
 }
 
-// Admin: create a weekly checkout link and optionally email it
+router.get('/plans', (req, res) => {
+  res.json({
+    plans: publicPlans(),
+    trial_days: TRIAL_DAYS,
+    currency: 'usd',
+    interval: 'week',
+    configured: Boolean(process.env.STRIPE_SECRET_KEY)
+  });
+});
+
+const checkoutHits = new Map();
+function checkoutLimited(ip) {
+  const now = Date.now();
+  const recent = (checkoutHits.get(ip) || []).filter((t) => now - t < 60 * 1000);
+  recent.push(now);
+  checkoutHits.set(ip, recent);
+  return recent.length > 8;
+}
+
+router.post('/checkout', async (req, res) => {
+  try {
+    const ip = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.ip || 'unknown';
+    if (checkoutLimited(ip)) {
+      return res.status(429).json({ error: 'Too many checkout attempts. Please wait a minute and try again.' });
+    }
+
+    const {
+      plan_key,
+      email,
+      name,
+      company,
+      phone,
+      trucks,
+      mc_number,
+      usdot
+    } = req.body || {};
+
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return res.status(400).json({ error: 'A valid work email is required.' });
+    }
+    if (!String(name || '').trim()) {
+      return res.status(400).json({ error: 'Full name is required.' });
+    }
+
+    const plan = PLANS[plan_key] || PLANS.solo_weekly;
+    const checkout = await createWeeklyCheckout({
+      email: cleanEmail,
+      name: String(name).trim(),
+      company: String(company || '').trim(),
+      phone: String(phone || '').trim(),
+      trucks,
+      mcNumber: String(mc_number || '').trim(),
+      usdot: String(usdot || '').trim(),
+      planKey: plan.key
+    });
+
+    res.json({
+      ok: true,
+      url: checkout.url,
+      simulated: checkout.simulated || false,
+      trial_days: TRIAL_DAYS,
+      message: checkout.simulated
+        ? 'Stripe is not connected yet. Add STRIPE_SECRET_KEY on the server to accept live cards.'
+        : 'Redirecting to secure Stripe Checkout.'
+    });
+  } catch (err) {
+    console.error('Public checkout error:', err);
+    res.status(500).json({ error: err.message || 'Could not start checkout' });
+  }
+});
+
+router.get('/session/:id', async (req, res) => {
+  try {
+    const stripe = getStripe();
+    if (!stripe) return res.json({ ok: false, simulated: true });
+    const session = await stripe.checkout.sessions.retrieve(req.params.id, {
+      expand: ['subscription', 'customer']
+    });
+    const sub = session.subscription && typeof session.subscription === 'object' ? session.subscription : null;
+    res.json({
+      ok: true,
+      email: session.customer_details?.email || session.customer_email,
+      status: session.status,
+      payment_status: session.payment_status,
+      trial_end: sub && sub.trial_end ? sub.trial_end : null,
+      plan_key: session.metadata && session.metadata.plan_key
+    });
+  } catch (err) {
+    res.status(404).json({ error: 'Checkout session not found' });
+  }
+});
+
 router.post('/weekly-link', requireAuth, requireRole('dispatcher', 'admin', 'super_admin', 'sales_rep'), async (req, res) => {
   try {
     const { lead_id, email, name, company, plan_key, amount_cents, send_email } = req.body;
@@ -188,17 +384,31 @@ async function handleStripeEvent(event) {
     const subId = obj.subscription;
     const customerId = obj.customer;
     const leadId = obj.metadata && obj.metadata.lead_id ? parseInt(obj.metadata.lead_id, 10) : null;
-    await pool.query(
-      `UPDATE billing_subscriptions
-       SET status = 'active',
-           stripe_subscription_id = COALESCE($1, stripe_subscription_id),
-           stripe_customer_id = $2,
-           updated_at = now()
-       WHERE stripe_checkout_session_id = $3`,
-      [subId ? String(subId) : null, customerId ? String(customerId) : null, sessionId]
-    );
-    if (leadId) {
-      await pool.query(`UPDATE crm_leads SET status = 'active' WHERE id = $1`, [leadId]);
+    let status = 'trialing';
+    try {
+      const stripe = getStripe();
+      if (stripe && subId) {
+        const sub = await stripe.subscriptions.retrieve(String(subId));
+        status = sub.status || 'trialing';
+      }
+    } catch (err) {
+      console.error('Stripe subscription retrieve:', err.message);
+    }
+    try {
+      await pool.query(
+        `UPDATE billing_subscriptions
+         SET status = $4,
+             stripe_subscription_id = COALESCE($1, stripe_subscription_id),
+             stripe_customer_id = $2,
+             updated_at = now()
+         WHERE stripe_checkout_session_id = $3`,
+        [subId ? String(subId) : null, customerId ? String(customerId) : null, sessionId, status]
+      );
+      if (leadId) {
+        await pool.query(`UPDATE crm_leads SET status = 'active' WHERE id = $1`, [leadId]);
+      }
+    } catch (err) {
+      console.error('billing checkout.session.completed db:', err.message);
     }
   }
 
@@ -211,7 +421,6 @@ async function handleStripeEvent(event) {
         [String(subId)]
       );
     }
-    // Also mark freight invoices if this is a one-off Stripe invoice id
     if (obj.id) {
       const invRes = await pool.query('SELECT id, load_id FROM invoices WHERE stripe_invoice_id = $1', [obj.id]);
       if (invRes.rows.length) {
@@ -261,6 +470,14 @@ async function webhookHandler(req, res) {
     res.status(400).send(`Webhook Error: ${err.message}`);
   }
 }
+
+router.get('/stripe-webhook', (req, res) => {
+  res.json({
+    ok: true,
+    message: 'Stripe webhook is live. Paste this URL in Stripe Dashboard → Developers → Webhooks. Do not open it in a browser — Stripe sends POST events here.',
+    method: 'POST'
+  });
+});
 
 router.post('/stripe-webhook', express.raw({ type: 'application/json' }), webhookHandler);
 

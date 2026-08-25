@@ -1,12 +1,39 @@
 (function () {
-  const path = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-  const isHome = path === '' || path === 'index.html' || path === '/';
+  function slug() {
+    const raw = (location.pathname.split('/').filter(Boolean).pop() || '').toLowerCase();
+    if (!raw || raw === 'index' || raw === 'index.html') return '';
+    return raw.replace(/\.html$/, '');
+  }
+  const path = slug();
+  const isHome = !path;
+
+  if (!document.querySelector('.app-shell') && !document.querySelector('.auth-wrapper')) {
+    document.body.classList.add('marketing');
+    if (!document.querySelector('link[href*="marketing.css"]')) {
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = '/css/marketing.css';
+      document.head.appendChild(l);
+    }
+  }
+
+  function payBadges() {
+    return `
+      <div class="pay-badges" aria-label="Accepted payment methods">
+        <span class="pay-badge visa">VISA</span>
+        <span class="pay-badge mc">MC</span>
+        <span class="pay-badge amex">AMEX</span>
+        <span class="pay-badge discover">DISC</span>
+        <span class="pay-badge stripe">STRIPE</span>
+      </div>`;
+  }
 
   function navHtml() {
     const active = (href, extra) => {
-      const file = href.replace(/^\//, '').split('#')[0];
+      const file = href.replace(/^\//, '').replace(/\.html$/, '').split('#')[0];
       if (file && path === file) return ' class="active" aria-current="page"';
-      if (extra && extra.includes(path)) return ' class="active"';
+      const extras = (extra || []).map((e) => String(e).replace(/\.html$/, ''));
+      if (extras.includes(path)) return ' class="active"';
       return '';
     };
     return `
@@ -18,29 +45,29 @@
       <ul class="nav-links" role="list">
         <li><a href="/"${isHome ? ' class="active" aria-current="page"' : ''}>Home</a></li>
         <li class="nav-item-dropdown">
-          <a href="/services.html"${active('/services.html', ['dispatch.html','load-booking.html','fleet-support.html','factoring.html','insurance.html','eld.html','dot-compliance.html'])}>Services ▾</a>
+          <a href="/services"${active('/services.html', ['dispatch.html','load-booking.html','fleet-support.html','factoring.html','insurance.html','eld.html','dot-compliance.html'])}>Services ▾</a>
           <div class="nav-dropdown-menu" role="menu">
             <div class="dropdown-label">Operations</div>
-            <a href="/dispatch.html" role="menuitem">Freight Operations</a>
-            <a href="/load-booking.html" role="menuitem">Load Booking</a>
-            <a href="/fleet-support.html" role="menuitem">Fleet Support</a>
+            <a href="/dispatch" role="menuitem">Fleet Operations Manager</a>
+            <a href="/load-booking" role="menuitem">Load Booking</a>
+            <a href="/fleet-support" role="menuitem">Fleet Support</a>
             <div class="dropdown-label">Financial</div>
-            <a href="/factoring.html" role="menuitem">Factoring</a>
-            <a href="/insurance.html" role="menuitem">Insurance</a>
+            <a href="/factoring" role="menuitem">Factoring</a>
+            <a href="/insurance" role="menuitem">Insurance</a>
             <div class="dropdown-label">Compliance</div>
-            <a href="/eld.html" role="menuitem">ELD &amp; Telematics</a>
-            <a href="/dot-compliance.html" role="menuitem">DOT Compliance</a>
+            <a href="/eld" role="menuitem">ELD &amp; Telematics</a>
+            <a href="/dot-compliance" role="menuitem">DOT Compliance</a>
           </div>
         </li>
-        <li><a href="/about.html"${active('/about.html')}>About</a></li>
-        <li><a href="/blog.html"${active('/blog.html', ['blog-post.html'])}>Blog</a></li>
-        <li><a href="/contact.html#pricing"${path === 'contact.html' ? ' class="active"' : ''}>Pricing</a></li>
-        <li><a href="/contact.html"${active('/contact.html')}>Contact</a></li>
+        <li><a href="/pricing"${active('/pricing.html', ['checkout.html','checkout-success.html'])}>Pricing</a></li>
+        <li><a href="/about"${active('/about.html')}>About</a></li>
+        <li><a href="/blog"${active('/blog.html', ['blog-post.html'])}>Insights</a></li>
+        <li><a href="/contact"${active('/contact.html')}>Contact</a></li>
       </ul>
       <div class="nav-actions">
-        <div class="live-status" aria-live="polite"><span class="live-dot" aria-hidden="true"></span> Operations Desk</div>
-        <a href="/login.html" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
-        <a href="/contact.html" class="btn btn-primary btn-sm" id="nav-cta-btn">Get Started</a>
+        <div class="live-status" aria-live="polite"><span class="live-dot" aria-hidden="true"></span> 24/7 Desk</div>
+        <a href="/login" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
+        <a href="/pricing" class="btn btn-primary btn-sm" id="nav-cta-btn">Start Free Week</a>
       </div>
       <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>`;
@@ -49,14 +76,15 @@
   function mobileHtml() {
     return `
       <a href="/">Home</a>
-      <a href="/services.html">Services</a>
-      <a href="/dispatch.html">Freight Operations</a>
-      <a href="/about.html">About</a>
-      <a href="/blog.html">Blog</a>
-      <a href="/contact.html">Contact</a>
+      <a href="/services">Services</a>
+      <a href="/dispatch">Fleet Operations</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/about">About</a>
+      <a href="/blog">Insights</a>
+      <a href="/contact">Contact</a>
       <div class="nav-mobile-cta-group">
-        <a href="/login.html" class="btn btn-secondary-glass">Sign In</a>
-        <a href="/contact.html" class="btn btn-primary-amber">Get Started →</a>
+        <a href="/login" class="btn btn-secondary-glass">Sign In</a>
+        <a href="/pricing" class="btn btn-primary-amber">Start Free Week →</a>
       </div>`;
   }
 
@@ -69,43 +97,44 @@
           <div class="nav-logo-mark">SW</div>
           <div class="nav-logo-text">Shipping <span>Wish</span></div>
         </a>
-        <p>Delaware LLC. Dedicated fleet operations managers for U.S. motor carriers. Weekly retainer. You keep freight pay.</p>
+        <p>Delaware LLC. Dedicated fleet operations managers for U.S. motor carriers. Flat weekly subscription. You keep 100% of freight pay. TMS included.</p>
         <div class="footer-contact">
           <div class="footer-contact-item">+1 (917) 737-0021</div>
           <div class="footer-contact-item">info@shippingwish.com</div>
           <div class="footer-contact-item">Rehoboth Beach, DE</div>
         </div>
+        <div style="margin-top:16px;">${payBadges()}</div>
       </div>
       <div class="footer-col">
         <h4>Services</h4>
         <ul>
-          <li><a href="/dispatch.html">Freight Operations</a></li>
-          <li><a href="/load-booking.html">Load Booking</a></li>
-          <li><a href="/fleet-support.html">Fleet Support</a></li>
-          <li><a href="/factoring.html">Factoring</a></li>
-          <li><a href="/contact.html#pricing">Pricing</a></li>
+          <li><a href="/dispatch">Fleet Operations Manager</a></li>
+          <li><a href="/load-booking">Load Booking</a></li>
+          <li><a href="/fleet-support">Fleet Support</a></li>
+          <li><a href="/factoring">Factoring</a></li>
+          <li><a href="/pricing">Weekly Plans</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Company</h4>
         <ul>
-          <li><a href="/about.html">About</a></li>
-          <li><a href="/blog.html">Blog</a></li>
-          <li><a href="/login.html">Carrier Portal</a></li>
-          <li><a href="/contact.html">Contact</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/blog">Insights</a></li>
+          <li><a href="/login">Carrier Portal</a></li>
+          <li><a href="/contact">Contact</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Legal</h4>
         <ul>
-          <li><a href="/privacy-policy.html">Privacy Policy</a></li>
-          <li><a href="/terms.html">Terms of Service</a></li>
+          <li><a href="/privacy-policy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms of Service</a></li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© ${new Date().getFullYear()} Shipping Wish LLC. Registered in Delaware, USA.</p>
-      <p>Independent operations support — not a freight broker or motor carrier.</p>
+      <p>© ${new Date().getFullYear()} Shipping Wish LLC. Registered in Delaware, USA. Independent operations support — not a freight broker or motor carrier.</p>
+      <p>Secure checkout by Stripe. Visa, Mastercard, American Express, and Discover accepted.</p>
     </div>
   </div>`;
   }
@@ -127,7 +156,7 @@
         if (btn) {
           btn.textContent = 'My Portal';
           const role = data.user.role || '';
-          btn.href = (role === 'carrier' || role === 'driver') ? '/dashboard.html' : '/admin-dashboard.html';
+          btn.href = (role === 'carrier' || role === 'driver') ? '/dashboard' : '/admin-dashboard';
         }
       })
       .catch(() => {});

@@ -1,33 +1,33 @@
 (function () {
   const STAFF_LINKS = [
     { section: 'Operations' },
-    { key: 'overview', navId: 'nav-tab-loads', href: '/admin-dashboard.html', icon: '📊', label: 'Overview & Loads' },
-    { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard.html', icon: '🎧', label: 'Dispatch Desk' },
-    { key: 'brokers', href: '/brokers.html', icon: '🤝', label: 'Broker Directory' },
-    { key: 'fleet', href: '/fleet.html', icon: '🚛', label: 'Fleet & Drivers' },
+    { key: 'overview', navId: 'nav-tab-loads', href: '/admin-dashboard', icon: '📊', label: 'Overview & Loads' },
+    { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: '🎧', label: 'Dispatch Desk' },
+    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' },
+    { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
     { section: 'Sales & Staff' },
-    { key: 'crm', href: '/crm-sales.html', icon: '📈', label: 'Sales CRM & Leads' },
-    { key: 'inbox', href: '/inbox.html', icon: '📬', label: 'Carrier Replies' },
-    { key: 'staff', href: '/staff-management.html', icon: '👔', label: 'Company Staff' },
+    { key: 'crm', href: '/crm-sales', icon: '📈', label: 'Sales CRM & Leads' },
+    { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Replies' },
+    { key: 'staff', href: '/staff-management', icon: '👔', label: 'Company Staff' },
     { section: 'Accounting' },
-    { key: 'invoices', href: '/invoices.html', icon: '💳', label: 'Invoices & Billing' },
-    { key: 'ifta', href: '/ifta.html', icon: '⛽', label: 'IFTA & Fuel' },
-    { key: 'documents', href: '/documents.html', icon: '📄', label: 'Document Vault' },
-    { key: 'planning', href: '/load-planning.html', icon: '📅', label: 'Load Planning' },
+    { key: 'invoices', href: '/invoices', icon: '💳', label: 'Invoices & Billing' },
+    { key: 'ifta', href: '/ifta', icon: '⛽', label: 'IFTA & Fuel' },
+    { key: 'documents', href: '/documents', icon: '📄', label: 'Document Vault' },
+    { key: 'planning', href: '/load-planning', icon: '📅', label: 'Load Planning' },
     { section: 'System' },
-    { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard.html#audit', icon: '🛡️', label: 'Audit Logs' },
-    { key: 'settings', navId: 'nav-tab-settings', href: '/admin-dashboard.html#settings', icon: '🌐', label: 'Website CMS' },
-    { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard.html#blog', icon: '📰', label: 'Blog Manager' }
+    { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: '🛡️', label: 'Audit Logs' },
+    { key: 'settings', navId: 'nav-tab-settings', href: '/admin-dashboard#settings', icon: '🌐', label: 'Website CMS' },
+    { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: '📰', label: 'Blog Manager' }
   ];
 
   const CARRIER_LINKS = [
     { section: 'Operations' },
-    { key: 'loads', href: '/dashboard.html', icon: '📦', label: 'My Loads' },
-    { key: 'fleet', href: '/fleet.html', icon: '🚛', label: 'Fleet & Drivers' },
-    { key: 'documents', href: '/documents.html', icon: '📄', label: 'Documents' },
+    { key: 'loads', href: '/dashboard', icon: '📦', label: 'My Loads' },
+    { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
+    { key: 'documents', href: '/documents', icon: '📄', label: 'Documents' },
     { section: 'Accounting' },
-    { key: 'invoices', href: '/invoices.html', icon: '💳', label: 'Invoices' },
-    { key: 'ifta', href: '/ifta.html', icon: '⛽', label: 'IFTA' }
+    { key: 'invoices', href: '/invoices', icon: '💳', label: 'Invoices' },
+    { key: 'ifta', href: '/ifta', icon: '⛽', label: 'IFTA' }
   ];
 
   const PAGE_KEY = {
@@ -50,7 +50,10 @@
   };
 
   function pageName() {
-    return (location.pathname.split('/').pop() || '').toLowerCase();
+    let p = (location.pathname.split('/').filter(Boolean).pop() || '').toLowerCase();
+    if (!p || p === 'index') return 'index.html';
+    if (!p.endsWith('.html')) p += '.html';
+    return p;
   }
 
   function isCarrierShell() {
@@ -67,21 +70,21 @@
     if (p === 'dispatcher-dashboard.html') {
       return [
         { section: 'This desk' },
-        { key: 'fleets', navId: 'nav-tab-fleets', href: '/dispatcher-dashboard.html#fleets', icon: '🚛', label: 'Assigned Fleets' }
+        { key: 'fleets', navId: 'nav-tab-fleets', href: '/dispatcher-dashboard#fleets', icon: '🚛', label: 'Assigned Fleets' }
       ];
     }
     if (p === 'sales-dashboard.html') {
       return [
         { section: 'This board' },
-        { key: 'leads', navId: 'nav-tab-leads', href: '/sales-dashboard.html#leads', icon: '🎯', label: 'Lead Pipeline' },
-        { key: 'tasks', navId: 'nav-tab-tasks', href: '/sales-dashboard.html#tasks', icon: '📋', label: 'Follow-up Tasks' }
+        { key: 'leads', navId: 'nav-tab-leads', href: '/sales-dashboard#leads', icon: '🎯', label: 'Lead Pipeline' },
+        { key: 'tasks', navId: 'nav-tab-tasks', href: '/sales-dashboard#tasks', icon: '📋', label: 'Follow-up Tasks' }
       ];
     }
     if (p === 'carrier-overview.html') {
       return [
         { section: 'Cockpit' },
-        { key: 'cockpit', navId: 'nav-tab-cockpit', href: '/carrier-overview.html#cockpit', icon: '📊', label: 'Fleet Cockpit' },
-        { key: 'carrier-loads', navId: 'nav-tab-loads', href: '/carrier-overview.html#loads', icon: '📦', label: 'My Loads' }
+        { key: 'cockpit', navId: 'nav-tab-cockpit', href: '/carrier-overview#cockpit', icon: '📊', label: 'Fleet Cockpit' },
+        { key: 'carrier-loads', navId: 'nav-tab-loads', href: '/carrier-overview#loads', icon: '📦', label: 'My Loads' }
       ];
     }
     return [];
@@ -125,7 +128,7 @@
     const carrier = isCarrierShell();
     const active = activeKey();
     const tag = carrier ? 'Carrier Portal' : 'Operations';
-    const home = carrier ? '/dashboard.html' : '/admin-dashboard.html';
+    const home = carrier ? '/dashboard' : '/admin-dashboard';
     const links = carrier ? CARRIER_LINKS : STAFF_LINKS.concat(extraLinks());
     return `
       <div class="sidebar-nav-scroll">
@@ -193,7 +196,7 @@
     btn.addEventListener('click', () => {
       if (typeof window.logout === 'function') return window.logout();
       fetch('/api/logout', { method: 'POST', credentials: 'include' }).finally(() => {
-        window.location.href = '/login.html';
+        window.location.href = '/login';
       });
     });
   }

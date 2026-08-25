@@ -117,7 +117,7 @@ async function loadTableLoads(tableId, isDispatcherOrAdmin = false) {
       const isDelivered = ['delivered', 'pod_uploaded', 'invoiced', 'paid'].includes(l.status);
       return `
         <tr>
-          <td><a href="/load-detail.html?id=${l.id}" style="color:var(--amber-primary);font-weight:600;">${l.load_number}</a></td>
+          <td><a href="/load-detail?id=${l.id}" style="color:var(--amber-primary);font-weight:600;">${l.load_number}</a></td>
           <td>${l.carrier_company || l.carrier_name || '-'}</td>
           <td>${l.broker_name || '-'}</td>
           <td>${l.pickup_location || '-'} (${formatDate(l.pickup_date)})</td>
@@ -125,7 +125,7 @@ async function loadTableLoads(tableId, isDispatcherOrAdmin = false) {
           <td style="font-weight:600;">${formatCurrency(l.rate || l.carrier_pay)}</td>
           <td>${renderStatusBadge(l.status)}</td>
           <td style="display:flex;gap:6px;align-items:center;">
-            <a href="/load-detail.html?id=${l.id}" class="btn btn-outline btn-sm">View</a>
+            <a href="/load-detail?id=${l.id}" class="btn btn-outline btn-sm">View</a>
             ${!isDelivered ? `
               <button class="btn btn-amber btn-sm" onclick="quickMarkDelivered(${l.id}, '${tableId}')">Mark Delivered</button>
             ` : ''}

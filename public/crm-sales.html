@@ -15,7 +15,7 @@
   <!-- LEFT SIDEBAR (MASTER UNIFIED NAVIGATION) -->
   <aside class="app-sidebar">
     <div>
-      <a href="/admin-dashboard.html" class="sidebar-brand" style="text-decoration:none;">
+      <a href="/admin-dashboard" class="sidebar-brand" style="text-decoration:none;">
         <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
         <div>
           <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
@@ -24,46 +24,46 @@
       </a>
 
       <div class="sidebar-section-label">Operations</div>
-      <a href="/admin-dashboard.html" class="sidebar-nav-link">
+      <a href="/admin-dashboard" class="sidebar-nav-link">
         <span aria-hidden="true">📊</span> Overview &amp; Loads
       </a>
-      <a href="/dispatcher-dashboard.html" class="sidebar-nav-link">
+      <a href="/dispatcher-dashboard" class="sidebar-nav-link">
         <span aria-hidden="true">🎧</span> Dispatch Desk
       </a>
-      <a href="/brokers.html" class="sidebar-nav-link">
+      <a href="/brokers" class="sidebar-nav-link">
         <span aria-hidden="true">🤝</span> Broker Directory &amp; Credit
       </a>
-      <a href="/fleet.html" class="sidebar-nav-link">
+      <a href="/fleet" class="sidebar-nav-link">
         <span aria-hidden="true">🚛</span> Fleet &amp; Drivers
       </a>
 
       <div class="sidebar-section-label">Sales &amp; Staff</div>
-      <a href="/crm-sales.html" class="sidebar-nav-link active">
+      <a href="/crm-sales" class="sidebar-nav-link active">
         <span aria-hidden="true">📈</span> Sales CRM &amp; Leads
       </a>
-      <a href="/inbox.html" class="sidebar-nav-link">
+      <a href="/inbox" class="sidebar-nav-link">
         <span aria-hidden="true">📬</span> Carrier Replies
       </a>
-      <a href="/staff-management.html" class="sidebar-nav-link">
+      <a href="/staff-management" class="sidebar-nav-link">
         <span aria-hidden="true">👔</span> Company Staff &amp; Roles
       </a>
 
       <div class="sidebar-section-label">Accounting &amp; Taxes</div>
-      <a href="/invoices.html" class="sidebar-nav-link">
+      <a href="/invoices" class="sidebar-nav-link">
         <span aria-hidden="true">💳</span> Invoices &amp; Billing
       </a>
-      <a href="/ifta.html" class="sidebar-nav-link">
+      <a href="/ifta" class="sidebar-nav-link">
         <span aria-hidden="true">⛽</span> IFTA &amp; Fuel Ledger
       </a>
-      <a href="/documents.html" class="sidebar-nav-link">
+      <a href="/documents" class="sidebar-nav-link">
         <span aria-hidden="true">📄</span> Document Vault (POD/BOL)
       </a>
-      <a href="/load-planning.html" class="sidebar-nav-link">
+      <a href="/load-planning" class="sidebar-nav-link">
         <span aria-hidden="true">📅</span> Load Planning
       </a>
 
       <div class="sidebar-section-label">Security &amp; System</div>
-      <a href="/admin-dashboard.html#audit" class="sidebar-nav-link">
+      <a href="/admin-dashboard#audit" class="sidebar-nav-link">
         <span aria-hidden="true">🛡️</span> Security Audit Logs
       </a>
     </div>
@@ -92,7 +92,7 @@
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-3);">
-        <a href="/inbox.html" class="btn btn-secondary btn-sm" id="inbox-link">📬 Replies <span id="inbox-unread">0</span></a>
+        <a href="/inbox" class="btn btn-secondary btn-sm" id="inbox-link">📬 Replies <span id="inbox-unread">0</span></a>
         <button class="btn btn-primary btn-sm" id="btn-add-lead" onclick="openAddLeadModal()">
           + Add Carrier Lead
         </button>
@@ -325,17 +325,17 @@
   async function checkAuth() {
     try {
       const res = await fetch('/api/me', { credentials: 'include' });
-      if (!res.ok) { window.location.href = '/login.html'; return; }
+      if (!res.ok) { window.location.href = '/login'; return; }
       const data = await res.json();
       const user = data.user || data;
       
-      if (!user || !user.role) { window.location.href = '/login.html'; return; }
+      if (!user || !user.role) { window.location.href = '/login'; return; }
       const role = (user.role || '').toLowerCase();
       const isAuthorized = ['admin', 'super_admin', 'superadmin', 'sales_rep', 'dispatcher'].includes(role) || (user.email && user.email.toLowerCase().includes('admin'));
       
       if (!isAuthorized) {
         alert('Access Restricted. Redirecting to Portal.');
-        window.location.href = '/dashboard.html';
+        window.location.href = '/dashboard';
         return;
       }
       
@@ -731,7 +731,7 @@
 
   async function logout() {
     await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-    window.location.href = '/login.html';
+    window.location.href = '/login';
   }
 </script>
 

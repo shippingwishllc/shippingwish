@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Checkout — Weekly Operations Plan | Shipping Wish LLC</title>
+  <meta name="description" content="Start a Shipping Wish weekly operations plan. Enter company details and continue to Stripe. $0 due today. 7-day free trial.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://www.shippingwish.com/checkout">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/marketing.css">
+</head>
+<body class="marketing">
+<nav class="nav" role="navigation"></nav>
+
+<div class="checkout-shell">
+  <div class="mkt-kicker">Stripe secure checkout</div>
+  <h1 class="mkt-h2" id="plan-title">Start your free week</h1>
+  <p class="mkt-sub" id="plan-sub" style="margin-bottom:18px;">Your card is saved. You will not be charged until the trial ends. Cancel before then and you pay $0.</p>
+  <div id="alert" class="form-alert" role="alert" style="display:none;margin-bottom:16px;"></div>
+  <div class="mkt-note" id="canceled-note" style="display:none;margin-bottom:16px;">Checkout was canceled. No charge was made. You can try again below.</div>
+
+  <form id="checkout-form">
+    <input type="hidden" name="plan_key" id="plan_key" value="solo_weekly">
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label required" for="name">Full name</label>
+        <input class="form-input" id="name" name="name" required autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label class="form-label required" for="email">Work email</label>
+        <input class="form-input" id="email" name="email" type="email" required autocomplete="email">
+      </div>
+      <div class="form-group full">
+        <label class="form-label required" for="company">Motor carrier / company name</label>
+        <input class="form-input" id="company" name="company" required autocomplete="organization">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="phone">Phone</label>
+        <input class="form-input" id="phone" name="phone" type="tel" autocomplete="tel">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="trucks">Power units</label>
+        <select class="form-input" id="trucks" name="trucks">
+          <option value="1">1 truck</option>
+          <option value="2-5">2–5 trucks</option>
+          <option value="6+">6+ trucks</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mc_number">MC number</label>
+        <input class="form-input" id="mc_number" name="mc_number" placeholder="MC-123456">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="usdot">USDOT</label>
+        <input class="form-input" id="usdot" name="usdot" placeholder="1234567">
+      </div>
+    </div>
+
+    <div class="safe-row" style="margin:18px 0;">
+      <span class="safe-pill">🔒 256-bit encryption</span>
+      <span class="safe-pill">PCI via Stripe</span>
+      <span class="safe-pill">$0 due today</span>
+    </div>
+    <div class="pay-badges" style="margin-bottom:18px;">
+      <span class="pay-badge visa">VISA</span>
+      <span class="pay-badge mc">MC</span>
+      <span class="pay-badge amex">AMEX</span>
+      <span class="pay-badge discover">DISC</span>
+      <span class="pay-badge stripe">STRIPE</span>
+    </div>
+
+    <button class="btn btn-primary btn-xl btn-block" type="submit" id="submit-btn">Continue to Stripe — $0 today</button>
+    <p style="font-size:12px;color:#64748b;margin-top:12px;line-height:1.5;">
+      Next screen is Stripe Checkout. We never store full card numbers on shippingwish.com.
+      By continuing you agree to the <a href="/terms">Terms</a> and <a href="/privacy-policy">Privacy Policy</a>.
+    </p>
+  </form>
+</div>
+
+<footer class="footer"></footer>
+<script src="/js/site-chrome.js"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const plan = params.get('plan') || 'solo_weekly';
+  const copy = {
+    solo_weekly: { title: 'Owner Operator — $149 / week after trial', trucks: '1' },
+    fleet_weekly: { title: 'Small Fleet — $350 / week after trial', trucks: '2-5' },
+    command_weekly: { title: 'Fleet Command — $500 / week after trial', trucks: '6+' },
+    custom_weekly: { title: 'Fleet Command — $500 / week after trial', trucks: '6+' }
+  };
+  const meta = copy[plan] || copy.solo_weekly;
+  document.getElementById('plan_key').value = copy[plan] ? plan : 'solo_weekly';
+  document.getElementById('plan-title').textContent = meta.title;
+  document.getElementById('trucks').value = meta.trucks;
+  if (params.get('canceled') === '1') {
+    document.getElementById('canceled-note').style.display = 'block';
+  }
+
+  const alertEl = document.getElementById('alert');
+  function showAlert(msg, ok) {
+    alertEl.style.display = 'block';
+    alertEl.textContent = msg;
+    alertEl.className = 'form-alert ' + (ok ? 'success' : 'error');
+  }
+
+  document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Opening Stripe…';
+    const body = {
+      plan_key: document.getElementById('plan_key').value,
+      name: document.getElementById('name').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      company: document.getElementById('company').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      trucks: document.getElementById('trucks').value,
+      mc_number: document.getElementById('mc_number').value.trim(),
+      usdot: document.getElementById('usdot').value.trim()
+    };
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        showAlert(data.error || 'Could not start checkout.');
+        btn.disabled = false;
+        btn.textContent = 'Continue to Stripe — $0 today';
+        return;
+      }
+      if (data.simulated) {
+        showAlert('Stripe is not connected on this server yet. Add STRIPE_SECRET_KEY in Vercel, then try again. No card was charged.');
+        btn.disabled = false;
+        btn.textContent = 'Continue to Stripe — $0 today';
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      showAlert('Network error. Please try again or call +1 (917) 737-0021.');
+      btn.disabled = false;
+      btn.textContent = 'Continue to Stripe — $0 today';
+    }
+  });
+})();
+</script>
+</body>
+</html>

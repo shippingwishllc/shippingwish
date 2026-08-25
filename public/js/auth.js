@@ -1,11 +1,16 @@
 // Shipping Wish LLC Auth & Navigation Helper
 
+function isAuthPage() {
+  const p = (window.location.pathname || '').replace(/\.html$/i, '').replace(/\/$/, '');
+  return p.endsWith('/login') || p.endsWith('/signup');
+}
+
 async function checkAuth(allowedRoles = []) {
   try {
     const res = await fetch('/api/me');
     if (!res.ok) {
-      if (!window.location.pathname.endsWith('/login.html') && !window.location.pathname.endsWith('/signup.html')) {
-        window.location.href = '/login.html';
+      if (!isAuthPage()) {
+        window.location.href = '/login';
       }
       return null;
     }
@@ -21,8 +26,8 @@ async function checkAuth(allowedRoles = []) {
     }
     return user;
   } catch (err) {
-    if (!window.location.pathname.endsWith('/login.html') && !window.location.pathname.endsWith('/signup.html')) {
-      window.location.href = '/login.html';
+    if (!isAuthPage()) {
+      window.location.href = '/login';
     }
     return null;
   }
@@ -30,11 +35,11 @@ async function checkAuth(allowedRoles = []) {
 
 function redirectUserToDashboard(user) {
   if (user.role === 'super_admin' || user.role === 'admin') {
-    window.location.href = '/admin-dashboard.html';
+    window.location.href = '/admin-dashboard';
   } else if (user.role === 'dispatcher') {
-    window.location.href = '/dispatcher-dashboard.html';
+    window.location.href = '/dispatcher-dashboard';
   } else {
-    window.location.href = '/dashboard.html';
+    window.location.href = '/dashboard';
   }
 }
 
@@ -65,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
       await fetch('/api/logout', { method: 'POST' });
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     });
   }
 

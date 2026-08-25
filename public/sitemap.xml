@@ -8,67 +8,79 @@
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/about.html</loc>
+    <loc>https://www.shippingwish.com/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/services.html</loc>
+    <loc>https://www.shippingwish.com/services</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/contact.html</loc>
+    <loc>https://www.shippingwish.com/pricing</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <url>
+    <loc>https://www.shippingwish.com/dispatch</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://www.shippingwish.com/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/factoring.html</loc>
+    <loc>https://www.shippingwish.com/factoring</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/insurance.html</loc>
+    <loc>https://www.shippingwish.com/insurance</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/eld.html</loc>
+    <loc>https://www.shippingwish.com/eld</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/dot-compliance.html</loc>
+    <loc>https://www.shippingwish.com/dot-compliance</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/login.html</loc>
+    <loc>https://www.shippingwish.com/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/signup.html</loc>
+    <loc>https://www.shippingwish.com/signup</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/privacy-policy.html</loc>
+    <loc>https://www.shippingwish.com/privacy-policy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
-    <loc>https://www.shippingwish.com/terms.html</loc>
+    <loc>https://www.shippingwish.com/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

@@ -13,7 +13,7 @@ async function checkAuth() {
   try {
     const res = await fetch('/api/me');
     if (!res.ok) {
-      window.location.href = '/login.html';
+      window.location.href = '/login';
       return;
     }
     const data = await res.json();
@@ -23,7 +23,7 @@ async function checkAuth() {
       document.getElementById('sales-avatar-initials').textContent = initials || 'SR';
     }
   } catch (err) {
-    window.location.href = '/login.html';
+    window.location.href = '/login';
   }
 }
 
@@ -448,6 +448,6 @@ function escapeHtml(str) {
 
 function logout() {
   fetch('/api/logout', { method: 'POST' }).then(() => {
-    window.location.href = '/login.html';
+    window.location.href = '/login';
   });
 }

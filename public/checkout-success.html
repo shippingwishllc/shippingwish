@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're in — 7-day trial started | Shipping Wish LLC</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/marketing.css">
+</head>
+<body class="marketing">
+<nav class="nav" role="navigation"></nav>
+<div class="checkout-shell" style="text-align:center;">
+  <div class="mkt-kicker">Trial active · $0 charged</div>
+  <h1 class="mkt-h2">Your operations desk is reserved.</h1>
+  <p class="mkt-sub" id="success-copy" style="margin:0 auto 22px;">
+    Stripe saved your card. The first weekly charge starts after 7 days.
+    Cancel in the Stripe receipt email or customer portal before then and you pay nothing.
+  </p>
+  <p id="trial-date" style="font-weight:800;color:#047857;margin-bottom:24px;"></p>
+  <div class="safe-row" style="justify-content:center;">
+    <span class="safe-pill">No charge today</span>
+    <span class="safe-pill">Visa · MC · Amex · Discover</span>
+  </div>
+  <div class="mkt-actions" style="justify-content:center;margin-top:28px;">
+    <a class="btn btn-primary btn-xl" href="/signup">Create portal login</a>
+    <a class="btn btn-secondary btn-xl" href="/contact">Talk to operations</a>
+  </div>
+</div>
+<footer class="footer"></footer>
+<script src="/js/site-chrome.js"></script>
+<script>
+(function () {
+  const id = new URLSearchParams(location.search).get('session_id');
+  const dateEl = document.getElementById('trial-date');
+  if (!id) {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    dateEl.textContent = 'Estimated first charge: ' + d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    return;
+  }
+  fetch('/api/billing/session/' + encodeURIComponent(id))
+    .then((r) => r.json())
+    .then((data) => {
+      if (data.trial_end) {
+        const d = new Date(data.trial_end * 1000);
+        dateEl.textContent = 'First charge on ' + d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' unless you cancel first.';
+      }
+    })
+    .catch(() => {});
+})();
+</script>
+</body>
+</html>

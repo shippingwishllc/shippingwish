@@ -30,18 +30,18 @@
       <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-loads" onclick="switchCarrierTab('loads')">
         <span aria-hidden="true">🚚</span> Active Dispatched Loads
       </a>
-      <a href="/fleet.html" class="sidebar-nav-link">
+      <a href="/fleet" class="sidebar-nav-link">
         <span aria-hidden="true">👥</span> Fleet Roster & Trucks
       </a>
 
       <div class="sidebar-section-label">Finance & Docs</div>
-      <a href="/invoices.html" class="sidebar-nav-link">
+      <a href="/invoices" class="sidebar-nav-link">
         <span aria-hidden="true">💳</span> Invoices & Factoring
       </a>
-      <a href="/documents.html" class="sidebar-nav-link">
+      <a href="/documents" class="sidebar-nav-link">
         <span aria-hidden="true">📄</span> Document Vault (POD/BOL)
       </a>
-      <a href="/driver-app.html" class="sidebar-nav-link">
+      <a href="/driver-app" class="sidebar-nav-link">
         <span aria-hidden="true">📱</span> Mobile Driver App
       </a>
     </div>
@@ -70,7 +70,7 @@
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-4);">
-        <a href="/driver-app.html" class="btn btn-primary btn-sm" id="btn-open-driver-app">
+        <a href="/driver-app" class="btn btn-primary btn-sm" id="btn-open-driver-app">
           📱 Driver App Console
         </a>
 
@@ -179,9 +179,9 @@
   async function checkCarrierAuth() {
     try {
       const res = await fetch('/api/me', { credentials: 'include' });
-      if (!res.ok) { window.location.href = '/login.html'; return; }
+      if (!res.ok) { window.location.href = '/login'; return; }
       const data = await res.json();
-      if (!data.user) { window.location.href = '/login.html'; return; }
+      if (!data.user) { window.location.href = '/login'; return; }
       const nameEl = document.getElementById('carrier-name-display') || document.getElementById('user-name-display');
       const mcEl = document.getElementById('carrier-mc-display') || document.getElementById('user-role-display');
       const avEl = document.getElementById('carrier-avatar-initials') || document.getElementById('user-avatar-initials');
@@ -189,7 +189,7 @@
       if (mcEl) mcEl.textContent = data.user.mc_number ? `MC-${data.user.mc_number}` : 'Carrier Client';
       if (avEl) avEl.textContent = (data.user.company_name || data.user.name || 'CF').slice(0, 2).toUpperCase();
     } catch (e) {
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     }
   }
 
@@ -238,7 +238,7 @@
         <td style="font-weight:700;">$${l.rpm || '0.00'}/mi</td>
         <td><span class="badge ${getStatusBadge(l.status)}">${formatStatus(l.status)}</span></td>
         <td>
-          <a href="/load-detail.html?id=${l.id}" class="btn btn-secondary btn-sm" id="btn-carrier-view-${l.id}">View Details</a>
+          <a href="/load-detail?id=${l.id}" class="btn btn-secondary btn-sm" id="btn-carrier-view-${l.id}">View Details</a>
         </td>
       </tr>
     `).join('');
@@ -288,9 +288,9 @@
   async function logout() {
     try {
       await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     } catch (e) {
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     }
   }
 </script>

@@ -6,7 +6,7 @@
   <title>Sign In — Shipping Wish LLC Carrier Portal</title>
   <meta name="description" content="Sign in to your Shipping Wish LLC carrier portal to view loads, documents, invoices, and fleet management.">
   <meta name="robots" content="noindex, nofollow">
-  <link rel="canonical" href="https://www.shippingwish.com/login.html">
+  <link rel="canonical" href="https://www.shippingwish.com/login">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
 
@@ -297,7 +297,7 @@
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2);">
               <label class="form-label" for="login-password" style="margin-bottom:0;">Password</label>
-              <a href="/contact.html" style="font-size:var(--text-xs);color:var(--color-amber-600);" id="forgot-password-link">Forgot password?</a>
+              <a href="/contact" style="font-size:var(--text-xs);color:var(--color-amber-600);" id="forgot-password-link">Forgot password?</a>
             </div>
             <input
               class="form-input"
@@ -318,12 +318,12 @@
 
       <div class="auth-divider"><span>No account yet?</span></div>
 
-      <a href="/signup.html" class="btn btn-light btn-lg btn-block" id="signup-from-login-btn">
+      <a href="/signup" class="btn btn-light btn-lg btn-block" id="signup-from-login-btn">
         Create Carrier Account
       </a>
 
       <p class="auth-footer-link">
-        Or <a href="/contact.html" id="contact-from-login-link">contact our dispatch team</a> to get started.
+        Or <a href="/contact" id="contact-from-login-link">contact our dispatch team</a> to get started.
       </p>
 
       <div id="login-role-display" style="display:none;text-align:center;margin-top:var(--space-4);">
@@ -348,12 +348,12 @@
   };
 
   const ROLE_REDIRECT = {
-    super_admin: '/admin-dashboard.html',
-    admin: '/admin-dashboard.html',
-    dispatcher: '/dispatcher-dashboard.html',
-    sales_rep: '/sales-dashboard.html',
-    carrier: '/carrier-overview.html',
-    driver: '/driver-app.html'
+    super_admin: '/admin-dashboard',
+    admin: '/admin-dashboard',
+    dispatcher: '/dispatcher-dashboard',
+    sales_rep: '/sales-dashboard',
+    carrier: '/carrier-overview',
+    driver: '/driver-app'
   };
 
   form.addEventListener('submit', async (e) => {
@@ -387,7 +387,7 @@
       } else {
         const role = data.user?.role || 'carrier';
         submitBtn.textContent = 'Redirecting...';
-        window.location.href = ROLE_REDIRECT[role] || '/carrier-overview.html';
+        window.location.href = ROLE_REDIRECT[role] || '/carrier-overview';
       }
     } catch (err) {
       alertBox.textContent = 'Network error. Please check your connection and try again.';
@@ -404,7 +404,7 @@
     .then(data => {
       if (data && data.user) {
         const role = data.user.role;
-        window.location.href = ROLE_REDIRECT[role] || '/carrier-overview.html';
+        window.location.href = ROLE_REDIRECT[role] || '/carrier-overview';
       }
     })
     .catch(() => {});
