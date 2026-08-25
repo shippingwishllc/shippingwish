@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { lookupCensusRow, digits } = require('../utils/fmcsa');
+const { lookupMotusBond, lookupInternalDtp, lookupLoadWrap } = require('../utils/broker-vet');
 
 const router = express.Router();
 
@@ -59,7 +60,7 @@ function censusBrokerPayload(row) {
     usdotActive,
     isBroker,
     addDate: formatCensusDate(row.add_date),
-    bondStatus: 'Not in FMCSA census. Confirm BMC-84/BMC-85 on FMCSA L&I.',
+    bondStatus: 'Bond not in Motus feed for this docket. Confirm BMC-84/85 on SAFER.',
     bondUrl: row.dot_number
       ? `https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&query_string=${encodeURIComponent(row.dot_number)}`
       : 'https://safer.fmcsa.dot.gov/',
@@ -92,6 +93,45 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
 
     const payload = censusBrokerPayload(row);
     const mcDigits = digits(payload.mcNumber);
+
+    const [bond, internalDtp, wrap] = await Promise.all([
+      lookupMotusBond(payload.mcNumber, payload.dotNumber),
+      lookupInternalDtp(pool, mcDigits),
+      lookupLoadWrap(payload.mcNumber, payload.dotNumber)
+    ]);
+
+    if (bond && bond.bondOnFile) {
+      payload.bondStatus = bond.bondStatus;
+      payload.bondAmount = bond.bondAmount;
+      payload.bondSource = bond.bondSource;
+    } else if (wrap && wrap.bondStatus) {
+      payload.bondStatus = wrap.bondStatus;
+      payload.bondAmount = wrap.bondAmount;
+      payload.bondSource = 'LoadWrap';
+    }
+
+    if (internalDtp && internalDtp.daysToPay != null) {
+      payload.daysToPay = internalDtp.daysToPay;
+      payload.paidLoadCount = internalDtp.paidLoadCount;
+      payload.dtpSource = 'internal';
+    } else if (wrap && wrap.daysToPay != null) {
+      payload.daysToPay = wrap.daysToPay;
+      payload.dtpSource = 'LoadWrap';
+    }
+
+    if (wrap && wrap.creditScore != null) {
+      payload.creditScore = wrap.creditScore;
+      payload.creditRating = wrap.creditRating;
+      payload.creditSource = 'LoadWrap';
+      payload.riskLevel = payload.usdotActive ? `LoadWrap ${wrap.creditScore}` : 'FMCSA INACTIVE';
+    }
+
+    if (wrap && wrap.factoringStatus) {
+      payload.factoringStatus = wrap.factoringStatus;
+    }
+
+    payload.loadWrapConfigured = !!String(process.env.LOADWRAP_API_KEY || '').trim();
+
     try {
       const saved = await pool.query(
         `SELECT id, credit_rating, notes FROM brokers
@@ -103,9 +143,22 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
         payload.alreadySaved = true;
         payload.directoryId = saved.rows[0].id;
         payload.directoryRating = saved.rows[0].credit_rating || '';
+        if (payload.creditScore == null && payload.directoryRating && payload.directoryRating !== 'Unrated') {
+          payload.creditRating = payload.directoryRating;
+          payload.creditSource = 'directory';
+        }
       }
     } catch {
       // directory lookup is optional
+    }
+
+    if (payload.creditScore == null && payload.creditSource !== 'directory') {
+      payload.entityNote = [
+        payload.entityNote,
+        payload.loadWrapConfigured
+          ? ''
+          : 'Credit/DTP from DAT/Highway is paid. Free option: add LOADWRAP_API_KEY (250 lookups/mo at loadwrap.com). DTP also fills from your own paid invoices.'
+      ].filter(Boolean).join(' ');
     }
 
     return res.json(payload);

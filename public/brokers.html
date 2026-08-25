@@ -108,7 +108,7 @@
         <div style="font-size:var(--text-base);font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           ⚡ FMCSA Broker / MC Authority Check
         </div>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:16px;">Type an MC# or USDOT. We pull the live FMCSA census (legal name, authority flags, address, phone). FMCSA does not publish credit scores, days-to-pay, or factoring approval.</p>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:16px;">Live FMCSA census for identity. BMC-84 from Motus when on file. Days-to-pay from <strong>your paid invoices</strong>. Industry credit scores (DAT/Highway) are paid — optional free LoadWrap key: 250 lookups/month.</p>
 
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
           <div class="search-input-group" style="flex:1;min-width:260px;">
@@ -381,14 +381,22 @@
       badge.style.background = data.usdotActive === false ? '#dc2626' : '#059669';
 
       document.getElementById('cr-score').textContent = data.creditScore == null
-        ? 'Credit score is not published by FMCSA'
-        : `Credit Score: ${data.creditScore} / 100`;
+        ? (data.creditSource === 'directory'
+          ? `Your directory rating: ${data.creditRating}`
+          : (data.loadWrapConfigured
+            ? 'LoadWrap returned no score for this MC'
+            : 'No free FMCSA credit bureau — add LOADWRAP_API_KEY or rate the broker yourself'))
+        : `${data.creditSource === 'LoadWrap' ? 'LoadWrap Trust' : 'Credit'}: ${data.creditScore} / 100`;
       document.getElementById('cr-authority').textContent = data.authorityStatus;
       document.getElementById('cr-authority').style.color = data.usdotActive === false ? '#fca5a5' : '#34d399';
       document.getElementById('cr-bond').textContent = data.bondStatus;
       const bondLink = document.getElementById('cr-bond-link');
       if (bondLink && data.bondUrl) bondLink.href = data.bondUrl;
-      document.getElementById('cr-dtp').textContent = data.daysToPay == null ? 'Not published by FMCSA' : `${data.daysToPay} Days Avg`;
+      document.getElementById('cr-dtp').textContent = data.daysToPay == null
+        ? 'No paid loads with this MC yet (DTP fills from your invoices)'
+        : (data.dtpSource === 'internal'
+          ? `${data.daysToPay} days avg · ${data.paidLoadCount} paid load${data.paidLoadCount === 1 ? '' : 's'}`
+          : `${data.daysToPay} days avg (${data.dtpSource})`);
       document.getElementById('cr-factoring').textContent = data.factoringStatus;
       document.getElementById('cr-limit').textContent = data.creditLimit || 'Not published by FMCSA';
     } catch (e) {
