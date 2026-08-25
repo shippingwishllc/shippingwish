@@ -43,11 +43,21 @@ router.get('/fmcsa/search', requireAuth, async (req, res) => {
 
   try {
     const result = await searchFmcsa(q);
-    result.carriers = await tagCrmDuplicates(result.carriers || []);
+    try {
+      result.carriers = await tagCrmDuplicates(result.carriers || []);
+    } catch (tagErr) {
+      result.tagWarning = 'Could not check CRM duplicates';
+    }
     res.json(result);
   } catch (err) {
     console.error('FMCSA search error:', err);
-    res.status(500).json({ error: 'FMCSA search failed: ' + err.message });
+    res.json({
+      source: 'fmcsa_error',
+      keyPresent: !!String(process.env.FMCSA_API_KEY || '').trim(),
+      carriers: [],
+      error: err.message,
+      message: 'FMCSA search failed: ' + err.message
+    });
   }
 });
 

@@ -1,33 +1,26 @@
-const https = require('https');
-
 const FMCSA_HOST = 'mobile.fmcsa.dot.gov';
 const SAFER_HOST = 'safer.fmcsa.dot.gov';
 
-function httpsRequest(url, timeoutMs = 18000, hops = 0) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, {
+async function httpsRequest(url, timeoutMs = 12000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const resp = await fetch(url, {
+      signal: ctrl.signal,
+      redirect: 'follow',
       headers: {
-        Accept: 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; ShippingWishTMS/1.0)'
+        Accept: 'application/json, text/html;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
       }
-    }, (resp) => {
-      const loc = resp.headers.location;
-      if ([301, 302, 307, 308].includes(resp.statusCode) && loc && hops < 4) {
-        const next = loc.startsWith('http') ? loc : new URL(loc, url).href;
-        resp.resume();
-        return resolve(httpsRequest(next, timeoutMs, hops + 1));
-      }
-      let body = '';
-      resp.on('data', (d) => { body += d; });
-      resp.on('end', () => {
-        resolve({ status: resp.statusCode || 0, body, contentType: String(resp.headers['content-type'] || '') });
-      });
     });
-    req.on('error', reject);
-    req.setTimeout(timeoutMs, () => {
-      req.destroy(new Error('FMCSA timeout'));
-    });
-  });
+    const body = await resp.text();
+    return { status: resp.status, body, contentType: String(resp.headers.get('content-type') || '') };
+  } catch (err) {
+    if (err && err.name === 'AbortError') throw new Error('FMCSA timeout');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function textVal(v) {
@@ -113,7 +106,7 @@ async function probeQc(path) {
       parseErr = err.message;
     }
   }
-  const authFail = status === 401 || status === 403 || looksLikeAuthFailure(data, body);
+  const authFail = status === 401 || (status !== 403 && looksLikeAuthFailure(data, body));
   const nodes = (!authFail && status < 400 && !parseErr) ? extractNodes(data) : [];
   const hint = typeof data.content === 'string'
     ? String(data.content).slice(0, 80)
@@ -228,7 +221,7 @@ async function fetchQcNodes(path, attempts) {
   if (attempts) {
     attempts.push({ path: probe.path, status: probe.status, result: probe.authFail ? 'auth' : (probe.nodes.length ? 'hit' : probe.hint) });
   }
-  if (probe.authFail) {
+  if (probe.authFail && probe.status === 401) {
     const err = new Error('FMCSA WebKey rejected. In Vercel use My WebKeys → WebKey, not Client Secret.');
     err.status = 401;
     throw err;
@@ -373,6 +366,110 @@ async function fetchSafer(kind, value) {
   return parseSaferHtml(body, kind === 'mc' ? { mc: value } : { dot: value });
 }
 
+function formatPhone(value) {
+  const d = digits(value);
+  if (d.length === 10) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  return String(value || '').trim();
+}
+
+function cargoFromCensus(row) {
+  const map = {
+    crgo_genfreight: 'General Freight',
+    crgo_produce: 'Produce',
+    crgo_coldfood: 'Refrigerated Food',
+    crgo_beverages: 'Beverages',
+    crgo_meat: 'Meat',
+    crgo_logs: 'Logs',
+    crgo_building: 'Building Materials',
+    crgo_drybulk: 'Dry Bulk'
+  };
+  return Object.entries(map)
+    .filter(([key]) => row[key] === 'X' || row[key] === 'Y')
+    .map(([, label]) => label)
+    .slice(0, 4)
+    .join(', ');
+}
+
+function soqlLike(name) {
+  return String(name || '')
+    .replace(/'/g, "''")
+    .replace(/[^\w .&-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase()
+    .slice(0, 60);
+}
+
+function censusToCarrier(row) {
+  if (!row) return null;
+  return normalizeCarrier({}, {
+    source: 'FMCSA Census',
+    company_name: row.legal_name || row.dba_name || '',
+    dba_name: row.dba_name || '',
+    owner_name: row.company_officer_1 || '',
+    officer_name: row.company_officer_1 || '',
+    mc: row.docket1 || '',
+    dot: row.dot_number || '',
+    phone: formatPhone(row.phone),
+    email: String(row.email_address || '').toLowerCase(),
+    phy_street: row.phy_street || '',
+    phy_city: row.phy_city || '',
+    phy_state: row.phy_state || '',
+    phy_zip: row.phy_zip || '',
+    num_trucks: row.power_units || row.truck_units || 1,
+    num_drivers: row.total_drivers || null,
+    usdot_status: row.status_code === 'A' ? 'ACTIVE' : (row.status_code || ''),
+    authority_status: row.classdef || row.docket1_status_code || '',
+    equipment_type: cargoFromCensus(row) || '53ft Dry Van'
+  });
+}
+
+async function censusQuery(params) {
+  const u = new URL('https://data.transportation.gov/resource/az4n-8mr2.json');
+  Object.entries(params).forEach(([key, value]) => {
+    if (value != null && value !== '') u.searchParams.set(key, String(value));
+  });
+  const { status, body } = await httpsRequest(u.toString(), 12000);
+  if (status >= 400) {
+    const err = new Error(`Census HTTP ${status}`);
+    err.status = status;
+    throw err;
+  }
+  const data = JSON.parse(body || '[]');
+  return Array.isArray(data) ? data : [];
+}
+
+async function searchCensus(classified, attempts) {
+  let rows = [];
+  let label = 'census';
+  if (classified.type === 'mc') {
+    label = `census/mc/${classified.value}`;
+    rows = await censusQuery({ docket1: classified.value, docket1prefix: 'MC', $limit: '10' });
+    if (!rows.length) rows = await censusQuery({ docket1: classified.value, $limit: '10' });
+  } else if (classified.type === 'dot') {
+    label = `census/dot/${classified.value}`;
+    rows = await censusQuery({ dot_number: classified.value, $limit: '10' });
+  } else if (classified.type === 'state') {
+    label = `census/state/${classified.value}`;
+    rows = await censusQuery({
+      phy_state: classified.value,
+      status_code: 'A',
+      $order: 'power_units DESC',
+      $limit: '25'
+    });
+  } else {
+    const q = soqlLike(classified.value);
+    if (q.length < 3) return [];
+    label = `census/name/${q}`;
+    rows = await censusQuery({
+      $where: `upper(legal_name) like '%${q}%'`,
+      $limit: '20'
+    });
+  }
+  if (attempts) attempts.push({ path: label, status: 200, result: rows.length ? `hit ${rows.length}` : 'empty' });
+  return rows.map(censusToCarrier).filter((c) => c && c.company_name);
+}
+
 const STATE_SEED_NAMES = [
   'Transport',
   'Trucking',
@@ -383,25 +480,40 @@ const STATE_SEED_NAMES = [
 ];
 
 async function searchFmcsa(query) {
-  if (!apiKey()) {
-    const classified = classifyQuery(query);
-    if (classified.type === 'mc' || classified.type === 'dot') {
-      try {
-        const safer = await fetchSafer(classified.type, classified.value);
-        if (safer && safer.company_name) {
-          return { source: 'FMCSA SAFER', query: classified, carriers: [safer] };
-        }
-      } catch {
-        // fall through to unconfigured message
-      }
+  const classified = classifyQuery(query);
+  const attempts = [];
+  const keyPresent = !!apiKey();
+
+  try {
+    const censusHits = await searchCensus(classified, attempts);
+    if (censusHits.length) {
+      return {
+        source: 'FMCSA Census',
+        query: classified,
+        keyPresent,
+        attempts,
+        carriers: censusHits
+      };
     }
-    return { source: 'unconfigured', keyPresent: false, carriers: [], message: 'Add FMCSA_API_KEY (free at https://mobile.fmcsa.dot.gov/QCDevsite/) to search live U.S. motor carriers.' };
+  } catch (err) {
+    attempts.push({ path: 'census', status: err.status || 0, result: err.message });
   }
 
-  const classified = classifyQuery(query);
+  if (!keyPresent) {
+    return {
+      source: attempts.length ? 'FMCSA Census' : 'unconfigured',
+      keyPresent: false,
+      query: classified,
+      attempts,
+      carriers: [],
+      message: attempts.length
+        ? `No FMCSA census record for ${classified.type.toUpperCase()} ${classified.value}. Try the legal name or USDOT.`
+        : 'Add FMCSA_API_KEY (free at https://mobile.fmcsa.dot.gov/QCDevsite/) to search live U.S. motor carriers.'
+    };
+  }
+
   let nodes = [];
   let lastError = '';
-  const attempts = [];
 
   try {
     if (classified.type === 'mc') {
@@ -451,14 +563,14 @@ async function searchFmcsa(query) {
 
   if (!found.length) {
     return {
-      source: lastError ? 'fmcsa_error' : 'FMCSA QC API',
+      source: lastError ? 'fmcsa_error' : 'FMCSA Census',
       query: classified,
       keyPresent: true,
       attempts,
       carriers: [],
       message: lastError
-        ? `FMCSA lookup failed (${lastError}). In Vercel confirm FMCSA_API_KEY is the WebKey (not Client Secret), Production env, then Redeploy.`
-        : `No FMCSA QC record for ${classified.type.toUpperCase()} ${classified.value}. Try the legal name (e.g. Alphandrea Logistics) or USDOT if you have it.`
+        ? `FMCSA lookup failed (${lastError}). QCMobile is often blocked from cloud servers; census had no match for ${classified.type.toUpperCase()} ${classified.value}.`
+        : `No FMCSA record for ${classified.type.toUpperCase()} ${classified.value}. Try the legal name or USDOT.`
     };
   }
 

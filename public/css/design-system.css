@@ -2788,7 +2788,8 @@ body:has(.app-shell) {
 .app-sidebar {
   width: 248px;
   padding: 10px 8px 12px;
-  overflow: hidden;
+  overflow: hidden !important;
+  scrollbar-width: none !important;
 }
 
 .sidebar-brand {
