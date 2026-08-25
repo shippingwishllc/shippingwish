@@ -575,7 +575,7 @@
         return;
       }
       if (!carriers.length) {
-        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">No carriers found. Try a company name, MC#, USDOT, or state (TX).</div>';
+        container.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);">${escapeHtml(data.message || 'No carriers found. Try a company name, MC#, USDOT, or state (TX).')}</div>`;
         return;
       }
 
