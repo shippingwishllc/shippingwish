@@ -150,6 +150,9 @@
     if (document.querySelector('.driver-header')) return;
     document.body.classList.add('app-body');
     aside.innerHTML = sidebarHtml();
+    // #region agent log
+    fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'278583'},body:JSON.stringify({sessionId:'278583',runId:'pre-fix',hypothesisId:'C',location:'app-shell.js:init',message:'sidebar replaced',data:{crmAvatarGone:!document.getElementById('crm-avatar'),hasNameEl:!!document.getElementById('user-name-display'),mobileBar:!!document.querySelector('.app-mobile-bar'),path:location.pathname},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     mountMobile();
     ensureLogout();
     fetch('/api/me', { credentials: 'include' })

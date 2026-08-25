@@ -141,7 +141,7 @@
         </div>
       </div>
 
-      <div class="tms-table-card" style="margin-bottom:var(--space-6);border-left:4px solid #0f172a;">
+      <div class="tms-panel call-track-card" style="margin-bottom:var(--space-6);border-left:4px solid #0f172a;">
         <h3 style="margin:0 0 8px;font-size:15px;font-weight:800;">Call track — never lead with “dispatch”</h3>
         <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);line-height:1.55;">Carriers hang up on “dispatch companies.” Open as a Delaware LLC offering a <strong>Dedicated Fleet Operations Manager</strong> / Dedicated Dispatcher for their trucks. Weekly retainer. They keep broker pay.</p>
         <ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.6;color:var(--text-secondary);">
@@ -179,7 +179,7 @@
 
       <!-- LEADS TABLE CARD -->
       <div class="tms-table-card">
-        <div class="tms-table-header" style="display:flex;align-items:center;justify-space-between;flex-wrap:wrap;gap:16px;margin-bottom:16px;">
+        <div class="tms-table-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:16px;">
           <div class="tab-pill-group" style="display:flex;gap:4px;background:var(--bg-card-subtle);padding:4px;border-radius:var(--radius-lg);" id="status-filters">
             <button class="btn btn-sm btn-primary filter-btn" data-status="All" onclick="filterByStatus('All', this)">All</button>
             <button class="btn btn-sm btn-secondary filter-btn" data-status="New Lead" onclick="filterByStatus('New Lead', this)">New Lead</button>
@@ -220,7 +220,7 @@
 </div>
 
 <!-- ================= ADD LEAD MODAL ================= -->
-<div class="modal-backdrop" id="add-lead-modal">
+<div class="modal-backdrop" id="add-lead-modal" style="display:none;">
   <div class="modal modal-md">
     <div class="modal-header">
       <h2>+ Add Carrier Lead</h2>
@@ -282,7 +282,7 @@
 </div>
 
 <!-- ================= SEND PACKET MODAL ================= -->
-<div class="modal-backdrop" id="send-packet-modal">
+<div class="modal-backdrop" id="send-packet-modal" style="display:none;">
   <div class="modal modal-md">
     <div class="modal-header">
       <h2>✉️ Send Onboarding Packet</h2>
@@ -315,15 +315,30 @@
   let leadsData = [];
   let currentFilter = 'All';
 
+  window.addEventListener('error', (ev) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'278583'},body:JSON.stringify({sessionId:'278583',runId:'pre-fix',hypothesisId:'D',location:'crm-sales.html:onerror',message:'window error',data:{msg:String(ev.message||''),line:ev.lineno,src:String(ev.filename||'').slice(-80)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  });
+
   document.addEventListener('DOMContentLoaded', async () => {
-    await checkAuth();
-    await loadLeads();
-    await loadInboxCount();
+    try {
+      await checkAuth();
+      await loadLeads();
+      await loadInboxCount();
+    } catch (err) {
+      // #region agent log
+      fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'278583'},body:JSON.stringify({sessionId:'278583',runId:'pre-fix',hypothesisId:'D',location:'crm-sales.html:DOMContentLoaded',message:'init threw',data:{err:String(err&&err.message||err)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+    }
   });
 
   async function checkAuth() {
     try {
       const res = await fetch('/api/me', { credentials: 'include' });
+      // #region agent log
+      fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'278583'},body:JSON.stringify({sessionId:'278583',runId:'pre-fix',hypothesisId:'B',location:'crm-sales.html:checkAuth',message:'auth response',data:{ok:res.ok,status:res.status},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       if (!res.ok) { window.location.href = '/login.html'; return; }
       const data = await res.json();
       const user = data.user || data;
@@ -370,11 +385,26 @@
       } else {
         leadsData = [];
       }
+      // #region agent log
+      fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'278583'},body:JSON.stringify({sessionId:'278583',runId:'pre-fix',hypothesisId:'A',location:'crm-sales.html:loadLeads',message:'leads fetched',data:{ok:res.ok,status:res.status,count:leadsData.length,nullPhones:leadsData.filter(l=>l.phone==null).length,nullCompany:leadsData.filter(l=>!l.companyName).length},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
     } catch (e) {
       leadsData = [];
+      // #region agent log
+      fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'278583'},body:JSON.stringify({sessionId:'278583',runId:'pre-fix',hypothesisId:'B',location:'crm-sales.html:loadLeads',message:'leads fetch threw',data:{err:String(e&&e.message||e)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
     }
     updateKPIs();
     renderLeadsTable();
+    const add = document.getElementById('add-lead-modal');
+    const packet = document.getElementById('send-packet-modal');
+    const ol = document.querySelector('.app-content ol');
+    const table = document.getElementById('leads-table');
+    const wrap = document.querySelector('.tms-table-wrapper');
+    const tbody = document.getElementById('leads-tbody');
+    // #region agent log
+    fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'278583'},body:JSON.stringify({sessionId:'278583',runId:'post-fix',hypothesisId:'E',location:'crm-sales.html:layout',message:'layout after render',data:{tbody:(tbody&&tbody.innerText||'').slice(0,120),addDisplay:add?getComputedStyle(add).display:null,addH:add?Math.round(add.getBoundingClientRect().height):null,packetDisplay:packet?getComputedStyle(packet).display:null,olList:ol?getComputedStyle(ol).listStyleType:null,tableW:table?table.scrollWidth:null,wrapW:wrap?wrap.clientWidth:null,scrollW:document.documentElement.scrollWidth,innerW:innerWidth,kpi:document.getElementById('kpi-total-leads')&&document.getElementById('kpi-total-leads').textContent},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
   }
 
   async function loadInboxCount() {
@@ -405,6 +435,7 @@
 
   function renderLeadsTable() {
     const tbody = document.getElementById('leads-tbody');
+    try {
     const search = (document.getElementById('search-leads').value || '').toLowerCase();
 
     const filtered = leadsData.filter(l => {
@@ -416,10 +447,10 @@
         (currentFilter === 'Dead' && l.status === 'dead');
 
       const matchSearch = !search ||
-        l.companyName.toLowerCase().includes(search) ||
-        l.mcNumber.toLowerCase().includes(search) ||
-        l.phone.includes(search) ||
-        l.salesRep.toLowerCase().includes(search);
+        String(l.companyName || '').toLowerCase().includes(search) ||
+        String(l.mcNumber || '').toLowerCase().includes(search) ||
+        String(l.phone || '').includes(search) ||
+        String(l.salesRep || '').toLowerCase().includes(search);
 
       return matchStatus && matchSearch;
     });
@@ -436,7 +467,7 @@
         <td><span class="badge badge-amber">${escapeHtml(l.equipmentType)} (${l.numTrucks} units)</span></td>
         <td><strong>${escapeHtml(l.ownerName)}</strong><br>${escapeHtml(l.phone)}<br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.email || 'No email')}</span></td>
         <td>${escapeHtml(l.salesRep)}</td>
-        <td><span class="badge ${getStatusBadge(l.status)}">${escapeHtml(l.status.replace('_', ' ').toUpperCase())}</span></td>
+        <td><span class="badge ${getStatusBadge(l.status)}">${escapeHtml(String(l.status || 'new').replace('_', ' ').toUpperCase())}</span></td>
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" onclick="sendOutreach(${l.id}, '${escapeJs(l.email)}', '${escapeJs(l.ownerName)}', '${escapeJs(l.companyName)}', 'dedicated_manager')">✉️ Email</button>
@@ -448,6 +479,11 @@
         </td>
       </tr>
     `).join('');
+    } catch (err) {
+      // #region agent log
+      fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'278583'},body:JSON.stringify({sessionId:'278583',runId:'pre-fix',hypothesisId:'A',location:'crm-sales.html:renderLeadsTable',message:'render threw',data:{err:String(err&&err.message||err),stack:String(err&&err.stack||'').slice(0,300),count:leadsData.length},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+    }
   }
 
   function getStatusBadge(status) {

@@ -3185,4 +3185,33 @@ body .container {
   border: 1px solid var(--border-default);
 }
 
+/* CRM / TMS cards: numbered lists, compact row actions, hidden modals */
+.app-content .tms-panel.call-track-card,
+.app-content .call-track-card {
+  overflow: visible;
+}
+
+.app-content .call-track-card ol,
+.app-content .tms-panel ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+
+.app-content .call-track-card ol li,
+.app-content .tms-panel ol li {
+  list-style: decimal;
+  display: list-item;
+}
+
+.app-content .tms-table-v2 .btn,
+.app-shell .tms-table-v2 .btn {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.modal-backdrop:not(.open) {
+  display: none !important;
+}
+
 
