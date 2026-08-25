@@ -170,13 +170,21 @@
     setText('disp-role-display', role);
     setText('user-display-name', name);
     setText('user-profile-display', name);
+    setText('user-badge-inv', name);
+    setText('user-badge-docs', name);
+    setText('user-badge-broker', name);
+    setText('fleet-user-name', name);
+    setText('fleet-user-role', role);
+    setText('ifta-user-name', name);
+    setText('ifta-user-role', role);
+    setText('carrier-name-nav', user.company_name || name);
+    setText('carrier-role-nav', role);
     setText('carrier-name-display', user.company_name || name);
-    const avatar = document.getElementById('user-avatar-initials');
-    if (avatar) avatar.textContent = av;
-    setText('disp-avatar-initials', av);
-    setText('crm-avatar', av);
-    setText('sales-avatar-initials', av);
-    setText('carrier-avatar-initials', av);
+    const avatarIds = ['user-avatar-initials', 'disp-avatar-initials', 'crm-avatar', 'sales-avatar-initials', 'carrier-avatar-initials', 'fleet-avatar-initials', 'ifta-avatar-initials', 'inv-avatar', 'doc-avatar', 'broker-avatar'];
+    avatarIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = av;
+    });
   }
 
   function ensureLogout() {

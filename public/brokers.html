@@ -274,10 +274,10 @@
     currentUser = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
     if (!currentUser) return;
 
-    document.getElementById('user-badge-broker').textContent = `${currentUser.name} (${currentUser.role})`;
-    if (document.getElementById('broker-avatar')) {
-      document.getElementById('broker-avatar').textContent = (currentUser.name||'BD').slice(0,2).toUpperCase();
-    }
+    const badge = document.getElementById('user-badge-broker') || document.getElementById('user-name-display');
+    if (badge) badge.textContent = `${currentUser.name} (${currentUser.role})`;
+    const av = document.getElementById('broker-avatar') || document.getElementById('user-avatar-initials');
+    if (av) av.textContent = (currentUser.name||'BD').slice(0,2).toUpperCase();
 
     loadBrokersList();
   }

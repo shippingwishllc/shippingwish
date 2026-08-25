@@ -182,11 +182,15 @@
         return;
       }
 
-      document.getElementById('carrier-name-nav').textContent = user.company_name || user.name || user.email;
-      document.getElementById('carrier-role-nav').textContent = (user.role || 'Carrier').toUpperCase();
-      document.getElementById('carrier-avatar-initials').textContent = (user.company_name || user.name || 'CP').slice(0, 2).toUpperCase();
+      const name = user.company_name || user.name || user.email || 'Carrier';
+      const nameEl = document.getElementById('carrier-name-nav') || document.getElementById('user-name-display');
+      const roleEl = document.getElementById('carrier-role-nav') || document.getElementById('user-role-display');
+      const avEl = document.getElementById('carrier-avatar-initials') || document.getElementById('user-avatar-initials');
+      if (nameEl) nameEl.textContent = name;
+      if (roleEl) roleEl.textContent = (user.role || 'Carrier').replace(/_/g, ' ');
+      if (avEl) avEl.textContent = name.slice(0, 2).toUpperCase();
     } catch (e) {
-      window.location.href = '/login.html';
+      if (!currentUser) window.location.href = '/login.html';
     }
   }
 

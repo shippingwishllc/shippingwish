@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fleet Equipment & Drivers Roster | Shipping Wish TMS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/design-system.css?v=4">
   
 </head>
 <body class="app-body">
@@ -415,9 +415,13 @@
       if (!user) { window.location.href = '/login.html'; return; }
 
       currentUser = user;
-      document.getElementById('fleet-user-name').textContent = user.name || user.email;
-      document.getElementById('fleet-user-role').textContent = (user.role || 'User').toUpperCase();
-      document.getElementById('fleet-avatar-initials').textContent = (user.name || 'FL').slice(0, 2).toUpperCase();
+      const name = user.name || user.email || 'User';
+      const nameEl = document.getElementById('fleet-user-name') || document.getElementById('user-name-display');
+      const roleEl = document.getElementById('fleet-user-role') || document.getElementById('user-role-display');
+      const avEl = document.getElementById('fleet-avatar-initials') || document.getElementById('user-avatar-initials');
+      if (nameEl) nameEl.textContent = name;
+      if (roleEl) roleEl.textContent = (user.role || 'User').replace(/_/g, ' ');
+      if (avEl) avEl.textContent = name.slice(0, 2).toUpperCase();
 
       if (user.role !== 'carrier') {
         populateCarrierSelects();
@@ -425,7 +429,7 @@
         document.querySelectorAll('#driver-carrier-field, #truck-carrier-field, #trailer-carrier-field').forEach(el => el.style.display = 'none');
       }
     } catch (e) {
-      window.location.href = '/login.html';
+      if (!currentUser) window.location.href = '/login.html';
     }
   }
 
@@ -656,6 +660,6 @@
   }
 </script>
 
-<script src="/js/app-shell.js"></script>
+<script src="/js/app-shell.js?v=4"></script>
 </body>
 </html>

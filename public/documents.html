@@ -235,10 +235,10 @@
     currentUser = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
     if (!currentUser) return;
 
-    document.getElementById('user-badge-docs').textContent = `${currentUser.name} (${currentUser.role})`;
-    if (document.getElementById('doc-avatar')) {
-      document.getElementById('doc-avatar').textContent = (currentUser.name||'DV').slice(0,2).toUpperCase();
-    }
+    const badge = document.getElementById('user-badge-docs') || document.getElementById('user-name-display');
+    if (badge) badge.textContent = `${currentUser.name} (${currentUser.role})`;
+    const av = document.getElementById('doc-avatar') || document.getElementById('user-avatar-initials');
+    if (av) av.textContent = (currentUser.name||'DV').slice(0,2).toUpperCase();
 
     loadDocumentsList();
     if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {

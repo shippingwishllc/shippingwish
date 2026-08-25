@@ -225,10 +225,10 @@
     currentUser = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
     if (!currentUser) return;
 
-    document.getElementById('user-badge-inv').textContent = `${currentUser.name} (${currentUser.role})`;
-    if (document.getElementById('inv-avatar')) {
-      document.getElementById('inv-avatar').textContent = (currentUser.name||'FI').slice(0,2).toUpperCase();
-    }
+    const badge = document.getElementById('user-badge-inv') || document.getElementById('user-name-display');
+    if (badge) badge.textContent = `${currentUser.name} (${currentUser.role})`;
+    const av = document.getElementById('inv-avatar') || document.getElementById('user-avatar-initials');
+    if (av) av.textContent = (currentUser.name||'FI').slice(0,2).toUpperCase();
 
     if (currentUser.role !== 'carrier') {
       document.getElementById('generate-inv-btn').style.display = 'inline-flex';
