@@ -80,15 +80,9 @@ router.get('/leads', requireAuth, async (req, res) => {
     query += ` ORDER BY l.created_at DESC`;
 
     const result = await pool.query(query, params);
-    // #region agent log
-    try { require('fs').appendFileSync(require('path').join(__dirname, '..', 'debug-278583.log'), JSON.stringify({sessionId:'278583',runId:'pre-fix',hypothesisId:'B',location:'routes/crm.js:GET /leads',message:'leads query ok',data:{count:result.rows.length,nullPhone:result.rows.filter(r=>r.phone==null).length,nullCompany:result.rows.filter(r=>!r.company_name).length,role:req.user&&req.user.role},timestamp:Date.now()})+'\n'); } catch (e) {}
-    // #endregion
     res.json({ leads: result.rows });
   } catch (err) {
     console.error('Error fetching CRM leads:', err);
-    // #region agent log
-    try { require('fs').appendFileSync(require('path').join(__dirname, '..', 'debug-278583.log'), JSON.stringify({sessionId:'278583',runId:'pre-fix',hypothesisId:'B',location:'routes/crm.js:GET /leads',message:'leads query failed',data:{err:String(err&&err.message||err)},timestamp:Date.now()})+'\n'); } catch (e) {}
-    // #endregion
     res.status(500).json({ error: 'Server error fetching leads' });
   }
 });

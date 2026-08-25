@@ -468,9 +468,12 @@
         window.location.href = '/login.html';
         return;
       }
-      document.getElementById('disp-name-display').textContent = data.user.name || 'Dispatcher';
-      document.getElementById('disp-role-display').textContent = (data.user.role || 'Dispatcher').toUpperCase();
-      document.getElementById('disp-avatar-initials').textContent = (data.user.name || 'DS').slice(0, 2).toUpperCase();
+      const nameEl = document.getElementById('disp-name-display') || document.getElementById('user-name-display');
+      const roleEl = document.getElementById('disp-role-display') || document.getElementById('user-role-display');
+      const avEl = document.getElementById('disp-avatar-initials') || document.getElementById('user-avatar-initials');
+      if (nameEl) nameEl.textContent = data.user.name || 'Dispatcher';
+      if (roleEl) roleEl.textContent = (data.user.role || 'Dispatcher').toUpperCase();
+      if (avEl) avEl.textContent = (data.user.name || 'DS').slice(0, 2).toUpperCase();
     } catch (err) {
       window.location.href = '/login.html';
     }
@@ -487,6 +490,7 @@
 
     if (tab === 'fleets') loadAssignedFleets();
   }
+  window.switchDeskTab = switchDeskTab;
 
   async function loadDeskData() {
     try {
@@ -497,16 +501,23 @@
 
       if (dashRes.ok) {
         const dashData = await dashRes.json();
-        document.getElementById('kpi-disp-revenue').textContent = `$${parseFloat(dashData.summary?.totalGrossRevenue || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        document.getElementById('kpi-disp-transit').textContent = dashData.summary?.activeLoadsCount || 0;
-        document.getElementById('kpi-disp-fleets').textContent = dashData.summary?.totalCarriers || 0;
-        document.getElementById('kpi-disp-pods').textContent = dashData.summary?.deliveredPendingPod || 0;
+        const kpiRev = document.getElementById('kpi-disp-revenue');
+        const kpiTransit = document.getElementById('kpi-disp-transit');
+        const kpiFleets = document.getElementById('kpi-disp-fleets');
+        const kpiPods = document.getElementById('kpi-disp-pods');
+        if (kpiRev) kpiRev.textContent = `$${parseFloat(dashData.summary?.totalGrossRevenue || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+        if (kpiTransit) kpiTransit.textContent = dashData.summary?.activeLoadsCount || 0;
+        if (kpiFleets) kpiFleets.textContent = dashData.summary?.totalCarriers || 0;
+        if (kpiPods) kpiPods.textContent = dashData.summary?.deliveredPendingPod || 0;
       }
 
       if (loadsRes.ok) {
         const data = await loadsRes.json();
         deskLoads = data.loads || [];
         renderDeskTable(deskLoads);
+      } else {
+        const tbody = document.getElementById('disp-tbody');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;" class="text-muted">Could not load desk loads.</td></tr>`;
       }
     } catch (err) {
       console.error('Load desk error:', err);

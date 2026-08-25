@@ -4,10 +4,20 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// GET /api/dashboard/stats
-router.get('/stats', requireAuth, async (req, res) => {
+function withSummary(payload) {
+  payload.summary = {
+    totalGrossRevenue: payload.totalRevenue || payload.totalEarned || 0,
+    activeLoadsCount: payload.activeLoads || 0,
+    totalCarriers: payload.totalCarriers || 0,
+    unpaidInvoicesSum: payload.pendingRevenue || payload.pendingPayment || 0,
+    deliveredPendingPod: payload.pendingDocs || 0,
+    totalMiles: payload.totalMiles || 0
+  };
+  return payload;
+}
+
+async function sendDashboard(req, res) {
   const { role, id: userId } = req.user;
-  const todayStr = new Date().toISOString().slice(0, 10);
 
   try {
     if (role === 'super_admin' || role === 'admin') {
@@ -37,12 +47,14 @@ router.get('/stats', requireAuth, async (req, res) => {
         LEFT JOIN loads l ON l.carrier_id = c.id
         WHERE c.role = 'carrier'
         GROUP BY c.id, c.name, c.company_name ORDER BY load_count DESC LIMIT 10`);
+      const carrierCountRes = await pool.query(`SELECT COUNT(*) FROM users WHERE role = 'carrier'`);
 
-      return res.json({
+      return res.json(withSummary({
         role: 'super_admin',
         totalLoads: parseInt(totalLoadsRes.rows[0].count, 10),
         todayLoads: parseInt(todayLoadsRes.rows[0].count, 10),
         activeLoads: parseInt(activeLoadsRes.rows[0].count, 10),
+        totalCarriers: parseInt(carrierCountRes.rows[0].count, 10),
         totalRevenue: parseFloat(revenueRes.rows[0].total_revenue || 0),
         totalCarrierPay: parseFloat(revenueRes.rows[0].total_carrier_pay || 0),
         grossMargin: parseFloat(revenueRes.rows[0].total_revenue || 0) - parseFloat(revenueRes.rows[0].total_carrier_pay || 0),
@@ -52,7 +64,7 @@ router.get('/stats', requireAuth, async (req, res) => {
         pendingInvoicesCount: parseInt(invoiceStatsRes.rows[0].pending_count || 0, 10),
         dispatcherPerformance: dispatcherPerfRes.rows,
         carrierPerformance: carrierPerfRes.rows
-      });
+      }));
 
     } else if (role === 'dispatcher') {
       // Dispatcher Specific Board & Performance Metrics
@@ -62,16 +74,22 @@ router.get('/stats', requireAuth, async (req, res) => {
       const upcomingPickupsRes = await pool.query(`SELECT COUNT(*) FROM loads WHERE dispatcher_id = $1 AND pickup_date = CURRENT_DATE`, [userId]);
       const upcomingDeliveriesRes = await pool.query(`SELECT COUNT(*) FROM loads WHERE dispatcher_id = $1 AND delivery_date = CURRENT_DATE`, [userId]);
       const pendingDocsRes = await pool.query(`SELECT COUNT(*) FROM loads WHERE dispatcher_id = $1 AND status = 'delivered'`, [userId]); // Needs POD/invoice
+      let fleetCount = 0;
+      try {
+        const fleetsRes = await pool.query(`SELECT COUNT(*) FROM dispatcher_carriers WHERE dispatcher_id = $1`, [userId]);
+        fleetCount = parseInt(fleetsRes.rows[0].count, 10);
+      } catch (e) { /* table optional */ }
 
-      return res.json({
+      return res.json(withSummary({
         role: 'dispatcher',
         todayLoads: parseInt(todayLoadsRes.rows[0].count, 10),
         activeLoads: parseInt(activeLoadsRes.rows[0].count, 10),
         completedLoads: parseInt(completedLoadsRes.rows[0].count, 10),
         upcomingPickups: parseInt(upcomingPickupsRes.rows[0].count, 10),
         upcomingDeliveries: parseInt(upcomingDeliveriesRes.rows[0].count, 10),
-        pendingDocs: parseInt(pendingDocsRes.rows[0].count, 10)
-      });
+        pendingDocs: parseInt(pendingDocsRes.rows[0].count, 10),
+        totalCarriers: fleetCount
+      }));
 
     } else {
       // Carrier Specific Dashboard & Revenue Summary
@@ -89,19 +107,22 @@ router.get('/stats', requireAuth, async (req, res) => {
         JOIN dispatcher_carriers dc ON dc.dispatcher_id = d.id
         WHERE dc.carrier_id = $1 LIMIT 1`, [userId]);
 
-      return res.json({
+      return res.json(withSummary({
         role: 'carrier',
         activeLoads: parseInt(activeLoadsRes.rows[0].count, 10),
         completedLoads: parseInt(completedLoadsRes.rows[0].count, 10),
         totalEarned: parseFloat(revenueRes.rows[0].total_earned || 0),
         pendingPayment: parseFloat(pendingPaymentRes.rows[0].pending_amount || 0),
         dispatcherContact: dispatcherInfoRes.rows[0] || { name: 'Shipping Wish Dispatch', phone: '+1 917 737 0021', email: 'info@shippingwish.com' }
-      });
+      }));
     }
   } catch (err) {
     console.error('Dashboard stats error:', err);
     res.status(500).json({ error: 'Could not load dashboard metrics.' });
   }
-});
+}
+
+router.get('/', requireAuth, sendDashboard);
+router.get('/stats', requireAuth, sendDashboard);
 
 module.exports = router;

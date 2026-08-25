@@ -182,9 +182,12 @@
       if (!res.ok) { window.location.href = '/login.html'; return; }
       const data = await res.json();
       if (!data.user) { window.location.href = '/login.html'; return; }
-      document.getElementById('carrier-name-display').textContent = data.user.company_name || data.user.name;
-      document.getElementById('carrier-mc-display').textContent = data.user.mc_number ? `MC-${data.user.mc_number}` : 'Carrier Client';
-      document.getElementById('carrier-avatar-initials').textContent = (data.user.company_name || data.user.name || 'CF').slice(0, 2).toUpperCase();
+      const nameEl = document.getElementById('carrier-name-display') || document.getElementById('user-name-display');
+      const mcEl = document.getElementById('carrier-mc-display') || document.getElementById('user-role-display');
+      const avEl = document.getElementById('carrier-avatar-initials') || document.getElementById('user-avatar-initials');
+      if (nameEl) nameEl.textContent = data.user.company_name || data.user.name;
+      if (mcEl) mcEl.textContent = data.user.mc_number ? `MC-${data.user.mc_number}` : 'Carrier Client';
+      if (avEl) avEl.textContent = (data.user.company_name || data.user.name || 'CF').slice(0, 2).toUpperCase();
     } catch (e) {
       window.location.href = '/login.html';
     }
@@ -256,6 +259,7 @@
   function switchCarrierTab(tab) {
     // Single tab for now
   }
+  window.switchCarrierTab = switchCarrierTab;
 
   function getStatusBadge(st) {
     switch(st) {

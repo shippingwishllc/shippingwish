@@ -440,9 +440,12 @@
         window.location.href = '/login.html';
         return;
       }
-      document.getElementById('user-name-display').textContent = data.user.name || 'Admin';
-      document.getElementById('user-role-display').textContent = (data.user.role || 'Admin').toUpperCase();
-      document.getElementById('user-avatar-initials').textContent = (data.user.name || 'SA').slice(0, 2).toUpperCase();
+      const nameEl = document.getElementById('user-name-display');
+      const roleEl = document.getElementById('user-role-display');
+      const avEl = document.getElementById('user-avatar-initials');
+      if (nameEl) nameEl.textContent = data.user.name || 'Admin';
+      if (roleEl) roleEl.textContent = (data.user.role || 'Admin').toUpperCase();
+      if (avEl) avEl.textContent = (data.user.name || 'SA').slice(0, 2).toUpperCase();
     } catch (err) {
       window.location.href = '/login.html';
     }
@@ -475,8 +478,10 @@
     if (tabName === 'settings') loadSiteSettings();
     if (tabName === 'blog') loadAdminBlogPosts();
   }
+  window.switchAdminTab = switchAdminTab;
 
   async function loadDashboardData() {
+    const tbody = document.getElementById('loads-tbody');
     try {
       const [dashRes, loadsRes] = await Promise.all([
         fetch('/api/dashboard', { credentials: 'include' }),
@@ -485,19 +490,26 @@
 
       if (dashRes.ok) {
         const dashData = await dashRes.json();
-        document.getElementById('kpi-gross-revenue').textContent = `$${parseFloat(dashData.summary?.totalGrossRevenue || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        document.getElementById('kpi-active-loads').textContent = dashData.summary?.activeLoadsCount || 0;
-        document.getElementById('kpi-carrier-count').textContent = dashData.summary?.totalCarriers || 0;
-        document.getElementById('kpi-pending-invoices').textContent = `$${parseFloat(dashData.summary?.unpaidInvoicesSum || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+        const kpiRev = document.getElementById('kpi-gross-revenue');
+        const kpiLoads = document.getElementById('kpi-active-loads');
+        const kpiCarriers = document.getElementById('kpi-carrier-count');
+        const kpiInv = document.getElementById('kpi-pending-invoices');
+        if (kpiRev) kpiRev.textContent = `$${parseFloat(dashData.summary?.totalGrossRevenue || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+        if (kpiLoads) kpiLoads.textContent = dashData.summary?.activeLoadsCount || 0;
+        if (kpiCarriers) kpiCarriers.textContent = dashData.summary?.totalCarriers || 0;
+        if (kpiInv) kpiInv.textContent = `$${parseFloat(dashData.summary?.unpaidInvoicesSum || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
       }
 
       if (loadsRes.ok) {
         const loadsData = await loadsRes.json();
         allLoads = loadsData.loads || [];
         renderLoadsTable(allLoads);
+      } else if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load loads. Sign in again if this persists.</td></tr>`;
       }
     } catch (err) {
       console.error('Load dashboard data error:', err);
+      if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load dashboard data.</td></tr>`;
     }
   }
 

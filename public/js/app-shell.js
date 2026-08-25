@@ -1,8 +1,8 @@
 (function () {
   const STAFF_LINKS = [
     { section: 'Operations' },
-    { key: 'overview', href: '/admin-dashboard.html', icon: '📊', label: 'Overview & Loads' },
-    { key: 'dispatch', href: '/dispatcher-dashboard.html', icon: '🎧', label: 'Dispatch Desk' },
+    { key: 'overview', navId: 'nav-tab-loads', href: '/admin-dashboard.html', icon: '📊', label: 'Overview & Loads' },
+    { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard.html', icon: '🎧', label: 'Dispatch Desk' },
     { key: 'brokers', href: '/brokers.html', icon: '🤝', label: 'Broker Directory' },
     { key: 'fleet', href: '/fleet.html', icon: '🚛', label: 'Fleet & Drivers' },
     { section: 'Sales & Staff' },
@@ -15,7 +15,9 @@
     { key: 'documents', href: '/documents.html', icon: '📄', label: 'Document Vault' },
     { key: 'planning', href: '/load-planning.html', icon: '📅', label: 'Load Planning' },
     { section: 'System' },
-    { key: 'audit', href: '/admin-dashboard.html#audit', icon: '🛡️', label: 'Audit Logs' }
+    { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard.html#audit', icon: '🛡️', label: 'Audit Logs' },
+    { key: 'settings', navId: 'nav-tab-settings', href: '/admin-dashboard.html#settings', icon: '🌐', label: 'Website CMS' },
+    { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard.html#blog', icon: '📰', label: 'Blog Manager' }
   ];
 
   const CARRIER_LINKS = [
@@ -53,19 +55,69 @@
 
   function isCarrierShell() {
     const p = pageName();
-    return p === 'dashboard.html' || p === 'driver-app.html';
+    return p === 'dashboard.html' || p === 'driver-app.html' || p === 'carrier-overview.html';
+  }
+
+  function hashKey() {
+    return (location.hash || '').replace('#', '').toLowerCase();
+  }
+
+  function extraLinks() {
+    const p = pageName();
+    if (p === 'dispatcher-dashboard.html') {
+      return [
+        { section: 'This desk' },
+        { key: 'fleets', navId: 'nav-tab-fleets', href: '/dispatcher-dashboard.html#fleets', icon: '🚛', label: 'Assigned Fleets' }
+      ];
+    }
+    if (p === 'sales-dashboard.html') {
+      return [
+        { section: 'This board' },
+        { key: 'leads', navId: 'nav-tab-leads', href: '/sales-dashboard.html#leads', icon: '🎯', label: 'Lead Pipeline' },
+        { key: 'tasks', navId: 'nav-tab-tasks', href: '/sales-dashboard.html#tasks', icon: '📋', label: 'Follow-up Tasks' }
+      ];
+    }
+    if (p === 'carrier-overview.html') {
+      return [
+        { section: 'Cockpit' },
+        { key: 'cockpit', navId: 'nav-tab-cockpit', href: '/carrier-overview.html#cockpit', icon: '📊', label: 'Fleet Cockpit' },
+        { key: 'carrier-loads', navId: 'nav-tab-loads', href: '/carrier-overview.html#loads', icon: '📦', label: 'My Loads' }
+      ];
+    }
+    return [];
   }
 
   function activeKey() {
-    if (location.hash === '#audit') return 'audit';
-    return PAGE_KEY[pageName()] || '';
+    const p = pageName();
+    const h = hashKey();
+    if (p === 'admin-dashboard.html') {
+      if (h === 'audit') return 'audit';
+      if (h === 'settings') return 'settings';
+      if (h === 'blog') return 'blog';
+      return 'overview';
+    }
+    if (p === 'dispatcher-dashboard.html') {
+      if (h === 'fleets') return 'fleets';
+      if (h === 'desk') return 'desk';
+      return 'dispatch';
+    }
+    if (p === 'sales-dashboard.html') {
+      if (h === 'tasks') return 'tasks';
+      if (h === 'leads') return 'leads';
+    }
+    if (p === 'carrier-overview.html') {
+      if (h === 'loads') return 'carrier-loads';
+      if (h === 'cockpit') return 'cockpit';
+    }
+    return PAGE_KEY[p] || '';
   }
 
   function renderLinks(items, active) {
     return items.map((item) => {
       if (item.section) return `<div class="sidebar-section-label">${item.section}</div>`;
       const cls = item.key === active ? 'sidebar-nav-link active' : 'sidebar-nav-link';
-      return `<a href="${item.href}" class="${cls}"><span aria-hidden="true">${item.icon}</span> ${item.label}</a>`;
+      const id = item.navId ? ` id="${item.navId}"` : '';
+      return `<a href="${item.href}" class="${cls}"${id}><span aria-hidden="true">${item.icon}</span> ${item.label}</a>`;
     }).join('');
   }
 
@@ -74,6 +126,7 @@
     const active = activeKey();
     const tag = carrier ? 'Carrier Portal' : 'Operations';
     const home = carrier ? '/dashboard.html' : '/admin-dashboard.html';
+    const links = carrier ? CARRIER_LINKS : STAFF_LINKS.concat(extraLinks());
     return `
       <div>
         <a href="${home}" class="sidebar-brand">
@@ -83,7 +136,7 @@
             <div class="sidebar-brand-tag">${tag}</div>
           </div>
         </a>
-        ${renderLinks(carrier ? CARRIER_LINKS : STAFF_LINKS, active)}
+        ${renderLinks(links, active)}
       </div>
       <div>
         <div class="sidebar-user-card">
@@ -101,14 +154,29 @@
     return String(name || 'SW').split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase();
   }
 
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
   function fillUser(user) {
     if (!user) return;
-    const nameEl = document.getElementById('user-name-display');
-    const roleEl = document.getElementById('user-role-display');
-    const av = document.getElementById('user-avatar-initials');
-    if (nameEl) nameEl.textContent = user.name || user.email || 'User';
-    if (roleEl) roleEl.textContent = (user.role || 'user').replace(/_/g, ' ');
-    if (av) av.textContent = initials(user.name || user.email);
+    const name = user.name || user.email || user.company_name || 'User';
+    const role = (user.role || 'user').replace(/_/g, ' ');
+    const av = initials(user.name || user.company_name || user.email);
+    setText('user-name-display', name);
+    setText('user-role-display', role);
+    setText('disp-name-display', name);
+    setText('disp-role-display', role);
+    setText('user-display-name', name);
+    setText('user-profile-display', name);
+    setText('carrier-name-display', user.company_name || name);
+    const avatar = document.getElementById('user-avatar-initials');
+    if (avatar) avatar.textContent = av;
+    setText('disp-avatar-initials', av);
+    setText('crm-avatar', av);
+    setText('sales-avatar-initials', av);
+    setText('carrier-avatar-initials', av);
   }
 
   function ensureLogout() {
@@ -137,11 +205,30 @@
 
     const aside = document.querySelector('.app-sidebar');
     const toggle = () => {
+      if (!aside) return;
       aside.classList.toggle('is-open');
       backdrop.classList.toggle('is-open');
     };
     bar.querySelector('button').addEventListener('click', toggle);
     backdrop.addEventListener('click', toggle);
+  }
+
+  function applyPageHash() {
+    const p = pageName();
+    const h = hashKey();
+    if (p === 'admin-dashboard.html' && typeof window.switchAdminTab === 'function') {
+      const tab = ['audit', 'settings', 'blog', 'loads', 'carriers', 'dispatchers', 'users'].includes(h) ? h : 'loads';
+      window.switchAdminTab(tab);
+    }
+    if (p === 'dispatcher-dashboard.html' && typeof window.switchDeskTab === 'function') {
+      window.switchDeskTab(h === 'fleets' ? 'fleets' : 'desk');
+    }
+    if (p === 'sales-dashboard.html' && typeof window.switchSalesTab === 'function') {
+      window.switchSalesTab(h === 'tasks' ? 'tasks' : 'leads');
+    }
+    if (p === 'carrier-overview.html' && typeof window.switchCarrierTab === 'function') {
+      window.switchCarrierTab(h === 'loads' ? 'loads' : 'cockpit');
+    }
   }
 
   function init() {
@@ -150,11 +237,10 @@
     if (document.querySelector('.driver-header')) return;
     document.body.classList.add('app-body');
     aside.innerHTML = sidebarHtml();
-    // #region agent log
-    fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'278583'},body:JSON.stringify({sessionId:'278583',runId:'pre-fix',hypothesisId:'C',location:'app-shell.js:init',message:'sidebar replaced',data:{crmAvatarGone:!document.getElementById('crm-avatar'),hasNameEl:!!document.getElementById('user-name-display'),mobileBar:!!document.querySelector('.app-mobile-bar'),path:location.pathname},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     mountMobile();
     ensureLogout();
+    applyPageHash();
+    window.addEventListener('hashchange', applyPageHash);
     fetch('/api/me', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => fillUser(data && data.user))
