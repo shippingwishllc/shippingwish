@@ -298,7 +298,7 @@ function buildTemplate(templateKey, vars) {
 
 const SMS_TEMPLATES = {
   dedicated_manager: ({ companyName }) =>
-    `Shipping Wish LLC (DE): Do you need a Dedicated Operations Manager for ${companyName || 'your trucks'}? Reply YES or call ${COMPANY.phone}. Reply STOP to opt out.`,
+    `Shipping Wish LLC: Do you need a Dedicated Operations Manager for ${companyName || 'your trucks'}? Reply YES or call ${COMPANY.phone}. Reply STOP to opt out.`,
   follow_up: ({ companyName }) =>
     `Shipping Wish LLC: following up on a Dedicated Operations Manager for ${companyName || 'your fleet'}. Reply YES or STOP.`,
   load_booked: ({ loadSummary }) =>

@@ -88,7 +88,7 @@
     <header class="app-header">
       <div>
         <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Sales CRM &amp; Carrier Acquisition</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">U.S. motor carriers only. Dedicated Operations Manager outreach — not a cold “dispatch” pitch.</p>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Website Stripe checkouts land here as Active. Contact-form requests land as New. Portal signups are under Admin → Carriers.</p>
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-3);">
@@ -129,7 +129,7 @@
             <div class="stat-kpi-icon">✅</div>
           </div>
           <div class="stat-kpi-val" id="kpi-onboarded">0</div>
-          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Signed setup agreement</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Stripe checkout completed — start their desk</div>
         </div>
 
         <div class="stat-kpi-card">
@@ -139,6 +139,31 @@
           </div>
           <div class="stat-kpi-val" id="kpi-packets-sent">0</div>
           <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Onboarding email packages sent</div>
+        </div>
+      </div>
+
+      <div class="tms-table-card" style="margin-bottom:var(--space-6);">
+        <div class="tms-table-header">
+          <div>
+            <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Website Stripe checkouts</h3>
+            <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Carriers who started or finished weekly checkout. Filter leads below by <strong>Active</strong> to work paid trials.</p>
+          </div>
+        </div>
+        <div class="tms-table-wrapper">
+          <table class="tms-table-v2">
+            <thead>
+              <tr>
+                <th>Company / name</th>
+                <th>Email / phone</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th>When</th>
+              </tr>
+            </thead>
+            <tbody id="checkout-tbody">
+              <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Loading checkouts…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -319,6 +344,7 @@
   document.addEventListener('DOMContentLoaded', async () => {
     await checkAuth();
     await loadLeads();
+    await loadCheckouts();
     await loadInboxCount();
   });
 
@@ -376,6 +402,45 @@
     }
     updateKPIs();
     renderLeadsTable();
+  }
+
+  function planLabel(key) {
+    if (key === 'fleet_weekly') return 'Small Fleet · $350/wk';
+    if (key === 'command_weekly' || key === 'custom_weekly') return 'Fleet Command · $500/wk';
+    return 'Owner Operator · $149/wk';
+  }
+
+  async function loadCheckouts() {
+    const tbody = document.getElementById('checkout-tbody');
+    if (!tbody) return;
+    try {
+      const res = await fetch('/api/billing/subscriptions', { credentials: 'include' });
+      if (!res.ok) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Sign in as admin or dispatcher to see Stripe checkouts.</td></tr>';
+        return;
+      }
+      const data = await res.json();
+      const rows = data.subscriptions || [];
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No website checkouts yet. They appear here as soon as a carrier starts Stripe.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map((s) => {
+        const when = s.created_at ? new Date(s.created_at).toLocaleString() : '—';
+        const name = s.company_name || s.owner_name || '—';
+        const contact = [s.lead_email, s.phone].filter(Boolean).join(' · ') || '—';
+        const st = s.status || 'incomplete';
+        return `<tr>
+          <td><strong>${escapeHtml(name)}</strong>${s.owner_name && s.company_name ? `<div style="font-size:12px;color:var(--text-muted);">${escapeHtml(s.owner_name)}</div>` : ''}</td>
+          <td>${escapeHtml(contact)}</td>
+          <td>${escapeHtml(planLabel(s.plan_key))}</td>
+          <td><span class="badge ${st === 'trialing' || st === 'active' ? 'badge-paid' : 'badge-amber'}">${escapeHtml(st)}</span></td>
+          <td style="white-space:nowrap;font-size:12px;">${escapeHtml(when)}</td>
+        </tr>`;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Could not load checkouts.</td></tr>';
+    }
   }
 
   async function loadInboxCount() {

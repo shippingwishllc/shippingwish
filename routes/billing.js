@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { sendBrandedEmail } = require('../utils/mailer');
-const { buildTemplate, COMPANY, APP_URL } = require('../utils/email-templates');
+const { buildTemplate, COMPANY, APP_URL, escapeHtml } = require('../utils/email-templates');
 
 const TRIAL_DAYS = parseInt(process.env.STRIPE_TRIAL_DAYS || '7', 10);
 
@@ -62,6 +62,127 @@ const PLANS = {
 };
 
 PLANS.custom_weekly = PLANS.command_weekly;
+
+function trucksCount(trucks) {
+  const s = String(trucks == null ? '' : trucks).trim();
+  if (s === '2-5') return 3;
+  if (s === '6+') return 6;
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+function opsRecipients() {
+  return [...new Set([
+    COMPANY.operationsEmail,
+    process.env.ADMIN_EMAIL_1,
+    process.env.ADMIN_EMAIL_2
+  ].filter(Boolean))];
+}
+
+async function notifyStaff({ subject, html, text }) {
+  for (const to of opsRecipients()) {
+    try {
+      await sendBrandedEmail({
+        to,
+        subject,
+        html,
+        text,
+        emailType: 'internal_lead',
+        templateKey: 'internal_checkout'
+      });
+    } catch (err) {
+      console.error('Staff notify:', err.message);
+    }
+  }
+}
+
+async function upsertWebsiteLead({
+  email,
+  name,
+  company,
+  phone,
+  trucks,
+  mcNumber,
+  usdot,
+  planKey,
+  status,
+  extraNote
+}) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  if (!cleanEmail) return null;
+  const plan = PLANS[planKey] || PLANS.solo_weekly;
+  const note = extraNote || [
+    `Website Stripe checkout — ${plan.name}`,
+    `$${(plan.amount_cents / 100).toFixed(0)} / week after 7-day trial.`,
+    `Trucks: ${trucks || '-'}.`,
+    mcNumber ? `MC ${mcNumber}.` : '',
+    usdot ? `USDOT ${usdot}.` : ''
+  ].filter(Boolean).join(' ');
+
+  try {
+    const existing = await pool.query(
+      `SELECT id FROM crm_leads WHERE email IS NOT NULL AND email != '' AND lower(email) = $1 ORDER BY id DESC LIMIT 1`,
+      [cleanEmail]
+    );
+    if (existing.rows.length) {
+      const id = existing.rows[0].id;
+      await pool.query(
+        `UPDATE crm_leads SET
+           company_name = COALESCE(NULLIF($2,''), company_name),
+           owner_name = COALESCE(NULLIF($3,''), owner_name),
+           phone = COALESCE(NULLIF($4,''), phone),
+           mc_number = COALESCE(NULLIF($5,''), mc_number),
+           dot_number = COALESCE(NULLIF($6,''), dot_number),
+           num_trucks = COALESCE($7, num_trucks),
+           notes = TRIM(BOTH FROM COALESCE(notes,'') || E'\n' || $8),
+           status = CASE WHEN $9 = 'active' THEN 'active' WHEN status = 'active' THEN status ELSE COALESCE(NULLIF($9,''), status) END,
+           last_contacted_at = now()
+         WHERE id = $1`,
+        [
+          id,
+          company || '',
+          name || '',
+          phone || '',
+          mcNumber || '',
+          usdot || '',
+          trucksCount(trucks),
+          note,
+          status || 'new'
+        ]
+      );
+      return id;
+    }
+
+    const ins = await pool.query(
+      `INSERT INTO crm_leads (company_name, owner_name, phone, email, mc_number, dot_number, num_trucks, status, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       RETURNING id`,
+      [
+        company || name || 'Website checkout',
+        name || '',
+        phone || '',
+        cleanEmail,
+        mcNumber || '',
+        usdot || '',
+        trucksCount(trucks),
+        status || 'new',
+        note
+      ]
+    );
+    const id = ins.rows[0].id;
+    try {
+      await pool.query(
+        `INSERT INTO lead_tasks (lead_id, task_title, due_date)
+         VALUES ($1, $2, CURRENT_DATE)`,
+        [id, status === 'active' ? `Start operations desk — ${company || name}` : `Follow website checkout — ${company || name}`]
+      );
+    } catch (_) { /* tasks table optional */ }
+    return id;
+  } catch (err) {
+    console.error('upsertWebsiteLead:', err.message);
+    return null;
+  }
+}
 
 function publicPlans() {
   return ['solo_weekly', 'fleet_weekly', 'command_weekly'].map((key) => {
@@ -245,6 +366,18 @@ router.post('/checkout', async (req, res) => {
     }
 
     const plan = PLANS[plan_key] || PLANS.solo_weekly;
+    const leadId = await upsertWebsiteLead({
+      email: cleanEmail,
+      name: String(name).trim(),
+      company: String(company || '').trim(),
+      phone: String(phone || '').trim(),
+      trucks,
+      mcNumber: String(mc_number || '').trim(),
+      usdot: String(usdot || '').trim(),
+      planKey: plan.key,
+      status: 'new'
+    });
+
     const checkout = await createWeeklyCheckout({
       email: cleanEmail,
       name: String(name).trim(),
@@ -253,7 +386,8 @@ router.post('/checkout', async (req, res) => {
       trucks,
       mcNumber: String(mc_number || '').trim(),
       usdot: String(usdot || '').trim(),
-      planKey: plan.key
+      planKey: plan.key,
+      leadId
     });
 
     res.json({
@@ -360,10 +494,10 @@ router.post('/weekly-link', requireAuth, requireRole('dispatcher', 'admin', 'sup
   }
 });
 
-router.get('/subscriptions', requireAuth, requireRole('admin', 'super_admin', 'dispatcher'), async (req, res) => {
+router.get('/subscriptions', requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT b.*, l.company_name, l.email AS lead_email, l.phone
+      `SELECT b.*, l.company_name, l.owner_name, l.email AS lead_email, l.phone, l.mc_number, l.num_trucks, l.status AS lead_status
        FROM billing_subscriptions b
        LEFT JOIN crm_leads l ON l.id = b.lead_id
        ORDER BY b.created_at DESC
@@ -383,7 +517,10 @@ async function handleStripeEvent(event) {
     const sessionId = obj.id;
     const subId = obj.subscription;
     const customerId = obj.customer;
-    const leadId = obj.metadata && obj.metadata.lead_id ? parseInt(obj.metadata.lead_id, 10) : null;
+    const meta = obj.metadata || {};
+    let leadId = meta.lead_id ? parseInt(meta.lead_id, 10) : null;
+    if (!Number.isFinite(leadId)) leadId = null;
+    const email = (obj.customer_details && obj.customer_details.email) || obj.customer_email || '';
     let status = 'trialing';
     try {
       const stripe = getStripe();
@@ -395,14 +532,28 @@ async function handleStripeEvent(event) {
       console.error('Stripe subscription retrieve:', err.message);
     }
     try {
+      const resolvedLead = await upsertWebsiteLead({
+        email: email || '',
+        name: meta.name || '',
+        company: meta.company || '',
+        phone: meta.phone || (obj.customer_details && obj.customer_details.phone) || '',
+        trucks: meta.trucks,
+        mcNumber: meta.mc_number,
+        usdot: meta.usdot,
+        planKey: meta.plan_key,
+        status: 'active',
+        extraNote: `Stripe checkout completed. Trial/subscription status: ${status}. Session ${sessionId}.`
+      });
+      if (resolvedLead) leadId = resolvedLead;
       await pool.query(
         `UPDATE billing_subscriptions
          SET status = $4,
              stripe_subscription_id = COALESCE($1, stripe_subscription_id),
              stripe_customer_id = $2,
+             lead_id = COALESCE($5, lead_id),
              updated_at = now()
          WHERE stripe_checkout_session_id = $3`,
-        [subId ? String(subId) : null, customerId ? String(customerId) : null, sessionId, status]
+        [subId ? String(subId) : null, customerId ? String(customerId) : null, sessionId, status, leadId]
       );
       if (leadId) {
         await pool.query(`UPDATE crm_leads SET status = 'active' WHERE id = $1`, [leadId]);
@@ -410,6 +561,21 @@ async function handleStripeEvent(event) {
     } catch (err) {
       console.error('billing checkout.session.completed db:', err.message);
     }
+
+    const plan = PLANS[meta.plan_key] || PLANS.solo_weekly;
+    const company = meta.company || email;
+    const crmUrl = `${APP_URL}/crm-sales`;
+    await notifyStaff({
+      subject: `New paid trial — ${company || 'carrier'} (${plan.name})`,
+      html: `<p>A carrier finished Stripe checkout. $0 today. First weekly charge after the free week.</p>
+        <p><strong>${escapeHtml(meta.name || '')}</strong><br>
+        ${escapeHtml(company || '')}<br>
+        ${escapeHtml(email)} · ${escapeHtml(meta.phone || '')}<br>
+        Plan: ${escapeHtml(plan.name)} — $${(plan.amount_cents / 100).toFixed(0)}/week<br>
+        Trucks: ${escapeHtml(meta.trucks || '-')} · MC ${escapeHtml(meta.mc_number || '-')} · USDOT ${escapeHtml(meta.usdot || '-')}</p>
+        <p>Open in admin: <a href="${crmUrl}">Sales CRM &amp; Leads</a> — they show as <strong>Active</strong>.</p>`,
+      text: `New Stripe checkout: ${meta.name || ''} / ${company} / ${email} / ${meta.phone || ''} / ${plan.name}. Open ${crmUrl}`
+    });
   }
 
   if (type === 'invoice.paid' || type === 'invoice.payment_succeeded') {

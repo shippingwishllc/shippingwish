@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
 const { requireAuth, requireRole, requireSuperAdmin, JWT_SECRET, setAuthCookie } = require('../middleware/auth');
+const { sendBrandedEmail } = require('../utils/mailer');
+const { COMPANY, APP_URL, escapeHtml } = require('../utils/email-templates');
 
 const router = express.Router();
 
@@ -90,6 +92,16 @@ router.post('/signup', rateLimit(5, 60000), async (req, res) => {
     );
     const user = result.rows[0];
     setAuthCookie(res, signToken(user));
+    const ops = [...new Set([COMPANY.operationsEmail, process.env.ADMIN_EMAIL_1, process.env.ADMIN_EMAIL_2].filter(Boolean))];
+    const subject = `Portal signup — ${company || name}`;
+    const html = `<p>A carrier created a portal login (this is not Stripe payment by itself).</p>
+      <p><strong>${escapeHtml(name)}</strong><br>${escapeHtml(company || '')}<br>${escapeHtml(email)} · ${escapeHtml(phone || '')}<br>
+      MC ${escapeHtml(mcNumber || '-')} · USDOT ${escapeHtml(dotNumber || '-')}</p>
+      <p>They appear in Admin → <a href="${APP_URL}/admin-dashboard">Registered Carrier Fleets</a> and can sign in at /login.</p>`;
+    const text = `Portal signup: ${name} / ${company} / ${email} / ${phone}`;
+    Promise.all(ops.map((to) => sendBrandedEmail({
+      to, subject, html, text, emailType: 'internal_lead', templateKey: 'internal_signup'
+    }))).catch((err) => console.error('Signup notify:', err.message));
     res.json({ ok: true, user });
   } catch (err) {
     console.error('Signup error:', err);
