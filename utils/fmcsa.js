@@ -3,13 +3,24 @@ const https = require('https');
 const FMCSA_HOST = 'mobile.fmcsa.dot.gov';
 const SAFER_HOST = 'safer.fmcsa.dot.gov';
 
-function httpsRequest(url, timeoutMs = 15000) {
+function httpsRequest(url, timeoutMs = 18000, hops = 0) {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { Accept: 'application/json, text/html;q=0.9', 'User-Agent': 'Mozilla/5.0 ShippingWishTMS' } }, (resp) => {
+    const req = https.get(url, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; ShippingWishTMS/1.0)'
+      }
+    }, (resp) => {
+      const loc = resp.headers.location;
+      if ([301, 302, 307, 308].includes(resp.statusCode) && loc && hops < 4) {
+        const next = loc.startsWith('http') ? loc : new URL(loc, url).href;
+        resp.resume();
+        return resolve(httpsRequest(next, timeoutMs, hops + 1));
+      }
       let body = '';
       resp.on('data', (d) => { body += d; });
       resp.on('end', () => {
-        resolve({ status: resp.statusCode || 0, body });
+        resolve({ status: resp.statusCode || 0, body, contentType: String(resp.headers['content-type'] || '') });
       });
     });
     req.on('error', reject);
@@ -19,18 +30,59 @@ function httpsRequest(url, timeoutMs = 15000) {
   });
 }
 
-async function httpsJson(url, timeoutMs = 15000) {
+function textVal(v) {
+  if (v == null || v === '') return '';
+  if (typeof v === 'string' || typeof v === 'number') return String(v).trim();
+  if (Array.isArray(v)) return textVal(v[0]);
+  if (typeof v === 'object') return textVal(v.value || v.content || v.text || v.legalName || v.dbaName);
+  return '';
+}
+
+function parseQcXml(xml) {
+  const grab = (tag) => {
+    const m = String(xml).match(new RegExp(`<${tag}[^>]*>([^<]+)`, 'i'));
+    return m ? m[1].trim() : '';
+  };
+  const legalName = grab('legalName');
+  const dbaName = grab('dbaName');
+  const dotNumber = grab('dotNumber');
+  const docketNumber = grab('docketNumber');
+  if (!legalName && !dotNumber) return {};
+  return {
+    content: {
+      carrier: {
+        legalName,
+        dbaName,
+        dotNumber,
+        docketNumber,
+        telephone: grab('telephone') || grab('phone'),
+        phyStreet: grab('phyStreet'),
+        phyCity: grab('phyCity'),
+        phyState: grab('phyState'),
+        phyZipcode: grab('phyZipcode') || grab('phyZip'),
+        totalPowerUnits: grab('totalPowerUnits'),
+        totalDrivers: grab('totalDrivers')
+      }
+    }
+  };
+}
+
+function parseQcBody(body) {
+  const t = String(body || '').trim();
+  if (!t) return {};
+  if (t.startsWith('{') || t.startsWith('[')) return JSON.parse(t);
+  if (t.startsWith('<')) return parseQcXml(t);
+  throw new Error('FMCSA returned non-JSON');
+}
+
+async function httpsJson(url, timeoutMs = 18000) {
   const { status, body } = await httpsRequest(url, timeoutMs);
   if (status >= 400) {
     const err = new Error(`FMCSA HTTP ${status}`);
     err.status = status;
     throw err;
   }
-  try {
-    return body ? JSON.parse(body) : {};
-  } catch (e) {
-    throw new Error('FMCSA returned non-JSON');
-  }
+  return parseQcBody(body);
 }
 
 function apiKey() {
@@ -38,9 +90,35 @@ function apiKey() {
 }
 
 function qcUrl(path) {
-  const key = encodeURIComponent(apiKey());
+  // FMCSA WebKeys often contain "+". encodeURIComponent turns that into %2B
+  // and QCMobile then returns auth-failure / empty content.
+  const key = encodeURIComponent(apiKey()).replace(/%2B/g, '+');
   const clean = String(path).replace(/^\/+/, '');
   return `https://${FMCSA_HOST}/qc/services/${clean}${clean.includes('?') ? '&' : '?'}webKey=${key}`;
+}
+
+function looksLikeAuthFailure(data, body) {
+  const blob = `${typeof data === 'string' ? data : JSON.stringify(data || {})}\n${body || ''}`;
+  return /authentication failure|invalid web.?key|not authenticated|unauthorized/i.test(blob);
+}
+
+async function probeQc(path) {
+  const { status, body } = await httpsRequest(qcUrl(path));
+  let data = {};
+  let parseErr = '';
+  if (status < 400) {
+    try {
+      data = parseQcBody(body);
+    } catch (err) {
+      parseErr = err.message;
+    }
+  }
+  const authFail = status === 401 || status === 403 || looksLikeAuthFailure(data, body);
+  const nodes = (!authFail && status < 400 && !parseErr) ? extractNodes(data) : [];
+  const hint = typeof data.content === 'string'
+    ? String(data.content).slice(0, 80)
+    : (parseErr || (nodes.length ? 'hit' : (Object.keys(data).join(',') || `http ${status}`)));
+  return { path, status, nodes, authFail, hint };
 }
 
 function digits(value) {
@@ -70,15 +148,17 @@ function asArray(value) {
 function unwrapCarrier(node) {
   if (!node || typeof node !== 'object') return null;
   if (Array.isArray(node)) return unwrapCarrier(node[0]);
-  if (node.carrier && typeof node.carrier === 'object' && !Array.isArray(node.carrier)) return node.carrier;
-  if (node.content) return unwrapCarrier(node.content);
-  if (node.legalName || node.dbaName || node.dotNumber || node.docketNumber) return node;
+  if (node.carrier) return unwrapCarrier(node.carrier);
+  if (node.content && typeof node.content !== 'string') return unwrapCarrier(node.content);
+  if (textVal(node.legalName) || textVal(node.dbaName) || textVal(node.dotNumber) || textVal(node.docketNumber)) return node;
   return null;
 }
 
 function extractNodes(data) {
   if (!data) return [];
+  if (typeof data.content === 'string') return [];
   if (Array.isArray(data)) return data.map(unwrapCarrier).filter(Boolean);
+  if (data.content && data.content.carrier) return asArray(data.content.carrier).map(unwrapCarrier).filter(Boolean);
   if (data.content) return asArray(data.content).map(unwrapCarrier).filter(Boolean);
   const one = unwrapCarrier(data);
   return one ? [one] : [];
@@ -117,13 +197,13 @@ function normalizeCarrier(raw, extras = {}) {
   const op = operationLabel(src.carrierOperation);
 
   return {
-    company_name: src.legalName || src.dbaName || src.legal_name || extras.company_name || '',
-    dba_name: src.dbaName || src.dba_name || extras.dba_name || '',
-    owner_name: src.officer1 || src.officerName || extras.owner_name || src.dbaName || '',
-    officer_name: src.officer1 || src.officerName || extras.officer_name || '',
+    company_name: textVal(src.legalName) || textVal(src.dbaName) || textVal(src.legal_name) || extras.company_name || '',
+    dba_name: textVal(src.dbaName) || textVal(src.dba_name) || extras.dba_name || '',
+    owner_name: textVal(src.officer1) || textVal(src.officerName) || extras.owner_name || textVal(src.dbaName) || '',
+    officer_name: textVal(src.officer1) || textVal(src.officerName) || extras.officer_name || '',
     mc_number: mc,
-    dot_number: String(src.dotNumber || src.dot_number || extras.dot || extras.dot_number || ''),
-    phone: src.telephone || src.phone || extras.phone || '',
+    dot_number: textVal(src.dotNumber) || textVal(src.dot_number) || String(extras.dot || extras.dot_number || ''),
+    phone: textVal(src.telephone) || textVal(src.phone) || extras.phone || '',
     email: String(src.emailAddress || src.email || extras.email || '').toLowerCase(),
     phy_address: [street, phyCity, phyState, phyZip].filter(Boolean).join(', '),
     address: [phyCity, phyState, phyZip].filter(Boolean).join(', '),
@@ -143,32 +223,46 @@ function normalizeCarrier(raw, extras = {}) {
   };
 }
 
-async function fetchQcNodes(path) {
-  try {
-    const data = await httpsJson(qcUrl(path));
-    return extractNodes(data);
-  } catch (err) {
-    if (err.status === 404) return [];
+async function fetchQcNodes(path, attempts) {
+  const probe = await probeQc(path);
+  if (attempts) {
+    attempts.push({ path: probe.path, status: probe.status, result: probe.authFail ? 'auth' : (probe.nodes.length ? 'hit' : probe.hint) });
+  }
+  if (probe.authFail) {
+    const err = new Error('FMCSA WebKey rejected. In Vercel use My WebKeys → WebKey, not Client Secret.');
+    err.status = 401;
     throw err;
   }
+  return probe.nodes;
 }
 
-async function fetchCarrierByDot(dot) {
+async function fetchCarrierByDot(dot, attempts) {
   const d = digits(dot);
   if (!d) return [];
-  return fetchQcNodes(`carriers/${d}`);
-}
-
-async function fetchCarrierByMc(mc) {
-  const m = digits(mc);
-  if (!m) return [];
-  let nodes = await fetchQcNodes(`carriers/docket-number/${m}/`);
-  if (!nodes.length) nodes = await fetchQcNodes(`carriers/docket-number/${m}`);
+  let nodes = await fetchQcNodes(`carriers/${d}`, attempts);
+  if (!nodes.length) nodes = await fetchQcNodes(`carriers/${d}/`, attempts);
   return nodes;
 }
 
-async function fetchCarrierByName(name) {
-  return fetchQcNodes(`carriers/name/${encodeURIComponent(name)}`);
+async function fetchCarrierByMc(mc, attempts) {
+  const m = digits(mc);
+  if (!m) return [];
+  const paths = [
+    `carriers/search/docket-number/${m}`,
+    `carriers/docket-number/${m}`,
+    `carriers/docket-number/${m}/`,
+    `carriers/docket-number/MC${m}`,
+    `carriers/docket-number/MC-${m}`
+  ];
+  for (const path of paths) {
+    const nodes = await fetchQcNodes(path, attempts);
+    if (nodes.length) return nodes;
+  }
+  return [];
+}
+
+async function fetchCarrierByName(name, attempts) {
+  return fetchQcNodes(`carriers/name/${encodeURIComponent(name)}`, attempts);
 }
 
 async function fetchBasics(dot) {
@@ -301,20 +395,19 @@ async function searchFmcsa(query) {
         // fall through to unconfigured message
       }
     }
-    return { source: 'unconfigured', carriers: [], message: 'Add FMCSA_API_KEY (free at https://mobile.fmcsa.dot.gov/QCDevsite/) to search live U.S. motor carriers.' };
+    return { source: 'unconfigured', keyPresent: false, carriers: [], message: 'Add FMCSA_API_KEY (free at https://mobile.fmcsa.dot.gov/QCDevsite/) to search live U.S. motor carriers.' };
   }
 
   const classified = classifyQuery(query);
   let nodes = [];
   let lastError = '';
+  const attempts = [];
 
   try {
     if (classified.type === 'mc') {
-      nodes = await fetchCarrierByMc(classified.value);
-      if (!nodes.length) nodes = await fetchCarrierByDot(classified.value);
+      nodes = await fetchCarrierByMc(classified.value, attempts);
     } else if (classified.type === 'dot') {
-      nodes = await fetchCarrierByDot(classified.value);
-      if (!nodes.length) nodes = await fetchCarrierByMc(classified.value);
+      nodes = await fetchCarrierByDot(classified.value, attempts);
     } else if (classified.type === 'state') {
       const found = [];
       for (const seed of STATE_SEED_NAMES) {
@@ -331,7 +424,7 @@ async function searchFmcsa(query) {
       }
       nodes = found.slice(0, 25);
     } else {
-      nodes = await fetchCarrierByName(classified.value);
+      nodes = await fetchCarrierByName(classified.value, attempts);
     }
   } catch (err) {
     lastError = err.message;
@@ -360,16 +453,20 @@ async function searchFmcsa(query) {
     return {
       source: lastError ? 'fmcsa_error' : 'FMCSA QC API',
       query: classified,
+      keyPresent: true,
+      attempts,
       carriers: [],
       message: lastError
-        ? `FMCSA lookup failed (${lastError}). Check the WebKey in Vercel, then Redeploy.`
-        : `No FMCSA record for ${classified.type.toUpperCase()} ${classified.value}. Confirm the number on SAFER, or try the company name.`
+        ? `FMCSA lookup failed (${lastError}). In Vercel confirm FMCSA_API_KEY is the WebKey (not Client Secret), Production env, then Redeploy.`
+        : `No FMCSA QC record for ${classified.type.toUpperCase()} ${classified.value}. Try the legal name (e.g. Alphandrea Logistics) or USDOT if you have it.`
     };
   }
 
   return {
     source: found[0].source || 'FMCSA QC API',
     query: classified,
+    keyPresent: true,
+    attempts,
     carriers: found
   };
 }
