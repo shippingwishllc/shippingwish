@@ -166,15 +166,15 @@ router.post('/leads', requireAuth, async (req, res) => {
     const dupParams = [];
     if (mcDigits) {
       dupParams.push(mcDigits);
-      dupChecks.push(`regexp_replace(COALESCE(mc_number,''), '[^0-9]', '', 'g') = $${dupParams.length}`);
+      dupChecks.push(`regexp_replace(COALESCE(l.mc_number,''), '[^0-9]', '', 'g') = $${dupParams.length}`);
     }
     if (phone && phone !== 'unknown') {
       dupParams.push(phone);
-      dupChecks.push(`phone = $${dupParams.length}`);
+      dupChecks.push(`l.phone = $${dupParams.length}`);
     }
     if (email) {
       dupParams.push(email);
-      dupChecks.push(`lower(COALESCE(email,'')) = $${dupParams.length}`);
+      dupChecks.push(`lower(COALESCE(l.email,'')) = $${dupParams.length}`);
     }
 
     if (dupChecks.length > 0) {
