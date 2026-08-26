@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { searchFmcsa } = require('../utils/fmcsa');
+const { ensureCrmLeadsTable } = require('../utils/ensure-growth-schema');
 
 // ============================================================
 // FMCSA API — Search US Carriers by Name, MC#, or DOT#
@@ -75,6 +76,7 @@ router.get('/fmcsa/carrier/:mc', requireAuth, async (req, res) => {
 // GET /api/crm/leads - Get all leads (Super Admin & Admin see all, Sales Rep sees assigned)
 router.get('/leads', requireAuth, async (req, res) => {
   try {
+    await ensureCrmLeadsTable().catch(() => {});
     let query = `
       SELECT l.*, u.name as sales_rep_name
       FROM crm_leads l
@@ -139,6 +141,9 @@ router.post('/leads', requireAuth, async (req, res) => {
     if (!company_name) {
       return res.status(400).json({ error: 'Company name is required' });
     }
+
+    // Production may never have run schema.sql — create CRM tables on first import
+    await ensureCrmLeadsTable();
 
     // Ensure FMCSA enrichment columns exist (safe on every import)
     const enrichCols = [
