@@ -107,13 +107,21 @@ async function sendDashboard(req, res) {
         JOIN dispatcher_carriers dc ON dc.dispatcher_id = d.id
         WHERE dc.carrier_id = $1 LIMIT 1`, [userId]);
 
+      const milesRes = await pool.query(
+        `SELECT COALESCE(SUM(miles),0) AS miles, COALESCE(SUM(rate),0) AS broker_pay
+         FROM loads WHERE carrier_id = $1 AND status NOT IN ('cancelled')`,
+        [userId]
+      );
+
       return res.json(withSummary({
         role: 'carrier',
         activeLoads: parseInt(activeLoadsRes.rows[0].count, 10),
         completedLoads: parseInt(completedLoadsRes.rows[0].count, 10),
-        totalEarned: parseFloat(revenueRes.rows[0].total_earned || 0),
+        totalEarned: parseFloat(revenueRes.rows[0].total_earned || milesRes.rows[0].broker_pay || 0),
+        totalRevenue: parseFloat(milesRes.rows[0].broker_pay || 0),
+        totalMiles: parseFloat(milesRes.rows[0].miles || 0),
         pendingPayment: parseFloat(pendingPaymentRes.rows[0].pending_amount || 0),
-        dispatcherContact: dispatcherInfoRes.rows[0] || { name: 'Shipping Wish Dispatch', phone: '+1 917 737 0021', email: 'info@shippingwish.com' }
+        dispatcherContact: dispatcherInfoRes.rows[0] || { name: 'Shipping Wish Dispatch', phone: '+1 917 737 0021', email: 'operations@shippingwish.com' }
       }));
     }
   } catch (err) {

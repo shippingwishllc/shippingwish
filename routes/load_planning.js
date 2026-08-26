@@ -19,6 +19,14 @@ router.get('/', requireAuth, async (req, res) => {
     if (req.user.role === 'dispatcher') {
       query += ` JOIN dispatcher_trucks dt ON lp.truck_id = dt.truck_id WHERE dt.dispatcher_id = $1`;
       params.push(req.user.id);
+    } else if (req.user.role === 'carrier' || req.user.role === 'carrier_admin') {
+      query += ` WHERE d.carrier_id = $1`;
+      params.push(req.user.id);
+    } else if (req.user.role === 'driver') {
+      query += ` WHERE d.user_id = $1`;
+      params.push(req.user.id);
+    } else if (!['admin', 'super_admin'].includes(req.user.role)) {
+      return res.json({ load_plans: [] });
     }
 
     query += ` ORDER BY lp.available_date ASC, lp.created_at DESC`;
@@ -38,6 +46,14 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (!driver_id || !truck_id || !available_date || !pickup_location) {
       return res.status(400).json({ error: 'Driver, Truck, Available Date, and Pickup Location are required' });
+    }
+
+    if (req.user.role === 'carrier' || req.user.role === 'carrier_admin') {
+      const d = await pool.query('SELECT id FROM drivers WHERE id = $1 AND carrier_id = $2', [driver_id, req.user.id]);
+      const t = await pool.query('SELECT id FROM trucks WHERE id = $1 AND carrier_id = $2', [truck_id, req.user.id]);
+      if (!d.rows.length || !t.rows.length) {
+        return res.status(403).json({ error: 'That driver or truck is not on your fleet.' });
+      }
     }
 
     const result = await pool.query(
@@ -63,6 +79,16 @@ router.put('/:id/status', requireAuth, async (req, res) => {
 
     if (!['scheduled', 'booked', 'completed'].includes(status)) {
       return res.status(400).json({ error: 'Invalid load plan status' });
+    }
+
+    if (req.user.role === 'carrier' || req.user.role === 'carrier_admin') {
+      const own = await pool.query(
+        `SELECT lp.id FROM load_plans lp
+         JOIN drivers d ON d.id = lp.driver_id
+         WHERE lp.id = $1 AND d.carrier_id = $2`,
+        [id, req.user.id]
+      );
+      if (!own.rows.length) return res.status(403).json({ error: 'That availability row is not yours.' });
     }
 
     const result = await pool.query(

@@ -27,6 +27,24 @@ router.post('/ping', requireAuth, async (req, res) => {
     }
 
     const load = loadRes.rows[0];
+    const role = req.user.role;
+    if (role === 'carrier' && load.carrier_id !== req.user.id) {
+      return res.status(403).json({ error: 'You do not have access to this load.' });
+    }
+    if (role === 'dispatcher' && load.dispatcher_id !== req.user.id) {
+      return res.status(403).json({ error: 'You do not have access to this load.' });
+    }
+    if (role === 'driver') {
+      const dr = await pool.query(
+        `SELECT id FROM drivers WHERE user_id = $1 OR (email IS NOT NULL AND lower(email) = lower($2))`,
+        [req.user.id, req.user.email || '']
+      );
+      const ids = dr.rows.map((r) => r.id);
+      const assigned = await pool.query('SELECT driver_id FROM loads WHERE id = $1', [loadId]);
+      if (!assigned.rows[0] || !ids.includes(assigned.rows[0].driver_id)) {
+        return res.status(403).json({ error: 'This load is not assigned to you.' });
+      }
+    }
 
     // 2. Insert tracking event
     const eventRes = await pool.query(

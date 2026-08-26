@@ -83,7 +83,7 @@ app.use('/api/accessorials', require('./routes/accessorials')); // Detention, TO
 app.use('/api/fuel', require('./routes/fuel'));           // Fuel purchases logging
 app.use('/api/ifta', require('./routes/ifta'));           // Quarterly IFTA mileage & fuel report
 app.use('/api/invoices', require('./routes/invoices'));   // Itemized PDF Freight Invoices & payment status
-app.use('/api/dashboard', require('./routes/dashboard')); // Real-time metrics for Super Admin, Dispatcher, Carrier
+app.use('/api/portal', require('./routes/portal'));           // Carrier / owner-operator home cockpit
 app.use('/api/loadboard', require('./routes/loadboard')); // DAT Load Finder, OpenAI Matcher & Carrier Offers Approval Flow
 app.use('/api/crm', require('./routes/crm'));             // CRM Carrier Leads, Dispositions & Daily Tasks
 app.use('/api/email', require('./routes/email'));         // 1-Click branded outreach, inbound replies, unsubscribe

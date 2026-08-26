@@ -183,7 +183,7 @@ router.post('/batch', requireAuth, requireRole('admin', 'super_admin'), async (r
       return res.status(409).json({ error: `Loads already invoiced: ${ids}. Remove them from the batch.` });
     }
 
-    const feePercent  = parseFloat(carrier.dispatch_fee_percent || 5.00);
+    const feePercent  = parseFloat(carrier.dispatch_fee_percent || 0);
     const grossTotal  = loads.reduce((s, l) => s + parseFloat(l.rate || 0), 0);
     const commAmt     = parseFloat(((grossTotal * feePercent) / 100).toFixed(2));
     const carrierPay  = parseFloat((grossTotal - commAmt).toFixed(2));

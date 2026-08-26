@@ -96,7 +96,7 @@
           🗺️ Route &amp; RPM Optimizer
         </button>
 
-        <button class="btn btn-primary btn-sm" onclick="openNewLoadModal()" id="btn-open-create-modal">
+        <button type="button" class="btn btn-primary btn-sm" onclick="openNewLoadModal()" id="btn-open-create-modal">
           + Book &amp; Create Load
         </button>
 
@@ -417,8 +417,8 @@
     </div>
 
     <div class="modal-footer">
-      <button onclick="closeNewLoadModal()" class="btn btn-light">Cancel</button>
-      <button onclick="submitNewLoadForm()" class="btn btn-primary" id="btn-submit-new-load">Book & Create Load →</button>
+      <button type="button" onclick="closeNewLoadModal()" class="btn btn-light">Cancel</button>
+      <button type="button" onclick="submitNewLoadForm()" class="btn btn-primary" id="btn-submit-new-load">Book & Create Load →</button>
     </div>
   </div>
 </div>
@@ -543,7 +543,7 @@
       const isPendingCancel = l.status === 'cancellation_requested';
       const isCancelled = l.status === 'cancelled';
       const equipLabel  = l.equipment_type || '53ft Dry Van';
-      const feePercent  = l.dispatch_fee_percent || 5.0;
+      const feePercent  = l.dispatch_fee_percent || 0;
 
       let statusUi = `
         <select class="form-select" style="padding:3px 20px 3px 8px;font-size:11px;font-weight:700;border-radius:12px;width:125px;" onchange="updateLoadStatus('${l.id}', this.value)">
@@ -708,7 +708,7 @@
 
     try {
       // Check last delivery for smart reload suggestion
-      const res = await fetch(`/api/loads/last-delivery/${carrierId}`, { credentials: 'include' });
+      const res = await fetch(`/api/loads/last-delivery?carrierId=${encodeURIComponent(carrierId)}`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         if (data.lastDelivery) {
@@ -716,7 +716,8 @@
           document.getElementById('reload-loc').textContent = data.lastDelivery.delivery_location;
           document.getElementById('reload-prev').textContent = data.lastDelivery.load_number;
           document.getElementById('cl-pickup-loc').value = data.lastDelivery.delivery_location;
-          document.getElementById('cl-pickup-state').value = data.lastDelivery.delivery_state || '';
+          const stateEl = document.getElementById('cl-pickup-state');
+          if (stateEl) stateEl.value = data.lastDelivery.delivery_state || '';
         } else {
           document.getElementById('reload-banner').style.display = 'none';
         }
@@ -917,8 +918,22 @@
       .replace(/"/g, '&quot;');
   }
 
+  async function logout() {
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    window.location.href = '/login';
+  }
+
+  window.submitNewLoadForm = submitNewLoadForm;
+  window.onCarrierSelectChange = onCarrierSelectChange;
+  window.calcRpm = calcRpm;
+  window.logout = logout;
+  window.openChatModal = openChatModal;
+  window.closeChatModal = closeChatModal;
+  window.updateLoadStatus = updateLoadStatus;
+</script>
+
 <!-- ================= ROUTE & RPM OPTIMIZER MODAL ================= -->
-<div class="modal-overlay" id="routeOptimizerModal" style="display:none;" onclick="if(event.target===this) closeRouteOptimizerModal()">
+<div class="modal-overlay" id="routeOptimizerModal" style="display:none;z-index:4100;align-items:center;justify-content:center;" onclick="if(event.target===this) closeRouteOptimizerModal()">
   <div class="modal-card" style="max-width:700px;background:#0f172a;color:#fff;border:1px solid rgba(245,158,11,0.3);box-shadow:0 25px 50px rgba(0,0,0,0.6);">
     <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1);">
       <div style="display:flex;align-items:center;gap:10px;">
@@ -996,12 +1011,20 @@
 
 <script>
   function openRouteOptimizerModal() {
-    document.getElementById('routeOptimizerModal').style.display = 'flex';
+    const el = document.getElementById('routeOptimizerModal');
+    if (!el) return;
+    el.style.display = 'flex';
+    el.classList.add('open');
   }
 
   function closeRouteOptimizerModal() {
-    document.getElementById('routeOptimizerModal').style.display = 'none';
+    const el = document.getElementById('routeOptimizerModal');
+    if (!el) return;
+    el.style.display = 'none';
+    el.classList.remove('open');
   }
+  window.openRouteOptimizerModal = openRouteOptimizerModal;
+  window.closeRouteOptimizerModal = closeRouteOptimizerModal;
 
   async function calculateRouteOptimization(e) {
     e.preventDefault();

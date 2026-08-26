@@ -61,10 +61,12 @@ async function loadPlans() {
       renderPlans(plans);
       updateKPIs(plans);
     } else {
-      renderMockPlans();
+      const tbody = document.getElementById('plans-table-body');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Could not load availability. Sign in again.</td></tr>`;
     }
   } catch (err) {
-    renderMockPlans();
+    const tbody = document.getElementById('plans-table-body');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Could not load availability.</td></tr>`;
   }
 }
 
@@ -129,16 +131,6 @@ function renderPlans(plans) {
       </tr>
     `;
   }).join('');
-}
-
-function renderMockPlans() {
-  const mock = [
-    { id: 101, driver_name: 'David Miller', truck_number: '1042', available_date: new Date(Date.now() + 86400000).toISOString(), pickup_location: 'Dallas, TX', delivery_preference: 'Chicago, IL or Midwest', notes: 'Taking weekend off, ready Monday 7 AM', status: 'scheduled' },
-    { id: 102, driver_name: 'Robert Vance', truck_number: '2091', available_date: new Date(Date.now() + 172800000).toISOString(), pickup_location: 'Atlanta, GA', delivery_preference: 'Florida or Southeast Regional', notes: 'Home time ending Sunday evening', status: 'scheduled' },
-    { id: 103, driver_name: 'Marcus Vance', truck_number: '3018', available_date: new Date().toISOString(), pickup_location: 'Columbus, OH', delivery_preference: 'East Coast Dry Van', notes: 'Reload booked by dispatcher', status: 'booked' }
-  ];
-  renderPlans(mock);
-  updateKPIs(mock);
 }
 
 async function updatePlanStatus(planId, newStatus) {

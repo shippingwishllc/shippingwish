@@ -21,13 +21,22 @@
   ];
 
   const CARRIER_LINKS = [
-    { section: 'Operations' },
-    { key: 'loads', href: '/dashboard', icon: '📦', label: 'My Loads' },
-    { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
+    { section: 'Your company' },
+    { key: 'home', href: '/carrier-overview', icon: '📊', label: 'Fleet home' },
+    { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Trucks & drivers' },
+    { key: 'planning', href: '/load-planning', icon: '📅', label: 'Empty truck / next load' },
     { key: 'documents', href: '/documents', icon: '📄', label: 'Documents' },
-    { section: 'Accounting' },
-    { key: 'invoices', href: '/invoices', icon: '💳', label: 'Invoices' },
-    { key: 'ifta', href: '/ifta', icon: '⛽', label: 'IFTA' }
+    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker credit check' },
+    { section: 'Money' },
+    { key: 'invoices', href: '/invoices', icon: '💳', label: 'Broker invoices' },
+    { key: 'ifta', href: '/ifta', icon: '⛽', label: 'IFTA & fuel' },
+    { section: 'On the road' },
+    { key: 'driver', href: '/driver-app', icon: '📱', label: 'Driver phone app' }
+  ];
+
+  const DRIVER_LINKS = [
+    { section: 'Road' },
+    { key: 'driver', href: '/driver-app', icon: '📱', label: 'My load' }
   ];
 
   const PAGE_KEY = {
@@ -44,9 +53,9 @@
     'documents.html': 'documents',
     'load-planning.html': 'planning',
     'load-detail.html': 'overview',
-    'carrier-overview.html': 'overview',
-    'dashboard.html': 'loads',
-    'driver-app.html': 'loads'
+    'carrier-overview.html': 'home',
+    'dashboard.html': 'home',
+    'driver-app.html': 'driver'
   };
 
   function pageName() {
@@ -56,9 +65,14 @@
     return p;
   }
 
+  let CURRENT_ROLE = '';
+
+  function isCarrierRole(role) {
+    return role === 'carrier' || role === 'carrier_admin';
+  }
+
   function isCarrierShell() {
-    const p = pageName();
-    return p === 'dashboard.html' || p === 'driver-app.html' || p === 'carrier-overview.html';
+    return isCarrierRole(CURRENT_ROLE);
   }
 
   function hashKey() {
@@ -125,11 +139,12 @@
   }
 
   function sidebarHtml() {
-    const carrier = isCarrierShell();
+    const carrier = isCarrierRole(CURRENT_ROLE);
+    const driver = CURRENT_ROLE === 'driver';
     const active = activeKey();
-    const tag = carrier ? 'Carrier Portal' : 'Operations';
-    const home = carrier ? '/dashboard' : '/admin-dashboard';
-    const links = carrier ? CARRIER_LINKS : STAFF_LINKS.concat(extraLinks());
+    const tag = driver ? 'Driver app' : carrier ? 'Your TMS' : 'Operations';
+    const home = driver ? '/driver-app' : carrier ? '/carrier-overview' : '/admin-dashboard';
+    const links = driver ? DRIVER_LINKS : carrier ? CARRIER_LINKS : STAFF_LINKS.concat(extraLinks());
     return `
       <div class="sidebar-nav-scroll">
         <a href="${home}" class="sidebar-brand">
@@ -247,15 +262,28 @@
     if (!aside) return;
     if (document.querySelector('.driver-header')) return;
     document.body.classList.add('app-body');
-    aside.innerHTML = sidebarHtml();
-    mountMobile();
-    ensureLogout();
-    applyPageHash();
-    window.addEventListener('hashchange', applyPageHash);
     fetch('/api/me', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => fillUser(data && data.user))
+      .then((data) => {
+        CURRENT_ROLE = (data && data.user && data.user.role) || '';
+        aside.innerHTML = sidebarHtml();
+        mountMobile();
+        ensureLogout();
+        applyPageHash();
+        fillUser(data && data.user);
+        if (CURRENT_ROLE === 'carrier' || CURRENT_ROLE === 'carrier_admin') {
+          const p = pageName();
+          if (p === 'dashboard.html') window.location.replace('/carrier-overview');
+          if (p === 'crm-sales.html' || p === 'staff-management.html' || p === 'admin-dashboard.html' || p === 'dispatcher-dashboard.html') {
+            window.location.replace('/carrier-overview');
+          }
+        }
+        if (CURRENT_ROLE === 'driver' && pageName() !== 'driver-app.html') {
+          window.location.replace('/driver-app');
+        }
+      })
       .catch(() => {});
+    window.addEventListener('hashchange', applyPageHash);
   }
 
   if (document.readyState === 'loading') {

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --navy: #0f172a;
+      --amber: #f59e0b;
+      --slate: #334155;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --paper: #f8fafc;
+      --red: #b91c1c;
+      --green: #047857;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--navy);
+      background: #e8edf3;
+      line-height: 1.55;
+    }
+    .toolbar {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--navy); color: #fff;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 12px; padding: 12px 20px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .toolbar a, .toolbar button {
+      background: var(--amber); color: var(--navy); border: 0;
+      font-weight: 800; padding: 8px 14px; border-radius: 6px;
+      text-decoration: none; cursor: pointer; font-size: 13px;
+    }
+    .wrap { max-width: 860px; margin: 24px auto 80px; background: #fff; box-shadow: 0 12px 40px rgba(15,23,42,.12); }
+    .hero img, .shot img { width: 100%; display: block; }
+    .hero { position: relative; }
+    .hero-caption {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(transparent, rgba(15,23,42,.92));
+      color: #fff; padding: 48px 36px 28px;
+    }
+    .hero-caption p { margin: 0 0 6px; letter-spacing: .16em; text-transform: uppercase; font-family: Arial, sans-serif; font-size: 11px; color: var(--amber); font-weight: 700; }
+    .hero-caption h1 { margin: 0; font-size: 34px; font-weight: normal; line-height: 1.2; }
+    .pad { padding: 32px 36px; }
+    h2 { font-size: 26px; font-weight: normal; margin: 0 0 12px; }
+    h3 { font-family: Arial, sans-serif; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--amber); margin: 28px 0 10px; }
+    p { margin: 0 0 12px; color: var(--slate); font-size: 16px; }
+    .lead { font-size: 18px; color: var(--navy); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+    .card { border: 1px solid var(--line); padding: 16px 18px; background: var(--paper); }
+    .card strong { display: block; font-family: Arial, sans-serif; font-size: 13px; margin-bottom: 6px; color: var(--navy); }
+    .yes { border-left: 4px solid var(--green); }
+    .no { border-left: 4px solid var(--red); background: #fef2f2; }
+    ol.steps, ul.clean { margin: 8px 0 16px; padding-left: 22px; color: var(--slate); }
+    ol.steps li, ul.clean li { margin: 0 0 8px; }
+    .script {
+      background: #0f172a; color: #e2e8f0; padding: 18px 20px; margin: 12px 0 16px;
+      font-size: 15px; line-height: 1.65;
+    }
+    .script em { color: var(--amber); font-style: normal; }
+    .urdu { background: #fffbeb; border: 1px solid #fde68a; padding: 14px 16px; margin: 10px 0 16px; font-family: Arial, sans-serif; font-size: 14px; color: #78350f; }
+    table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 13px; margin: 12px 0 18px; }
+    th, td { border: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top; }
+    th { background: var(--navy); color: #fff; font-weight: 700; }
+    .price { font-size: 28px; color: var(--navy); font-family: Arial, sans-serif; font-weight: 800; }
+    .muted { color: var(--muted); font-size: 13px; font-family: Arial, sans-serif; }
+    .shot { margin: 8px 0 20px; }
+    .shot figcaption { font-family: Arial, sans-serif; font-size: 12px; color: var(--muted); padding: 8px 0 0; }
+    .break { page-break-before: always; border-top: 8px solid var(--navy); }
+    .footer-note { font-family: Arial, sans-serif; font-size: 12px; color: var(--muted); padding: 0 36px 36px; }
+    @media print {
+      .toolbar { display: none; }
+      body { background: #fff; }
+      .wrap { margin: 0; box-shadow: none; max-width: none; }
+      a[href]::after { content: none !important; }
+    }
+    @media (max-width: 700px) {
+      .grid { grid-template-columns: 1fr; }
+      .pad, .hero-caption { padding: 20px; }
+      .hero-caption h1 { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div style="font-weight:800;letter-spacing:.04em;">SHIPPING WISH LLC · SALES WORKSHOP</div>
+    <div style="display:flex;gap:8px;">
+      <a href="/sales-workshop/Shipping-Wish-Sales-Playbook.pdf" download>Download PDF</a>
+      <button type="button" onclick="window.print()">Print / Save PDF</button>
+    </div>
+  </div>
+
+  <article class="wrap">
+    <header class="hero">
+      <img src="images/cover.jpg" alt="Operations desk and trucks at a US terminal">
+      <div class="hero-caption">
+        <p>Internal training · Sales CRM &amp; Carrier Acquisition</p>
+        <h1>How we win carriers, keep them, and start work</h1>
+      </div>
+    </header>
+
+    <section class="pad">
+      <p class="lead">This book is for sales people. Read it once in the workshop. Keep it open on your desk. If you follow this, you will know what to say, where the client shows in our software, and what happens after they pay.</p>
+      <p>We are <strong>Shipping Wish LLC</strong>. We place a <strong>Dedicated Fleet Operations Manager</strong> with small U.S. motor carriers. They keep 100% of freight pay from the broker. We invoice a small weekly Stripe retainer. We are not a “dispatch company” and we do not take a percent of the load.</p>
+      <div class="urdu"><strong>Asan baat:</strong> Hum carrier ke trucks ke liye ek dedicated operations manager dete hain. Load ka paisa unka. Humara weekly fee Stripe se. “Dispatch 10%” kabhi mat bolo.</div>
+    </section>
+
+    <section class="pad" style="padding-top:0;">
+      <h2>1. What we sell (memorize this)</h2>
+      <div class="grid">
+        <div class="card">
+          <strong>1 truck</strong>
+          <div class="price">$149 / week</div>
+          <p>Named manager, load booking, TMS. 7-day free trial. $0 due today.</p>
+        </div>
+        <div class="card">
+          <strong>2–5 trucks</strong>
+          <div class="price">$350 / week</div>
+          <p>Dedicated desk, multi-truck planning, less deadhead.</p>
+        </div>
+        <div class="card">
+          <strong>6+ trucks</strong>
+          <div class="price">$500 / week</div>
+          <p>Operations team working as their staff. Lane strategy.</p>
+        </div>
+        <div class="card yes">
+          <strong>Always true</strong>
+          <p>7 free days. First charge next week. Cancel before first charge = $0. They invoice the broker or factor — not us.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pad break">
+      <h2>2. Words that kill the call</h2>
+      <figure class="shot">
+        <img src="images/sales-call.jpg" alt="Sales person on a calm professional call">
+        <figcaption>Calm. Short. Not a boiler room. You are offering a manager, not dumping loads.</figcaption>
+      </figure>
+      <div class="grid">
+        <div class="card no">
+          <strong>Never say</strong>
+          <ul class="clean">
+            <li>“We are a dispatch company”</li>
+            <li>“10% of the load” / commission / “we split”</li>
+            <li>“I have a hot load right now” on a cold call</li>
+            <li>“Load board” as the product (we include freight finding — we do not sell a board subscription)</li>
+            <li>“Guaranteed $X per mile”</li>
+            <li>Anything about Delaware / “US based company” as a sales pitch</li>
+          </ul>
+        </div>
+        <div class="card yes">
+          <strong>Always say</strong>
+          <ul class="clean">
+            <li>“Dedicated Operations Manager for your trucks”</li>
+            <li>“Weekly Stripe invoice — small and clear”</li>
+            <li>“You keep 100% of freight pay”</li>
+            <li>“Named person, not a call center”</li>
+            <li>“7-day trial, $0 today”</li>
+            <li>“If you already have this in-house, I will hang up”</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="pad break">
+      <h2>3. How a client enters our software</h2>
+      <p>Three doors. Sales works Door 1 and Door 2. Operations owns Door 3 after checkout.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>How they arrived</th>
+            <th>Where you look</th>
+            <th>Status you will see</th>
+            <th>Your job</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>You found them (FMCSA / Add Lead) or they used Contact form</td>
+            <td><strong>Sales CRM &amp; Leads</strong> → lead table</td>
+            <td>New</td>
+            <td>Call → Email → Packet → Stripe link</td>
+          </tr>
+          <tr>
+            <td>They paid / started trial on the website</td>
+            <td>CRM top table <strong>Website Stripe checkouts</strong> + filter <strong>Active</strong></td>
+            <td>Active</td>
+            <td>Call today. Collect MC, COI, trucks, lanes. Assign desk.</td>
+          </tr>
+          <tr>
+            <td>They created a portal login at /signup</td>
+            <td>Admin → <strong>Carriers</strong> (Registered Carrier Fleets)</td>
+            <td>User account</td>
+            <td>Match to a CRM lead. Start onboarding.</td>
+          </tr>
+          <tr>
+            <td>They replied to your email</td>
+            <td><strong>Carrier Replies</strong> inbox</td>
+            <td>Interested</td>
+            <td>Answer same day. Send weekly Stripe link.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="urdu"><strong>Yaad rakho:</strong> Website se Stripe checkout = turant kaam start. Woh “Active” hain. Nayi inquiry “New” hai — pehle baat karo, paisa baad mein.</div>
+    </section>
+
+    <section class="pad">
+      <h2>4. Your daily loop (do this in order)</h2>
+      <ol class="steps">
+        <li>Login → <strong>Sales CRM &amp; Leads</strong>.</li>
+        <li>Check <strong>Website Stripe checkouts</strong>. Anyone new = call in 15 minutes. They already agreed to the trial.</li>
+        <li>Open <strong>Carrier Replies</strong>. Answer every unread email.</li>
+        <li>Filter leads <strong>New</strong>. Call 20. Log the call in your head: did they want a manager or not?</li>
+        <li>If they said maybe: click <strong>Email</strong> (Dedicated Manager letter).</li>
+        <li>If they said yes: click <strong>Packet</strong> then <strong>Weekly Stripe</strong>.</li>
+        <li>SMS only if they asked for a text, or they already replied YES, or they are a paying/trial client. Cold SMS can get the company fined.</li>
+      </ol>
+      <h3>CRM buttons</h3>
+      <table>
+        <tr><th>Button</th><th>What it does</th></tr>
+        <tr><td>✉️ Email</td><td>Sends the Dedicated Operations Manager letter via Resend. Status becomes Contacted.</td></tr>
+        <tr><td>📱 SMS</td><td>Sends a short Twilio text with STOP/HELP footer. Use after consent.</td></tr>
+        <tr><td>💳 Weekly Stripe</td><td>Creates their $149 / $350 / $500 checkout link and emails it.</td></tr>
+        <tr><td>Packet</td><td>Setup email: MC, COI, trucks, who approves loads.</td></tr>
+        <tr><td>+ Add Carrier Lead</td><td>Manual lead (referral, truck stop, LinkedIn).</td></tr>
+        <tr><td>FMCSA Finder</td><td>Search MC / DOT / state. Import into CRM. FMCSA often has no email — find email before sending mail.</td></tr>
+      </table>
+    </section>
+
+    <section class="pad break">
+      <h2>5. How to talk to a carrier</h2>
+      <figure class="shot">
+        <img src="images/carrier-owner.jpg" alt="Owner-operator beside his truck">
+        <figcaption>He is busy, suspicious, and tired of “dispatch” calls. Respect that in the first 20 seconds.</figcaption>
+      </figure>
+
+      <h3>English — 20 second open</h3>
+      <div class="script">
+        “Hi, this is <em>[your name]</em> with Shipping Wish LLC. I’m not calling to dump loads on you.<br>
+        We place a Dedicated Operations Manager with small fleets — one named person on your trucks. Weekly Stripe invoice. You keep 100% of the freight pay.<br>
+        Do you already have that person in-house, or is that still you at night?”
+      </div>
+
+      <h3>Roman Urdu — same meaning (practice both)</h3>
+      <div class="urdu">
+        “Salam, meri naam [name] hai, Shipping Wish LLC se. Load dump nahi kar raha.<br>
+        Hum chhote fleet ko Dedicated Operations Manager dete hain — ek named person aap ke trucks pe. Weekly Stripe bill. Freight ka 100% paisa aapka.<br>
+        Kya yeh kaam already ghar pe koi karta hai, ya raat ko aap khud karte ho?”
+      </div>
+
+      <h3>If they pause</h3>
+      <div class="script">
+        “Small weekly amount. 7-day trial, nothing due today. We find and book. You approve. Useful, or are you covered?”
+      </div>
+
+      <h3>If they got burned before</h3>
+      <div class="script">
+        “Understood. This is a named manager, not a call center, and not a cut of your load. I can email a one-pager. No pressure.”
+      </div>
+
+      <h3>If they say yes</h3>
+      <ol class="steps">
+        <li>Ask: trucks, equipment, home time, MC/DOT.</li>
+        <li>Send Packet + Weekly Stripe from CRM while you are still on the phone.</li>
+        <li>Stay on the line until they open the email. “$0 today. First charge after 7 days if you keep us.”</li>
+        <li>Tell them an operations manager will call today or tomorrow morning.</li>
+      </ol>
+      <div class="urdu"><strong>Close line:</strong> “Link email mein hai. 7 din free. Cancel kar diya to $0. Agar rakhoge to weekly $[149/350/500]. Manager kal se trucks dekhna shuru karega.”</div>
+    </section>
+
+    <section class="pad break">
+      <h2>6. How you keep them satisfied</h2>
+      <figure class="shot">
+        <img src="images/ops-desk.jpg" alt="Named operations manager working dual monitors">
+        <figcaption>Satisfaction is not a speech. It is a named human who answers, books, and does not disappear.</figcaption>
+      </figure>
+      <p>Sales closes. Operations keeps. But sales is responsible for a clean handoff. If you sell a dream and ops gets an empty folder, the carrier cancels in week one.</p>
+      <h3>First 24 hours after Active / Stripe</h3>
+      <ol class="steps">
+        <li>Call. Introduce the manager by name.</li>
+        <li>Collect: MC, USDOT, COI, W-9, factoring (if any), truck/trailer, preferred lanes, who approves loads, ELD.</li>
+        <li>Put files in Document Vault. Put trucks in Fleet.</li>
+        <li>Send one email: “Here is your manager, here is the portal login, here is what we will send you when a load is booked.”</li>
+      </ol>
+      <h3>First 7 days (trial)</h3>
+      <ul class="clean">
+        <li>At least one serious load option they can say yes or no to. Never book without approval.</li>
+        <li>If freight is ugly that week, say so. Silence kills trust.</li>
+        <li>Answer phone/SMS the same hour on active freight.</li>
+        <li>No surprise extra fees. Weekly Stripe is the only operations bill from us.</li>
+      </ul>
+      <figure class="shot">
+        <img src="images/handshake.jpg" alt="Handshake at the truck — partnership not a pitch">
+        <figcaption>They stay when they feel staffed — not sold.</figcaption>
+      </figure>
+      <div class="card yes">
+        <strong>The promise you are allowed to make</strong>
+        <p>A named manager. Load finding and booking you approve. Paperwork follow-up. TMS. You keep broker pay. You can cancel before the first charge.</p>
+      </div>
+      <div class="card no">
+        <strong>The promise you are not allowed to make</strong>
+        <p>A dollar-per-mile number. “Always loaded.” “We pay you.” “We are your broker.” “No deadhead ever.”</p>
+      </div>
+    </section>
+
+    <section class="pad break">
+      <h2>7. Email + SMS — what actually goes out</h2>
+      <figure class="shot">
+        <img src="images/email-phone.jpg" alt="Laptop inbox and phone on an operations desk">
+        <figcaption>Letters look like a company writing to a company. Not a blast. Not a coupon.</figcaption>
+      </figure>
+      <h3>Email (Resend)</h3>
+      <ul class="clean">
+        <li>Outreach letter = Dedicated Operations Manager. Ask them to reply with trucks and lanes.</li>
+        <li>Follow-up = short. “Reply YES.”</li>
+        <li>Packet + Stripe link = setup list + checkout.</li>
+        <li>After they checkout = <strong>trial agreement email</strong> ($0 today, weekly amount, what we do this week). This is meant to land in Gmail Primary, not Promotions.</li>
+        <li>Replies land in <strong>Carrier Replies</strong> if inbound is on, and also in the Google inbox on operations@.</li>
+      </ul>
+      <h3>SMS (Twilio)</h3>
+      <div class="script">
+        Shipping Wish LLC: Dedicated ops manager for [company]? Weekly fee, you keep freight pay. Reply YES or call +1 (917) 737-0021.<br><br>
+        <em>Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. Shipping Wish LLC</em>
+      </div>
+      <p>If they text STOP, the system blocks more SMS. Do not argue. Call or email instead.</p>
+    </section>
+
+    <section class="pad break">
+      <h2>8. Other ways to market (besides CRM calling)</h2>
+      <p>Calling FMCSA lists is one engine. It is not the whole company.</p>
+      <table>
+        <thead><tr><th>Channel</th><th>Do this</th><th>Do not</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Website /pricing</td>
+            <td>Send this link after the call. Let Stripe take the card.</td>
+            <td>Invent a different price on the phone.</td>
+          </tr>
+          <tr>
+            <td>Google Business Profile</td>
+            <td>Name, phone, Rehoboth address, photos of desk (not fake trucks). Ask happy carriers for a review.</td>
+            <td>Fake reviews. Keyword stuffing “best dispatcher.”</td>
+          </tr>
+          <tr>
+            <td>Google search ads</td>
+            <td>Keywords: truck dispatch service, dedicated dispatcher for owner operator. Send to /pricing.</td>
+            <td>Ads that say “10% dispatch.”</td>
+          </tr>
+          <tr>
+            <td>Referrals</td>
+            <td>Ask every Active carrier: “Who else with 1–5 trucks is booking their own freight at 11pm?”</td>
+            <td>Pay cash kickbacks without the owner approving it.</td>
+          </tr>
+          <tr>
+            <td>LinkedIn / Facebook groups</td>
+            <td>Helpful posts: detention, factoring, how a dedicated manager works. Then DM.</td>
+            <td>Spam groups with the same pitch.</td>
+          </tr>
+          <tr>
+            <td>Insurance / factoring agents</td>
+            <td>They already talk to small fleets. Leave one-pagers.</td>
+            <td>Promise them a cut of our weekly fee unless the owner signed it.</td>
+          </tr>
+          <tr>
+            <td>Truck stops / yards</td>
+            <td>One-page card: weekly prices, phone, QR to /pricing.</td>
+            <td>Fake “we have a load for you” flyers.</td>
+          </tr>
+          <tr>
+            <td>YouTube / shorts</td>
+            <td>60 seconds: “We don’t take a % of your load.” Show the three prices.</td>
+            <td>Stock footage of random trucks with loud music.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="pad break">
+      <h2>9. Owner setup — Resend email + Twilio SMS</h2>
+      <p>Sales does not put API keys in. The owner does this once in Resend, Twilio, and Vercel. Then the CRM buttons work.</p>
+      <h3>Is Resend two-way?</h3>
+      <p><strong>Resend sends. Gmail (or Microsoft) receives.</strong> That is the correct professional setup. You can also turn on Resend inbound so replies appear inside our Inbox page. You do not need a second email vendor for sending. You <em>do</em> want Google Workspace (or similar) so the team can reply like a normal company.</p>
+      <ol class="steps">
+        <li>Resend.com → API Keys → copy key into Vercel: <code>RESEND_API_KEY</code></li>
+        <li>Resend → Domains → add <strong>shippingwish.com</strong> → add DNS SPF + DKIM. Wait until it says Verified.</li>
+        <li>Add DMARC TXT: <code>v=DMARC1; p=quarantine; rua=mailto:operations@shippingwish.com</code></li>
+        <li>Vercel: <code>MAIL_FROM=Shipping Wish LLC &lt;operations@shippingwish.com&gt;</code> and <code>MAIL_REPLY_TO=operations@shippingwish.com</code></li>
+        <li>Keep MX records on Google Workspace so operations@ is a real inbox. Do not move MX to Resend.</li>
+        <li>Optional two-way into CRM: Resend webhook <code>email.received</code> → <code>https://www.shippingwish.com/api/email/inbound?secret=YOUR_SECRET</code> and set <code>RESEND_INBOUND_SECRET</code>.</li>
+      </ol>
+      <p class="muted">Spam / Promotions: nobody can promise Gmail Primary forever. Authenticated domain + real Reply-To + letter-style service emails + people actually replying is how you stay out of spam. Blast 500 cold emails in an hour and you will land in Promotions or the junk folder. Trial and load emails are service messages — those belong in Primary.</p>
+      <h3>Twilio</h3>
+      <ol class="steps">
+        <li>Twilio → Account SID + Auth Token → Vercel <code>TWILIO_ACCOUNT_SID</code> / <code>TWILIO_AUTH_TOKEN</code> / <code>TWILIO_FROM_NUMBER</code></li>
+        <li>Register <strong>A2P 10DLC</strong> (Trust Hub) or US carriers will filter you.</li>
+        <li>Number webhook “A message comes in”: <code>https://www.shippingwish.com/api/voip/twilio-inbound</code></li>
+        <li>STOP / HELP is automatic. Do not remove that footer.</li>
+      </ol>
+    </section>
+
+    <section class="pad">
+      <h2>10. Workshop drill (30 minutes)</h2>
+      <ol class="steps">
+        <li>Pair up. Person A is the tired owner-operator. Person B uses the 20-second open. Switch.</li>
+        <li>Person A says “I got burned by a dispatcher.” Person B uses the burned script. No arguing.</li>
+        <li>Open CRM on the projector. Import or add a fake lead. Click Email. Show Inbox.</li>
+        <li>Show /pricing on the phone. Walk a test checkout in Stripe test mode if the owner allows it.</li>
+        <li>Quiz: “Stripe checkout finished — where do you look?” Answer: CRM → Website Stripe checkouts / Active. Call in 15 minutes.</li>
+      </ol>
+      <p class="lead" style="margin-top:24px;">If you remember only four lines: dedicated manager · weekly Stripe · they keep freight pay · never say dispatch commission.</p>
+    </section>
+
+    <p class="footer-note">Shipping Wish LLC · Internal sales playbook · Not for carriers · www.shippingwish.com · +1 (917) 737-0021<br>
+    19266 Coastal Hwy, Rehoboth Beach, DE 19971, USA</p>
+  </article>
+</body>
+</html>

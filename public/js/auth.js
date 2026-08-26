@@ -38,8 +38,12 @@ function redirectUserToDashboard(user) {
     window.location.href = '/admin-dashboard';
   } else if (user.role === 'dispatcher') {
     window.location.href = '/dispatcher-dashboard';
+  } else if (user.role === 'sales_rep') {
+    window.location.href = '/sales-dashboard';
+  } else if (user.role === 'driver') {
+    window.location.href = '/driver-app';
   } else {
-    window.location.href = '/dashboard';
+    window.location.href = '/carrier-overview';
   }
 }
 

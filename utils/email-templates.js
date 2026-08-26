@@ -43,8 +43,20 @@ function unsubscribeUrl(email) {
   return `${APP_URL}/unsubscribe?t=${encodeURIComponent(unsubscribeToken(email))}`;
 }
 
-function wrapCorporateEmail({ preheader, heading, bodyHtml, ctaLabel, ctaUrl, recipientEmail }) {
+function wrapCorporateEmail({
+  preheader,
+  heading,
+  bodyHtml,
+  ctaLabel,
+  ctaUrl,
+  recipientEmail,
+  transactional
+}) {
   const unsub = recipientEmail ? unsubscribeUrl(recipientEmail) : `${APP_URL}/unsubscribe`;
+  const footerNote = transactional
+    ? `<p style="margin:0;">This is a service message about your fleet operations account with ${escapeHtml(COMPANY.legal)}. Reply to this email if anything is wrong.</p>`
+    : `<p style="margin:0;">This message was sent to ${escapeHtml(recipientEmail || 'you')} regarding fleet operations support for U.S. motor carriers.
+              <a href="${escapeHtml(unsub)}" style="color:#64748b;">Unsubscribe</a>.</p>`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -61,7 +73,7 @@ function wrapCorporateEmail({ preheader, heading, bodyHtml, ctaLabel, ctaUrl, re
           <tr>
             <td style="background:#0f172a;padding:18px 28px;">
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#f59e0b;font-weight:700;">Shipping Wish LLC</p>
-              <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#cbd5e1;">Fleet operations · Load booking · TMS</p>
+              <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#cbd5e1;">Dedicated fleet operations · You keep the freight pay</p>
             </td>
           </tr>
           <tr>
@@ -80,9 +92,8 @@ function wrapCorporateEmail({ preheader, heading, bodyHtml, ctaLabel, ctaUrl, re
             <td style="padding:20px 28px;border-top:1px solid #e2e8f0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#64748b;">
               <p style="margin:0 0 8px;"><strong style="color:#0f172a;">${escapeHtml(COMPANY.legal)}</strong><br>
               ${escapeHtml(COMPANY.address)}<br>
-              ${escapeHtml(COMPANY.phone)} · ${escapeHtml(COMPANY.email)}</p>
-              <p style="margin:0;">This message was sent to ${escapeHtml(recipientEmail || 'you')} regarding fleet operations support for U.S. motor carriers.
-              <a href="${escapeHtml(unsub)}" style="color:#64748b;">Unsubscribe</a>.</p>
+              ${escapeHtml(COMPANY.phone)} · ${escapeHtml(COMPANY.operationsEmail)}</p>
+              ${footerNote}
             </td>
           </tr>
         </table>
@@ -225,9 +236,95 @@ Unsubscribe: ${unsubscribeUrl(recipientEmail)}`;
       bodyHtml,
       ctaLabel: billingUrl ? 'Complete weekly billing' : 'Reply with setup details',
       ctaUrl: billingUrl || `mailto:${COMPANY.operationsEmail}`,
-      recipientEmail
+      recipientEmail,
+      transactional: true
     }),
     text
+  };
+}
+
+function trialWelcomeEmail({
+  ownerName,
+  companyName,
+  recipientEmail,
+  planName,
+  weeklyAmount,
+  trucks,
+  trialDays,
+  portalCreated,
+  portalTempPassword
+}) {
+  const name = firstName(ownerName, companyName);
+  const days = trialDays || parseInt(process.env.STRIPE_TRIAL_DAYS || '7', 10);
+  const amount = weeklyAmount || '$149';
+  const heading = 'Your 7-day operations trial is on';
+  const loginUrl = `${APP_URL}/login`;
+  const portalHtml = portalCreated && portalTempPassword
+    ? `<p style="margin:0 0 8px;font-size:16px;line-height:1.7;"><strong>Your TMS login is ready</strong></p>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      Sign in at <a href="${escapeHtml(loginUrl)}">${escapeHtml(loginUrl)}</a><br>
+      Email: ${escapeHtml(recipientEmail || '')}<br>
+      Temporary password: <strong>${escapeHtml(portalTempPassword)}</strong><br>
+      Change it after first login. Add trucks, drivers, COI, and W-9 so we can book.
+    </p>`
+    : `<p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      Open your TMS at <a href="${escapeHtml(loginUrl)}">${escapeHtml(loginUrl)}</a> with this email.
+      If you already had a password, keep using it.
+    </p>`;
+  const portalText = portalCreated && portalTempPassword
+    ? `TMS login: ${loginUrl}\nEmail: ${recipientEmail || ''}\nTemporary password: ${portalTempPassword}\nChange it after first login.\n\n`
+    : `TMS login: ${loginUrl} (use this email).\n\n`;
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">Hello ${escapeHtml(name)},</p>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      Thank you. <strong>${escapeHtml(companyName || 'Your company')}</strong> started a Dedicated Fleet Operations trial with Shipping Wish LLC.
+    </p>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      You agreed to a weekly operations retainer after a ${escapeHtml(String(days))}-day free trial.
+      <strong>Nothing is charged today.</strong> If you keep the desk, the weekly amount is
+      <strong>${escapeHtml(amount)} per week</strong> for ${escapeHtml(planName || 'your plan')}
+      ${trucks ? `(${escapeHtml(String(trucks))})` : ''}. Cancel in the Stripe email or portal before the trial ends and you pay $0.
+    </p>
+    ${portalHtml}
+    <p style="margin:0 0 8px;font-size:16px;line-height:1.7;"><strong>What we do this week</strong></p>
+    <ol style="margin:0 0 14px;padding-left:20px;font-size:16px;line-height:1.7;">
+      <li>Assign a named operations manager to your trucks only</li>
+      <li>Collect MC / USDOT, insurance, equipment, and preferred lanes</li>
+      <li>Start finding freight you approve — you keep 100% of broker pay</li>
+    </ol>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      Reply to this email with truck count, equipment, and home time. Or call ${escapeHtml(COMPANY.phone)}.
+      This is a service email, not a promotion.
+    </p>
+    <p style="margin:0;font-size:16px;line-height:1.7;">Respectfully,<br>
+    Operations Desk<br>${escapeHtml(COMPANY.name)}</p>
+  `;
+  const text = `Hello ${name},
+
+Thank you. ${companyName || 'Your company'} started a Dedicated Fleet Operations trial with Shipping Wish LLC.
+
+Nothing is charged today. After ${days} free days, weekly billing is ${amount} if you keep the desk. Cancel before the trial ends and you pay $0.
+
+${portalText}This week we assign a named manager, collect MC/DOT + insurance + lanes, and start finding freight you approve. You keep 100% of broker pay.
+
+Reply with equipment and home time, or call ${COMPANY.phone}.
+
+${COMPANY.name}
+${COMPANY.address}
+${COMPANY.phone}`;
+  return {
+    subject: `Trial started — Dedicated Operations Manager for ${companyName || 'your fleet'}`,
+    html: wrapCorporateEmail({
+      preheader: `$${0} due today. Named operations manager assigned this week. Weekly retainer starts after ${days} days unless you cancel.`,
+      heading,
+      bodyHtml,
+      ctaLabel: 'Open your carrier portal',
+      ctaUrl: `${APP_URL}/login`,
+      recipientEmail,
+      transactional: true
+    }),
+    text,
+    transactional: true
   };
 }
 
@@ -250,7 +347,8 @@ function loadBookedEmail({ ownerName, companyName, recipientEmail, loadSummary }
       bodyHtml,
       ctaLabel: 'Open carrier portal',
       ctaUrl: `${APP_URL}/login`,
-      recipientEmail
+      recipientEmail,
+      transactional: true
     }),
     text
   };
@@ -272,7 +370,8 @@ function contactAckEmail({ name, recipientEmail }) {
       preheader: 'An operations manager will contact you shortly.',
       heading,
       bodyHtml,
-      recipientEmail
+      recipientEmail,
+      transactional: true
     }),
     text: `Hello ${name || 'there'},\n\nShipping Wish LLC received your request. Call ${COMPANY.phone} if urgent.\n\nOperations Desk`
   };
@@ -289,6 +388,9 @@ function buildTemplate(templateKey, vars) {
       return loadBookedEmail(vars);
     case 'contact_ack':
       return contactAckEmail(vars);
+    case 'trial_welcome':
+    case 'subscription_started':
+      return trialWelcomeEmail(vars);
     case 'dedicated_manager':
     case 'outreach':
     default:
@@ -298,13 +400,15 @@ function buildTemplate(templateKey, vars) {
 
 const SMS_TEMPLATES = {
   dedicated_manager: ({ companyName }) =>
-    `Shipping Wish LLC: Do you need a Dedicated Operations Manager for ${companyName || 'your trucks'}? Reply YES or call ${COMPANY.phone}. Reply STOP to opt out.`,
+    `Shipping Wish LLC: Dedicated ops manager for ${companyName || 'your trucks'}? Weekly fee, you keep freight pay. Reply YES or call ${COMPANY.phone}.`,
   follow_up: ({ companyName }) =>
-    `Shipping Wish LLC: following up on a Dedicated Operations Manager for ${companyName || 'your fleet'}. Reply YES or STOP.`,
+    `Shipping Wish LLC: still want a Dedicated Operations Manager for ${companyName || 'your fleet'}? Reply YES or call ${COMPANY.phone}.`,
   load_booked: ({ loadSummary }) =>
-    `Shipping Wish LLC: load booked. ${loadSummary || 'Check your email for details.'} Call ${COMPANY.phone} if anything is wrong.`,
+    `Shipping Wish LLC: load booked. ${loadSummary || 'Details in email.'} Call ${COMPANY.phone} if wrong.`,
   onboarding: () =>
-    `Shipping Wish LLC: setup received. Complete weekly Stripe billing from your email so we can assign your operations manager. ${COMPANY.phone}`
+    `Shipping Wish LLC: complete weekly Stripe from your email so we assign your operations manager. ${COMPANY.phone}`,
+  trial_welcome: ({ companyName }) =>
+    `Shipping Wish LLC: ${companyName || 'your'} 7-day ops trial is on. $0 today. Reply with trucks + lanes, or call ${COMPANY.phone}.`
 };
 
 module.exports = {
@@ -318,5 +422,6 @@ module.exports = {
   SMS_TEMPLATES,
   dedicatedManagerEmail,
   followUpEmail,
-  onboardingEmail
+  onboardingEmail,
+  trialWelcomeEmail
 };

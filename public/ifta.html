@@ -352,26 +352,11 @@
           </tr>
         `).join('');
       } else {
-        renderMockIftaReport();
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load IFTA report. Sign in again or call operations.</td></tr>`;
       }
     } catch (err) {
-      renderMockIftaReport();
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load IFTA report.</td></tr>`;
     }
-  }
-
-  function renderMockIftaReport() {
-    document.getElementById('kpi-total-miles').textContent = '14,820 mi';
-    document.getElementById('kpi-total-gallons').textContent = '2,180 gal';
-    document.getElementById('kpi-total-cost').textContent = '$7,412.00';
-    document.getElementById('kpi-avg-mpg').textContent = '6.8 MPG';
-
-    const tbody = document.getElementById('ifta-report-tbody');
-    tbody.innerHTML = `
-      <tr><td><strong style="color:var(--text-primary);">TX (Texas)</strong></td><td>4,250 mi</td><td>625 gal</td><td><strong>$2,125.00</strong></td><td>28.7%</td></tr>
-      <tr><td><strong style="color:var(--text-primary);">IL (Illinois)</strong></td><td>3,840 mi</td><td>565 gal</td><td><strong>$1,921.00</strong></td><td>25.9%</td></tr>
-      <tr><td><strong style="color:var(--text-primary);">GA (Georgia)</strong></td><td>3,510 mi</td><td>515 gal</td><td><strong>$1,751.00</strong></td><td>23.7%</td></tr>
-      <tr><td><strong style="color:var(--text-primary);">OH (Ohio)</strong></td><td>3,220 mi</td><td>475 gal</td><td><strong>$1,615.00</strong></td><td>21.7%</td></tr>
-    `;
   }
 
   async function loadFuelLogs() {
@@ -396,20 +381,11 @@
           </tr>
         `).join('');
       } else {
-        renderMockFuelLogs();
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load fuel receipts. Sign in again or call operations.</td></tr>`;
       }
     } catch (err) {
-      renderMockFuelLogs();
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load fuel receipts.</td></tr>`;
     }
-  }
-
-  function renderMockFuelLogs() {
-    const tbody = document.getElementById('fuel-logs-tbody');
-    tbody.innerHTML = `
-      <tr><td>2026-08-22</td><td><span class="badge badge-amber">TX</span></td><td>Love's Travel Stop #482</td><td>145.00 gal</td><td><strong>$493.00</strong></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Sample log deleted.')">Delete</button></td></tr>
-      <tr><td>2026-08-19</td><td><span class="badge badge-amber">IL</span></td><td>Pilot Flying J #102</td><td>160.00 gal</td><td><strong>$544.00</strong></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Sample log deleted.')">Delete</button></td></tr>
-      <tr><td>2026-08-15</td><td><span class="badge badge-amber">GA</span></td><td>TA Petro Center #291</td><td>130.00 gal</td><td><strong>$442.00</strong></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Sample log deleted.')">Delete</button></td></tr>
-    `;
   }
 
   async function deleteFuel(id) {
@@ -485,6 +461,6 @@
   }
 </script>
 
-<script src="/js/app-shell.js"></script>
+<script src="/js/app-shell.js?v=7"></script>
 </body>
 </html>

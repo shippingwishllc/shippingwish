@@ -12,6 +12,31 @@ const STATUS_FLOW = [
   'cancellation_requested', 'cancelled'
 ];
 
+async function denyIfNoLoadAccess(req, res, load) {
+  const role = req.user.role;
+  if (role === 'admin' || role === 'super_admin') return false;
+  if (role === 'carrier' && load.carrier_id !== req.user.id) {
+    res.status(403).json({ error: 'You do not have access to this load.' });
+    return true;
+  }
+  if (role === 'dispatcher' && load.dispatcher_id !== req.user.id) {
+    res.status(403).json({ error: 'You do not have access to this load.' });
+    return true;
+  }
+  if (role === 'driver') {
+    const dr = await pool.query(
+      `SELECT id FROM drivers WHERE user_id = $1 OR (email IS NOT NULL AND lower(email) = lower($2))`,
+      [req.user.id, req.user.email || '']
+    );
+    const ids = dr.rows.map((r) => r.id);
+    if (!load.driver_id || !ids.includes(load.driver_id)) {
+      res.status(403).json({ error: 'This load is not assigned to you.' });
+      return true;
+    }
+  }
+  return false;
+}
+
 // Endpoint: Fetch last delivery location & date for next load / reload suggestion
 router.get('/last-delivery', requireAuth, async (req, res) => {
   const { carrierId, driverId } = req.query;
@@ -144,6 +169,14 @@ router.get('/', requireAuth, async (req, res) => {
     if (req.user.role === 'carrier') {
       params.push(req.user.id);
       query += ` AND l.carrier_id = $${params.length}`;
+    } else if (req.user.role === 'driver') {
+      params.push(req.user.id);
+      const n = params.length;
+      params.push(req.user.email || '');
+      query += ` AND (
+        dr.user_id = $${n}
+        OR (dr.email IS NOT NULL AND lower(dr.email) = lower($${n + 1}))
+      )`;
     } else if (req.user.role === 'dispatcher') {
       // STRICT ISOLATION: Each dispatcher ONLY sees loads booked by themselves
       params.push(req.user.id);
@@ -200,12 +233,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!loadResult.rows.length) return res.status(404).json({ error: 'Load not found.' });
     const load = loadResult.rows[0];
 
-    if (req.user.role === 'carrier' && load.carrier_id !== req.user.id) {
-      return res.status(403).json({ error: 'You do not have access to this load.' });
-    }
-    if (req.user.role === 'dispatcher' && load.dispatcher_id !== req.user.id) {
-      return res.status(403).json({ error: 'You do not have access to this load.' });
-    }
+    if (await denyIfNoLoadAccess(req, res, load)) return;
 
     const history = await pool.query(
       `SELECT h.*, u.name AS changed_by_name FROM load_status_history h
@@ -288,16 +316,11 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Invalid load status.' });
   }
   try {
-    const loadResult = await pool.query('SELECT load_number, carrier_id, dispatcher_id, status AS current_status FROM loads WHERE id = $1', [id]);
+    const loadResult = await pool.query('SELECT load_number, carrier_id, dispatcher_id, driver_id, status AS current_status FROM loads WHERE id = $1', [id]);
     if (!loadResult.rows.length) return res.status(404).json({ error: 'Load not found.' });
     const load = loadResult.rows[0];
 
-    if (req.user.role === 'carrier' && load.carrier_id !== req.user.id) {
-      return res.status(403).json({ error: 'You do not have access to this load.' });
-    }
-    if (req.user.role === 'dispatcher' && load.dispatcher_id !== req.user.id) {
-      return res.status(403).json({ error: 'You do not have access to this load.' });
-    }
+    if (await denyIfNoLoadAccess(req, res, load)) return;
 
     await pool.query('UPDATE loads SET status = $1, updated_at = now() WHERE id = $2', [status, id]);
     await pool.query(

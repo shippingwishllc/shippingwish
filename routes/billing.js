@@ -23,7 +23,7 @@ const PLANS = {
     description: 'Named operations manager for one truck. Load booking, broker handling, and TMS included. You keep freight pay.',
     features: [
       'Named 24/7 operations manager on your company',
-      'Load finding and booking — no DAT subscription required',
+      'Load finding and booking — you do not buy a load-board seat',
       'Full TMS portal included',
       'Broker packets, rate cons, BOL, POD follow-up',
       'You invoice the broker or factor directly'
@@ -220,6 +220,77 @@ function lineItemForPlan(plan, amount) {
   };
 }
 
+async function provisionCarrierPortal({
+  email,
+  name,
+  company,
+  phone,
+  mcNumber,
+  usdot,
+  sessionId
+}) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  if (!cleanEmail) return { user: null, created: false, tempPassword: null };
+
+  try {
+    const existing = await pool.query('SELECT * FROM users WHERE lower(email) = $1', [cleanEmail]);
+    if (existing.rows.length) {
+      const user = existing.rows[0];
+      if (user.role !== 'carrier' && user.role !== 'carrier_admin') {
+        return { user: null, created: false, skipped: true, reason: 'email_in_use' };
+      }
+      await pool.query(
+        `UPDATE users SET
+           company_name = COALESCE(NULLIF($2,''), company_name),
+           phone = COALESCE(NULLIF($3,''), phone),
+           mc_number = COALESCE(NULLIF($4,''), mc_number),
+           dot_number = COALESCE(NULLIF($5,''), dot_number)
+         WHERE id = $1`,
+        [user.id, company || '', phone || '', mcNumber || '', usdot || '']
+      );
+      if (sessionId) {
+        await pool.query(
+          `UPDATE billing_subscriptions SET user_id = $1, updated_at = now()
+           WHERE stripe_checkout_session_id = $2`,
+          [user.id, sessionId]
+        );
+      }
+      return { user, created: false, tempPassword: null };
+    }
+
+    const crypto = require('crypto');
+    const bcrypt = require('bcryptjs');
+    const tempPassword = crypto.randomBytes(5).toString('hex') + 'Aa1';
+    const hash = await bcrypt.hash(tempPassword, 10);
+    const ins = await pool.query(
+      `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number)
+       VALUES ($1,$2,$3,'carrier',$4,$5,$6,$7)
+       RETURNING id, name, email, role, company_name, phone, mc_number, dot_number`,
+      [
+        name || company || cleanEmail,
+        cleanEmail,
+        hash,
+        company || name || null,
+        phone || null,
+        mcNumber || null,
+        usdot || null
+      ]
+    );
+    const user = ins.rows[0];
+    if (sessionId) {
+      await pool.query(
+        `UPDATE billing_subscriptions SET user_id = $1, updated_at = now()
+         WHERE stripe_checkout_session_id = $2`,
+        [user.id, sessionId]
+      );
+    }
+    return { user, created: true, tempPassword };
+  } catch (err) {
+    console.error('provisionCarrierPortal:', err.message);
+    return { user: null, created: false, tempPassword: null, error: err.message };
+  }
+}
+
 async function recordSubscription({ userId, leadId, sessionId, planKey, amount, status }) {
   try {
     const ins = await pool.query(
@@ -413,13 +484,23 @@ router.get('/session/:id', async (req, res) => {
       expand: ['subscription', 'customer']
     });
     const sub = session.subscription && typeof session.subscription === 'object' ? session.subscription : null;
+    const email = session.customer_details?.email || session.customer_email;
+    let portalReady = false;
+    if (email) {
+      const u = await pool.query(
+        `SELECT id FROM users WHERE lower(email) = lower($1) AND role IN ('carrier','carrier_admin') LIMIT 1`,
+        [email]
+      );
+      portalReady = u.rows.length > 0;
+    }
     res.json({
       ok: true,
-      email: session.customer_details?.email || session.customer_email,
+      email,
       status: session.status,
       payment_status: session.payment_status,
       trial_end: sub && sub.trial_end ? sub.trial_end : null,
-      plan_key: session.metadata && session.metadata.plan_key
+      plan_key: session.metadata && session.metadata.plan_key,
+      portal_ready: portalReady
     });
   } catch (err) {
     res.status(404).json({ error: 'Checkout session not found' });
@@ -444,13 +525,22 @@ router.post('/weekly-link', requireAuth, requireRole('dispatcher', 'admin', 'sup
 
     if (!targetEmail) return res.status(400).json({ error: 'Carrier email is required' });
 
+    let carrierUserId = null;
+    try {
+      const existingCarrier = await pool.query(
+        `SELECT id FROM users WHERE lower(email) = lower($1) AND role IN ('carrier','carrier_admin') LIMIT 1`,
+        [targetEmail]
+      );
+      if (existingCarrier.rows[0]) carrierUserId = existingCarrier.rows[0].id;
+    } catch (_) { /* optional */ }
+
     const checkout = await createWeeklyCheckout({
       email: targetEmail,
       name: targetName,
       company: targetCompany,
       planKey: plan_key || 'solo_weekly',
       leadId: lead_id,
-      userId: req.user.id,
+      userId: carrierUserId,
       amountOverride: amount_cents ? parseInt(amount_cents, 10) : null
     });
 
@@ -491,6 +581,24 @@ router.post('/weekly-link', requireAuth, requireRole('dispatcher', 'admin', 'sup
   } catch (err) {
     console.error('Weekly link error:', err);
     res.status(500).json({ error: err.message || 'Could not create Stripe weekly link' });
+  }
+});
+
+router.get('/mine', requireAuth, async (req, res) => {
+  try {
+    const me = await pool.query('SELECT id, email FROM users WHERE id = $1', [req.user.id]);
+    if (!me.rows.length) return res.status(404).json({ error: 'User not found' });
+    const email = me.rows[0].email;
+    const result = await pool.query(
+      `SELECT b.* FROM billing_subscriptions b
+       LEFT JOIN crm_leads l ON l.id = b.lead_id
+       WHERE b.user_id = $1 OR lower(l.email) = lower($2)
+       ORDER BY b.created_at DESC LIMIT 1`,
+      [req.user.id, email]
+    );
+    res.json({ subscription: result.rows[0] || null });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load subscription' });
   }
 });
 
@@ -564,6 +672,63 @@ async function handleStripeEvent(event) {
 
     const plan = PLANS[meta.plan_key] || PLANS.solo_weekly;
     const company = meta.company || email;
+    const weekly = `$${(plan.amount_cents / 100).toFixed(0)}`;
+    let portal = { created: false, tempPassword: null };
+    if (email) {
+      portal = await provisionCarrierPortal({
+        email,
+        name: meta.name,
+        company,
+        phone: meta.phone || (obj.customer_details && obj.customer_details.phone) || '',
+        mcNumber: meta.mc_number,
+        usdot: meta.usdot,
+        sessionId
+      });
+    }
+    if (email) {
+      try {
+        const tpl = buildTemplate('trial_welcome', {
+          ownerName: meta.name,
+          companyName: company,
+          recipientEmail: email,
+          planName: plan.name,
+          weeklyAmount: weekly,
+          trucks: meta.trucks,
+          trialDays: TRIAL_DAYS,
+          portalCreated: portal.created,
+          portalTempPassword: portal.tempPassword
+        });
+        await sendBrandedEmail({
+          to: email,
+          subject: tpl.subject,
+          html: tpl.html,
+          text: tpl.text,
+          leadId,
+          emailType: 'trial_welcome',
+          templateKey: 'trial_welcome',
+          transactional: true
+        });
+      } catch (err) {
+        console.error('trial welcome email:', err.message);
+      }
+    }
+    const phone = meta.phone || (obj.customer_details && obj.customer_details.phone) || '';
+    if (phone) {
+      try {
+        const voip = require('./voip');
+        if (typeof voip.sendTemplatedSms === 'function') {
+          await voip.sendTemplatedSms({
+            lead_id: leadId,
+            to_number: phone,
+            template_key: 'trial_welcome',
+            company_name: company,
+            user: null
+          });
+        }
+      } catch (err) {
+        console.error('trial welcome sms:', err.message);
+      }
+    }
     const crmUrl = `${APP_URL}/crm-sales`;
     await notifyStaff({
       subject: `New paid trial — ${company || 'carrier'} (${plan.name})`,
@@ -573,8 +738,9 @@ async function handleStripeEvent(event) {
         ${escapeHtml(email)} · ${escapeHtml(meta.phone || '')}<br>
         Plan: ${escapeHtml(plan.name)} — $${(plan.amount_cents / 100).toFixed(0)}/week<br>
         Trucks: ${escapeHtml(meta.trucks || '-')} · MC ${escapeHtml(meta.mc_number || '-')} · USDOT ${escapeHtml(meta.usdot || '-')}</p>
+        <p>TMS portal: ${portal.created ? 'new carrier login emailed with a temporary password' : (portal.skipped ? 'email already belongs to a staff/driver account — link manually' : 'existing carrier login linked')}.</p>
         <p>Open in admin: <a href="${crmUrl}">Sales CRM &amp; Leads</a> — they show as <strong>Active</strong>.</p>`,
-      text: `New Stripe checkout: ${meta.name || ''} / ${company} / ${email} / ${meta.phone || ''} / ${plan.name}. Open ${crmUrl}`
+      text: `New Stripe checkout: ${meta.name || ''} / ${company} / ${email} / ${meta.phone || ''} / ${plan.name}. Portal: ${portal.created ? 'new login emailed' : 'linked or skipped'}. Open ${crmUrl}`
     });
   }
 

@@ -264,7 +264,7 @@ async function importFMCSACarrier(c) {
 
 // Trigger SMS modal
 function sendSmsModal(leadId, phone) {
-  const msg = prompt(`Enter SMS pitch to send to ${phone}:`, `Hi from Shipping Wish LLC! We have premium high-paying US freight lanes available for your trucks. Reply back or call us at +1 (917) 737-0021.`);
+  const msg = prompt(`Enter SMS to send to ${phone}:`, `Shipping Wish LLC: Dedicated ops manager for your trucks? Weekly fee, you keep freight pay. Reply YES or call +1 (917) 737-0021.`);
   if (!msg) return;
 
   fetch('/api/voip/send-sms', {

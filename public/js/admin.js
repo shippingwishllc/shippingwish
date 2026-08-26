@@ -181,7 +181,7 @@ async function loadCarriersTab() {
 
     tbody.innerHTML = carriers.map(c => {
       const equip = c.equipment_category || 'dry_van';
-      const fee   = parseFloat(c.dispatch_fee_percent || 5.00);
+      const fee   = parseFloat(c.dispatch_fee_percent || 0);
       const equipLabel = { box_truck:'Box Truck', dry_van:'Dry Van', reefer:'Reefer', flatbed:'Flatbed', other:'Other' }[equip] || equip;
 
       return `

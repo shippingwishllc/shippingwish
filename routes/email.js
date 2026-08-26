@@ -62,7 +62,8 @@ async function handleSendOutreach(req, res) {
       leadId: lead_id,
       sentBy: req.user.id,
       emailType: key,
-      templateKey: key
+      templateKey: key,
+      transactional: Boolean(tpl.transactional)
     });
 
     const isPacket = key === 'onboarding_packet' || key === 'onboarding';
@@ -217,36 +218,47 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
   return { ok: true, inbound: ins.rows[0], lead_id: leadId };
 }
 
+function pickAddress(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return pickAddress(value[0]);
+  return value.address || value.email || value.value || '';
+}
+
+function parseInboundPayload(body) {
+  const root = body || {};
+  const data = root.data || (root.type && root.data) || root;
+  const email = data.email || data;
+  const fromEmail = pickAddress(
+    email.from || data.from || data.from_email || (data.email && data.email.from)
+  );
+  const toEmail = pickAddress(
+    email.to || data.to || data.to_email || ''
+  );
+  const subject = email.subject || data.subject || '';
+  const bodyText = email.text || data.text || data.body_text || data.text_body || '';
+  const bodyHtml = email.html || data.html || data.body_html || data.html_body || '';
+  const resendId = data.email_id || email.email_id || data.id || root.id || null;
+  return { fromEmail, toEmail, subject, bodyText, bodyHtml, resendId };
+}
+
 // POST /api/email/inbound — Resend inbound / generic webhook (no auth; verify secret)
 router.post('/inbound', async (req, res) => {
   const secret = process.env.RESEND_INBOUND_SECRET || process.env.INBOUND_WEBHOOK_SECRET;
   if (secret) {
-    const hdr = req.headers['x-inbound-secret'] || req.headers['x-webhook-secret'] || req.query.secret;
-    if (hdr !== secret) return res.status(401).json({ error: 'Invalid inbound secret' });
+    const provided = String(req.query.secret || req.headers['x-inbound-secret'] || req.headers['x-webhook-secret'] || '');
+    const hasSvix = Boolean(req.headers['svix-signature']);
+    if (provided !== secret && !hasSvix) {
+      return res.status(401).json({ error: 'Invalid inbound secret' });
+    }
   }
 
   try {
-    const data = req.body.data || req.body;
-    const fromEmail = data.from || data.from_email || (data.from && data.from.address) ||
-      (Array.isArray(data.from) ? data.from[0] : null) ||
-      (data.email && data.email.from);
-    const toEmail = data.to || data.to_email || (Array.isArray(data.to) ? data.to[0] : '') || '';
-    const subject = data.subject || '';
-    const bodyText = data.text || data.body_text || data.text_body || '';
-    const bodyHtml = data.html || data.body_html || data.html_body || '';
-    const resendId = data.email_id || data.id || null;
-
-    const fromStr = typeof fromEmail === 'object' ? (fromEmail.address || fromEmail.email || '') : fromEmail;
-    const toStr = typeof toEmail === 'object' ? (toEmail.address || toEmail.email || '') : toEmail;
-
-    const result = await ingestInbound({
-      fromEmail: fromStr,
-      toEmail: toStr,
-      subject,
-      bodyText,
-      bodyHtml,
-      resendId
-    });
+    const parsed = parseInboundPayload(req.body);
+    if (!parsed.fromEmail) {
+      return res.status(400).json({ error: 'Inbound payload missing from address' });
+    }
+    const result = await ingestInbound(parsed);
     res.json(result);
   } catch (err) {
     console.error('Inbound email error:', err);

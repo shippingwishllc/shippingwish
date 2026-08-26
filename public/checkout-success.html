@@ -16,6 +16,7 @@
   <h1 class="mkt-h2">Your operations desk is reserved.</h1>
   <p class="mkt-sub" id="success-copy" style="margin:0 auto 22px;">
     Stripe saved your card. The first weekly charge starts after 7 days.
+    Your TMS login is in the welcome email — same address you used at checkout.
     Cancel in the Stripe receipt email or customer portal before then and you pay nothing.
   </p>
   <p id="trial-date" style="font-weight:800;color:#047857;margin-bottom:24px;"></p>
@@ -24,7 +25,7 @@
     <span class="safe-pill">Visa · MC · Amex · Discover</span>
   </div>
   <div class="mkt-actions" style="justify-content:center;margin-top:28px;">
-    <a class="btn btn-primary btn-xl" href="/signup">Create portal login</a>
+    <a class="btn btn-primary btn-xl" href="/login">Open your TMS</a>
     <a class="btn btn-secondary btn-xl" href="/contact">Talk to operations</a>
   </div>
 </div>
@@ -46,6 +47,10 @@
       if (data.trial_end) {
         const d = new Date(data.trial_end * 1000);
         dateEl.textContent = 'First charge on ' + d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' unless you cancel first.';
+      }
+      if (data.portal_ready) {
+        const copy = document.getElementById('success-copy');
+        if (copy) copy.textContent = 'Your TMS is ready. Sign in with the checkout email. A temporary password is in the welcome email if this is a new account.';
       }
     })
     .catch(() => {});

@@ -120,34 +120,56 @@ router.get('/leads/stats', requireAuth, async (req, res) => {
 // POST /api/crm/leads - Add a new carrier lead (with duplicate protection)
 router.post('/leads', requireAuth, async (req, res) => {
   try {
-    const {
-      company_name, owner_name, phone, email,
-      mc_number, dot_number, equipment_type,
-      num_trucks, target_lanes, notes
-    } = req.body;
+    const company_name = String(req.body.company_name || '').trim();
+    const owner_name = String(req.body.owner_name || req.body.officer_name || '').trim();
+    let phone = String(req.body.phone || '').trim();
+    const email = String(req.body.email || '').trim().toLowerCase();
+    let mc_number = String(req.body.mc_number || '').trim().toUpperCase().replace(/\s+/g, '');
+    const dot_number = String(req.body.dot_number || '').replace(/[^0-9]/g, '');
+    const equipment_type = String(req.body.equipment_type || '53ft Dry Van').trim().slice(0, 120);
+    const num_trucks = Math.max(1, parseInt(req.body.num_trucks, 10) || 1);
+    const target_lanes = String(req.body.target_lanes || '').trim();
+    const notes = String(req.body.notes || '').trim();
 
-    if (!company_name || !phone) {
-      return res.status(400).json({ error: 'Company name and phone number are required' });
+    if (mc_number && !mc_number.startsWith('MC')) {
+      mc_number = `MC-${mc_number.replace(/^MC-?/i, '')}`;
+    }
+    if (!phone) phone = 'unknown';
+
+    if (!company_name) {
+      return res.status(400).json({ error: 'Company name is required' });
     }
 
-    // ============================================================
-    // DUPLICATE CHECK — Prevent 2 sales reps calling same carrier
-    // Check by MC number, phone number, OR email address
-    // ============================================================
+    // Ensure FMCSA enrichment columns exist (safe on every import)
+    const enrichCols = [
+      'phy_address TEXT',
+      'phy_city TEXT',
+      'phy_state TEXT',
+      'phy_zip TEXT',
+      'officer_name TEXT',
+      'safety_rating TEXT',
+      'authority_status TEXT',
+      'num_drivers INTEGER'
+    ];
+    for (const col of enrichCols) {
+      await pool.query(`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS ${col}`).catch(() => {});
+    }
+
+    // Duplicate check — MC digits, phone, or email (one owner per carrier)
+    const mcDigits = mc_number.replace(/[^0-9]/g, '');
     const dupChecks = [];
     const dupParams = [];
-
-    if (mc_number && mc_number.trim()) {
-      dupParams.push(mc_number.trim());
-      dupChecks.push(`mc_number = $${dupParams.length}`);
+    if (mcDigits) {
+      dupParams.push(mcDigits);
+      dupChecks.push(`regexp_replace(COALESCE(mc_number,''), '[^0-9]', '', 'g') = $${dupParams.length}`);
     }
-    if (phone && phone.trim()) {
-      dupParams.push(phone.trim());
+    if (phone && phone !== 'unknown') {
+      dupParams.push(phone);
       dupChecks.push(`phone = $${dupParams.length}`);
     }
-    if (email && email.trim()) {
-      dupParams.push(email.trim().toLowerCase());
-      dupChecks.push(`lower(email) = $${dupParams.length}`);
+    if (email) {
+      dupParams.push(email);
+      dupChecks.push(`lower(COALESCE(email,'')) = $${dupParams.length}`);
     }
 
     if (dupChecks.length > 0) {
@@ -167,29 +189,32 @@ router.post('/leads', requireAuth, async (req, res) => {
           error: 'DUPLICATE_LEAD',
           message: `This carrier is already in the CRM${dup.owned_by ? ' and owned by ' + dup.owned_by : ' (unassigned)'}.`,
           existing_lead: {
-            id:           dup.id,
+            id: dup.id,
             company_name: dup.company_name,
-            mc_number:    dup.mc_number,
-            phone:        dup.phone,
-            status:       dup.status,
-            owned_by:     dup.owned_by || 'Unassigned',
-            owner_id:     dup.owner_id
+            mc_number: dup.mc_number,
+            phone: dup.phone,
+            status: dup.status,
+            owned_by: dup.owned_by || 'Unassigned',
+            owner_id: dup.owner_id
           }
         });
       }
     }
 
-    // No duplicate — safe to create
-    const sales_rep_id = req.body.sales_rep_id || (req.user.role === 'sales_rep' ? req.user.id : null);
+    // Sales reps own what they import. Admin/super_admin leave unassigned unless they pass sales_rep_id.
+    const sales_rep_id = req.body.sales_rep_id
+      || (req.user.role === 'sales_rep' ? req.user.id : null);
 
-    const baseVals = [
-      company_name, owner_name || '', phone,
-      email ? email.toLowerCase() : '',
-      mc_number || '', dot_number || '',
-      equipment_type || '53ft Dry Van',
-      num_trucks || 1, target_lanes || '',
-      sales_rep_id, notes || ''
-    ];
+    const phy_address = String(req.body.phy_address || req.body.address || '').trim();
+    const phy_city = String(req.body.phy_city || '').trim();
+    const phy_state = String(req.body.phy_state || req.body.state || '').trim().slice(0, 2).toUpperCase();
+    const phy_zip = String(req.body.phy_zip || '').trim();
+    const officer_name = String(req.body.officer_name || owner_name || '').trim();
+    const safety_rating = String(req.body.safety_rating || '').trim().slice(0, 80);
+    const authority_status = String(req.body.authority_status || '').trim().slice(0, 120);
+    const num_drivers = req.body.num_drivers != null && req.body.num_drivers !== ''
+      ? (parseInt(req.body.num_drivers, 10) || null)
+      : null;
 
     let result;
     try {
@@ -199,42 +224,51 @@ router.post('/leads', requireAuth, async (req, res) => {
           equipment_type, num_trucks, target_lanes, status, sales_rep_id, notes,
           phy_address, phy_city, phy_state, phy_zip, officer_name, safety_rating,
           authority_status, num_drivers
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new', $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'new',$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
         RETURNING *`,
         [
-          ...baseVals,
-          req.body.phy_address || req.body.address || '',
-          req.body.phy_city || '',
-          req.body.phy_state || req.body.state || '',
-          req.body.phy_zip || '',
-          req.body.officer_name || '',
-          req.body.safety_rating || '',
-          req.body.authority_status || '',
-          req.body.num_drivers || null
+          company_name, owner_name, phone, email, mc_number, dot_number,
+          equipment_type, num_trucks, target_lanes, sales_rep_id, notes,
+          phy_address, phy_city, phy_state, phy_zip, officer_name, safety_rating,
+          authority_status, num_drivers
         ]
       );
-    } catch (colErr) {
+    } catch (richErr) {
+      console.warn('CRM rich insert failed, using base columns:', richErr.message);
       result = await pool.query(
         `INSERT INTO crm_leads (
           company_name, owner_name, phone, email, mc_number, dot_number,
           equipment_type, num_trucks, target_lanes, status, sales_rep_id, notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new', $10, $11)
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'new',$10,$11)
         RETURNING *`,
-        baseVals
+        [
+          company_name, owner_name, phone, email, mc_number, dot_number,
+          equipment_type, num_trucks, target_lanes, sales_rep_id, notes
+        ]
       );
     }
 
-    // Auto-create initial follow-up task
-    await pool.query(
-      `INSERT INTO lead_tasks (lead_id, assigned_to, task_title, due_date)
-       VALUES ($1, $2, $3, CURRENT_DATE)`,
-      [result.rows[0].id, sales_rep_id || req.user.id, `Initial Cold Call & Intro Email to ${company_name}`]
-    );
+    try {
+      await pool.query(
+        `INSERT INTO lead_tasks (lead_id, assigned_to, task_title, due_date)
+         VALUES ($1, $2, $3, CURRENT_DATE)`,
+        [
+          result.rows[0].id,
+          sales_rep_id || req.user.id,
+          `Initial Cold Call & Intro Email to ${company_name}`.slice(0, 200)
+        ]
+      );
+    } catch (taskErr) {
+      console.warn('CRM lead task skipped:', taskErr.message);
+    }
 
     res.status(201).json({ message: 'Lead created successfully', lead: result.rows[0] });
   } catch (err) {
     console.error('Error creating CRM lead:', err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({
+      error: 'Server error',
+      message: err.message || 'Could not import this carrier. Check company name and try again.'
+    });
   }
 });
 

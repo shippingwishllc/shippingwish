@@ -115,6 +115,10 @@
 
 <main class="container" style="max-width:560px;padding:var(--space-5) var(--space-4);">
 
+  <select id="driver-load-select" onchange="pickDriverLoad()" style="width:100%;margin:0 0 12px;padding:10px;border-radius:8px;background:#0f172a;color:#fff;border:1px solid rgba(255,255,255,0.2);">
+    <option value="">Select assigned load…</option>
+  </select>
+
   <!-- ACTIVE LOAD CARD -->
   <div class="driver-card" id="load-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
@@ -214,31 +218,50 @@
     }
   }
 
+  let driverLoads = [];
+
   async function loadActiveDriverLoad() {
     try {
-      const res = await fetch('/api/loads?limit=1', { credentials: 'include' });
+      const res = await fetch('/api/loads', { credentials: 'include' });
       if (!res.ok) return;
       const data = await res.json();
-      const loads = data.loads || [];
+      driverLoads = data.loads || [];
+      const sel = document.getElementById('driver-load-select');
+      if (sel) {
+        sel.innerHTML = '<option value="">Select assigned load…</option>' + driverLoads.map((l) =>
+          `<option value="${l.id}">${l.load_number} · ${l.pickup_location} → ${l.delivery_location}</option>`
+        ).join('');
+      }
 
-      if (loads.length === 0) {
+      if (driverLoads.length === 0) {
         document.getElementById('load-card').innerHTML = `
           <div style="text-align:center;padding:30px;color:rgba(255,255,255,0.6);">
-            <div style="font-size:36px;margin-bottom:8px;">🚛</div>
-            <h3>No Active Load Assigned</h3>
-            <p style="font-size:12px;">Contact your dispatcher to receive your next load dispatch.</p>
+            <h3>No load assigned to you</h3>
+            <p style="font-size:12px;">Your owner must assign this login to a driver on the fleet roster, then dispatch a load to that driver.</p>
           </div>
         `;
         return;
       }
 
-      activeLoad = loads[0];
+      const active = driverLoads.find((l) => ['booked','dispatched','at_pickup','loaded','in_transit','at_delivery'].includes(l.status)) || driverLoads[0];
+      if (sel) sel.value = String(active.id);
+      activeLoad = active;
       renderActiveLoad(activeLoad);
       fetchDriverChatMessages();
     } catch (e) {
       console.error('Load driver load error:', e);
     }
   }
+
+  function pickDriverLoad() {
+    const id = parseInt(document.getElementById('driver-load-select').value, 10);
+    const found = driverLoads.find((l) => l.id === id);
+    if (!found) return;
+    activeLoad = found;
+    renderActiveLoad(activeLoad);
+    fetchDriverChatMessages();
+  }
+  window.pickDriverLoad = pickDriverLoad;
 
   function renderActiveLoad(l) {
     document.getElementById('load-number-badge').textContent = `LOAD #${l.load_number}`;
@@ -414,6 +437,6 @@
     }
   }
 </script>
-<script src="/js/app-shell.js"></script>
+<script src="/js/app-shell.js?v=7"></script>
 </body>
 </html>

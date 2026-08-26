@@ -45,20 +45,27 @@ async function sendBrandedEmail({
   sentBy,
   emailType,
   templateKey,
-  cc
+  cc,
+  transactional
 }) {
   if (!to) throw new Error('Recipient email is required');
-  if (await isUnsubscribed(to)) {
+  const isTx = Boolean(transactional) ||
+    ['contact_ack', 'trial_welcome', 'subscription_started', 'load_booked', 'onboarding', 'internal_lead', 'internal_checkout'].includes(templateKey || emailType);
+  if (!isTx && await isUnsubscribed(to)) {
     return { skipped: true, reason: 'unsubscribed', id: null };
   }
 
   const resend = getResend();
-  const from = mailFrom();
+  const from = isTx
+    ? (process.env.MAIL_FROM_TRANSACTIONAL || mailFrom())
+    : mailFrom();
   const replyTo = replyToAddress(leadId);
-  const headers = {
-    'List-Unsubscribe': `<${unsubscribeUrl(to)}>`,
-    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
-  };
+  const headers = isTx
+    ? undefined
+    : {
+      'List-Unsubscribe': `<${unsubscribeUrl(to)}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+    };
 
   let providerId = null;
   let status = 'logged';
@@ -70,9 +77,9 @@ async function sendBrandedEmail({
       subject,
       html,
       text: text || html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
-      reply_to: replyTo,
-      headers
+      reply_to: replyTo
     };
+    if (headers) payload.headers = headers;
     if (cc && cc.length) payload.cc = cc;
     const result = await resend.emails.send(payload);
     if (result.error) {

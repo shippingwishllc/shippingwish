@@ -66,7 +66,7 @@
     <header class="app-header">
       <div>
         <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Carrier Owner Cockpit</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Fleet revenue telemetry, active dispatches, & driver status</p>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">You keep 100% of broker pay. Weekly operations retainer is Stripe — not a cut of the load.</p>
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-4);">
@@ -120,12 +120,54 @@
 
           <div class="stat-kpi-card">
             <div class="stat-kpi-top">
-              <span class="stat-kpi-title">Net Carrier Payout</span>
+              <span class="stat-kpi-title">You keep (broker pay)</span>
               <div class="stat-kpi-icon">💵</div>
             </div>
             <div class="stat-kpi-val" id="kpi-carrier-net">$0.00</div>
-            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Net payout (after dispatch fee)</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">100% of freight — no dispatch %</div>
           </div>
+        </div>
+
+        <div class="tms-panel" id="setup-panel" style="margin:0 0 24px;border-left:4px solid #f59e0b;">
+          <h3 style="margin:0 0 8px;font-size:15px;font-weight:800;">Get ready so we can book</h3>
+          <p id="manager-line" style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);"></p>
+          <p id="sub-line" style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);"></p>
+          <div id="checklist-box" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
+        <div class="tms-table-card" style="margin-bottom:24px;" id="offers-card">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Load offers — accept or decline</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Your operations manager sends freight here. Accepting books it on your trucks.</p>
+            </div>
+          </div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Lane</th>
+                  <th>When</th>
+                  <th>Rate / miles</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="offers-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Loading offers…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tms-table-card" id="compliance-card" style="margin-bottom:24px;display:none;">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Expiring in 30 days</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">CDL, medical, insurance, plates — same alerts Alvys / Motive fleets use.</p>
+            </div>
+          </div>
+          <div id="compliance-list" style="padding:12px 16px;"></div>
         </div>
 
         <!-- Table Card -->
@@ -195,35 +237,100 @@
 
   async function loadCarrierCockpitData() {
     try {
-      const [dashRes, loadsRes] = await Promise.all([
-        fetch('/api/dashboard', { credentials: 'include' }),
-        fetch('/api/loads', { credentials: 'include' })
-      ]);
+      const homeRes = await fetch('/api/portal/home', { credentials: 'include' });
+      if (homeRes.status === 403) return;
+      if (!homeRes.ok) throw new Error('portal');
+      const home = await homeRes.json();
 
-      if (dashRes.ok) {
-        const dashData = await dashRes.json();
-        const gross = parseFloat(dashData.summary?.totalGrossRevenue || 0);
-        const net = gross * 0.95; // 5% dispatch fee deduction
-        document.getElementById('kpi-carrier-revenue').textContent = `$${gross.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        document.getElementById('kpi-carrier-active').textContent = dashData.summary?.activeLoadsCount || 0;
-        document.getElementById('kpi-carrier-miles').textContent = `${(dashData.summary?.totalMiles || 0).toLocaleString()} mi`;
-        document.getElementById('kpi-carrier-net').textContent = `$${net.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+      const k = home.kpis || {};
+      document.getElementById('kpi-carrier-revenue').textContent = `$${(k.brokerPay || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+      document.getElementById('kpi-carrier-active').textContent = k.activeLoads || 0;
+      document.getElementById('kpi-carrier-miles').textContent = `${(k.miles || 0).toLocaleString()} mi`;
+      document.getElementById('kpi-carrier-net').textContent = `$${(k.youKeep || k.brokerPay || 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+
+      const mgr = home.manager || {};
+      document.getElementById('manager-line').innerHTML =
+        `<strong>Your operations manager:</strong> ${escapeHtml(mgr.name || 'Shipping Wish Operations')} · ${escapeHtml(mgr.phone || '')} · ${escapeHtml(mgr.email || '')}`;
+
+      const sub = home.subscription;
+      const subEl = document.getElementById('sub-line');
+      if (sub) {
+        subEl.textContent = `Weekly operations plan: ${sub.plan_key || 'weekly'} · status ${sub.status || 'active'}. First week can be $0 if you are on trial.`;
+      } else {
+        subEl.textContent = 'No Stripe trial on this login yet. If you paid on the website with a different email, tell operations so we can link it.';
       }
 
-      if (loadsRes.ok) {
-        const data = await loadsRes.json();
-        carrierLoads = data.loads || [];
-        renderCarrierLoads(carrierLoads);
+      document.getElementById('checklist-box').innerHTML = (home.checklist || []).map((c) => `
+        <div style="font-size:13px;color:${c.done ? 'var(--color-green-700,#047857)' : 'var(--text-secondary)'};">
+          ${c.done ? '✓' : '○'} ${escapeHtml(c.label)}
+          ${!c.done && c.key === 'truck' ? ' — <a href="/fleet">add a truck</a>' : ''}
+          ${!c.done && c.key === 'driver' ? ' — <a href="/fleet">add a driver</a>' : ''}
+          ${!c.done && c.key === 'insurance' ? ' — <a href="/documents">upload COI</a>' : ''}
+        </div>
+      `).join('');
+
+      carrierLoads = home.loads || [];
+      renderCarrierLoads(carrierLoads);
+      renderOffers(home.offers || []);
+
+      const comp = home.compliance || [];
+      const card = document.getElementById('compliance-card');
+      if (comp.length) {
+        card.style.display = 'block';
+        document.getElementById('compliance-list').innerHTML = comp.map((x) =>
+          `<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--border-default);">${escapeHtml(x.label)} — ${escapeHtml(String(x.date).slice(0,10))}</div>`
+        ).join('');
       }
     } catch (err) {
       console.error('Carrier cockpit load error:', err);
     }
   }
 
+  function renderOffers(offers) {
+    const tbody = document.getElementById('offers-tbody');
+    const pending = offers.filter((o) => o.status === 'pending');
+    const rows = pending.length ? pending : offers.slice(0, 8);
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No offers yet. Your manager will send freight here for you to accept.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((o) => `
+      <tr>
+        <td>${escapeHtml(o.pickup_location)} → ${escapeHtml(o.delivery_location)}</td>
+        <td>${escapeHtml(o.pickup_date || 'TBD')}</td>
+        <td>$${parseFloat(o.rate || 0).toLocaleString()} / ${o.miles || 0} mi</td>
+        <td>${escapeHtml(o.status)}</td>
+        <td>
+          ${o.status === 'pending' ? `
+            <button class="btn btn-primary btn-sm" type="button" onclick="respondOffer(${o.id}, 'accepted')">Accept</button>
+            <button class="btn btn-light btn-sm" type="button" onclick="respondOffer(${o.id}, 'declined')">Decline</button>
+          ` : ''}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function respondOffer(id, response) {
+    if (!confirm(response === 'accepted' ? 'Accept this load onto your trucks?' : 'Decline this offer?')) return;
+    const res = await fetch(`/api/loadboard/offers/${id}/respond`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ response })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not respond');
+      return;
+    }
+    loadCarrierCockpitData();
+  }
+  window.respondOffer = respondOffer;
+
   function renderCarrierLoads(loads) {
     const tbody = document.getElementById('carrier-loads-tbody');
     if (!loads || loads.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">No active loads found for your fleet.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">No loads yet. When your operations manager books freight (or you accept an offer), it shows here.</td></tr>`;
       return;
     }
 
@@ -294,6 +401,6 @@
     }
   }
 </script>
-<script src="/js/app-shell.js"></script>
+<script src="/js/app-shell.js?v=7"></script>
 </body>
 </html>

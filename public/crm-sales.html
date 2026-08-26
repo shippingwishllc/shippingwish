@@ -92,6 +92,7 @@
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <a href="/sales-workshop/" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">📘 Sales playbook</a>
         <a href="/inbox" class="btn btn-secondary btn-sm" id="inbox-link">📬 Replies <span id="inbox-unread">0</span></a>
         <button class="btn btn-primary btn-sm" id="btn-add-lead" onclick="openAddLeadModal()">
           + Add Carrier Lead
@@ -718,9 +719,14 @@
     if (res.ok) {
       alert(c.company_name + ' imported.');
       loadLeads();
+      if (typeof searchFmcsacarriers === 'function') searchFmcsacarriers();
     } else {
       const data = await res.json().catch(() => ({}));
-      alert(data.message || data.error || 'Error importing carrier lead.');
+      if (res.status === 409) {
+        alert(data.message || 'Already in CRM.');
+      } else {
+        alert(data.message || data.error || 'Error importing carrier lead.');
+      }
     }
   }
 

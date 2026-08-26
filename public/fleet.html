@@ -487,25 +487,19 @@
             <td>${(d.medical_expiry || '').split('T')[0] || 'N/A'}</td>
             <td><span class="badge badge-amber">${d.truck_number ? 'Truck #' + escapeHtml(d.truck_number) : 'Unassigned'}</span></td>
             <td><span class="badge ${d.status === 'available' ? 'badge-paid' : 'badge-booked'}">${escapeHtml(d.status || 'available')}</span></td>
-            <td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteDriver(${d.id})">Delete</button></td>
+            <td>
+              <button class="btn btn-secondary btn-sm" type="button" onclick="inviteDriver(${Number(d.id)})">Invite to app</button>
+              <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteDriver(${d.id})">Delete</button>
+            </td>
           </tr>
         `).join('');
+        window.__fleetDrivers = drivers;
       } else {
-        renderMockDrivers();
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load drivers. Sign in again or call operations.</td></tr>`;
       }
     } catch (e) {
-      renderMockDrivers();
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load drivers.</td></tr>`;
     }
-  }
-
-  function renderMockDrivers() {
-    document.getElementById('kpi-drivers-count').textContent = '3';
-    const tbody = document.getElementById('drivers-table-body');
-    tbody.innerHTML = `
-      <tr><td><strong style="color:var(--text-primary);">David Miller</strong></td><td>Apex Transport LLC</td><td>+1 917 555 0192</td><td>2027-11-15</td><td>2026-10-20</td><td><span class="badge badge-amber">Truck #1042</span></td><td><span class="badge badge-paid">Available</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Driver deleted.')">Delete</button></td></tr>
-      <tr><td><strong style="color:var(--text-primary);">Robert Vance</strong></td><td>Tri-State Hauling</td><td>+1 312 555 0184</td><td>2028-04-10</td><td>2027-02-14</td><td><span class="badge badge-amber">Truck #2091</span></td><td><span class="badge badge-booked">On Load</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Driver deleted.')">Delete</button></td></tr>
-      <tr><td><strong style="color:var(--text-primary);">Marcus Vance</strong></td><td>BlueSky Logistics</td><td>+1 404 555 0148</td><td>2026-12-01</td><td>2026-09-05</td><td><span class="badge badge-amber">Truck #3018</span></td><td><span class="badge badge-paid">Available</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Driver deleted.')">Delete</button></td></tr>
-    `;
   }
 
   async function loadTrucks() {
@@ -533,21 +527,11 @@
           </tr>
         `).join('');
       } else {
-        renderMockTrucks();
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load trucks. Sign in again or call operations.</td></tr>`;
       }
     } catch (e) {
-      renderMockTrucks();
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load trucks.</td></tr>`;
     }
-  }
-
-  function renderMockTrucks() {
-    document.getElementById('kpi-trucks-count').textContent = '3';
-    const tbody = document.getElementById('trucks-table-body');
-    tbody.innerHTML = `
-      <tr><td><strong style="color:var(--text-primary);">Truck #1042</strong></td><td>Apex Transport LLC</td><td>1XPD499X9810294</td><td>TX-9981</td><td>2027-05-12</td><td>2026-11-30</td><td>245,800 mi</td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Truck deleted.')">Delete</button></td></tr>
-      <tr><td><strong style="color:var(--text-primary);">Truck #2091</strong></td><td>Tri-State Hauling</td><td>1XPD499X4819204</td><td>IL-4019</td><td>2026-10-18</td><td>2026-12-15</td><td>310,400 mi</td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Truck deleted.')">Delete</button></td></tr>
-      <tr><td><strong style="color:var(--text-primary);">Truck #3018</strong></td><td>BlueSky Logistics</td><td>1XPD499X3940192</td><td>GA-8821</td><td>2027-01-22</td><td>2027-03-01</td><td>189,200 mi</td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Truck deleted.')">Delete</button></td></tr>
-    `;
   }
 
   async function loadTrailers() {
@@ -574,26 +558,31 @@
           </tr>
         `).join('');
       } else {
-        renderMockTrailers();
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load trailers. Sign in again or call operations.</td></tr>`;
       }
     } catch (e) {
-      renderMockTrailers();
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load trailers.</td></tr>`;
     }
-  }
-
-  function renderMockTrailers() {
-    document.getElementById('kpi-trailers-count').textContent = '3';
-    const tbody = document.getElementById('trailers-table-body');
-    tbody.innerHTML = `
-      <tr><td><strong style="color:var(--text-primary);">Trailer #TR-502</strong></td><td>Apex Transport LLC</td><td><span class="badge badge-amber">Dry Van 53ft</span></td><td>2027-03-15</td><td>2026-11-30</td><td><span class="badge badge-paid">Active</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Trailer deleted.')">Delete</button></td></tr>
-      <tr><td><strong style="color:var(--text-primary);">Trailer #TR-809</strong></td><td>Tri-State Hauling</td><td><span class="badge badge-amber">Reefer 53ft</span></td><td>2026-11-01</td><td>2026-12-15</td><td><span class="badge badge-paid">Active</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Trailer deleted.')">Delete</button></td></tr>
-      <tr><td><strong style="color:var(--text-primary);">Trailer #TR-310</strong></td><td>BlueSky Logistics</td><td><span class="badge badge-amber">Flatbed 48ft</span></td><td>2027-02-28</td><td>2027-03-01</td><td><span class="badge badge-paid">Active</span></td><td><button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="alert('Trailer deleted.')">Delete</button></td></tr>
-    `;
   }
 
   async function deleteDriver(id) { if(confirm('Delete driver record?')) { await fetch(`/api/fleet/drivers/${id}`, {method:'DELETE', credentials: 'include'}); loadDrivers(); } }
   async function deleteTruck(id) { if(confirm('Delete truck record?')) { await fetch(`/api/fleet/trucks/${id}`, {method:'DELETE', credentials: 'include'}); loadTrucks(); } }
   async function deleteTrailer(id) { if(confirm('Delete trailer record?')) { await fetch(`/api/fleet/trailers/${id}`, {method:'DELETE', credentials: 'include'}); loadTrailers(); } }
+
+  async function inviteDriver(id) {
+    const hint = ((window.__fleetDrivers || []).find((d) => d.id === id) || {}).email || '';
+    const email = prompt('Driver email for the phone app login:', hint);
+    if (!email) return;
+    const res = await fetch(`/api/fleet/drivers/${id}/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json().catch(() => ({}));
+    alert(data.message || data.error || 'Invite finished');
+  }
+  window.inviteDriver = inviteDriver;
 
   function openModal(id) {
     const modal = document.getElementById(id);
@@ -660,6 +649,6 @@
   }
 </script>
 
-<script src="/js/app-shell.js?v=4"></script>
+<script src="/js/app-shell.js?v=7"></script>
 </body>
 </html>

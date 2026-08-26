@@ -78,5 +78,16 @@ CREATE INDEX IF NOT EXISTS idx_outreach_lead ON outreach_sends(lead_id);
 CREATE INDEX IF NOT EXISTS idx_billing_lead ON billing_subscriptions(lead_id);
 CREATE INDEX IF NOT EXISTS idx_billing_status ON billing_subscriptions(status);
 CREATE INDEX IF NOT EXISTS idx_unsubscribes_email ON unsubscribes(email);
+
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS sms_optouts (
+  id SERIAL PRIMARY KEY,
+  phone TEXT UNIQUE NOT NULL,
+  reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_leads_state ON crm_leads(phy_state);
 CREATE INDEX IF NOT EXISTS idx_leads_mc ON crm_leads(mc_number);
+CREATE INDEX IF NOT EXISTS idx_sms_optouts_phone ON sms_optouts(phone);
