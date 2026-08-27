@@ -43,26 +43,6 @@ function unsubscribeUrl(email) {
   return `${APP_URL}/unsubscribe?t=${encodeURIComponent(unsubscribeToken(email))}`;
 }
 
-/**
- * Outreach / cold mail — plain letter look (no dark banner, no CTA button).
- * Marketing HTML triggers Gmail Promotions/Spam more than a simple note.
- */
-function wrapPlainOutreachEmail({ bodyHtml, recipientEmail }) {
-  const unsub = recipientEmail ? unsubscribeUrl(recipientEmail) : `${APP_URL}/unsubscribe`;
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#222222;">
-  <div style="max-width:560px;padding:20px 16px;">
-    ${bodyHtml}
-    <p style="margin:28px 0 0;padding-top:14px;border-top:1px solid #e5e5e5;font-size:12px;line-height:1.5;color:#666666;">
-      ${escapeHtml(COMPANY.legal)} · ${escapeHtml(COMPANY.address)} · ${escapeHtml(COMPANY.phone)}<br>
-      <a href="${escapeHtml(unsub)}" style="color:#666666;">Unsubscribe</a>
-    </p>
-  </div>
-</body>
-</html>`;
-}
 
 function wrapCorporateEmail({
   preheader,
@@ -135,75 +115,91 @@ function firstName(ownerName, companyName) {
 
 function dedicatedManagerEmail({ ownerName, companyName, recipientEmail }) {
   const name = firstName(ownerName, companyName);
-  const company = companyName || 'your trucks';
+  const company = companyName || 'your fleet';
+  const heading = `Dedicated operations manager for ${company}`;
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Hi ${escapeHtml(name)},</p>
-    <p style="margin:0 0 12px;">
-      I’m reaching out from Shipping Wish LLC. We help small carriers keep trucks covered —
-      one person on your equipment for load search, broker calls, and paperwork you approve.
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">Hello ${escapeHtml(name)},</p>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      I am writing from <strong>Shipping Wish LLC</strong>. We place a
+      <strong>Dedicated Fleet Operations Manager</strong> with small motor carriers.
     </p>
-    <p style="margin:0 0 12px;">
-      Broker pay stays with you. We charge a flat weekly fee for the manager, not a percent of the load.
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      That person works your trucks only: finding freight, talking to brokers, booking loads you approve,
+      and handling the paperwork so the equipment keeps moving. You collect the freight pay from the broker.
+      We invoice a flat weekly amount for the manager — not a cut of your load.
     </p>
-    <p style="margin:0 0 12px;">
-      If that sounds useful for ${escapeHtml(company)}, reply with how many trucks and what you haul.
-      Or call ${escapeHtml(COMPANY.phone)}. If you are set, no need to reply.
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">If this would help ${escapeHtml(company)}, reply to this email with:</p>
+    <ol style="margin:0 0 14px;padding-left:20px;font-size:16px;line-height:1.7;">
+      <li>Equipment type and how many trucks</li>
+      <li>Preferred lanes or home time</li>
+      <li>Whether you want a weekly dedicated manager</li>
+    </ol>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      Or call ${escapeHtml(COMPANY.phone)}. I will not waste your time if you already have this covered.
     </p>
-    <p style="margin:0;">Thanks,<br>
-    ${escapeHtml(COMPANY.name)}<br>
-    ${escapeHtml(COMPANY.phone)}<br>
-    ${escapeHtml(COMPANY.operationsEmail)}</p>
+    <p style="margin:0;font-size:16px;line-height:1.7;">Respectfully,<br>
+    Operations Desk<br>${escapeHtml(COMPANY.name)}</p>
   `;
-  const text = `Hi ${name},
+  const text = `Hello ${name},
 
-I'm reaching out from Shipping Wish LLC. We help small carriers keep trucks covered — one person on your equipment for load search, broker calls, and paperwork you approve.
+I am writing from Shipping Wish LLC. We place a Dedicated Fleet Operations Manager with small motor carriers.
 
-Broker pay stays with you. We charge a flat weekly fee for the manager, not a percent of the load.
+That person works your trucks only: finding freight, talking to brokers, booking loads you approve, and handling paperwork. You collect freight pay from the broker. We invoice a flat weekly amount for the manager — not a cut of your load.
 
-If that sounds useful for ${company}, reply with how many trucks and what you haul. Or call ${COMPANY.phone}. If you are set, no need to reply.
+If this would help ${company}, reply with equipment type, truck count, and preferred lanes — or call ${COMPANY.phone}.
 
-Thanks,
-${COMPANY.name}
-${COMPANY.phone}
-${COMPANY.operationsEmail}
+Shipping Wish LLC
+${COMPANY.address}
+${COMPANY.phone} · ${COMPANY.operationsEmail}
 
 Unsubscribe: ${unsubscribeUrl(recipientEmail)}`;
 
   return {
-    subject: `${name} — note about ${company}`,
-    html: wrapPlainOutreachEmail({ bodyHtml, recipientEmail }),
+    subject: `Operations manager for ${company}`,
+    html: wrapCorporateEmail({
+      preheader: 'A dedicated operations manager for your trucks. Weekly retainer. You keep the freight pay.',
+      heading,
+      bodyHtml,
+      ctaLabel: 'Reply to this email',
+      ctaUrl: `mailto:${COMPANY.operationsEmail}?subject=${encodeURIComponent('Re: ' + company)}`,
+      recipientEmail
+    }),
     text
   };
 }
 
 function followUpEmail({ ownerName, companyName, recipientEmail }) {
   const name = firstName(ownerName, companyName);
-  const company = companyName || 'your trucks';
+  const company = companyName || 'your fleet';
+  const heading = `Following up — ${company}`;
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Hi ${escapeHtml(name)},</p>
-    <p style="margin:0 0 12px;">
-      Following up in case my earlier note about ops help for ${escapeHtml(company)} got buried.
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">Hello ${escapeHtml(name)},</p>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      Checking in on my note about a Dedicated Fleet Operations Manager for ${escapeHtml(company)}.
     </p>
-    <p style="margin:0 0 12px;">
-      If you already have someone on freight full-time, ignore this.
-      If not, a short reply with truck count is enough and we can talk.
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      If you already have someone booking freight full-time, you can ignore this.
+      If you do not, I can have a manager start looking at loads for your equipment this week.
     </p>
-    <p style="margin:0;">Thanks,<br>
-    ${escapeHtml(COMPANY.name)} · ${escapeHtml(COMPANY.phone)}</p>
+    <p style="margin:0;font-size:16px;line-height:1.7;">Reply to this email and I will send the one-page setup and weekly billing link.<br><br>
+    Operations Desk · ${escapeHtml(COMPANY.name)} · ${escapeHtml(COMPANY.phone)}</p>
   `;
-  const text = `Hi ${name},
+  const text = `Hello ${name},
 
-Following up in case my earlier note about ops help for ${company} got buried.
+Checking in on a Dedicated Fleet Operations Manager for ${company}. If you already have this covered, ignore this. If not, reply and I will send the setup and weekly billing link.
 
-If you already have someone on freight full-time, ignore this. If not, a short reply with truck count is enough.
-
-Thanks,
 ${COMPANY.name} · ${COMPANY.phone}
-
 Unsubscribe: ${unsubscribeUrl(recipientEmail)}`;
   return {
-    subject: `Re: ${company}`,
-    html: wrapPlainOutreachEmail({ bodyHtml, recipientEmail }),
+    subject: `Following up — ${company}`,
+    html: wrapCorporateEmail({
+      preheader: 'If you already have freight covered, ignore this. If not, reply to this email.',
+      heading,
+      bodyHtml,
+      ctaLabel: 'Reply to this email',
+      ctaUrl: `mailto:${COMPANY.operationsEmail}?subject=${encodeURIComponent('Re: ' + company)}`,
+      recipientEmail
+    }),
     text
   };
 }
