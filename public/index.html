@@ -56,16 +56,21 @@
 <nav class="nav" role="navigation" aria-label="Main navigation"></nav>
 
 <section class="mkt-hero">
+  <div class="mkt-hero-bg" aria-hidden="true">
+    <span class="mkt-orb mkt-orb-a"></span>
+    <span class="mkt-orb mkt-orb-b"></span>
+    <span class="mkt-orb mkt-orb-c"></span>
+  </div>
   <div class="mkt-wrap mkt-hero-grid">
     <div>
-      <div class="mkt-kicker">24/7 operations desk</div>
+      <div class="mkt-kicker"><span class="mkt-kicker-dot"></span> 24/7 operations desk</div>
       <h1 class="mkt-h1">Hire a manager for your trucking company. <em>We work as your staff.</em></h1>
       <p class="mkt-lede">
         Shipping Wish places a named Fleet Operations Manager inside your company — 24/7 load booking, broker handling, and a full TMS.
         You keep every dollar the broker pays. Flat weekly subscription. You do not buy your own load-board seat. First week is free.
       </p>
       <div class="mkt-actions">
-        <a href="/pricing" class="btn btn-primary btn-xl">Start 7 days free — $0 today</a>
+        <a href="/pricing" class="btn btn-primary btn-xl mkt-btn-glow">Start 7 days free — $0 today</a>
         <a href="/about" class="btn btn-secondary btn-xl">See the company</a>
       </div>
       <div class="mkt-trust">
@@ -75,28 +80,45 @@
         <span>✓ High RPM · less deadhead</span>
       </div>
     </div>
-    <div class="mkt-panel">
+    <div class="mkt-panel mkt-panel-float">
       <div class="mkt-panel-top">
         <span>Carrier Operations Portal</span>
-        <span style="color:#059669;">● Live desk</span>
+        <span class="mkt-live"><span class="mkt-live-dot"></span> Live desk</span>
       </div>
-      <div class="mkt-load">
+      <div class="mkt-load mkt-load-glow">
         <div style="display:flex;justify-content:space-between;font-size:12px;opacity:.7;margin-bottom:8px;">
           <span>LOAD SW-98401</span>
-          <span>715 mi · $4.82 / mi</span>
+          <span><span data-hero-counter="715" data-duration="1400">0</span> mi · $<span data-hero-counter="4.82" data-decimals="2" data-duration="1800">0</span> / mi</span>
         </div>
-        <strong>$3,450.00</strong>
-        <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:13px;">
+        <strong class="mkt-load-pay">$<span data-hero-counter="3450" data-decimals="0" data-format="currency" data-duration="2000">0</span></strong>
+        <div class="mkt-load-route">
           <span>Chicago, IL</span>
+          <span class="mkt-load-line" aria-hidden="true"></span>
           <span>Atlanta, GA</span>
         </div>
         <p style="margin:14px 0 0;font-size:12px;opacity:.75;line-height:1.5;">Booked by your operations manager. Freight pay goes to your company. Your weekly plan is billed separately on Stripe.</p>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;font-size:12px;font-weight:700;color:#334155;">
-        <div style="background:#f8fafc;border-radius:12px;padding:12px;">TMS included</div>
-        <div style="background:#f8fafc;border-radius:12px;padding:12px;">You don’t buy a load-board seat</div>
-        <div style="background:#f8fafc;border-radius:12px;padding:12px;">You keep freight pay</div>
-        <div style="background:#f8fafc;border-radius:12px;padding:12px;">$0 due this week</div>
+      <div class="mkt-hero-kpis">
+        <div class="mkt-hero-kpi" style="--i:0">
+          <span class="mkt-hero-kpi-icon">🚛</span>
+          <span class="mkt-hero-kpi-val" data-hero-counter="12" data-duration="1500">0</span>
+          <span class="mkt-hero-kpi-label">Loads today</span>
+        </div>
+        <div class="mkt-hero-kpi" style="--i:1">
+          <span class="mkt-hero-kpi-icon">📈</span>
+          <span class="mkt-hero-kpi-val">$<span data-hero-counter="4.82" data-decimals="2" data-duration="1700">0</span></span>
+          <span class="mkt-hero-kpi-label">Avg RPM</span>
+        </div>
+        <div class="mkt-hero-kpi" style="--i:2">
+          <span class="mkt-hero-kpi-icon">💵</span>
+          <span class="mkt-hero-kpi-val"><span data-hero-counter="100" data-duration="1600">0</span>%</span>
+          <span class="mkt-hero-kpi-label">Broker pay kept</span>
+        </div>
+        <div class="mkt-hero-kpi" style="--i:3">
+          <span class="mkt-hero-kpi-icon">⏱️</span>
+          <span class="mkt-hero-kpi-val">24/7</span>
+          <span class="mkt-hero-kpi-label">Desk coverage</span>
+        </div>
       </div>
     </div>
   </div>
@@ -226,16 +248,28 @@
   </div>
 </section>
 
-<section class="mkt-section ink">
+<section class="mkt-section ink reveal">
   <div class="mkt-wrap mkt-center">
     <div class="mkt-eyebrow">Company capacity</div>
     <h2 class="mkt-h2">100+ dedicated people managing your work.</h2>
     <p class="mkt-sub">Built to run as an extension of your motor carrier — booking, paperwork, and profit protection across the Lower 48.</p>
     <div class="mkt-stats">
-      <div class="mkt-stat"><b>100+</b><span>Dedicated operations staff</span></div>
-      <div class="mkt-stat"><b>24/7</b><span>Coverage on active freight</span></div>
-      <div class="mkt-stat"><b>48</b><span>States we work</span></div>
-      <div class="mkt-stat"><b>$0</b><span>Due during your first week</span></div>
+      <div class="mkt-stat mkt-stat-pop" style="--i:0">
+        <b><span data-counter="100" data-suffix="+">0</span></b>
+        <span>Dedicated operations staff</span>
+      </div>
+      <div class="mkt-stat mkt-stat-pop" style="--i:1">
+        <b class="mkt-stat-static">24/7</b>
+        <span>Coverage on active freight</span>
+      </div>
+      <div class="mkt-stat mkt-stat-pop" style="--i:2">
+        <b><span data-counter="48">0</span></b>
+        <span>States we work</span>
+      </div>
+      <div class="mkt-stat mkt-stat-pop" style="--i:3">
+        <b>$<span data-counter="0">0</span></b>
+        <span>Due during your first week</span>
+      </div>
     </div>
   </div>
 </section>
@@ -365,6 +399,7 @@
 </section>
 
 <footer class="footer" role="contentinfo"></footer>
+<script src="/js/marketing-animations.js"></script>
 <script src="/js/site-chrome.js"></script>
 </body>
 </html>
