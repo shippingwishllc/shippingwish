@@ -125,21 +125,96 @@ async function sendBrandedEmail({
   return { skipped: false, id: providerId, status, from, replyTo };
 }
 
+function receivingApiKey() {
+  return process.env.RESEND_RECEIVING_API_KEY || process.env.RESEND_API_KEY || null;
+}
+
+async function resendApiGet(path, apiKey) {
+  const res = await fetch(`https://api.resend.com${path}`, {
+    headers: { Authorization: `Bearer ${apiKey}` }
+  });
+  const text = await res.text().catch(() => '');
+  let json = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = null;
+  }
+  return { ok: res.ok, status: res.status, json, text };
+}
+
+function normalizeEmail(addr) {
+  const raw = String(addr || '').trim().toLowerCase();
+  const m = raw.match(/<([^>]+)>/);
+  return (m ? m[1] : raw).trim();
+}
+
 /**
  * Resend webhooks only send metadata. Fetch full received email (html/text/headers).
- * Uses REST so it works even if the installed SDK is older than receiving.get.
+ * Sending-only API keys cannot call receiving endpoints — use RESEND_RECEIVING_API_KEY (full access).
  */
-async function fetchReceivedEmail(emailId) {
-  if (!emailId || !process.env.RESEND_API_KEY) return null;
-  const res = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`, {
-    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` }
-  });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    console.warn('[MAILER] fetchReceivedEmail failed', res.status, errText.slice(0, 200));
+async function fetchReceivedEmail(emailId, hints = {}) {
+  const key = receivingApiKey();
+  if (!key) {
+    return { ok: false, error: 'Resend API key missing', hint: 'Set RESEND_API_KEY in Vercel.' };
+  }
+
+  const permissionHint =
+    'Create a Resend API key with Full access (Sending only cannot read inbox). ' +
+    'Add it in Vercel as RESEND_RECEIVING_API_KEY, redeploy, then click Reload body again.';
+
+  async function loadById(id) {
+    if (!id) return null;
+    const r = await resendApiGet(`/emails/receiving/${encodeURIComponent(id)}`, key);
+    if (r.ok && r.json) return { data: r.json, emailId: id };
+    if (r.status === 401 || r.status === 403) {
+      return { permissionError: true, status: r.status, detail: r.text.slice(0, 200) };
+    }
     return null;
   }
-  return res.json();
+
+  let loaded = await loadById(emailId);
+  if (loaded && loaded.permissionError) {
+    return { ok: false, error: 'API key cannot read inbound emails', hint: permissionHint, status: loaded.status };
+  }
+
+  if (!loaded) {
+    const list = await resendApiGet('/emails/receiving?limit=50', key);
+    if (!list.ok) {
+      if (list.status === 401 || list.status === 403) {
+        return { ok: false, error: 'API key cannot read inbound emails', hint: permissionHint, status: list.status };
+      }
+      return {
+        ok: false,
+        error: 'Could not list received emails from Resend',
+        detail: (list.json && list.json.message) || list.text.slice(0, 200)
+      };
+    }
+    const items = (list.json && list.json.data) || [];
+    const from = normalizeEmail(hints.fromEmail);
+    const subj = String(hints.subject || '').trim().toLowerCase();
+    let match = items.find((e) => e.id === emailId);
+    if (!match && from) {
+      match = items.find((e) => normalizeEmail(e.from) === from);
+    }
+    if (!match && from && subj) {
+      match = items.find((e) => normalizeEmail(e.from) === from && String(e.subject || '').toLowerCase() === subj);
+    }
+    if (match) loaded = await loadById(match.id);
+  }
+
+  if (!loaded) {
+    return {
+      ok: false,
+      error: 'Received email not found in Resend',
+      hint: 'Check resend.com → Emails → Receiving. If missing, inbound MX/webhook may not have captured it.'
+    };
+  }
+  if (loaded.permissionError) {
+    return { ok: false, error: 'API key cannot read inbound emails', hint: permissionHint, status: loaded.status };
+  }
+
+  return { ok: true, data: loaded.data, emailId: loaded.emailId };
 }
 
 module.exports = {
@@ -148,5 +223,6 @@ module.exports = {
   replyToAddress,
   isUnsubscribed,
   sendBrandedEmail,
-  fetchReceivedEmail
+  fetchReceivedEmail,
+  receivingApiKey
 };

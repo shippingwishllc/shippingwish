@@ -25,29 +25,33 @@ function htmlToPlain(html) {
     .trim();
 }
 
-function displayNameFromHeader(fromHeader, fallbackEmail) {
-  const raw = String(fromHeader || '').trim();
-  if (!raw) return fallbackEmail || '';
-  const angle = raw.match(/^(.+?)\s*<[^>]+>$/);
-  if (angle) return angle[1].replace(/^["']|["']$/g, '').trim() || fallbackEmail || '';
-  return raw.includes('@') ? (fallbackEmail || raw) : raw;
-}
 
 async function enrichFromResend(parsed) {
   if ((parsed.bodyText || parsed.bodyHtml) && parsed.fromEmail) return parsed;
-  if (!parsed.resendId) return parsed;
-  const full = await fetchReceivedEmail(parsed.resendId);
-  if (!full) return parsed;
+  if (!parsed.resendId && !parsed.fromEmail) return parsed;
+  const result = await fetchReceivedEmail(parsed.resendId, {
+    fromEmail: parsed.fromEmail,
+    subject: parsed.subject
+  });
+  if (!result.ok || !result.data) {
+    if (result.hint) console.warn('[EMAIL] enrichFromResend:', result.error, result.hint);
+    else console.warn('[EMAIL] enrichFromResend failed:', result.error);
+    return parsed;
+  }
+  const full = result.data;
   const bodyHtml = parsed.bodyHtml || full.html || '';
   const bodyText = parsed.bodyText || full.text || (bodyHtml ? htmlToPlain(bodyHtml) : '');
-  const fromEmail = parsed.fromEmail || pickAddress(full.from) || '';
+  const fromEmail = parsed.fromEmail || normalizeEmailFromHeader(full.from) || '';
   const toEmail = parsed.toEmail || pickAddress(full.to) || '';
   const subject = parsed.subject || full.subject || '';
-  const fromName = displayNameFromHeader(
-    (full.headers && (full.headers.from || full.headers.From)) || full.from,
-    fromEmail
-  );
-  return { ...parsed, fromEmail, toEmail, subject, bodyText, bodyHtml, fromName };
+  parsed.resendId = result.emailId || parsed.resendId;
+  return { ...parsed, fromEmail, toEmail, subject, bodyText, bodyHtml };
+}
+
+function normalizeEmailFromHeader(value) {
+  const raw = String(value || '').trim();
+  const m = raw.match(/<([^>]+)>/);
+  return (m ? m[1] : raw).trim().toLowerCase();
 }
 
 async function markLeadContacted(leadId, statusIfNew) {
@@ -209,16 +213,22 @@ router.get('/inbox/:id', requireAuth, async (req, res) => {
     let msg = result.rows[0];
 
     // Backfill empty body from Resend if we still have the email id
-    if (!(msg.body_text || msg.body_html) && msg.resend_email_id) {
-      const full = await fetchReceivedEmail(msg.resend_email_id);
-      if (full) {
+    if (!(msg.body_text || msg.body_html) && (msg.resend_email_id || msg.from_email)) {
+      const result = await fetchReceivedEmail(msg.resend_email_id, {
+        fromEmail: msg.from_email,
+        subject: msg.subject
+      });
+      if (result.ok && result.data) {
+        const full = result.data;
         const bodyHtml = full.html || '';
         const bodyText = full.text || (bodyHtml ? htmlToPlain(bodyHtml) : '');
         await pool.query(
-          `UPDATE email_inbound SET body_text = $2, body_html = $3 WHERE id = $1`,
-          [msg.id, bodyText, bodyHtml]
+          `UPDATE email_inbound
+           SET body_text = $2, body_html = $3, resend_email_id = COALESCE($4, resend_email_id)
+           WHERE id = $1`,
+          [msg.id, bodyText, bodyHtml, result.emailId || msg.resend_email_id]
         );
-        msg = { ...msg, body_text: bodyText, body_html: bodyHtml };
+        msg = { ...msg, body_text: bodyText, body_html: bodyHtml, resend_email_id: result.emailId || msg.resend_email_id };
       }
     }
 
@@ -250,17 +260,27 @@ router.post('/inbox/:id/refresh', requireAuth, async (req, res) => {
     const row = await pool.query('SELECT * FROM email_inbound WHERE id = $1', [req.params.id]);
     if (!row.rows.length) return res.status(404).json({ error: 'Message not found' });
     const msg = row.rows[0];
-    if (!msg.resend_email_id) {
-      return res.status(400).json({ error: 'No Resend email id to refresh from' });
+    const result = await fetchReceivedEmail(msg.resend_email_id, {
+      fromEmail: msg.from_email,
+      subject: msg.subject
+    });
+    if (!result.ok || !result.data) {
+      return res.status(502).json({
+        error: result.error || 'Could not fetch email from Resend',
+        hint: result.hint || null,
+        detail: result.detail || null
+      });
     }
-    const full = await fetchReceivedEmail(msg.resend_email_id);
-    if (!full) return res.status(502).json({ error: 'Could not fetch email from Resend' });
+    const full = result.data;
     const bodyHtml = full.html || '';
     const bodyText = full.text || (bodyHtml ? htmlToPlain(bodyHtml) : '');
     const updated = await pool.query(
-      `UPDATE email_inbound SET body_text = $2, body_html = $3, subject = COALESCE(NULLIF($4,''), subject)
+      `UPDATE email_inbound
+       SET body_text = $2, body_html = $3,
+           subject = COALESCE(NULLIF($4,''), subject),
+           resend_email_id = COALESCE($5, resend_email_id)
        WHERE id = $1 RETURNING *`,
-      [msg.id, bodyText, bodyHtml, full.subject || '']
+      [msg.id, bodyText, bodyHtml, full.subject || '', result.emailId || msg.resend_email_id]
     );
     res.json({ ok: true, message: updated.rows[0] });
   } catch (err) {
@@ -353,7 +373,7 @@ function parseInboundPayload(body) {
   const subject = email.subject || data.subject || '';
   const bodyText = email.text || data.text || data.body_text || data.text_body || '';
   const bodyHtml = email.html || data.html || data.body_html || data.html_body || '';
-  const resendId = data.email_id || email.email_id || data.id || root.id || null;
+  const resendId = data.email_id || email.email_id || null;
   return { fromEmail, toEmail, subject, bodyText, bodyHtml, resendId };
 }
 

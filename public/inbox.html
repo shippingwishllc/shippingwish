@@ -217,7 +217,7 @@
     const res = await fetch('/api/email/inbox/' + id + '/refresh', { method: 'POST', credentials: 'include' });
     const data = await res.json();
     if (!res.ok) {
-      alert(data.error || 'Could not reload body');
+      alert([data.error || 'Could not reload body', data.hint, data.detail].filter(Boolean).join('\n\n'));
       openMessage(id);
       return;
     }
