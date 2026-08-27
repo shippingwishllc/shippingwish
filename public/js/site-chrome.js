@@ -226,6 +226,19 @@
     setTimeout(show, 2200);
   }
 
+  function loadMarketingAnimations() {
+    if (window.__swMktAnimLoaded) return;
+    if (document.querySelector('script[src*="marketing-animations"]')) {
+      window.__swMktAnimLoaded = true;
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = '/js/marketing-animations.js';
+    s.defer = true;
+    document.body.appendChild(s);
+    window.__swMktAnimLoaded = true;
+  }
+
   function init() {
     if (document.querySelector('.app-shell')) return;
     if (document.querySelector('.auth-wrapper')) return;
@@ -253,6 +266,7 @@
     bindGlobalNavOnce();
     bindLoggedIn();
     bindReveals();
+    loadMarketingAnimations();
 
     let footer = document.querySelector('footer.footer');
     if (!footer) {

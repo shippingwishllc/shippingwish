@@ -455,6 +455,34 @@ body.marketing .btn-secondary {
   border-radius: 18px;
   padding: 24px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 0.35s ease, border-color 0.3s ease;
+}
+
+/* KPI card grids — scroll stagger + hover lift */
+.mkt-kpi-grid .mkt-kpi-card {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s cubic-bezier(0.34, 1.45, 0.64, 1),
+    box-shadow 0.35s ease,
+    border-color 0.3s ease;
+}
+.mkt-kpi-grid.is-visible .mkt-kpi-card {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: calc(var(--i, 0) * 0.09s);
+}
+.mkt-kpi-grid.is-visible .mkt-kpi-card:hover {
+  transform: translateY(-12px);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.14);
+  border-color: #fcd34d;
+}
+.mkt-kpi-grid.is-visible .price-card.featured {
+  transform: translateY(-6px);
+}
+.mkt-kpi-grid.is-visible .price-card.featured:hover {
+  transform: translateY(-18px);
 }
 
 .mkt-card h3 {
@@ -516,6 +544,13 @@ body.marketing .btn-secondary {
   letter-spacing: -0.04em;
   line-height: 1;
   color: #0b1220 !important;
+  font-variant-numeric: tabular-nums;
+}
+.price-amt [data-counter] {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit !important;
+  letter-spacing: inherit;
 }
 .price-amt span,
 .price-amt small {
@@ -957,7 +992,23 @@ body.marketing .pricing-features li {
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
 }
 .mkt-who h3 { margin: 0 0 6px; font-size: 1.2rem; }
-.mkt-who .amt { font-weight: 900; font-size: 1.6rem; color: #0b1220; margin: 10px 0 8px; }
+.mkt-who .amt {
+  font-weight: 900;
+  font-size: 1.6rem;
+  color: #0b1220;
+  margin: 10px 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.mkt-who .amt [data-counter] {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+.mkt-who .amt-unit {
+  font-size: 0.55em;
+  font-weight: 700;
+  color: #64748b;
+}
 .mkt-who p { color: #64748b; margin: 0; line-height: 1.55; }
 
 .mkt-steps {
@@ -972,6 +1023,7 @@ body.marketing .pricing-features li {
   border-radius: 18px;
   padding: 20px 16px;
   position: relative;
+  transition: box-shadow 0.35s ease, border-color 0.3s ease;
 }
 .mkt-step b {
   display: inline-flex;
@@ -1066,10 +1118,12 @@ body.marketing .pricing-features li {
   .reveal, .mkt-hero .mkt-kicker, .mkt-hero .mkt-h1, .mkt-hero .mkt-lede,
   .mkt-hero .mkt-actions, .mkt-hero .mkt-trust, .mkt-hero .mkt-panel,
   .mkt-orb, .mkt-panel-float, .mkt-hero-kpi, .mkt-load-glow, .mkt-load-line::after,
-  .mkt-kicker-dot, .mkt-live-dot, .mkt-stat-pop {
+  .mkt-kicker-dot, .mkt-live-dot, .mkt-stat-pop,
+  .mkt-kpi-grid .mkt-kpi-card {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+    transition: none !important;
   }
 }
 
