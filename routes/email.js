@@ -2,9 +2,53 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { sendBrandedEmail, isUnsubscribed } = require('../utils/mailer');
+const { sendBrandedEmail, isUnsubscribed, fetchReceivedEmail } = require('../utils/mailer');
 const { buildTemplate, verifyUnsubscribeToken, COMPANY } = require('../utils/email-templates');
 const { notifyAdmins, createNotification } = require('../utils/notifications');
+
+function htmlToPlain(html) {
+  return String(html || '')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+function displayNameFromHeader(fromHeader, fallbackEmail) {
+  const raw = String(fromHeader || '').trim();
+  if (!raw) return fallbackEmail || '';
+  const angle = raw.match(/^(.+?)\s*<[^>]+>$/);
+  if (angle) return angle[1].replace(/^["']|["']$/g, '').trim() || fallbackEmail || '';
+  return raw.includes('@') ? (fallbackEmail || raw) : raw;
+}
+
+async function enrichFromResend(parsed) {
+  if ((parsed.bodyText || parsed.bodyHtml) && parsed.fromEmail) return parsed;
+  if (!parsed.resendId) return parsed;
+  const full = await fetchReceivedEmail(parsed.resendId);
+  if (!full) return parsed;
+  const bodyHtml = parsed.bodyHtml || full.html || '';
+  const bodyText = parsed.bodyText || full.text || (bodyHtml ? htmlToPlain(bodyHtml) : '');
+  const fromEmail = parsed.fromEmail || pickAddress(full.from) || '';
+  const toEmail = parsed.toEmail || pickAddress(full.to) || '';
+  const subject = parsed.subject || full.subject || '';
+  const fromName = displayNameFromHeader(
+    (full.headers && (full.headers.from || full.headers.From)) || full.from,
+    fromEmail
+  );
+  return { ...parsed, fromEmail, toEmail, subject, bodyText, bodyHtml, fromName };
+}
 
 async function markLeadContacted(leadId, statusIfNew) {
   if (!leadId) return;
@@ -150,6 +194,41 @@ router.get('/inbox', requireAuth, async (req, res) => {
   }
 });
 
+router.get('/inbox/:id', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT i.*, l.company_name, l.owner_name, l.phone, l.mc_number, l.email AS lead_email, l.sales_rep_id,
+              u.name AS sales_rep_name
+       FROM email_inbound i
+       LEFT JOIN crm_leads l ON l.id = i.lead_id
+       LEFT JOIN users u ON u.id = l.sales_rep_id
+       WHERE i.id = $1`,
+      [req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Message not found' });
+    let msg = result.rows[0];
+
+    // Backfill empty body from Resend if we still have the email id
+    if (!(msg.body_text || msg.body_html) && msg.resend_email_id) {
+      const full = await fetchReceivedEmail(msg.resend_email_id);
+      if (full) {
+        const bodyHtml = full.html || '';
+        const bodyText = full.text || (bodyHtml ? htmlToPlain(bodyHtml) : '');
+        await pool.query(
+          `UPDATE email_inbound SET body_text = $2, body_html = $3 WHERE id = $1`,
+          [msg.id, bodyText, bodyHtml]
+        );
+        msg = { ...msg, body_text: bodyText, body_html: bodyHtml };
+      }
+    }
+
+    res.json({ message: msg });
+  } catch (err) {
+    console.error('Inbox message fetch error:', err);
+    res.status(500).json({ error: 'Could not load message' });
+  }
+});
+
 router.post('/inbox/:id/read', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE email_inbound SET is_read = TRUE WHERE id = $1', [req.params.id]);
@@ -166,16 +245,52 @@ router.post('/inbox/:id/read', requireAuth, async (req, res) => {
   }
 });
 
+router.post('/inbox/:id/refresh', requireAuth, async (req, res) => {
+  try {
+    const row = await pool.query('SELECT * FROM email_inbound WHERE id = $1', [req.params.id]);
+    if (!row.rows.length) return res.status(404).json({ error: 'Message not found' });
+    const msg = row.rows[0];
+    if (!msg.resend_email_id) {
+      return res.status(400).json({ error: 'No Resend email id to refresh from' });
+    }
+    const full = await fetchReceivedEmail(msg.resend_email_id);
+    if (!full) return res.status(502).json({ error: 'Could not fetch email from Resend' });
+    const bodyHtml = full.html || '';
+    const bodyText = full.text || (bodyHtml ? htmlToPlain(bodyHtml) : '');
+    const updated = await pool.query(
+      `UPDATE email_inbound SET body_text = $2, body_html = $3, subject = COALESCE(NULLIF($4,''), subject)
+       WHERE id = $1 RETURNING *`,
+      [msg.id, bodyText, bodyHtml, full.subject || '']
+    );
+    res.json({ ok: true, message: updated.rows[0] });
+  } catch (err) {
+    console.error('Inbox refresh error:', err);
+    res.status(500).json({ error: 'Could not refresh message' });
+  }
+});
+
 function extractLeadIdFromAddress(toEmail) {
   const m = String(toEmail || '').match(/replies\+(\d+)@/i);
   return m ? parseInt(m[1], 10) : null;
 }
 
-async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, resendId }) {
-  const from = String(fromEmail || '').trim().toLowerCase();
-  if (!from) return { ok: false, error: 'missing from' };
+async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, resendId, fromName }) {
+  let payload = { fromEmail, toEmail, subject, bodyText, bodyHtml, resendId, fromName };
+  // Resend email.received webhook has no body — pull content via Receiving API
+  if (!(payload.bodyText || payload.bodyHtml) && payload.resendId) {
+    payload = await enrichFromResend(payload);
+  } else if (payload.bodyHtml && !payload.bodyText) {
+    payload.bodyText = htmlToPlain(payload.bodyHtml);
+  }
 
-  let leadId = extractLeadIdFromAddress(toEmail);
+  const from = String(payload.fromEmail || '').trim().toLowerCase();
+  if (!from) return { ok: false, error: 'missing from' };
+  const toEmailFinal = payload.toEmail || toEmail || '';
+  const subjectFinal = payload.subject || subject || '(no subject)';
+  const bodyTextFinal = payload.bodyText || '';
+  const bodyHtmlFinal = payload.bodyHtml || '';
+
+  let leadId = extractLeadIdFromAddress(toEmailFinal);
   if (!leadId) {
     const match = await pool.query(
       `SELECT id, sales_rep_id, company_name FROM crm_leads WHERE lower(email) = $1 ORDER BY last_contacted_at DESC NULLS LAST LIMIT 1`,
@@ -187,7 +302,7 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
   const ins = await pool.query(
     `INSERT INTO email_inbound (lead_id, from_email, to_email, subject, body_text, body_html, resend_email_id)
      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [leadId, from, toEmail || '', subject || '(no subject)', bodyText || '', bodyHtml || '', resendId || null]
+    [leadId, from, toEmailFinal, subjectFinal, bodyTextFinal, bodyHtmlFinal, payload.resendId || resendId || null]
   );
 
   if (leadId) {
@@ -201,7 +316,7 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
     );
     const lead = (await pool.query('SELECT company_name, sales_rep_id FROM crm_leads WHERE id = $1', [leadId])).rows[0];
     const title = `Carrier replied: ${lead ? lead.company_name : from}`;
-    const msg = `${from} — ${(subject || '').slice(0, 120)}`;
+    const msg = `${from} — ${(subjectFinal || '').slice(0, 120)}`;
     await notifyAdmins(title, msg, 'success', '/inbox.html');
     if (lead && lead.sales_rep_id) {
       await createNotification(lead.sales_rep_id, title, msg, 'success', '/inbox.html');
@@ -254,7 +369,11 @@ router.post('/inbound', async (req, res) => {
   }
 
   try {
-    const parsed = parseInboundPayload(req.body);
+    let parsed = parseInboundPayload(req.body);
+    // Webhook often has from + email_id but no body — enrich before require-from check
+    if (!parsed.fromEmail && parsed.resendId) {
+      parsed = await enrichFromResend(parsed);
+    }
     if (!parsed.fromEmail) {
       return res.status(400).json({ error: 'Inbound payload missing from address' });
     }

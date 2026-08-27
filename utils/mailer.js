@@ -125,10 +125,28 @@ async function sendBrandedEmail({
   return { skipped: false, id: providerId, status, from, replyTo };
 }
 
+/**
+ * Resend webhooks only send metadata. Fetch full received email (html/text/headers).
+ * Uses REST so it works even if the installed SDK is older than receiving.get.
+ */
+async function fetchReceivedEmail(emailId) {
+  if (!emailId || !process.env.RESEND_API_KEY) return null;
+  const res = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`, {
+    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` }
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    console.warn('[MAILER] fetchReceivedEmail failed', res.status, errText.slice(0, 200));
+    return null;
+  }
+  return res.json();
+}
+
 module.exports = {
   getResend,
   mailFrom,
   replyToAddress,
   isUnsubscribed,
-  sendBrandedEmail
+  sendBrandedEmail,
+  fetchReceivedEmail
 };

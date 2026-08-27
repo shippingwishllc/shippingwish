@@ -6,6 +6,20 @@
   <title>Carrier Replies Inbox | Shipping Wish TMS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .inbox-layout { display:grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr); gap:16px; align-items:start; }
+    @media (max-width: 900px) { .inbox-layout { grid-template-columns: 1fr; } }
+    .inbox-item { border:1px solid var(--border-default); border-radius:12px; padding:14px 16px; cursor:pointer; text-align:left; background:transparent; width:100%; }
+    .inbox-item:hover { border-color: var(--color-amber-500, #f59e0b); }
+    .inbox-item.active { border-color: var(--color-amber-500, #f59e0b); background: rgba(245,158,11,0.08); }
+    .inbox-item.unread { background: rgba(245,158,11,0.06); }
+    .msg-panel { border:1px solid var(--border-default); border-radius:12px; padding:20px; min-height:320px; background: var(--bg-elevated, #fff); }
+    .contact-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px 16px; margin:14px 0 18px; padding:14px; border-radius:10px; background: rgba(15,23,42,0.04); font-size:13px; }
+    .contact-grid strong { display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color: var(--text-muted); margin-bottom:2px; }
+    .msg-body { white-space:pre-wrap; font-size:14px; line-height:1.6; margin:0; max-height:55vh; overflow:auto; }
+    .msg-body-html { font-size:14px; line-height:1.6; max-height:55vh; overflow:auto; border-top:1px solid var(--border-default); padding-top:14px; margin-top:14px; }
+    .msg-body-html img { max-width:100%; height:auto; }
+  </style>
 </head>
 <body class="app-body">
 <div class="app-shell">
@@ -41,11 +55,11 @@
     <header class="app-header">
       <div>
         <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Carrier Replies Inbox</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">When a carrier replies to outreach, it lands here for admin and sales.</p>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Click a message to read it and see sender contact details.</p>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary btn-sm" onclick="loadInbox(true)">Unread only</button>
-        <button class="btn btn-primary btn-sm" onclick="loadInbox(false)">All replies</button>
+        <button class="btn btn-secondary btn-sm" type="button" onclick="loadInbox(true)">Unread only</button>
+        <button class="btn btn-primary btn-sm" type="button" onclick="loadInbox(false)">All replies</button>
       </div>
     </header>
     <main class="app-content">
@@ -59,57 +73,155 @@
           <div class="stat-kpi-val" id="kpi-total">0</div>
         </div>
       </div>
-      <div class="tms-table-card">
-        <div id="inbox-list" style="display:flex;flex-direction:column;gap:12px;">
-          <p class="text-muted" style="padding:24px;text-align:center;">Loading inbox…</p>
+      <div class="inbox-layout">
+        <div class="tms-table-card" style="padding:12px;">
+          <div id="inbox-list" style="display:flex;flex-direction:column;gap:10px;">
+            <p class="text-muted" style="padding:24px;text-align:center;">Loading inbox…</p>
+          </div>
+        </div>
+        <div class="msg-panel" id="msg-panel">
+          <p class="text-muted" style="margin:0;">Select a reply on the left to open it.</p>
         </div>
       </div>
     </main>
   </div>
 </div>
 <script>
+  let messagesCache = [];
+  let selectedId = null;
+
   async function checkAuth() {
     const res = await fetch('/api/me', { credentials: 'include' });
     if (!res.ok) window.location.href = '/login';
   }
 
   function escapeHtml(str) {
-    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function previewText(m) {
+    const t = (m.body_text || '').trim();
+    if (t) return t.slice(0, 120);
+    if (m.body_html) return '(HTML email — open to read)';
+    return 'No body yet — open to load from Resend';
+  }
+
+  function contactTitle(m) {
+    return m.company_name || m.owner_name || m.from_email || 'Unknown sender';
   }
 
   async function loadInbox(unreadOnly) {
     const res = await fetch('/api/email/inbox' + (unreadOnly ? '?unread=1' : ''), { credentials: 'include' });
     const data = await res.json();
     document.getElementById('kpi-unread').textContent = data.unread || 0;
-    document.getElementById('kpi-total').textContent = (data.messages || []).length;
+    messagesCache = data.messages || [];
+    document.getElementById('kpi-total').textContent = messagesCache.length;
     const list = document.getElementById('inbox-list');
-    const msgs = data.messages || [];
-    if (!msgs.length) {
+    if (!messagesCache.length) {
       list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No carrier replies yet. When a carrier replies to operations@ or your outreach, it will appear here.</p>';
+      document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">No messages.</p>';
       return;
     }
-    list.innerHTML = msgs.map(m => `
-      <div style="border:1px solid var(--border-default);border-radius:12px;padding:16px;background:${m.is_read ? 'transparent' : 'rgba(245,158,11,0.06)'};">
-        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <div>
-            <div style="font-weight:800;">${escapeHtml(m.company_name || m.from_email)}</div>
-            <div style="font-size:12px;color:var(--text-muted);">${escapeHtml(m.from_email)} · ${escapeHtml(m.subject || '')}</div>
-            <div style="font-size:12px;margin-top:4px;">${m.sales_rep_name ? 'Rep: ' + escapeHtml(m.sales_rep_name) : 'Unassigned'} · ${m.phone ? escapeHtml(m.phone) : ''} · ${m.mc_number ? escapeHtml(m.mc_number) : ''}</div>
-          </div>
+    list.innerHTML = messagesCache.map(m => `
+      <button type="button" class="inbox-item ${m.is_read ? '' : 'unread'} ${selectedId === m.id ? 'active' : ''}" onclick="openMessage(${m.id})">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div style="font-weight:800;">${escapeHtml(contactTitle(m))}</div>
           <div style="font-size:11px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</div>
         </div>
-        <p style="margin:12px 0 0;white-space:pre-wrap;font-size:14px;line-height:1.5;">${escapeHtml((m.body_text || '').slice(0, 800))}</p>
-        <div style="margin-top:12px;display:flex;gap:8px;">
-          ${m.is_read ? '' : `<button class="btn btn-primary btn-sm" onclick="markRead(${m.id})">Mark read</button>`}
-          <a class="btn btn-secondary btn-sm" href="/crm-sales">Open CRM</a>
-        </div>
-      </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${escapeHtml(m.from_email || '')}</div>
+        <div style="font-size:13px;margin-top:6px;font-weight:600;">${escapeHtml(m.subject || '(no subject)')}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${escapeHtml(previewText(m))}</div>
+      </button>
     `).join('');
+
+    if (selectedId && messagesCache.some(m => m.id === selectedId)) {
+      openMessage(selectedId);
+    }
   }
 
-  async function markRead(id) {
-    await fetch('/api/email/inbox/' + id + '/read', { method: 'POST', credentials: 'include' });
-    loadInbox(false);
+  async function openMessage(id) {
+    selectedId = id;
+    document.querySelectorAll('.inbox-item').forEach(el => el.classList.remove('active'));
+    const btn = Array.from(document.querySelectorAll('.inbox-item')).find(el => el.getAttribute('onclick') === 'openMessage(' + id + ')');
+    if (btn) btn.classList.add('active');
+
+    const panel = document.getElementById('msg-panel');
+    panel.innerHTML = '<p class="text-muted" style="margin:0;">Loading message…</p>';
+
+    const res = await fetch('/api/email/inbox/' + id, { credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok || !data.message) {
+      panel.innerHTML = '<p style="color:#b91c1c;margin:0;">' + escapeHtml(data.error || 'Could not open message') + '</p>';
+      return;
+    }
+    const m = data.message;
+
+    // Mark read when opened
+    if (!m.is_read) {
+      fetch('/api/email/inbox/' + id + '/read', { method: 'POST', credentials: 'include' }).then(() => {
+        const cached = messagesCache.find(x => x.id === id);
+        if (cached) cached.is_read = true;
+        const unreadEl = document.getElementById('kpi-unread');
+        const n = Math.max(0, parseInt(unreadEl.textContent, 10) - 1);
+        unreadEl.textContent = String(n);
+      });
+    }
+
+    const bodyText = (m.body_text || '').trim();
+    const hasHtml = Boolean((m.body_html || '').trim());
+    const crmLink = m.lead_id ? `/crm-sales?lead=${m.lead_id}` : '/crm-sales';
+    const mailto = m.from_email ? `mailto:${encodeURIComponent(m.from_email)}?subject=${encodeURIComponent('Re: ' + (m.subject || ''))}` : '#';
+
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+        <div>
+          <h2 style="margin:0 0 4px;font-size:18px;">${escapeHtml(m.subject || '(no subject)')}</h2>
+          <div style="font-size:12px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a class="btn btn-primary btn-sm" href="${mailto}">Reply in email</a>
+          <a class="btn btn-secondary btn-sm" href="${crmLink}">Open CRM</a>
+          ${m.resend_email_id ? `<button type="button" class="btn btn-secondary btn-sm" onclick="refreshBody(${m.id})">Reload body</button>` : ''}
+        </div>
+      </div>
+      <div class="contact-grid">
+        <div><strong>From email</strong>${escapeHtml(m.from_email || '—')}</div>
+        <div><strong>Name / company</strong>${escapeHtml(m.owner_name || m.company_name || '—')}</div>
+        <div><strong>Phone</strong>${m.phone ? `<a href="tel:${escapeHtml(m.phone)}">${escapeHtml(m.phone)}</a>` : '—'}</div>
+        <div><strong>MC</strong>${escapeHtml(m.mc_number || '—')}</div>
+        <div><strong>CRM lead email</strong>${escapeHtml(m.lead_email || '—')}</div>
+        <div><strong>Sales rep</strong>${escapeHtml(m.sales_rep_name || 'Unassigned')}</div>
+        <div><strong>To</strong>${escapeHtml(m.to_email || '—')}</div>
+        <div><strong>Matched lead</strong>${m.lead_id ? '#' + m.lead_id : 'Not in CRM'}</div>
+      </div>
+      ${bodyText
+        ? `<pre class="msg-body">${escapeHtml(bodyText)}</pre>`
+        : (hasHtml
+          ? `<pre class="msg-body">${escapeHtml(stripHtml(m.body_html))}</pre>`
+          : `<p class="text-muted">Email body is empty. If this just arrived, click <strong>Reload body</strong> to pull it from Resend.</p>`)}
+    `;
+  }
+
+  function stripHtml(html) {
+    const d = document.createElement('div');
+    d.innerHTML = String(html || '');
+    return (d.textContent || d.innerText || '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  async function refreshBody(id) {
+    const panel = document.getElementById('msg-panel');
+    const note = document.createElement('p');
+    note.className = 'text-muted';
+    note.textContent = 'Fetching full email from Resend…';
+    panel.prepend(note);
+    const res = await fetch('/api/email/inbox/' + id + '/refresh', { method: 'POST', credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || 'Could not reload body');
+      openMessage(id);
+      return;
+    }
+    openMessage(id);
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
