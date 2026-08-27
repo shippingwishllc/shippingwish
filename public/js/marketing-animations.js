@@ -44,7 +44,7 @@
   }
 
   function initScrollCounters() {
-    const nodes = document.querySelectorAll('[data-counter]');
+    const nodes = document.querySelectorAll('.mkt-stat-num[data-counter], [data-counter]:not(.mkt-stat-label)');
     if (!nodes.length) return;
     nodes.forEach((el) => {
       if (reduced) {
@@ -57,7 +57,13 @@
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
-        animateCounter(entry.target, { immediate: false });
+        const target = parseFloat(entry.target.dataset.counter || '0');
+        if (target === 0) {
+          entry.target.textContent = formatValue(0, entry.target);
+        } else {
+          entry.target.textContent = formatValue(0, entry.target);
+          animateCounter(entry.target, { immediate: false });
+        }
         entry.target.closest('.mkt-stat')?.classList.add('is-counted');
         observer.unobserve(entry.target);
       });
