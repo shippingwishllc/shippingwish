@@ -108,18 +108,86 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+/** Detect bot gibberish like ZTFKFQOTXIAcgvdFKNMXw / Evasolwtck */
+function looksLikeGibberish(str) {
+  const s = String(str || '').trim();
+  if (!s) return false;
+  const compact = s.replace(/[^a-zA-Z]/g, '');
+  if (compact.length < 8) return false;
+  // Long run of consonants / mixed case random tokens
+  if (/[bcdfghjklmnpqrstvwxyz]{6,}/i.test(compact)) return true;
+  const vowels = (compact.match(/[aeiou]/gi) || []).length;
+  const ratio = vowels / compact.length;
+  if (compact.length >= 12 && ratio < 0.18) return true;
+  // Mostly random alphanumerics with almost no spaces (name/company should have spaces or words)
+  if (/^[A-Za-z0-9]{16,}$/.test(s.replace(/\s/g, '')) && !/\s/.test(s) && ratio < 0.28) return true;
+  return false;
+}
+
+function isDisposableOrSuspiciousEmail(email) {
+  const e = String(email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return true;
+  // Bot-style dotted local parts like brpa.r.adis.1.5@gmail.com + random
+  const local = e.split('@')[0];
+  if ((local.match(/\./g) || []).length >= 3 && /[0-9]/.test(local)) return true;
+  if (looksLikeGibberish(local.replace(/\./g, ''))) return true;
+  return false;
+}
+
+const contactHits = new Map();
+function contactRateLimited(ip) {
+  const key = String(ip || 'unknown');
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const max = 5;
+  const hits = (contactHits.get(key) || []).filter((t) => now - t < windowMs);
+  hits.push(now);
+  contactHits.set(key, hits);
+  return hits.length > max;
+}
+
+function isLikelyBotContact(body) {
+  const { name, company, phone, email, loadDetails, message, website, company_url } = body || {};
+  // Honeypot fields — real users leave empty
+  if (website || company_url) return { bot: true, reason: 'honeypot' };
+  if (looksLikeGibberish(name) || looksLikeGibberish(company) || looksLikeGibberish(loadDetails) || looksLikeGibberish(message)) {
+    return { bot: true, reason: 'gibberish' };
+  }
+  if (isDisposableOrSuspiciousEmail(email)) return { bot: true, reason: 'bad_email' };
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (digits.length < 10 || digits.length > 15) return { bot: true, reason: 'bad_phone' };
+  // Same digit repeated (0000000000) or sequential spam
+  if (/^(\d)\1{9,}$/.test(digits)) return { bot: true, reason: 'bad_phone' };
+  return { bot: false };
+}
+
 app.post('/api/contact', async (req, res) => {
-  const { name, company, phone, email, role, serviceType, loadDetails, message } = req.body;
+  const { name, company, phone, email, role, serviceType, loadDetails, message } = req.body || {};
+  const ip = req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim() || req.ip;
 
   if (!name || !phone || !email) {
     return res.status(400).json({ error: 'Name, phone, and email are required.' });
   }
 
+  // Silent OK for bots — do NOT email (protects domain reputation)
+  if (contactRateLimited(ip) || isLikelyBotContact(req.body).bot) {
+    console.warn('[CONTACT] Dropped likely bot submission', {
+      ip,
+      email: String(email || '').slice(0, 80),
+      name: String(name || '').slice(0, 40)
+    });
+    return res.json({ ok: true, message: 'Request received.' });
+  }
+
+  const safeName = String(name).trim().slice(0, 80);
+  const safeCompany = String(company || '').trim().slice(0, 100);
+  const subjectCompany = safeCompany || safeName;
+
   const adminHtml = `
     <h2>New operations request — Shipping Wish LLC</h2>
     <table cellpadding="6" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;">
-      <tr><td><b>Name</b></td><td>${escapeHtml(name)}</td></tr>
-      <tr><td><b>Company</b></td><td>${escapeHtml(company || '-')}</td></tr>
+      <tr><td><b>Name</b></td><td>${escapeHtml(safeName)}</td></tr>
+      <tr><td><b>Company</b></td><td>${escapeHtml(safeCompany || '-')}</td></tr>
       <tr><td><b>Role</b></td><td>${escapeHtml(role || '-')}</td></tr>
       <tr><td><b>Phone</b></td><td>${escapeHtml(phone)}</td></tr>
       <tr><td><b>Email</b></td><td>${escapeHtml(email)}</td></tr>
@@ -129,29 +197,34 @@ app.post('/api/contact', async (req, res) => {
     </table>
   `;
 
-  const ack = buildTemplate('contact_ack', { name, recipientEmail: email });
+  const ack = buildTemplate('contact_ack', { name: safeName, recipientEmail: email });
 
   try {
     if (ADMIN_EMAILS.length) {
       await sendBrandedEmail({
         to: ADMIN_EMAILS[0],
         cc: ADMIN_EMAILS.slice(1),
-        subject: `New operations request — ${name}${company ? ' (' + company + ')' : ''}`,
+        subject: `New ops request — ${subjectCompany}`,
         html: adminHtml,
-        text: `${name} / ${company} / ${phone} / ${email} / ${serviceType || ''} / ${message || ''}`,
+        text: `${safeName} / ${safeCompany} / ${phone} / ${email} / ${serviceType || ''} / ${message || ''}`,
         emailType: 'internal_lead',
-        templateKey: 'internal_lead'
+        templateKey: 'internal_lead',
+        transactional: true
       });
     }
 
-    await sendBrandedEmail({
-      to: email,
-      subject: ack.subject,
-      html: ack.html,
-      text: ack.text,
-      emailType: 'contact_ack',
-      templateKey: 'contact_ack'
-    });
+    // Never auto-ack to addresses that look fake (bounces hurt reputation)
+    if (!isDisposableOrSuspiciousEmail(email)) {
+      await sendBrandedEmail({
+        to: email,
+        subject: ack.subject,
+        html: ack.html,
+        text: ack.text,
+        emailType: 'contact_ack',
+        templateKey: 'contact_ack',
+        transactional: true
+      });
+    }
 
     try {
       const pool = require('./db');
@@ -159,7 +232,7 @@ app.post('/api/contact', async (req, res) => {
         `INSERT INTO crm_leads (company_name, owner_name, phone, email, notes, status)
          VALUES ($1,$2,$3,$4,$5,'new')
          ON CONFLICT DO NOTHING`,
-        [company || name, name, phone, email.toLowerCase(), `Website form. Service: ${serviceType || '-'}. ${message || ''}`]
+        [safeCompany || safeName, safeName, phone, email.toLowerCase(), `Website form. Service: ${serviceType || '-'}. ${message || ''}`]
       );
     } catch (crmErr) {
       console.warn('[CONTACT] CRM insert skipped:', crmErr.message);

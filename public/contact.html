@@ -364,6 +364,14 @@
               <textarea class="form-textarea" id="cf-message" name="message" rows="3" placeholder="Tell us about your fleet, preferred routes, any current challenges..."></textarea>
             </div>
 
+            <!-- Honeypot — leave empty; bots fill this and get dropped server-side -->
+            <div aria-hidden="true" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
+              <label for="cf-website">Website</label>
+              <input type="text" id="cf-website" name="website" tabindex="-1" autocomplete="off">
+              <label for="cf-company-url">Company URL</label>
+              <input type="text" id="cf-company-url" name="company_url" tabindex="-1" autocomplete="off">
+            </div>
+
             <div id="form-error" style="display:none;padding:var(--space-3) var(--space-4);background:#fef2f2;border:1px solid #fca5a5;border-radius:var(--radius-md);color:#991b1b;font-size:var(--text-sm);" role="alert"></div>
 
             <button type="submit" class="btn btn-primary btn-lg btn-block" id="form-submit-btn">
