@@ -114,52 +114,48 @@ function firstName(ownerName, companyName) {
 
 function dedicatedManagerEmail({ ownerName, companyName, recipientEmail }) {
   const name = firstName(ownerName, companyName);
-  const heading = `Do you need a Dedicated Operations Manager for ${companyName || 'your trucks'}?`;
+  const company = companyName || 'your trucks';
+  const heading = `Quick question for ${company}`;
   const bodyHtml = `
     <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">Hello ${escapeHtml(name)},</p>
     <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
-      I am writing from <strong>Shipping Wish LLC</strong>. We place a
-      <strong>Dedicated Fleet Operations Manager</strong> with small motor carriers.
+      This is the operations desk at Shipping Wish. We put one named manager on a small fleet —
+      load finding, broker calls, booking you approve, and paperwork — so your trucks keep moving.
     </p>
     <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
-      That person works your trucks only: finding freight, talking to brokers, booking loads you approve,
-      and handling the paperwork so the equipment keeps moving. You collect the freight pay from the broker.
-      We invoice a small weekly amount for the manager — not a cut of your load.
+      You keep what the broker pays. We bill a flat weekly amount for the manager, not a cut of the load.
     </p>
-    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">If this would help ${escapeHtml(companyName || 'your company')}, reply to this email with:</p>
-    <ol style="margin:0 0 14px;padding-left:20px;font-size:16px;line-height:1.7;">
-      <li>Equipment type and how many trucks</li>
-      <li>Preferred lanes or home time</li>
-      <li>Whether you want a weekly dedicated manager</li>
-    </ol>
     <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
-      Or call ${escapeHtml(COMPANY.phone)}. I will not waste your time if you already have this covered.
+      If that would help ${escapeHtml(company)}, just reply with truck count, equipment, and preferred lanes.
+      Or call ${escapeHtml(COMPANY.phone)}. If you already have this covered, you can ignore this note.
     </p>
-    <p style="margin:0;font-size:16px;line-height:1.7;">Respectfully,<br>
-    Operations Desk<br>${escapeHtml(COMPANY.name)}</p>
+    <p style="margin:0;font-size:16px;line-height:1.7;">Thank you,<br>
+    Operations Desk<br>${escapeHtml(COMPANY.name)}<br>
+    ${escapeHtml(COMPANY.phone)}</p>
   `;
   const text = `Hello ${name},
 
-I am writing from Shipping Wish LLC. We place a Dedicated Fleet Operations Manager with small motor carriers.
+This is the operations desk at Shipping Wish. We put one named manager on a small fleet — load finding, broker calls, booking you approve, and paperwork.
 
-That person works your trucks only: finding freight, talking to brokers, booking loads you approve, and handling paperwork. You collect freight pay from the broker. We invoice a small weekly amount for the manager — not a cut of your load.
+You keep what the broker pays. We bill a flat weekly amount for the manager, not a cut of the load.
 
-If this would help ${companyName || 'your company'}, reply with equipment type, truck count, and preferred lanes — or call ${COMPANY.phone}.
+If that would help ${company}, reply with truck count, equipment, and preferred lanes — or call ${COMPANY.phone}. If you already have this covered, ignore this note.
 
-Shipping Wish LLC
+${COMPANY.name}
 ${COMPANY.address}
-${COMPANY.phone} · ${COMPANY.email}
+${COMPANY.phone}
 
 Unsubscribe: ${unsubscribeUrl(recipientEmail)}`;
 
+  // Short subject — avoid repeating company name twice (triggers spam filters)
   return {
-    subject: `Dedicated Operations Manager for ${companyName || 'your fleet'} — Shipping Wish LLC`,
+    subject: `Question for ${company}`,
     html: wrapCorporateEmail({
-      preheader: 'A dedicated operations manager for your trucks. Weekly retainer. You keep the freight pay.',
+      preheader: 'Named manager for your trucks. Flat weekly fee. You keep broker pay.',
       heading,
       bodyHtml,
-      ctaLabel: 'Reply or start a conversation',
-      ctaUrl: `mailto:${COMPANY.operationsEmail}?subject=${encodeURIComponent('Dedicated Operations Manager — ' + (companyName || ''))}`,
+      ctaLabel: 'Reply to this email',
+      ctaUrl: `mailto:${COMPANY.operationsEmail}?subject=${encodeURIComponent('Re: ' + company)}`,
       recipientEmail
     }),
     text
@@ -168,33 +164,34 @@ Unsubscribe: ${unsubscribeUrl(recipientEmail)}`;
 
 function followUpEmail({ ownerName, companyName, recipientEmail }) {
   const name = firstName(ownerName, companyName);
-  const heading = 'Following up — Dedicated Operations Manager';
+  const company = companyName || 'your trucks';
+  const heading = `Following up with ${company}`;
   const bodyHtml = `
     <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">Hello ${escapeHtml(name)},</p>
     <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
-      Checking in on my note about a Dedicated Fleet Operations Manager for ${escapeHtml(companyName || 'your fleet')}.
+      Just checking whether a named operations manager would still be useful for ${escapeHtml(company)}.
     </p>
     <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
-      If you already have someone booking freight full-time, you can ignore this.
-      If you do not, I can have a manager start looking at loads for your equipment this week.
+      If you already have someone booking freight full-time, ignore this note.
+      If not, reply and we can talk truck count and lanes — no pressure.
     </p>
-    <p style="margin:0;font-size:16px;line-height:1.7;">Reply “yes” and I will send the one-page setup and weekly billing link.<br><br>
+    <p style="margin:0;font-size:16px;line-height:1.7;">Thank you,<br>
     Operations Desk · ${escapeHtml(COMPANY.name)} · ${escapeHtml(COMPANY.phone)}</p>
   `;
   const text = `Hello ${name},
 
-Checking in on a Dedicated Fleet Operations Manager for ${companyName || 'your fleet'}. If you already have this covered, ignore this. If not, reply YES and I will send the setup and weekly billing link.
+Just checking whether a named operations manager would still be useful for ${company}. If you already have this covered, ignore this. If not, reply with truck count and lanes.
 
 ${COMPANY.name} · ${COMPANY.phone}
 Unsubscribe: ${unsubscribeUrl(recipientEmail)}`;
   return {
-    subject: `Quick follow-up for ${companyName || 'your company'}`,
+    subject: `Following up — ${company}`,
     html: wrapCorporateEmail({
-      preheader: 'If you already have freight covered, ignore this. If not, reply yes.',
+      preheader: 'If you already have freight covered, ignore this.',
       heading,
       bodyHtml,
-      ctaLabel: 'Reply YES',
-      ctaUrl: `mailto:${COMPANY.operationsEmail}?subject=${encodeURIComponent('YES — Dedicated Manager — ' + (companyName || ''))}`,
+      ctaLabel: 'Reply to this email',
+      ctaUrl: `mailto:${COMPANY.operationsEmail}?subject=${encodeURIComponent('Re: ' + company)}`,
       recipientEmail
     }),
     text
