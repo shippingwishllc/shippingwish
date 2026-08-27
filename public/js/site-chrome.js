@@ -19,12 +19,19 @@
 
   function payBadges() {
     return `
-      <div class="pay-badges" aria-label="Accepted payment methods">
-        <span class="pay-badge visa">VISA</span>
-        <span class="pay-badge mc">MC</span>
-        <span class="pay-badge amex">AMEX</span>
-        <span class="pay-badge discover">DISC</span>
-        <span class="pay-badge stripe">STRIPE</span>
+      <div class="pay-cards" aria-label="Accepted payment methods">
+        <span class="pay-card pay-card-visa" title="Visa">
+          <svg viewBox="0 0 48 32" aria-hidden="true"><rect width="48" height="32" rx="4" fill="#1A1F71"/><text x="24" y="21" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Arial,sans-serif" font-style="italic">VISA</text></svg>
+        </span>
+        <span class="pay-card pay-card-mc" title="Mastercard">
+          <svg viewBox="0 0 48 32" aria-hidden="true"><rect width="48" height="32" rx="4" fill="#fff"/><circle cx="19" cy="16" r="9" fill="#EB001B"/><circle cx="29" cy="16" r="9" fill="#F79E1B"/><path d="M24 9.2a9 9 0 0 1 0 13.6 9 9 0 0 1 0-13.6z" fill="#FF5F00"/></svg>
+        </span>
+        <span class="pay-card pay-card-amex" title="American Express">
+          <svg viewBox="0 0 48 32" aria-hidden="true"><rect width="48" height="32" rx="4" fill="#2E77BC"/><text x="24" y="19" text-anchor="middle" fill="#fff" font-size="7.5" font-weight="700" font-family="Arial,sans-serif">AMEX</text></svg>
+        </span>
+        <span class="pay-card pay-card-disc" title="Discover">
+          <svg viewBox="0 0 48 32" aria-hidden="true"><rect width="48" height="32" rx="4" fill="#4A4A4A"/><text x="22" y="19" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="700" font-family="Arial,sans-serif">DISCOVER</text><circle cx="36" cy="16" r="7" fill="#F47216"/></svg>
+        </span>
       </div>`;
   }
 
@@ -93,9 +100,9 @@
   <div class="container">
     <div class="footer-top">
       <div class="footer-brand">
-        <a href="/" class="nav-logo">
+        <a href="/" class="nav-logo footer-logo">
           <div class="nav-logo-mark">SW</div>
-          <div class="nav-logo-text">Shipping <span>Wish</span></div>
+          <div class="nav-logo-text footer-logo-text">Shipping <span>Wish</span></div>
         </a>
         <p>Dedicated fleet operations managers for motor carriers. Flat weekly subscription. You keep 100% of freight pay. TMS included.</p>
         <div class="footer-contact">
@@ -134,7 +141,7 @@
     </div>
     <div class="footer-bottom">
       <p>© ${new Date().getFullYear()} Shipping Wish LLC. Independent operations support — not a freight broker or motor carrier.</p>
-      <p>Secure checkout by Stripe. Visa, Mastercard, American Express, and Discover accepted.</p>
+      <p class="footer-pay-note">Secure checkout by Stripe · Visa, Mastercard, Amex &amp; Discover</p>
     </div>
   </div>`;
   }
