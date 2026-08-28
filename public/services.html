@@ -62,6 +62,7 @@
             font-size: 1.1rem;
         }
         .service-image {
+            position: relative;
             border-radius: var(--radius-2xl);
             height: 340px;
             display: flex;
@@ -69,6 +70,26 @@
             justify-content: center;
             box-shadow: var(--shadow-xl);
             overflow: hidden;
+            background: #0f172a;
+        }
+        .service-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .service-image-fallback {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .service-image.is-fallback .service-image-fallback {
+            display: flex;
+        }
+        .service-image.is-fallback img {
+            display: none;
         }
         @media (max-width: 600px) {
             .service-image {
@@ -170,7 +191,9 @@
                 </ul>
                 <a href="/pricing" class="btn-primary" id="btn-service-dispatch">See weekly plans</a>
             </div>
-            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);">
+            <div class="service-image">
+                <img src="/images/services/service-dispatch.png" alt="Dedicated fleet operations manager at a 24/7 freight dispatch desk" width="1792" height="1024" loading="lazy" decoding="async">
+                <div class="service-image-fallback" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);" aria-hidden="true">
                 <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <!-- Dispatch headset professional icon -->
                   <circle cx="70" cy="70" r="62" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.15)" stroke-width="1"/>
@@ -188,6 +211,7 @@
                   <rect x="63" y="107" width="32" height="6" rx="3" fill="rgba(255,255,255,0.1)"/>
                   <rect x="63" y="107" width="20" height="6" rx="3" fill="rgba(16,185,129,0.5)"/>
                 </svg>
+                </div>
             </div>
         </div>
     </section>
@@ -207,7 +231,9 @@
                 </ul>
                 <a href="/contact?service=load-booking" class="btn-primary" id="btn-service-load">Book Better Loads</a>
             </div>
-            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1a2a4a 100%);">
+            <div class="service-image">
+                <img src="/images/services/service-load-board.png" alt="Load board management with profitable freight lanes on a US route map" width="1792" height="1024" loading="lazy" decoding="async">
+                <div class="service-image-fallback" style="background:linear-gradient(135deg,#0f172a 0%,#1a2a4a 100%);" aria-hidden="true">
                 <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <!-- Load board / map routes -->
                   <circle cx="70" cy="70" r="62" fill="rgba(245,158,11,0.05)" stroke="rgba(245,158,11,0.1)" stroke-width="1"/>
@@ -231,6 +257,7 @@
                   <rect x="100" y="55" width="28" height="12" rx="6" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
                   <text x="114" y="64" font-family="monospace" font-size="6" fill="#10b981" text-anchor="middle">$2.45/mi</text>
                 </svg>
+                </div>
             </div>
         </div>
     </section>
@@ -250,7 +277,9 @@
                 </ul>
                 <a href="/contact?service=fleet" class="btn-primary" id="btn-service-fleet">Streamline Your Fleet</a>
             </div>
-            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);">
+            <div class="service-image">
+                <img src="/images/services/service-fleet.png" alt="Fleet and driver management at a professional US motor carrier yard" width="1792" height="1024" loading="lazy" decoding="async">
+                <div class="service-image-fallback" style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);" aria-hidden="true">
                 <svg width="160" height="120" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <!-- Professional semi truck side view -->
                   <!-- Trailer -->
@@ -277,6 +306,7 @@
                   <circle cx="113" cy="30" r="3" fill="#10b981"/>
                   <text x="128" y="34" font-family="sans-serif" font-size="7" fill="rgba(255,255,255,0.7)" text-anchor="middle">ACTIVE</text>
                 </svg>
+                </div>
             </div>
         </div>
     </section>
@@ -296,7 +326,9 @@
                 </ul>
                 <a href="/contact?service=documents" class="btn-primary" id="btn-service-docs">Organize Your Docs</a>
             </div>
-            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1a2a1a 100%);">
+            <div class="service-image">
+                <img src="/images/services/service-documents.png" alt="Freight document management — BOL, rate cons, and POD processing" width="1792" height="1024" loading="lazy" decoding="async">
+                <div class="service-image-fallback" style="background:linear-gradient(135deg,#0f172a 0%,#1a2a1a 100%);" aria-hidden="true">
                 <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <!-- Documents / BOL stack -->
                   <rect x="35" y="30" width="64" height="82" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
@@ -319,6 +351,7 @@
                   <circle cx="95" cy="85" r="16" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.35)" stroke-width="1.5"/>
                   <path d="M87 85 L92 91 L103 79" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                 </svg>
+                </div>
             </div>
         </div>
     </section>
@@ -338,7 +371,9 @@
                 </ul>
                 <a href="/contact?service=factoring" class="btn-primary" id="btn-service-factoring">Improve Cash Flow</a>
             </div>
-            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1a2010 100%);">
+            <div class="service-image">
+                <img src="/images/services/service-factoring.png" alt="Trucking factoring setup for faster carrier cash flow" width="1792" height="1024" loading="lazy" decoding="async">
+                <div class="service-image-fallback" style="background:linear-gradient(135deg,#0f172a 0%,#1a2010 100%);" aria-hidden="true">
                 <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <!-- Dollar / Factoring cash flow -->
                   <circle cx="70" cy="70" r="40" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.2)" stroke-width="1.5"/>
@@ -361,6 +396,7 @@
                   <rect x="46" y="88" width="28" height="10" rx="5" fill="rgba(59,130,246,0.1)" stroke="rgba(59,130,246,0.2)" stroke-width="1"/>
                   <text x="60" y="96" font-family="sans-serif" font-size="6" fill="rgba(59,130,246,0.7)" text-anchor="middle">APEX</text>
                 </svg>
+                </div>
             </div>
         </div>
     </section>
@@ -380,7 +416,9 @@
                 </ul>
                 <a href="/contact?service=insurance" class="btn-primary" id="btn-service-insurance">Review Insurance Options</a>
             </div>
-            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#1a1a2e 100%);">
+            <div class="service-image">
+                <img src="/images/services/service-insurance.png" alt="Commercial trucking insurance coordination for motor carriers" width="1792" height="1024" loading="lazy" decoding="async">
+                <div class="service-image-fallback" style="background:linear-gradient(135deg,#0f172a 0%,#1a1a2e 100%);" aria-hidden="true">
                 <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <!-- Shield / Insurance -->
                   <path d="M70 22 L105 36 L105 76 C105 98 70 118 70 118 C70 118 35 98 35 76 L35 36 Z" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.35)" stroke-width="2" stroke-linejoin="round"/>
@@ -394,6 +432,7 @@
                   <rect x="90" y="20" width="36" height="14" rx="7" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.25)" stroke-width="1"/>
                   <text x="108" y="30" font-family="sans-serif" font-size="7" font-weight="700" fill="rgba(59,130,246,0.8)" text-anchor="middle">FMCSA</text>
                 </svg>
+                </div>
             </div>
         </div>
     </section>
@@ -413,7 +452,9 @@
                 </ul>
                 <a href="/contact?service=eld" class="btn-primary" id="btn-service-eld">Upgrade Your ELD</a>
             </div>
-            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#0f1a2e 100%);">
+            <div class="service-image">
+                <img src="/images/services/service-eld.png" alt="ELD and telematics — FMCSA hours of service and GPS fleet tracking" width="1792" height="1024" loading="lazy" decoding="async">
+                <div class="service-image-fallback" style="background:linear-gradient(135deg,#0f172a 0%,#0f1a2e 100%);" aria-hidden="true">
                 <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <!-- ELD device / tablet -->
                   <rect x="42" y="28" width="56" height="84" rx="8" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
@@ -439,6 +480,7 @@
                   <rect x="95" y="90" width="32" height="14" rx="7" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.25)" stroke-width="1"/>
                   <text x="111" y="100" font-family="sans-serif" font-size="7" font-weight="700" fill="rgba(59,130,246,0.8)" text-anchor="middle">ELD ✓</text>
                 </svg>
+                </div>
             </div>
         </div>
     </section>
@@ -458,7 +500,9 @@
                 </ul>
                 <a href="/contact?service=compliance" class="btn-primary" id="btn-service-compliance">Get Compliant</a>
             </div>
-            <div class="service-image" style="background:linear-gradient(135deg,#0f172a 0%,#14200a 100%);">
+            <div class="service-image">
+                <img src="/images/services/service-compliance.png" alt="DOT compliance support — audit-ready carrier safety and IFTA records" width="1792" height="1024" loading="lazy" decoding="async">
+                <div class="service-image-fallback" style="background:linear-gradient(135deg,#0f172a 0%,#14200a 100%);" aria-hidden="true">
                 <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <!-- Compliance / Clipboard checklist -->
                   <rect x="30" y="25" width="80" height="95" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
@@ -482,6 +526,7 @@
                   <text x="96" y="36" font-family="sans-serif" font-size="6" font-weight="700" fill="rgba(245,158,11,0.7)" text-anchor="middle">DOT</text>
                   <text x="96" y="45" font-family="sans-serif" font-size="5" fill="rgba(245,158,11,0.5)" text-anchor="middle">COMPLIANT</text>
                 </svg>
+                </div>
             </div>
         </div>
     </section>
@@ -664,6 +709,14 @@
             });
         }, revealOptions);
         reveals.forEach(el => revealObserver.observe(el));
+
+        // Show SVG fallback when AI photo is not uploaded yet
+        document.querySelectorAll('.service-image img').forEach((img) => {
+            const wrap = img.closest('.service-image');
+            const showFallback = () => wrap && wrap.classList.add('is-fallback');
+            img.addEventListener('error', showFallback);
+            if (img.complete && img.naturalWidth === 0) showFallback();
+        });
     </script>
 <script src="/js/site-chrome.js"></script>
 </body>

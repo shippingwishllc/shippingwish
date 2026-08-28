@@ -1,0 +1,49 @@
+{
+  "style_suffix": "Professional corporate photo for a US motor carrier operations company website. Photorealistic, clean modern office or logistics environment, subtle navy blue and amber gold accent lighting, sharp focus, no text, no logos, no watermarks, no cartoon, no AI artifacts, 16:9 wide composition.",
+  "output_dir": "public/images/services",
+  "model": "dall-e-3",
+  "size": "1792x1024",
+  "quality": "standard",
+  "images": [
+    {
+      "file": "service-dispatch.png",
+      "section": "Fleet Operations Manager",
+      "prompt": "A professional freight dispatch operations manager wearing a headset at a modern logistics desk with multiple monitors showing load boards and route maps, calm focused expression, 24/7 control room atmosphere, semi-truck fleet context on screens"
+    },
+    {
+      "file": "service-load-board.png",
+      "section": "Load Board Management",
+      "prompt": "Close view of a logistics coordinator analyzing profitable freight lanes on digital load board software, US map with highlighted routes between major cities, dry van freight rates on screen, professional trucking office"
+    },
+    {
+      "file": "service-fleet.png",
+      "section": "Fleet & Driver Management",
+      "prompt": "Clean lineup of modern white semi trucks and dry van trailers at a US carrier yard at golden hour, fleet manager with tablet doing inspection, organized professional motor carrier operation"
+    },
+    {
+      "file": "service-documents.png",
+      "section": "Document Management",
+      "prompt": "Organized digital freight paperwork workflow: bill of lading, rate confirmation, and proof of delivery documents on desk and laptop, shipping clerk processing carrier documents, neat professional back office"
+    },
+    {
+      "file": "service-factoring.png",
+      "section": "Factoring Setup Assistance",
+      "prompt": "Trucking company owner reviewing fast payment and cash flow on laptop with invoice documents, subtle sense of speed and financial relief, professional US freight business office, warm confident mood"
+    },
+    {
+      "file": "service-insurance.png",
+      "section": "Insurance Coordination",
+      "prompt": "Commercial trucking insurance consultation scene, semi truck visible through office window, agent reviewing commercial auto and cargo coverage documents with carrier owner, trustworthy corporate setting"
+    },
+    {
+      "file": "service-eld.png",
+      "section": "ELD & Telematics",
+      "prompt": "Truck driver using FMCSA compliant electronic logging device tablet mounted in modern semi truck cab, GPS fleet map and hours of service chart visible, Advance Track style telematics dashboard, daytime highway"
+    },
+    {
+      "file": "service-compliance.png",
+      "section": "DOT Compliance Support",
+      "prompt": "DOT compliance specialist with clipboard checklist reviewing carrier safety files and IFTA records in professional office, organized audit-ready binders, US Department of Transportation compliance theme without official logos"
+    }
+  ]
+}

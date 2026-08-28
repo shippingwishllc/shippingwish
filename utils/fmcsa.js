@@ -1,5 +1,6 @@
 const FMCSA_HOST = 'mobile.fmcsa.dot.gov';
 const SAFER_HOST = 'safer.fmcsa.dot.gov';
+const { sanitizeEmail } = require('./email-valid');
 
 async function httpsRequest(url, timeoutMs = 12000) {
   const ctrl = new AbortController();
@@ -197,7 +198,7 @@ function normalizeCarrier(raw, extras = {}) {
     mc_number: mc,
     dot_number: textVal(src.dotNumber) || textVal(src.dot_number) || String(extras.dot || extras.dot_number || ''),
     phone: textVal(src.telephone) || textVal(src.phone) || extras.phone || '',
-    email: String(src.emailAddress || src.email || extras.email || '').toLowerCase(),
+    email: sanitizeEmail(String(src.emailAddress || src.email || extras.email || '')),
     phy_address: [street, phyCity, phyState, phyZip].filter(Boolean).join(', '),
     address: [phyCity, phyState, phyZip].filter(Boolean).join(', '),
     phy_city: phyCity,
@@ -411,7 +412,7 @@ function censusToCarrier(row) {
     mc: row.docket1 || '',
     dot: row.dot_number || '',
     phone: formatPhone(row.phone),
-    email: String(row.email_address || '').toLowerCase(),
+    email: sanitizeEmail(row.email_address || ''),
     phy_street: row.phy_street || '',
     phy_city: row.phy_city || '',
     phy_state: row.phy_state || '',

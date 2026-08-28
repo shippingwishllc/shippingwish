@@ -111,9 +111,9 @@ body.marketing .btn-secondary {
   position: absolute;
   border-radius: 50%;
   filter: blur(40px);
-  opacity: 0.55;
-  animation: mktOrbFloat 14s ease-in-out infinite;
+  opacity: 0.45;
 }
+
 .mkt-orb-a {
   width: 340px;
   height: 340px;
@@ -127,7 +127,6 @@ body.marketing .btn-secondary {
   background: rgba(245, 158, 11, 0.28);
   top: 20%;
   right: -40px;
-  animation-delay: -5s;
 }
 .mkt-orb-c {
   width: 200px;
@@ -135,13 +134,6 @@ body.marketing .btn-secondary {
   background: rgba(99, 102, 241, 0.2);
   bottom: 10%;
   left: 35%;
-  animation-delay: -9s;
-}
-
-@keyframes mktOrbFloat {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(18px, -22px) scale(1.06); }
-  66% { transform: translate(-12px, 14px) scale(0.96); }
 }
 
 .mkt-kicker-dot {
@@ -160,21 +152,11 @@ body.marketing .btn-secondary {
 }
 
 .mkt-btn-glow {
-  box-shadow: 0 4px 24px rgba(245, 158, 11, 0.35);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.28);
+  transition: box-shadow 0.2s ease;
 }
 .mkt-btn-glow:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.45);
-}
-
-.mkt-panel-float {
-  animation: mktPanelFloat 6s ease-in-out infinite;
-}
-
-@keyframes mktPanelFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.34);
 }
 
 .mkt-live {
@@ -198,16 +180,6 @@ body.marketing .btn-secondary {
   50% { opacity: 0.45; transform: scale(0.85); }
 }
 
-.mkt-load-glow {
-  position: relative;
-  animation: mktLoadGlow 4s ease-in-out infinite;
-}
-
-@keyframes mktLoadGlow {
-  0%, 100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
-  50% { box-shadow: 0 0 28px rgba(245, 158, 11, 0.15); }
-}
-
 .mkt-load-pay {
   font-size: 1.65rem;
   font-variant-numeric: tabular-nums;
@@ -228,20 +200,6 @@ body.marketing .btn-secondary {
   height: 2px;
   background: linear-gradient(90deg, rgba(255,255,255,0.2), #f59e0b, rgba(255,255,255,0.2));
   border-radius: 2px;
-  position: relative;
-  overflow: hidden;
-}
-.mkt-load-line::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
-  animation: mktRouteShine 2.5s ease-in-out infinite;
-}
-
-@keyframes mktRouteShine {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
 }
 
 .mkt-hero-kpis {
@@ -257,19 +215,6 @@ body.marketing .btn-secondary {
   border-radius: 14px;
   padding: 12px 10px;
   text-align: center;
-  opacity: 0;
-  transform: translateY(12px);
-  animation: mktKpiIn 0.6s ease forwards;
-  animation-delay: calc(0.55s + var(--i, 0) * 0.1s);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-.mkt-hero-kpi:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
-}
-
-@keyframes mktKpiIn {
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .mkt-hero-kpi-icon {
@@ -458,31 +403,75 @@ body.marketing .btn-secondary {
   transition: box-shadow 0.35s ease, border-color 0.3s ease;
 }
 
-/* KPI card grids — scroll stagger + hover lift */
-.mkt-kpi-grid .mkt-kpi-card {
+/* Section motion — each block uses its own data-motion mode */
+[data-motion] .motion-item {
   opacity: 0;
-  transform: translateY(32px);
   transition:
-    opacity 0.55s ease,
-    transform 0.55s cubic-bezier(0.34, 1.45, 0.64, 1),
-    box-shadow 0.35s ease,
-    border-color 0.3s ease;
+    opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
 }
-.mkt-kpi-grid.is-visible .mkt-kpi-card {
+[data-motion].is-inview .motion-item {
   opacity: 1;
-  transform: translateY(0);
-  transition-delay: calc(var(--i, 0) * 0.09s);
+  transform: none;
+  transition-delay: calc(var(--i, 0) * 0.07s);
 }
-.mkt-kpi-grid.is-visible .mkt-kpi-card:hover {
-  transform: translateY(-12px);
-  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.14);
-  border-color: #fcd34d;
+
+[data-motion="fade"] .motion-item {
+  transform: translateY(10px);
 }
-.mkt-kpi-grid.is-visible .price-card.featured {
+[data-motion="fade"].is-inview .motion-item:hover {
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+[data-motion="pricing"] .motion-item {
+  transform: translateY(14px);
+}
+[data-motion="pricing"].is-inview .motion-item {
+  transition-delay: calc(var(--i, 0) * 0.1s);
+}
+[data-motion="pricing"].is-inview .price-card.featured {
   transform: translateY(-6px);
 }
-.mkt-kpi-grid.is-visible .price-card.featured:hover {
-  transform: translateY(-18px);
+[data-motion="pricing"].is-inview .motion-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.09);
+}
+[data-motion="pricing"].is-inview .price-card.featured:hover {
+  transform: translateY(-8px);
+}
+
+[data-motion="steps"] .motion-item {
+  transform: translateX(-12px);
+}
+[data-motion="steps"].is-inview .motion-item {
+  transition-delay: calc(var(--i, 0) * 0.08s);
+}
+
+[data-motion="partners"] .motion-item {
+  transform: translateY(6px);
+}
+[data-motion="partners"].is-inview .motion-item {
+  transition-delay: calc(var(--i, 0) * 0.06s);
+}
+[data-motion="partners"].is-inview .motion-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+  border-color: #cbd5e1;
+}
+
+[data-motion="stats"] .motion-item {
+  transform: translateY(8px);
+}
+[data-motion="stats"].is-inview .motion-item {
+  transition-delay: calc(var(--i, 0) * 0.09s);
+}
+[data-motion="stats"].is-inview .motion-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(255,255,255,0.09);
 }
 
 .mkt-card h3 {
@@ -597,28 +586,6 @@ body.marketing .btn-secondary {
   align-items: center;
   justify-content: center;
   min-height: 118px;
-  transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
-}
-.mkt-stat-pop {
-  opacity: 0;
-  transform: translateY(20px) scale(0.96);
-}
-.mkt-stat-pop.is-visible {
-  animation: mktStatPop 0.65s ease forwards;
-  animation-delay: calc(var(--i, 0) * 0.12s);
-}
-.mkt-stat-pop.is-visible.is-counted,
-.mkt-stat-pop.is-visible:hover {
-  transform: translateY(-4px);
-  border-color: rgba(251, 191, 36, 0.35);
-  background: rgba(255,255,255,0.09);
-}
-
-@keyframes mktStatPop {
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 .mkt-stat-val {
@@ -644,12 +611,6 @@ body.marketing .btn-secondary {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: mktShimmer 3s ease-in-out infinite;
-}
-
-@keyframes mktShimmer {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.15); }
 }
 
 .mkt-stat-label {
@@ -821,15 +782,8 @@ body.marketing .footer-col a:hover::after {
   padding: 32px 16px 28px;
   text-align: center;
   box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
-  transition: transform 0.4s cubic-bezier(0.34, 1.45, 0.64, 1),
-    box-shadow 0.4s ease,
-    border-color 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.25s ease;
   cursor: default;
-}
-.mkt-partner-card:hover {
-  transform: translateY(-12px);
-  box-shadow: 0 22px 44px rgba(15, 23, 42, 0.12);
-  border-color: #fcd34d;
 }
 .mkt-partner-type {
   display: block;
@@ -847,29 +801,6 @@ body.marketing .footer-col a:hover::after {
   color: #0f172a;
   line-height: 1.35;
   letter-spacing: -0.02em;
-}
-
-.mkt-partners.visible .mkt-partner-card {
-  animation: mktPartnerIn 0.55s ease forwards;
-}
-.mkt-partners .mkt-partner-card {
-  opacity: 0;
-  transform: translateY(24px);
-}
-.mkt-partners.visible .mkt-partner-card:nth-child(1) { animation-delay: 0.04s; }
-.mkt-partners.visible .mkt-partner-card:nth-child(2) { animation-delay: 0.1s; }
-.mkt-partners.visible .mkt-partner-card:nth-child(3) { animation-delay: 0.16s; }
-.mkt-partners.visible .mkt-partner-card:nth-child(4) { animation-delay: 0.22s; }
-.mkt-partners.visible .mkt-partner-card:nth-child(5) { animation-delay: 0.28s; }
-
-@keyframes mktPartnerIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.mkt-partners.visible .mkt-partner-card:hover {
-  transform: translateY(-12px);
 }
 
 .checkout-shell {
@@ -945,7 +876,6 @@ body.marketing .pricing-features li {
   .mkt-stats,
   .mkt-hero-kpis { grid-template-columns: repeat(2, 1fr); }
   .mkt-partner-grid { grid-template-columns: repeat(2, 1fr); }
-  .mkt-panel-float { animation: none; }
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -1072,6 +1002,12 @@ body.marketing .pricing-features li {
   width: 3px;
   background: linear-gradient(#f59e0b, #93c5fd);
   border-radius: 99px;
+  transform-origin: top center;
+  transform: scaleY(0);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+}
+[data-motion="timeline"].is-inview::before {
+  transform: scaleY(1);
 }
 .mkt-tl {
   position: relative;
@@ -1087,6 +1023,20 @@ body.marketing .pricing-features li {
   border-radius: 50%;
   background: #f59e0b;
   box-shadow: 0 0 0 6px #fffbeb;
+  opacity: 0;
+  transform: scale(0.65);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-motion="timeline"].is-inview .motion-item::before {
+  opacity: 1;
+  transform: scale(1);
+  transition-delay: calc(0.18s + var(--i, 0) * 0.12s);
+}
+[data-motion="timeline"] .motion-item {
+  transform: translateX(-18px);
+}
+[data-motion="timeline"].is-inview .motion-item {
+  transition-delay: calc(0.15s + var(--i, 0) * 0.12s);
 }
 .mkt-tl h3 { margin: 0 0 6px; }
 .mkt-tl p { color: #64748b; margin: 0; line-height: 1.55; }
@@ -1117,9 +1067,8 @@ body.marketing .pricing-features li {
 @media (prefers-reduced-motion: reduce) {
   .reveal, .mkt-hero .mkt-kicker, .mkt-hero .mkt-h1, .mkt-hero .mkt-lede,
   .mkt-hero .mkt-actions, .mkt-hero .mkt-trust, .mkt-hero .mkt-panel,
-  .mkt-orb, .mkt-panel-float, .mkt-hero-kpi, .mkt-load-glow, .mkt-load-line::after,
-  .mkt-kicker-dot, .mkt-live-dot, .mkt-stat-pop,
-  .mkt-kpi-grid .mkt-kpi-card {
+  .mkt-kicker-dot, .mkt-live-dot,
+  [data-motion] .motion-item, [data-motion]::before, .mkt-tl::before {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { searchFmcsa } = require('../utils/fmcsa');
+const { sanitizeEmail, emailValidationError } = require('../utils/email-valid');
 const { ensureCrmLeadsTable } = require('../utils/ensure-growth-schema');
 
 // ============================================================
@@ -125,7 +126,13 @@ router.post('/leads', requireAuth, async (req, res) => {
     const company_name = String(req.body.company_name || '').trim();
     const owner_name = String(req.body.owner_name || req.body.officer_name || '').trim();
     let phone = String(req.body.phone || '').trim();
-    const email = String(req.body.email || '').trim().toLowerCase();
+    let email = sanitizeEmail(req.body.email);
+    if (String(req.body.email || '').trim() && !email) {
+      return res.status(400).json({
+        error: 'INVALID_EMAIL',
+        message: emailValidationError(req.body.email)
+      });
+    }
     let mc_number = String(req.body.mc_number || '').trim().toUpperCase().replace(/\s+/g, '');
     const dot_number = String(req.body.dot_number || '').replace(/[^0-9]/g, '');
     const equipment_type = String(req.body.equipment_type || '53ft Dry Van').trim().slice(0, 120);
@@ -296,6 +303,7 @@ router.post('/leads/import-fmcsa', requireAuth, requireRole('admin', 'super_admi
   for (const c of carriers) {
     if (!c.company_name) { skipped++; continue; }
     if (!c.phone) c.phone = 'unknown';
+    c.email = sanitizeEmail(c.email);
 
     // Duplicate check
     const dup = await pool.query(
@@ -372,6 +380,63 @@ router.post('/leads/:id/claim', requireAuth, async (req, res) => {
     res.json({ ok: true, message: `Lead "${lead.company_name}" claimed by ${req.user.name}` });
   } catch (err) {
     res.status(500).json({ error: 'Could not claim lead.' });
+  }
+});
+
+router.patch('/leads/:id/contact', requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
+  try {
+    const leadId = parseInt(req.params.id, 10);
+    if (!leadId) return res.status(400).json({ error: 'Invalid lead id' });
+
+    const lr = await pool.query('SELECT id, sales_rep_id, company_name FROM crm_leads WHERE id = $1', [leadId]);
+    if (!lr.rows.length) return res.status(404).json({ error: 'Lead not found' });
+    const lead = lr.rows[0];
+
+    if (req.user.role === 'sales_rep' && lead.sales_rep_id && lead.sales_rep_id !== req.user.id) {
+      return res.status(403).json({ error: 'You can only edit leads you own.' });
+    }
+
+    const owner_name = req.body.owner_name != null ? String(req.body.owner_name).trim() : null;
+    const phone = req.body.phone != null ? String(req.body.phone).trim() : null;
+    let email = null;
+    if (req.body.email != null) {
+      email = sanitizeEmail(req.body.email);
+      if (String(req.body.email).trim() && !email) {
+        return res.status(400).json({
+          error: 'INVALID_EMAIL',
+          message: emailValidationError(req.body.email)
+        });
+      }
+    }
+
+    const sets = [];
+    const params = [];
+    if (owner_name !== null) {
+      params.push(owner_name);
+      sets.push(`owner_name = $${params.length}`);
+    }
+    if (phone !== null) {
+      params.push(phone || 'unknown');
+      sets.push(`phone = $${params.length}`);
+    }
+    if (email !== null) {
+      params.push(email);
+      sets.push(`email = $${params.length}`);
+    }
+    if (!sets.length) {
+      return res.status(400).json({ error: 'Nothing to update. Pass email, phone, or owner_name.' });
+    }
+
+    params.push(leadId);
+    const result = await pool.query(
+      `UPDATE crm_leads SET ${sets.join(', ')} WHERE id = $${params.length}
+       RETURNING id, company_name, owner_name, phone, email`,
+      params
+    );
+    res.json({ ok: true, message: 'Contact updated.', lead: result.rows[0] });
+  } catch (err) {
+    console.error('Lead contact update error:', err);
+    res.status(500).json({ error: 'Could not update contact.' });
   }
 });
 

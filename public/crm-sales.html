@@ -308,6 +308,42 @@
   </div>
 </div>
 
+<!-- ================= EDIT CONTACT MODAL ================= -->
+<div class="modal-backdrop" id="edit-contact-modal" style="display:none;">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>✏️ Fix contact info</h2>
+      <button onclick="closeModal('edit-contact-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);margin-bottom:16px;">FMCSA sometimes lists truncated emails (e.g. <code>@gm</code> instead of <code>@gmail.com</code>). Enter the full address before sending outreach.</p>
+      <form id="edit-contact-form">
+        <input type="hidden" id="edit-lead-id">
+        <div class="form-group">
+          <label class="form-label" for="edit-company">Carrier</label>
+          <input type="text" id="edit-company" class="form-input" readonly style="background:rgba(255,255,255,0.05);">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-owner">Owner / contact</label>
+          <input type="text" id="edit-owner" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label required" for="edit-phone">Phone</label>
+          <input type="text" id="edit-phone" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label required" for="edit-email">Email</label>
+          <input type="email" id="edit-email" class="form-input" required placeholder="dispatch@carrier.com">
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeModal('edit-contact-modal')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save contact →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- ================= SEND PACKET MODAL ================= -->
 <div class="modal-backdrop" id="send-packet-modal" style="display:none;">
   <div class="modal modal-md">
@@ -502,12 +538,13 @@
         <td><strong style="color:var(--text-primary);">${escapeHtml(l.companyName)}</strong>${l.unread ? ` <span class="badge badge-new">${l.unread} reply</span>` : ''}${l.phyState ? `<div style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.phyState)}${l.safety ? ' · ' + escapeHtml(l.safety) : ''}</div>` : ''}</td>
         <td>${escapeHtml(l.mcNumber)}<br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.dotNumber)}</span></td>
         <td><span class="badge badge-amber">${escapeHtml(l.equipmentType)} (${l.numTrucks} units)</span></td>
-        <td><strong>${escapeHtml(l.ownerName)}</strong><br>${escapeHtml(l.phone)}<br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.email || 'No email')}</span></td>
+        <td><strong>${escapeHtml(l.ownerName)}</strong><br>${escapeHtml(l.phone)}<br><span style="font-size:11px;color:${l.email && !isValidEmail(l.email) ? 'var(--color-red-500)' : 'var(--text-muted)'};">${escapeHtml(l.email || 'No email')}${l.email && !isValidEmail(l.email) ? ' ⚠ invalid' : ''}</span></td>
         <td>${escapeHtml(l.salesRep)}</td>
         <td><span class="badge ${getStatusBadge(l.status)}">${escapeHtml(String(l.status || 'new').replace('_', ' ').toUpperCase())}</span></td>
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" onclick="sendOutreach(${l.id}, '${escapeJs(l.email)}', '${escapeJs(l.ownerName)}', '${escapeJs(l.companyName)}', 'dedicated_manager')">✉️ Email</button>
+            <button class="btn btn-light btn-sm" onclick="openEditContactModal(${l.id}, '${escapeJs(l.companyName)}', '${escapeJs(l.ownerName)}', '${escapeJs(l.phone)}', '${escapeJs(l.email)}')">✏️ Contact</button>
             <button class="btn btn-light btn-sm" onclick="sendSms(${l.id}, '${escapeJs(l.phone)}', '${escapeJs(l.companyName)}')">📱 SMS</button>
             <button class="btn btn-light btn-sm" onclick="sendWeeklyLink(${l.id})">💳 Weekly Stripe</button>
             <button class="btn btn-light btn-sm" onclick="openSendPacketModal(${l.id}, '${escapeJs(l.companyName)}', '${escapeJs(l.email)}')">Packet</button>
@@ -572,6 +609,11 @@
 
   document.getElementById('add-lead-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const emailVal = document.getElementById('email').value.trim();
+    if (emailVal && !isValidEmail(emailVal)) {
+      alert(emailHint(emailVal));
+      return;
+    }
     const payload = {
       company_name: document.getElementById('companyName').value,
       mc_number: document.getElementById('mcNumber').value,
@@ -593,13 +635,46 @@
       closeModal('add-lead-modal');
       e.target.reset();
       loadLeads();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.message || data.error || 'Could not save lead.');
+    }
+  });
+
+  document.getElementById('edit-contact-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const leadId = document.getElementById('edit-lead-id').value;
+    const email = document.getElementById('edit-email').value.trim();
+    const phone = document.getElementById('edit-phone').value.trim();
+    const owner_name = document.getElementById('edit-owner').value.trim();
+    if (!isValidEmail(email)) {
+      alert(emailHint(email));
+      return;
+    }
+    const res = await fetch(`/api/crm/leads/${leadId}/contact`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, phone, owner_name })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      closeModal('edit-contact-modal');
+      loadLeads();
+      alert('Contact saved. You can send email now.');
+    } else {
+      alert(data.message || data.error || 'Could not update contact.');
     }
   });
 
   document.getElementById('send-packet-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const leadId = document.getElementById('packet-lead-id').value;
-    const email = document.getElementById('packet-email').value;
+    const email = document.getElementById('packet-email').value.trim();
+    if (!isValidEmail(email)) {
+      alert(emailHint(email));
+      return;
+    }
 
     const res = await fetch('/api/email/onboarding-packet', {
       method: 'POST',
@@ -613,7 +688,7 @@
       loadLeads();
     } else {
       const data = await res.json().catch(() => ({}));
-      alert(data.error || 'Could not send email. Check RESEND_API_KEY and MAIL_FROM.');
+      alert(data.message || data.error || 'Could not send email. Check RESEND_API_KEY and MAIL_FROM.');
     }
   });
 
@@ -738,9 +813,38 @@
     return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
   }
 
+  function isValidEmail(email) {
+    const e = String(email || '').trim().toLowerCase();
+    return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(e);
+  }
+
+  function emailHint(email) {
+    const e = String(email || '').trim();
+    if (!e) return 'No email — add one before sending.';
+    if (!e.includes('@')) return 'Missing @ — fix email first.';
+    if (!/@[^@]+\.[^.]+/.test(e)) return 'Incomplete domain — likely FMCSA truncation. Use full @gmail.com / @company.com.';
+    return 'Invalid email format.';
+  }
+
+  function openEditContactModal(id, company, owner, phone, email) {
+    document.getElementById('edit-lead-id').value = id;
+    document.getElementById('edit-company').value = company || '';
+    document.getElementById('edit-owner').value = owner || '';
+    document.getElementById('edit-phone').value = phone || '';
+    document.getElementById('edit-email').value = email || '';
+    openModal('edit-contact-modal');
+  }
+
   async function sendOutreach(leadId, email, ownerName, companyName, templateKey) {
+    const leadRow = (leadsData || []).find((x) => x.id === leadId);
     if (!email) {
       alert('This lead has no email. Add an email first. FMCSA often does not publish emails.');
+      openEditContactModal(leadId, companyName, ownerName, leadRow?.phone || '', '');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      alert(emailHint(email) + '\n\nCurrent value: ' + email + '\n\nClick OK to fix the email.');
+      openEditContactModal(leadId, companyName, ownerName, leadRow?.phone || '', email);
       return;
     }
     if (!confirm('Send Dedicated Operations Manager email to ' + email + '?')) return;
@@ -757,7 +861,14 @@
       })
     });
     const data = await res.json().catch(() => ({}));
-    alert(data.message || data.error || 'Send finished');
+    if (!res.ok) {
+      alert(data.message || data.error || 'Could not send email');
+      if (data.error === 'INVALID_EMAIL') {
+        openEditContactModal(leadId, companyName, ownerName, leadRow?.phone || '', email);
+      }
+      return;
+    }
+    alert(data.message || 'Send finished');
     loadLeads();
   }
 

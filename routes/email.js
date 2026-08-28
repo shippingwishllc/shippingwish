@@ -5,6 +5,7 @@ const { requireAuth } = require('../middleware/auth');
 const { sendBrandedEmail, isUnsubscribed, fetchReceivedEmail } = require('../utils/mailer');
 const { buildTemplate, verifyUnsubscribeToken, COMPANY } = require('../utils/email-templates');
 const { notifyAdmins, createNotification } = require('../utils/notifications');
+const { isValidEmail, emailValidationError } = require('../utils/email-valid');
 
 function htmlToPlain(html) {
   return String(html || '')
@@ -83,11 +84,20 @@ async function handleSendOutreach(req, res) {
       return res.status(400).json({ error: 'Recipient email is required' });
     }
 
-    if (await isUnsubscribed(recipient_email)) {
+    if (!isValidEmail(recipient_email)) {
+      return res.status(400).json({
+        error: 'INVALID_EMAIL',
+        message: emailValidationError(recipient_email)
+      });
+    }
+
+    const toAddress = String(recipient_email).trim().toLowerCase();
+
+    if (await isUnsubscribed(toAddress)) {
       return res.status(400).json({ error: 'This address is unsubscribed. Do not email them.' });
     }
 
-    let lead = { owner_name, company_name, phone: null, email: recipient_email };
+    let lead = { owner_name, company_name, phone: null, email: toAddress };
     if (lead_id) {
       const lr = await pool.query('SELECT * FROM crm_leads WHERE id = $1', [lead_id]);
       if (lr.rows.length) lead = { ...lr.rows[0], ...lead };
@@ -97,13 +107,13 @@ async function handleSendOutreach(req, res) {
     const tpl = buildTemplate(key, {
       ownerName: owner_name || lead.owner_name,
       companyName: company_name || lead.company_name,
-      recipientEmail: recipient_email,
+      recipientEmail: toAddress,
       billingUrl: billing_url,
       loadSummary: load_summary
     });
 
     const result = await sendBrandedEmail({
-      to: recipient_email,
+      to: toAddress,
       subject: tpl.subject,
       html: tpl.html,
       text: tpl.text,
@@ -140,7 +150,7 @@ async function handleSendOutreach(req, res) {
       ok: true,
       message: result.skipped
         ? `Skipped: ${result.reason}`
-        : `Email sent to ${recipient_email}`,
+        : `Email sent to ${toAddress}`,
       email: result,
       sms
     });
