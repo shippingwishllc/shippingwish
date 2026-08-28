@@ -2,10 +2,18 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { sendBrandedEmail, isUnsubscribed, fetchReceivedEmail } = require('../utils/mailer');
+const { sendBrandedEmail, isUnsubscribed, fetchReceivedEmail, fetchReceivedAttachments, formatReplyFromAddress, getResend, normalizeEmail } = require('../utils/mailer');
 const { buildTemplate, verifyUnsubscribeToken, COMPANY } = require('../utils/email-templates');
 const { notifyAdmins, createNotification } = require('../utils/notifications');
 const { isValidEmail, emailValidationError } = require('../utils/email-valid');
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
 function htmlToPlain(html) {
   return String(html || '')
@@ -53,6 +61,31 @@ function normalizeEmailFromHeader(value) {
   const raw = String(value || '').trim();
   const m = raw.match(/<([^>]+)>/);
   return (m ? m[1] : raw).trim().toLowerCase();
+}
+
+async function ensureInboundColumns() {
+  await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'`).catch(() => {});
+}
+
+async function loadAttachmentsForMessage(msg) {
+  let cached = msg.attachments;
+  if (typeof cached === 'string') {
+    try { cached = JSON.parse(cached); } catch { cached = []; }
+  }
+  if (Array.isArray(cached) && cached.length) return cached;
+  if (!msg.resend_email_id) return [];
+  const result = await fetchReceivedAttachments(msg.resend_email_id);
+  if (!result.ok) return [];
+  const meta = (result.attachments || []).map((a) => ({
+    id: a.id,
+    filename: a.filename,
+    content_type: a.content_type,
+    size: a.size
+  }));
+  if (meta.length) {
+    await pool.query('UPDATE email_inbound SET attachments = $2::jsonb WHERE id = $1', [msg.id, JSON.stringify(meta)]);
+  }
+  return meta;
 }
 
 async function markLeadContacted(leadId, statusIfNew) {
@@ -210,6 +243,7 @@ router.get('/inbox', requireAuth, async (req, res) => {
 
 router.get('/inbox/:id', requireAuth, async (req, res) => {
   try {
+    await ensureInboundColumns();
     const result = await pool.query(
       `SELECT i.*, l.company_name, l.owner_name, l.phone, l.mc_number, l.email AS lead_email, l.sales_rep_id,
               u.name AS sales_rep_name
@@ -241,6 +275,8 @@ router.get('/inbox/:id', requireAuth, async (req, res) => {
         msg = { ...msg, body_text: bodyText, body_html: bodyHtml, resend_email_id: result.emailId || msg.resend_email_id };
       }
     }
+
+    msg.attachments = await loadAttachmentsForMessage(msg);
 
     res.json({ message: msg });
   } catch (err) {
@@ -292,10 +328,108 @@ router.post('/inbox/:id/refresh', requireAuth, async (req, res) => {
        WHERE id = $1 RETURNING *`,
       [msg.id, bodyText, bodyHtml, full.subject || '', result.emailId || msg.resend_email_id]
     );
-    res.json({ ok: true, message: updated.rows[0] });
+    const refreshed = updated.rows[0];
+    refreshed.attachments = await loadAttachmentsForMessage(refreshed);
+    res.json({ ok: true, message: refreshed });
   } catch (err) {
     console.error('Inbox refresh error:', err);
     res.status(500).json({ error: 'Could not refresh message' });
+  }
+});
+
+router.get('/inbox/:id/attachments/:attachmentId/download', requireAuth, async (req, res) => {
+  try {
+    const row = await pool.query('SELECT resend_email_id FROM email_inbound WHERE id = $1', [req.params.id]);
+    if (!row.rows.length) return res.status(404).json({ error: 'Message not found' });
+    const emailId = row.rows[0].resend_email_id;
+    if (!emailId) return res.status(404).json({ error: 'No Resend email id — click Reload body first' });
+
+    const listed = await fetchReceivedAttachments(emailId);
+    if (!listed.ok) {
+      return res.status(502).json({ error: listed.error, hint: listed.hint || null });
+    }
+    const att = (listed.attachments || []).find((a) => a.id === req.params.attachmentId);
+    if (!att || !att.download_url) return res.status(404).json({ error: 'Attachment not found or link expired — reopen the message and try again' });
+
+    const fileRes = await fetch(att.download_url);
+    if (!fileRes.ok) return res.status(502).json({ error: 'Could not download attachment from Resend' });
+
+    const filename = (att.filename || 'attachment').replace(/[^\w.\-()+ ]/g, '_');
+    res.setHeader('Content-Type', att.content_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    const buf = Buffer.from(await fileRes.arrayBuffer());
+    res.send(buf);
+  } catch (err) {
+    console.error('Attachment download error:', err);
+    res.status(500).json({ error: 'Could not download attachment' });
+  }
+});
+
+router.post('/inbox/:id/reply', requireAuth, async (req, res) => {
+  try {
+    const message = String(req.body.message || req.body.body || '').trim();
+    if (!message) return res.status(400).json({ error: 'Reply message is required' });
+
+    const row = await pool.query('SELECT * FROM email_inbound WHERE id = $1', [req.params.id]);
+    if (!row.rows.length) return res.status(404).json({ error: 'Message not found' });
+    const msg = row.rows[0];
+
+    const recipient = normalizeEmail(msg.from_email);
+    if (!recipient) return res.status(400).json({ error: 'Original sender email is missing' });
+
+    const replyMailbox = normalizeEmail(msg.to_email);
+    if (!replyMailbox) {
+      return res.status(400).json({
+        error: 'This message has no To address saved. Cannot choose reply-from mailbox.',
+        hint: 'Click Reload body, or check Resend inbound routing for wajeeh@ / operations@.'
+      });
+    }
+
+    const fromHeader = formatReplyFromAddress(msg.to_email);
+    let subject = String(msg.subject || '').trim() || '(no subject)';
+    if (!/^re:/i.test(subject)) subject = `Re: ${subject}`;
+
+    const resend = getResend();
+    if (!resend) return res.status(503).json({ error: 'RESEND_API_KEY not configured on server' });
+
+    const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.65;color:#0f172a;">${escapeHtml(message).replace(/\n/g, '<br>')}</div>`;
+    const sent = await resend.emails.send({
+      from: fromHeader,
+      to: [recipient],
+      reply_to: replyMailbox,
+      subject,
+      text: message,
+      html
+    });
+
+    if (sent.error) {
+      return res.status(502).json({
+        error: sent.error.message || 'Resend could not send reply',
+        hint: `Make sure ${replyMailbox} is allowed to send in Resend (verified domain).`
+      });
+    }
+
+    const providerId = (sent.data && sent.data.id) || null;
+    try {
+      await pool.query(
+        `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key)
+         VALUES ($1, $2, $3, 'inbox_reply', 'sent', $4, $5, 'inbox_reply')`,
+        [msg.lead_id || null, recipient, subject, providerId, req.user.id]
+      );
+    } catch (_) { /* optional log */ }
+
+    if (msg.lead_id) await markLeadContacted(msg.lead_id, 'contacted');
+
+    res.json({
+      ok: true,
+      message: `Reply sent from ${replyMailbox} to ${recipient}`,
+      from: fromHeader,
+      reply_to: replyMailbox,
+      resend_id: providerId
+    });
+  } catch (err) {
+    console.error('Inbox reply error:', err);
+    res.status(500).json({ error: err.message || 'Could not send reply' });
   }
 });
 
@@ -304,8 +438,8 @@ function extractLeadIdFromAddress(toEmail) {
   return m ? parseInt(m[1], 10) : null;
 }
 
-async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, resendId, fromName }) {
-  let payload = { fromEmail, toEmail, subject, bodyText, bodyHtml, resendId, fromName };
+async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, resendId, fromName, attachments }) {
+  let payload = { fromEmail, toEmail, subject, bodyText, bodyHtml, resendId, fromName, attachments };
   // Resend email.received webhook has no body — pull content via Receiving API
   if (!(payload.bodyText || payload.bodyHtml) && payload.resendId) {
     payload = await enrichFromResend(payload);
@@ -319,6 +453,7 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
   const subjectFinal = payload.subject || subject || '(no subject)';
   const bodyTextFinal = payload.bodyText || '';
   const bodyHtmlFinal = payload.bodyHtml || '';
+  const attachmentsFinal = JSON.stringify(payload.attachments || attachments || []);
 
   let leadId = extractLeadIdFromAddress(toEmailFinal);
   if (!leadId) {
@@ -329,10 +464,11 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
     if (match.rows.length) leadId = match.rows[0].id;
   }
 
+  await ensureInboundColumns();
   const ins = await pool.query(
-    `INSERT INTO email_inbound (lead_id, from_email, to_email, subject, body_text, body_html, resend_email_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [leadId, from, toEmailFinal, subjectFinal, bodyTextFinal, bodyHtmlFinal, payload.resendId || resendId || null]
+    `INSERT INTO email_inbound (lead_id, from_email, to_email, subject, body_text, body_html, resend_email_id, attachments)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb) RETURNING *`,
+    [leadId, from, toEmailFinal, subjectFinal, bodyTextFinal, bodyHtmlFinal, payload.resendId || resendId || null, attachmentsFinal]
   );
 
   if (leadId) {
@@ -384,7 +520,13 @@ function parseInboundPayload(body) {
   const bodyText = email.text || data.text || data.body_text || data.text_body || '';
   const bodyHtml = email.html || data.html || data.body_html || data.html_body || '';
   const resendId = data.email_id || email.email_id || null;
-  return { fromEmail, toEmail, subject, bodyText, bodyHtml, resendId };
+  const attachments = (data.attachments || email.attachments || []).map((a) => ({
+    id: a.id,
+    filename: a.filename,
+    content_type: a.content_type,
+    size: a.size
+  }));
+  return { fromEmail, toEmail, subject, bodyText, bodyHtml, resendId, attachments };
 }
 
 // POST /api/email/inbound — Resend inbound / generic webhook (no auth; verify secret)

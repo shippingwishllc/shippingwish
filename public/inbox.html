@@ -19,6 +19,11 @@
     .msg-body { white-space:pre-wrap; font-size:14px; line-height:1.6; margin:0; max-height:55vh; overflow:auto; }
     .msg-body-html { font-size:14px; line-height:1.6; max-height:55vh; overflow:auto; border-top:1px solid var(--border-default); padding-top:14px; margin-top:14px; }
     .msg-body-html img { max-width:100%; height:auto; }
+    .attach-list { display:flex; flex-direction:column; gap:8px; margin:0 0 16px; padding:12px; border-radius:10px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); }
+    .attach-item { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:13px; }
+    .reply-box { margin-top:18px; padding-top:18px; border-top:1px solid var(--border-default); }
+    .reply-box textarea { width:100%; min-height:120px; border-radius:10px; border:1px solid var(--border-default); padding:12px; font-family:inherit; font-size:14px; resize:vertical; }
+    .reply-from-note { font-size:12px; color:var(--text-muted); margin:0 0 10px; }
   </style>
 </head>
 <body class="app-body">
@@ -55,7 +60,7 @@
     <header class="app-header">
       <div>
         <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Carrier Replies Inbox</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Click a message to read it and see sender contact details.</p>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Read and reply from the same inbox address (operations@, wajeeh@, etc.).</p>
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-secondary btn-sm" type="button" onclick="loadInbox(true)">Unread only</button>
@@ -172,6 +177,19 @@
     const crmLink = m.lead_id ? `/crm-sales?lead=${m.lead_id}` : '/crm-sales';
     const mailto = m.from_email ? `mailto:${encodeURIComponent(m.from_email)}?subject=${encodeURIComponent('Re: ' + (m.subject || ''))}` : '#';
 
+    const attachments = Array.isArray(m.attachments) ? m.attachments : [];
+    const replyFrom = m.to_email || 'operations@shippingwish.com';
+    const attachHtml = attachments.length ? `
+      <div class="attach-list">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:4px;">Attachments (${attachments.length})</div>
+        ${attachments.map(a => `
+          <div class="attach-item">
+            <span>📎 ${escapeHtml(a.filename || 'file')}${a.size ? ` <span style="color:var(--text-muted);">(${Math.round(a.size / 1024)} KB)</span>` : ''}</span>
+            <a class="btn btn-secondary btn-sm" href="/api/email/inbox/${m.id}/attachments/${encodeURIComponent(a.id)}/download" download>Download</a>
+          </div>
+        `).join('')}
+      </div>` : '';
+
     panel.innerHTML = `
       <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;">
         <div>
@@ -179,7 +197,7 @@
           <div style="font-size:12px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <a class="btn btn-primary btn-sm" href="${mailto}">Reply in email</a>
+          <a class="btn btn-secondary btn-sm" href="${mailto}">Open in mail app</a>
           <a class="btn btn-secondary btn-sm" href="${crmLink}">Open CRM</a>
           ${m.resend_email_id ? `<button type="button" class="btn btn-secondary btn-sm" onclick="refreshBody(${m.id})">Reload body</button>` : ''}
         </div>
@@ -191,15 +209,47 @@
         <div><strong>MC</strong>${escapeHtml(m.mc_number || '—')}</div>
         <div><strong>CRM lead email</strong>${escapeHtml(m.lead_email || '—')}</div>
         <div><strong>Sales rep</strong>${escapeHtml(m.sales_rep_name || 'Unassigned')}</div>
-        <div><strong>To</strong>${escapeHtml(m.to_email || '—')}</div>
+        <div><strong>To (your inbox)</strong>${escapeHtml(m.to_email || '—')}</div>
         <div><strong>Matched lead</strong>${m.lead_id ? '#' + m.lead_id : 'Not in CRM'}</div>
       </div>
+      ${attachHtml}
       ${bodyText
         ? `<pre class="msg-body">${escapeHtml(bodyText)}</pre>`
         : (hasHtml
           ? `<pre class="msg-body">${escapeHtml(stripHtml(m.body_html))}</pre>`
           : `<p class="text-muted">Email body is empty. If this just arrived, click <strong>Reload body</strong> to pull it from Resend.</p>`)}
+      <div class="reply-box">
+        <h3 style="margin:0 0 8px;font-size:15px;">Reply from portal</h3>
+        <p class="reply-from-note">Reply will send from <strong>${escapeHtml(replyFrom)}</strong> to <strong>${escapeHtml(m.from_email || '')}</strong> (same thread).</p>
+        <textarea id="reply-text-${m.id}" placeholder="Type your reply…"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="sendReply(${m.id})">Send reply</button>
+        </div>
+      </div>
     `;
+  }
+
+  async function sendReply(id) {
+    const ta = document.getElementById('reply-text-' + id);
+    const message = (ta && ta.value || '').trim();
+    if (!message) {
+      alert('Write a reply message first.');
+      return;
+    }
+    if (!confirm('Send this reply from the inbox address shown above?')) return;
+    const res = await fetch('/api/email/inbox/' + id + '/reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ message })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert([data.error || 'Could not send reply', data.hint].filter(Boolean).join('\n\n'));
+      return;
+    }
+    alert(data.message || 'Reply sent');
+    if (ta) ta.value = '';
   }
 
   function stripHtml(html) {

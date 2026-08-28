@@ -217,6 +217,47 @@ async function fetchReceivedEmail(emailId, hints = {}) {
   return { ok: true, data: loaded.data, emailId: loaded.emailId };
 }
 
+/** List attachments for a received email (signed download_url expires ~1h). */
+async function fetchReceivedAttachments(emailId) {
+  const key = receivingApiKey();
+  if (!key) {
+    return { ok: false, error: 'Resend API key missing', hint: 'Set RESEND_RECEIVING_API_KEY (Full access) in Vercel.' };
+  }
+  if (!emailId) return { ok: false, error: 'Missing received email id' };
+
+  const r = await resendApiGet(`/emails/receiving/${encodeURIComponent(emailId)}/attachments`, key);
+  if (!r.ok) {
+    if (r.status === 401 || r.status === 403) {
+      return {
+        ok: false,
+        error: 'API key cannot read inbound attachments',
+        hint: 'Use RESEND_RECEIVING_API_KEY with Full access.'
+      };
+    }
+    return { ok: false, error: (r.json && r.json.message) || 'Could not list attachments' };
+  }
+  const items = (r.json && r.json.data) || [];
+  return { ok: true, attachments: items };
+}
+
+function formatReplyFromAddress(toEmail) {
+  const addr = normalizeEmail(toEmail);
+  if (!addr) return mailFrom();
+  const mapRaw = process.env.INBOUND_REPLY_FROM || '';
+  if (mapRaw) {
+    try {
+      const map = JSON.parse(mapRaw);
+      if (map[addr]) return map[addr];
+    } catch (_) { /* ignore bad JSON */ }
+  }
+  if (addr === normalizeEmail(process.env.OPERATIONS_EMAIL || COMPANY.operationsEmail)) {
+    return process.env.MAIL_FROM_TRANSACTIONAL || mailFrom();
+  }
+  const local = addr.split('@')[0] || 'Shipping Wish';
+  const name = local.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  return `${name} <${addr}>`;
+}
+
 module.exports = {
   getResend,
   mailFrom,
@@ -224,5 +265,8 @@ module.exports = {
   isUnsubscribed,
   sendBrandedEmail,
   fetchReceivedEmail,
-  receivingApiKey
+  fetchReceivedAttachments,
+  formatReplyFromAddress,
+  receivingApiKey,
+  normalizeEmail
 };
