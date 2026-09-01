@@ -85,6 +85,7 @@ body.nav-open .nav {
 .mkt-hero .mkt-h1,
 .mkt-hero .mkt-lede,
 .mkt-hero .mkt-actions,
+.mkt-hero .mkt-hero-tool-card,
 .mkt-hero .mkt-trust,
 .mkt-hero .mkt-panel {
   animation: fadeUp 0.7s ease both;
@@ -92,7 +93,8 @@ body.nav-open .nav {
 .mkt-hero .mkt-h1 { animation-delay: 0.08s; }
 .mkt-hero .mkt-lede { animation-delay: 0.16s; }
 .mkt-hero .mkt-actions { animation-delay: 0.24s; }
-.mkt-hero .mkt-trust { animation-delay: 0.32s; }
+.mkt-hero .mkt-hero-tool-card { animation-delay: 0.28s; }
+.mkt-hero .mkt-trust { animation-delay: 0.34s; }
 .mkt-hero .mkt-panel { animation-delay: 0.2s; }
 
 body.marketing .btn-secondary {
@@ -313,33 +315,99 @@ body.marketing .btn-secondary {
   margin-bottom: 16px;
 }
 
-.mkt-hero-free-tool {
-  display: inline-flex;
+.mkt-hero-tool-card {
+  position: relative;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 20px;
-  padding: 10px 16px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #b45309;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  gap: 16px;
+  width: 100%;
+  max-width: 620px;
+  margin-bottom: 22px;
+  padding: 16px 18px;
+  border-radius: 16px;
   text-decoration: none;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.06),
+    0 0 0 1px rgba(245, 158, 11, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.mkt-hero-free-tool:hover {
-  background: rgba(245, 158, 11, 0.2);
-  border-color: #f59e0b;
-  color: #92400e;
-  transform: translateY(-1px);
+.mkt-hero-tool-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  box-shadow: inset 3px 0 0 #f59e0b;
 }
-.mkt-hero-free-tool span {
-  font-size: 11px;
-  font-weight: 600;
+.mkt-hero-tool-card:hover {
+  transform: translateY(-2px);
+  border-color: #fcd34d;
+  box-shadow:
+    0 12px 32px rgba(245, 158, 11, 0.18),
+    0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.mkt-hero-tool-icon {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fffbeb, #fef3c7);
+  border: 1px solid #fde68a;
+}
+.mkt-hero-tool-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mkt-hero-tool-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+.mkt-hero-tool-desc {
+  font-size: 13px;
+  font-weight: 500;
   color: #64748b;
-  padding-left: 8px;
-  border-left: 1px solid rgba(245, 158, 11, 0.35);
+  line-height: 1.45;
+}
+.mkt-hero-tool-cta {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 800;
+  color: #b45309;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  white-space: nowrap;
+}
+.mkt-hero-tool-card:hover .mkt-hero-tool-cta {
+  background: #f59e0b;
+  color: #0f172a;
+  border-color: #f59e0b;
+}
+
+@media (max-width: 640px) {
+  .mkt-hero-tool-card {
+    flex-wrap: wrap;
+    padding: 14px 16px;
+  }
+  .mkt-hero-tool-cta {
+    width: 100%;
+    text-align: center;
+    margin-top: 4px;
+  }
 }
 
 .mkt-hero-grid {
@@ -1296,7 +1364,7 @@ body.marketing .pricing-features li {
 
 @media (prefers-reduced-motion: reduce) {
   .reveal, .mkt-hero .mkt-kicker, .mkt-hero .mkt-h1, .mkt-hero .mkt-lede,
-  .mkt-hero .mkt-actions, .mkt-hero .mkt-trust, .mkt-hero .mkt-panel,
+  .mkt-hero .mkt-actions, .mkt-hero .mkt-hero-tool-card, .mkt-hero .mkt-trust, .mkt-hero .mkt-panel,
   .mkt-kicker-dot, .mkt-live-dot,
   [data-motion] .motion-item, [data-motion]::before, .mkt-tl::before {
     animation: none !important;
