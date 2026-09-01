@@ -7,32 +7,72 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
   <style>
+    :root {
+      --inbox-page-items: 7;
+      --inbox-item-h: 84px;
+      --inbox-item-gap: 8px;
+      --inbox-list-h: calc(var(--inbox-page-items) * var(--inbox-item-h) + (var(--inbox-page-items) - 1) * var(--inbox-item-gap));
+      --inbox-pane-h: calc(var(--inbox-list-h) + 52px);
+    }
     .inbox-layout { display:grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr); gap:16px; align-items:stretch; }
     @media (max-width: 900px) { .inbox-layout { grid-template-columns: 1fr; } }
     .inbox-list-col { display:flex; flex-direction:column; min-height:0; }
-    .inbox-list-card { flex:1; display:flex; flex-direction:column; padding:12px; min-height:520px; }
-    #inbox-list { display:flex; flex-direction:column; gap:10px; flex:1; }
+    .inbox-list-card {
+      display:flex; flex-direction:column; padding:12px;
+      height:var(--inbox-pane-h); min-height:var(--inbox-pane-h); max-height:var(--inbox-pane-h);
+      overflow:hidden;
+    }
+    #inbox-list {
+      display:flex; flex-direction:column; gap:var(--inbox-item-gap);
+      height:var(--inbox-list-h); min-height:var(--inbox-list-h); max-height:var(--inbox-list-h);
+      overflow:hidden; flex-shrink:0;
+    }
     .inbox-pagination {
       display:flex; justify-content:space-between; align-items:center; gap:12px;
-      padding-top:12px; margin-top:12px; border-top:1px solid var(--border-default);
-      font-size:12px; color:var(--text-muted); flex-wrap:wrap;
+      padding-top:10px; margin-top:auto; border-top:1px solid var(--border-default);
+      font-size:12px; color:var(--text-muted); flex-wrap:wrap; flex-shrink:0;
     }
     .inbox-pagination .pager-btns { display:flex; gap:8px; }
-    .inbox-item { border:1px solid var(--border-default); border-radius:12px; padding:14px 16px; cursor:pointer; text-align:left; background:transparent; width:100%; min-height:88px; }
+    .inbox-item {
+      border:1px solid var(--border-default); border-radius:12px; padding:10px 14px;
+      cursor:pointer; text-align:left; background:transparent; width:100%;
+      height:var(--inbox-item-h); min-height:var(--inbox-item-h); max-height:var(--inbox-item-h);
+      overflow:hidden; flex-shrink:0;
+    }
+    .inbox-item-preview {
+      font-size:12px; color:var(--text-muted); margin-top:4px;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
     .inbox-item:hover { border-color: var(--color-amber-500, #f59e0b); }
     .inbox-item.active { border-color: var(--color-amber-500, #f59e0b); background: rgba(245,158,11,0.08); }
     .inbox-item.unread { background: rgba(245,158,11,0.06); }
-    .msg-panel { border:1px solid var(--border-default); border-radius:12px; padding:20px; min-height:520px; background: var(--bg-elevated, #fff); }
-    .contact-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px 16px; margin:14px 0 18px; padding:14px; border-radius:10px; background: rgba(15,23,42,0.04); font-size:13px; }
-    .contact-grid strong { display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color: var(--text-muted); margin-bottom:2px; }
-    .msg-body { white-space:pre-wrap; font-size:14px; line-height:1.6; margin:0; max-height:55vh; overflow:auto; }
-    .msg-body-html { font-size:14px; line-height:1.6; max-height:55vh; overflow:auto; border-top:1px solid var(--border-default); padding-top:14px; margin-top:14px; }
-    .msg-body-html img { max-width:100%; height:auto; }
-    .attach-list { display:flex; flex-direction:column; gap:8px; margin:0 0 16px; padding:12px; border-radius:10px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); }
+    .msg-panel {
+      border:1px solid var(--border-default); border-radius:12px;
+      height:var(--inbox-pane-h); min-height:var(--inbox-pane-h); max-height:var(--inbox-pane-h);
+      background: var(--bg-elevated, #fff);
+      display:flex; flex-direction:column; overflow:hidden; padding:16px;
+    }
+    .msg-panel-empty {
+      margin:auto; text-align:center; color:var(--text-muted); padding:24px;
+    }
+    .msg-panel-header { flex-shrink:0; margin-bottom:10px; }
+    .msg-scroll-area {
+      flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;
+      padding-right:4px;
+    }
+    .contact-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px 14px; margin:0 0 12px; padding:12px; border-radius:10px; background: rgba(15,23,42,0.04); font-size:12px; }
+    .contact-grid strong { display:block; font-size:10px; text-transform:uppercase; letter-spacing:0.04em; color: var(--text-muted); margin-bottom:2px; }
+    .msg-body { white-space:pre-wrap; font-size:14px; line-height:1.55; margin:0; }
+    .attach-list { display:flex; flex-direction:column; gap:8px; margin:0 0 12px; padding:10px; border-radius:10px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); }
     .attach-item { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:13px; }
-    .reply-box { margin-top:18px; padding-top:18px; border-top:1px solid var(--border-default); }
-    .reply-box textarea { width:100%; min-height:120px; border-radius:10px; border:1px solid var(--border-default); padding:12px; font-family:inherit; font-size:14px; resize:vertical; }
-    .reply-from-note { font-size:12px; color:var(--text-muted); margin:0 0 10px; }
+    .reply-box { flex-shrink:0; margin-top:10px; padding-top:12px; border-top:1px solid var(--border-default); }
+    .reply-box textarea { width:100%; min-height:88px; max-height:120px; border-radius:10px; border:1px solid var(--border-default); padding:10px; font-family:inherit; font-size:14px; resize:vertical; }
+    .reply-from-note { font-size:11px; color:var(--text-muted); margin:0 0 8px; }
+    @media (max-width: 900px) {
+      .inbox-list-card, .msg-panel { height:auto; min-height:auto; max-height:none; }
+      #inbox-list { height:auto; min-height:auto; max-height:none; overflow:visible; }
+      .inbox-item { height:auto; min-height:84px; max-height:none; }
+    }
   </style>
 </head>
 <body class="app-body">
@@ -79,14 +119,14 @@
           </div>
         </div>
         <div class="msg-panel" id="msg-panel">
-          <p class="text-muted" style="margin:0;">Select a reply on the left to open it.</p>
+          <p class="msg-panel-empty">Select a reply on the left to open it.</p>
         </div>
       </div>
     </main>
   </div>
 </div>
 <script>
-  const INBOX_PAGE_SIZE = 8;
+  const INBOX_PAGE_SIZE = 7;
   let messagesCache = [];
   let selectedId = null;
   let currentPage = 1;
@@ -140,7 +180,7 @@
         </div>
         <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${escapeHtml(m.from_email || '')}</div>
         <div style="font-size:13px;margin-top:6px;font-weight:600;">${escapeHtml(m.subject || '(no subject)')}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${escapeHtml(previewText(m))}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;" class="inbox-item-preview">${escapeHtml(previewText(m))}</div>
       </button>
     `).join('');
   }
@@ -270,36 +310,40 @@
       </div>` : '';
 
     panel.innerHTML = `
-      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;">
-        <div>
-          <h2 style="margin:0 0 4px;font-size:18px;">${escapeHtml(m.subject || '(no subject)')}</h2>
-          <div style="font-size:12px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <a class="btn btn-secondary btn-sm" href="${mailto}">Open in mail app</a>
-          ${IS_ADMIN ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="trashEmail(${m.id})">Move to trash</button>` : ''}
+      <div class="msg-panel-header">
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+          <div>
+            <h2 style="margin:0 0 4px;font-size:17px;">${escapeHtml(m.subject || '(no subject)')}</h2>
+            <div style="font-size:12px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a class="btn btn-secondary btn-sm" href="${mailto}">Open in mail app</a>
+            ${IS_ADMIN ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="trashEmail(${m.id})">Move to trash</button>` : ''}
+          </div>
         </div>
       </div>
-      <div class="contact-grid">
-        <div><strong>From email</strong>${escapeHtml(m.from_email || '—')}</div>
-        <div><strong>Name / company</strong>${escapeHtml(m.owner_name || m.company_name || '—')}</div>
-        <div><strong>Phone</strong>${m.phone ? `<a href="tel:${escapeHtml(m.phone)}">${escapeHtml(m.phone)}</a>` : '—'}</div>
-        <div><strong>MC</strong>${escapeHtml(m.mc_number || '—')}</div>
-        <div><strong>Sales rep</strong>${escapeHtml(m.sales_rep_name || 'Unassigned')}</div>
-        <div><strong>To (your inbox)</strong>${escapeHtml(m.to_email || '—')}</div>
-        <div><strong>Matched lead</strong>${matchedLead}</div>
+      <div class="msg-scroll-area">
+        <div class="contact-grid">
+          <div><strong>From email</strong>${escapeHtml(m.from_email || '—')}</div>
+          <div><strong>Name / company</strong>${escapeHtml(m.owner_name || m.company_name || '—')}</div>
+          <div><strong>Phone</strong>${m.phone ? `<a href="tel:${escapeHtml(m.phone)}">${escapeHtml(m.phone)}</a>` : '—'}</div>
+          <div><strong>MC</strong>${escapeHtml(m.mc_number || '—')}</div>
+          <div><strong>Sales rep</strong>${escapeHtml(m.sales_rep_name || 'Unassigned')}</div>
+          <div><strong>To (your inbox)</strong>${escapeHtml(m.to_email || '—')}</div>
+          <div><strong>Matched lead</strong>${matchedLead}</div>
+        </div>
+        ${attachHtml}
+        ${bodyText
+          ? `<pre class="msg-body">${escapeHtml(bodyText)}</pre>`
+          : (hasHtml
+            ? `<pre class="msg-body">${escapeHtml(stripHtml(m.body_html))}</pre>`
+            : `<p class="text-muted" style="margin:0;">Email body is still loading or was not saved. Re-open this message in a moment.</p>`)}
       </div>
-      ${attachHtml}
-      ${bodyText
-        ? `<pre class="msg-body">${escapeHtml(bodyText)}</pre>`
-        : (hasHtml
-          ? `<pre class="msg-body">${escapeHtml(stripHtml(m.body_html))}</pre>`
-          : `<p class="text-muted">Email body is still loading or was not saved. Re-open this message in a moment.</p>`)}
       <div class="reply-box">
-        <h3 style="margin:0 0 8px;font-size:15px;">Reply from portal</h3>
+        <h3 style="margin:0 0 6px;font-size:14px;">Reply from portal</h3>
         <p class="reply-from-note">Reply will send from <strong>${escapeHtml(replyFrom)}</strong> to <strong>${escapeHtml(m.from_email || '')}</strong> (same thread).</p>
         <textarea id="reply-text-${m.id}" placeholder="Type your reply…"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
           <button type="button" class="btn btn-primary btn-sm" onclick="sendReply(${m.id})">Send reply</button>
         </div>
       </div>
@@ -358,6 +402,6 @@
     await loadInbox(false);
   });
 </script>
-<script src="/js/app-shell.js?v=14"></script>
+<script src="/js/app-shell.js?v=18"></script>
 </body>
 </html>
