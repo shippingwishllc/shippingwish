@@ -578,7 +578,6 @@
     initCallCount += 1;
     const aside = document.querySelector('.app-sidebar');
     if (!aside) return;
-    if (document.querySelector('.driver-header')) return;
     document.body.classList.add('app-body');
 
     const staticLinkCount = aside.querySelectorAll('a.sidebar-nav-link').length;
