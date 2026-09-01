@@ -119,6 +119,35 @@ async function ensureGrowthSchema() {
   } catch (err) {
     console.warn('[OTP_TRIAL] Schema apply skipped:', err.message);
   }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS signup_pending (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL UNIQUE,
+        otp_hash TEXT NOT NULL,
+        password_hash TEXT NOT NULL,
+        name TEXT NOT NULL,
+        company_name TEXT,
+        phone TEXT,
+        mc_number TEXT,
+        dot_number TEXT,
+        address TEXT,
+        signup_ip TEXT,
+        user_agent TEXT,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        expires_at TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await pool.query(
+      'CREATE INDEX IF NOT EXISTS idx_signup_pending_email ON signup_pending(lower(email))'
+    ).catch(() => {});
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ');
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ');
+  } catch (err) {
+    console.warn('[OTP_TRIAL] direct ensure skipped:', err.message);
+  }
 }
 
 /** Call from CRM import if table still missing (serverless race / cold start). */
