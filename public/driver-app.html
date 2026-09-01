@@ -11,12 +11,55 @@
   <style>
     .driver-console-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: var(--space-6);
-      align-items: start;
+      align-items: stretch;
+    }
+    .driver-col-left {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+    .driver-col-right {
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .driver-chat-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .driver-chat-card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-5);
+      min-height: 0;
+    }
+    #load-card-alert {
+      display: none;
+      margin: 0 var(--space-5) var(--space-4);
+      padding: 10px 12px;
+      border-radius: var(--radius-lg);
+      font-size: var(--text-xs);
+      line-height: 1.5;
+    }
+    #load-empty-banner {
+      display: none;
+      margin: 0 var(--space-5) var(--space-4);
+      padding: 14px 16px;
+      border-radius: var(--radius-lg);
+      background: var(--color-gray-50);
+      border: 1px dashed var(--border-default);
+      text-align: center;
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      line-height: 1.55;
     }
     @media (max-width: 960px) {
       .driver-console-grid { grid-template-columns: 1fr; }
+      .driver-col-right { min-height: auto; }
     }
     .route-visual {
       display: flex;
@@ -100,7 +143,8 @@
       background: rgba(245,158,11,0.06);
     }
     .driver-chat-box {
-      height: 220px;
+      flex: 1;
+      min-height: 280px;
       overflow-y: auto;
       background: var(--color-gray-50);
       border: 1px solid var(--border-default);
@@ -198,8 +242,8 @@
       </div>
 
       <div class="driver-console-grid">
-        <div>
-          <div class="tms-table-card" id="load-card" style="margin-bottom:var(--space-6);">
+        <div class="driver-col-left">
+          <div class="tms-table-card" id="load-card">
             <div class="tms-table-header" style="padding:var(--space-5) var(--space-5) 0;">
               <div>
                 <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Active trip</h3>
@@ -207,41 +251,54 @@
               </div>
               <span class="badge badge-amber" id="load-number-badge">LOAD #---</span>
             </div>
-            <div style="padding:var(--space-5);">
-              <div class="route-visual">
-                <div class="route-node">
-                  <span style="font-size:10px;color:var(--text-muted);display:block;text-transform:uppercase;">Pickup</span>
-                  <strong style="font-size:14px;" id="pickup-city">—</strong>
+
+            <div id="load-card-alert" role="alert"></div>
+
+            <div id="load-empty-banner">
+              <div style="font-size:32px;margin-bottom:8px;">🚛</div>
+              <strong style="display:block;color:var(--text-primary);margin-bottom:6px;">No load assigned yet</strong>
+              Dispatch will assign a load here. Add trucks/drivers on
+              <a href="/fleet">Trucks &amp; drivers</a> and check offers on
+              <a href="/carrier-overview">Fleet home</a>.
+            </div>
+
+            <div id="load-trip-content">
+              <div style="padding:var(--space-5);padding-top:0;">
+                <div class="route-visual">
+                  <div class="route-node">
+                    <span style="font-size:10px;color:var(--text-muted);display:block;text-transform:uppercase;">Pickup</span>
+                    <strong style="font-size:14px;" id="pickup-city">—</strong>
+                  </div>
+                  <div style="z-index:2;background:var(--color-white);padding:4px 12px;border-radius:12px;border:1px solid rgba(245,158,11,0.35);font-size:11px;color:var(--color-amber-600);font-weight:700;" id="miles-badge">🚚 — Mi</div>
+                  <div class="route-node">
+                    <span style="font-size:10px;color:var(--text-muted);display:block;text-transform:uppercase;">Delivery</span>
+                    <strong style="font-size:14px;" id="delivery-city">—</strong>
+                  </div>
                 </div>
-                <div style="z-index:2;background:var(--color-white);padding:4px 12px;border-radius:12px;border:1px solid rgba(245,158,11,0.35);font-size:11px;color:var(--color-amber-600);font-weight:700;" id="miles-badge">🚚 — Mi</div>
-                <div class="route-node">
-                  <span style="font-size:10px;color:var(--text-muted);display:block;text-transform:uppercase;">Delivery</span>
-                  <strong style="font-size:14px;" id="delivery-city">—</strong>
+
+                <div class="load-info-panel" style="margin-bottom:var(--space-5);">
+                  <div><strong>Broker:</strong> <span id="info-broker">—</span></div>
+                  <div><strong>Commodity / Weight:</strong> <span id="info-cargo">—</span></div>
+                  <div><strong>Ref # / BOL #:</strong> <span id="info-refs">—</span></div>
+                  <div><strong>Pickup:</strong> <span id="info-pickup-time">—</span></div>
+                  <div><strong>Delivery:</strong> <span id="info-delivery-time">—</span></div>
                 </div>
-              </div>
 
-              <div class="load-info-panel" style="margin-bottom:var(--space-5);">
-                <div><strong>Broker:</strong> <span id="info-broker">—</span></div>
-                <div><strong>Commodity / Weight:</strong> <span id="info-cargo">—</span></div>
-                <div><strong>Ref # / BOL #:</strong> <span id="info-refs">—</span></div>
-                <div><strong>Pickup:</strong> <span id="info-pickup-time">—</span></div>
-                <div><strong>Delivery:</strong> <span id="info-delivery-time">—</span></div>
-              </div>
+                <button type="button" class="btn btn-primary btn-block" onclick="sendGpsPing()" id="btn-gps-ping" style="margin-bottom:var(--space-2);">
+                  📡 Send 1-Tap GPS Location Ping
+                </button>
 
-              <button type="button" class="btn btn-primary btn-block" onclick="sendGpsPing()" id="btn-gps-ping" style="margin-bottom:var(--space-2);">
-                📡 Send 1-Tap GPS Location Ping
-              </button>
-
-              <div style="font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);margin:var(--space-4) 0 var(--space-2);">Update trip progress</div>
-              <div class="status-btn-grid">
-                <button type="button" class="status-btn" onclick="setTripStatus('at_pickup')" id="sbtn-at_pickup">📍 Arrived pickup</button>
-                <button type="button" class="status-btn" onclick="setTripStatus('loaded')" id="sbtn-loaded">📦 Loaded &amp; sealed</button>
-                <button type="button" class="status-btn" onclick="setTripStatus('in_transit')" id="sbtn-in_transit">🚚 In transit</button>
-                <button type="button" class="status-btn" onclick="setTripStatus('at_delivery')" id="sbtn-at_delivery">🏢 Arrived receiver</button>
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);margin:var(--space-4) 0 var(--space-2);">Update trip progress</div>
+                <div class="status-btn-grid">
+                  <button type="button" class="status-btn" onclick="setTripStatus('at_pickup')" id="sbtn-at_pickup">📍 Arrived pickup</button>
+                  <button type="button" class="status-btn" onclick="setTripStatus('loaded')" id="sbtn-loaded">📦 Loaded &amp; sealed</button>
+                  <button type="button" class="status-btn" onclick="setTripStatus('in_transit')" id="sbtn-in_transit">🚚 In transit</button>
+                  <button type="button" class="status-btn" onclick="setTripStatus('at_delivery')" id="sbtn-at_delivery">🏢 Arrived receiver</button>
+                </div>
+                <button type="button" class="status-btn delivered-btn" onclick="setTripStatus('delivered')" id="sbtn-delivered">
+                  ✅ Mark delivered
+                </button>
               </div>
-              <button type="button" class="status-btn delivered-btn" onclick="setTripStatus('delivered')" id="sbtn-delivered">
-                ✅ Mark delivered
-              </button>
             </div>
           </div>
 
@@ -264,21 +321,23 @@
           </div>
         </div>
 
-        <div class="tms-table-card">
-          <div class="tms-table-header" style="padding:var(--space-5) var(--space-5) 0;">
-            <div>
-              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">💬 Dispatcher &amp; carrier chat</h3>
-              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Messages for the selected load</p>
+        <div class="driver-col-right">
+          <div class="tms-table-card driver-chat-card">
+            <div class="tms-table-header" style="padding:var(--space-5) var(--space-5) 0;">
+              <div>
+                <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">💬 Dispatcher &amp; carrier chat</h3>
+                <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Messages for the selected load</p>
+              </div>
             </div>
-          </div>
-          <div style="padding:var(--space-5);">
-            <div id="driver-chat-box" class="driver-chat-box">
-              <div style="text-align:center;color:var(--text-muted);font-size:12px;margin:auto;">Loading messages…</div>
+            <div class="driver-chat-card-body">
+              <div id="driver-chat-box" class="driver-chat-box">
+                <div style="text-align:center;color:var(--text-muted);font-size:12px;margin:auto;">Loading messages…</div>
+              </div>
+              <form style="display:flex;gap:var(--space-2);margin-top:var(--space-3);" onsubmit="sendDriverMessage(event)">
+                <input type="text" class="form-input" id="driver-chat-input" placeholder="Message dispatcher…" style="flex:1;" required>
+                <button type="submit" class="btn btn-primary btn-sm" id="btn-driver-send-msg">Send</button>
+              </form>
             </div>
-            <form style="display:flex;gap:var(--space-2);margin-top:var(--space-3);" onsubmit="sendDriverMessage(event)">
-              <input type="text" class="form-input" id="driver-chat-input" placeholder="Message dispatcher…" style="flex:1;" required>
-              <button type="submit" class="btn btn-primary btn-sm" id="btn-driver-send-msg">Send</button>
-            </form>
           </div>
         </div>
       </div>
@@ -288,269 +347,7 @@
 </div>
 
 <script src="/js/notifications-bell.js"></script>
-<script>
-  let activeLoad = null;
-  let driverLoads = [];
-
-  document.addEventListener('DOMContentLoaded', async () => {
-    await checkDriverAuth();
-    loadActiveDriverLoad();
-  });
-
-  async function checkDriverAuth() {
-    try {
-      const res = await fetch('/api/me', { credentials: 'include' });
-      if (!res.ok) { window.location.href = '/login'; return; }
-      const data = await res.json();
-      if (!data.user) { window.location.href = '/login'; return; }
-      const name = data.user.name || 'Driver';
-      document.getElementById('driver-name-head').textContent = name;
-      document.getElementById('driver-truck-head').textContent = data.user.company_name || 'Carrier fleet';
-    } catch (e) {
-      window.location.href = '/login';
-    }
-  }
-
-  async function loadActiveDriverLoad() {
-    try {
-      const res = await fetch('/api/loads', { credentials: 'include' });
-      if (!res.ok) return;
-      const data = await res.json();
-      driverLoads = data.loads || [];
-      const sel = document.getElementById('driver-load-select');
-      if (sel) {
-        sel.innerHTML = '<option value="">Select assigned load…</option>' + driverLoads.map((l) =>
-          `<option value="${l.id}">${l.load_number} · ${l.pickup_location} → ${l.delivery_location}</option>`
-        ).join('');
-      }
-
-      if (driverLoads.length === 0) {
-        document.getElementById('load-card').innerHTML = `
-          <div style="text-align:center;padding:48px 24px;color:var(--text-muted);">
-            <div style="font-size:40px;margin-bottom:12px;">🚛</div>
-            <h3 style="font-weight:800;color:var(--text-primary);margin:0 0 8px;">No load assigned yet</h3>
-            <p style="font-size:13px;line-height:1.5;max-width:360px;margin:0 auto;">
-              Add drivers on <a href="/fleet">Trucks &amp; drivers</a>, then dispatch assigns a load. Offers appear on <a href="/carrier-overview">Fleet home</a>.
-            </p>
-          </div>
-        `;
-        document.getElementById('kpi-load-number').textContent = '—';
-        document.getElementById('kpi-load-lane').textContent = 'No active load';
-        return;
-      }
-
-      const active = driverLoads.find((l) => ['booked','dispatched','at_pickup','loaded','in_transit','at_delivery'].includes(l.status)) || driverLoads[0];
-      if (sel) sel.value = String(active.id);
-      activeLoad = active;
-      renderActiveLoad(activeLoad);
-      fetchDriverChatMessages();
-    } catch (e) {
-      console.error('Load driver load error:', e);
-    }
-  }
-
-  function pickDriverLoad() {
-    const id = parseInt(document.getElementById('driver-load-select').value, 10);
-    const found = driverLoads.find((l) => l.id === id);
-    if (!found) return;
-    activeLoad = found;
-    renderActiveLoad(activeLoad);
-    fetchDriverChatMessages();
-  }
-  window.pickDriverLoad = pickDriverLoad;
-
-  function renderActiveLoad(l) {
-    document.getElementById('load-number-badge').textContent = `LOAD #${l.load_number}`;
-    document.getElementById('kpi-load-number').textContent = l.load_number;
-    document.getElementById('kpi-load-rate').textContent = `$${parseFloat(l.rate || 0).toLocaleString()}`;
-    document.getElementById('kpi-load-miles').textContent = `${l.miles || 0} miles`;
-    document.getElementById('kpi-load-status').textContent = formatStatus(l.status);
-    document.getElementById('kpi-load-lane').textContent = `${l.pickup_location} → ${l.delivery_location}`;
-
-    document.getElementById('pickup-city').textContent = `${l.pickup_location} ${l.pickup_state ? `(${l.pickup_state})` : ''}`;
-    document.getElementById('delivery-city').textContent = `${l.delivery_location} ${l.delivery_state ? `(${l.delivery_state})` : ''}`;
-    document.getElementById('miles-badge').textContent = `🚚 ${l.miles || 0} Mi`;
-
-    document.getElementById('info-broker').textContent = `${l.broker_name || 'Direct client'} ${l.broker_mc ? `(MC: ${l.broker_mc})` : ''}`;
-    document.getElementById('info-cargo').textContent = `${l.commodity || 'General freight'} / ${l.weight ? l.weight + ' lbs' : 'N/A'}`;
-    document.getElementById('info-refs').textContent = `Ref: ${l.reference_number || 'N/A'} | BOL: ${l.bol_number || 'N/A'}`;
-    document.getElementById('info-pickup-time').textContent = `${l.pickup_date || 'TBD'} ${l.pickup_time || ''}`;
-    document.getElementById('info-delivery-time').textContent = `${l.delivery_date || 'TBD'} ${l.delivery_time || ''}`;
-
-    document.querySelectorAll('.status-btn').forEach((btn) => btn.classList.remove('active'));
-    const activeBtn = document.getElementById(`sbtn-${l.status}`);
-    if (activeBtn) activeBtn.classList.add('active');
-  }
-
-  function formatStatus(st) {
-    return (st || '').replace(/_/g, ' ').toUpperCase();
-  }
-
-  async function setTripStatus(newStatus) {
-    if (!activeLoad) return;
-    try {
-      const res = await fetch(`/api/loads/${activeLoad.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ status: newStatus })
-      });
-      if (res.ok) {
-        activeLoad.status = newStatus;
-        renderActiveLoad(activeLoad);
-        sendGpsPing(newStatus);
-      }
-    } catch (e) { /* ignore */ }
-  }
-
-  function sendGpsPing(overrideStatus = null) {
-    const msgDiv = document.getElementById('gps-status-msg');
-    const kpiGps = document.getElementById('kpi-gps-time');
-    msgDiv.textContent = 'Acquiring GPS coordinates…';
-
-    if (!navigator.geolocation) {
-      msgDiv.textContent = 'Geolocation not supported by this browser.';
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const latitude = pos.coords.latitude;
-        const longitude = pos.coords.longitude;
-        msgDiv.textContent = `Sending ${latitude.toFixed(4)}, ${longitude.toFixed(4)}…`;
-
-        try {
-          const res = await fetch('/api/tracking/ping', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              loadId: activeLoad ? activeLoad.id : null,
-              latitude,
-              longitude,
-              status: overrideStatus || (activeLoad ? activeLoad.status : 'in_transit'),
-              locationName: `GPS Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}`
-            })
-          });
-          if (res.ok) {
-            const t = new Date().toLocaleTimeString();
-            msgDiv.textContent = `✓ GPS ping sent (${t})`;
-            if (kpiGps) kpiGps.textContent = t;
-          } else {
-            msgDiv.textContent = 'Could not record GPS ping.';
-          }
-        } catch (err) {
-          msgDiv.textContent = 'Network error sending GPS ping.';
-        }
-      },
-      (err) => {
-        msgDiv.textContent = `GPS error: ${err.message}`;
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }
-  window.sendGpsPing = sendGpsPing;
-
-  async function handlePodFileUpload(input) {
-    if (!input.files || input.files.length === 0 || !activeLoad) return;
-    const file = input.files[0];
-    const alertDiv = document.getElementById('pod-upload-alert');
-    alertDiv.textContent = 'Uploading POD…';
-    alertDiv.style.color = 'var(--color-amber-600)';
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('loadId', activeLoad.id);
-    formData.append('category', 'pod');
-
-    try {
-      const res = await fetch('/api/documents/upload', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alertDiv.textContent = data.error || 'Upload failed.';
-        alertDiv.style.color = 'var(--color-error, #dc2626)';
-      } else {
-        alertDiv.textContent = '✓ POD uploaded — dispatcher notified.';
-        alertDiv.style.color = 'var(--color-success, #059669)';
-      }
-    } catch (err) {
-      alertDiv.textContent = 'Network error uploading POD.';
-      alertDiv.style.color = 'var(--color-error, #dc2626)';
-    }
-  }
-
-  async function fetchDriverChatMessages() {
-    if (!activeLoad) return;
-    const box = document.getElementById('driver-chat-box');
-    try {
-      const res = await fetch(`/api/messages/load/${activeLoad.id}`, { credentials: 'include' });
-      if (!res.ok) {
-        box.innerHTML = '<div style="color:var(--text-muted);margin:auto;font-size:12px;">No messages.</div>';
-        return;
-      }
-      const data = await res.json();
-      const msgs = data.messages || [];
-
-      if (msgs.length === 0) {
-        box.innerHTML = '<div style="color:var(--text-muted);font-size:12px;margin:auto;text-align:center;">No messages yet.<br>Type below to contact dispatch.</div>';
-        return;
-      }
-
-      box.innerHTML = msgs.map((m) => `
-        <div class="driver-chat-bubble">
-          <div style="font-size:11px;font-weight:700;color:var(--color-amber-600);margin-bottom:2px;">
-            ${escapeHtml(m.sender_name)} <span style="color:var(--text-muted);font-weight:normal;">(${m.sender_role})</span>
-          </div>
-          <div style="font-size:12px;color:var(--text-primary);">${escapeHtml(m.message)}</div>
-          <div style="font-size:9px;color:var(--text-muted);margin-top:4px;">${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
-      `).join('');
-      box.scrollTop = box.scrollHeight;
-    } catch (e) { /* ignore */ }
-  }
-
-  async function sendDriverMessage(e) {
-    e.preventDefault();
-    const input = document.getElementById('driver-chat-input');
-    const message = input.value.trim();
-    if (!message || !activeLoad) return;
-
-    try {
-      const res = await fetch(`/api/messages/load/${activeLoad.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ message })
-      });
-      if (res.ok) {
-        input.value = '';
-        fetchDriverChatMessages();
-      }
-    } catch (e) { /* ignore */ }
-  }
-
-  function escapeHtml(str) {
-    return String(str || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  async function logout() {
-    try {
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-      window.location.href = '/login';
-    } catch (e) {
-      window.location.href = '/login';
-    }
-  }
-  window.logout = logout;
-</script>
-<script src="/js/app-shell.js?v=14"></script>
+<script src="/js/driver-app.js?v=1"></script>
+<script src="/js/app-shell.js?v=15"></script>
 </body>
 </html>

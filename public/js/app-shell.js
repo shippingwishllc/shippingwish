@@ -382,7 +382,7 @@
   const shellPrefetchCache = new Map();
   let shellNavBusy = false;
   const SHELL_SKIP_SRC = /app-shell(-boot)?\.js|design-system\.css/i;
-  const SHELL_REEXEC_SRC = /notifications-bell\.js|load-planning\.js|sales\.js/i;
+  const SHELL_REEXEC_SRC = /notifications-bell\.js|load-planning\.js|sales\.js|driver-app\.js/i;
 
   if (!window.__swRun) {
     window.__swRun = function (fn) {
