@@ -7,13 +7,22 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
   <style>
-    .inbox-layout { display:grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr); gap:16px; align-items:start; }
+    .inbox-layout { display:grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr); gap:16px; align-items:stretch; }
     @media (max-width: 900px) { .inbox-layout { grid-template-columns: 1fr; } }
-    .inbox-item { border:1px solid var(--border-default); border-radius:12px; padding:14px 16px; cursor:pointer; text-align:left; background:transparent; width:100%; }
+    .inbox-list-col { display:flex; flex-direction:column; min-height:0; }
+    .inbox-list-card { flex:1; display:flex; flex-direction:column; padding:12px; min-height:520px; }
+    #inbox-list { display:flex; flex-direction:column; gap:10px; flex:1; }
+    .inbox-pagination {
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding-top:12px; margin-top:12px; border-top:1px solid var(--border-default);
+      font-size:12px; color:var(--text-muted); flex-wrap:wrap;
+    }
+    .inbox-pagination .pager-btns { display:flex; gap:8px; }
+    .inbox-item { border:1px solid var(--border-default); border-radius:12px; padding:14px 16px; cursor:pointer; text-align:left; background:transparent; width:100%; min-height:88px; }
     .inbox-item:hover { border-color: var(--color-amber-500, #f59e0b); }
     .inbox-item.active { border-color: var(--color-amber-500, #f59e0b); background: rgba(245,158,11,0.08); }
     .inbox-item.unread { background: rgba(245,158,11,0.06); }
-    .msg-panel { border:1px solid var(--border-default); border-radius:12px; padding:20px; min-height:320px; background: var(--bg-elevated, #fff); }
+    .msg-panel { border:1px solid var(--border-default); border-radius:12px; padding:20px; min-height:520px; background: var(--bg-elevated, #fff); }
     .contact-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px 16px; margin:14px 0 18px; padding:14px; border-radius:10px; background: rgba(15,23,42,0.04); font-size:13px; }
     .contact-grid strong { display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color: var(--text-muted); margin-bottom:2px; }
     .msg-body { white-space:pre-wrap; font-size:14px; line-height:1.6; margin:0; max-height:55vh; overflow:auto; }
@@ -54,9 +63,18 @@
         </div>
       </div>
       <div class="inbox-layout">
-        <div class="tms-table-card" style="padding:12px;">
-          <div id="inbox-list" style="display:flex;flex-direction:column;gap:10px;">
-            <p class="text-muted" style="padding:24px;text-align:center;">Loading inbox…</p>
+        <div class="inbox-list-col">
+          <div class="tms-table-card inbox-list-card">
+            <div id="inbox-list">
+              <p class="text-muted" style="padding:24px;text-align:center;">Loading inbox…</p>
+            </div>
+            <div class="inbox-pagination" id="inbox-pagination" style="display:none;">
+              <span id="inbox-page-info">—</span>
+              <div class="pager-btns">
+                <button type="button" class="btn btn-secondary btn-sm" id="inbox-prev-btn" onclick="goInboxPage(-1)">← Previous</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="inbox-next-btn" onclick="goInboxPage(1)">Next →</button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="msg-panel" id="msg-panel">
@@ -67,8 +85,13 @@
   </div>
 </div>
 <script>
+  const INBOX_PAGE_SIZE = 8;
   let messagesCache = [];
   let selectedId = null;
+  let currentPage = 1;
+  let totalPages = 1;
+  let totalMessages = 0;
+  let unreadOnlyFilter = false;
 
   async function checkAuth() {
     const res = await fetch('/api/me', { credentials: 'include' });
@@ -98,16 +121,10 @@
     return m.company_name || m.owner_name || m.from_email || 'Unknown sender';
   }
 
-  async function loadInbox(unreadOnly) {
-    const res = await fetch('/api/email/inbox' + (unreadOnly ? '?unread=1' : ''), { credentials: 'include' });
-    const data = await res.json();
-    document.getElementById('kpi-unread').textContent = data.unread || 0;
-    messagesCache = data.messages || [];
-    document.getElementById('kpi-total').textContent = messagesCache.length;
+  function renderInboxList() {
     const list = document.getElementById('inbox-list');
     if (!messagesCache.length) {
-      list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No carrier replies yet. When a carrier replies to operations@ or your outreach, it will appear here.</p>';
-      document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">No messages.</p>';
+      list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No carrier replies on this page. Try Previous or show all replies.</p>';
       return;
     }
     list.innerHTML = messagesCache.map(m => `
@@ -121,6 +138,78 @@
         <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${escapeHtml(previewText(m))}</div>
       </button>
     `).join('');
+  }
+
+  function renderPagination() {
+    const pager = document.getElementById('inbox-pagination');
+    const info = document.getElementById('inbox-page-info');
+    const prevBtn = document.getElementById('inbox-prev-btn');
+    const nextBtn = document.getElementById('inbox-next-btn');
+    if (!pager || !info) return;
+
+    if (totalMessages === 0) {
+      pager.style.display = 'none';
+      return;
+    }
+
+    pager.style.display = 'flex';
+    const start = (currentPage - 1) * INBOX_PAGE_SIZE + 1;
+    const end = Math.min(currentPage * INBOX_PAGE_SIZE, totalMessages);
+    info.textContent = `${start}–${end} of ${totalMessages} · Page ${currentPage} of ${totalPages}`;
+
+    if (prevBtn) {
+      prevBtn.disabled = currentPage <= 1;
+      prevBtn.style.opacity = currentPage <= 1 ? '0.5' : '';
+      prevBtn.style.cursor = currentPage <= 1 ? 'not-allowed' : '';
+    }
+    if (nextBtn) {
+      nextBtn.disabled = currentPage >= totalPages;
+      nextBtn.style.opacity = currentPage >= totalPages ? '0.5' : '';
+      nextBtn.style.cursor = currentPage >= totalPages ? 'not-allowed' : '';
+    }
+  }
+
+  function goInboxPage(delta) {
+    const next = currentPage + delta;
+    if (next < 1 || next > totalPages) return;
+    loadInbox(unreadOnlyFilter, next);
+  }
+
+  async function loadInbox(unreadOnly, page) {
+    if (typeof unreadOnly === 'boolean') {
+      if (page === undefined) currentPage = 1;
+      unreadOnlyFilter = unreadOnly;
+    }
+    if (page !== undefined) currentPage = page;
+    if (currentPage < 1) currentPage = 1;
+
+    const qs = new URLSearchParams({
+      perPage: String(INBOX_PAGE_SIZE),
+      page: String(currentPage)
+    });
+    if (unreadOnlyFilter) qs.set('unread', '1');
+
+    const res = await fetch('/api/email/inbox?' + qs.toString(), { credentials: 'include' });
+    const data = await res.json();
+    document.getElementById('kpi-unread').textContent = data.unread || 0;
+    messagesCache = data.messages || [];
+    totalMessages = data.total || messagesCache.length;
+    totalPages = data.totalPages || 1;
+    currentPage = data.page || currentPage;
+
+    document.getElementById('kpi-total').textContent = totalMessages;
+
+    const list = document.getElementById('inbox-list');
+    if (totalMessages === 0) {
+      list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No carrier replies yet. When a carrier replies to operations@ or your outreach, it will appear here.</p>';
+      document.getElementById('inbox-pagination').style.display = 'none';
+      document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">No messages.</p>';
+      selectedId = null;
+      return;
+    }
+
+    renderInboxList();
+    renderPagination();
 
     if (selectedId && messagesCache.some(m => m.id === selectedId)) {
       openMessage(selectedId);

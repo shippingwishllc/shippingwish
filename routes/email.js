@@ -231,18 +231,35 @@ router.get('/logs', requireAuth, async (req, res) => {
 router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     const unreadOnly = req.query.unread === '1';
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const perPage = Math.min(20, Math.max(1, parseInt(req.query.perPage || '8', 10)));
+    const offset = (page - 1) * perPage;
+    const where = unreadOnly ? 'WHERE i.is_read = FALSE' : '';
+
+    const countResult = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound i ${where}`);
+    const total = countResult.rows[0]?.count || 0;
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+
     const result = await pool.query(
       `SELECT i.*, l.company_name, l.owner_name, l.phone, l.mc_number, l.sales_rep_id,
               u.name AS sales_rep_name
        FROM email_inbound i
        LEFT JOIN crm_leads l ON l.id = i.lead_id
        LEFT JOIN users u ON u.id = l.sales_rep_id
-       ${unreadOnly ? 'WHERE i.is_read = FALSE' : ''}
+       ${where}
        ORDER BY i.created_at DESC
-       LIMIT 150`
+       LIMIT $1 OFFSET $2`,
+      [perPage, offset]
     );
-    const unread = await pool.query(`SELECT COUNT(*) FROM email_inbound WHERE is_read = FALSE`);
-    res.json({ messages: result.rows, unread: parseInt(unread.rows[0].count, 10) });
+    const unread = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound WHERE is_read = FALSE`);
+    res.json({
+      messages: result.rows,
+      unread: unread.rows[0]?.count || 0,
+      total,
+      page,
+      perPage,
+      totalPages
+    });
   } catch (err) {
     console.error('Inbox fetch error:', err);
     res.status(500).json({ error: 'Could not load inbox. Apply v3 growth schema first.' });
