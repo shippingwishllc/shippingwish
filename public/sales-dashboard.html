@@ -44,52 +44,8 @@
 
 <div class="app-shell">
   <!-- LEFT SIDEBAR -->
-  <aside class="app-sidebar" role="navigation" aria-label="Sales Navigation">
-    <div>
-      <a href="/" class="sidebar-brand" style="text-decoration:none;">
-        <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
-        <div>
-          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
-          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">CARRIER ACQUISITION CRM</div>
-        </div>
-      </a>
-
-      <div class="sidebar-section-label">Sales Operations</div>
-      <a href="javascript:void(0)" class="sidebar-nav-link active" id="nav-tab-leads" onclick="switchSalesTab('leads')">
-        <span aria-hidden="true">🎯</span> Lead Pipeline
-      </a>
-      <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-tasks" onclick="switchSalesTab('tasks')">
-        <span aria-hidden="true">📋</span> Today's Follow-up Tasks
-      </a>
-      <a href="/shipping_wish_sales_manual.md" target="_blank" class="sidebar-nav-link">
-        <span aria-hidden="true">📗</span> Sales Playbook
-      </a>
-
-      <div class="sidebar-section-label">Operations & Admin</div>
-      <a href="/dispatcher-dashboard" class="sidebar-nav-link">
-        <span aria-hidden="true">🎧</span> Dispatcher Desk
-      </a>
-      <a href="/admin-dashboard" class="sidebar-nav-link">
-        <span aria-hidden="true">📊</span> Admin Command Center
-      </a>
-      <a href="/invoices" class="sidebar-nav-link">
-        <span aria-hidden="true">💳</span> Invoices & Finance
-      </a>
-    </div>
-
-    <div>
-      <div class="sidebar-user-card">
-        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="sales-avatar-initials">SR</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="user-display-name">Sales Representative</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);">Outreach Team</div>
-        </div>
-      </div>
-      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);" id="logout-btn">
-        🚪 Sign Out
-      </button>
-    </div>
-  </aside>
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
 
   <!-- MAIN WORKSPACE -->
   <div class="app-main">
@@ -332,6 +288,6 @@
 
 <script src="/js/notifications-bell.js"></script>
 <script src="/js/sales.js"></script>
-<script src="/js/app-shell.js?v=9"></script>
+<script src="/js/app-shell.js?v=12"></script>
 </body>
 </html>

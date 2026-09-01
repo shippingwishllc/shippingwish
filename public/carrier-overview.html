@@ -13,52 +13,8 @@
 
 <div class="app-shell">
   <!-- LEFT SIDEBAR -->
-  <aside class="app-sidebar" role="navigation" aria-label="Carrier Navigation">
-    <div>
-      <a href="/" class="sidebar-brand" style="text-decoration:none;">
-        <div class="nav-logo-mark" style="width:36px;height:36px;font-size:16px;">SW</div>
-        <div>
-          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
-          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">CARRIER SUITE</div>
-        </div>
-      </a>
-
-      <div class="sidebar-section-label">Carrier Operations</div>
-      <a href="javascript:void(0)" class="sidebar-nav-link active" id="nav-tab-cockpit" onclick="switchCarrierTab('cockpit')">
-        <span aria-hidden="true">📊</span> Fleet Cockpit
-      </a>
-      <a href="javascript:void(0)" class="sidebar-nav-link" id="nav-tab-loads" onclick="switchCarrierTab('loads')">
-        <span aria-hidden="true">🚚</span> Active Dispatched Loads
-      </a>
-      <a href="/fleet" class="sidebar-nav-link">
-        <span aria-hidden="true">👥</span> Fleet Roster & Trucks
-      </a>
-
-      <div class="sidebar-section-label">Finance & Docs</div>
-      <a href="/invoices" class="sidebar-nav-link">
-        <span aria-hidden="true">💳</span> Invoices & Factoring
-      </a>
-      <a href="/documents" class="sidebar-nav-link">
-        <span aria-hidden="true">📄</span> Document Vault (POD/BOL)
-      </a>
-      <a href="/driver-app" class="sidebar-nav-link">
-        <span aria-hidden="true">📱</span> Mobile Driver App
-      </a>
-    </div>
-
-    <div>
-      <div class="sidebar-user-card">
-        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="carrier-avatar-initials">CF</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="carrier-name-display">Carrier Portal</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="carrier-mc-display">MC-XXXXXX</div>
-        </div>
-      </div>
-      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);" id="logout-btn">
-        🚪 Sign Out
-      </button>
-    </div>
-  </aside>
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
 
   <!-- MAIN WORKSPACE -->
   <div class="app-main">
@@ -401,6 +357,6 @@
     }
   }
 </script>
-<script src="/js/app-shell.js?v=9"></script>
+<script src="/js/app-shell.js?v=12"></script>
 </body>
 </html>

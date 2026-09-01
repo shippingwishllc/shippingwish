@@ -3109,6 +3109,9 @@ textarea.form-input { height: auto; min-height: 88px; }
   z-index: 190;
 }
 
+.app-sidebar.shell-mounted {
+  contain: layout style paint;
+}
 .app-sidebar:not(.shell-content-ready) > * {
   visibility: hidden;
 }

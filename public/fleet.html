@@ -12,67 +12,8 @@
 
 <div class="app-shell">
   <!-- SIDEBAR NAVIGATION -->
-  <aside class="app-sidebar">
-    <div style="padding:var(--space-4);border-bottom:1px solid rgba(255,255,255,0.08);">
-      <a href="/admin-dashboard" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
-        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--color-amber-500),#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#0f172a;font-weight:900;font-size:18px;">SW</div>
-        <div>
-          <div style="font-weight:800;font-size:16px;color:#fff;letter-spacing:-0.02em;">Shipping Wish</div>
-          <div style="font-size:11px;color:var(--color-amber-400);font-weight:600;">ENTERPRISE TMS</div>
-        </div>
-      </a>
-    </div>
-
-    <div class="sidebar-nav">
-      <div class="sidebar-section-label">Operations</div>
-      <a href="/admin-dashboard" class="sidebar-nav-link">
-        <span aria-hidden="true">📊</span> Overview &amp; Loads
-      </a>
-      <a href="/dispatcher-dashboard" class="sidebar-nav-link">
-        <span aria-hidden="true">🎧</span> Dispatch Desk
-      </a>
-      <a href="/fleet" class="sidebar-nav-link active">
-        <span aria-hidden="true">🚛</span> Fleet &amp; Drivers
-      </a>
-
-      <div class="sidebar-section-label">Sales &amp; Staff</div>
-      <a href="/crm-sales" class="sidebar-nav-link">
-        <span aria-hidden="true">📈</span> Sales CRM &amp; Leads
-      </a>
-      <a href="/staff-management" class="sidebar-nav-link">
-        <span aria-hidden="true">👔</span> Company Staff &amp; Roles
-      </a>
-
-      <div class="sidebar-section-label">Accounting &amp; Taxes</div>
-      <a href="/invoices" class="sidebar-nav-link">
-        <span aria-hidden="true">💳</span> Invoices &amp; Billing
-      </a>
-      <a href="/ifta" class="sidebar-nav-link">
-        <span aria-hidden="true">⛽</span> IFTA &amp; Fuel Ledger
-      </a>
-      <a href="/load-planning" class="sidebar-nav-link">
-        <span aria-hidden="true">📅</span> Load Planning
-      </a>
-
-      <div class="sidebar-section-label">System</div>
-      <a href="/admin-dashboard#audit" class="sidebar-nav-link">
-        <span aria-hidden="true">🛡️</span> Security Audit Logs
-      </a>
-    </div>
-
-    <div>
-      <div class="sidebar-user-card">
-        <div class="avatar" style="width:36px;height:36px;background:var(--color-amber-500);color:#0f172a;font-weight:800;font-size:14px;" id="fleet-avatar-initials">FL</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#fff;" class="truncate" id="fleet-user-name">Fleet Console</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="fleet-user-role">Operations HQ</div>
-        </div>
-      </div>
-      <button onclick="logout()" class="btn btn-light btn-block btn-sm" style="margin-top:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1);">
-        🚪 Sign Out
-      </button>
-    </div>
-  </aside>
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
 
   <!-- MAIN WORKSPACE -->
   <div class="app-main">
@@ -649,6 +590,6 @@
   }
 </script>
 
-<script src="/js/app-shell.js?v=9"></script>
+<script src="/js/app-shell.js?v=12"></script>
 </body>
 </html>

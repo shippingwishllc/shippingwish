@@ -1,6 +1,14 @@
 (function () {
   // #region agent log
   function dbgLog(location, message, data, hypothesisId) {
+    const entry = { sessionId: '278583', location, message, data, timestamp: Date.now(), hypothesisId };
+    try {
+      const k = 'sw_debug_278583';
+      const arr = JSON.parse(sessionStorage.getItem(k) || '[]');
+      arr.push(entry);
+      if (arr.length > 40) arr.shift();
+      sessionStorage.setItem(k, JSON.stringify(arr));
+    } catch (_) { /* ignore */ }
     fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '278583' },
@@ -9,10 +17,25 @@
   }
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
+  const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
   // #endregion
 
   function clearRoleCache() {
-    try { sessionStorage.removeItem(ROLE_CACHE_KEY); } catch (_) { /* ignore */ }
+    try {
+      sessionStorage.removeItem(ROLE_CACHE_KEY);
+      sessionStorage.removeItem(SIDEBAR_HTML_KEY);
+    } catch (_) { /* ignore */ }
+  }
+
+  function persistSidebarHtml(aside) {
+    try {
+      sessionStorage.setItem(SIDEBAR_HTML_KEY, aside.innerHTML);
+    } catch (_) { /* ignore */ }
+  }
+
+  function isSidebarBooted(aside) {
+    return aside.classList.contains('shell-content-ready')
+      && aside.querySelectorAll('a.sidebar-nav-link').length > 0;
   }
 
   function loadingSidebarHtml() {
@@ -291,6 +314,19 @@
   function mountSidebarContent(aside) {
     const cached = sessionStorage.getItem(ROLE_CACHE_KEY) || '';
     CURRENT_ROLE = cached;
+    if (isSidebarBooted(aside) && cached) {
+      syncActiveNav(aside);
+      aside.classList.add('shell-mounted');
+      aside.classList.remove('is-shell-pending');
+      // #region agent log
+      dbgLog('app-shell.js:boot-skip', 'skipped mount — sidebar restored from boot cache', {
+        page: pageName(),
+        cachedRole: cached,
+        linkCount: aside.querySelectorAll('a.sidebar-nav-link').length
+      }, 'F');
+      // #endregion
+      return;
+    }
     aside.innerHTML = cached ? sidebarHtml() : loadingSidebarHtml();
     aside.classList.add('shell-mounted', 'shell-content-ready');
     if (!cached) {
@@ -298,6 +334,7 @@
       aside.classList.remove('shell-content-ready');
     } else {
       aside.classList.remove('is-shell-pending');
+      persistSidebarHtml(aside);
     }
   }
 
@@ -342,6 +379,201 @@
     }
   }
 
+  const shellPrefetchCache = new Map();
+  let shellNavBusy = false;
+  const SHELL_SKIP_SRC = /app-shell(-boot)?\.js|design-system\.css/i;
+  const SHELL_REEXEC_SRC = /notifications-bell\.js|load-planning\.js|sales\.js/i;
+
+  if (!window.__swRun) {
+    window.__swRun = function (fn) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fn);
+      } else {
+        Promise.resolve(fn()).catch(console.error);
+      }
+    };
+  }
+
+  function isShellNavLink(a) {
+    if (!a || a.target === '_blank' || a.hasAttribute('download')) return false;
+    const raw = a.getAttribute('href');
+    if (!raw || raw.startsWith('javascript:')) return false;
+    try {
+      const url = new URL(a.href, location.origin);
+      if (url.origin !== location.origin) return false;
+      if (url.pathname === location.pathname && url.hash) return false;
+      if (!document.querySelector('.app-shell .app-main')) return false;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function prefetchShellPage(href) {
+    const url = new URL(href, location.origin);
+    const key = url.pathname + url.search;
+    if (shellPrefetchCache.has(key)) return;
+    fetch(url.pathname + url.search, { credentials: 'include', headers: { Accept: 'text/html' } })
+      .then((r) => (r.ok ? r.text() : null))
+      .then((html) => { if (html) shellPrefetchCache.set(key, html); })
+      .catch(() => {});
+  }
+
+  function removePageExtras() {
+    const shell = document.querySelector('.app-shell');
+    if (!shell) return;
+    let el = shell.nextElementSibling;
+    while (el) {
+      if (el.tagName === 'SCRIPT') break;
+      const next = el.nextElementSibling;
+      el.remove();
+      el = next;
+    }
+  }
+
+  function applyHeadExtras(doc) {
+    const old = document.getElementById('sw-page-style');
+    if (old) old.remove();
+    const style = doc.querySelector('head style');
+    if (!style || !style.textContent.trim()) return;
+    const s = document.createElement('style');
+    s.id = 'sw-page-style';
+    s.textContent = style.textContent;
+    document.head.appendChild(s);
+  }
+
+  function runFetchedScripts(doc) {
+    const scripts = doc.querySelectorAll('body script');
+    scripts.forEach((old) => {
+      if (old.src && SHELL_SKIP_SRC.test(old.src)) return;
+      const s = document.createElement('script');
+      if (old.src) {
+        if (SHELL_REEXEC_SRC.test(old.src)) {
+          const u = new URL(old.src, location.href);
+          u.searchParams.set('sw', String(Date.now()));
+          s.src = u.pathname + u.search;
+        } else if (/main\.js|auth\.js|tms\.js/i.test(old.src)) {
+          return;
+        } else {
+          return;
+        }
+      } else {
+        const code = old.textContent.replace(
+          /document\.addEventListener\s*\(\s*['"]DOMContentLoaded['"]\s*,/g,
+          '__swRun('
+        );
+        s.textContent = code;
+      }
+      document.body.appendChild(s);
+    });
+  }
+
+  function applyShellDocument(doc) {
+    const newMain = doc.querySelector('.app-main');
+    const oldMain = document.querySelector('.app-main');
+    if (!newMain || !oldMain) throw new Error('missing app-main');
+
+    oldMain.replaceWith(document.importNode(newMain, true));
+    removePageExtras();
+
+    const srcShell = doc.querySelector('.app-shell');
+    const shell = document.querySelector('.app-shell');
+    if (srcShell && shell) {
+      const fragment = document.createDocumentFragment();
+      let el = srcShell.nextElementSibling;
+      while (el) {
+        if (el.tagName === 'SCRIPT') break;
+        fragment.appendChild(document.importNode(el, true));
+        el = el.nextElementSibling;
+      }
+      shell.parentNode.insertBefore(fragment, shell.nextSibling);
+    }
+
+    applyHeadExtras(doc);
+    const title = doc.querySelector('title');
+    if (title) document.title = title.textContent;
+    runFetchedScripts(doc);
+  }
+
+  async function shellNavigate(href, opts) {
+    const url = new URL(href, location.origin);
+    const key = url.pathname + url.search;
+    if (shellNavBusy) return;
+    shellNavBusy = true;
+    const aside = document.querySelector('.app-sidebar');
+  try {
+      let html = shellPrefetchCache.get(key);
+      if (!html) {
+        const res = await fetch(key, { credentials: 'include', headers: { Accept: 'text/html' } });
+        if (!res.ok) throw new Error('fetch failed');
+        html = await res.text();
+      } else {
+        shellPrefetchCache.delete(key);
+      }
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const apply = () => applyShellDocument(doc);
+      if (document.startViewTransition) {
+        await document.startViewTransition(apply);
+      } else {
+        apply();
+      }
+      if (!opts || !opts.noHistory) {
+        history.pushState({ swShell: true }, '', url.pathname + url.search + url.hash);
+      }
+      if (aside) {
+        syncActiveNav(aside);
+        persistSidebarHtml(aside);
+      }
+      applyPageHash();
+      // #region agent log
+      dbgLog('app-shell.js:shell-nav', 'partial navigation applied', {
+        page: pageName(),
+        href: key,
+        prefetched: shellPrefetchCache.has(key)
+      }, 'G');
+      // #endregion
+    } catch (err) {
+      // #region agent log
+      dbgLog('app-shell.js:shell-nav-fallback', 'partial nav failed, full reload', { href: key, err: String(err) }, 'G');
+      // #endregion
+      window.location.href = href;
+    } finally {
+      shellNavBusy = false;
+    }
+  }
+
+  function setupShellNav() {
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('.app-sidebar a[href]');
+      if (!a || !isShellNavLink(a)) return;
+      e.preventDefault();
+      shellNavigate(a.href);
+    });
+
+    document.querySelector('.app-sidebar')?.addEventListener('mouseenter', (e) => {
+      const a = e.target.closest('a[href]');
+      if (a && isShellNavLink(a)) prefetchShellPage(a.href);
+    }, true);
+
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.swShell) {
+        shellNavigate(location.href, { noHistory: true });
+      }
+    });
+
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        document.querySelectorAll('.app-sidebar a[href]').forEach((a) => {
+          if (isShellNavLink(a)) prefetchShellPage(a.href);
+        });
+      }, { timeout: 2500 });
+    }
+
+    if (!history.state || !history.state.swShell) {
+      history.replaceState({ swShell: true }, '', location.href);
+    }
+  }
+
   function init() {
     initCallCount += 1;
     const aside = document.querySelector('.app-sidebar');
@@ -365,6 +597,7 @@
     mountSidebarContent(aside);
     ensureLogout();
     mountMobile();
+    setupShellNav();
 
     fetch('/api/me', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
@@ -390,6 +623,7 @@
         } else {
           aside.innerHTML = sidebarHtml();
           aside.classList.add('shell-content-ready');
+          persistSidebarHtml(aside);
           ensureLogout();
         }
 
