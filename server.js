@@ -7,6 +7,10 @@ const { sendBrandedEmail } = require('./utils/mailer');
 const { buildTemplate, COMPANY } = require('./utils/email-templates');
 const { ensureGrowthSchema } = require('./utils/ensure-growth-schema');
 const { webhookHandler } = require('./routes/billing');
+const { requireAuth } = require('./middleware/auth');
+const { requireCarrierSubscription } = require('./middleware/subscription');
+
+const carrierApiGate = [requireAuth, requireCarrierSubscription];
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -75,26 +79,26 @@ app.get('/api/health', async (req, res) => {
 
 // ---------- Enterprise TMS API Routes ----------
 app.use('/api', require('./routes/auth'));                // /api/signup, /api/login, /api/me, /api/users, /api/carriers
-app.use('/api/loads', require('./routes/loads'));         // Load CRUD, status pipeline, accessorials, state miles
-app.use('/api/brokers', require('./routes/brokers'));     // Broker CRUD, credit rating, search
-app.use('/api/fleet', require('./routes/fleet'));         // Trucks, Trailers, Drivers, expiries
-app.use('/api/documents', require('./routes/documents')); // File upload & download (Rate Conf, BOL, POD, Packets)
-app.use('/api/accessorials', require('./routes/accessorials')); // Detention, TONU, Layover, Lumper, Fuel Advances
-app.use('/api/fuel', require('./routes/fuel'));           // Fuel purchases logging
-app.use('/api/ifta', require('./routes/ifta'));           // Quarterly IFTA mileage & fuel report
-app.use('/api/invoices', require('./routes/invoices'));   // Itemized PDF Freight Invoices & payment status
-app.use('/api/portal', require('./routes/portal'));           // Carrier / owner-operator home cockpit
-app.use('/api/loadboard', require('./routes/loadboard')); // DAT Load Finder, OpenAI Matcher & Carrier Offers Approval Flow
+app.use('/api/loads', carrierApiGate, require('./routes/loads'));
+app.use('/api/brokers', carrierApiGate, require('./routes/brokers'));
+app.use('/api/fleet', carrierApiGate, require('./routes/fleet'));
+app.use('/api/documents', carrierApiGate, require('./routes/documents'));
+app.use('/api/accessorials', carrierApiGate, require('./routes/accessorials'));
+app.use('/api/fuel', carrierApiGate, require('./routes/fuel'));
+app.use('/api/ifta', carrierApiGate, require('./routes/ifta'));
+app.use('/api/invoices', carrierApiGate, require('./routes/invoices'));
+app.use('/api/portal', carrierApiGate, require('./routes/portal'));
+app.use('/api/loadboard', carrierApiGate, require('./routes/loadboard'));
 app.use('/api/crm', require('./routes/crm'));             // CRM Carrier Leads, Dispositions & Daily Tasks
 app.use('/api/email', require('./routes/email'));         // 1-Click branded outreach, inbound replies, unsubscribe
 app.use('/api/billing', require('./routes/billing'));     // Weekly Stripe retainers + checkout links
 app.use('/api/voip', require('./routes/voip'));           // Click-to-call, Twilio SMS, webhooks
 app.use('/api/employees', require('./routes/employees')); // Admin HR Employee Management, Salaries & Multi-Dispatcher Assignment
-app.use('/api/load-planning', require('./routes/load_planning')); // Driver Availability & Load Planning Schedule
-app.use('/api/notifications', require('./routes/notifications')); // In-app user notifications & bell counter
-app.use('/api/tracking', require('./routes/tracking'));           // Driver GPS pings & load tracking history
+app.use('/api/load-planning', carrierApiGate, require('./routes/load_planning'));
+app.use('/api/notifications', carrierApiGate, require('./routes/notifications'));
+app.use('/api/tracking', carrierApiGate, require('./routes/tracking'));
 app.use('/api/audit-logs', require('./routes/audit'));            // System security audit log viewer
-app.use('/api/messages', require('./routes/messages'));            // Load chat & dispatcher-driver messaging
+app.use('/api/messages', carrierApiGate, require('./routes/messages'));
 app.use('/api/routes', require('./routes/routes'));              // Google Route Optimization API, Truck Miles, RPM & Fuel Calculator
 app.use('/api/settings', require('./routes/settings'));          // Website CMS Settings & Contact Info
 app.use('/api/blog', require('./routes/blog'));                  // SEO Freight Blog & Admin Articles Manager
@@ -247,6 +251,21 @@ app.post('/api/contact', async (req, res) => {
 });
 
 // Automatic Super Admin Account Initializer
+async function backfillCarrierTrials() {
+  const days = parseInt(process.env.PORTAL_TRIAL_DAYS || process.env.STRIPE_TRIAL_DAYS || '7', 10);
+  try {
+    const pool = require('./db');
+    await pool.query(
+      `UPDATE users
+       SET trial_ends_at = created_at + ($1 || ' days')::interval
+       WHERE role IN ('carrier','carrier_admin') AND trial_ends_at IS NULL`,
+      [String(days)]
+    );
+  } catch (err) {
+    console.warn('[TRIAL] backfill skipped:', err.message);
+  }
+}
+
 async function seedAdminUsers() {
   try {
     const pool = require('./db');
@@ -271,13 +290,13 @@ async function seedAdminUsers() {
 }
 
 if (require.main === module) {
-  ensureGrowthSchema().then(seedAdminUsers).then(() => {
+  ensureGrowthSchema().then(backfillCarrierTrials).then(seedAdminUsers).then(() => {
     app.listen(PORT, () => {
       console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
     });
   });
 } else {
-  ensureGrowthSchema().catch((err) => console.warn('[GROWTH] schema:', err.message));
+  ensureGrowthSchema().then(backfillCarrierTrials).catch((err) => console.warn('[GROWTH] schema:', err.message));
   seedAdminUsers();
 }
 

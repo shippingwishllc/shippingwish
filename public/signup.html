@@ -267,6 +267,12 @@
             <input class="form-input" id="su-confirm" type="password" required placeholder="Repeat your password" autocomplete="new-password">
           </div>
 
+          <div class="form-group" id="otp-section" style="display:none;">
+            <label class="form-label required" for="su-otp">Email verification code</label>
+            <input class="form-input" id="su-otp" name="otp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code from noreply@shippingwish.com" maxlength="8">
+            <span class="form-hint">Check your inbox (and spam). Code expires in 10 minutes.</span>
+          </div>
+
           <button type="submit" class="btn btn-primary btn-lg btn-block" id="signup-submit-btn">
             Create Account →
           </button>
@@ -294,6 +300,8 @@
   const form = document.getElementById('signup-form');
   const alertBox = document.getElementById('signup-alert');
   const submitBtn = document.getElementById('signup-submit-btn');
+  const otpSection = document.getElementById('otp-section');
+  let otpSent = false;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -318,28 +326,63 @@
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating account...';
-
     const formData = new FormData(form);
     const body = Object.fromEntries(formData);
 
     try {
-      const res = await fetch('/api/signup', {
+      if (!otpSent) {
+        submitBtn.textContent = 'Sending verification code…';
+        const res = await fetch('/api/signup/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alertBox.textContent = data.error || 'Could not send verification code.';
+          alertBox.className = 'form-alert error';
+          alertBox.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Account →';
+          return;
+        }
+        otpSent = true;
+        otpSection.style.display = 'block';
+        document.getElementById('su-otp').focus();
+        alertBox.textContent = 'Code sent from noreply@shippingwish.com — enter it below and submit again.';
+        alertBox.className = 'form-alert success';
+        alertBox.style.display = 'block';
+        submitBtn.textContent = 'Verify code & create account →';
+        submitBtn.disabled = false;
+        return;
+      }
+
+      const otp = (document.getElementById('su-otp').value || '').trim();
+      if (!otp) {
+        alertBox.textContent = 'Enter the 6-digit code from your email.';
+        alertBox.className = 'form-alert error';
+        alertBox.style.display = 'block';
+        submitBtn.disabled = false;
+        return;
+      }
+
+      submitBtn.textContent = 'Verifying…';
+      const res = await fetch('/api/signup/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(body)
+        body: JSON.stringify({ email: body.email, otp })
       });
       const data = await res.json();
 
       if (!res.ok) {
-        alertBox.textContent = data.error || 'Could not create account. Please try again.';
+        alertBox.textContent = data.error || 'Verification failed.';
         alertBox.className = 'form-alert error';
         alertBox.style.display = 'block';
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account →';
+        submitBtn.textContent = 'Verify code & create account →';
       } else {
-        submitBtn.textContent = 'Redirecting to your portal...';
+        submitBtn.textContent = 'Redirecting to your portal…';
         window.location.href = '/carrier-overview?welcome=1';
       }
     } catch (err) {
@@ -347,7 +390,7 @@
       alertBox.className = 'form-alert error';
       alertBox.style.display = 'block';
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Create Account →';
+      submitBtn.textContent = otpSent ? 'Verify code & create account →' : 'Create Account →';
     }
   });
 

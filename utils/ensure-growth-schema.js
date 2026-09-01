@@ -110,6 +110,15 @@ async function ensureGrowthSchema() {
   } catch (err) {
     console.warn('[GROWTH] Schema apply skipped:', err.message);
   }
+
+  const fileV4 = path.join(__dirname, '..', 'sql', 'migrations', 'v4_signup_otp_trial.sql');
+  try {
+    const sqlV4 = fs.readFileSync(fileV4, 'utf8');
+    const { ok, failed } = await runStatements(sqlV4, 'OTP_TRIAL');
+    console.log(`[OTP_TRIAL] Schema v4 applied (${ok} ok, ${failed} skipped)`);
+  } catch (err) {
+    console.warn('[OTP_TRIAL] Schema apply skipped:', err.message);
+  }
 }
 
 /** Call from CRM import if table still missing (serverless race / cold start). */

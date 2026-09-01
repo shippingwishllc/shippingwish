@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { getCarrierAccess, TRIAL_DAYS } = require('../middleware/subscription');
 
 const router = express.Router();
 
@@ -123,8 +124,18 @@ router.get('/home', requireAuth, async (req, res) => {
       { key: 'driver', label: 'At least one driver', done: driversRes.rows.length > 0 },
       { key: 'insurance', label: 'Certificate of insurance uploaded', done: Boolean(docCats.insurance) },
       { key: 'w9', label: 'W-9 uploaded', done: Boolean(docCats.w9) },
-      { key: 'trial', label: 'Weekly operations trial / subscription', done: Boolean(subRes.rows[0]) }
+      { key: 'trial', label: 'Weekly operations trial / subscription', done: false }
     ];
+
+    const access = await getCarrierAccess(req.user.id, user.email);
+    const trialDone = access.allowed && (access.mode === 'subscription' || access.mode === 'portal_trial');
+    checklist.find((c) => c.key === 'trial').done = trialDone;
+    if (access.mode === 'portal_trial' && access.trialDaysLeft != null) {
+      checklist.find((c) => c.key === 'trial').label =
+        `Portal trial — ${access.trialDaysLeft} day(s) left (then Stripe weekly plan)`;
+    } else if (access.mode === 'subscription') {
+      checklist.find((c) => c.key === 'trial').label = 'Weekly operations plan active';
+    }
 
     const pendingOffers = (offersRes.rows || []).filter((o) => o.status === 'pending');
     const invoicePending = (invoicesRes.rows || [])
@@ -139,6 +150,8 @@ router.get('/home', requireAuth, async (req, res) => {
         email: process.env.OPERATIONS_EMAIL || 'operations@shippingwish.com'
       },
       subscription: subRes.rows[0] || null,
+      access,
+      trialDays: TRIAL_DAYS,
       kpis: {
         brokerPay: milesRes.rows[0].broker_pay || 0,
         youKeep: milesRes.rows[0].you_keep || 0,

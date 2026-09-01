@@ -46,19 +46,20 @@ async function sendBrandedEmail({
   emailType,
   templateKey,
   cc,
-  transactional
+  transactional,
+  from: fromOverride
 }) {
   if (!to) throw new Error('Recipient email is required');
   const isTx = Boolean(transactional) ||
-    ['contact_ack', 'trial_welcome', 'subscription_started', 'load_booked', 'onboarding', 'internal_lead', 'internal_checkout'].includes(templateKey || emailType);
+    ['contact_ack', 'trial_welcome', 'subscription_started', 'load_booked', 'onboarding', 'internal_lead', 'internal_checkout', 'signup_otp'].includes(templateKey || emailType);
   if (!isTx && await isUnsubscribed(to)) {
     return { skipped: true, reason: 'unsubscribed', id: null };
   }
 
   const resend = getResend();
-  const from = isTx
-    ? (process.env.MAIL_FROM_TRANSACTIONAL || mailFrom())
-    : mailFrom();
+  const from = fromOverride || (isTx
+    ? (process.env.MAIL_FROM_TRANSACTIONAL || process.env.MAIL_FROM_NOREPLY || mailFrom())
+    : mailFrom());
   const replyTo = replyToAddress(leadId);
   const headers = isTx
     ? undefined

@@ -214,7 +214,11 @@
   async function loadCarrierCockpitData() {
     try {
       const homeRes = await fetch('/api/portal/home', { credentials: 'include' });
-      if (homeRes.status === 403) return;
+      if (homeRes.status === 403) {
+        const err = await homeRes.json().catch(() => ({}));
+        window.location.href = err.checkoutUrl || '/checkout?plan=solo_weekly';
+        return;
+      }
       if (!homeRes.ok) throw new Error('portal');
       const home = await homeRes.json();
 
@@ -229,11 +233,16 @@
         `<strong>Your operations manager:</strong> ${escapeHtml(mgr.name || 'Shipping Wish Operations')} · ${escapeHtml(mgr.phone || '')} · ${escapeHtml(mgr.email || '')}`;
 
       const sub = home.subscription;
+      const access = home.access;
       const subEl = document.getElementById('sub-line');
-      if (sub) {
-        subEl.textContent = `Weekly operations plan: ${sub.plan_key || 'weekly'} · status ${sub.status || 'active'}. First week can be $0 if you are on trial.`;
+      if (access && access.mode === 'portal_trial') {
+        subEl.textContent = `Portal trial: ${access.trialDaysLeft} day(s) left of full TMS access. Add Stripe weekly plan before trial ends to stay active ($0 due today).`;
+      } else if (access && access.mode === 'subscription') {
+        subEl.textContent = `Weekly operations plan: ${sub?.plan_key || 'weekly'} · status ${sub?.status || 'active'}.`;
+      } else if (sub) {
+        subEl.textContent = `Weekly operations plan: ${sub.plan_key || 'weekly'} · status ${sub.status || 'active'}.`;
       } else {
-        subEl.textContent = 'No Stripe trial on this login yet. If you paid on the website with a different email, tell operations so we can link it.';
+        subEl.textContent = 'Complete Stripe weekly plan to keep TMS active after your 7-day portal trial.';
       }
 
       document.getElementById('checklist-box').innerHTML = (home.checklist || []).map((c) => `

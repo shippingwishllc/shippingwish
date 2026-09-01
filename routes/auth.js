@@ -4,7 +4,8 @@ const jwt = require('jsonwebtoken');
 const pool = require('../db');
 const { requireAuth, requireRole, requireSuperAdmin, JWT_SECRET, setAuthCookie } = require('../middleware/auth');
 const { sendBrandedEmail } = require('../utils/mailer');
-const { COMPANY, APP_URL, escapeHtml } = require('../utils/email-templates');
+const { COMPANY, APP_URL, escapeHtml, buildTemplate } = require('../utils/email-templates');
+const { getCarrierAccess, TRIAL_DAYS, isCarrierRole } = require('../middleware/subscription');
 
 const router = express.Router();
 
@@ -110,46 +111,183 @@ async function createPortalSignupLead(user, meta) {
   }
 }
 
-// Public signup — creates a carrier account by default
-router.post('/signup', rateLimit(5, 60000), async (req, res) => {
+const OTP_TTL_MS = 10 * 60 * 1000;
+const OTP_MAX_ATTEMPTS = 5;
+const NOREPLY_FROM = process.env.MAIL_FROM_NOREPLY || 'Shipping Wish LLC <noreply@shippingwish.com>';
+
+function generateOtp() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+async function ensureSignupTables() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS signup_pending (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      otp_hash TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      name TEXT NOT NULL,
+      company_name TEXT,
+      phone TEXT,
+      mc_number TEXT,
+      dot_number TEXT,
+      address TEXT,
+      signup_ip TEXT,
+      user_agent TEXT,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `).catch(() => {});
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ').catch(() => {});
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ').catch(() => {});
+}
+
+// Step 1 — send OTP to email (noreply@shippingwish.com)
+router.post('/signup/send-otp', rateLimit(5, 60000), async (req, res) => {
   const { name, company, phone, email, password, mcNumber, dotNumber, address } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email, and password are required.' });
   }
+  if (String(password).length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  }
 
   const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').split(',')[0].trim();
   const userAgent = req.headers['user-agent'] || '';
+  const emailNorm = String(email).trim().toLowerCase();
 
   try {
-    const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1)', [email]);
+    await ensureSignupTables();
+    const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1)', [emailNorm]);
     if (existing.rows.length) {
-      return res.status(409).json({ error: 'An account with this email already exists.' });
+      return res.status(409).json({ error: 'An account with this email already exists. Sign in instead.' });
     }
+
+    const otp = generateOtp();
+    const otpHash = await bcrypt.hash(otp, 10);
     const passwordHash = await bcrypt.hash(password, 10);
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+
+    await pool.query(
+      `INSERT INTO signup_pending (email, otp_hash, password_hash, name, company_name, phone, mc_number, dot_number, address, signup_ip, user_agent, attempts, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,0,$12)
+       ON CONFLICT (email) DO UPDATE SET
+         otp_hash = EXCLUDED.otp_hash,
+         password_hash = EXCLUDED.password_hash,
+         name = EXCLUDED.name,
+         company_name = EXCLUDED.company_name,
+         phone = EXCLUDED.phone,
+         mc_number = EXCLUDED.mc_number,
+         dot_number = EXCLUDED.dot_number,
+         address = EXCLUDED.address,
+         signup_ip = EXCLUDED.signup_ip,
+         user_agent = EXCLUDED.user_agent,
+         attempts = 0,
+         expires_at = EXCLUDED.expires_at`,
+      [emailNorm, otpHash, passwordHash, name, company || null, phone || null, mcNumber || null, dotNumber || null, address || null, clientIp, userAgent, expiresAt]
+    );
+
+    const tpl = buildTemplate('signup_otp', { name, otp, trialDays: TRIAL_DAYS });
+    await sendBrandedEmail({
+      to: emailNorm,
+      subject: `Your Shipping Wish verification code: ${otp}`,
+      html: tpl.html,
+      text: tpl.text,
+      emailType: 'signup_otp',
+      templateKey: 'signup_otp',
+      transactional: true,
+      from: NOREPLY_FROM
+    });
+
+    res.json({ ok: true, message: 'Verification code sent.', expiresInMinutes: 10 });
+  } catch (err) {
+    console.error('send-otp error:', err);
+    res.status(500).json({ error: 'Could not send verification code. Try again in a minute.' });
+  }
+});
+
+// Step 2 — verify OTP and create account with 7-day portal trial
+router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ error: 'Email and verification code are required.' });
+  }
+  const emailNorm = String(email).trim().toLowerCase();
+  const otpClean = String(otp).trim().replace(/\s/g, '');
+
+  try {
+    await ensureSignupTables();
+    const pendingRes = await pool.query('SELECT * FROM signup_pending WHERE lower(email) = lower($1)', [emailNorm]);
+    if (!pendingRes.rows.length) {
+      return res.status(400).json({ error: 'No pending signup for this email. Request a new code.' });
+    }
+    const pending = pendingRes.rows[0];
+
+    if (new Date(pending.expires_at) < new Date()) {
+      await pool.query('DELETE FROM signup_pending WHERE id = $1', [pending.id]);
+      return res.status(400).json({ error: 'Code expired. Request a new verification code.' });
+    }
+
+    if (pending.attempts >= OTP_MAX_ATTEMPTS) {
+      return res.status(429).json({ error: 'Too many wrong attempts. Request a new code.' });
+    }
+
+    const otpOk = await bcrypt.compare(otpClean, pending.otp_hash);
+    if (!otpOk) {
+      await pool.query('UPDATE signup_pending SET attempts = attempts + 1 WHERE id = $1', [pending.id]);
+      return res.status(400).json({ error: 'Incorrect code. Check your email and try again.' });
+    }
+
+    const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1)', [emailNorm]);
+    if (existing.rows.length) {
+      await pool.query('DELETE FROM signup_pending WHERE id = $1', [pending.id]);
+      return res.status(409).json({ error: 'Account already exists. Sign in instead.' });
+    }
+
+    const trialEnds = new Date();
+    trialEnds.setDate(trialEnds.getDate() + TRIAL_DAYS);
+
     const result = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, address, signup_ip, user_agent)
-       VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, $8, $9, $10)
-       RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, signup_ip`,
-      [name, email, passwordHash, company || null, phone || null, mcNumber || null, dotNumber || null, address || null, clientIp, userAgent]
+      `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, address, signup_ip, user_agent, trial_ends_at, email_verified_at)
+       VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, $8, $9, $10, $11, now())
+       RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, signup_ip, trial_ends_at`,
+      [pending.name, emailNorm, pending.password_hash, pending.company_name, pending.phone, pending.mc_number, pending.dot_number, pending.address, pending.signup_ip, pending.user_agent, trialEnds]
     );
     const user = result.rows[0];
+    await pool.query('DELETE FROM signup_pending WHERE id = $1', [pending.id]);
+
     setAuthCookie(res, signToken(user));
-    await createPortalSignupLead(user, { company, phone, mcNumber, dotNumber });
+    await createPortalSignupLead(user, {
+      company: pending.company_name,
+      phone: pending.phone,
+      mcNumber: pending.mc_number,
+      dotNumber: pending.dot_number
+    });
+
     const ops = [...new Set([COMPANY.operationsEmail, process.env.ADMIN_EMAIL_1, process.env.ADMIN_EMAIL_2].filter(Boolean))];
-    const subject = `Portal signup — ${company || name}`;
-    const html = `<p>A carrier created a portal login (this is not Stripe payment by itself).</p>
-      <p><strong>${escapeHtml(name)}</strong><br>${escapeHtml(company || '')}<br>${escapeHtml(email)} · ${escapeHtml(phone || '')}<br>
-      MC ${escapeHtml(mcNumber || '-')} · USDOT ${escapeHtml(dotNumber || '-')}</p>
-      <p>They appear in Admin → <a href="${APP_URL}/admin-dashboard">Registered Carrier Fleets</a> and can sign in at /login.</p>`;
-    const text = `Portal signup: ${name} / ${company} / ${email} / ${phone}`;
+    const subject = `Portal signup (verified) — ${pending.company_name || pending.name}`;
+    const html = `<p>Carrier verified email and created portal login.</p>
+      <p><strong>${escapeHtml(pending.name)}</strong><br>${escapeHtml(pending.company_name || '')}<br>${escapeHtml(emailNorm)}</p>
+      <p>${TRIAL_DAYS}-day portal trial until ${trialEnds.toISOString().slice(0, 10)}. Stripe weekly plan still required after trial unless they subscribe early.</p>`;
     Promise.all(ops.map((to) => sendBrandedEmail({
-      to, subject, html, text, emailType: 'internal_lead', templateKey: 'internal_signup'
+      to, subject, html, text: subject, emailType: 'internal_lead', templateKey: 'internal_signup', transactional: true
     }))).catch((err) => console.error('Signup notify:', err.message));
-    res.json({ ok: true, user });
+
+    const access = await getCarrierAccess(user.id, user.email);
+    res.json({ ok: true, user, access, trialDays: TRIAL_DAYS });
   } catch (err) {
-    console.error('Signup error:', err);
-    res.status(500).json({ error: 'Could not create account right now.' });
+    console.error('verify-otp error:', err);
+    res.status(500).json({ error: 'Could not verify code right now.' });
   }
+});
+
+// Legacy direct signup — disabled (OTP required)
+router.post('/signup', rateLimit(5, 60000), async (req, res) => {
+  return res.status(400).json({
+    error: 'Email verification is required. Enter your details and use the code we email you.',
+    code: 'OTP_REQUIRED'
+  });
 });
 
 // Login
@@ -174,19 +312,21 @@ router.post('/login', rateLimit(10, 60000), async (req, res) => {
     await pool.query('UPDATE users SET signup_ip = $1 WHERE id = $2', [clientIp, user.id]);
 
     setAuthCookie(res, signToken(user));
-    res.json({
-      ok: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        company_name: user.company_name,
-        phone: user.phone,
-        mc_number: user.mc_number,
-        signup_ip: clientIp
-      }
-    });
+    const userOut = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      company_name: user.company_name,
+      phone: user.phone,
+      mc_number: user.mc_number,
+      signup_ip: clientIp
+    };
+    const payload = { ok: true, user: userOut };
+    if (isCarrierRole(user.role)) {
+      payload.access = await getCarrierAccess(user.id, user.email);
+    }
+    res.json(payload);
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: err.message || 'Could not sign in right now.' });
@@ -199,12 +339,17 @@ router.get('/me', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE users SET signup_ip = $1 WHERE id = $2 AND signup_ip IS NULL', [clientIp, req.user.id]);
     const result = await pool.query(
-      `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, address, is_suspended, signup_ip, created_at, organization_id
+      `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, address, is_suspended, signup_ip, created_at, organization_id, trial_ends_at, email_verified_at
        FROM users WHERE id = $1`,
       [req.user.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'User not found.' });
-    res.json({ ok: true, user: result.rows[0] });
+    const user = result.rows[0];
+    const payload = { ok: true, user };
+    if (isCarrierRole(user.role)) {
+      payload.access = await getCarrierAccess(user.id, user.email);
+    }
+    res.json(payload);
   } catch (err) {
     res.status(500).json({ error: 'Could not load account.' });
   }
@@ -398,6 +543,75 @@ router.get('/carriers/:id/commission', requireAuth, requireRole('dispatcher', 'a
     res.json({ carrier: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: 'Could not fetch carrier commission.' });
+  }
+});
+
+// Super admin: remove fake carrier signups (keeps Muhammad Ahsan / email containing ahsan)
+router.post('/admin/cleanup-fake-carriers', requireAuth, requireSuperAdmin, async (req, res) => {
+  const { confirm } = req.body || {};
+  if (confirm !== 'DELETE_FAKE_CARRIERS_EXCEPT_AHSAN') {
+    return res.status(400).json({
+      error: 'Confirmation required.',
+      hint: 'POST with body { "confirm": "DELETE_FAKE_CARRIERS_EXCEPT_AHSAN" }'
+    });
+  }
+
+  try {
+    const keepRes = await pool.query(
+      `SELECT id, email, name FROM users
+       WHERE role IN ('carrier','carrier_admin')
+         AND (lower(name) LIKE '%ahsan%' OR lower(email) LIKE '%ahsan%')
+       ORDER BY created_at ASC`
+    );
+    const keepIds = keepRes.rows.map((r) => r.id);
+    if (!keepIds.length) {
+      return res.status(400).json({ error: 'No Ahsan carrier account found — aborting to avoid deleting everyone.' });
+    }
+
+    const victims = await pool.query(
+      `SELECT id, email, name FROM users
+       WHERE role IN ('carrier','carrier_admin') AND id NOT IN (${keepIds.join(',')})`
+    );
+
+    const deleted = [];
+    for (const u of victims.rows) {
+      const id = u.id;
+      await pool.query('DELETE FROM loads WHERE carrier_id = $1', [id]).catch(() => {});
+      await pool.query('DELETE FROM trucks WHERE carrier_id = $1', [id]).catch(() => {});
+      await pool.query('DELETE FROM drivers WHERE carrier_id = $1', [id]).catch(() => {});
+      await pool.query('DELETE FROM trailers WHERE carrier_id = $1', [id]).catch(() => {});
+      await pool.query('DELETE FROM documents WHERE carrier_id = $1', [id]).catch(() => {});
+      await pool.query('DELETE FROM dispatcher_carriers WHERE carrier_id = $1', [id]).catch(() => {});
+      await pool.query('DELETE FROM billing_subscriptions WHERE user_id = $1', [id]).catch(() => {});
+      await pool.query('DELETE FROM signup_pending WHERE lower(email) = lower($1)', [u.email]).catch(() => {});
+      await pool.query('DELETE FROM users WHERE id = $1', [id]);
+      deleted.push({ id: u.id, email: u.email, name: u.name });
+    }
+
+    const trialEnds = new Date();
+    trialEnds.setDate(trialEnds.getDate() + TRIAL_DAYS);
+    for (const k of keepRes.rows) {
+      await pool.query(
+        `UPDATE users SET trial_ends_at = $1, email_verified_at = COALESCE(email_verified_at, now()) WHERE id = $2`,
+        [trialEnds, k.id]
+      );
+    }
+
+    await pool.query(
+      `DELETE FROM crm_leads WHERE status = 'new' AND lower(email) NOT IN (SELECT unnest($1::text[]))`,
+      [keepRes.rows.map((r) => String(r.email).toLowerCase())]
+    ).catch(() => {});
+
+    res.json({
+      ok: true,
+      kept: keepRes.rows,
+      deletedCount: deleted.length,
+      deleted,
+      trialResetUntil: trialEnds.toISOString()
+    });
+  } catch (err) {
+    console.error('cleanup-fake-carriers:', err);
+    res.status(500).json({ error: 'Cleanup failed.', detail: err.message });
   }
 });
 

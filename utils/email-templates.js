@@ -380,8 +380,37 @@ function contactAckEmail({ name, recipientEmail }) {
   };
 }
 
+function signupOtpEmail({ name, otp, trialDays }) {
+  const days = trialDays || parseInt(process.env.PORTAL_TRIAL_DAYS || process.env.STRIPE_TRIAL_DAYS || '7', 10);
+  const heading = 'Verify your email — Shipping Wish carrier portal';
+  const bodyHtml = `
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">
+      Hi ${escapeHtml(name || 'there')},
+    </p>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#334155;">
+      Use this one-time code to finish creating your carrier portal account. It expires in <strong>10 minutes</strong>.
+    </p>
+    <div style="text-align:center;margin:24px 0;padding:20px;background:#0f172a;border-radius:12px;">
+      <div style="font-size:32px;font-weight:900;letter-spacing:0.35em;color:#f59e0b;font-family:monospace;">${escapeHtml(String(otp))}</div>
+    </div>
+    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#64748b;">
+      After verification you get <strong>${days} days</strong> of full TMS access. Then weekly Stripe billing keeps your desk active ($0 due today when you add your card).
+    </p>
+    <p style="margin:0;font-size:13px;color:#94a3b8;">If you did not request this, ignore this email.</p>
+  `;
+  const text = `Shipping Wish LLC — Your signup code: ${otp}\n\nExpires in 10 minutes. After verify: ${days}-day portal trial then weekly Stripe plan.\n\n${COMPANY.phone}`;
+  return wrapCorporateEmail({
+    preheader: `Your verification code: ${otp}`,
+    heading,
+    bodyHtml,
+    text
+  });
+}
+
 function buildTemplate(templateKey, vars) {
   switch (templateKey) {
+    case 'signup_otp':
+      return signupOtpEmail(vars);
     case 'follow_up':
       return followUpEmail(vars);
     case 'onboarding_packet':
@@ -426,5 +455,6 @@ module.exports = {
   dedicatedManagerEmail,
   followUpEmail,
   onboardingEmail,
-  trialWelcomeEmail
+  trialWelcomeEmail,
+  signupOtpEmail
 };
