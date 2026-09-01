@@ -1460,6 +1460,7 @@ html {
   padding: 8px 8px 12px;
   position: sticky;
   top: 0;
+  align-self: start;
   height: 100vh;
   max-height: 100vh;
   overflow: hidden;
@@ -2841,6 +2842,7 @@ body:has(.app-shell) {
 .app-sidebar {
   width: 248px;
   padding: 8px 8px 14px;
+  align-self: start;
   overflow: hidden !important;
   scrollbar-width: none !important;
 }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Carrier Replies Inbox | Shipping Wish TMS</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/design-system.css?v=19">
   <style>
     :root {
       --inbox-page-items: 7;
@@ -73,6 +73,16 @@
       #inbox-list { height:auto; min-height:auto; max-height:none; overflow:visible; }
       .inbox-item { height:auto; min-height:84px; max-height:none; }
     }
+    /* Keep inbox in one viewport — scroll only inside email panel, not whole page */
+    .inbox-page-content {
+      padding-top: var(--space-6);
+      padding-bottom: var(--space-6);
+    }
+    @media (min-width: 901px) {
+      .inbox-page-content .stat-card-grid {
+        margin-bottom: var(--space-4) !important;
+      }
+    }
   </style>
 </head>
 <body class="app-body">
@@ -92,7 +102,7 @@
         <button class="btn btn-primary btn-sm" type="button" onclick="loadInbox(false)">All replies</button>
       </div>
     </header>
-    <main class="app-content">
+    <main class="app-content inbox-page-content">
       <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
         <div class="stat-kpi-card">
           <div class="stat-kpi-top"><span class="stat-kpi-title">Unread replies</span><div class="stat-kpi-icon">📬</div></div>
