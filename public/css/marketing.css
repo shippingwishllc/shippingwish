@@ -980,7 +980,6 @@ body.marketing .pricing-features li {
   .mkt-hero { padding: 36px 0 48px; }
   .mkt-hero-grid { grid-template-columns: 1fr; gap: 32px; }
   .mkt-cards,
-  .mkt-price-grid,
   .mkt-stats,
   .mkt-hero-kpis { grid-template-columns: repeat(2, 1fr); }
   .mkt-partner-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1001,6 +1000,25 @@ body.marketing .pricing-features li {
     overflow-x: auto;
   }
   .mkt-wrap { padding: 0 16px; }
+}
+
+@media (max-width: 768px) {
+  .mkt-price-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    max-width: min(100%, 440px);
+    margin-inline: auto;
+  }
+
+  .price-card {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .price-card.featured {
+    margin-top: 10px;
+  }
 }
 
 .mkt-icon {
@@ -1381,7 +1399,22 @@ body.marketing .pricing-features li {
 @media (max-width: 640px) {
   .mkt-h1 { font-size: 1.85rem; }
   .mkt-partner-grid { grid-template-columns: 1fr; }
+  .mkt-stats,
+  .mkt-hero-kpis { grid-template-columns: 1fr; }
+  .mkt-cards { grid-template-columns: 1fr; }
   .price-amt { font-size: 2.5rem; }
+  .price-card { padding: 24px 18px 20px; }
+  .safe-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .safe-pill {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+    text-align: center;
+  }
   .nav-logo-text { font-size: 15px; }
   body.marketing .nav-actions .live-status { display: none; }
   .mkt-quote { padding: 24px 18px; }
