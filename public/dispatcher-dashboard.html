@@ -867,8 +867,8 @@
 </script>
 
 <!-- ================= ROUTE & RPM OPTIMIZER MODAL ================= -->
-<div class="modal-overlay" id="routeOptimizerModal" style="display:none;z-index:4100;align-items:center;justify-content:center;" onclick="if(event.target===this) closeRouteOptimizerModal()">
-  <div class="modal-card" style="max-width:700px;background:#0f172a;color:#fff;border:1px solid rgba(245,158,11,0.3);box-shadow:0 25px 50px rgba(0,0,0,0.6);">
+<div class="modal-backdrop" id="routeOptimizerModal" onclick="if(event.target===this) closeRouteOptimizerModal()">
+  <div class="modal modal-lg" style="max-width:700px;background:#0f172a;color:#fff;border:1px solid rgba(245,158,11,0.3);box-shadow:0 25px 50px rgba(0,0,0,0.6);">
     <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1);">
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:24px;">🗺️</span>
@@ -947,14 +947,12 @@
   function openRouteOptimizerModal() {
     const el = document.getElementById('routeOptimizerModal');
     if (!el) return;
-    el.style.display = 'flex';
     el.classList.add('open');
   }
 
   function closeRouteOptimizerModal() {
     const el = document.getElementById('routeOptimizerModal');
     if (!el) return;
-    el.style.display = 'none';
     el.classList.remove('open');
   }
   window.openRouteOptimizerModal = openRouteOptimizerModal;
@@ -1016,6 +1014,7 @@
       btn.innerText = '⚡ Calculate Route, RPM & Profitability →';
     }
   }
+  window.calculateRouteOptimization = calculateRouteOptimization;
 </script>
 <script src="/js/app-shell.js?v=14"></script>
 </body>
