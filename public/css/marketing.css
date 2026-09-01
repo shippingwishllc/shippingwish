@@ -1399,8 +1399,32 @@ body.marketing .pricing-features li {
 @media (max-width: 640px) {
   .mkt-h1 { font-size: 1.85rem; }
   .mkt-partner-grid { grid-template-columns: 1fr; }
-  .mkt-stats,
-  .mkt-hero-kpis { grid-template-columns: 1fr; }
+  .mkt-hero-kpis,
+  .mkt-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .mkt-stat {
+    min-height: 96px;
+    padding: 16px 10px;
+  }
+  .mkt-stat-val {
+    font-size: 1.5rem;
+  }
+  .mkt-stat-label {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .mkt-hero-kpi {
+    padding: 10px 8px;
+  }
+  .mkt-hero-kpi-val {
+    font-size: 1rem;
+  }
+  .mkt-hero-kpi-label {
+    font-size: 10px;
+    line-height: 1.3;
+  }
   .mkt-cards { grid-template-columns: 1fr; }
   .price-amt { font-size: 2.5rem; }
   .price-card { padding: 24px 18px 20px; }
