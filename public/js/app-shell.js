@@ -1,4 +1,44 @@
 (function () {
+  // #region agent log
+  function dbgLog(location, message, data, hypothesisId) {
+    fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '278583' },
+      body: JSON.stringify({ sessionId: '278583', location, message, data, timestamp: Date.now(), hypothesisId })
+    }).catch(() => {});
+  }
+  let initCallCount = 0;
+  const ROLE_CACHE_KEY = 'sw_portal_role';
+  // #endregion
+
+  function clearRoleCache() {
+    try { sessionStorage.removeItem(ROLE_CACHE_KEY); } catch (_) { /* ignore */ }
+  }
+
+  function loadingSidebarHtml() {
+    return `
+      <div class="sidebar-nav-scroll sidebar-shell-pending">
+        <div class="sidebar-brand">
+          <div class="nav-logo-mark">SW</div>
+          <div>
+            <div class="sidebar-brand-name">Shipping Wish</div>
+            <div class="sidebar-brand-tag">Portal</div>
+          </div>
+        </div>
+        <p class="sidebar-shell-placeholder" aria-live="polite">Loading your menu…</p>
+      </div>
+      <div class="sidebar-foot">
+        <div class="sidebar-user-card">
+          <div class="avatar" id="user-avatar-initials" style="background:var(--color-amber-500);color:#0f172a;font-weight:800;">SW</div>
+          <div style="flex:1;min-width:0;">
+            <div class="truncate" id="user-name-display" style="font-size:13px;font-weight:700;color:#fff;">Signed in</div>
+            <div id="user-role-display" style="font-size:11px;color:rgba(255,255,255,0.45);">Portal</div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-light btn-block btn-sm" id="shell-logout-btn" disabled>Sign out</button>
+      </div>`;
+  }
+
   const STAFF_LINKS = [
     { section: 'Operations' },
     { key: 'overview', navId: 'nav-tab-loads', href: '/admin-dashboard', icon: '📊', label: 'Overview & Loads' },
@@ -139,8 +179,17 @@
   }
 
   function sidebarHtml() {
+    if (!CURRENT_ROLE) return loadingSidebarHtml();
     const carrier = isCarrierRole(CURRENT_ROLE);
     const driver = CURRENT_ROLE === 'driver';
+    // #region agent log
+    dbgLog('app-shell.js:sidebarHtml', 'building sidebar HTML', {
+      currentRole: CURRENT_ROLE || '(empty)',
+      carrier,
+      driver,
+      linkSet: driver ? 'driver' : carrier ? 'carrier' : 'staff'
+    }, 'D');
+    // #endregion
     const active = activeKey();
     const tag = driver ? 'Driver app' : carrier ? 'Your TMS' : 'Operations';
     const home = driver ? '/driver-app' : carrier ? '/carrier-overview' : '/admin-dashboard';
@@ -208,12 +257,23 @@
   function ensureLogout() {
     const btn = document.getElementById('shell-logout-btn');
     if (!btn) return;
+    btn.disabled = false;
     btn.addEventListener('click', () => {
+      clearRoleCache();
       if (typeof window.logout === 'function') return window.logout();
       fetch('/api/logout', { method: 'POST', credentials: 'include' }).finally(() => {
         window.location.href = '/login';
       });
     });
+  }
+
+  function mountSidebarContent(aside) {
+    const cached = sessionStorage.getItem(ROLE_CACHE_KEY) || '';
+    CURRENT_ROLE = cached;
+    aside.innerHTML = cached ? sidebarHtml() : loadingSidebarHtml();
+    aside.classList.add('shell-mounted');
+    if (!cached) aside.classList.add('is-shell-pending');
+    else aside.classList.remove('is-shell-pending');
   }
 
   function mountMobile() {
@@ -258,15 +318,50 @@
   }
 
   function init() {
+    initCallCount += 1;
     const aside = document.querySelector('.app-sidebar');
     if (!aside) return;
     if (document.querySelector('.driver-header')) return;
     document.body.classList.add('app-body');
+
+    const staticLinkCount = aside.querySelectorAll('a.sidebar-nav-link').length;
+    const staticLabels = Array.from(aside.querySelectorAll('a.sidebar-nav-link')).slice(0, 4).map((a) => a.textContent.trim().slice(0, 40));
+    const initStart = Date.now();
+    // #region agent log
+    dbgLog('app-shell.js:init-start', 'init called with static sidebar in DOM', {
+      initCallCount,
+      page: pageName(),
+      staticLinkCount,
+      staticLabels,
+      cachedRole: sessionStorage.getItem(ROLE_CACHE_KEY) || null
+    }, 'A');
+    // #endregion
+
+    mountSidebarContent(aside);
+    ensureLogout();
+
     fetch('/api/me', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         CURRENT_ROLE = (data && data.user && data.user.role) || '';
+        if (CURRENT_ROLE) sessionStorage.setItem(ROLE_CACHE_KEY, CURRENT_ROLE);
+        const beforeReplace = aside.querySelectorAll('a.sidebar-nav-link').length;
         aside.innerHTML = sidebarHtml();
+        aside.classList.add('shell-mounted');
+        aside.classList.remove('is-shell-pending');
+        const afterReplace = aside.querySelectorAll('a.sidebar-nav-link').length;
+        const renderedLabels = Array.from(aside.querySelectorAll('a.sidebar-nav-link')).slice(0, 4).map((a) => a.textContent.trim().slice(0, 40));
+        // #region agent log
+        dbgLog('app-shell.js:after-me', 'sidebar replaced after /api/me', {
+          initCallCount,
+          msSinceInit: Date.now() - initStart,
+          role: CURRENT_ROLE,
+          beforeReplace,
+          afterReplace,
+          renderedLabels,
+          isCarrierShell: isCarrierShell()
+        }, 'B');
+        // #endregion
         mountMobile();
         ensureLogout();
         applyPageHash();
@@ -282,7 +377,11 @@
           window.location.replace('/driver-app');
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        // #region agent log
+        dbgLog('app-shell.js:me-error', '/api/me failed', { initCallCount, err: String(err) }, 'C');
+        // #endregion
+      });
     window.addEventListener('hashchange', applyPageHash);
   }
 

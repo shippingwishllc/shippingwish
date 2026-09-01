@@ -3105,6 +3105,19 @@ textarea.form-input { height: auto; min-height: 88px; }
   z-index: 190;
 }
 
+.app-sidebar:not(.shell-mounted) {
+  visibility: hidden;
+}
+.app-sidebar.shell-mounted {
+  visibility: visible;
+}
+.app-sidebar .sidebar-shell-placeholder {
+  margin: 16px 12px 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.45;
+}
+
 .page-hero {
   background: var(--color-gray-900);
   padding: 72px 0 64px;
