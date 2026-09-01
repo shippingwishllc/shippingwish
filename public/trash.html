@@ -15,6 +15,14 @@
       margin-top:16px; padding-top:16px; border-top:1px solid var(--border-default);
       font-size:12px; color:var(--text-muted); flex-wrap:wrap;
     }
+    .trash-retention-banner {
+      margin-bottom:16px; padding:12px 14px; border-radius:var(--radius-md);
+      background:var(--surface-raised); border:1px solid var(--border-default);
+      font-size:12px; color:var(--text-muted);
+    }
+    .trash-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .trash-days-left { font-size:12px; white-space:nowrap; }
+    .trash-days-left.soon { color:var(--color-danger, #dc2626); font-weight:600; }
   </style>
 </head>
 <body class="app-body">
@@ -26,7 +34,7 @@
     <header class="app-header">
       <div>
         <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Trash</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Soft-deleted loads, accounts, drivers &amp; emails — admin restore only</p>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Soft-deleted loads, accounts, drivers &amp; emails — restore or permanently delete</p>
       </div>
     </header>
     <main class="app-content">
@@ -50,6 +58,10 @@
       </div>
 
       <div class="tms-table-card" style="padding:16px;">
+        <div class="trash-retention-banner" id="trash-retention-banner">
+          Items in Trash are automatically deleted after <strong id="trash-retention-days">30</strong> days.
+          You can restore them anytime before that, or delete permanently now.
+        </div>
         <div class="trash-tabs" id="trash-tabs">
           <button type="button" class="btn btn-primary btn-sm" data-type="loads" onclick="switchTrashTab('loads', this)">Loads</button>
           <button type="button" class="btn btn-secondary btn-sm" data-type="users" onclick="switchTrashTab('users', this)">Carriers / accounts</button>
@@ -83,6 +95,7 @@
   let trashPageNum = 1;
   let trashTotalPages = 1;
   let trashTotal = 0;
+  let trashRetentionDays = 30;
   const TRASH_PER_PAGE = 20;
 
   function escapeHtml(str) {
@@ -110,6 +123,24 @@
     document.getElementById('kpi-trash-loads').textContent = c.loads || 0;
     document.getElementById('kpi-trash-users').textContent = c.users || 0;
     document.getElementById('kpi-trash-emails').textContent = c.emails || 0;
+    if (c.retentionDays) {
+      trashRetentionDays = c.retentionDays;
+      document.getElementById('trash-retention-days').textContent = c.retentionDays;
+    }
+  }
+
+  function formatDaysLeft(item) {
+    if (item.daysLeft == null) return '—';
+    if (item.daysLeft <= 0) return '<span class="trash-days-left soon">Purges today</span>';
+    if (item.daysLeft <= 7) return `<span class="trash-days-left soon">${item.daysLeft} day${item.daysLeft === 1 ? '' : 's'} left</span>`;
+    return `<span class="trash-days-left">${item.daysLeft} days left</span>`;
+  }
+
+  function actionButtons(item) {
+  return `<div class="trash-actions">
+    <button type="button" class="btn btn-primary btn-sm" onclick="restoreItem('${item.type}', ${item.id})">Restore</button>
+    <button type="button" class="btn btn-danger btn-sm" onclick="purgeItem('${item.type}', ${item.id})">Delete forever</button>
+  </div>`;
   }
 
   function switchTrashTab(type, btn) {
@@ -132,20 +163,20 @@
   function renderTrashHead() {
     const thead = document.getElementById('trash-thead');
     if (trashType === 'loads') {
-      thead.innerHTML = '<tr><th>Load</th><th>Carrier</th><th>Lane</th><th>Deleted</th><th>By</th><th></th></tr>';
+      thead.innerHTML = '<tr><th>Load</th><th>Carrier</th><th>Lane</th><th>Deleted</th><th>Auto-purge</th><th>By</th><th></th></tr>';
     } else if (trashType === 'users') {
-      thead.innerHTML = '<tr><th>Name / email</th><th>Role</th><th>Company</th><th>Deleted</th><th>By</th><th></th></tr>';
+      thead.innerHTML = '<tr><th>Name / email</th><th>Role</th><th>Company</th><th>Deleted</th><th>Auto-purge</th><th>By</th><th></th></tr>';
     } else if (trashType === 'drivers') {
-      thead.innerHTML = '<tr><th>Driver</th><th>Carrier</th><th>Contact</th><th>Deleted</th><th>By</th><th></th></tr>';
+      thead.innerHTML = '<tr><th>Driver</th><th>Carrier</th><th>Contact</th><th>Deleted</th><th>Auto-purge</th><th>By</th><th></th></tr>';
     } else {
-      thead.innerHTML = '<tr><th>From</th><th>Subject</th><th>Lead</th><th>Deleted</th><th>By</th><th></th></tr>';
+      thead.innerHTML = '<tr><th>From</th><th>Subject</th><th>Lead</th><th>Deleted</th><th>Auto-purge</th><th>By</th><th></th></tr>';
     }
   }
 
   async function loadTrash() {
     renderTrashHead();
     const tbody = document.getElementById('trash-tbody');
-    tbody.innerHTML = '<tr><td colspan="6" class="trash-empty">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="trash-empty">Loading…</td></tr>';
 
     const qs = new URLSearchParams({
       type: trashType,
@@ -155,17 +186,21 @@
     const res = await fetch('/api/trash?' + qs.toString(), { credentials: 'include' });
     const data = await res.json();
     if (!res.ok) {
-      tbody.innerHTML = '<tr><td colspan="6" class="trash-empty">' + escapeHtml(data.error || 'Could not load trash') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="trash-empty">' + escapeHtml(data.error || 'Could not load trash') + '</td></tr>';
       return;
     }
 
     trashTotal = data.total || 0;
     trashTotalPages = data.totalPages || 1;
     trashPageNum = data.page || trashPageNum;
+    if (data.retentionDays) {
+      trashRetentionDays = data.retentionDays;
+      document.getElementById('trash-retention-days').textContent = data.retentionDays;
+    }
 
     const items = data.items || [];
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="trash-empty">Nothing in trash for this category.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="trash-empty">Nothing in trash for this category.</td></tr>';
       document.getElementById('trash-pagination').style.display = 'none';
       return;
     }
@@ -173,7 +208,8 @@
     tbody.innerHTML = items.map((item) => {
       const deleted = item.deleted_at ? new Date(item.deleted_at).toLocaleString() : '—';
       const by = escapeHtml(item.deleted_by_name || '—');
-      const restoreBtn = `<button type="button" class="btn btn-primary btn-sm" onclick="restoreItem('${item.type}', ${item.id})">Restore</button>`;
+      const actions = actionButtons(item);
+      const daysLeft = formatDaysLeft(item);
 
       if (item.type === 'load') {
         return `<tr>
@@ -181,8 +217,9 @@
           <td>${escapeHtml(item.carrier_company || item.carrier_name || '—')}</td>
           <td>${escapeHtml(item.pickup_location)} → ${escapeHtml(item.delivery_location)}</td>
           <td style="font-size:12px;">${deleted}</td>
+          <td>${daysLeft}</td>
           <td style="font-size:12px;">${by}</td>
-          <td>${restoreBtn}</td>
+          <td>${actions}</td>
         </tr>`;
       }
       if (item.type === 'user') {
@@ -191,8 +228,9 @@
           <td><span class="badge badge-amber">${escapeHtml(item.role)}</span></td>
           <td>${escapeHtml(item.company_name || '—')}</td>
           <td style="font-size:12px;">${deleted}</td>
+          <td>${daysLeft}</td>
           <td style="font-size:12px;">${by}</td>
-          <td>${restoreBtn}</td>
+          <td>${actions}</td>
         </tr>`;
       }
       if (item.type === 'driver') {
@@ -201,8 +239,9 @@
           <td>${escapeHtml(item.carrier_company || item.carrier_name || '—')}</td>
           <td>${escapeHtml(item.phone || item.email || '—')}</td>
           <td style="font-size:12px;">${deleted}</td>
+          <td>${daysLeft}</td>
           <td style="font-size:12px;">${by}</td>
-          <td>${restoreBtn}</td>
+          <td>${actions}</td>
         </tr>`;
       }
       return `<tr>
@@ -210,8 +249,9 @@
         <td>${escapeHtml(item.subject || '(no subject)')}</td>
         <td>${escapeHtml(item.company_name || item.owner_name || '—')}</td>
         <td style="font-size:12px;">${deleted}</td>
+        <td>${daysLeft}</td>
         <td style="font-size:12px;">${by}</td>
-        <td>${restoreBtn}</td>
+        <td>${actions}</td>
       </tr>`;
     }).join('');
 
@@ -222,6 +262,24 @@
     document.getElementById('trash-page-info').textContent = `${start}–${end} of ${trashTotal}`;
     document.getElementById('trash-prev').disabled = trashPageNum <= 1;
     document.getElementById('trash-next').disabled = trashPageNum >= trashTotalPages;
+  }
+
+  async function purgeItem(type, id) {
+    if (!confirm('Permanently delete this item? This cannot be undone.')) return;
+    const res = await fetch('/api/trash/purge-permanent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ type, id, confirm: 'DELETE_FOREVER' })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not permanently delete.');
+      return;
+    }
+    alert(data.message || 'Permanently deleted.');
+    await loadTrashCounts();
+    await loadTrash();
   }
 
   async function restoreItem(type, id) {

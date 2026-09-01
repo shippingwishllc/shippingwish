@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const { sendBrandedEmail } = require('./utils/mailer');
 const { buildTemplate, COMPANY } = require('./utils/email-templates');
 const { ensureGrowthSchema } = require('./utils/ensure-growth-schema');
+const { purgeExpiredTrash } = require('./utils/trash');
 const { webhookHandler } = require('./routes/billing');
 const { requireAuth } = require('./middleware/auth');
 const { requireCarrierSubscription } = require('./middleware/subscription');
@@ -290,14 +291,33 @@ async function seedAdminUsers() {
   }
 }
 
+function runTrashAutoPurge() {
+  return purgeExpiredTrash()
+    .then((result) => {
+      const p = result.purged;
+      const total = p.loads + p.drivers + p.emails + p.users;
+      if (total > 0) {
+        console.log(`[TRASH] Auto-purged ${total} expired item(s) (>${result.retentionDays} days)`);
+      }
+    })
+    .catch((err) => console.warn('[TRASH] startup purge skipped:', err.message));
+}
+
 if (require.main === module) {
-  ensureGrowthSchema().then(backfillCarrierTrials).then(seedAdminUsers).then(() => {
-    app.listen(PORT, () => {
-      console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
+  ensureGrowthSchema()
+    .then(backfillCarrierTrials)
+    .then(seedAdminUsers)
+    .then(runTrashAutoPurge)
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
+      });
     });
-  });
 } else {
-  ensureGrowthSchema().then(backfillCarrierTrials).catch((err) => console.warn('[GROWTH] schema:', err.message));
+  ensureGrowthSchema()
+    .then(backfillCarrierTrials)
+    .then(runTrashAutoPurge)
+    .catch((err) => console.warn('[GROWTH] schema:', err.message));
   seedAdminUsers();
 }
 
