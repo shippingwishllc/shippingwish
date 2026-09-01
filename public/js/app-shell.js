@@ -18,12 +18,23 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
+  const SIDEBAR_VERSION = '18';
   // #endregion
 
   function clearRoleCache() {
     try {
       sessionStorage.removeItem(ROLE_CACHE_KEY);
       sessionStorage.removeItem(SIDEBAR_HTML_KEY);
+    } catch (_) { /* ignore */ }
+  }
+
+  function ensureSidebarVersion() {
+    try {
+      const prev = sessionStorage.getItem('sw_sidebar_ver');
+      if (prev !== SIDEBAR_VERSION) {
+        sessionStorage.removeItem(SIDEBAR_HTML_KEY);
+        sessionStorage.setItem('sw_sidebar_ver', SIDEBAR_VERSION);
+      }
     } catch (_) { /* ignore */ }
   }
 
@@ -71,6 +82,7 @@
     { section: 'Sales & Staff' },
     { key: 'crm', href: '/crm-sales', icon: '📈', label: 'Sales CRM & Leads' },
     { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Replies' },
+    { key: 'trash', href: '/trash', icon: '🗑️', label: 'Trash', adminOnly: true },
     { key: 'staff', href: '/staff-management', icon: '👔', label: 'Company Staff' },
     { section: 'Accounting' },
     { key: 'invoices', href: '/invoices', icon: '💳', label: 'Invoices & Billing' },
@@ -79,7 +91,6 @@
     { key: 'planning', href: '/load-planning', icon: '📅', label: 'Load Planning' },
     { section: 'System' },
     { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: '🛡️', label: 'Audit Logs' },
-    { key: 'trash', href: '/trash', icon: '🗑️', label: 'Trash', adminOnly: true },
     { key: 'settings', navId: 'nav-tab-settings', href: '/admin-dashboard#settings', icon: '🌐', label: 'Website CMS' },
     { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: '📰', label: 'Blog Manager' }
   ];
@@ -585,6 +596,7 @@
     const aside = document.querySelector('.app-sidebar');
     if (!aside) return;
     document.body.classList.add('app-body');
+    ensureSidebarVersion();
 
     const staticLinkCount = aside.querySelectorAll('a.sidebar-nav-link').length;
     const staticLabels = Array.from(aside.querySelectorAll('a.sidebar-nav-link')).slice(0, 4).map((a) => a.textContent.trim().slice(0, 40));

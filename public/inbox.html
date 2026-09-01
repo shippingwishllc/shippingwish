@@ -46,7 +46,8 @@
         <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Carrier Replies Inbox</h1>
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Read and reply from the same inbox address (operations@, wajeeh@, etc.).</p>
       </div>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <a href="/trash" class="btn btn-secondary btn-sm" id="inbox-trash-link" style="display:none;">🗑️ Trash</a>
         <button class="btn btn-secondary btn-sm" type="button" onclick="loadInbox(true)">Unread only</button>
         <button class="btn btn-primary btn-sm" type="button" onclick="loadInbox(false)">All replies</button>
       </div>
@@ -106,6 +107,8 @@
       window.location.href = '/carrier-overview';
     }
     IS_ADMIN = role === 'admin' || role === 'super_admin';
+    const trashLink = document.getElementById('inbox-trash-link');
+    if (trashLink) trashLink.style.display = IS_ADMIN ? '' : 'none';
   }
 
   function escapeHtml(str) {
@@ -248,8 +251,10 @@
 
     const bodyText = (m.body_text || '').trim();
     const hasHtml = Boolean((m.body_html || '').trim());
-    const crmLink = m.lead_id ? `/crm-sales?lead=${m.lead_id}` : '/crm-sales';
     const mailto = m.from_email ? `mailto:${encodeURIComponent(m.from_email)}?subject=${encodeURIComponent('Re: ' + (m.subject || ''))}` : '#';
+    const matchedLead = m.lead_id
+      ? `<a href="/crm-sales?lead=${m.lead_id}">Lead #${m.lead_id} — open in Sales CRM</a>`
+      : 'Not in CRM yet';
 
     const attachments = Array.isArray(m.attachments) ? m.attachments : [];
     const replyFrom = m.to_email || 'operations@shippingwish.com';
@@ -272,8 +277,6 @@
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <a class="btn btn-secondary btn-sm" href="${mailto}">Open in mail app</a>
-          <a class="btn btn-secondary btn-sm" href="${crmLink}">Open CRM</a>
-          ${m.resend_email_id ? `<button type="button" class="btn btn-secondary btn-sm" onclick="refreshBody(${m.id})">Reload body</button>` : ''}
           ${IS_ADMIN ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="trashEmail(${m.id})">Move to trash</button>` : ''}
         </div>
       </div>
@@ -282,17 +285,16 @@
         <div><strong>Name / company</strong>${escapeHtml(m.owner_name || m.company_name || '—')}</div>
         <div><strong>Phone</strong>${m.phone ? `<a href="tel:${escapeHtml(m.phone)}">${escapeHtml(m.phone)}</a>` : '—'}</div>
         <div><strong>MC</strong>${escapeHtml(m.mc_number || '—')}</div>
-        <div><strong>CRM lead email</strong>${escapeHtml(m.lead_email || '—')}</div>
         <div><strong>Sales rep</strong>${escapeHtml(m.sales_rep_name || 'Unassigned')}</div>
         <div><strong>To (your inbox)</strong>${escapeHtml(m.to_email || '—')}</div>
-        <div><strong>Matched lead</strong>${m.lead_id ? '#' + m.lead_id : 'Not in CRM'}</div>
+        <div><strong>Matched lead</strong>${matchedLead}</div>
       </div>
       ${attachHtml}
       ${bodyText
         ? `<pre class="msg-body">${escapeHtml(bodyText)}</pre>`
         : (hasHtml
           ? `<pre class="msg-body">${escapeHtml(stripHtml(m.body_html))}</pre>`
-          : `<p class="text-muted">Email body is empty. If this just arrived, click <strong>Reload body</strong> to pull it from Resend.</p>`)}
+          : `<p class="text-muted">Email body is still loading or was not saved. Re-open this message in a moment.</p>`)}
       <div class="reply-box">
         <h3 style="margin:0 0 8px;font-size:15px;">Reply from portal</h3>
         <p class="reply-from-note">Reply will send from <strong>${escapeHtml(replyFrom)}</strong> to <strong>${escapeHtml(m.from_email || '')}</strong> (same thread).</p>
@@ -346,22 +348,9 @@
       document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">Select a reply on the left.</p>';
     }
     loadInbox(unreadOnlyFilter);
-  }
-
-  async function refreshBody(id) {
-    const panel = document.getElementById('msg-panel');
-    const note = document.createElement('p');
-    note.className = 'text-muted';
-    note.textContent = 'Fetching full email from Resend…';
-    panel.prepend(note);
-    const res = await fetch('/api/email/inbox/' + id + '/refresh', { method: 'POST', credentials: 'include' });
-    const data = await res.json();
-    if (!res.ok) {
-      alert([data.error || 'Could not reload body', data.hint, data.detail].filter(Boolean).join('\n\n'));
-      openMessage(id);
-      return;
+    if (IS_ADMIN) {
+      alert('Email moved to Trash. Click the 🗑️ Trash button (top right) or sidebar → Trash to restore.');
     }
-    openMessage(id);
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
