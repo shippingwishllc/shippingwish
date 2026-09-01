@@ -1,30 +1,50 @@
 /**
- * Remove fake carrier signups — keeps accounts matching "ahsan" in name or email.
- * Usage: node scripts/cleanup-fake-signups.js
- * Requires DATABASE_URL or POSTGRES_* in environment (.env loaded via dotenv in db.js).
+ * Remove fake carrier signups — keeps accounts matching "ahsan" in name or email,
+ * or emails listed in KEEP_CARRIER_EMAILS (comma-separated).
+ * Usage: node scripts/cleanup-fake-signups.js [--force]
+ *   --force  delete all carriers if no keep match (fresh start for OTP signup)
  */
 require('dotenv').config();
 const pool = require('../db');
 const { TRIAL_DAYS } = require('../middleware/subscription');
 
+const force = process.argv.includes('--force');
+
+function extraKeepEmails() {
+  const raw = process.env.KEEP_CARRIER_EMAILS || '';
+  return raw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+}
+
 async function main() {
+  const extras = extraKeepEmails();
   const keepRes = await pool.query(
     `SELECT id, email, name FROM users
-     WHERE role IN ('carrier','carrier_admin')
-       AND (lower(name) LIKE '%ahsan%' OR lower(email) LIKE '%ahsan%')
-     ORDER BY created_at ASC`
+     WHERE role = 'carrier'
+       AND (
+         lower(name) LIKE '%ahsan%'
+         OR lower(email) LIKE '%ahsan%'
+         OR lower(email) = ANY($1::text[])
+       )
+     ORDER BY created_at ASC`,
+    [extras]
   );
   const keepIds = keepRes.rows.map((r) => r.id);
   if (!keepIds.length) {
-    console.error('No Ahsan account found — aborting.');
-    process.exit(1);
+    if (!force) {
+      console.error('No Ahsan account found — aborting. Re-run with --force to delete ALL carriers.');
+      process.exit(1);
+    }
+    console.warn('No keep match — --force deleting every carrier account.');
+  } else {
+    console.log('Keeping:', keepRes.rows);
   }
-  console.log('Keeping:', keepRes.rows);
 
-  const victims = await pool.query(
-    `SELECT id, email, name FROM users
-     WHERE role IN ('carrier','carrier_admin') AND id NOT IN (${keepIds.join(',')})`
-  );
+  const victims = keepIds.length
+    ? await pool.query(
+      `SELECT id, email, name FROM users
+       WHERE role = 'carrier' AND id NOT IN (${keepIds.join(',')})`
+    )
+    : await pool.query(`SELECT id, email, name FROM users WHERE role = 'carrier'`);
 
   for (const u of victims.rows) {
     const id = u.id;
@@ -48,7 +68,9 @@ async function main() {
       [trialEnds, k.id]
     );
   }
-  console.log('Trial reset until', trialEnds.toISOString(), 'for kept accounts');
+  if (keepRes.rows.length) {
+    console.log('Trial reset until', trialEnds.toISOString(), 'for kept accounts');
+  }
   console.log('Deleted', victims.rows.length, 'fake carrier account(s).');
   process.exit(0);
 }

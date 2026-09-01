@@ -559,7 +559,7 @@ router.post('/admin/cleanup-fake-carriers', requireAuth, requireSuperAdmin, asyn
   try {
     const keepRes = await pool.query(
       `SELECT id, email, name FROM users
-       WHERE role IN ('carrier','carrier_admin')
+       WHERE role = 'carrier'
          AND (lower(name) LIKE '%ahsan%' OR lower(email) LIKE '%ahsan%')
        ORDER BY created_at ASC`
     );
@@ -570,7 +570,7 @@ router.post('/admin/cleanup-fake-carriers', requireAuth, requireSuperAdmin, asyn
 
     const victims = await pool.query(
       `SELECT id, email, name FROM users
-       WHERE role IN ('carrier','carrier_admin') AND id NOT IN (${keepIds.join(',')})`
+       WHERE role = 'carrier' AND id NOT IN (${keepIds.join(',')})`
     );
 
     const deleted = [];

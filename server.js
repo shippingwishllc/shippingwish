@@ -258,7 +258,7 @@ async function backfillCarrierTrials() {
     await pool.query(
       `UPDATE users
        SET trial_ends_at = created_at + ($1 || ' days')::interval
-       WHERE role IN ('carrier','carrier_admin') AND trial_ends_at IS NULL`,
+       WHERE role = 'carrier' AND trial_ends_at IS NULL`,
       [String(days)]
     );
   } catch (err) {
