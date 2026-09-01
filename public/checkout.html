@@ -98,6 +98,28 @@
   if (params.get('canceled') === '1') {
     document.getElementById('canceled-note').style.display = 'block';
   }
+  if (params.get('from') === 'signup') {
+    document.getElementById('plan-sub').textContent =
+      'Account created. Complete Stripe checkout to start your free week ($0 due today). Broker load pay stays separate.';
+  }
+
+  fetch('/api/me', { credentials: 'include' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      if (!data || !data.user) return;
+      const u = data.user;
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val && !el.value) el.value = val;
+      };
+      set('name', u.name);
+      set('email', u.email);
+      set('company', u.company_name);
+      set('phone', u.phone);
+      set('mc_number', u.mc_number);
+      set('usdot', u.dot_number);
+    })
+    .catch(() => {});
 
   const alertEl = document.getElementById('alert');
   function showAlert(msg, ok) {

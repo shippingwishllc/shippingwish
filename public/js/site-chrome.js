@@ -203,7 +203,7 @@
         if (btn) {
           btn.textContent = 'My Portal';
           const role = data.user.role || '';
-          btn.href = (role === 'carrier' || role === 'driver') ? '/dashboard' : '/admin-dashboard';
+          btn.href = (role === 'carrier' || role === 'driver') ? '/carrier-overview' : '/admin-dashboard';
         }
       })
       .catch(() => {});

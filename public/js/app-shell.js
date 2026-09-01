@@ -91,7 +91,7 @@
     { key: 'documents', href: '/documents', icon: '📄', label: 'Documents' },
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker credit check' },
     { section: 'Money' },
-    { key: 'invoices', href: '/invoices', icon: '💳', label: 'Broker invoices' },
+    { key: 'invoices', href: '/invoices', icon: '💳', label: 'Service billing' },
     { key: 'ifta', href: '/ifta', icon: '⛽', label: 'IFTA & fuel' },
     { section: 'On the road' },
     { key: 'driver', href: '/driver-app', icon: '📱', label: 'Driver phone app' }

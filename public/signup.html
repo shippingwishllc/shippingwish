@@ -340,7 +340,7 @@
         submitBtn.textContent = 'Create Account →';
       } else {
         submitBtn.textContent = 'Redirecting to your portal...';
-        window.location.href = '/carrier-overview';
+        window.location.href = '/carrier-overview?welcome=1';
       }
     } catch (err) {
       alertBox.textContent = 'Network error. Please check your connection.';

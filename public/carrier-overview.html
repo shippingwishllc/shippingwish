@@ -43,6 +43,17 @@
     <!-- CONTENT BODY -->
     <main class="app-content">
 
+      <div id="welcome-banner" class="tms-panel" style="display:none;margin-bottom:24px;border-left:4px solid #2563eb;padding:16px 18px;">
+        <h3 style="margin:0 0 8px;font-size:15px;font-weight:800;">Welcome — portal account ready</h3>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);line-height:1.5;">
+          Start your <strong>free 7-day week</strong> on Stripe ($0 due today). Broker load pay stays separate — you collect from brokers via factoring or direct pay.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="/checkout?plan=solo_weekly" class="btn btn-primary btn-sm">Start free week on Stripe →</a>
+          <button type="button" class="btn btn-light btn-sm" onclick="document.getElementById('welcome-banner').style.display='none'">I'll do this later</button>
+        </div>
+      </div>
+
       <!-- ================= TAB 1: COCKPIT OVERVIEW ================= -->
       <div id="carrier-tab-cockpit" class="carrier-tab-content">
         <!-- KPI Stat Cards -->
@@ -91,6 +102,19 @@
           <div id="checklist-box" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
 
+        <div class="tms-table-card" id="compliance-card" style="margin-bottom:24px;display:none;">
+          <div class="tms-table-header">
+            <div>
+              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Expiring in 30 days</h3>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">CDL, medical, insurance, plates — same alerts Alvys / Motive fleets use.</p>
+            </div>
+          </div>
+          <div id="compliance-list" style="padding:12px 16px;"></div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 2: LOADS & OFFERS ================= -->
+      <div id="carrier-tab-loads" class="carrier-tab-content" style="display:none;">
         <div class="tms-table-card" style="margin-bottom:24px;" id="offers-card">
           <div class="tms-table-header">
             <div>
@@ -114,16 +138,6 @@
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div class="tms-table-card" id="compliance-card" style="margin-bottom:24px;display:none;">
-          <div class="tms-table-header">
-            <div>
-              <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Expiring in 30 days</h3>
-              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">CDL, medical, insurance, plates — same alerts Alvys / Motive fleets use.</p>
-            </div>
-          </div>
-          <div id="compliance-list" style="padding:12px 16px;"></div>
         </div>
 
         <!-- Table Card -->
@@ -170,6 +184,12 @@
   let carrierLoads = [];
 
   document.addEventListener('DOMContentLoaded', async () => {
+    if (new URLSearchParams(location.search).get('welcome') === '1') {
+      const banner = document.getElementById('welcome-banner');
+      if (banner) banner.style.display = 'block';
+    }
+    const hash = (location.hash || '').replace('#', '').toLowerCase();
+    if (hash === 'loads') switchCarrierTab('loads');
     await checkCarrierAuth();
     loadCarrierCockpitData();
   });
@@ -222,6 +242,8 @@
           ${!c.done && c.key === 'truck' ? ' — <a href="/fleet">add a truck</a>' : ''}
           ${!c.done && c.key === 'driver' ? ' — <a href="/fleet">add a driver</a>' : ''}
           ${!c.done && c.key === 'insurance' ? ' — <a href="/documents">upload COI</a>' : ''}
+          ${!c.done && c.key === 'w9' ? ' — <a href="/documents">upload W-9</a>' : ''}
+          ${!c.done && c.key === 'trial' ? ' — <a href="/checkout?plan=solo_weekly">start free week on Stripe</a>' : ''}
         </div>
       `).join('');
 
@@ -320,7 +342,14 @@
   }
 
   function switchCarrierTab(tab) {
-    // Single tab for now
+    const cockpit = document.getElementById('carrier-tab-cockpit');
+    const loads = document.getElementById('carrier-tab-loads');
+    const showLoads = tab === 'loads';
+    if (cockpit) cockpit.style.display = showLoads ? 'none' : 'block';
+    if (loads) loads.style.display = showLoads ? 'block' : 'none';
+    document.querySelectorAll('#nav-tab-cockpit, #nav-tab-loads').forEach((el) => el.classList.remove('active'));
+    const nav = document.getElementById(showLoads ? 'nav-tab-loads' : 'nav-tab-cockpit');
+    if (nav) nav.classList.add('active');
   }
   window.switchCarrierTab = switchCarrierTab;
 
@@ -357,6 +386,6 @@
     }
   }
 </script>
-<script src="/js/app-shell.js?v=12"></script>
+<script src="/js/app-shell.js?v=13"></script>
 </body>
 </html>

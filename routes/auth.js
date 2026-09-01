@@ -76,6 +76,40 @@ function signToken(user) {
   );
 }
 
+async function createPortalSignupLead(user, meta) {
+  const { company, phone, mcNumber, dotNumber } = meta;
+  try {
+    const dup = await pool.query(
+      `SELECT id FROM crm_leads
+       WHERE lower(email) = lower($1)
+          OR ($2 != '' AND mc_number = $2)
+       LIMIT 1`,
+      [user.email, mcNumber || '']
+    );
+    if (dup.rows.length) return dup.rows[0].id;
+
+    const notes = 'Portal signup — assign dispatcher, send onboarding packet. Stripe weekly plan not started yet unless they complete checkout.';
+    let ins;
+    try {
+      ins = await pool.query(
+        `INSERT INTO crm_leads (company_name, owner_name, phone, email, mc_number, dot_number, equipment_type, num_trucks, status, notes)
+         VALUES ($1,$2,$3,$4,$5,$6,'dry_van',1,'new',$7) RETURNING id`,
+        [company || user.name, user.name, phone || '', user.email, mcNumber || '', dotNumber || '', notes]
+      );
+    } catch (colErr) {
+      ins = await pool.query(
+        `INSERT INTO crm_leads (company_name, owner_name, phone, email, mc_number, dot_number, equipment_type, num_trucks, status, notes)
+         VALUES ($1,$2,$3,$4,$5,$6,'53ft Dry Van',1,'new',$7) RETURNING id`,
+        [company || user.name, user.name, phone || '', user.email, mcNumber || '', dotNumber || '', notes]
+      );
+    }
+    return ins.rows[0].id;
+  } catch (err) {
+    console.warn('Portal signup CRM lead skipped:', err.message);
+    return null;
+  }
+}
+
 // Public signup — creates a carrier account by default
 router.post('/signup', rateLimit(5, 60000), async (req, res) => {
   const { name, company, phone, email, password, mcNumber, dotNumber, address } = req.body;
@@ -100,6 +134,7 @@ router.post('/signup', rateLimit(5, 60000), async (req, res) => {
     );
     const user = result.rows[0];
     setAuthCookie(res, signToken(user));
+    await createPortalSignupLead(user, { company, phone, mcNumber, dotNumber });
     const ops = [...new Set([COMPANY.operationsEmail, process.env.ADMIN_EMAIL_1, process.env.ADMIN_EMAIL_2].filter(Boolean))];
     const subject = `Portal signup — ${company || name}`;
     const html = `<p>A carrier created a portal login (this is not Stripe payment by itself).</p>

@@ -7,6 +7,20 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
+async function userCanAccessDocument(req, doc) {
+  const role = req.user.role;
+  if (['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(role)) return true;
+  if (role === 'carrier' || role === 'carrier_admin') {
+    if (doc.carrier_id === req.user.id) return true;
+    if (doc.load_id) {
+      const lr = await pool.query('SELECT carrier_id FROM loads WHERE id = $1', [doc.load_id]);
+      if (lr.rows.length && lr.rows[0].carrier_id === req.user.id) return true;
+    }
+    return false;
+  }
+  return false;
+}
+
 const os = require('os');
 const UPLOADS_DIR = process.env.VERCEL ? path.join(os.tmpdir(), 'uploads') : path.join(__dirname, '..', 'uploads');
 try {
@@ -104,6 +118,9 @@ router.get('/:id/view', requireAuth, async (req, res) => {
     const result = await pool.query('SELECT * FROM documents WHERE id = $1', [req.params.id]);
     if (!result.rows.length) return res.status(404).json({ error: 'Document not found.' });
     const doc = result.rows[0];
+    if (!await userCanAccessDocument(req, doc)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
 
     if (!fs.existsSync(doc.filepath)) {
       return res.status(404).json({ error: 'File on disk not found.' });
@@ -134,6 +151,9 @@ router.get('/:id/download', requireAuth, async (req, res) => {
     const result = await pool.query('SELECT * FROM documents WHERE id = $1', [req.params.id]);
     if (!result.rows.length) return res.status(404).json({ error: 'Document not found.' });
     const doc = result.rows[0];
+    if (!await userCanAccessDocument(req, doc)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
 
     if (!fs.existsSync(doc.filepath)) {
       return res.status(404).json({ error: 'File on disk not found.' });

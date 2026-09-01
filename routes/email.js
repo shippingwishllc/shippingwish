@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { sendBrandedEmail, isUnsubscribed, fetchReceivedEmail, fetchReceivedAttachments, formatReplyFromAddress, getResend, normalizeEmail } = require('../utils/mailer');
 const { buildTemplate, verifyUnsubscribeToken, COMPANY } = require('../utils/email-templates');
 const { notifyAdmins, createNotification } = require('../utils/notifications');
@@ -13,6 +13,14 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function staffEmailOnly(req, res, next) {
+  const role = req.user && req.user.role;
+  if (role === 'carrier' || role === 'carrier_admin' || role === 'driver') {
+    return res.status(403).json({ error: 'Staff access only.' });
+  }
+  next();
 }
 
 function htmlToPlain(html) {
@@ -220,7 +228,7 @@ router.get('/logs', requireAuth, async (req, res) => {
 });
 
 // GET /api/email/inbox — inbound replies for admin / sales
-router.get('/inbox', requireAuth, async (req, res) => {
+router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     const unreadOnly = req.query.unread === '1';
     const result = await pool.query(
@@ -241,7 +249,7 @@ router.get('/inbox', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/inbox/:id', requireAuth, async (req, res) => {
+router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     await ensureInboundColumns();
     const result = await pool.query(
@@ -285,7 +293,7 @@ router.get('/inbox/:id', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/inbox/:id/read', requireAuth, async (req, res) => {
+router.post('/inbox/:id/read', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     await pool.query('UPDATE email_inbound SET is_read = TRUE WHERE id = $1', [req.params.id]);
     const row = await pool.query('SELECT lead_id FROM email_inbound WHERE id = $1', [req.params.id]);
@@ -301,7 +309,7 @@ router.post('/inbox/:id/read', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/inbox/:id/refresh', requireAuth, async (req, res) => {
+router.post('/inbox/:id/refresh', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     const row = await pool.query('SELECT * FROM email_inbound WHERE id = $1', [req.params.id]);
     if (!row.rows.length) return res.status(404).json({ error: 'Message not found' });
@@ -337,7 +345,7 @@ router.post('/inbox/:id/refresh', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/inbox/:id/attachments/:attachmentId/download', requireAuth, async (req, res) => {
+router.get('/inbox/:id/attachments/:attachmentId/download', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     const row = await pool.query('SELECT resend_email_id FROM email_inbound WHERE id = $1', [req.params.id]);
     if (!row.rows.length) return res.status(404).json({ error: 'Message not found' });
@@ -365,7 +373,7 @@ router.get('/inbox/:id/attachments/:attachmentId/download', requireAuth, async (
   }
 });
 
-router.post('/inbox/:id/reply', requireAuth, async (req, res) => {
+router.post('/inbox/:id/reply', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     const message = String(req.body.message || req.body.body || '').trim();
     if (!message) return res.status(400).json({ error: 'Reply message is required' });

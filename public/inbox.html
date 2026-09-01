@@ -72,7 +72,15 @@
 
   async function checkAuth() {
     const res = await fetch('/api/me', { credentials: 'include' });
-    if (!res.ok) window.location.href = '/login';
+    if (!res.ok) {
+      window.location.href = '/login';
+      return;
+    }
+    const data = await res.json();
+    const role = data.user && data.user.role;
+    if (role === 'carrier' || role === 'carrier_admin' || role === 'driver') {
+      window.location.href = '/carrier-overview';
+    }
   }
 
   function escapeHtml(str) {
@@ -254,6 +262,6 @@
     await loadInbox(false);
   });
 </script>
-<script src="/js/app-shell.js?v=12"></script>
+<script src="/js/app-shell.js?v=13"></script>
 </body>
 </html>
