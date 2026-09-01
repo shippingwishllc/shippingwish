@@ -169,13 +169,22 @@
               🔍 Live US Carrier Finder &amp; Sourcing Engine
               <span class="gov-badge">FMCSA DOT Official API</span>
             </div>
-            <p style="font-size:12px;color:#94a3b8;margin-top:2px;">Search 600,000+ active US trucking companies by MC#, DOT#, or Company Name — import directly to CRM with duplicate protection</p>
+            <p style="font-size:12px;color:#94a3b8;margin-top:2px;">Search by MC#, DOT#, name, phone, or email — import to CRM with duplicate protection</p>
           </div>
           <button class="btn btn-primary btn-sm" onclick="openAddLeadModal()">+ Manual Lead Entry</button>
         </div>
 
-        <div class="fmcsa-search-bar-inner">
-          <input type="text" id="fmcsa-query-input" class="fmcsa-search-input" placeholder="Enter MC# (e.g. 882341), DOT#, or Company Name..." onkeyup="if(event.key==='Enter') searchFMCSA()">
+        <div class="fmcsa-search-bar-inner" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <select id="fmcsa-query-mode" class="fmcsa-search-input" style="width:auto;min-width:110px;flex:0 0 auto;">
+            <option value="auto">Auto</option>
+            <option value="mc">MC</option>
+            <option value="dot">DOT</option>
+            <option value="name">Name</option>
+            <option value="phone">Phone</option>
+            <option value="email">Email</option>
+            <option value="state">State</option>
+          </select>
+          <input type="text" id="fmcsa-query-input" class="fmcsa-search-input" style="flex:1;min-width:200px;" placeholder="MC, USDOT, name, phone, or email..." onkeyup="if(event.key==='Enter') searchFMCSA()">
           <button class="btn btn-primary btn-sm" onclick="searchFMCSA()" id="btn-fmcsa-search">
             🔎 Search US Carriers
           </button>

@@ -166,8 +166,10 @@ async function claimLead(leadId) {
 // FMCSA Live Sourcing Engine
 async function searchFMCSA() {
   const query = (document.getElementById('fmcsa-query-input').value || '').trim();
+  const modeEl = document.getElementById('fmcsa-query-mode');
+  const mode = modeEl ? modeEl.value : 'auto';
   if (!query) {
-    alert('Please enter an MC#, DOT#, or Company Name to search US government carriers database.');
+    alert('Enter MC#, DOT#, company name, phone, or email to search FMCSA.');
     return;
   }
 
@@ -176,14 +178,8 @@ async function searchFMCSA() {
   btn.textContent = '⏳ Searching FMCSA...';
 
   try {
-    let url = '/api/crm/fmcsa/search?';
-    if (/^\d+$/.test(query.replace(/MC-?/i, ''))) {
-      url += `mc=${encodeURIComponent(query.replace(/MC-?/i, ''))}`;
-    } else {
-      url += `name=${encodeURIComponent(query)}`;
-    }
-
-    const res = await fetch(url);
+    const params = new URLSearchParams({ q: query, mode });
+    const res = await fetch(`/api/crm/fmcsa/search?${params.toString()}`, { credentials: 'include' });
     const data = await res.json();
     btn.disabled = false;
     btn.textContent = '🔎 Search US Carriers';

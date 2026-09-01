@@ -119,17 +119,44 @@ function digits(value) {
   return String(value || '').replace(/[^0-9]/g, '');
 }
 
-function classifyQuery(q) {
+function soqlEscape(value) {
+  return String(value || '').replace(/'/g, "''");
+}
+
+function classifyQuery(q, mode = 'auto') {
   const raw = String(q || '').trim();
+  const forced = String(mode || 'auto').toLowerCase();
   const num = digits(raw);
+
+  if (forced !== 'auto') {
+    if (forced === 'phone') return { type: 'phone', value: num || raw };
+    if (forced === 'email') return { type: 'email', value: raw.toLowerCase() };
+    if (forced === 'mc') return { type: 'mc', value: num };
+    if (forced === 'dot') return { type: 'dot', value: num };
+    if (forced === 'state') return { type: 'state', value: raw.toUpperCase().slice(0, 2) };
+    if (forced === 'name') return { type: 'name', value: raw };
+  }
+
+  if (raw.includes('@')) {
+    return { type: 'email', value: raw.toLowerCase() };
+  }
   if (/^(MC[-\s]?)?\d{4,8}$/i.test(raw) && num.length >= 4 && num.length <= 8) {
     return { type: 'mc', value: num };
   }
-  if (/^(USDOT|DOT)[-\s]?\d{5,8}$/i.test(raw) || (num.length >= 6 && num.length <= 8 && !/[a-z]/i.test(raw))) {
+  if (/^(USDOT|DOT)[-\s]?\d{5,8}$/i.test(raw)) {
     return { type: 'dot', value: num };
   }
   if (/^[A-Z]{2}$/i.test(raw)) {
     return { type: 'state', value: raw.toUpperCase() };
+  }
+  if (num.length >= 10 && num.length <= 11 && /^[\d\s().+-]+$/.test(raw)) {
+    return { type: 'phone', value: num.length === 11 && num.startsWith('1') ? num.slice(1) : num };
+  }
+  if (num.length >= 7 && num.length <= 9 && /^[\d\s().+-]+$/.test(raw)) {
+    return { type: 'phone', value: num };
+  }
+  if (num.length >= 6 && num.length <= 8 && !/[a-z]/i.test(raw)) {
+    return { type: 'dot', value: num };
   }
   return { type: 'name', value: raw };
 }
@@ -458,6 +485,51 @@ async function searchCensusRows(classified) {
       $order: 'power_units DESC',
       $limit: '25'
     });
+  } else if (classified.type === 'phone') {
+    const d = digits(classified.value);
+    if (d.length < 7) return { rows: [], label: 'census/phone-too-short' };
+    label = `census/phone/${d}`;
+    const wherePhone = `phone like '%${soqlEscape(d)}%'`;
+    rows = await censusQuery({
+      $where: wherePhone,
+      status_code: 'A',
+      $order: 'power_units DESC',
+      $limit: '20'
+    });
+    if (!rows.length) {
+      rows = await censusQuery({
+        $where: wherePhone,
+        $order: 'power_units DESC',
+        $limit: '20'
+      });
+    }
+  } else if (classified.type === 'email') {
+    const em = String(classified.value || '').toLowerCase().trim();
+    if (!em.includes('@') || em.length < 5) return { rows: [], label: 'census/email-invalid' };
+    label = `census/email/${em}`;
+    rows = await censusQuery({
+      $where: `lower(email_address) = '${soqlEscape(em)}'`,
+      $limit: '10'
+    });
+    if (!rows.length) {
+      const local = em.split('@')[0];
+      rows = await censusQuery({
+        $where: `lower(email_address) like '%${soqlEscape(local)}%'`,
+        $order: 'power_units DESC',
+        $limit: '20'
+      });
+    }
+    if (!rows.length && em.includes('@')) {
+      const domain = em.split('@')[1];
+      if (domain && domain.includes('.')) {
+        rows = await censusQuery({
+          $where: `lower(email_address) like '%${soqlEscape(domain)}%'`,
+          status_code: 'A',
+          $order: 'power_units DESC',
+          $limit: '20'
+        });
+      }
+    }
   } else {
     const q = soqlLike(classified.value);
     if (q.length < 3) return { rows: [], label: 'census/name-too-short' };
@@ -491,8 +563,8 @@ const STATE_SEED_NAMES = [
   'Carrier'
 ];
 
-async function searchFmcsa(query) {
-  const classified = classifyQuery(query);
+async function searchFmcsa(query, options = {}) {
+  const classified = classifyQuery(query, options.mode);
   const attempts = [];
   const keyPresent = !!apiKey();
 
@@ -519,7 +591,7 @@ async function searchFmcsa(query) {
       attempts,
       carriers: [],
       message: attempts.length
-        ? `No FMCSA census record for ${classified.type.toUpperCase()} ${classified.value}. Try the legal name or USDOT.`
+        ? `No FMCSA census record for ${classified.type.toUpperCase()} ${classified.value}. Try MC#, USDOT, name, phone, or email.`
         : 'Add FMCSA_API_KEY (free at https://mobile.fmcsa.dot.gov/QCDevsite/) to search live U.S. motor carriers.'
     };
   }
@@ -582,7 +654,7 @@ async function searchFmcsa(query) {
       carriers: [],
       message: lastError
         ? `FMCSA lookup failed (${lastError}). QCMobile is often blocked from cloud servers; census had no match for ${classified.type.toUpperCase()} ${classified.value}.`
-        : `No FMCSA record for ${classified.type.toUpperCase()} ${classified.value}. Try the legal name or USDOT.`
+        : `No FMCSA record for ${classified.type.toUpperCase()} ${classified.value}. Try MC#, USDOT, name, phone, or email.`
     };
   }
 

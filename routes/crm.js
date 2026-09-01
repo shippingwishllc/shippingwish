@@ -38,13 +38,14 @@ async function tagCrmDuplicates(carriers) {
 }
 
 router.get('/fmcsa/search', requireAuth, async (req, res) => {
-  const q = (req.query.q || req.query.name || req.query.mc || req.query.dot || '').trim();
+  const q = (req.query.q || req.query.name || req.query.mc || req.query.dot || req.query.phone || req.query.email || '').trim();
+  const mode = String(req.query.mode || 'auto').trim().toLowerCase();
   if (!q) {
-    return res.status(400).json({ error: 'Provide q, name, mc, or dot to search.' });
+    return res.status(400).json({ error: 'Provide q (MC, DOT, name, phone, or email) to search.' });
   }
 
   try {
-    const result = await searchFmcsa(q);
+    const result = await searchFmcsa(q, { mode });
     try {
       result.carriers = await tagCrmDuplicates(result.carriers || []);
     } catch (tagErr) {
