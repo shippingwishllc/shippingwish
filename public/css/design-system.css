@@ -2837,12 +2837,43 @@ body:has(.app-shell) {
 .app-shell,
 .app-layout {
   grid-template-columns: 248px 1fr;
+  height: 100vh;
+  max-height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+  align-items: start;
+}
+
+@supports (height: 100dvh) {
+  .app-shell,
+  .app-layout {
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 100dvh;
+  }
+}
+
+.app-main {
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+@supports (height: 100dvh) {
+  .app-main {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
 }
 
 .app-sidebar {
   width: 248px;
   padding: 8px 8px 14px;
   align-self: start;
+  position: relative;
+  top: auto;
   overflow: hidden !important;
   scrollbar-width: none !important;
 }
