@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free FMCSA Carrier Lookup — Search MC, DOT, Phone &amp; Email | Shipping Wish</title>
+  <meta name="description" content="Free FMCSA motor carrier search tool. Look up trucking companies by MC number, USDOT, company name, phone, or email using official U.S. DOT Company Census public records. No login required.">
+  <meta name="keywords" content="FMCSA carrier lookup, MC number search, USDOT carrier search, motor carrier phone search, trucking company email lookup, vet a carrier free, FMCSA census search, carrier authority check, trucking company finder, owner operator MC lookup, freight carrier database, SAFER carrier search alternative, dispatch carrier sourcing">
+  <link rel="canonical" href="https://www.shippingwish.com/carrier-search">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.shippingwish.com/carrier-search">
+  <meta property="og:title" content="Free FMCSA Carrier Lookup — MC, DOT, Phone &amp; Email">
+  <meta property="og:description" content="Search U.S. motor carriers in the public FMCSA Company Census. Free tool by Shipping Wish LLC — no account required.">
+  <meta property="og:image" content="https://www.shippingwish.com/images/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Free FMCSA Carrier Lookup | Shipping Wish">
+  <meta name="twitter:description" content="Search trucking companies by MC#, USDOT, name, phone, or email. Public census data.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/marketing.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "Shipping Wish FMCSA Carrier Lookup",
+        "url": "https://www.shippingwish.com/carrier-search",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Free public search of U.S. FMCSA Company Census records by MC number, USDOT, company name, phone, or email.",
+        "provider": {
+          "@type": "Organization",
+          "name": "Shipping Wish LLC",
+          "url": "https://www.shippingwish.com"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "name": "Shipping Wish LLC",
+        "url": "https://www.shippingwish.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://www.shippingwish.com/carrier-search?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body class="marketing">
+
+<nav class="nav" role="navigation" aria-label="Main navigation"></nav>
+
+<section class="cs-hero" aria-labelledby="cs-heading">
+  <div class="cs-hero-inner">
+    <div class="mkt-kicker" style="justify-content:center;color:#fbbf24;">
+      <span class="mkt-kicker-dot"></span> Free public tool · U.S. DOT open data
+    </div>
+    <h1 id="cs-heading">Look up a U.S. motor carrier in seconds</h1>
+    <p class="cs-hero-lede">
+      Search the FMCSA <strong>Company Census</strong> by MC number, USDOT, legal name, phone, or email.
+      Built for dispatchers, brokers, and carriers who need a fast identity check — no CRM login, no import, read-only results.
+    </p>
+
+    <div class="cs-search-panel" role="search" aria-label="FMCSA carrier lookup">
+      <div class="cs-search-row">
+        <label for="cs-mode" class="sr-only">Search type</label>
+        <select id="cs-mode" class="cs-mode-select" aria-label="Search field">
+          <option value="auto">Auto</option>
+          <option value="mc">MC</option>
+          <option value="dot">DOT</option>
+          <option value="name">Name</option>
+          <option value="phone">Phone</option>
+          <option value="email">Email</option>
+          <option value="state">State</option>
+        </select>
+        <div class="cs-search-input-wrap">
+          <span aria-hidden="true" style="color:#94a3b8;">🔎</span>
+          <input type="search" id="cs-query" class="cs-search-input" placeholder="MC, USDOT, name, phone, or email…" autocomplete="off" enterkeyhint="search">
+        </div>
+        <button type="button" class="btn btn-primary cs-search-btn" id="cs-search-btn" onclick="runCarrierSearch()">Search</button>
+      </div>
+      <p class="cs-hint">
+        Examples: <code>MC-149201</code> · <code>3940192</code> · <code>Texas Freight LLC</code> · <code>4024542804</code> · <code>dispatch@company.com</code> · state <code>TX</code>
+      </p>
+      <div id="cs-results" class="cs-results" hidden></div>
+    </div>
+
+    <p class="cs-legal">
+      Data source: U.S. Department of Transportation open <strong>Company Census File</strong> (FMCSA).
+      Shipping Wish LLC is not affiliated with FMCSA. This is not a credit score, fraud score, or payment-history report.
+      Always verify operating authority on <a href="https://safer.fmcsa.dot.gov/" target="_blank" rel="noopener" style="color:#fbbf24;">FMCSA SAFER</a> before hauling freight.
+    </p>
+  </div>
+</section>
+
+<section class="mkt-section alt cs-body-section reveal">
+  <div class="mkt-eyebrow">Why use this</div>
+  <h2 class="mkt-h2">Fast carrier identity from public records</h2>
+  <p class="mkt-sub" style="max-width:720px;">
+    Before you call a carrier or send a packet, confirm the legal name, MC/DOT, address, and contact info match what FMCSA published.
+    Our dispatch desk uses the same census feed internally — we made the search public so you can vet carriers without signing into our TMS.
+  </p>
+  <div class="mkt-cards" style="margin-top:28px;">
+    <article class="mkt-card">
+      <h3>MC &amp; USDOT</h3>
+      <p>Direct lookup by motor carrier or USDOT number from the federal motor carrier census.</p>
+    </article>
+    <article class="mkt-card">
+      <h3>Phone &amp; email</h3>
+      <p>Find carriers when you only have a callback number or inbox address from a lead list or rate confirmation.</p>
+    </article>
+    <article class="mkt-card">
+      <h3>No account</h3>
+      <p>Read-only results. No import, no outreach buttons — just the public profile fields we return from census.</p>
+    </article>
+  </div>
+</section>
+
+<section class="mkt-section cs-body-section reveal">
+  <div class="mkt-center">
+    <div class="mkt-eyebrow">Questions</div>
+    <h2 class="mkt-h2">FMCSA carrier lookup FAQ</h2>
+  </div>
+  <div class="cs-faq" style="max-width:760px;margin:24px auto 0;">
+    <details open>
+      <summary>Is this the same as FMCSA SAFER?</summary>
+      <p>This tool queries the same underlying <strong>Company Census</strong> that powers many government carrier profiles. For safety ratings and full authority history, also open the carrier on FMCSA SAFER.</p>
+    </details>
+    <details>
+      <summary>Can I search by phone number or email?</summary>
+      <p>Yes. Choose <strong>Phone</strong> or <strong>Email</strong> in the dropdown, or use <strong>Auto</strong> when the query looks like a phone or email. Not every carrier has both fields on file.</p>
+    </details>
+    <details>
+      <summary>Is this legal to use on a public website?</summary>
+      <p>Yes. The U.S. DOT publishes the Company Census as open data for public use. We do not resell the data — this is a free lookup with source attribution and disclaimers.</p>
+    </details>
+    <details>
+      <summary>Do you book freight or broker loads?</summary>
+      <p>Shipping Wish LLC provides <a href="/dispatch">dedicated fleet operations managers</a> for motor carriers on a weekly subscription. We are not a freight broker. Need a manager on your MC? <a href="/pricing">Start a free week</a>.</p>
+    </details>
+  </div>
+</section>
+
+<section class="mkt-section ink">
+  <div class="mkt-wrap mkt-center">
+    <h2 class="mkt-h2">Need someone to run your dispatch desk?</h2>
+    <p class="mkt-sub">We place a named operations manager with your carrier — load booking, brokers, TMS included. $0 due this week.</p>
+    <div class="mkt-actions" style="justify-content:center;margin-top:24px;">
+      <a href="/pricing" class="btn btn-primary btn-xl">Start 7 days free</a>
+      <a href="/contact" class="btn btn-secondary btn-xl">Talk to operations</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" role="contentinfo"></footer>
+
+<script>
+(function () {
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  const queryInput = document.getElementById('cs-query');
+  const modeSelect = document.getElementById('cs-mode');
+  const resultsEl = document.getElementById('cs-results');
+  const btn = document.getElementById('cs-search-btn');
+
+  queryInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') runCarrierSearch();
+  });
+
+  // Deep link ?q=MC123 or ?q=email
+  const startQ = new URLSearchParams(location.search).get('q');
+  if (startQ) {
+    queryInput.value = startQ;
+    setTimeout(runCarrierSearch, 400);
+  }
+
+  async function runCarrierSearch() {
+    const q = queryInput.value.trim();
+    const mode = modeSelect.value || 'auto';
+    if (!q) {
+      alert('Enter MC#, USDOT, company name, phone, email, or state (e.g. TX).');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Searching…';
+    resultsEl.hidden = false;
+    resultsEl.innerHTML = '<div class="cs-empty">Querying FMCSA Company Census…</div>';
+
+    try {
+      const params = new URLSearchParams({ q, mode });
+      const res = await fetch('/api/public/carrier-search?' + params.toString());
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 429) {
+        resultsEl.innerHTML = '<div class="cs-empty">' + escapeHtml(data.error || 'Too many searches. Please wait a few minutes.') + '</div>';
+        return;
+      }
+      if (!res.ok) {
+        resultsEl.innerHTML = '<div class="cs-empty">' + escapeHtml(data.error || 'Search failed.') + '</div>';
+        return;
+      }
+
+      const list = data.carriers || [];
+      if (!list.length) {
+        resultsEl.innerHTML = '<div class="cs-empty"><strong>No census match</strong> for “' + escapeHtml(q) + '”. Try MC#, USDOT, legal name, phone, or email. Older records may lack contact fields.</div>';
+        return;
+      }
+
+      resultsEl.innerHTML = list.map((c) => {
+        const safer = c.dot_number
+          ? 'https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&query_string=' + encodeURIComponent(c.dot_number)
+          : 'https://safer.fmcsa.dot.gov/';
+        return `
+          <article class="cs-card">
+            <h3>${escapeHtml(c.company_name || 'Unknown carrier')}</h3>
+            <div class="cs-card-meta">
+              ${c.dba_name ? '<div>DBA: <strong>' + escapeHtml(c.dba_name) + '</strong></div>' : ''}
+              <div>${escapeHtml(c.mc_number || 'MC N/A')} · USDOT <strong>${escapeHtml(c.dot_number || 'N/A')}</strong></div>
+              <div>${escapeHtml(c.phy_address || 'Address not on census')}</div>
+              <div>Contact: ${escapeHtml(c.owner_name || '—')} · ${escapeHtml(c.phone || 'no phone')} · ${escapeHtml(c.email || 'no email on file')}</div>
+              ${c.num_trucks ? '<div>Fleet: <strong>' + escapeHtml(String(c.num_trucks)) + '</strong> power units' + (c.num_drivers ? ' · ' + escapeHtml(String(c.num_drivers)) + ' drivers' : '') + '</div>' : ''}
+            </div>
+            <div class="cs-badge-row">
+              ${c.authority_status ? '<span class="cs-badge">' + escapeHtml(c.authority_status) + '</span>' : ''}
+              ${c.safety_rating ? '<span class="cs-badge">' + escapeHtml('Safety: ' + c.safety_rating) + '</span>' : ''}
+              ${c.usdot_status ? '<span class="cs-badge muted">' + escapeHtml(c.usdot_status) + '</span>' : ''}
+              <a class="cs-badge muted" href="${safer}" target="_blank" rel="noopener">Open SAFER ↗</a>
+            </div>
+          </article>`;
+      }).join('') + '<p class="cs-hint" style="margin-top:8px;">Showing ' + list.length + ' result(s) from public census. ' + escapeHtml(data.disclaimer || '') + '</p>';
+    } catch (err) {
+      resultsEl.innerHTML = '<div class="cs-empty">Network error. Please try again.</div>';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Search';
+    }
+  }
+
+  window.runCarrierSearch = runCarrierSearch;
+})();
+</script>
+<script src="/js/marketing-animations.js"></script>
+<script src="/js/site-chrome.js"></script>
+</body>
+</html>

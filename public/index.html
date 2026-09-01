@@ -44,7 +44,10 @@
         "url": "https://www.shippingwish.com",
         "potentialAction": {
           "@type": "SearchAction",
-          "target": "https://www.shippingwish.com/blog",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://www.shippingwish.com/carrier-search?q={search_term_string}"
+          },
           "query-input": "required name=search_term_string"
         }
       }

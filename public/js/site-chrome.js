@@ -67,6 +67,7 @@
           </div>
         </li>
         <li><a href="/pricing"${active('/pricing.html', ['checkout.html','checkout-success.html'])}>Pricing</a></li>
+        <li><a href="/carrier-search"${active('/carrier-search.html')}>Carrier Lookup</a></li>
         <li><a href="/about"${active('/about.html')}>About</a></li>
         <li><a href="/blog"${active('/blog.html', ['blog-post.html'])}>Insights</a></li>
         <li><a href="/contact"${active('/contact.html')}>Contact</a></li>
@@ -86,6 +87,7 @@
       <a href="/services" data-nav-close>Services</a>
       <a href="/dispatch" data-nav-close>Fleet Operations</a>
       <a href="/pricing" data-nav-close>Pricing</a>
+      <a href="/carrier-search" data-nav-close>Carrier Lookup</a>
       <a href="/about" data-nav-close>About</a>
       <a href="/blog" data-nav-close>Insights</a>
       <a href="/contact" data-nav-close>Contact</a>
@@ -126,6 +128,7 @@
         <h4>Company</h4>
         <ul>
           <li><a href="/about">About</a></li>
+          <li><a href="/carrier-search">Free Carrier Lookup</a></li>
           <li><a href="/blog">Insights</a></li>
           <li><a href="/login">Carrier Portal</a></li>
           <li><a href="/contact">Contact</a></li>

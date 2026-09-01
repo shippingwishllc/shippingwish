@@ -98,6 +98,7 @@ app.use('/api/messages', require('./routes/messages'));            // Load chat 
 app.use('/api/routes', require('./routes/routes'));              // Google Route Optimization API, Truck Miles, RPM & Fuel Calculator
 app.use('/api/settings', require('./routes/settings'));          // Website CMS Settings & Contact Info
 app.use('/api/blog', require('./routes/blog'));                  // SEO Freight Blog & Admin Articles Manager
+app.use('/api/public', require('./routes/public-tools'));        // Public FMCSA carrier lookup (rate limited)
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {
