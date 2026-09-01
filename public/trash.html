@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trash — Admin Recovery | Shipping Wish TMS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .trash-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .trash-table-wrap { overflow-x:auto; }
+    .trash-empty { text-align:center; padding:48px 24px; color:var(--text-muted); }
+    .trash-pagination {
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      margin-top:16px; padding-top:16px; border-top:1px solid var(--border-default);
+      font-size:12px; color:var(--text-muted); flex-wrap:wrap;
+    }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Trash</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Soft-deleted loads, accounts, drivers &amp; emails — admin restore only</p>
+      </div>
+    </header>
+    <main class="app-content">
+      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">In trash</span><div class="stat-kpi-icon">🗑️</div></div>
+          <div class="stat-kpi-val" id="kpi-trash-total">0</div>
+        </div>
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Loads</span><div class="stat-kpi-icon">🚚</div></div>
+          <div class="stat-kpi-val" id="kpi-trash-loads">0</div>
+        </div>
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Accounts</span><div class="stat-kpi-icon">👤</div></div>
+          <div class="stat-kpi-val" id="kpi-trash-users">0</div>
+        </div>
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Emails</span><div class="stat-kpi-icon">📧</div></div>
+          <div class="stat-kpi-val" id="kpi-trash-emails">0</div>
+        </div>
+      </div>
+
+      <div class="tms-table-card" style="padding:16px;">
+        <div class="trash-tabs" id="trash-tabs">
+          <button type="button" class="btn btn-primary btn-sm" data-type="loads" onclick="switchTrashTab('loads', this)">Loads</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-type="users" onclick="switchTrashTab('users', this)">Carriers / accounts</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-type="drivers" onclick="switchTrashTab('drivers', this)">Drivers</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-type="emails" onclick="switchTrashTab('emails', this)">Emails</button>
+        </div>
+
+        <div class="trash-table-wrap">
+          <table class="tms-table-v2">
+            <thead id="trash-thead"></thead>
+            <tbody id="trash-tbody">
+              <tr><td colspan="6" class="trash-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="trash-pagination" id="trash-pagination" style="display:none;">
+          <span id="trash-page-info">—</span>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="trash-prev" onclick="trashPage(-1)">← Previous</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="trash-next" onclick="trashPage(1)">Next →</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  let trashType = 'loads';
+  let trashPageNum = 1;
+  let trashTotalPages = 1;
+  let trashTotal = 0;
+  const TRASH_PER_PAGE = 20;
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  async function checkAuth() {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/login'; return false; }
+    const data = await res.json();
+    const role = data.user && data.user.role;
+    if (!['admin', 'super_admin'].includes(role)) {
+      alert('Trash is admin-only. Dispatchers and sales staff cannot delete or restore.');
+      window.location.href = '/admin-dashboard';
+      return false;
+    }
+    return true;
+  }
+
+  async function loadTrashCounts() {
+    const res = await fetch('/api/trash/counts', { credentials: 'include' });
+    if (!res.ok) return;
+    const c = await res.json();
+    document.getElementById('kpi-trash-total').textContent = c.total || 0;
+    document.getElementById('kpi-trash-loads').textContent = c.loads || 0;
+    document.getElementById('kpi-trash-users').textContent = c.users || 0;
+    document.getElementById('kpi-trash-emails').textContent = c.emails || 0;
+  }
+
+  function switchTrashTab(type, btn) {
+    trashType = type;
+    trashPageNum = 1;
+    document.querySelectorAll('#trash-tabs button').forEach(b => {
+      b.className = 'btn btn-secondary btn-sm';
+    });
+    if (btn) btn.className = 'btn btn-primary btn-sm';
+    loadTrash();
+  }
+
+  function trashPage(delta) {
+    const next = trashPageNum + delta;
+    if (next < 1 || next > trashTotalPages) return;
+    trashPageNum = next;
+    loadTrash();
+  }
+
+  function renderTrashHead() {
+    const thead = document.getElementById('trash-thead');
+    if (trashType === 'loads') {
+      thead.innerHTML = '<tr><th>Load</th><th>Carrier</th><th>Lane</th><th>Deleted</th><th>By</th><th></th></tr>';
+    } else if (trashType === 'users') {
+      thead.innerHTML = '<tr><th>Name / email</th><th>Role</th><th>Company</th><th>Deleted</th><th>By</th><th></th></tr>';
+    } else if (trashType === 'drivers') {
+      thead.innerHTML = '<tr><th>Driver</th><th>Carrier</th><th>Contact</th><th>Deleted</th><th>By</th><th></th></tr>';
+    } else {
+      thead.innerHTML = '<tr><th>From</th><th>Subject</th><th>Lead</th><th>Deleted</th><th>By</th><th></th></tr>';
+    }
+  }
+
+  async function loadTrash() {
+    renderTrashHead();
+    const tbody = document.getElementById('trash-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="trash-empty">Loading…</td></tr>';
+
+    const qs = new URLSearchParams({
+      type: trashType,
+      page: String(trashPageNum),
+      perPage: String(TRASH_PER_PAGE)
+    });
+    const res = await fetch('/api/trash?' + qs.toString(), { credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) {
+      tbody.innerHTML = '<tr><td colspan="6" class="trash-empty">' + escapeHtml(data.error || 'Could not load trash') + '</td></tr>';
+      return;
+    }
+
+    trashTotal = data.total || 0;
+    trashTotalPages = data.totalPages || 1;
+    trashPageNum = data.page || trashPageNum;
+
+    const items = data.items || [];
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="trash-empty">Nothing in trash for this category.</td></tr>';
+      document.getElementById('trash-pagination').style.display = 'none';
+      return;
+    }
+
+    tbody.innerHTML = items.map((item) => {
+      const deleted = item.deleted_at ? new Date(item.deleted_at).toLocaleString() : '—';
+      const by = escapeHtml(item.deleted_by_name || '—');
+      const restoreBtn = `<button type="button" class="btn btn-primary btn-sm" onclick="restoreItem('${item.type}', ${item.id})">Restore</button>`;
+
+      if (item.type === 'load') {
+        return `<tr>
+          <td><strong>${escapeHtml(item.load_number)}</strong><br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(item.status)}</span></td>
+          <td>${escapeHtml(item.carrier_company || item.carrier_name || '—')}</td>
+          <td>${escapeHtml(item.pickup_location)} → ${escapeHtml(item.delivery_location)}</td>
+          <td style="font-size:12px;">${deleted}</td>
+          <td style="font-size:12px;">${by}</td>
+          <td>${restoreBtn}</td>
+        </tr>`;
+      }
+      if (item.type === 'user') {
+        return `<tr>
+          <td><strong>${escapeHtml(item.name)}</strong><br><span style="font-size:11px;">${escapeHtml(item.email)}</span></td>
+          <td><span class="badge badge-amber">${escapeHtml(item.role)}</span></td>
+          <td>${escapeHtml(item.company_name || '—')}</td>
+          <td style="font-size:12px;">${deleted}</td>
+          <td style="font-size:12px;">${by}</td>
+          <td>${restoreBtn}</td>
+        </tr>`;
+      }
+      if (item.type === 'driver') {
+        return `<tr>
+          <td><strong>${escapeHtml(item.name)}</strong></td>
+          <td>${escapeHtml(item.carrier_company || item.carrier_name || '—')}</td>
+          <td>${escapeHtml(item.phone || item.email || '—')}</td>
+          <td style="font-size:12px;">${deleted}</td>
+          <td style="font-size:12px;">${by}</td>
+          <td>${restoreBtn}</td>
+        </tr>`;
+      }
+      return `<tr>
+        <td>${escapeHtml(item.from_email)}</td>
+        <td>${escapeHtml(item.subject || '(no subject)')}</td>
+        <td>${escapeHtml(item.company_name || item.owner_name || '—')}</td>
+        <td style="font-size:12px;">${deleted}</td>
+        <td style="font-size:12px;">${by}</td>
+        <td>${restoreBtn}</td>
+      </tr>`;
+    }).join('');
+
+    const pager = document.getElementById('trash-pagination');
+    pager.style.display = 'flex';
+    const start = (trashPageNum - 1) * TRASH_PER_PAGE + 1;
+    const end = Math.min(trashPageNum * TRASH_PER_PAGE, trashTotal);
+    document.getElementById('trash-page-info').textContent = `${start}–${end} of ${trashTotal}`;
+    document.getElementById('trash-prev').disabled = trashPageNum <= 1;
+    document.getElementById('trash-next').disabled = trashPageNum >= trashTotalPages;
+  }
+
+  async function restoreItem(type, id) {
+    if (!confirm('Restore this item? It will appear again in the live system.')) return;
+    const res = await fetch('/api/trash/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ type, id })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not restore.');
+      return;
+    }
+    alert(data.message || 'Restored.');
+    await loadTrashCounts();
+    await loadTrash();
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!await checkAuth()) return;
+    await loadTrashCounts();
+    await loadTrash();
+  });
+</script>
+<script src="/js/app-shell.js?v=16"></script>
+</body>
+</html>

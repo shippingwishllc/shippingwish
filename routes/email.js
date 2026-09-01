@@ -234,7 +234,7 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page || '1', 10));
     const perPage = Math.min(20, Math.max(1, parseInt(req.query.perPage || '8', 10)));
     const offset = (page - 1) * perPage;
-    const where = unreadOnly ? 'WHERE i.is_read = FALSE' : '';
+    const where = unreadOnly ? 'WHERE i.deleted_at IS NULL AND i.is_read = FALSE' : 'WHERE i.deleted_at IS NULL';
 
     const countResult = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound i ${where}`);
     const total = countResult.rows[0]?.count || 0;
@@ -251,7 +251,7 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
        LIMIT $1 OFFSET $2`,
       [perPage, offset]
     );
-    const unread = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound WHERE is_read = FALSE`);
+    const unread = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound WHERE is_read = FALSE AND deleted_at IS NULL`);
     res.json({
       messages: result.rows,
       unread: unread.rows[0]?.count || 0,
@@ -266,6 +266,20 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
   }
 });
 
+// ADMIN: Move inbound email to trash
+router.delete('/inbox/:id', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE email_inbound SET deleted_at = now(), deleted_by = $2 WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
+      [req.params.id, req.user.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Message not found or already in trash.' });
+    res.json({ ok: true, message: 'Email moved to Trash.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not move email to trash.' });
+  }
+});
+
 router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     await ensureInboundColumns();
@@ -275,7 +289,7 @@ router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
        FROM email_inbound i
        LEFT JOIN crm_leads l ON l.id = i.lead_id
        LEFT JOIN users u ON u.id = l.sales_rep_id
-       WHERE i.id = $1`,
+       WHERE i.id = $1 AND i.deleted_at IS NULL`,
       [req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Message not found' });

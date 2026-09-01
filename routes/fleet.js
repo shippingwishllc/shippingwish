@@ -188,10 +188,12 @@ router.get('/drivers', requireAuth, async (req, res) => {
       LEFT JOIN trailers tr ON tr.id = d.assigned_trailer_id`;
     let params = [];
     const carrierId = getCarrierScope(req);
+    let where = 'd.deleted_at IS NULL';
     if (carrierId) {
-      query += ` WHERE d.carrier_id = $1`;
+      where += ` AND d.carrier_id = $1`;
       params.push(carrierId);
     }
+    query += ` WHERE ${where}`;
     query += ` ORDER BY d.name ASC`;
     const result = await pool.query(query, params);
     res.json({ drivers: result.rows });
@@ -246,8 +248,11 @@ router.delete('/drivers/:id', requireAuth, async (req, res) => {
   try {
     const gate = await assertOwnedFleetRow(req, 'drivers', req.params.id);
     if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
-    await pool.query('DELETE FROM drivers WHERE id = $1', [req.params.id]);
-    res.json({ ok: true });
+    await pool.query(
+      'UPDATE drivers SET deleted_at = now(), deleted_by = $2 WHERE id = $1 AND deleted_at IS NULL',
+      [req.params.id, req.user.id]
+    );
+    res.json({ ok: true, message: 'Driver moved to Trash. Company admin can ask Shipping Wish to restore.' });
   } catch (err) {
     res.status(500).json({ error: 'Could not delete driver.' });
   }

@@ -79,6 +79,7 @@
     { key: 'planning', href: '/load-planning', icon: '📅', label: 'Load Planning' },
     { section: 'System' },
     { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: '🛡️', label: 'Audit Logs' },
+    { key: 'trash', href: '/trash', icon: '🗑️', label: 'Trash', adminOnly: true },
     { key: 'settings', navId: 'nav-tab-settings', href: '/admin-dashboard#settings', icon: '🌐', label: 'Website CMS' },
     { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: '📰', label: 'Blog Manager' }
   ];
@@ -118,7 +119,8 @@
     'load-detail.html': 'overview',
     'carrier-overview.html': 'home',
     'dashboard.html': 'home',
-    'driver-app.html': 'driver'
+    'driver-app.html': 'driver',
+    'trash.html': 'trash'
   };
 
   function pageName() {
@@ -204,7 +206,11 @@
   function linkItemsForRole(role) {
     if (role === 'driver') return DRIVER_LINKS;
     if (isCarrierRole(role)) return CARRIER_LINKS;
-    return STAFF_LINKS.concat(extraLinks());
+    const staff = STAFF_LINKS.filter((item) => {
+      if (!item.adminOnly) return true;
+      return role === 'admin' || role === 'super_admin';
+    });
+    return staff.concat(extraLinks());
   }
 
   function syncActiveNav(aside) {

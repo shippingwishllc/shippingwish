@@ -98,6 +98,7 @@ app.use('/api/load-planning', carrierApiGate, require('./routes/load_planning'))
 app.use('/api/notifications', carrierApiGate, require('./routes/notifications'));
 app.use('/api/tracking', carrierApiGate, require('./routes/tracking'));
 app.use('/api/audit-logs', require('./routes/audit'));            // System security audit log viewer
+app.use('/api/trash', require('./routes/trash'));                 // Admin-only soft-delete trash & restore
 app.use('/api/messages', carrierApiGate, require('./routes/messages'));
 app.use('/api/routes', require('./routes/routes'));              // Google Route Optimization API, Truck Miles, RPM & Fuel Calculator
 app.use('/api/settings', require('./routes/settings'));          // Website CMS Settings & Contact Info

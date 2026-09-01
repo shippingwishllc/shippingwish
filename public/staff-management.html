@@ -177,6 +177,8 @@
 <script>
   let usersData = [];
   let currentRoleFilter = 'all';
+  let IS_ADMIN = false;
+  let IS_ADMIN = false;
 
   document.addEventListener('DOMContentLoaded', async () => {
     await checkAuth();
@@ -192,6 +194,7 @@
       
       if (!user || !user.role) { window.location.href = '/login'; return; }
       const role = (user.role || '').toLowerCase();
+      IS_ADMIN = role === 'admin' || role === 'super_admin';
       const isAuthorized = ['admin', 'super_admin', 'superadmin', 'dispatcher', 'sales_rep'].includes(role) || (user.email && user.email.toLowerCase().includes('admin'));
       
       if (!isAuthorized) {
@@ -284,8 +287,8 @@
         <td>${escapeHtml(u.created)}</td>
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-light btn-sm" onclick="toggleSuspend(${u.id})">${u.isSuspended ? 'Unsuspend' : 'Suspend'}</button>
-            <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteUser(${u.id})">Delete</button>
+            ${IS_ADMIN ? `<button class="btn btn-light btn-sm" onclick="toggleSuspend(${u.id})">${u.isSuspended ? 'Unsuspend' : 'Suspend'}</button>
+            <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteUser(${u.id})">Move to trash</button>` : '<span style="font-size:11px;color:var(--text-muted);">Admin only</span>'}
           </div>
         </td>
       </tr>
@@ -332,10 +335,9 @@
   }
 
   async function deleteUser(id) {
-    if (confirm('Delete this user account?')) {
-      await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
-      fetchUsers();
-    }
+    if (!confirm('Move this account to Trash? Only admins can restore from the Trash page.')) return;
+    await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+    fetchUsers();
   }
 
   document.getElementById('add-user-form').addEventListener('submit', async (e) => {

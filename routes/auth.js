@@ -159,7 +159,7 @@ router.post('/signup/send-otp', rateLimit(5, 60000), async (req, res) => {
 
   try {
     await ensureSignupTables();
-    const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1)', [emailNorm]);
+    const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1) AND deleted_at IS NULL', [emailNorm]);
     if (existing.rows.length) {
       return res.status(409).json({ error: 'An account with this email already exists. Sign in instead.' });
     }
@@ -239,7 +239,7 @@ router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
       return res.status(400).json({ error: 'Incorrect code. Check your email and try again.' });
     }
 
-    const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1)', [emailNorm]);
+    const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1) AND deleted_at IS NULL', [emailNorm]);
     if (existing.rows.length) {
       await pool.query('DELETE FROM signup_pending WHERE id = $1', [pending.id]);
       return res.status(409).json({ error: 'Account already exists. Sign in instead.' });
@@ -304,6 +304,9 @@ router.post('/login', rateLimit(10, 60000), async (req, res) => {
     if (user.is_suspended) {
       return res.status(403).json({ error: 'Your account has been suspended. Please contact Shipping Wish support.' });
     }
+    if (user.deleted_at) {
+      return res.status(403).json({ error: 'This account was removed. Contact Shipping Wish admin to restore.' });
+    }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Invalid email or password.' });
@@ -345,6 +348,10 @@ router.get('/me', requireAuth, async (req, res) => {
     );
     if (!result.rows.length) return res.status(404).json({ error: 'User not found.' });
     const user = result.rows[0];
+    if (user.deleted_at) {
+      res.clearCookie('sw_token');
+      return res.status(403).json({ error: 'Account removed. Contact admin if this was a mistake.' });
+    }
     const payload = { ok: true, user };
     if (isCarrierRole(user.role)) {
       payload.access = await getCarrierAccess(user.id, user.email);
@@ -365,10 +372,10 @@ router.post('/logout', (req, res) => {
 router.get('/users', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const { role } = req.query;
-    let query = `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, is_suspended, signup_ip, created_at FROM users`;
+    let query = `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, is_suspended, signup_ip, created_at FROM users WHERE deleted_at IS NULL`;
     let params = [];
     if (role) {
-      query += ` WHERE role = $1`;
+      query += ` AND role = $1`;
       params.push(role);
     }
     query += ` ORDER BY created_at DESC`;
@@ -394,7 +401,7 @@ router.post('/users', requireAuth, requireRole('admin', 'super_admin'), async (r
   }
 
   try {
-    const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1)', [email]);
+    const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1) AND deleted_at IS NULL', [email]);
     if (existing.rows.length) {
       return res.status(409).json({ error: 'User email already exists.' });
     }
@@ -423,20 +430,24 @@ router.patch('/users/:id/suspend', requireAuth, requireSuperAdmin, async (req, r
   }
 });
 
-// SUPER ADMIN: Delete user
+// ADMIN: Move user to trash (soft delete)
 router.delete('/users/:id', requireAuth, requireSuperAdmin, async (req, res) => {
   try {
-    const check = await pool.query('SELECT role FROM users WHERE id = $1', [req.params.id]);
-    if (check.rows.length && check.rows[0].role === 'super_admin') {
-      const countRes = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'super_admin'");
+    const check = await pool.query('SELECT role FROM users WHERE id = $1 AND deleted_at IS NULL', [req.params.id]);
+    if (!check.rows.length) return res.status(404).json({ error: 'User not found.' });
+    if (check.rows[0].role === 'super_admin') {
+      const countRes = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'super_admin' AND deleted_at IS NULL");
       if (parseInt(countRes.rows[0].count, 10) <= 1) {
         return res.status(400).json({ error: 'Cannot delete the only Super Admin account.' });
       }
     }
-    await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
-    res.json({ ok: true });
+    await pool.query(
+      'UPDATE users SET deleted_at = now(), deleted_by = $2 WHERE id = $1 AND deleted_at IS NULL',
+      [req.params.id, req.user.id]
+    );
+    res.json({ ok: true, message: 'Account moved to Trash. Restore from Trash page if needed.' });
   } catch (err) {
-    res.status(500).json({ error: 'Could not delete user.' });
+    res.status(500).json({ error: 'Could not move user to trash.' });
   }
 });
 

@@ -460,7 +460,10 @@
         <td><strong style="color:var(--color-success);">$${parseFloat(l.rate || 0).toLocaleString()}</strong></td>
         <td><span class="badge ${getStatusBadge(l.status)}">${formatStatus(l.status)}</span></td>
         <td>
-          <a href="/load-detail?id=${l.id}" class="btn btn-secondary btn-sm" id="btn-view-load-${l.id}">View Detail</a>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <a href="/load-detail?id=${l.id}" class="btn btn-secondary btn-sm" id="btn-view-load-${l.id}">View</a>
+            <button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="trashLoad(${l.id})">Trash</button>
+          </div>
         </td>
       </tr>
     `).join('');
@@ -482,6 +485,21 @@
     });
 
     renderLoadsTable(filtered);
+  }
+
+  async function trashLoad(id) {
+    const load = allLoads.find((l) => l.id === id);
+    const label = load ? load.load_number : id;
+    if (!confirm(`Move load ${label} to Trash? Restore from Trash page if this was a mistake.`)) return;
+    const res = await fetch(`/api/loads/${id}`, { method: 'DELETE', credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not move load to trash.');
+      return;
+    }
+    allLoads = allLoads.filter((l) => l.id !== id);
+    renderLoadsTable(allLoads);
+    alert(data.message || 'Load moved to Trash.');
   }
 
   async function loadAuditLogs() {

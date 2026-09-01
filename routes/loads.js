@@ -163,7 +163,7 @@ router.get('/', requireAuth, async (req, res) => {
       LEFT JOIN drivers dr ON dr.id = l.driver_id
       LEFT JOIN trucks t ON t.id = l.truck_id
       LEFT JOIN trailers tr ON tr.id = l.trailer_id
-      WHERE 1=1`;
+      WHERE l.deleted_at IS NULL`;
     let params = [];
 
     if (req.user.role === 'carrier') {
@@ -227,7 +227,7 @@ router.get('/:id', requireAuth, async (req, res) => {
        LEFT JOIN trucks t ON t.id = l.truck_id
        LEFT JOIN trailers tr ON tr.id = l.trailer_id
        LEFT JOIN brokers b ON b.id = l.broker_id
-       WHERE l.id = $1`,
+       WHERE l.id = $1 AND l.deleted_at IS NULL`,
       [id]
     );
     if (!loadResult.rows.length) return res.status(404).json({ error: 'Load not found.' });
@@ -539,6 +539,22 @@ router.post('/:id/approve-cancellation', requireAuth, requireRole('admin', 'supe
   } catch (err) {
     console.error('Approve cancellation error:', err);
     res.status(500).json({ error: 'Could not process cancellation approval.' });
+  }
+});
+
+// ADMIN: Move load to trash (soft delete)
+router.delete('/:id', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE loads SET deleted_at = now(), deleted_by = $2 WHERE id = $1 AND deleted_at IS NULL RETURNING id, load_number`,
+      [req.params.id, req.user.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Load not found or already in trash.' });
+    auditLog(req.user.id, 'LOAD_TRASH', 'load', req.params.id, { loadNumber: result.rows[0].load_number }, getClientIp(req));
+    res.json({ ok: true, message: 'Load moved to Trash. Restore from Trash page if needed.' });
+  } catch (err) {
+    console.error('Trash load error:', err);
+    res.status(500).json({ error: 'Could not move load to trash.' });
   }
 });
 

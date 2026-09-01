@@ -92,6 +92,7 @@
   let totalPages = 1;
   let totalMessages = 0;
   let unreadOnlyFilter = false;
+  let IS_ADMIN = false;
 
   async function checkAuth() {
     const res = await fetch('/api/me', { credentials: 'include' });
@@ -104,6 +105,7 @@
     if (role === 'carrier' || role === 'carrier_admin' || role === 'driver') {
       window.location.href = '/carrier-overview';
     }
+    IS_ADMIN = role === 'admin' || role === 'super_admin';
   }
 
   function escapeHtml(str) {
@@ -272,6 +274,7 @@
           <a class="btn btn-secondary btn-sm" href="${mailto}">Open in mail app</a>
           <a class="btn btn-secondary btn-sm" href="${crmLink}">Open CRM</a>
           ${m.resend_email_id ? `<button type="button" class="btn btn-secondary btn-sm" onclick="refreshBody(${m.id})">Reload body</button>` : ''}
+          ${IS_ADMIN ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="trashEmail(${m.id})">Move to trash</button>` : ''}
         </div>
       </div>
       <div class="contact-grid">
@@ -328,6 +331,21 @@
     const d = document.createElement('div');
     d.innerHTML = String(html || '');
     return (d.textContent || d.innerText || '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  async function trashEmail(id) {
+    if (!confirm('Move this email to Trash? Only admins can restore from the Trash page.')) return;
+    const res = await fetch('/api/email/inbox/' + id, { method: 'DELETE', credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not move to trash.');
+      return;
+    }
+    if (selectedId === id) {
+      selectedId = null;
+      document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">Select a reply on the left.</p>';
+    }
+    loadInbox(unreadOnlyFilter);
   }
 
   async function refreshBody(id) {

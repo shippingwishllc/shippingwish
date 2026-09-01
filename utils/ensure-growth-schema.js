@@ -148,6 +148,28 @@ async function ensureGrowthSchema() {
   } catch (err) {
     console.warn('[OTP_TRIAL] direct ensure skipped:', err.message);
   }
+
+  const fileV5 = path.join(__dirname, '..', 'sql', 'migrations', 'v5_soft_delete.sql');
+  try {
+    const sqlV5 = fs.readFileSync(fileV5, 'utf8');
+    const { ok, failed } = await runStatements(sqlV5, 'SOFT_DELETE');
+    console.log(`[SOFT_DELETE] Schema v5 applied (${ok} ok, ${failed} skipped)`);
+  } catch (err) {
+    console.warn('[SOFT_DELETE] Schema apply skipped:', err.message);
+  }
+
+  try {
+    await pool.query('ALTER TABLE loads ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ');
+    await pool.query('ALTER TABLE loads ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL');
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ');
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL');
+    await pool.query('ALTER TABLE drivers ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ');
+    await pool.query('ALTER TABLE drivers ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL');
+    await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ');
+    await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL');
+  } catch (err) {
+    console.warn('[SOFT_DELETE] direct ensure skipped:', err.message);
+  }
 }
 
 /** Call from CRM import if table still missing (serverless race / cold start). */

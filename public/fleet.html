@@ -506,7 +506,7 @@
     }
   }
 
-  async function deleteDriver(id) { if(confirm('Delete driver record?')) { await fetch(`/api/fleet/drivers/${id}`, {method:'DELETE', credentials: 'include'}); loadDrivers(); } }
+  async function deleteDriver(id) { if(confirm('Move driver to Trash? Shipping Wish admin can restore from Trash.')) { await fetch(`/api/fleet/drivers/${id}`, {method:'DELETE', credentials: 'include'}); loadDrivers(); } }
   async function deleteTruck(id) { if(confirm('Delete truck record?')) { await fetch(`/api/fleet/trucks/${id}`, {method:'DELETE', credentials: 'include'}); loadTrucks(); } }
   async function deleteTrailer(id) { if(confirm('Delete trailer record?')) { await fetch(`/api/fleet/trailers/${id}`, {method:'DELETE', credentials: 'include'}); loadTrailers(); } }
 
