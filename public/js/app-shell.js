@@ -178,6 +178,26 @@
     }).join('');
   }
 
+  function linkItemsForRole(role) {
+    if (role === 'driver') return DRIVER_LINKS;
+    if (isCarrierRole(role)) return CARRIER_LINKS;
+    return STAFF_LINKS.concat(extraLinks());
+  }
+
+  function syncActiveNav(aside) {
+    const active = activeKey();
+    aside.querySelectorAll('a.sidebar-nav-link').forEach((el) => el.classList.remove('active'));
+    for (const item of linkItemsForRole(CURRENT_ROLE)) {
+      if (item.section) continue;
+      if (item.key !== active) continue;
+      const el = item.navId
+        ? aside.querySelector(`#${item.navId}`)
+        : aside.querySelector(`a.sidebar-nav-link[href="${item.href}"]`);
+      if (el) el.classList.add('active');
+      break;
+    }
+  }
+
   function sidebarHtml() {
     if (!CURRENT_ROLE) return loadingSidebarHtml();
     const carrier = isCarrierRole(CURRENT_ROLE);
@@ -256,7 +276,8 @@
 
   function ensureLogout() {
     const btn = document.getElementById('shell-logout-btn');
-    if (!btn) return;
+    if (!btn || btn.dataset.shellBound === '1') return;
+    btn.dataset.shellBound = '1';
     btn.disabled = false;
     btn.addEventListener('click', () => {
       clearRoleCache();
@@ -271,9 +292,13 @@
     const cached = sessionStorage.getItem(ROLE_CACHE_KEY) || '';
     CURRENT_ROLE = cached;
     aside.innerHTML = cached ? sidebarHtml() : loadingSidebarHtml();
-    aside.classList.add('shell-mounted');
-    if (!cached) aside.classList.add('is-shell-pending');
-    else aside.classList.remove('is-shell-pending');
+    aside.classList.add('shell-mounted', 'shell-content-ready');
+    if (!cached) {
+      aside.classList.add('is-shell-pending');
+      aside.classList.remove('shell-content-ready');
+    } else {
+      aside.classList.remove('is-shell-pending');
+    }
   }
 
   function mountMobile() {
@@ -339,31 +364,50 @@
 
     mountSidebarContent(aside);
     ensureLogout();
+    mountMobile();
 
     fetch('/api/me', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
+        const prevRole = sessionStorage.getItem(ROLE_CACHE_KEY) || '';
         CURRENT_ROLE = (data && data.user && data.user.role) || '';
         if (CURRENT_ROLE) sessionStorage.setItem(ROLE_CACHE_KEY, CURRENT_ROLE);
-        const beforeReplace = aside.querySelectorAll('a.sidebar-nav-link').length;
-        aside.innerHTML = sidebarHtml();
+
+        const navReady = aside.classList.contains('shell-content-ready')
+          && aside.querySelectorAll('a.sidebar-nav-link').length > 0;
+        const skipRebuild = CURRENT_ROLE && CURRENT_ROLE === prevRole && navReady;
+
+        if (skipRebuild) {
+          syncActiveNav(aside);
+          // #region agent log
+          dbgLog('app-shell.js:skip-rebuild', 'skipped sidebar DOM rebuild on navigation', {
+            initCallCount,
+            page: pageName(),
+            role: CURRENT_ROLE,
+            msSinceInit: Date.now() - initStart
+          }, 'E');
+          // #endregion
+        } else {
+          aside.innerHTML = sidebarHtml();
+          aside.classList.add('shell-content-ready');
+          ensureLogout();
+        }
+
         aside.classList.add('shell-mounted');
         aside.classList.remove('is-shell-pending');
         const afterReplace = aside.querySelectorAll('a.sidebar-nav-link').length;
         const renderedLabels = Array.from(aside.querySelectorAll('a.sidebar-nav-link')).slice(0, 4).map((a) => a.textContent.trim().slice(0, 40));
         // #region agent log
-        dbgLog('app-shell.js:after-me', 'sidebar replaced after /api/me', {
+        dbgLog('app-shell.js:after-me', 'sidebar state after /api/me', {
           initCallCount,
           msSinceInit: Date.now() - initStart,
           role: CURRENT_ROLE,
-          beforeReplace,
+          skipRebuild,
           afterReplace,
           renderedLabels,
           isCarrierShell: isCarrierShell()
         }, 'B');
         // #endregion
-        mountMobile();
-        ensureLogout();
         applyPageHash();
         fillUser(data && data.user);
         if (CURRENT_ROLE === 'carrier' || CURRENT_ROLE === 'carrier_admin') {

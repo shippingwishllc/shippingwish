@@ -1447,6 +1447,10 @@ html, body.app-body {
   overflow-x: hidden;
 }
 
+html {
+  background: var(--color-gray-50);
+}
+
 .app-sidebar {
   background: var(--color-gray-900);
   border-right: 1px solid rgba(255,255,255,0.08);
@@ -3105,10 +3109,10 @@ textarea.form-input { height: auto; min-height: 88px; }
   z-index: 190;
 }
 
-.app-sidebar:not(.shell-mounted) {
+.app-sidebar:not(.shell-content-ready) > * {
   visibility: hidden;
 }
-.app-sidebar.shell-mounted {
+.app-sidebar.shell-content-ready > * {
   visibility: visible;
 }
 .app-sidebar .sidebar-shell-placeholder {
