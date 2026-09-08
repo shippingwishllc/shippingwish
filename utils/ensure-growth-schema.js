@@ -170,6 +170,16 @@ async function ensureGrowthSchema() {
   } catch (err) {
     console.warn('[SOFT_DELETE] direct ensure skipped:', err.message);
   }
+
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const sqlV6 = fs.readFileSync(path.join(__dirname, '../sql/migrations/v6_sms_inbox.sql'), 'utf8');
+    const { ok, failed } = await runStatements(sqlV6, 'SMS_INBOX');
+    console.log(`[SMS_INBOX] Schema v6 applied (${ok} ok, ${failed} skipped)`);
+  } catch (err) {
+    console.warn('[SMS_INBOX] Schema apply skipped:', err.message);
+  }
 }
 
 /** Call from CRM import if table still missing (serverless race / cold start). */

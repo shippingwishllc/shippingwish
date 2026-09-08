@@ -5,6 +5,7 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const { searchFmcsa } = require('../utils/fmcsa');
 const { sanitizeEmail, emailValidationError } = require('../utils/email-valid');
 const { ensureCrmLeadsTable } = require('../utils/ensure-growth-schema');
+const { ensureSmsMessagesTable } = require('../utils/sms-inbox');
 
 // ============================================================
 // FMCSA API — Search US Carriers by Name, MC#, or DOT#
@@ -79,8 +80,21 @@ router.get('/fmcsa/carrier/:mc', requireAuth, async (req, res) => {
 router.get('/leads', requireAuth, async (req, res) => {
   try {
     await ensureCrmLeadsTable().catch(() => {});
+    await ensureSmsMessagesTable().catch(() => {});
     let query = `
-      SELECT l.*, u.name as sales_rep_name
+      SELECT l.*, u.name as sales_rep_name,
+        COALESCE((
+          SELECT COUNT(*)::int FROM sms_messages sm
+          WHERE sm.lead_id = l.id AND sm.direction = 'outbound'
+        ), 0) AS sms_sent_count,
+        COALESCE((
+          SELECT COUNT(*)::int FROM sms_messages sm
+          WHERE sm.lead_id = l.id AND sm.direction = 'inbound'
+        ), 0) AS sms_reply_count,
+        EXISTS (
+          SELECT 1 FROM sms_optouts o
+          WHERE regexp_replace(o.phone, '\\D', '', 'g') LIKE '%' || right(regexp_replace(l.phone, '\\D', '', 'g'), 10)
+        ) AS sms_opted_out
       FROM crm_leads l
       LEFT JOIN users u ON l.sales_rep_id = u.id
     `;

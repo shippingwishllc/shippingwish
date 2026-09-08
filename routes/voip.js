@@ -14,6 +14,7 @@ const {
   startConfirmReply
 } = require('../utils/sms');
 const { notifyAdmins, createNotification } = require('../utils/notifications');
+const { logSmsMessage, findLeadByPhone, OUR_NUMBER } = require('../utils/sms-inbox');
 
 async function isSmsOptedOut(phone) {
   const n = normalizePhone(phone);
@@ -80,6 +81,20 @@ async function sendTemplatedSms({ lead_id, to_number, template_key, company_name
     smsStatus = sent.status;
     twilioSid = sent.sid;
     bodySent = sent.body || message;
+
+    if (smsStatus === 'sent' || smsStatus === 'logged') {
+      await logSmsMessage({
+        direction: 'outbound',
+        from_number: OUR_NUMBER,
+        to_number,
+        body: bodySent,
+        lead_id: lead_id || null,
+        sent_by: user && user.id,
+        twilio_sid: twilioSid,
+        disposition: smsStatus,
+        is_read: true
+      });
+    }
   } catch (twilioErr) {
     console.error('Twilio SMS error:', twilioErr.message);
     smsStatus = 'twilio_error';
@@ -187,6 +202,19 @@ router.post('/send-sms', requireAuth, async (req, res) => {
       smsStatus = sent.status;
       twilioSid = sent.sid;
       bodySent = sent.body || message;
+      if (smsStatus === 'sent' || smsStatus === 'logged') {
+        await logSmsMessage({
+          direction: 'outbound',
+          from_number: OUR_NUMBER,
+          to_number,
+          body: bodySent,
+          lead_id: lead_id || null,
+          sent_by: req.user.id,
+          twilio_sid: twilioSid,
+          disposition: smsStatus,
+          is_read: true
+        });
+      }
       if (smsStatus === 'logged') {
         console.log('[DEV] Twilio not configured — SMS logged only:', { to_number, body: bodySent });
       }
@@ -331,19 +359,29 @@ router.post('/twilio-inbound', async (req, res) => {
     } else {
       disposition = 'inbound_reply';
       reply = helpReply();
-      const lead = await pool.query(
-        `SELECT id, company_name, sales_rep_id FROM crm_leads
-         WHERE regexp_replace(phone, '\\D', '', 'g') LIKE '%' || right(regexp_replace($1, '\\D', '', 'g'), 10)
-         ORDER BY last_contacted_at DESC NULLS LAST LIMIT 1`,
-        [from]
-      );
-      const title = `SMS from ${lead.rows[0] ? lead.rows[0].company_name : from}`;
-      const msg = String(body).slice(0, 180);
-      await notifyAdmins(title, msg, 'success', '/crm-sales');
-      if (lead.rows[0] && lead.rows[0].sales_rep_id) {
-        await createNotification(lead.rows[0].sales_rep_id, title, msg, 'success', '/crm-sales');
+      const lead = await findLeadByPhone(from);
+      if (lead) {
+        const title = `SMS from ${lead.company_name || from}`;
+        const msg = String(body).slice(0, 180);
+        await notifyAdmins(title, msg, 'success', '/sms-inbox?phone=' + encodeURIComponent(from));
+        if (lead.sales_rep_id) {
+          await createNotification(lead.sales_rep_id, title, msg, 'success', '/sms-inbox?phone=' + encodeURIComponent(from));
+        }
+      } else {
+        await notifyAdmins(`SMS from ${from}`, String(body).slice(0, 180), 'success', '/sms-inbox');
       }
     }
+
+    const leadForLog = await findLeadByPhone(from);
+    await logSmsMessage({
+      direction: 'inbound',
+      from_number: from,
+      to_number: to || OUR_NUMBER,
+      body: String(body).slice(0, 1600),
+      lead_id: leadForLog?.id || null,
+      disposition,
+      is_read: false
+    });
 
     await pool.query(
       `INSERT INTO voip_call_logs (

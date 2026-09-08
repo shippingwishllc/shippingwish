@@ -27,7 +27,8 @@
 
       <div style="display:flex;align-items:center;gap:var(--space-3);">
         <a href="/sales-workshop/" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">📘 Sales playbook</a>
-        <a href="/inbox" class="btn btn-secondary btn-sm" id="inbox-link">📬 Replies <span id="inbox-unread">0</span></a>
+        <a href="/inbox" class="btn btn-secondary btn-sm" id="inbox-link">📬 Email <span id="inbox-unread">0</span></a>
+        <a href="/sms-inbox" class="btn btn-secondary btn-sm" id="sms-inbox-link">📱 SMS <span id="sms-inbox-unread">0</span></a>
         <button class="btn btn-primary btn-sm" id="btn-add-lead" onclick="openAddLeadModal()">
           + Add Carrier Lead
         </button>
@@ -175,11 +176,12 @@
                 <th>Contact Info</th>
                 <th>Sales Rep</th>
                 <th>Status</th>
+                <th>SMS</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="leads-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading carrier leads...</td></tr>
+              <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">Loading carrier leads...</td></tr>
             </tbody>
           </table>
         </div>
@@ -326,6 +328,7 @@
     await loadLeads();
     await loadCheckouts();
     await loadInboxCount();
+    await loadSmsUnread();
   });
 
   async function checkAuth() {
@@ -372,7 +375,10 @@
           status: l.status || 'new',
           unread: l.unread_replies || 0,
           phyState: l.phy_state || '',
-          safety: l.safety_rating || ''
+          safety: l.safety_rating || '',
+          smsSentCount: l.sms_sent_count || 0,
+          smsReplyCount: l.sms_reply_count || 0,
+          smsOptedOut: !!l.sms_opted_out
         }));
       } else {
         leadsData = [];
@@ -475,7 +481,7 @@
     });
 
     if (!filtered.length) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No carrier leads matching current filter.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No carrier leads matching current filter.</td></tr>`;
       return;
     }
 
@@ -487,6 +493,7 @@
         <td><strong>${escapeHtml(l.ownerName)}</strong><br>${escapeHtml(l.phone)}<br><span style="font-size:11px;color:${l.email && !isValidEmail(l.email) ? 'var(--color-red-500)' : 'var(--text-muted)'};">${escapeHtml(l.email || 'No email')}${l.email && !isValidEmail(l.email) ? ' ⚠ invalid' : ''}</span></td>
         <td>${escapeHtml(l.salesRep)}</td>
         <td><span class="badge ${getStatusBadge(l.status)}">${escapeHtml(String(l.status || 'new').replace('_', ' ').toUpperCase())}</span></td>
+        <td>${smsStatusBadge(l)}</td>
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" onclick="sendOutreach(${l.id}, '${escapeJs(l.email)}', '${escapeJs(l.ownerName)}', '${escapeJs(l.companyName)}', 'dedicated_manager')">✉️ Email</button>
@@ -501,8 +508,25 @@
     `).join('');
     } catch (err) {
       console.error('renderLeadsTable', err);
-      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Could not render leads.</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">Could not render leads.</td></tr>`;
     }
+  }
+
+  function smsStatusBadge(l) {
+    if (l.smsOptedOut) return '<span class="badge" style="background:#fee2e2;color:#991b1b;">STOP</span>';
+    if (l.smsReplyCount > 0) return `<a href="/sms-inbox?phone=${encodeURIComponent(l.phone)}" class="badge badge-green" style="text-decoration:none;">Replied (${l.smsReplyCount})</a>`;
+    if (l.smsSentCount > 0) return `<a href="/sms-inbox?phone=${encodeURIComponent(l.phone)}" class="badge badge-amber" style="text-decoration:none;">Sent (${l.smsSentCount})</a>`;
+    return '<span style="font-size:11px;color:var(--text-muted);">Not sent</span>';
+  }
+
+  async function loadSmsUnread() {
+    try {
+      const res = await fetch('/api/sms/inbox/unread-count', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const el = document.getElementById('sms-inbox-unread');
+      if (el) el.textContent = data.unread || 0;
+    } catch (e) {}
   }
 
   function getStatusBadge(status) {
@@ -839,7 +863,8 @@
     });
     const data = await res.json().catch(() => ({}));
     alert(data.message || data.error || 'SMS finished');
-    loadLeads();
+    await loadSmsUnread();
+    await loadLeads();
   }
 
   async function sendWeeklyLink(leadId) {

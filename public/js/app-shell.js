@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '18';
+  const SIDEBAR_VERSION = '19';
   // #endregion
 
   function clearRoleCache() {
@@ -82,6 +82,7 @@
     { section: 'Sales & Staff' },
     { key: 'crm', href: '/crm-sales', icon: '📈', label: 'Sales CRM & Leads' },
     { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Replies' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: '📱', label: 'SMS Replies' },
     { key: 'trash', href: '/trash', icon: '🗑️', label: 'Trash', adminOnly: true },
     { key: 'staff', href: '/staff-management', icon: '👔', label: 'Company Staff' },
     { section: 'Accounting' },
@@ -122,6 +123,7 @@
     'crm-sales.html': 'crm',
     'sales-dashboard.html': 'crm',
     'inbox.html': 'inbox',
+    'sms-inbox.html': 'sms-inbox',
     'staff-management.html': 'staff',
     'invoices.html': 'invoices',
     'ifta.html': 'ifta',

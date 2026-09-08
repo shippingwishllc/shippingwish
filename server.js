@@ -94,6 +94,7 @@ app.use('/api/crm', require('./routes/crm'));             // CRM Carrier Leads, 
 app.use('/api/email', require('./routes/email'));         // 1-Click branded outreach, inbound replies, unsubscribe
 app.use('/api/billing', require('./routes/billing'));     // Weekly Stripe retainers + checkout links
 app.use('/api/voip', require('./routes/voip'));           // Click-to-call, Twilio SMS, webhooks
+app.use('/api/sms/inbox', require('./routes/sms-inbox')); // Two-way SMS inbox threads & replies
 app.use('/api/employees', require('./routes/employees')); // Admin HR Employee Management, Salaries & Multi-Dispatcher Assignment
 app.use('/api/load-planning', carrierApiGate, require('./routes/load_planning'));
 app.use('/api/notifications', carrierApiGate, require('./routes/notifications'));

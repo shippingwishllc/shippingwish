@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMS Replies Inbox | Shipping Wish TMS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css?v=20">
+  <style>
+    :root {
+      --inbox-page-items: 7;
+      --inbox-item-h: 84px;
+      --inbox-item-gap: 8px;
+      --inbox-list-h: calc(var(--inbox-page-items) * var(--inbox-item-h) + (var(--inbox-page-items) - 1) * var(--inbox-item-gap));
+      --inbox-pane-h: calc(var(--inbox-list-h) + 52px);
+    }
+    .inbox-layout { display:grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr); gap:16px; align-items:stretch; }
+    @media (max-width: 900px) { .inbox-layout { grid-template-columns: 1fr; } }
+    .inbox-list-col { display:flex; flex-direction:column; min-height:0; }
+    .inbox-list-card {
+      display:flex; flex-direction:column; padding:12px;
+      height:var(--inbox-pane-h); min-height:var(--inbox-pane-h); max-height:var(--inbox-pane-h);
+      overflow:hidden;
+    }
+    #thread-list {
+      display:flex; flex-direction:column; gap:var(--inbox-item-gap);
+      height:var(--inbox-list-h); min-height:var(--inbox-list-h); max-height:var(--inbox-list-h);
+      overflow-y:auto; flex-shrink:0;
+    }
+    .inbox-pagination {
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding-top:10px; margin-top:auto; border-top:1px solid var(--border-default);
+      font-size:12px; color:var(--text-muted); flex-wrap:wrap; flex-shrink:0;
+    }
+    .thread-item {
+      border:1px solid var(--border-default); border-radius:12px; padding:10px 14px;
+      cursor:pointer; text-align:left; background:transparent; width:100%;
+      min-height:var(--inbox-item-h); overflow:hidden; flex-shrink:0;
+    }
+    .thread-item:hover { border-color: var(--color-amber-500, #f59e0b); }
+    .thread-item.active { border-color: var(--color-amber-500, #f59e0b); background: rgba(245,158,11,0.08); }
+    .thread-item.unread { background: rgba(245,158,11,0.06); }
+    .msg-panel {
+      border:1px solid var(--border-default); border-radius:12px;
+      height:var(--inbox-pane-h); min-height:var(--inbox-pane-h); max-height:var(--inbox-pane-h);
+      background: var(--bg-elevated, #fff);
+      display:flex; flex-direction:column; overflow:hidden; padding:16px;
+    }
+    .msg-panel-empty { margin:auto; text-align:center; color:var(--text-muted); padding:24px; }
+    .msg-scroll-area { flex:1; min-height:0; overflow-y:auto; padding:8px 4px; display:flex; flex-direction:column; gap:10px; }
+    .sms-bubble {
+      max-width:88%; padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.5;
+      white-space:pre-wrap; word-break:break-word;
+    }
+    .sms-bubble.out { align-self:flex-end; background:#0f172a; color:#fff; border-bottom-right-radius:4px; }
+    .sms-bubble.in { align-self:flex-start; background:#f1f5f9; color:#0f172a; border-bottom-left-radius:4px; }
+    .sms-meta { font-size:10px; color:var(--text-muted); margin-top:4px; }
+    .reply-box { flex-shrink:0; margin-top:10px; padding-top:12px; border-top:1px solid var(--border-default); }
+    .reply-box textarea { width:100%; min-height:80px; border-radius:10px; border:1px solid var(--border-default); padding:10px; font-family:inherit; font-size:14px; resize:vertical; box-sizing:border-box; }
+    .inbox-page-content { padding-top: var(--space-6); padding-bottom: var(--space-6); }
+    @media (min-width: 901px) {
+      .inbox-page-content .stat-card-grid { margin-bottom: var(--space-4) !important; }
+    }
+    @media (max-width: 900px) {
+      .inbox-list-card, .msg-panel { height:auto; min-height:auto; max-height:none; }
+      #thread-list { height:auto; min-height:auto; max-height:320px; }
+    }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">SMS Replies Inbox</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Two-way texts from <strong>+1 (609) 469-6004</strong> — sent &amp; received in one thread.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="/crm-sales" class="btn btn-secondary btn-sm">← CRM</a>
+        <button class="btn btn-secondary btn-sm" type="button" onclick="loadThreads(true)">Unread only</button>
+        <button class="btn btn-primary btn-sm" type="button" onclick="loadThreads(false)">All threads</button>
+      </div>
+    </header>
+    <main class="app-content inbox-page-content">
+      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Unread SMS</span><div class="stat-kpi-icon">📱</div></div>
+          <div class="stat-kpi-val" id="kpi-unread">0</div>
+        </div>
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Sent today</span><div class="stat-kpi-icon">📤</div></div>
+          <div class="stat-kpi-val" id="kpi-sent-today">0</div>
+        </div>
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Conversations</span><div class="stat-kpi-icon">💬</div></div>
+          <div class="stat-kpi-val" id="kpi-threads">0</div>
+        </div>
+      </div>
+
+      <div class="inbox-layout">
+        <div class="inbox-list-col">
+          <div class="tms-table-card inbox-list-card">
+            <div id="thread-list"><p class="text-muted" style="padding:24px;text-align:center;">Loading…</p></div>
+            <div class="inbox-pagination" id="thread-pagination" style="display:none;">
+              <span id="thread-page-info">—</span>
+              <div style="display:flex;gap:8px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="thread-prev" onclick="goThreadPage(-1)">← Previous</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="thread-next" onclick="goThreadPage(1)">Next →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="msg-panel" id="msg-panel">
+          <p class="msg-panel-empty">Select a conversation on the left.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  const PAGE_SIZE = 7;
+  let threads = [];
+  let selectedPhone = null;
+  let currentPage = 1;
+  let totalPages = 1;
+  let unreadOnly = false;
+  let activeLeadId = null;
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  async function checkAuth() {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/login'; return false; }
+    const role = (await res.json()).user?.role;
+    if (['carrier', 'carrier_admin', 'driver'].includes(role)) {
+      window.location.href = '/carrier-overview';
+      return false;
+    }
+    return true;
+  }
+
+  async function loadStats() {
+    const res = await fetch('/api/sms/inbox/stats', { credentials: 'include' });
+    if (!res.ok) return;
+    const s = await res.json();
+    document.getElementById('kpi-unread').textContent = s.unread || 0;
+    document.getElementById('kpi-sent-today').textContent = s.sent_today || 0;
+    document.getElementById('kpi-threads').textContent = s.threads || 0;
+  }
+
+  function renderThreadList() {
+    const el = document.getElementById('thread-list');
+    if (!threads.length) {
+      el.innerHTML = '<p class="text-muted" style="padding:24px;text-align:center;">No SMS conversations yet. Send from CRM → 📱 SMS.</p>';
+      document.getElementById('thread-pagination').style.display = 'none';
+      return;
+    }
+    el.innerHTML = threads.map((t) => {
+      const title = t.company_name || t.owner_name || t.peer_phone;
+      const active = selectedPhone && t.peer_phone === selectedPhone ? 'active' : '';
+      const unread = t.unread_count > 0 ? 'unread' : '';
+      const badge = t.unread_count > 0 ? `<span class="badge badge-new">${t.unread_count}</span>` : '';
+      const opt = t.opted_out ? '<span class="badge" style="background:#fee2e2;color:#991b1b;">STOP</span>' : '';
+      const dir = t.last_direction === 'outbound' ? '↗ Sent' : '↙ Reply';
+      return `<button type="button" class="thread-item ${active} ${unread}" onclick="openThread('${escapeHtml(t.peer_phone).replace(/'/g, "\\'")}')">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+          <strong style="font-size:13px;">${escapeHtml(title)}</strong>
+          <span style="font-size:10px;color:var(--text-muted);white-space:nowrap;">${dir}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${escapeHtml(t.peer_phone)} ${badge} ${opt}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml((t.last_body || '').slice(0, 100))}</div>
+      </button>`;
+    }).join('');
+
+    const pager = document.getElementById('thread-pagination');
+    pager.style.display = 'flex';
+    document.getElementById('thread-page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById('thread-prev').disabled = currentPage <= 1;
+    document.getElementById('thread-next').disabled = currentPage >= totalPages;
+  }
+
+  async function loadThreads(unread) {
+    unreadOnly = !!unread;
+    currentPage = 1;
+    await fetchThreads();
+  }
+
+  async function fetchThreads() {
+    const qs = new URLSearchParams({ page: String(currentPage), perPage: String(PAGE_SIZE) });
+    if (unreadOnly) qs.set('unread', '1');
+    const res = await fetch('/api/sms/inbox?' + qs.toString(), { credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('thread-list').innerHTML = '<p class="text-muted" style="padding:24px;">Could not load SMS inbox.</p>';
+      return;
+    }
+    threads = data.threads || [];
+    totalPages = data.totalPages || 1;
+    renderThreadList();
+    await loadStats();
+  }
+
+  function goThreadPage(delta) {
+    const next = currentPage + delta;
+    if (next < 1 || next > totalPages) return;
+    currentPage = next;
+    fetchThreads();
+  }
+
+  async function openThread(phone) {
+    selectedPhone = phone;
+    renderThreadList();
+    const panel = document.getElementById('msg-panel');
+    panel.innerHTML = '<p class="msg-panel-empty">Loading thread…</p>';
+
+    const res = await fetch('/api/sms/inbox/thread?phone=' + encodeURIComponent(phone), { credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) {
+      panel.innerHTML = '<p class="msg-panel-empty">' + escapeHtml(data.error || 'Could not load thread') + '</p>';
+      return;
+    }
+
+    activeLeadId = data.lead?.id || null;
+    const title = data.lead?.company_name || data.lead?.owner_name || data.peer_phone;
+    const optNote = data.opted_out
+      ? '<p style="color:#991b1b;font-size:12px;margin:0 0 10px;">This number replied STOP — do not send marketing SMS.</p>'
+      : '';
+
+    const bubbles = (data.messages || []).map((m) => {
+      const cls = m.direction === 'outbound' ? 'out' : 'in';
+      const when = m.created_at ? new Date(m.created_at).toLocaleString() : '';
+      const who = m.direction === 'outbound' ? (m.sent_by_name || 'You') : 'Carrier';
+      return `<div class="sms-bubble ${cls}">${escapeHtml(m.body)}<div class="sms-meta">${escapeHtml(who)} · ${when}</div></div>`;
+    }).join('') || '<p class="text-muted" style="text-align:center;">No messages in thread yet.</p>';
+
+    panel.innerHTML = `
+      <div style="flex-shrink:0;margin-bottom:10px;">
+        <h2 style="margin:0;font-size:16px;font-weight:800;">${escapeHtml(title)}</h2>
+        <p style="margin:4px 0 0;font-size:12px;color:var(--text-muted);">${escapeHtml(data.peer_phone)} · From ${escapeHtml(data.our_number || '+1 (609) 469-6004')}</p>
+        ${optNote}
+      </div>
+      <div class="msg-scroll-area" id="msg-scroll">${bubbles}</div>
+      <div class="reply-box">
+        <p style="font-size:11px;color:var(--text-muted);margin:0 0 8px;">Reply sends from your Twilio line. STOP/HELP footer added automatically.</p>
+        <textarea id="reply-text" placeholder="Type your reply…" ${data.opted_out ? 'disabled' : ''}></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="sendReply()" ${data.opted_out ? 'disabled' : ''}>Send SMS →</button>
+        </div>
+      </div>`;
+
+    const scroll = document.getElementById('msg-scroll');
+    if (scroll) scroll.scrollTop = scroll.scrollHeight;
+
+    await fetch('/api/sms/inbox/thread/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ phone })
+    });
+    await loadStats();
+    fetchThreads();
+  }
+
+  async function sendReply() {
+    const text = document.getElementById('reply-text')?.value?.trim();
+    if (!text || !selectedPhone) return;
+    const res = await fetch('/api/sms/inbox/reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ phone: selectedPhone, body: text, lead_id: activeLeadId })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || 'Could not send SMS');
+      return;
+    }
+    await openThread(selectedPhone);
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!await checkAuth()) return;
+    await fetchThreads();
+    await loadStats();
+    const params = new URLSearchParams(window.location.search);
+    const phone = params.get('phone');
+    if (phone) openThread(phone);
+  });
+</script>
+<script src="/js/app-shell.js?v=19"></script>
+</body>
+</html>
