@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '19';
+  const SIDEBAR_VERSION = '20';
   // #endregion
 
   function clearRoleCache() {
@@ -330,10 +330,17 @@
     });
   }
 
+  function sidebarNeedsRebuild(aside) {
+    try {
+      if (sessionStorage.getItem('sw_sidebar_ver') !== SIDEBAR_VERSION) return true;
+    } catch (_) { /* ignore */ }
+    return !aside.querySelector('a.sidebar-nav-link[href="/sms-inbox"]');
+  }
+
   function mountSidebarContent(aside) {
     const cached = sessionStorage.getItem(ROLE_CACHE_KEY) || '';
     CURRENT_ROLE = cached;
-    if (isSidebarBooted(aside) && cached) {
+    if (isSidebarBooted(aside) && cached && !sidebarNeedsRebuild(aside)) {
       syncActiveNav(aside);
       aside.classList.add('shell-mounted');
       aside.classList.remove('is-shell-pending');
