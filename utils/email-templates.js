@@ -431,10 +431,14 @@ function buildTemplate(templateKey, vars) {
 }
 
 const SMS_TEMPLATES = {
-  dedicated_manager: ({ companyName }) =>
-    `Shipping Wish LLC: Dedicated ops manager for ${companyName || 'your trucks'}? Weekly fee, you keep freight pay. Reply YES or call ${COMPANY.phone}.`,
-  follow_up: ({ companyName }) =>
-    `Shipping Wish LLC: still want a Dedicated Operations Manager for ${companyName || 'your fleet'}? Reply YES or call ${COMPANY.phone}.`,
+  dedicated_manager: ({ companyName }) => {
+    const name = (companyName && String(companyName).trim()) || 'there';
+    return `Hi, ${name}: Tired of chasing loads? Get a dedicated ops manager who books freight for you 24/7 - you keep 100% of the pay, no cut. First week $0. Check us out: shippingwish.com or call ${COMPANY.phone}.`;
+  },
+  follow_up: ({ companyName }) => {
+    const name = (companyName && String(companyName).trim()) || 'there';
+    return `Hi, ${name}: Still looking for a dedicated ops desk? We book freight 24/7 - you keep broker pay, flat weekly fee. First week $0 at shippingwish.com or call ${COMPANY.phone}.`;
+  },
   load_booked: ({ loadSummary }) =>
     `Shipping Wish LLC: load booked. ${loadSummary || 'Details in email.'} Call ${COMPANY.phone} if wrong.`,
   onboarding: () =>

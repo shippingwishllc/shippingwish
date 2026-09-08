@@ -825,7 +825,7 @@
       alert('No phone number on this lead.');
       return;
     }
-    if (!confirm('SMS only after they asked, or you have consent. Send Dedicated Manager SMS to ' + phone + '?')) return;
+    if (!confirm('SMS only after they asked, or you have consent. Send to ' + phone + ' for ' + (companyName || 'this lead') + '?')) return;
     const res = await fetch('/api/voip/send-template-sms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
