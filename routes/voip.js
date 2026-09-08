@@ -62,7 +62,7 @@ async function sendTwilioSms(toNumber, message) {
   if (process.env.TWILIO_MESSAGING_SERVICE_SID) {
     payload.messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
   } else {
-    payload.from = process.env.TWILIO_FROM_NUMBER || '+19177370021';
+    payload.from = process.env.TWILIO_FROM_NUMBER || '+16094696004';
   }
   const twilioMsg = await twilio.messages.create(payload);
   return { status: 'sent', sid: twilioMsg.sid, body };
