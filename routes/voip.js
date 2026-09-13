@@ -326,12 +326,12 @@ function twiml(message) {
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${safe}</Message></Response>`;
 }
 
-// POST /api/voip/twilio-inbound — Twilio "A message comes in" webhook (form-encoded)
-router.post('/twilio-inbound', async (req, res) => {
+// ALL /api/voip/twilio-inbound — Twilio "A message comes in" webhook (handles both POST form-encoded and GET)
+router.all('/twilio-inbound', async (req, res) => {
   try {
-    const from = req.body.From || req.body.from || '';
-    const body = req.body.Body || req.body.body || '';
-    const to = req.body.To || req.body.to || '';
+    const from = req.body?.From || req.body?.from || req.query?.From || req.query?.from || '';
+    const body = req.body?.Body || req.body?.body || req.query?.Body || req.query?.body || '';
+    const to = req.body?.To || req.body?.to || req.query?.To || req.query?.to || '';
     if (!from) return res.status(400).type('text/plain').send('Missing From');
 
     let reply = helpReply();
