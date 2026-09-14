@@ -235,69 +235,96 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
     const perPage = Math.min(20, Math.max(1, parseInt(req.query.perPage || '8', 10)));
     const offset = (page - 1) * perPage;
 
-    const countResult = await pool.query(`
-      SELECT (
-        (SELECT COUNT(*)::int FROM email_inbound i WHERE i.deleted_at IS NULL ${unreadOnly ? 'AND i.is_read = FALSE' : ''}) +
-        (SELECT COUNT(*)::int FROM email_logs e ${unreadOnly ? 'WHERE 1=0' : ''})
-      ) AS count
-    `);
-    const total = countResult.rows[0]?.count || 0;
+    let total = 0;
+    let rows = [];
+    let unreadCount = 0;
+
+    try {
+      const countResult = await pool.query(`
+        SELECT (
+          (SELECT COUNT(*)::int FROM email_inbound i WHERE i.deleted_at IS NULL ${unreadOnly ? 'AND i.is_read = FALSE' : ''}) +
+          (SELECT COUNT(*)::int FROM email_logs e ${unreadOnly ? 'WHERE 1=0' : ''})
+        ) AS count
+      `);
+      total = countResult.rows[0]?.count || 0;
+
+      const result = await pool.query(
+        `WITH combined AS (
+          SELECT 
+            'inbound' AS direction,
+            i.id,
+            i.lead_id,
+            i.from_email AS peer_email,
+            COALESCE(i.from_name, l.company_name, l.owner_name, i.from_email) AS peer_name,
+            i.from_email,
+            i.subject,
+            i.body_text,
+            i.body_html,
+            i.is_read,
+            i.created_at::timestamptz AS created_at,
+            l.company_name,
+            l.owner_name,
+            l.phone,
+            l.mc_number
+          FROM email_inbound i
+          LEFT JOIN crm_leads l ON l.id = i.lead_id
+          WHERE i.deleted_at IS NULL ${unreadOnly ? 'AND i.is_read = FALSE' : ''}
+
+          UNION ALL
+
+          SELECT 
+            'outbound' AS direction,
+            (e.id + 10000000) AS id,
+            e.lead_id,
+            e.recipient_email AS peer_email,
+            COALESCE(l.company_name, l.owner_name, e.recipient_email) AS peer_name,
+            'operations@shippingwish.com' AS from_email,
+            CONCAT('↗ Outbound: ', e.subject) AS subject,
+            CONCAT('Outbound Email (', COALESCE(e.email_type, 'outreach'), ') sent to ', e.recipient_email) AS body_text,
+            CONCAT('<p>Outbound Email sent to <strong>', e.recipient_email, '</strong></p>') AS body_html,
+            TRUE AS is_read,
+            e.sent_at::timestamptz AS created_at,
+            l.company_name,
+            l.owner_name,
+            l.phone,
+            l.mc_number
+          FROM email_logs e
+          LEFT JOIN crm_leads l ON l.id = e.lead_id
+          ${unreadOnly ? 'WHERE 1=0' : ''}
+        )
+        SELECT * FROM combined
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2`,
+        [perPage, offset]
+      );
+      rows = result.rows;
+    } catch (unionErr) {
+      console.warn('Union inbox query fallback to email_inbound:', unionErr.message);
+      const countResult = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound i WHERE i.deleted_at IS NULL ${unreadOnly ? 'AND i.is_read = FALSE' : ''}`);
+      total = countResult.rows[0]?.count || 0;
+      const result = await pool.query(
+        `SELECT i.*, i.from_email AS peer_email, COALESCE(i.from_name, l.company_name, l.owner_name, i.from_email) AS peer_name,
+                l.company_name, l.owner_name, l.phone, l.mc_number
+         FROM email_inbound i
+         LEFT JOIN crm_leads l ON l.id = i.lead_id
+         WHERE i.deleted_at IS NULL ${unreadOnly ? 'AND i.is_read = FALSE' : ''}
+         ORDER BY i.created_at DESC
+         LIMIT $1 OFFSET $2`,
+        [perPage, offset]
+      );
+      rows = result.rows;
+    }
+
+    try {
+      const unreadRes = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound WHERE is_read = FALSE AND deleted_at IS NULL`);
+      unreadCount = unreadRes.rows[0]?.count || 0;
+    } catch (e) {}
+
     const totalPages = Math.max(1, Math.ceil(total / perPage));
 
-    const result = await pool.query(
-      `WITH combined AS (
-        SELECT 
-          'inbound' AS direction,
-          i.id,
-          i.lead_id,
-          i.from_email AS peer_email,
-          COALESCE(i.from_name, l.company_name, l.owner_name, i.from_email) AS peer_name,
-          i.from_email,
-          i.subject,
-          i.body_text,
-          i.body_html,
-          i.is_read,
-          i.created_at,
-          l.company_name,
-          l.owner_name,
-          l.phone,
-          l.mc_number
-        FROM email_inbound i
-        LEFT JOIN crm_leads l ON l.id = i.lead_id
-        WHERE i.deleted_at IS NULL ${unreadOnly ? 'AND i.is_read = FALSE' : ''}
-
-        UNION ALL
-
-        SELECT 
-          'outbound' AS direction,
-          (e.id + 10000000) AS id,
-          e.lead_id,
-          e.recipient_email AS peer_email,
-          COALESCE(l.company_name, l.owner_name, e.recipient_email) AS peer_name,
-          'operations@shippingwish.com' AS from_email,
-          CONCAT('↗ Outbound: ', e.subject) AS subject,
-          CONCAT('Outbound Email (', COALESCE(e.email_type, 'outreach'), ') sent to ', e.recipient_email) AS body_text,
-          CONCAT('<p>Outbound Email sent to <strong>', e.recipient_email, '</strong></p>') AS body_html,
-          TRUE AS is_read,
-          e.sent_at AS created_at,
-          l.company_name,
-          l.owner_name,
-          l.phone,
-          l.mc_number
-        FROM email_logs e
-        LEFT JOIN crm_leads l ON l.id = e.lead_id
-        ${unreadOnly ? 'WHERE 1=0' : ''}
-      )
-      SELECT * FROM combined
-      ORDER BY created_at DESC
-      LIMIT $1 OFFSET $2`,
-      [perPage, offset]
-    );
-
-    const unread = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound WHERE is_read = FALSE AND deleted_at IS NULL`);
     res.json({
-      messages: result.rows,
-      unread: unread.rows[0]?.count || 0,
+      messages: rows,
+      unread: unreadCount,
       total,
       page,
       perPage,
