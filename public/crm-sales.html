@@ -521,6 +521,16 @@
     document.getElementById('kpi-packets-sent').textContent = packets;
   }
 
+  function getInitials(name) {
+    const str = String(name || '').trim();
+    if (!str) return 'SW';
+    const words = str.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return str.slice(0, 2).toUpperCase();
+  }
+
   function renderLeadsTable() {
     const tbody = document.getElementById('leads-tbody');
     try {
@@ -553,21 +563,44 @@
 
     tbody.innerHTML = filtered.map(l => `
       <tr>
-        <td><strong style="color:var(--text-primary);">${escapeHtml(l.companyName)}</strong>${l.unread ? ` <span class="badge badge-new">${l.unread} reply</span>` : ''}${l.phyState ? `<div style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.phyState)}${l.safety ? ' · ' + escapeHtml(l.safety) : ''}</div>` : ''}</td>
-        <td>${escapeHtml(l.mcNumber)}<br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.dotNumber)}</span></td>
-        <td><span class="badge badge-amber">${escapeHtml(l.equipmentType)} (${l.numTrucks} units)</span></td>
-        <td><strong>${escapeHtml(l.ownerName)}</strong><br>${escapeHtml(l.phone)}<br><span style="font-size:11px;color:${l.email && !isValidEmail(l.email) ? 'var(--color-red-500)' : 'var(--text-muted)'};">${escapeHtml(l.email || 'No email')}${l.email && !isValidEmail(l.email) ? ' ⚠ invalid' : ''}</span></td>
-        <td>${escapeHtml(l.salesRep)}</td>
-        <td><span class="badge ${getStatusBadge(l.status)}">${escapeHtml(String(l.status || 'new').replace('_', ' ').toUpperCase())}</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#0f172a;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(245,158,11,0.2);">
+              ${getInitials(l.companyName)}
+            </div>
+            <div>
+              <strong style="color:var(--text-primary);font-size:13.5px;display:block;">${escapeHtml(l.companyName)}</strong>
+              <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;margin-top:2px;">
+                ${l.phyState ? `<span>📍 ${escapeHtml(l.phyState)}</span>` : ''}
+                ${l.unread ? ` <span class="badge badge-new" style="font-size:9px;">${l.unread} reply</span>` : ''}
+                ${l.safety ? `<span style="color:#10b981;">&bull; ${escapeHtml(l.safety)}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(l.mcNumber)}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.dotNumber)}</div>
+        </td>
+        <td>
+          <span class="badge badge-amber" style="font-weight:700;font-size:11px;">${escapeHtml(l.equipmentType)} (${l.numTrucks} units)</span>
+        </td>
+        <td>
+          <strong style="color:var(--text-primary);">${escapeHtml(l.ownerName)}</strong>
+          <div style="font-size:12px;margin-top:2px;"><a href="tel:${escapeHtml(l.phone)}" style="color:#60a5fa;text-decoration:none;">${escapeHtml(l.phone)}</a></div>
+          <div style="font-size:11px;color:${l.email && !isValidEmail(l.email) ? 'var(--color-red-500)' : 'var(--text-muted)'};">${escapeHtml(l.email || 'No email')}${l.email && !isValidEmail(l.email) ? ' ⚠ invalid' : ''}</div>
+        </td>
+        <td><span style="font-size:12px;font-weight:600;color:var(--text-secondary);">${escapeHtml(l.salesRep)}</span></td>
+        <td><span class="badge ${getStatusBadge(l.status)}" style="font-weight:800;letter-spacing:0.03em;">${escapeHtml(String(l.status || 'new').replace('_', ' ').toUpperCase())}</span></td>
         <td>${smsStatusBadge(l)}</td>
         <td>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-primary btn-sm" onclick="sendOutreach(${l.id}, '${escapeJs(l.email)}', '${escapeJs(l.ownerName)}', '${escapeJs(l.companyName)}', 'dedicated_manager')">✉️ Email</button>
-            <button class="btn btn-light btn-sm" onclick="openEditContactModal(${l.id}, '${escapeJs(l.companyName)}', '${escapeJs(l.ownerName)}', '${escapeJs(l.phone)}', '${escapeJs(l.email)}')">✏️ Contact</button>
-            <button class="btn btn-light btn-sm" onclick="sendSms(${l.id}, '${escapeJs(l.phone)}', '${escapeJs(l.companyName)}')">📱 SMS</button>
-            <button class="btn btn-light btn-sm" onclick="sendWeeklyLink(${l.id})">💳 Weekly Stripe</button>
-            <button class="btn btn-light btn-sm" onclick="openSendPacketModal(${l.id}, '${escapeJs(l.companyName)}', '${escapeJs(l.email)}')">Packet</button>
-            <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteLead(${l.id})">Delete</button>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="sendOutreach(${l.id}, '${escapeJs(l.email)}', '${escapeJs(l.ownerName)}', '${escapeJs(l.companyName)}', 'dedicated_manager')">✉️ Email</button>
+            <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="sendSms(${l.id}, '${escapeJs(l.phone)}', '${escapeJs(l.companyName)}')">📱 SMS</button>
+            <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="openEditContactModal(${l.id}, '${escapeJs(l.companyName)}', '${escapeJs(l.ownerName)}', '${escapeJs(l.phone)}', '${escapeJs(l.email)}')">✏️ Contact</button>
+            <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="openSendPacketModal(${l.id}, '${escapeJs(l.companyName)}', '${escapeJs(l.email)}')">📄 Packet</button>
+            <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="sendWeeklyLink(${l.id})">💳 Stripe</button>
+            <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;color:var(--color-red-500);" onclick="deleteLead(${l.id})">🗑️</button>
           </div>
         </td>
       </tr>
