@@ -113,6 +113,72 @@
         </ol>
       </div>
 
+      <!-- AI AUTONOMOUS CARRIER PROSPECTING BOT WIDGET -->
+      <div class="tms-table-card" style="margin-bottom:var(--space-6);background:linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,23,42,0.4) 100%);border:1px solid rgba(245,158,11,0.3);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+          <div>
+            <h3 style="font-size:17px;font-weight:900;color:#f59e0b;margin:0;display:flex;align-items:center;gap:8px;">
+              <span>🤖 AI Autonomous FMCSA Freight Prospecting Bot</span>
+              <span class="badge badge-paid" style="font-size:10px;">PROSPECT &amp; OUTREACH ACTIVE</span>
+            </h3>
+            <p style="font-size:12px;color:var(--text-muted);margin:4px 0 0 0;">
+              AI auto-scrapes active FMCSA motor carriers, filters ONLY freight trucks (Dry Van, Reefer, Flatbed, Box Trucks — auto-excludes passengers/farm), generates personalized AI outreach copy, and triggers emails &amp; SMS!
+            </p>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:14px;">
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Target Freight States</label>
+            <select id="ai-bot-states" class="form-input" style="font-size:12px;padding:8px;" multiple>
+              <option value="TX" selected>Texas (TX)</option>
+              <option value="FL" selected>Florida (FL)</option>
+              <option value="GA" selected>Georgia (GA)</option>
+              <option value="IL" selected>Illinois (IL)</option>
+              <option value="CA" selected>California (CA)</option>
+              <option value="NC" selected>North Carolina (NC)</option>
+              <option value="PA">Pennsylvania (PA)</option>
+              <option value="OH">Ohio (OH)</option>
+              <option value="TN">Tennessee (TN)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Campaign Batch Limit</label>
+            <select id="ai-bot-limit" class="form-input" style="font-size:12px;padding:8px;">
+              <option value="5">5 Active Freight Carriers</option>
+              <option value="10" selected>10 Active Freight Carriers</option>
+              <option value="25">25 Active Freight Carriers</option>
+              <option value="50">50 Active Freight Carriers</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Outreach Channels</label>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;font-size:12px;color:var(--text-primary);">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" id="ai-bot-email" checked> ✉️ Send Branded Email
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" id="ai-bot-sms" checked> 📱 Send Twilio SMS
+              </label>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:flex-end;">
+            <button class="btn btn-primary btn-block" id="btn-run-ai-bot" onclick="runAiProspectingCampaign()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#0f172a;font-weight:800;padding:12px;">
+              🚀 Run AI Prospecting Campaign →
+            </button>
+          </div>
+        </div>
+
+        <div id="ai-bot-results" style="display:none;margin-top:14px;padding:14px;border-radius:8px;background:rgba(15,23,42,0.6);border:1px solid rgba(245,158,11,0.2);">
+          <div style="font-size:13px;font-weight:800;color:#f59e0b;margin-bottom:8px;" id="ai-bot-status-header">⏳ AI Campaign Progress...</div>
+          <div style="font-size:12px;color:var(--text-muted);" id="ai-bot-summary-text">Processing active carriers...</div>
+          <div id="ai-bot-leads-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+      </div>
+
       <!-- FMCSA CARRIER LEADS SCRAPER WIDGET -->
       <div class="tms-table-card" style="margin-bottom:var(--space-6);background:linear-gradient(135deg, rgba(15,23,42,0.03) 0%, rgba(30,41,59,0.06) 100%);">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
@@ -545,8 +611,82 @@
     renderLeadsTable();
   }
 
-  function searchLeadsTable() {
-    renderLeadsTable();
+  async function runAiProspectingCampaign() {
+    const btn = document.getElementById('btn-run-ai-bot');
+    const resultsBox = document.getElementById('ai-bot-results');
+    const header = document.getElementById('ai-bot-status-header');
+    const summary = document.getElementById('ai-bot-summary-text');
+    const list = document.getElementById('ai-bot-leads-list');
+
+    const stateSelect = document.getElementById('ai-bot-states');
+    const selectedStates = Array.from(stateSelect.selectedOptions).map(o => o.value);
+    const limit = document.getElementById('ai-bot-limit').value;
+    const sendEmail = document.getElementById('ai-bot-email').checked;
+    const sendSms = document.getElementById('ai-bot-sms').checked;
+
+    btn.disabled = true;
+    btn.textContent = '⏳ AI Searching & Messaging...';
+
+    resultsBox.style.display = 'block';
+    header.textContent = '⏳ AI Autonomous Campaign In Progress...';
+    summary.textContent = `Scanning FMCSA census for ${selectedStates.join(', ')}... Filtering active freight equipment...`;
+    list.innerHTML = '';
+
+    try {
+      const res = await fetch('/api/crm/ai-prospect-campaign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          states: selectedStates,
+          limit: parseInt(limit, 10),
+          send_email: sendEmail,
+          send_sms: sendSms
+        })
+      });
+
+      const data = await res.json();
+      btn.disabled = false;
+      btn.textContent = '🚀 Run AI Prospecting Campaign →';
+
+      if (!res.ok) {
+        header.textContent = '❌ AI Campaign Failed';
+        summary.textContent = data.error || 'Server error running campaign';
+        return;
+      }
+
+      header.textContent = `✅ AI Campaign Complete! (${data.imported} New Carriers Contacted)`;
+      summary.innerHTML = `
+        <strong>Scraped/Processed:</strong> ${data.processed} | 
+        <strong>Imported to CRM:</strong> ${data.imported} | 
+        <strong>Emails Sent:</strong> ${data.emails_sent} | 
+        <strong>SMS Sent:</strong> ${data.sms_sent} | 
+        <strong>Skipped Duplicates:</strong> ${data.skipped_duplicates} | 
+        <strong>Filtered Banned/Inactive:</strong> ${data.filtered_out}
+      `;
+
+      const leads = data.leads || [];
+      if (leads.length) {
+        list.innerHTML = leads.map(l => `
+          <div style="background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong style="color:#fff;">${escapeHtml(l.company_name)}</strong> (${escapeHtml(l.mc_number)}) &bull; ${escapeHtml(l.equipment_type)} &bull; 📍 ${escapeHtml(l.state)}
+            </div>
+            <div style="display:flex;gap:6px;">
+              ${l.email_sent ? '<span class="badge badge-paid">✉️ Email Sent</span>' : ''}
+              ${l.sms_sent ? '<span class="badge badge-booked">📱 SMS Sent</span>' : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      loadLeads();
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = '🚀 Run AI Prospecting Campaign →';
+      header.textContent = '❌ Connection Error';
+      summary.textContent = err.message;
+    }
   }
 
   function openAddLeadModal() {
