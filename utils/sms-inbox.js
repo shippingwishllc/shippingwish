@@ -24,6 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_sms_messages_to ON sms_messages(to_number);
 `;
 
 let tableReady = false;
+let backfillDone = false;
 
 async function ensureSmsMessagesTable() {
   if (tableReady) return;
@@ -31,9 +32,74 @@ async function ensureSmsMessagesTable() {
     .map((s) => s.trim())
     .filter(Boolean);
   for (const stmt of statements) {
-    await pool.query(stmt).catch(() => {});
+    await pool.query(stmt);
+  }
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS sms_optouts (
+      id SERIAL PRIMARY KEY,
+      phone TEXT NOT NULL UNIQUE,
+      reason TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `).catch(() => {});
+  const check = await pool.query(`SELECT to_regclass('public.sms_messages') AS t`);
+  if (!check.rows[0]?.t) {
+    throw new Error('sms_messages table missing after ensure');
   }
   tableReady = true;
+}
+
+/** One-time import from voip_call_logs for SMS sent before sms_messages existed. */
+async function backfillFromVoipLogs() {
+  if (backfillDone) return;
+  backfillDone = true;
+  try {
+    await ensureSmsMessagesTable();
+    const existing = await pool.query('SELECT COUNT(*)::int AS c FROM sms_messages');
+    if ((existing.rows[0]?.c || 0) > 0) return;
+
+    const logs = await pool.query(`
+      SELECT id, lead_id, sales_rep_id, call_type, from_number, to_number, disposition, notes, created_at
+      FROM voip_call_logs
+      WHERE call_type IN ('sms', 'inbound_sms')
+      ORDER BY created_at ASC
+      LIMIT 500
+    `);
+    for (const row of logs.rows) {
+      if (row.call_type === 'inbound_sms') {
+        await logSmsMessage({
+          direction: 'inbound',
+          from_number: row.from_number,
+          to_number: row.to_number || OUR_NUMBER,
+          body: String(row.notes || '').slice(0, 1600),
+          lead_id: row.lead_id,
+          disposition: row.disposition,
+          is_read: false
+        });
+      } else if (row.call_type === 'sms' && row.to_number) {
+        let body = String(row.notes || '');
+        if (body.startsWith('SMS: ')) {
+          body = body.split(' | Twilio SID:')[0].slice(5);
+        }
+        await logSmsMessage({
+          direction: 'outbound',
+          from_number: OUR_NUMBER,
+          to_number: row.to_number,
+          body: body.slice(0, 1600),
+          lead_id: row.lead_id,
+          sent_by: row.sales_rep_id,
+          disposition: row.disposition,
+          is_read: true
+        });
+      }
+    }
+    if (logs.rows.length) {
+      console.log(`[SMS_INBOX] Backfilled ${logs.rows.length} SMS from voip_call_logs`);
+    }
+  } catch (err) {
+    console.warn('[SMS_INBOX] backfill skipped:', err.message);
+    backfillDone = false;
+  }
 }
 
 function phoneTail(phone) {
@@ -120,6 +186,7 @@ function peerFromRow(row) {
 module.exports = {
   OUR_NUMBER,
   ensureSmsMessagesTable,
+  backfillFromVoipLogs,
   findLeadByPhone,
   isPhoneOptedOut,
   logSmsMessage,

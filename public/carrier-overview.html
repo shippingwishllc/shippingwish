@@ -278,27 +278,39 @@
     const pending = offers.filter((o) => o.status === 'pending');
     const rows = pending.length ? pending : offers.slice(0, 8);
     if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No offers yet. Your manager will send freight here for you to accept.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">No offers yet. Your manager will send freight here for you to accept.</td></tr>`;
       return;
     }
-    tbody.innerHTML = rows.map((o) => `
-      <tr>
-        <td>${escapeHtml(o.pickup_location)} → ${escapeHtml(o.delivery_location)}</td>
-        <td>${escapeHtml(o.pickup_date || 'TBD')}</td>
-        <td>$${parseFloat(o.rate || 0).toLocaleString()} / ${o.miles || 0} mi</td>
-        <td>${escapeHtml(o.status)}</td>
-        <td>
-          ${o.status === 'pending' ? `
-            <button class="btn btn-primary btn-sm" type="button" onclick="respondOffer(${o.id}, 'accepted')">Accept</button>
-            <button class="btn btn-light btn-sm" type="button" onclick="respondOffer(${o.id}, 'declined')">Decline</button>
-          ` : ''}
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = rows.map((o) => {
+      let bStateBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#f1f5f9;color:#475569;">${escapeHtml(o.broker_negotiation_status || 'idle')}</span>`;
+      if (o.broker_negotiation_status === 'bidding') {
+        bStateBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#fef3c7;color:#b45309;">🤖 AI Bidding Broker…</span>`;
+      } else if (o.broker_negotiation_status === 'countered') {
+        bStateBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#e0f2fe;color:#0369a1;">💬 Broker Countered</span>`;
+      } else if (o.broker_negotiation_status === 'accepted' || o.status === 'booked') {
+        bStateBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#d1fae5;color:#047857;">🎉 Deal Locked & Booked</span>`;
+      }
+
+      return `
+        <tr>
+          <td>${escapeHtml(o.pickup_location)} → ${escapeHtml(o.delivery_location)}</td>
+          <td>${escapeHtml(o.pickup_date || 'TBD')}</td>
+          <td>$${parseFloat(o.rate || 0).toLocaleString()} / ${o.miles || 0} mi</td>
+          <td>${escapeHtml(o.status)}</td>
+          <td>${bStateBadge}</td>
+          <td>
+            ${o.status === 'pending' ? `
+              <button class="btn btn-primary btn-sm" type="button" onclick="respondOffer(${o.id}, 'accepted')">✓ Approve & AI Bid</button>
+              <button class="btn btn-light btn-sm" type="button" onclick="respondOffer(${o.id}, 'declined')">Decline</button>
+            ` : (o.broker_negotiation_status === 'bidding' ? '<span style="font-size:12px;color:#059669;font-weight:600;">AI Negotiating Broker…</span>' : '—')}
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   async function respondOffer(id, response) {
-    if (!confirm(response === 'accepted' ? 'Accept this load onto your trucks?' : 'Decline this offer?')) return;
+    if (!confirm(response === 'accepted' ? 'Approve this load? Shipping Wish AI will automatically email the broker to bid and negotiate the best rate for your MC.' : 'Decline this offer?')) return;
     const res = await fetch(`/api/loadboard/offers/${id}/respond`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -309,6 +321,9 @@
     if (!res.ok) {
       alert(data.error || 'Could not respond');
       return;
+    }
+    if (data.negotiation && data.negotiation.message) {
+      alert(`🚀 ${data.negotiation.message}`);
     }
     loadCarrierCockpitData();
   }

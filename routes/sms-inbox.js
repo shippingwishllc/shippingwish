@@ -3,6 +3,7 @@ const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const {
   ensureSmsMessagesTable,
+  backfillFromVoipLogs,
   findLeadByPhone,
   isPhoneOptedOut,
   logSmsMessage,
@@ -53,60 +54,69 @@ router.get('/', requireAuth, staffOnly, async (req, res) => {
 
   try {
     await ensureSmsMessagesTable();
+    await backfillFromVoipLogs();
 
     const countRes = await pool.query(`
-      WITH peers AS (
-        SELECT CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END AS peer_phone
+      WITH latest AS (
+        SELECT DISTINCT ON (
+          right(regexp_replace(CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END, '[^0-9]', '', 'g'), 10)
+        )
+          right(regexp_replace(CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END, '[^0-9]', '', 'g'), 10) AS peer_tail,
+          direction,
+          is_read
         FROM sms_messages
-        GROUP BY 1
+        ORDER BY
+          right(regexp_replace(CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END, '[^0-9]', '', 'g'), 10),
+          created_at DESC
       ),
-      enriched AS (
-        SELECT p.peer_phone,
-          (SELECT COUNT(*)::int FROM sms_messages sm
-           WHERE sm.direction = 'inbound' AND sm.is_read = FALSE AND sm.from_number = p.peer_phone) AS unread_count
-        FROM peers p
+      unread AS (
+        SELECT right(regexp_replace(from_number, '[^0-9]', '', 'g'), 10) AS peer_tail,
+               COUNT(*)::int AS unread_count
+        FROM sms_messages
+        WHERE direction = 'inbound' AND is_read = FALSE
+        GROUP BY 1
       )
-      SELECT COUNT(*)::int AS count FROM enriched e
-      ${unreadOnly ? 'WHERE e.unread_count > 0' : ''}
+      SELECT COUNT(*)::int AS count
+      FROM latest l
+      LEFT JOIN unread u USING (peer_tail)
+      ${unreadOnly ? 'WHERE COALESCE(u.unread_count, 0) > 0' : ''}
     `);
     const total = countRes.rows[0]?.count || 0;
 
     const result = await pool.query(
       `
-      WITH peers AS (
+      WITH base AS (
         SELECT
           CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END AS peer_phone,
-          MAX(created_at) AS last_at
+          right(regexp_replace(CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END, '[^0-9]', '', 'g'), 10) AS peer_tail,
+          body, direction, created_at, lead_id, is_read, from_number
         FROM sms_messages
-        GROUP BY 1
       ),
-      enriched AS (
-        SELECT
-          p.peer_phone,
-          p.last_at,
-          (SELECT body FROM sms_messages sm
-           WHERE (CASE WHEN sm.direction = 'inbound' THEN sm.from_number ELSE sm.to_number END) = p.peer_phone
-           ORDER BY sm.created_at DESC LIMIT 1) AS last_body,
-          (SELECT direction FROM sms_messages sm
-           WHERE (CASE WHEN sm.direction = 'inbound' THEN sm.from_number ELSE sm.to_number END) = p.peer_phone
-           ORDER BY sm.created_at DESC LIMIT 1) AS last_direction,
-          (SELECT COUNT(*)::int FROM sms_messages sm
-           WHERE sm.direction = 'inbound' AND sm.is_read = FALSE AND sm.from_number = p.peer_phone) AS unread_count,
-          (SELECT lead_id FROM sms_messages sm
-           WHERE (CASE WHEN sm.direction = 'inbound' THEN sm.from_number ELSE sm.to_number END) = p.peer_phone
-             AND sm.lead_id IS NOT NULL
-           ORDER BY sm.created_at DESC LIMIT 1) AS lead_id
-        FROM peers p
+      latest AS (
+        SELECT DISTINCT ON (peer_tail)
+          peer_phone, peer_tail, body AS last_body, direction AS last_direction,
+          created_at AS last_at, lead_id
+        FROM base
+        ORDER BY peer_tail, created_at DESC
+      ),
+      unread AS (
+        SELECT right(regexp_replace(from_number, '[^0-9]', '', 'g'), 10) AS peer_tail,
+               COUNT(*)::int AS unread_count
+        FROM sms_messages
+        WHERE direction = 'inbound' AND is_read = FALSE
+        GROUP BY 1
       )
-      SELECT e.*, l.company_name, l.owner_name,
+      SELECT l.*, COALESCE(u.unread_count, 0) AS unread_count,
+        cl.company_name, cl.owner_name,
         EXISTS (
           SELECT 1 FROM sms_optouts o
-          WHERE regexp_replace(o.phone, '\\D', '', 'g') = regexp_replace(e.peer_phone, '\\D', '', 'g')
+          WHERE right(regexp_replace(o.phone, '[^0-9]', '', 'g'), 10) = l.peer_tail
         ) AS opted_out
-      FROM enriched e
-      LEFT JOIN crm_leads l ON l.id = e.lead_id
-      ${unreadOnly ? 'WHERE e.unread_count > 0' : ''}
-      ORDER BY e.last_at DESC
+      FROM latest l
+      LEFT JOIN unread u USING (peer_tail)
+      LEFT JOIN crm_leads cl ON cl.id = l.lead_id
+      ${unreadOnly ? 'WHERE COALESCE(u.unread_count, 0) > 0' : ''}
+      ORDER BY l.last_at DESC
       LIMIT $1 OFFSET $2
       `,
       [perPage, offset]
@@ -145,6 +155,7 @@ router.get('/thread', requireAuth, staffOnly, async (req, res) => {
 
   try {
     await ensureSmsMessagesTable();
+    await backfillFromVoipLogs();
     const tail = phoneTail(phone);
     const normalized = phone.replace(/\s/g, '');
 
@@ -152,10 +163,10 @@ router.get('/thread', requireAuth, staffOnly, async (req, res) => {
       `SELECT sm.*, u.name AS sent_by_name
        FROM sms_messages sm
        LEFT JOIN users u ON u.id = sm.sent_by
-       WHERE regexp_replace(
+       WHERE right(regexp_replace(
          CASE WHEN sm.direction = 'inbound' THEN sm.from_number ELSE sm.to_number END,
-         '\\D', '', 'g'
-       ) LIKE '%' || $1
+         '[^0-9]', '', 'g'
+       ), 10) = $1
        ORDER BY sm.created_at ASC
        LIMIT 200`,
       [tail]
@@ -242,6 +253,7 @@ router.post('/reply', requireAuth, staffOnly, async (req, res) => {
 router.get('/stats', requireAuth, staffOnly, async (req, res) => {
   try {
     await ensureSmsMessagesTable();
+    await backfillFromVoipLogs();
     const [unread, outboundToday, threads, optedOut] = await Promise.all([
       pool.query(`SELECT COUNT(*)::int AS c FROM sms_messages WHERE direction='inbound' AND is_read=FALSE`),
       pool.query(`SELECT COUNT(*)::int AS c FROM sms_messages WHERE direction='outbound' AND created_at >= CURRENT_DATE`),

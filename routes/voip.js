@@ -357,8 +357,97 @@ router.all('/twilio-inbound', async (req, res) => {
       disposition = 'help';
       reply = helpReply();
     } else {
-      disposition = 'inbound_reply';
-      reply = helpReply();
+      const textBody = String(body).trim();
+      const yesMatch = textBody.match(/^(yes|ok|accept)\s*(\d+)?$/i);
+      let offerApproved = null;
+
+      if (yesMatch) {
+        const offerId = yesMatch[2] ? parseInt(yesMatch[2], 10) : null;
+        try {
+          let offerRes;
+          if (offerId) {
+            offerRes = await pool.query('SELECT * FROM load_offers WHERE id = $1 AND driver_approval_status = \'pending\'', [offerId]);
+          } else {
+            // Find most recent pending offer for this phone / carrier
+            offerRes = await pool.query(
+              `SELECT o.* FROM load_offers o
+               JOIN users u ON u.id = o.carrier_id
+               WHERE regexp_replace(u.phone, '\\D', '', 'g') LIKE '%' || right(regexp_replace($1, '\\D', '', 'g'), 10)
+                 AND o.driver_approval_status = 'pending'
+               ORDER BY o.created_at DESC LIMIT 1`,
+              [from]
+            );
+          }
+
+          if (offerRes.rows.length) {
+            offerApproved = offerRes.rows[0];
+            const offer = offerApproved;
+            await pool.query(
+              `UPDATE load_offers SET status = 'accepted', driver_approval_status = 'approved', broker_negotiation_status = 'bidding' WHERE id = $1`,
+              [offer.id]
+            );
+
+            await pool.query(
+              `INSERT INTO ai_load_negotiations (offer_id, event_type, sender_type, message_text, rate_offered, rpm)
+               VALUES ($1, 'driver_approved', 'driver', $2, $3, $4)`,
+              [offer.id, `Driver approved offer #${offer.id} via SMS reply: "${textBody}"`, offer.rate, offer.rpm]
+            );
+
+            // Trigger AI broker bidding email
+            const targetBid = (parseFloat(offer.rate) + 150).toFixed(2);
+            await pool.query(
+              `UPDATE load_offers SET initial_bid_rate = $1 WHERE id = $2`,
+              [targetBid, offer.id]
+            );
+
+            const { sendBrandedEmail } = require('../utils/mailer');
+            const carrierRes = await pool.query('SELECT * FROM users WHERE id = $1', [offer.carrier_id]);
+            const carrier = carrierRes.rows[0] || {};
+            const carrierCompany = carrier.company_name || carrier.name || 'Motor Carrier';
+            const carrierMc = carrier.mc_number || '149201';
+
+            const emailSubject = `Rate Inquiry & Load Booking: ${offer.pickup_location} ➔ ${offer.delivery_location} (${offer.equipment_type}) — MC# ${carrierMc}`;
+            const emailBodyText = `Hi ${offer.broker_name} Dispatch,\n\n` +
+              `Shipping Wish LLC is bidding on behalf of ${carrierCompany} (MC# ${carrierMc}).\n\n` +
+              `Load Details:\n` +
+              `• Lane: ${offer.pickup_location} ➔ ${offer.delivery_location}\n` +
+              `• Equipment: ${offer.equipment_type}\n` +
+              `• Distance: ${offer.miles} miles\n` +
+              `• Requested Rate: $${targetBid} ($${(targetBid / offer.miles).toFixed(2)}/mile)\n\n` +
+              `Our truck is empty and ready for immediate dispatch. Please confirm rate and send Rate Confirmation to dispatch@shippingwish.com.\n\n` +
+              `Best regards,\nShipping Wish Autonomous Dispatch Engine\nhttps://www.shippingwish.com`;
+
+            try {
+              await sendBrandedEmail({
+                to: offer.broker_email || 'dispatch@broker.com',
+                subject: emailSubject,
+                text: emailBodyText,
+                html: `<pre style="font-family:sans-serif;font-size:14px;">${emailBodyText}</pre>`,
+                emailType: 'broker_bid'
+              });
+            } catch (e) {
+              console.warn('Inbound SMS broker bid email notice:', e.message);
+            }
+
+            await pool.query(
+              `INSERT INTO ai_load_negotiations (offer_id, event_type, sender_type, message_text, rate_offered, rpm)
+               VALUES ($1, 'broker_bid_sent', 'ai_bot', $2, $3, $4)`,
+              [offer.id, `AI dispatched official rate inquiry email to ${offer.broker_name} (${offer.broker_email}) requesting $${targetBid}`, targetBid, (targetBid / offer.miles).toFixed(2)]
+            );
+
+            reply = `${COMPANY.name}: Load offer #${offer.id} (${offer.pickup_location} ➔ ${offer.delivery_location}) APPROVED! AI has emailed ${offer.broker_name} requesting $${targetBid}. We will notify you once deal is locked!`;
+            disposition = 'driver_load_approval';
+          }
+        } catch (err) {
+          console.warn('Driver SMS approval processing error:', err.message);
+        }
+      }
+
+      if (!offerApproved) {
+        disposition = 'inbound_reply';
+        reply = helpReply();
+      }
+
       const lead = await findLeadByPhone(from);
       if (lead) {
         const title = `SMS from ${lead.company_name || from}`;

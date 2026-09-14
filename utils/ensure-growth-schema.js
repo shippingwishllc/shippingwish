@@ -180,6 +180,32 @@ async function ensureGrowthSchema() {
   } catch (err) {
     console.warn('[SMS_INBOX] Schema apply skipped:', err.message);
   }
+
+  try {
+    await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS broker_email TEXT');
+    await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS driver_approval_status TEXT DEFAULT \'pending\'');
+    await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS broker_negotiation_status TEXT DEFAULT \'idle\'');
+    await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS target_min_rpm NUMERIC(6,2) DEFAULT 2.80');
+    await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS initial_bid_rate NUMERIC(10,2)');
+    await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS final_agreed_rate NUMERIC(10,2)');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ai_load_negotiations (
+        id SERIAL PRIMARY KEY,
+        offer_id INTEGER REFERENCES load_offers(id) ON DELETE CASCADE,
+        event_type TEXT NOT NULL, -- driver_approved, broker_bid_sent, broker_counter_received, deal_closed, deal_rejected
+        sender_type TEXT NOT NULL, -- ai_bot, driver, broker
+        message_text TEXT,
+        rate_offered NUMERIC(10,2),
+        rpm NUMERIC(6,2),
+        metadata JSONB,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_ai_neg_offer ON ai_load_negotiations(offer_id)');
+  } catch (err) {
+    console.warn('[AI_NEGOTIATIONS] direct ensure skipped:', err.message);
+  }
 }
 
 /** Call from CRM import if table still missing (serverless race / cold start). */
