@@ -179,16 +179,19 @@
   function renderInboxList() {
     const list = document.getElementById('inbox-list');
     if (!messagesCache.length) {
-      list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No carrier replies on this page. Try Previous or show all replies.</p>';
+      list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No carrier emails on this page. Try Previous or show all messages.</p>';
       return;
     }
     list.innerHTML = messagesCache.map(m => `
       <button type="button" class="inbox-item ${m.is_read ? '' : 'unread'} ${selectedId === m.id ? 'active' : ''}" onclick="openMessage(${m.id})">
         <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-          <div style="font-weight:800;">${escapeHtml(contactTitle(m))}</div>
+          <div style="font-weight:800;display:flex;align-items:center;gap:6px;">
+            ${m.direction === 'outbound' ? '<span class="badge badge-paid" style="font-size:9px;padding:2px 6px;">↗ Sent</span>' : '<span class="badge badge-booked" style="font-size:9px;padding:2px 6px;">📥 Inbound</span>'}
+            <span>${escapeHtml(contactTitle(m))}</span>
+          </div>
           <div style="font-size:11px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</div>
         </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${escapeHtml(m.from_email || '')}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${escapeHtml(m.peer_email || m.from_email || '')}</div>
         <div style="font-size:13px;margin-top:6px;font-weight:600;">${escapeHtml(m.subject || '(no subject)')}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-top:4px;" class="inbox-item-preview">${escapeHtml(previewText(m))}</div>
       </button>

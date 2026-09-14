@@ -227,30 +227,73 @@ router.get('/logs', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/email/inbox — inbound replies for admin / sales
+// GET /api/email/inbox — inbound replies and outbound sent emails for admin / sales
 router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     const unreadOnly = req.query.unread === '1';
     const page = Math.max(1, parseInt(req.query.page || '1', 10));
     const perPage = Math.min(20, Math.max(1, parseInt(req.query.perPage || '8', 10)));
     const offset = (page - 1) * perPage;
-    const where = unreadOnly ? 'WHERE i.deleted_at IS NULL AND i.is_read = FALSE' : 'WHERE i.deleted_at IS NULL';
 
-    const countResult = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound i ${where}`);
+    const countResult = await pool.query(`
+      SELECT (
+        (SELECT COUNT(*)::int FROM email_inbound i WHERE i.deleted_at IS NULL ${unreadOnly ? 'AND i.is_read = FALSE' : ''}) +
+        (SELECT COUNT(*)::int FROM email_logs e ${unreadOnly ? 'WHERE 1=0' : ''})
+      ) AS count
+    `);
     const total = countResult.rows[0]?.count || 0;
     const totalPages = Math.max(1, Math.ceil(total / perPage));
 
     const result = await pool.query(
-      `SELECT i.*, l.company_name, l.owner_name, l.phone, l.mc_number, l.sales_rep_id,
-              u.name AS sales_rep_name
-       FROM email_inbound i
-       LEFT JOIN crm_leads l ON l.id = i.lead_id
-       LEFT JOIN users u ON u.id = l.sales_rep_id
-       ${where}
-       ORDER BY i.created_at DESC
-       LIMIT $1 OFFSET $2`,
+      `WITH combined AS (
+        SELECT 
+          'inbound' AS direction,
+          i.id,
+          i.lead_id,
+          i.from_email AS peer_email,
+          COALESCE(i.from_name, l.company_name, l.owner_name, i.from_email) AS peer_name,
+          i.from_email,
+          i.subject,
+          i.body_text,
+          i.body_html,
+          i.is_read,
+          i.created_at,
+          l.company_name,
+          l.owner_name,
+          l.phone,
+          l.mc_number
+        FROM email_inbound i
+        LEFT JOIN crm_leads l ON l.id = i.lead_id
+        WHERE i.deleted_at IS NULL ${unreadOnly ? 'AND i.is_read = FALSE' : ''}
+
+        UNION ALL
+
+        SELECT 
+          'outbound' AS direction,
+          (e.id + 10000000) AS id,
+          e.lead_id,
+          e.recipient_email AS peer_email,
+          COALESCE(l.company_name, l.owner_name, e.recipient_email) AS peer_name,
+          'operations@shippingwish.com' AS from_email,
+          CONCAT('↗ Outbound: ', e.subject) AS subject,
+          CONCAT('Outbound Email (', COALESCE(e.email_type, 'outreach'), ') sent to ', e.recipient_email) AS body_text,
+          CONCAT('<p>Outbound Email sent to <strong>', e.recipient_email, '</strong></p>') AS body_html,
+          TRUE AS is_read,
+          e.sent_at AS created_at,
+          l.company_name,
+          l.owner_name,
+          l.phone,
+          l.mc_number
+        FROM email_logs e
+        LEFT JOIN crm_leads l ON l.id = e.lead_id
+        ${unreadOnly ? 'WHERE 1=0' : ''}
+      )
+      SELECT * FROM combined
+      ORDER BY created_at DESC
+      LIMIT $1 OFFSET $2`,
       [perPage, offset]
     );
+
     const unread = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound WHERE is_read = FALSE AND deleted_at IS NULL`);
     res.json({
       messages: result.rows,
@@ -262,7 +305,7 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
     });
   } catch (err) {
     console.error('Inbox fetch error:', err);
-    res.status(500).json({ error: 'Could not load inbox. Apply v3 growth schema first.' });
+    res.status(500).json({ error: 'Could not load inbox.' });
   }
 });
 
@@ -282,6 +325,47 @@ router.delete('/inbox/:id', requireAuth, requireRole('admin', 'super_admin'), as
 
 router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
   try {
+    const numericId = parseInt(req.params.id, 10);
+    if (numericId > 10000000) {
+      const realId = numericId - 10000000;
+      const result = await pool.query(
+        `SELECT e.*, l.company_name, l.owner_name, l.phone, l.mc_number, l.email AS lead_email, l.sales_rep_id,
+                u.name AS sales_rep_name
+         FROM email_logs e
+         LEFT JOIN crm_leads l ON l.id = e.lead_id
+         LEFT JOIN users u ON u.id = l.sales_rep_id
+         WHERE e.id = $1`,
+        [realId]
+      );
+      if (!result.rows.length) return res.status(404).json({ error: 'Outbound email log not found' });
+      const e = result.rows[0];
+      const msg = {
+        id: numericId,
+        direction: 'outbound',
+        lead_id: e.lead_id,
+        from_email: 'operations@shippingwish.com',
+        to_email: e.recipient_email,
+        subject: e.subject,
+        body_text: `Outbound Email (${e.email_type || 'campaign'}) sent to ${e.recipient_email}.\nStatus: ${e.status || 'sent'}`,
+        body_html: `<div style="padding:18px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">
+          <h4 style="margin:0 0 10px;color:#f59e0b;font-size:16px;">↗ Outbound Email Sent to ${escapeHtml(e.recipient_email)}</h4>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Recipient:</strong> ${escapeHtml(e.recipient_email)}</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Subject:</strong> ${escapeHtml(e.subject)}</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Campaign Type:</strong> ${escapeHtml(e.email_type || 'campaign')}</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Status:</strong> <span class="badge badge-paid">${escapeHtml(e.status || 'sent')}</span></p>
+          <p style="margin:8px 0 0;font-size:11px;color:#94a3b8;">Sent via Shipping Wish Resend Email Engine</p>
+        </div>`,
+        created_at: e.sent_at,
+        is_read: true,
+        company_name: e.company_name,
+        owner_name: e.owner_name,
+        phone: e.phone,
+        mc_number: e.mc_number,
+        attachments: []
+      };
+      return res.json({ message: msg });
+    }
+
     await ensureInboundColumns();
     const result = await pool.query(
       `SELECT i.*, l.company_name, l.owner_name, l.phone, l.mc_number, l.email AS lead_email, l.sales_rep_id,
