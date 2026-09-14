@@ -247,7 +247,7 @@
       activeLeadId = data.lead?.id || null;
       const title = data.lead?.company_name || data.lead?.owner_name || data.peer_phone;
       const optNote = data.opted_out
-        ? '<p style="color:#991b1b;font-size:12px;margin:0 0 10px;">This number replied STOP — do not send marketing SMS.</p>'
+        ? '<p style="color:#991b1b;background:#fee2e2;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:800;margin:8px 0 10px;border:1px solid #f87171;display:flex;align-items:center;gap:6px;">🚫 OPTED OUT (STOP) — Locked by US TCPA Law. Sending SMS &amp; Email is permanently blocked for this contact.</p>'
         : '';
 
       const bubbles = (data.messages || []).map((m) => {

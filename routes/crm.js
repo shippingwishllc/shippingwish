@@ -154,6 +154,22 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
           continue;
         }
 
+        // Filter 4: Check if Phone or Email is Opted Out / Unsubscribed (TCPA Guard)
+        if (c.phone) {
+          const { isPhoneOptedOut } = require('../utils/sms-inbox');
+          if (await isPhoneOptedOut(c.phone)) {
+            excludedBanned++;
+            continue;
+          }
+        }
+        if (c.email) {
+          const { isUnsubscribed } = require('../utils/mailer');
+          if (await isUnsubscribed(c.email)) {
+            excludedBanned++;
+            continue;
+          }
+        }
+
         // Map equipment type to standard target freight equipment
         let matchedEquip = '53ft Dry Van';
         if (cargoDesc.includes('reefer') || cargoDesc.includes('cold') || cargoDesc.includes('frozen') || compName.includes('reefer')) {
