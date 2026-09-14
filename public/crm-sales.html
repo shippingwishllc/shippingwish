@@ -129,17 +129,72 @@
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:14px;">
           <div>
-            <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Target Freight States</label>
-            <select id="ai-bot-states" class="form-input" style="font-size:12px;padding:8px;" multiple>
-              <option value="TX" selected>Texas (TX)</option>
-              <option value="FL" selected>Florida (FL)</option>
-              <option value="GA" selected>Georgia (GA)</option>
-              <option value="IL" selected>Illinois (IL)</option>
-              <option value="CA" selected>California (CA)</option>
-              <option value="NC" selected>North Carolina (NC)</option>
-              <option value="PA">Pennsylvania (PA)</option>
-              <option value="OH">Ohio (OH)</option>
-              <option value="TN">Tennessee (TN)</option>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <label style="font-size:11px;font-weight:700;color:var(--text-muted);">Target Freight States (50 States)</label>
+              <div style="display:flex;gap:4px;">
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size:9px;padding:2px 5px;" onclick="selectPresetStates('top')">🔥 Top 10</button>
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size:9px;padding:2px 5px;" onclick="selectPresetStates('all')">🇺🇸 All 50</button>
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size:9px;padding:2px 5px;" onclick="selectPresetStates('clear')">🧹 Clear</button>
+              </div>
+            </div>
+            <select id="ai-bot-states" class="form-input" style="font-size:12px;padding:6px;height:120px;" multiple>
+              <optgroup label="🔥 Top US Freight Hubs">
+                <option value="TX" selected>Texas (TX)</option>
+                <option value="FL" selected>Florida (FL)</option>
+                <option value="GA" selected>Georgia (GA)</option>
+                <option value="IL" selected>Illinois (IL)</option>
+                <option value="CA" selected>California (CA)</option>
+                <option value="NC" selected>North Carolina (NC)</option>
+                <option value="PA" selected>Pennsylvania (PA)</option>
+                <option value="OH" selected>Ohio (OH)</option>
+                <option value="TN" selected>Tennessee (TN)</option>
+                <option value="IN" selected>Indiana (IN)</option>
+              </optgroup>
+              <optgroup label="🌴 Southern Region">
+                <option value="AL">Alabama (AL)</option>
+                <option value="AR">Arkansas (AR)</option>
+                <option value="LA">Louisiana (LA)</option>
+                <option value="MS">Mississippi (MS)</option>
+                <option value="OK">Oklahoma (OK)</option>
+                <option value="SC">South Carolina (SC)</option>
+                <option value="VA">Virginia (VA)</option>
+              </optgroup>
+              <optgroup label="🌽 Midwest Region">
+                <option value="IA">Iowa (IA)</option>
+                <option value="KS">Kansas (KS)</option>
+                <option value="MI">Michigan (MI)</option>
+                <option value="MN">Minnesota (MN)</option>
+                <option value="MO">Missouri (MO)</option>
+                <option value="NE">Nebraska (NE)</option>
+                <option value="ND">North Dakota (ND)</option>
+                <option value="SD">South Dakota (SD)</option>
+                <option value="WI">Wisconsin (WI)</option>
+              </optgroup>
+              <optgroup label="🏢 Eastern / Northeast Region">
+                <option value="CT">Connecticut (CT)</option>
+                <option value="DE">Delaware (DE)</option>
+                <option value="ME">Maine (ME)</option>
+                <option value="MD">Maryland (MD)</option>
+                <option value="MA">Massachusetts (MA)</option>
+                <option value="NH">New Hampshire (NH)</option>
+                <option value="NJ">New Jersey (NJ)</option>
+                <option value="NY">New York (NY)</option>
+                <option value="RI">Rhode Island (RI)</option>
+                <option value="VT">Vermont (VT)</option>
+                <option value="WV">West Virginia (WV)</option>
+              </optgroup>
+              <optgroup label="🏔️ Western / Southwest Region">
+                <option value="AZ">Arizona (AZ)</option>
+                <option value="CO">Colorado (CO)</option>
+                <option value="ID">Idaho (ID)</option>
+                <option value="MT">Montana (MT)</option>
+                <option value="NV">Nevada (NV)</option>
+                <option value="NM">New Mexico (NM)</option>
+                <option value="OR">Oregon (OR)</option>
+                <option value="UT">Utah (UT)</option>
+                <option value="WA">Washington (WA)</option>
+                <option value="WY">Wyoming (WY)</option>
+              </optgroup>
             </select>
           </div>
 
@@ -642,6 +697,21 @@
     });
     btn.className = 'btn btn-sm btn-primary filter-btn';
     renderLeadsTable();
+  }
+
+  function selectPresetStates(mode) {
+    const sel = document.getElementById('ai-bot-states');
+    if (!sel) return;
+    const topStates = ['TX', 'FL', 'GA', 'IL', 'CA', 'NC', 'PA', 'OH', 'TN', 'IN'];
+    Array.from(sel.options).forEach(opt => {
+      if (mode === 'all') {
+        opt.selected = true;
+      } else if (mode === 'clear') {
+        opt.selected = false;
+      } else if (mode === 'top') {
+        opt.selected = topStates.includes(opt.value);
+      }
+    });
   }
 
   async function runAiProspectingCampaign() {
