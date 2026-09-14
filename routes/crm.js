@@ -194,7 +194,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
           `Would you be open to reviewing our current load availability for ${stateName}?\n\n` +
           `Best regards,\nShipping Wish Operations Team\nhttps://www.shippingwish.com`;
 
-        const smsText = `Hi ${ownerName}, Shipping Wish LLC has premium ${matchedEquip} freight out of ${stateName}. We book loads 24/7 & you keep 100% pay. Reply YES to see rates or call +1 (917) 737-0021.`;
+        const smsText = `Hi ${ownerName}, Shipping Wish LLC has premium ${matchedEquip} freight out of ${stateName}. We book loads 24/7 & you keep 100% pay. Check rates: https://www.shippingwish.com or reply YES.`;
 
         // Save lead in PostgreSQL CRM table
         const insertRes = await pool.query(
