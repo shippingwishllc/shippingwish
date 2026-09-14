@@ -214,7 +214,10 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
               to: c.email,
               subject: emailSubject,
               text: emailBodyText,
-              html: `<p>Hi <strong>${ownerName}</strong>,</p><p>Shipping Wish LLC dispatch team noticed <strong>${c.company_name}</strong> is actively operating ${numUnits} ${matchedEquip} unit(s) out of <strong>${stateName}</strong>.</p><p>We provide 24/7 dedicated dispatch, high-paying freight rate negotiation ($3.20/mile avg), and load board booking — you keep 100% of your gross pay with $0 upfront fees.</p><p><a href="https://www.shippingwish.com/services" style="background:#f59e0b;color:#0f172a;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">View Dispatch Services &amp; Load Rates →</a></p>`
+              html: `<p>Hi <strong>${ownerName}</strong>,</p><p>Shipping Wish LLC dispatch team noticed <strong>${c.company_name}</strong> is actively operating ${numUnits} ${matchedEquip} unit(s) out of <strong>${stateName}</strong>.</p><p>We provide 24/7 dedicated dispatch, high-paying freight rate negotiation ($3.20/mile avg), and load board booking — you keep 100% of your gross pay with $0 upfront fees.</p><p><a href="https://www.shippingwish.com/services" style="background:#f59e0b;color:#0f172a;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">View Dispatch Services &amp; Load Rates →</a></p>`,
+              leadId: newLead.id,
+              sentBy: req.user ? req.user.id : null,
+              emailType: 'ai_prospecting'
             });
             emailSentStatus = true;
             emailsSent++;
@@ -228,10 +231,22 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
         if (send_sms && c.phone) {
           try {
             const { sendTwilioSms } = require('./voip');
+            const { logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
             const smsRes = await sendTwilioSms(c.phone, smsText);
             if (smsRes.status === 'sent' || smsRes.status === 'logged') {
               smsSentStatus = true;
               smsSent++;
+              await logSmsMessage({
+                direction: 'outbound',
+                from_number: OUR_NUMBER,
+                to_number: c.phone,
+                body: smsRes.body || smsText,
+                lead_id: newLead.id,
+                sent_by: req.user ? req.user.id : null,
+                twilio_sid: smsRes.sid,
+                disposition: smsRes.status,
+                is_read: true
+              }).catch(() => {});
             }
           } catch (sErr) {
             console.warn('AI Campaign SMS error:', sErr.message);
