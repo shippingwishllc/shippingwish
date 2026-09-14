@@ -322,12 +322,20 @@
         `).join('')}
       </div>` : '';
 
+    const isOutbound = m.direction === 'outbound';
+    const dirBadge = isOutbound
+      ? '<span class="badge badge-paid" style="font-size:11px;padding:3px 8px;">↗ Outbound Email Sent</span>'
+      : '<span class="badge badge-booked" style="font-size:11px;padding:3px 8px;">📥 Inbound Reply Received</span>';
+
     panel.innerHTML = `
       <div class="msg-panel-header">
         <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;">
           <div>
-            <h2 style="margin:0 0 4px;font-size:17px;">${escapeHtml(m.subject || '(no subject)')}</h2>
-            <div style="font-size:12px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              ${dirBadge}
+              <span style="font-size:11px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</span>
+            </div>
+            <h2 style="margin:0;font-size:17px;font-weight:800;color:var(--text-primary);">${escapeHtml(m.subject || '(no subject)')}</h2>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <a class="btn btn-secondary btn-sm" href="${mailto}">Open in mail app</a>
@@ -335,26 +343,42 @@
           </div>
         </div>
       </div>
+
       <div class="msg-scroll-area">
-        <div class="contact-grid">
-          <div><strong>From email</strong>${escapeHtml(m.from_email || '—')}</div>
-          <div><strong>Name / company</strong>${escapeHtml(m.owner_name || m.company_name || '—')}</div>
-          <div><strong>Phone</strong>${m.phone ? `<a href="tel:${escapeHtml(m.phone)}">${escapeHtml(m.phone)}</a>` : '—'}</div>
-          <div><strong>MC</strong>${escapeHtml(m.mc_number || '—')}</div>
-          <div><strong>Sales rep</strong>${escapeHtml(m.sales_rep_name || 'Unassigned')}</div>
-          <div><strong>To (your inbox)</strong>${escapeHtml(m.to_email || '—')}</div>
-          <div><strong>Matched lead</strong>${matchedLead}</div>
+        <div style="background:rgba(15,23,42,0.05);border:1px solid var(--border-default);border-radius:10px;padding:12px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:8px;">
+            <div>
+              <strong style="color:var(--text-muted);text-transform:uppercase;font-size:10px;letter-spacing:0.04em;">Carrier / Recipient</strong>
+              <div style="font-size:14px;font-weight:800;color:#f59e0b;margin-top:2px;">
+                ${escapeHtml(m.company_name || m.owner_name || m.peer_name || 'Carrier')} ${m.mc_number ? `<span style="font-size:12px;color:var(--text-muted);">(${escapeHtml(m.mc_number)})</span>` : ''}
+              </div>
+            </div>
+            <div>
+              ${matchedLead}
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:8px;color:var(--text-muted);">
+            <div><strong>From:</strong> <span style="color:var(--text-primary);">${escapeHtml(m.from_email || 'operations@shippingwish.com')}</span></div>
+            <div><strong>To:</strong> <span style="color:var(--text-primary);">${escapeHtml(m.peer_email || m.to_email || '—')}</span></div>
+            <div><strong>Phone:</strong> ${m.phone ? `<a href="tel:${escapeHtml(m.phone)}" style="color:#60a5fa;">${escapeHtml(m.phone)}</a>` : '—'}</div>
+            <div><strong>Sales Rep:</strong> <span style="color:var(--text-primary);">${escapeHtml(m.sales_rep_name || 'Unassigned')}</span></div>
+          </div>
         </div>
+
         ${attachHtml}
-        ${bodyText
-          ? `<pre class="msg-body">${escapeHtml(bodyText)}</pre>`
-          : (hasHtml
-            ? `<pre class="msg-body">${escapeHtml(stripHtml(m.body_html))}</pre>`
-            : `<p class="text-muted" style="margin:0;">Email body is still loading or was not saved. Re-open this message in a moment.</p>`)}
+
+        <div style="background:var(--bg-elevated, #0f172a);border:1px solid var(--border-default);border-radius:10px;padding:16px;margin-bottom:14px;">
+          ${bodyText
+            ? `<div style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.6;color:var(--text-primary);">${escapeHtml(bodyText)}</div>`
+            : (hasHtml
+              ? `<div style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.6;color:var(--text-primary);">${escapeHtml(stripHtml(m.body_html))}</div>`
+              : `<p class="text-muted" style="margin:0;">Email body preview is loading...</p>`)}
+        </div>
       </div>
+
       <div class="reply-box">
         <h3 style="margin:0 0 6px;font-size:14px;">Reply from portal</h3>
-        <p class="reply-from-note">Reply will send from <strong>${escapeHtml(replyFrom)}</strong> to <strong>${escapeHtml(m.from_email || '')}</strong> (same thread).</p>
+        <p class="reply-from-note">Reply will send from <strong>${escapeHtml(replyFrom)}</strong> to <strong>${escapeHtml(m.peer_email || m.from_email || '')}</strong> (same thread).</p>
         <textarea id="reply-text-${m.id}" placeholder="Type your reply…"></textarea>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
           <button type="button" class="btn btn-primary btn-sm" onclick="sendReply(${m.id})">Send reply</button>
