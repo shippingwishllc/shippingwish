@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '20';
+  const SIDEBAR_VERSION = '21';
   // #endregion
 
   function clearRoleCache() {
@@ -77,6 +77,7 @@
     { section: 'Operations' },
     { key: 'overview', navId: 'nav-tab-loads', href: '/admin-dashboard', icon: '📊', label: 'Overview & Loads' },
     { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: '🎧', label: 'Dispatch Desk' },
+    { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Match' },
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
     { section: 'Sales & Staff' },
@@ -99,6 +100,7 @@
   const CARRIER_LINKS = [
     { section: 'Your company' },
     { key: 'home', href: '/carrier-overview', icon: '📊', label: 'Fleet home' },
+    { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Bidding' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Trucks & drivers' },
     { key: 'planning', href: '/load-planning', icon: '📅', label: 'Empty truck / next load' },
     { key: 'documents', href: '/documents', icon: '📄', label: 'Documents' },
@@ -118,6 +120,7 @@
   const PAGE_KEY = {
     'admin-dashboard.html': 'overview',
     'dispatcher-dashboard.html': 'dispatch',
+    'load-booking.html': 'loadboard',
     'brokers.html': 'brokers',
     'fleet.html': 'fleet',
     'crm-sales.html': 'crm',
