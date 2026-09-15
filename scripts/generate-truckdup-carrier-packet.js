@@ -125,7 +125,7 @@ const pCards = [
   },
   {
     title: 'Unified 7% Dispatch Fee (Single Payee)',
-    desc: 'The total dispatch/service fee is 7% of gross freight revenue, payable to Truck’d Up. The carrier owes no separate dispatch fee to Shipping Wish.'
+    desc: 'The total dispatch/service fee will be 7% of gross freight revenue, payable to Truck’d Up. The carrier owes no separate dispatch fee to Shipping Wish.'
   },
   {
     title: 'Dispatch Fulfillment & Commercial Roles',
@@ -293,7 +293,7 @@ doc.font('Helvetica-Bold').fontSize(7.8);
 const safeTitleH = doc.heightOfString("TRUCK'D UP PARTNER FEE STRUCTURE & COMMERCIAL TERMS:", { width: safeW });
 
 doc.font('Helvetica').fontSize(7.2);
-const termPartnerText = "• PARTNER DISPATCH TERMS & COMMERCIAL RELATIONSHIP: The total dispatch/service fee should be listed as 7% of gross freight revenue, payable to Truck’d Up. The carrier owes no separate dispatch fee to Shipping Wish. Shipping Wish provides the dispatch fulfillment while Truck’d Up maintains the carrier-facing commercial relationship.";
+const termPartnerText = "• PARTNER DISPATCH TERMS & COMMERCIAL RELATIONSHIP: The total dispatch/service fee will be 7% of gross freight revenue, payable to Truck’d Up. The carrier owes no separate dispatch fee to Shipping Wish. Shipping Wish provides the dispatch fulfillment while Truck’d Up maintains the carrier-facing commercial relationship.";
 const termPartnerH = doc.heightOfString(termPartnerText, { width: safeW, lineGap: 1.3 });
 
 const termCustodyText = "• 100% DIRECT FREIGHT REMITTANCE: This agreement does NOT authorize Dispatcher or Partner to collect, deposit, or endorse freight pay. 100% of freight revenues are billed and paid directly to Carrier or Carrier's factoring company.";
