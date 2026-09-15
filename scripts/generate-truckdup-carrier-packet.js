@@ -125,11 +125,11 @@ const pCards = [
   },
   {
     title: 'Unified 7% Dispatch Fee (Single Payee)',
-    desc: 'Total dispatch fee is 7% of gross freight payable to Truck’d Up (Truck’d Up retains 3%, remits 4% to Shipping Wish). No separate fee to Shipping Wish.'
+    desc: 'The total dispatch/service fee is 7% of gross freight revenue, payable to Truck’d Up. The carrier owes no separate dispatch fee to Shipping Wish.'
   },
   {
-    title: 'Dedicated Backend Dispatch Desk',
-    desc: 'Shipping Wish LLC provides dedicated load search, broker rate negotiation, 24/7 tracking, and rate confirmation handling.'
+    title: 'Dispatch Fulfillment & Commercial Roles',
+    desc: 'Shipping Wish provides the dispatch fulfillment while Truck’d Up maintains the carrier-facing commercial relationship.'
   },
   {
     title: 'Carrier Authority & Fast 2-Hr Activation',
@@ -290,19 +290,16 @@ const safeStartY = y;
 const safeW = CW - 24;
 
 doc.font('Helvetica-Bold').fontSize(7.8);
-const safeTitleH = doc.heightOfString("TRUCK'D UP PARTNER FEE STRUCTURE & COMMERCIAL SAFEGUARDS:", { width: safeW });
+const safeTitleH = doc.heightOfString("TRUCK'D UP PARTNER FEE STRUCTURE & COMMERCIAL TERMS:", { width: safeW });
 
-doc.font('Helvetica').fontSize(6.8);
-const termFeeText = "• TOTAL 7% DISPATCH SERVICE FEE: Carrier accounts sourced through Truck'd Up are billed a total dispatch fee of seven percent (7%) of gross freight revenue, payable directly to Truck'd Up. Truck'd Up retains three percent (3%) and remits four percent (4%) to Shipping Wish LLC for dispatch fulfillment. Carrier owes NO separate, direct, or additional dispatch fee to Shipping Wish LLC.";
-const termFeeH = doc.heightOfString(termFeeText, { width: safeW, lineGap: 1.2 });
-
-const termRolesText = "• OPERATIONAL ROLES: Shipping Wish LLC provides dedicated backend dispatch fulfillment, load booking, and tracking. Truck'd Up maintains the carrier-facing commercial relationship, primary point of contact, and billing management.";
-const termRolesH = doc.heightOfString(termRolesText, { width: safeW, lineGap: 1.2 });
+doc.font('Helvetica').fontSize(7.2);
+const termPartnerText = "• PARTNER DISPATCH TERMS & COMMERCIAL RELATIONSHIP: The total dispatch/service fee should be listed as 7% of gross freight revenue, payable to Truck’d Up. The carrier owes no separate dispatch fee to Shipping Wish. Shipping Wish provides the dispatch fulfillment while Truck’d Up maintains the carrier-facing commercial relationship.";
+const termPartnerH = doc.heightOfString(termPartnerText, { width: safeW, lineGap: 1.3 });
 
 const termCustodyText = "• 100% DIRECT FREIGHT REMITTANCE: This agreement does NOT authorize Dispatcher or Partner to collect, deposit, or endorse freight pay. 100% of freight revenues are billed and paid directly to Carrier or Carrier's factoring company.";
-const termCustodyH = doc.heightOfString(termCustodyText, { width: safeW, lineGap: 1.2 });
+const termCustodyH = doc.heightOfString(termCustodyText, { width: safeW, lineGap: 1.3 });
 
-const totalSafeBoxH = 8 + safeTitleH + 5 + termFeeH + 5 + termRolesH + 5 + termCustodyH + 8;
+const totalSafeBoxH = 8 + safeTitleH + 6 + termPartnerH + 6 + termCustodyH + 8;
 
 // Draw container box
 doc.rect(LEFT_X, safeStartY, CW, totalSafeBoxH).fillAndStroke('#fef3c7', '#fde68a');
@@ -310,17 +307,14 @@ doc.rect(LEFT_X, safeStartY, 4, totalSafeBoxH).fill(AMBER);
 
 // Render text sequentially with proper spacing
 let textCursorY = safeStartY + 8;
-doc.fillColor('#92400e').font('Helvetica-Bold').fontSize(7.8).text("TRUCK'D UP PARTNER FEE STRUCTURE & COMMERCIAL SAFEGUARDS:", LEFT_X + 12, textCursorY);
-textCursorY += safeTitleH + 5;
+doc.fillColor('#92400e').font('Helvetica-Bold').fontSize(7.8).text("TRUCK'D UP PARTNER FEE STRUCTURE & COMMERCIAL TERMS:", LEFT_X + 12, textCursorY);
+textCursorY += safeTitleH + 6;
 
-doc.fillColor('#78350f').font('Helvetica').fontSize(6.8);
-doc.text(termFeeText, LEFT_X + 12, textCursorY, { width: safeW, lineGap: 1.2 });
-textCursorY += termFeeH + 5;
+doc.fillColor('#78350f').font('Helvetica').fontSize(7.2);
+doc.text(termPartnerText, LEFT_X + 12, textCursorY, { width: safeW, lineGap: 1.3 });
+textCursorY += termPartnerH + 6;
 
-doc.text(termRolesText, LEFT_X + 12, textCursorY, { width: safeW, lineGap: 1.2 });
-textCursorY += termRolesH + 5;
-
-doc.text(termCustodyText, LEFT_X + 12, textCursorY, { width: safeW, lineGap: 1.2 });
+doc.text(termCustodyText, LEFT_X + 12, textCursorY, { width: safeW, lineGap: 1.3 });
 
 y = safeStartY + totalSafeBoxH + 8;
 doc.restore();
