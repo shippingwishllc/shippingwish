@@ -167,6 +167,7 @@ async function ensureGrowthSchema() {
     await pool.query('ALTER TABLE drivers ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL');
     await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ');
     await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL');
+    await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS from_name TEXT');
   } catch (err) {
     console.warn('[SOFT_DELETE] direct ensure skipped:', err.message);
   }

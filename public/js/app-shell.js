@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '21';
+  const SIDEBAR_VERSION = '22';
   // #endregion
 
   function clearRoleCache() {
@@ -432,6 +432,7 @@
       if (url.origin !== location.origin) return false;
       if (url.pathname === location.pathname && url.hash) return false;
       if (!document.querySelector('.app-shell .app-main')) return false;
+      if (url.pathname === '/inbox' || url.pathname === '/inbox.html') return false;
       return true;
     } catch (_) {
       return false;
@@ -491,7 +492,7 @@
           /document\.addEventListener\s*\(\s*['"]DOMContentLoaded['"]\s*,/g,
           '__swRun('
         );
-        s.textContent = code;
+        s.textContent = `try { (function(){\n${code}\n})(); } catch(e) { console.error('[APP_SHELL_EXEC]', e); }`;
       }
       document.body.appendChild(s);
     });

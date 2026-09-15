@@ -136,6 +136,7 @@
   </div>
 </div>
 <script>
+(function () {
   const INBOX_PAGE_SIZE = 7;
   let messagesCache = [];
   let selectedId = null;
@@ -247,30 +248,38 @@
     });
     if (unreadOnlyFilter) qs.set('unread', '1');
 
-    const res = await fetch('/api/email/inbox?' + qs.toString(), { credentials: 'include' });
-    const data = await res.json();
-    document.getElementById('kpi-unread').textContent = data.unread || 0;
-    messagesCache = data.messages || [];
-    totalMessages = data.total || messagesCache.length;
-    totalPages = data.totalPages || 1;
-    currentPage = data.page || currentPage;
+    try {
+      const res = await fetch('/api/email/inbox?' + qs.toString(), { credentials: 'include' });
+      const data = await res.json();
+      document.getElementById('kpi-unread').textContent = data.unread || 0;
+      messagesCache = data.messages || [];
+      totalMessages = data.total || messagesCache.length;
+      totalPages = data.totalPages || 1;
+      currentPage = data.page || currentPage;
 
-    document.getElementById('kpi-total').textContent = totalMessages;
+      document.getElementById('kpi-total').textContent = totalMessages;
 
-    const list = document.getElementById('inbox-list');
-    if (totalMessages === 0) {
-      list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No carrier replies yet. When a carrier replies to operations@ or your outreach, it will appear here.</p>';
-      document.getElementById('inbox-pagination').style.display = 'none';
-      document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">No messages.</p>';
-      selectedId = null;
-      return;
-    }
+      const list = document.getElementById('inbox-list');
+      if (totalMessages === 0) {
+        list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No carrier replies yet. When a carrier replies to operations@ or your outreach, it will appear here.</p>';
+        document.getElementById('inbox-pagination').style.display = 'none';
+        document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">No messages.</p>';
+        selectedId = null;
+        return;
+      }
 
-    renderInboxList();
-    renderPagination();
+      renderInboxList();
+      renderPagination();
 
-    if (selectedId && messagesCache.some(m => m.id === selectedId)) {
-      openMessage(selectedId);
+      if (selectedId && messagesCache.some(m => m.id === selectedId)) {
+        openMessage(selectedId);
+      }
+    } catch (err) {
+      console.error('Inbox load error:', err);
+      const list = document.getElementById('inbox-list');
+      if (list) {
+        list.innerHTML = '<p class="text-muted" style="padding:24px;text-align:center;">Could not load inbox. <button class="btn btn-secondary btn-sm" type="button" onclick="loadInbox(false)">Retry</button></p>';
+      }
     }
   }
 
@@ -434,11 +443,24 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', async () => {
+  window.loadInbox = loadInbox;
+  window.openMessage = openMessage;
+  window.goInboxPage = goInboxPage;
+  window.sendReply = sendReply;
+  window.trashEmail = trashEmail;
+
+  async function init() {
     await checkAuth();
     await loadInbox(false);
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
 </script>
-<script src="/js/app-shell.js?v=20"></script>
+<script src="/js/app-shell.js?v=22"></script>
 </body>
 </html>

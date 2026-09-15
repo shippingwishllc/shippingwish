@@ -72,6 +72,7 @@ function normalizeEmailFromHeader(value) {
 }
 
 async function ensureInboundColumns() {
+  await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS from_name TEXT`).catch(() => {});
   await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'`).catch(() => {});
 }
 
@@ -153,50 +154,56 @@ async function handleSendOutreach(req, res) {
       loadSummary: load_summary
     });
 
-    const result = await sendBrandedEmail({
+    const sendRes = await sendBrandedEmail({
       to: toAddress,
       subject: tpl.subject,
       html: tpl.html,
       text: tpl.text,
-      leadId: lead_id,
+      leadId: lead_id || lead.id,
       sentBy: req.user.id,
-      emailType: key,
-      templateKey: key,
-      transactional: Boolean(tpl.transactional)
+      emailType: email_type || 'outreach',
+      templateKey: key
     });
 
-    const isPacket = key === 'onboarding_packet' || key === 'onboarding';
-    await markLeadContacted(lead_id, isPacket ? 'packet_sent' : 'contacted');
+    if (sendRes.skipped) {
+      return res.status(400).json({ error: 'Recipient is unsubscribed.' });
+    }
 
-    let sms = null;
+    await markLeadContacted(lead_id || lead.id, 'contacted');
+
+    let smsResult = null;
     if (also_sms && lead.phone) {
       try {
-        const voip = require('./voip');
-        if (typeof voip.sendTemplatedSms === 'function') {
-          sms = await voip.sendTemplatedSms({
-            lead_id,
-            to_number: lead.phone,
-            template_key: key,
-            company_name: lead.company_name,
-            user: req.user,
-            load_summary
-          });
-        }
-      } catch (smsErr) {
-        sms = { error: smsErr.message };
+        const { sendTwilioSms } = require('./voip');
+        const { logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
+        const smsBody = `Hi ${ownerName || lead.owner_name || 'there'}, Shipping Wish LLC sent load details to ${toAddress}. Check your email or reply YES to connect.`;
+        const sent = await sendTwilioSms(lead.phone, smsBody);
+        await logSmsMessage({
+          direction: 'outbound',
+          from_number: OUR_NUMBER,
+          to_number: lead.phone,
+          body: sent.body || smsBody,
+          lead_id: lead_id || lead.id,
+          sent_by: req.user.id,
+          twilio_sid: sent.sid,
+          disposition: sent.status,
+          is_read: true
+        });
+        smsResult = { ok: true, status: sent.status };
+      } catch (err) {
+        console.warn('Also-SMS error:', err.message);
+        smsResult = { ok: false, error: err.message };
       }
     }
 
     res.json({
       ok: true,
-      message: result.skipped
-        ? `Skipped: ${result.reason}`
-        : `Email sent to ${toAddress}`,
-      email: result,
-      sms
+      message: `Outreach email sent to ${toAddress}`,
+      email_id: sendRes.id,
+      sms: smsResult
     });
   } catch (err) {
-    console.error('Error sending outreach email:', err);
+    console.error('Send outreach error:', err);
     res.status(500).json({ error: err.message || 'Failed to send outreach email' });
   }
 }
@@ -230,6 +237,7 @@ router.get('/logs', requireAuth, async (req, res) => {
 // GET /api/email/inbox — inbound replies and outbound sent emails for admin / sales
 router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
   try {
+    await ensureInboundColumns();
     const { ensureGrowthSchema } = require('../utils/ensure-growth-schema');
     await ensureGrowthSchema().catch(() => {});
 
@@ -243,7 +251,7 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
     try {
       const ibRes = await pool.query(
         `SELECT i.id, i.lead_id, i.from_email AS peer_email,
-                COALESCE(i.from_name, l.company_name, l.owner_name, i.from_email) AS peer_name,
+                COALESCE(l.company_name, l.owner_name, i.from_email) AS peer_name,
                 i.from_email, i.subject, i.body_text, i.body_html, i.is_read,
                 i.created_at, l.company_name, l.owner_name, l.phone, l.mc_number,
                 'inbound' AS direction
@@ -279,10 +287,8 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
       } catch (e2) {
         console.warn('email_logs query warning:', e2.message);
       }
-    }
 
-    // Layer 3: Contacted leads fallback from crm_leads if email_logs is empty
-    if (outboundRows.length === 0 && !unreadOnly) {
+      // Layer 3: Also include contacted leads from crm_leads not already in email_logs
       try {
         const leadRes = await pool.query(
           `SELECT (l.id + 20000000) AS id, l.id AS lead_id, l.email AS peer_email,
@@ -296,11 +302,13 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
                   'outbound' AS direction
            FROM crm_leads l
            WHERE l.email IS NOT NULL AND l.email <> '' AND l.status IN ('contacted', 'packet_sent', 'interested', 'active')
+             AND lower(l.email) NOT IN (SELECT lower(recipient_email) FROM email_logs WHERE recipient_email IS NOT NULL)
            ORDER BY l.created_at DESC`
         );
-        outboundRows = leadRes.rows || [];
+        const extraLeads = leadRes.rows || [];
+        outboundRows = [...outboundRows, ...extraLeads];
       } catch (e3) {
-        console.warn('crm_leads fallback warning:', e3.message);
+        console.warn('crm_leads extra merge warning:', e3.message);
       }
     }
 
