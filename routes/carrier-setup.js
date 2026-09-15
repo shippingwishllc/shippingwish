@@ -8,14 +8,26 @@ const { sendBrandedEmail } = require('../utils/mailer');
 const { notifyAdmins } = require('../utils/notifications');
 const { isValidEmail } = require('../utils/email-valid');
 
-// Ensure upload directory exists
-const UPLOADS_DIR = path.join(__dirname, '../uploads/carrier_onboarding');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+const os = require('os');
+
+// Ensure upload directory exists safely across local and Vercel serverless environments
+const UPLOADS_DIR = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'carrier_onboarding')
+  : path.join(__dirname, '../uploads/carrier_onboarding');
+
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.warn('[WARN] Could not create carrier_onboarding uploads directory:', e.message);
 }
 
-// Ensure onboarding_submissions table exists
+// Ensure onboarding_submissions table exists safely
+let tableChecked = false;
 async function ensureOnboardingTable() {
+  if (tableChecked) return;
+  tableChecked = true;
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS onboarding_submissions (
@@ -62,7 +74,9 @@ async function ensureOnboardingTable() {
     console.warn('[ONBOARDING_TABLE_WARN]', err.message);
   }
 }
-ensureOnboardingTable();
+
+// Run table check lazily in background
+ensureOnboardingTable().catch(() => {});
 
 // Configure multer for document uploads
 const storage = multer.diskStorage({
@@ -100,6 +114,7 @@ function escapeHtml(str) {
  */
 router.post('/submit', uploadFields, async (req, res) => {
   try {
+    await ensureOnboardingTable();
     const body = req.body || {};
 
     const companyName = String(body.company_name || '').trim();
