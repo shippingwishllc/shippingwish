@@ -29,7 +29,7 @@
         <a href="/sales-workshop/" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">📘 Sales playbook</a>
         <a href="/inbox" class="btn btn-secondary btn-sm" id="inbox-link">📬 Email <span id="inbox-unread">0</span></a>
         <a href="/sms-inbox" class="btn btn-secondary btn-sm" id="sms-inbox-link">📱 SMS <span id="sms-inbox-unread">0</span></a>
-        <button class="btn btn-primary btn-sm" id="btn-add-lead" onclick="openAddLeadModal()">
+        <button class="btn btn-primary btn-sm" id="btn-add-lead" type="button" onclick="window.openAddLeadModal ? window.openAddLeadModal() : (window.openModal ? window.openModal('add-lead-modal') : null)">
           + Add Carrier Lead
         </button>
         <div id="notif-container"></div>
@@ -308,16 +308,12 @@
         </div>
       </div>
 
-    </main>
-  </div>
-</div>
-
 <!-- ================= ADD LEAD MODAL ================= -->
 <div class="modal-backdrop" id="add-lead-modal" style="display:none;">
   <div class="modal modal-md">
     <div class="modal-header">
       <h2>+ Add Carrier Lead</h2>
-      <button onclick="closeModal('add-lead-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+      <button type="button" onclick="closeModal('add-lead-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
     </div>
     <div class="modal-body">
       <form id="add-lead-form">
@@ -379,7 +375,7 @@
   <div class="modal modal-md">
     <div class="modal-header">
       <h2>✏️ Fix contact info</h2>
-      <button onclick="closeModal('edit-contact-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+      <button type="button" onclick="closeModal('edit-contact-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
     </div>
     <div class="modal-body">
       <p style="color:var(--text-muted);margin-bottom:16px;">FMCSA sometimes lists truncated emails (e.g. <code>@gm</code> instead of <code>@gmail.com</code>). Enter the full address before sending outreach.</p>
@@ -415,7 +411,7 @@
   <div class="modal modal-md">
     <div class="modal-header">
       <h2>✉️ Send Onboarding Packet</h2>
-      <button onclick="closeModal('send-packet-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+      <button type="button" onclick="closeModal('send-packet-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
     </div>
     <div class="modal-body">
       <p style="color:var(--text-muted);margin-bottom:16px;">Send Official Carrier Onboarding Packet &amp; Setup Package from <strong>operations@shippingwish.com</strong>:</p>
@@ -457,6 +453,10 @@
         </div>
       </form>
     </div>
+  </div>
+</div>
+
+    </main>
   </div>
 </div>
 
@@ -814,26 +814,49 @@
     }
   }
 
-  function openAddLeadModal() {
-    openModal('add-lead-modal');
-  }
-
-  function openSendPacketModal(id, company, email) {
-    document.getElementById('packet-lead-id').value = id;
-    document.getElementById('packet-company').value = company;
-    document.getElementById('packet-email').value = email;
-    openModal('send-packet-modal');
-  }
-
-  function openModal(id) {
+  window.openModal = function(id) {
     const el = document.getElementById(id);
-    if (el) { el.style.display = 'flex'; el.classList.add('open'); }
-  }
+    if (el) {
+      el.style.display = 'flex';
+      el.classList.add('open');
+    }
+  };
 
-  function closeModal(id) {
+  window.closeModal = function(id) {
     const el = document.getElementById(id);
-    if (el) { el.style.display = 'none'; el.classList.remove('open'); }
-  }
+    if (el) {
+      el.style.display = 'none';
+      el.classList.remove('open');
+    }
+  };
+
+  window.openAddLeadModal = function() {
+    window.openModal('add-lead-modal');
+  };
+
+  window.openSendPacketModal = function(id, company, email) {
+    const idEl = document.getElementById('packet-lead-id');
+    const compEl = document.getElementById('packet-company');
+    const emailEl = document.getElementById('packet-email');
+    if (idEl) idEl.value = id || '';
+    if (compEl) compEl.value = company || '';
+    if (emailEl) emailEl.value = email || '';
+    window.openModal('send-packet-modal');
+  };
+
+  document.getElementById('btn-add-lead')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.openAddLeadModal();
+  });
+
+  document.querySelectorAll('.modal-backdrop').forEach(mb => {
+    mb.addEventListener('click', (e) => {
+      if (e.target === mb) {
+        mb.style.display = 'none';
+        mb.classList.remove('open');
+      }
+    });
+  });
 
   async function deleteLead(id) {
     if (confirm('Delete lead record?')) {
