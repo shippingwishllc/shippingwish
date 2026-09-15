@@ -1,11 +1,19 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { sendBrandedEmail, isUnsubscribed, fetchReceivedEmail, fetchReceivedAttachments, formatReplyFromAddress, getResend, normalizeEmail } = require('../utils/mailer');
 const { buildTemplate, verifyUnsubscribeToken, COMPANY } = require('../utils/email-templates');
 const { notifyAdmins, createNotification } = require('../utils/notifications');
 const { isValidEmail, emailValidationError } = require('../utils/email-valid');
+
+const emailUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024, files: 5 }
+});
 
 function escapeHtml(str) {
   return String(str || '')
@@ -119,7 +127,12 @@ async function handleSendOutreach(req, res) {
       template_key,
       billing_url,
       load_summary,
-      also_sms
+      also_sms,
+      custom_subject,
+      custom_message,
+      attachments,
+      attach_packet,
+      from_address
     } = req.body;
 
     if (!recipient_email) {
@@ -154,6 +167,26 @@ async function handleSendOutreach(req, res) {
       loadSummary: load_summary
     });
 
+    if (custom_subject) tpl.subject = custom_subject;
+    if (custom_message) {
+      tpl.text = custom_message;
+      tpl.html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.65;color:#0f172a;">${escapeHtml(custom_message).replace(/\n/g, '<br>')}</div>`;
+    }
+
+    let finalAttachments = Array.isArray(attachments) ? [...attachments] : [];
+    // Auto attach onboarding packet PDF if key is onboarding or explicitly requested
+    if (attach_packet !== false && (key === 'onboarding' || key === 'onboarding_packet' || attach_packet === true)) {
+      const packetPath = path.join(__dirname, '../public/downloads/Shipping-Wish-Carrier-Onboarding-Packet.pdf');
+      if (fs.existsSync(packetPath)) {
+        finalAttachments.push({
+          filename: 'Shipping-Wish-Carrier-Onboarding-Packet.pdf',
+          content: fs.readFileSync(packetPath)
+        });
+      }
+    }
+
+    const fromSender = from_address || 'Shipping Wish Operations <operations@shippingwish.com>';
+
     const sendRes = await sendBrandedEmail({
       to: toAddress,
       subject: tpl.subject,
@@ -162,7 +195,9 @@ async function handleSendOutreach(req, res) {
       leadId: lead_id || lead.id,
       sentBy: req.user.id,
       emailType: email_type || 'outreach',
-      templateKey: key
+      templateKey: key,
+      from: fromSender,
+      attachments: finalAttachments
     });
 
     if (sendRes.skipped) {
@@ -198,9 +233,10 @@ async function handleSendOutreach(req, res) {
 
     res.json({
       ok: true,
-      message: `Outreach email sent to ${toAddress}`,
+      message: `Outreach email sent to ${toAddress}${finalAttachments.length ? ' with ' + finalAttachments.length + ' attachment(s)' : ''}`,
       email_id: sendRes.id,
-      sms: smsResult
+      sms: smsResult,
+      attachments_count: finalAttachments.length
     });
   } catch (err) {
     console.error('Send outreach error:', err);
@@ -214,7 +250,65 @@ router.post('/onboarding-packet', requireAuth, (req, res) => {
   req.body.template_key = req.body.template_key || 'onboarding';
   req.body.lead_id = req.body.lead_id || req.body.leadId;
   req.body.recipient_email = req.body.recipient_email || req.body.email;
+  req.body.attach_packet = req.body.attach_packet !== false;
   return handleSendOutreach(req, res);
+});
+
+// Multipart endpoint for sending emails with file attachments (PDFs, images, agreements)
+router.post('/send-with-attachments', requireAuth, emailUpload.array('attachments', 5), async (req, res) => {
+  try {
+    const toAddress = String(req.body.to || req.body.recipient_email || req.body.email || '').trim().toLowerCase();
+    if (!toAddress || !isValidEmail(toAddress)) {
+      return res.status(400).json({ error: 'Valid recipient email is required' });
+    }
+
+    const subject = String(req.body.subject || '').trim() || 'Shipping Wish LLC — Dispatch Operations';
+    const message = String(req.body.message || req.body.body || '').trim();
+    const leadId = req.body.lead_id ? parseInt(req.body.lead_id, 10) : null;
+    const fromSender = req.body.from || 'Shipping Wish Operations <operations@shippingwish.com>';
+
+    const attachments = (req.files || []).map(f => ({
+      filename: f.originalname,
+      content: f.buffer
+    }));
+
+    if (req.body.attach_packet === 'true' || req.body.attach_packet === true) {
+      const packetPath = path.join(__dirname, '../public/downloads/Shipping-Wish-Carrier-Onboarding-Packet.pdf');
+      if (fs.existsSync(packetPath)) {
+        attachments.unshift({
+          filename: 'Shipping-Wish-Carrier-Onboarding-Packet.pdf',
+          content: fs.readFileSync(packetPath)
+        });
+      }
+    }
+
+    const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.65;color:#0f172a;">${escapeHtml(message).replace(/\n/g, '<br>')}</div>`;
+
+    const sendRes = await sendBrandedEmail({
+      to: toAddress,
+      subject,
+      html,
+      text: message,
+      leadId,
+      sentBy: req.user.id,
+      emailType: 'custom_attachment',
+      templateKey: 'custom',
+      from: fromSender,
+      attachments
+    });
+
+    if (leadId) await markLeadContacted(leadId, 'contacted');
+
+    res.json({
+      ok: true,
+      message: `Email with ${attachments.length} attachment(s) sent successfully to ${toAddress}`,
+      resend_id: sendRes.id,
+      attachments_count: attachments.length
+    });
+  } catch (err) {
+    console.error('Send with attachments error:', err);
+    res.status(500).json({ error: err.message || 'Failed to send email with attachments' });
+  }
 });
 
 // GET /api/email/logs

@@ -47,7 +47,8 @@ async function sendBrandedEmail({
   templateKey,
   cc,
   transactional,
-  from: fromOverride
+  from: fromOverride,
+  attachments
 }) {
   if (!to) throw new Error('Recipient email is required');
   const isTx = Boolean(transactional) ||
@@ -82,6 +83,16 @@ async function sendBrandedEmail({
     };
     if (headers) payload.headers = headers;
     if (cc && cc.length) payload.cc = cc;
+    if (attachments && Array.isArray(attachments) && attachments.length) {
+      payload.attachments = attachments.map(att => {
+        if (!att) return null;
+        return {
+          filename: att.filename || 'attachment',
+          content: att.content,
+          path: att.path
+        };
+      }).filter(Boolean);
+    }
     const result = await resend.emails.send(payload);
     if (result.error) {
       throw new Error(result.error.message || 'Resend send failed');

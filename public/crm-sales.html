@@ -418,20 +418,42 @@
       <button onclick="closeModal('send-packet-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
     </div>
     <div class="modal-body">
-      <p style="color:var(--text-muted);margin-bottom:16px;">Send 1-Click Carrier Dispatch Agreement &amp; Setup Package via email:</p>
+      <p style="color:var(--text-muted);margin-bottom:16px;">Send Official Carrier Onboarding Packet &amp; Setup Package from <strong>operations@shippingwish.com</strong>:</p>
       <form id="send-packet-form">
         <input type="hidden" id="packet-lead-id">
         <div class="form-group">
-          <label class="form-label" for="packet-company">Carrier Company</label>
+          <label class="form-label" for="packet-company">Carrier / Partner Company</label>
           <input type="text" id="packet-company" class="form-input" readonly style="background:rgba(255,255,255,0.05);">
         </div>
         <div class="form-group">
           <label class="form-label required" for="packet-email">Recipient Email</label>
           <input type="email" id="packet-email" class="form-input" required>
         </div>
-        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:12px 14px;margin:14px 0;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text-main);cursor:pointer;">
+            <input type="checkbox" id="packet-attach-pdf" checked style="accent-color:#f59e0b;width:16px;height:16px;">
+            <span>📎 Attach Carrier Onboarding Packet (PDF)</span>
+          </label>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;padding-left:24px;">
+            Shipping-Wish-Carrier-Onboarding-Packet.pdf (3-Page Checklist, Profile &amp; POA)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="packet-custom-file">Attach Additional File (Signed Agreement, Image, etc.)</label>
+          <input type="file" id="packet-custom-file" class="form-input" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" style="padding:6px 10px;">
+          <small style="color:var(--text-muted);font-size:11px;">Supports PDF, PNG, JPG, or Word docs (up to 15MB).</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="packet-custom-notes">Custom Message / Note (Optional)</label>
+          <textarea id="packet-custom-notes" class="form-input" rows="3" placeholder="Add any custom instructions, partner agreement confirmation, or rate notes..."></textarea>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;">
           <button type="button" onclick="closeModal('send-packet-modal')" class="btn btn-secondary">Cancel</button>
-          <button type="submit" class="btn btn-primary">🚀 Send Onboarding Email →</button>
+          <button type="submit" id="btn-submit-packet" class="btn btn-primary">🚀 Send Email with Attachments →</button>
         </div>
       </form>
     </div>
@@ -884,24 +906,71 @@
     e.preventDefault();
     const leadId = document.getElementById('packet-lead-id').value;
     const email = document.getElementById('packet-email').value.trim();
+    const attachPdf = document.getElementById('packet-attach-pdf').checked;
+    const fileInput = document.getElementById('packet-custom-file');
+    const customNotes = document.getElementById('packet-custom-notes').value.trim();
+    const btn = document.getElementById('btn-submit-packet');
+
     if (!isValidEmail(email)) {
       alert(emailHint(email));
       return;
     }
 
-    const res = await fetch('/api/email/onboarding-packet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ leadId, email, template_key: 'onboarding' })
-    });
-    if (res.ok) {
-      alert('Setup email sent.');
-      closeModal('send-packet-modal');
-      loadLeads();
-    } else {
+    btn.disabled = true;
+    btn.textContent = '⏳ Sending Email & Attachments...';
+
+    try {
+      const hasCustomFile = fileInput && fileInput.files && fileInput.files.length > 0;
+      let res;
+
+      if (hasCustomFile || customNotes) {
+        // Send via multipart attachments endpoint
+        const formData = new FormData();
+        formData.append('recipient_email', email);
+        formData.append('lead_id', leadId);
+        formData.append('attach_packet', attachPdf ? 'true' : 'false');
+        formData.append('subject', 'Shipping Wish LLC — Carrier Onboarding Packet & Setup');
+        formData.append('message', customNotes || 'Please find attached our official carrier onboarding packet and compliance checklist.');
+        formData.append('from', 'Shipping Wish Operations <operations@shippingwish.com>');
+        if (hasCustomFile) {
+          for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('attachments', fileInput.files[i]);
+          }
+        }
+        res = await fetch('/api/email/send-with-attachments', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
+      } else {
+        // Standard packet endpoint (auto-attaches onboarding packet PDF)
+        res = await fetch('/api/email/onboarding-packet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            leadId,
+            email,
+            template_key: 'onboarding',
+            attach_packet: attachPdf,
+            from_address: 'Shipping Wish Operations <operations@shippingwish.com>'
+          })
+        });
+      }
+
       const data = await res.json().catch(() => ({}));
-      alert(data.message || data.error || 'Could not send email. Check RESEND_API_KEY and MAIL_FROM.');
+      if (res.ok) {
+        alert(data.message || 'Carrier onboarding email with attachments sent successfully!');
+        closeModal('send-packet-modal');
+        loadLeads();
+      } else {
+        alert(data.message || data.error || 'Could not send email. Check RESEND_API_KEY and MAIL_FROM.');
+      }
+    } catch (err) {
+      alert('Error sending email: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🚀 Send Email with Attachments →';
     }
   });
 
