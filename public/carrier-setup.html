@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Carrier Setup & Onboarding | Shipping Wish LLC</title>
+  <meta name="description" content="Online carrier setup portal for motor carriers. Submit MC authority, insurance COI, W-9, fleet profile, and digital signature for instant dispatch onboarding.">
+  <link rel="canonical" href="https://www.shippingwish.com/carrier-setup">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.shippingwish.com/carrier-setup">
+  <meta property="og:title" content="Digital Carrier Setup & Fast-Track Onboarding | Shipping Wish LLC">
+  <meta property="og:description" content="Instant digital onboarding for motor carriers. Upload compliance documents, sign online, and activate 24/7 dispatch within 2 hours.">
+  <meta property="og:image" content="https://www.shippingwish.com/images/og-image.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/marketing.css">
+  <style>
+    .setup-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+    .setup-hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .setup-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(234, 179, 8, 0.15);
+      border: 1px solid rgba(234, 179, 8, 0.35);
+      color: #facc15;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .setup-title {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .setup-subtitle {
+      font-size: 16px;
+      color: #94a3b8;
+      max-width: 680px;
+      margin: 0 auto 24px;
+      line-height: 1.6;
+    }
+
+    /* Trust highlights */
+    .setup-highlights {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .setup-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 14px;
+      border-radius: 6px;
+    }
+
+    /* Wizard steps navigation */
+    .wizard-steps {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      margin: 32px 0 40px;
+    }
+    .wizard-steps::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 40px;
+      right: 40px;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      z-index: 1;
+    }
+    .wizard-progress-line {
+      position: absolute;
+      top: 20px;
+      left: 40px;
+      width: 0%;
+      height: 3px;
+      background: #eab308;
+      z-index: 2;
+      transition: width 0.3s ease;
+    }
+    .step-item {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: default;
+    }
+    .step-circle {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #0f172a;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+    .step-item.active .step-circle {
+      background: #eab308;
+      border-color: #eab308;
+      color: #0a192f;
+      box-shadow: 0 0 16px rgba(234, 179, 8, 0.4);
+    }
+    .step-item.completed .step-circle {
+      background: #10b981;
+      border-color: #10b981;
+      color: #ffffff;
+    }
+    .step-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-align: center;
+    }
+    .step-item.active .step-label {
+      color: #facc15;
+    }
+    .step-item.completed .step-label {
+      color: #e2e8f0;
+    }
+
+    /* Form Container */
+    .wizard-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      padding: 36px 32px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+    @media (max-width: 640px) {
+      .wizard-card { padding: 24px 18px; }
+      .wizard-steps::before { left: 20px; right: 20px; }
+      .step-label { font-size: 11px; }
+    }
+
+    .section-heading {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-subheading {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    /* Form Grids */
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .form-group label .req {
+      color: #ef4444;
+      font-weight: 700;
+      margin-left: 2px;
+    }
+    .form-group label .opt {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: normal;
+    }
+    .form-control {
+      background: rgba(2, 6, 23, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 14px;
+      color: #ffffff;
+      transition: all 0.2s;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: #eab308;
+      box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2);
+    }
+    .form-control::placeholder {
+      color: #475569;
+    }
+    select.form-control option {
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    /* Equipment Selection Grid */
+    .equip-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .equip-card {
+      background: rgba(2, 6, 23, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .equip-card:hover {
+      border-color: rgba(234, 179, 8, 0.5);
+      background: rgba(234, 179, 8, 0.05);
+    }
+    .equip-card.selected {
+      border-color: #eab308;
+      background: rgba(234, 179, 8, 0.12);
+    }
+    .equip-card input[type="checkbox"] {
+      accent-color: #eab308;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    .equip-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    /* File Dropzone */
+    .upload-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+    .dropzone {
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      background: rgba(2, 6, 23, 0.4);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: #eab308;
+      background: rgba(234, 179, 8, 0.05);
+    }
+    .dropzone.has-file {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .dropzone input[type="file"] {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .dz-icon {
+      font-size: 26px;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .dz-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .dz-hint {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+    .dz-filename {
+      font-size: 12px;
+      color: #34d399;
+      font-weight: 600;
+      margin-top: 6px;
+      word-break: break-all;
+    }
+
+    /* Agreement box */
+    .legal-box {
+      background: rgba(2, 6, 23, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 12px;
+      color: #94a3b8;
+      height: 140px;
+      overflow-y: auto;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .legal-box h4 {
+      color: #e2e8f0;
+      margin: 10px 0 4px;
+      font-size: 12px;
+    }
+    .legal-box p {
+      margin-bottom: 8px;
+    }
+
+    /* Signature Area */
+    .sig-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .sig-tab {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .sig-tab.active {
+      background: #eab308;
+      border-color: #eab308;
+      color: #0a192f;
+    }
+    .canvas-container {
+      position: relative;
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    #signature-canvas {
+      width: 100%;
+      height: 140px;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .typed-sig-container {
+      display: none;
+      margin-bottom: 8px;
+    }
+    .typed-preview {
+      font-family: 'Brush Script MT', 'Dancing Script', 'Pacifico', cursive, sans-serif;
+      font-size: 32px;
+      color: #0f172a;
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 8px;
+      text-align: center;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+    }
+    .sig-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .btn-clear-sig {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .btn-clear-sig:hover {
+      color: #f87171;
+    }
+
+    /* Checkbox acknowledgment */
+    .ack-group {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 20px 0;
+      padding: 14px;
+      background: rgba(234, 179, 8, 0.05);
+      border: 1px solid rgba(234, 179, 8, 0.2);
+      border-radius: 8px;
+    }
+    .ack-group input[type="checkbox"] {
+      margin-top: 3px;
+      width: 18px;
+      height: 18px;
+      accent-color: #eab308;
+      cursor: pointer;
+    }
+    .ack-group label {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.5;
+      cursor: pointer;
+    }
+
+    /* Buttons */
+    .wizard-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .btn-next {
+      background: #eab308;
+      color: #0a192f;
+      font-weight: 700;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-next:hover {
+      background: #facc15;
+      box-shadow: 0 0 16px rgba(234, 179, 8, 0.4);
+    }
+    .btn-prev {
+      background: rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      font-weight: 600;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-prev:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+    }
+
+    /* Success Screen */
+    .success-panel {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background: #10b981;
+      color: #ffffff;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin-bottom: 24px;
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+    }
+    .success-panel h2 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 12px;
+    }
+    .success-panel p {
+      font-size: 16px;
+      color: #94a3b8;
+      max-width: 580px;
+      margin: 0 auto 28px;
+      line-height: 1.6;
+    }
+    .success-summary {
+      background: rgba(2, 6, 23, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 520px;
+      margin: 0 auto 32px;
+      text-align: left;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 14px;
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-label { color: #64748b; }
+    .summary-val { color: #f8fafc; font-weight: 600; }
+
+    /* Alert / Validation Error */
+    .alert-banner {
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body class="marketing">
+<nav class="nav" role="navigation" aria-label="Main navigation"></nav>
+
+<div class="setup-wrap">
+  <div class="setup-hero">
+    <div class="setup-badge">⚡ 24/7 Motor Carrier Onboarding</div>
+    <h1 class="setup-title">Digital Carrier Setup & Fast-Track Dispatch</h1>
+    <p class="setup-subtitle">
+      Complete your carrier agreement, upload your active MC authority &amp; COI, and activate your dedicated operations manager in under 5 minutes. 100% digital — keep all broker rate confirmations directly.
+    </p>
+    <div class="setup-highlights">
+      <span class="setup-pill">✓ Instant Packet Counter-Signed</span>
+      <span class="setup-pill">✓ Keep 100% Broker Pay</span>
+      <span class="setup-pill">✓ 2-Hour Dispatch Assignment SLA</span>
+      <span class="setup-pill">📞 24/7 Hotline: +1 (551) 400-6300</span>
+    </div>
+  </div>
+
+  <!-- Wizard Step Indicator -->
+  <div class="wizard-steps" id="wizard-steps-bar">
+    <div class="wizard-progress-line" id="wizard-progress"></div>
+    <div class="step-item active" id="step-indicator-1">
+      <div class="step-circle">1</div>
+      <div class="step-label">Carrier Profile</div>
+    </div>
+    <div class="step-item" id="step-indicator-2">
+      <div class="step-circle">2</div>
+      <div class="step-label">Fleet &amp; Authority</div>
+    </div>
+    <div class="step-item" id="step-indicator-3">
+      <div class="step-circle">3</div>
+      <div class="step-label">Documents &amp; Sign</div>
+    </div>
+  </div>
+
+  <!-- Error banner -->
+  <div class="alert-banner" id="form-error-banner"></div>
+
+  <!-- Form Wizard Card -->
+  <div class="wizard-card">
+    <form id="carrier-setup-form" novalidate enctype="multipart/form-data">
+      
+      <!-- ================= STEP 1: COMPANY PROFILE ================= -->
+      <div class="wizard-step-pane" id="step-pane-1">
+        <div class="section-heading">🏢 Carrier Company Information</div>
+        <div class="section-subheading">Enter your official motor carrier business details as registered with FMCSA.</div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="company_name">Legal Company / Carrier Name <span class="req">*</span></label>
+            <input type="text" id="company_name" name="company_name" class="form-control" placeholder="e.g. Apex Express Freight LLC" required>
+          </div>
+          <div class="form-group">
+            <label for="dba">DBA (Doing Business As) <span class="opt">(Optional)</span></label>
+            <input type="text" id="dba" name="dba" class="form-control" placeholder="e.g. Apex Logistics">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="owner_name">Authorized Officer / Owner Name <span class="req">*</span></label>
+            <input type="text" id="owner_name" name="owner_name" class="form-control" placeholder="e.g. John Miller" required>
+          </div>
+          <div class="form-group">
+            <label for="title">Title / Role <span class="req">*</span></label>
+            <input type="text" id="title" name="title" class="form-control" value="Owner / Authorized Representative" required>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="email">Official Dispatch Email <span class="req">*</span></label>
+            <input type="email" id="email" name="email" class="form-control" placeholder="dispatch@yourcompany.com" required>
+          </div>
+          <div class="form-group">
+            <label for="billing_email">Accounting / Invoicing Email <span class="opt">(Optional)</span></label>
+            <input type="email" id="billing_email" name="billing_email" class="form-control" placeholder="billing@yourcompany.com">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="phone">Primary Phone Number <span class="req">*</span></label>
+            <input type="tel" id="phone" name="phone" class="form-control" placeholder="e.g. (555) 123-4567" required>
+          </div>
+          <div class="form-group">
+            <label for="emergency_phone">24/7 Emergency / After-Hours Line <span class="opt">(Optional)</span></label>
+            <input type="tel" id="emergency_phone" name="emergency_phone" class="form-control" placeholder="e.g. (555) 987-6543">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label for="address">Physical Business Street Address <span class="req">*</span></label>
+          <input type="text" id="address" name="address" class="form-control" placeholder="123 Trucking Way, Suite 100" required>
+        </div>
+
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label for="city">City <span class="req">*</span></label>
+            <input type="text" id="city" name="city" class="form-control" placeholder="Dallas" required>
+          </div>
+          <div class="form-group">
+            <label for="state">State <span class="req">*</span></label>
+            <select id="state" name="state" class="form-control" required>
+              <option value="">Select State</option>
+              <option value="AL">Alabama</option><option value="AK">Alaska</option><option value="AZ">Arizona</option>
+              <option value="AR">Arkansas</option><option value="CA">California</option><option value="CO">Colorado</option>
+              <option value="CT">Connecticut</option><option value="DE">Delaware</option><option value="FL">Florida</option>
+              <option value="GA">Georgia</option><option value="HI">Hawaii</option><option value="ID">Idaho</option>
+              <option value="IL">Illinois</option><option value="IN">Indiana</option><option value="IA">Iowa</option>
+              <option value="KS">Kansas</option><option value="KY">Kentucky</option><option value="LA">Louisiana</option>
+              <option value="ME">Maine</option><option value="MD">Maryland</option><option value="MA">Massachusetts</option>
+              <option value="MI">Michigan</option><option value="MN">Minnesota</option><option value="MS">Mississippi</option>
+              <option value="MO">Missouri</option><option value="MT">Montana</option><option value="NE">Nebraska</option>
+              <option value="NV">Nevada</option><option value="NH">New Hampshire</option><option value="NJ">New Jersey</option>
+              <option value="NM">New Mexico</option><option value="NY">New York</option><option value="NC">North Carolina</option>
+              <option value="ND">North Dakota</option><option value="OH">Ohio</option><option value="OK">Oklahoma</option>
+              <option value="OR">Oregon</option><option value="PA">Pennsylvania</option><option value="RI">Rhode Island</option>
+              <option value="SC">South Carolina</option><option value="SD">South Dakota</option><option value="TN">Tennessee</option>
+              <option value="TX">Texas</option><option value="UT">Utah</option><option value="VT">Vermont</option>
+              <option value="VA">Virginia</option><option value="WA">Washington</option><option value="WV">West Virginia</option>
+              <option value="WI">Wisconsin</option><option value="WY">Wyoming</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="zip">ZIP Code <span class="req">*</span></label>
+            <input type="text" id="zip" name="zip" class="form-control" placeholder="75001" required>
+          </div>
+        </div>
+
+        <div class="wizard-actions">
+          <div></div>
+          <button type="button" class="btn-next" onclick="goToStep(2)">
+            Continue to Step 2: Fleet &amp; Authority →
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= STEP 2: FLEET & AUTHORITY ================= -->
+      <div class="wizard-step-pane" id="step-pane-2" style="display: none;">
+        <div class="section-heading">🚛 Operating Authority &amp; Fleet Specs</div>
+        <div class="section-subheading">Help your dedicated dispatcher source top-paying loads tailored to your equipment and lane preferences.</div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="mc_number">MC / FF Number <span class="req">*</span></label>
+            <input type="text" id="mc_number" name="mc_number" class="form-control" placeholder="e.g. 1234567" required>
+          </div>
+          <div class="form-group">
+            <label for="dot_number">USDOT Number <span class="req">*</span></label>
+            <input type="text" id="dot_number" name="dot_number" class="form-control" placeholder="e.g. 3849102" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label>Equipment Types Operated <span class="req">*</span> <span class="opt">(Select all that apply)</span></label>
+        </div>
+        <div class="equip-grid">
+          <label class="equip-card selected">
+            <input type="checkbox" name="equipment_types" value="53ft Dry Van" checked>
+            <span class="equip-name">53' Dry Van</span>
+          </label>
+          <label class="equip-card">
+            <input type="checkbox" name="equipment_types" value="53ft Reefer">
+            <span class="equip-name">53' Reefer</span>
+          </label>
+          <label class="equip-card">
+            <input type="checkbox" name="equipment_types" value="Flatbed">
+            <span class="equip-name">Flatbed (48'/53')</span>
+          </label>
+          <label class="equip-card">
+            <input type="checkbox" name="equipment_types" value="Stepdeck">
+            <span class="equip-name">Step Deck / Drop</span>
+          </label>
+          <label class="equip-card">
+            <input type="checkbox" name="equipment_types" value="Box Truck">
+            <span class="equip-name">26' Box Truck</span>
+          </label>
+          <label class="equip-card">
+            <input type="checkbox" name="equipment_types" value="Power Only">
+            <span class="equip-name">Power Only</span>
+          </label>
+        </div>
+
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label for="num_trucks">Active Trucks <span class="req">*</span></label>
+            <input type="number" id="num_trucks" name="num_trucks" class="form-control" min="1" value="1" required>
+          </div>
+          <div class="form-group">
+            <label for="num_drivers">Active Drivers <span class="req">*</span></label>
+            <input type="number" id="num_drivers" name="num_drivers" class="form-control" min="1" value="1" required>
+          </div>
+          <div class="form-group">
+            <label for="max_payload">Max Payload (lbs)</label>
+            <input type="text" id="max_payload" name="max_payload" class="form-control" value="45,000 lbs">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="eld_provider">ELD / Telematics System <span class="opt">(Optional)</span></label>
+            <input type="text" id="eld_provider" name="eld_provider" class="form-control" placeholder="e.g. Samsara, Motive, KeepTruckin">
+          </div>
+          <div class="form-group">
+            <label for="factoring_company">Factoring Company Name <span class="opt">(Optional)</span></label>
+            <input type="text" id="factoring_company" name="factoring_company" class="form-control" placeholder="e.g. Apex, RTS, TBS (or QuickPay)">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="preferred_lanes">Preferred Operating States / Lanes <span class="opt">(Optional)</span></label>
+            <input type="text" id="preferred_lanes" name="preferred_lanes" class="form-control" placeholder="e.g. Midwest, Southeast, TX to OH, All 48">
+          </div>
+          <div class="form-group">
+            <label for="excluded_states">Excluded States / Areas <span class="opt">(Optional)</span></label>
+            <input type="text" id="excluded_states" name="excluded_states" class="form-control" placeholder="e.g. NYC Burroughs, CA, CO mountains">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label for="min_rpm">Target Minimum Rate Per Mile (RPM) <span class="opt">(Optional)</span></label>
+          <input type="text" id="min_rpm" name="min_rpm" class="form-control" placeholder="e.g. $2.50/mile (we always push for maximum market rate)">
+        </div>
+
+        <div class="wizard-actions">
+          <button type="button" class="btn-prev" onclick="goToStep(1)">← Back to Profile</button>
+          <button type="button" class="btn-next" onclick="goToStep(3)">
+            Continue to Step 3: Documents &amp; Sign →
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= STEP 3: DOCUMENTS & SIGN ================= -->
+      <div class="wizard-step-pane" id="step-pane-3" style="display: none;">
+        <div class="section-heading">📄 Compliance Documents &amp; Digital Signature</div>
+        <div class="section-subheading">Upload your compliance files and sign the dispatch authorization online.</div>
+
+        <div class="upload-grid">
+          <!-- MC Authority -->
+          <div class="dropzone" id="dz-mc">
+            <input type="file" id="file_mc_cert" name="mc_cert" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileSelect(this, 'dz-mc', 'file-name-mc')">
+            <span class="dz-icon">📜</span>
+            <div class="dz-title">FMCSA Authority Certificate <span class="req">*</span></div>
+            <div class="dz-hint">Click or drag &amp; drop MC Certificate (PDF or Image)</div>
+            <div class="dz-filename" id="file-name-mc"></div>
+          </div>
+
+          <!-- Insurance COI -->
+          <div class="dropzone" id="dz-coi">
+            <input type="file" id="file_coi" name="coi" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileSelect(this, 'dz-coi', 'file-name-coi')">
+            <span class="dz-icon">🛡️</span>
+            <div class="dz-title">Certificate of Insurance (COI) <span class="req">*</span></div>
+            <div class="dz-hint">Min $1M Auto / $100K Cargo. Holder: Shipping Wish LLC</div>
+            <div class="dz-filename" id="file-name-coi"></div>
+          </div>
+
+          <!-- W9 Form -->
+          <div class="dropzone" id="dz-w9">
+            <input type="file" id="file_w9" name="w9" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileSelect(this, 'dz-w9', 'file-name-w9')">
+            <span class="dz-icon">📝</span>
+            <div class="dz-title">Signed Form W-9 <span class="req">*</span></div>
+            <div class="dz-hint">Signed IRS W-9 with matching FEIN / SSN</div>
+            <div class="dz-filename" id="file-name-w9"></div>
+          </div>
+
+          <!-- Factoring NOA -->
+          <div class="dropzone" id="dz-noa">
+            <input type="file" id="file_noa" name="noa" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileSelect(this, 'dz-noa', 'file-name-noa')">
+            <span class="dz-icon">🏦</span>
+            <div class="dz-title">Factoring NOA / Void Check <span class="opt">(Optional)</span></div>
+            <div class="dz-hint">Notice of Assignment or direct deposit info</div>
+            <div class="dz-filename" id="file-name-noa"></div>
+          </div>
+        </div>
+
+        <!-- Agreement Terms Box -->
+        <div class="form-group">
+          <label>Carrier Dispatch Agreement &amp; Limited Power of Attorney (Summary)</label>
+          <div class="legal-box">
+            <h4>1. APPOINTMENT &amp; LIMITED POWER OF ATTORNEY</h4>
+            <p>Carrier hereby appoints Shipping Wish LLC ("Dispatcher") as its authorized agent to contact brokers and shippers, secure freight tenders, negotiate spot rates, execute rate confirmations in Carrier's name, and process check calls. Dispatcher does not purchase or broker freight.</p>
+            <h4>2. CARRIER SETTLEMENT &amp; PAYMENT</h4>
+            <p>Carrier bills and collects 100% of freight charges directly from brokers or shippers (or through Carrier's factoring provider). Shipping Wish LLC receives compensation strictly via agreed flat weekly operations management subscription or dispatch service fee as agreed.</p>
+            <h4>3. SAFETY &amp; FMCSA COMPLIANCE</h4>
+            <p>Carrier warrants that it maintains active FMCSA operating authority and required liability and cargo insurance at all times. Carrier drivers retain sole discretion over safe driving hours and vehicle safety.</p>
+            <h4>4. TERM &amp; TERMINATION</h4>
+            <p>This agreement may be cancelled by either party with written notice at any time without long-term penalty.</p>
+          </div>
+        </div>
+
+        <!-- Digital Signature -->
+        <div class="form-group">
+          <label>Authorized Digital Signature <span class="req">*</span></label>
+          <div class="sig-tabs">
+            <button type="button" class="sig-tab active" id="tab-sig-draw" onclick="setSigMode('draw')">✍️ Draw Signature</button>
+            <button type="button" class="sig-tab" id="tab-sig-type" onclick="setSigMode('type')">⌨️ Type Legal Name</button>
+          </div>
+
+          <!-- Canvas Draw -->
+          <div class="canvas-container" id="canvas-wrapper">
+            <canvas id="signature-canvas"></canvas>
+          </div>
+
+          <!-- Type Signature -->
+          <div class="typed-sig-container" id="typed-sig-wrapper">
+            <input type="text" id="typed-sig-input" class="form-control" style="background:#fff;color:#0f172a;font-weight:700;margin-bottom:8px;" placeholder="Type your full legal name to sign" oninput="updateTypedPreview()">
+            <div class="typed-preview" id="typed-preview-text">Your Signature</div>
+          </div>
+
+          <div class="sig-actions">
+            <button type="button" class="btn-clear-sig" id="btn-clear" onclick="clearSignature()">Clear Signature</button>
+            <span style="font-size:12px;color:#64748b;">Finger / Stylus / Mouse supported</span>
+          </div>
+        </div>
+
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label for="signer_name">Signer Legal Full Name <span class="req">*</span></label>
+            <input type="text" id="signer_name" name="signer_name" class="form-control" placeholder="e.g. John Miller" required>
+          </div>
+          <div class="form-group">
+            <label for="signer_title">Signer Title <span class="req">*</span></label>
+            <input type="text" id="signer_title" name="signer_title" class="form-control" value="Authorized Officer" required>
+          </div>
+          <div class="form-group">
+            <label for="sign_date">Execution Date</label>
+            <input type="text" id="sign_date" class="form-control" readonly style="opacity:0.75;">
+          </div>
+        </div>
+
+        <div class="ack-group">
+          <input type="checkbox" id="agree_terms" name="agree_terms" required>
+          <label for="agree_terms">
+            <strong>I hereby authorize Shipping Wish LLC</strong> to act as our dedicated dispatch agent pursuant to the terms above. I certify under penalty of perjury that I am authorized to execute agreements on behalf of this carrier and that all insurance and authority information provided is true and accurate.
+          </label>
+        </div>
+
+        <div class="wizard-actions">
+          <button type="button" class="btn-prev" onclick="goToStep(2)">← Back to Fleet</button>
+          <button type="submit" class="btn-next" id="btn-submit-setup">
+            <span id="submit-btn-text">Submit &amp; Activate Dispatch →</span>
+            <span id="submit-btn-spinner" style="display:none;">⏳ Submitting Packet...</span>
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- ================= SUCCESS CONFIRMATION ================= -->
+    <div class="success-panel" id="setup-success-panel">
+      <div class="success-icon">✓</div>
+      <h2>Carrier Onboarding Completed!</h2>
+      <p>
+        Your digital setup packet has been counter-signed and registered with <strong>Shipping Wish LLC</strong>. An official confirmation email with your completed onboarding agreement has been dispatched.
+      </p>
+
+      <div class="success-summary">
+        <div class="summary-row">
+          <span class="summary-label">Carrier Legal Name:</span>
+          <span class="summary-val" id="res-company-name">-</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Operating Authority:</span>
+          <span class="summary-val" id="res-mc-number">-</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Status:</span>
+          <span class="summary-val" style="color:#10b981;">✓ Packet Verified &amp; Active</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Dedicated Dispatcher SLA:</span>
+          <span class="summary-val" style="color:#facc15;">Within 2 Hours</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">24/7 Dispatch Desk:</span>
+          <span class="summary-val">+1 (551) 400-6300</span>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+        <a href="/downloads/Shipping-Wish-Carrier-Onboarding-Packet.pdf" class="btn btn-primary btn-xl" target="_blank" download>
+          📄 Download Onboarding Packet (PDF)
+        </a>
+        <a href="/" class="btn btn-secondary btn-xl">
+          Return to Home
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer" role="contentinfo"></footer>
+
+<script src="/js/site-chrome.js"></script>
+<script>
+  let currentStep = 1;
+  let sigMode = 'draw';
+  let canvas, ctx;
+  let isDrawing = false;
+  let hasDrawn = false;
+
+  // Set today's date
+  document.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const dateInput = document.getElementById('sign_date');
+    if (dateInput) dateInput.value = today;
+
+    initSignatureCanvas();
+
+    // Auto-fill signer name from owner name
+    const ownerInput = document.getElementById('owner_name');
+    const signerInput = document.getElementById('signer_name');
+    const typedSigInput = document.getElementById('typed-sig-input');
+    if (ownerInput && signerInput) {
+      ownerInput.addEventListener('input', () => {
+        if (!signerInput.value || signerInput.dataset.touched !== 'true') {
+          signerInput.value = ownerInput.value;
+        }
+        if (typedSigInput && !typedSigInput.value) {
+          typedSigInput.value = ownerInput.value;
+          updateTypedPreview();
+        }
+      });
+      signerInput.addEventListener('input', () => {
+        signerInput.dataset.touched = 'true';
+      });
+    }
+
+    // Toggle equip card styles
+    document.querySelectorAll('.equip-card input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        cb.closest('.equip-card').classList.toggle('selected', cb.checked);
+      });
+    });
+  });
+
+  function initSignatureCanvas() {
+    canvas = document.getElementById('signature-canvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+
+    // Resize canvas based on display width
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0) {
+        canvas.width = rect.width * 2;
+        canvas.height = 280;
+        ctx.scale(2, 2);
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      }
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    function getCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function startDraw(e) {
+      isDrawing = true;
+      hasDrawn = true;
+      const pos = getCoords(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      e.preventDefault();
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      const pos = getCoords(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      e.preventDefault();
+    }
+
+    function stopDraw(e) {
+      if (isDrawing) {
+        ctx.closePath();
+        isDrawing = false;
+      }
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDraw);
+
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    window.addEventListener('touchend', stopDraw);
+  }
+
+  function clearSignature() {
+    if (ctx && canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasDrawn = false;
+    }
+    const typed = document.getElementById('typed-sig-input');
+    if (typed) {
+      typed.value = '';
+      updateTypedPreview();
+    }
+  }
+
+  function setSigMode(mode) {
+    sigMode = mode;
+    document.getElementById('tab-sig-draw').classList.toggle('active', mode === 'draw');
+    document.getElementById('tab-sig-type').classList.toggle('active', mode === 'type');
+
+    document.getElementById('canvas-wrapper').style.display = mode === 'draw' ? 'block' : 'none';
+    document.getElementById('typed-sig-wrapper').style.display = mode === 'type' ? 'block' : 'none';
+  }
+
+  function updateTypedPreview() {
+    const val = document.getElementById('typed-sig-input').value.trim();
+    document.getElementById('typed-preview-text').textContent = val || 'Your Signature';
+  }
+
+  function handleFileSelect(input, dropzoneId, labelId) {
+    const dz = document.getElementById(dropzoneId);
+    const label = document.getElementById(labelId);
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      dz.classList.add('has-file');
+      label.textContent = `✓ ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+    } else {
+      dz.classList.remove('has-file');
+      label.textContent = '';
+    }
+  }
+
+  function showError(msg) {
+    const banner = document.getElementById('form-error-banner');
+    banner.textContent = msg;
+    banner.style.display = 'block';
+    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function hideError() {
+    const banner = document.getElementById('form-error-banner');
+    banner.style.display = 'none';
+    banner.textContent = '';
+  }
+
+  function validateStep(step) {
+    hideError();
+    if (step === 1) {
+      const comp = document.getElementById('company_name').value.trim();
+      const owner = document.getElementById('owner_name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const addr = document.getElementById('address').value.trim();
+      const city = document.getElementById('city').value.trim();
+      const state = document.getElementById('state').value.trim();
+      const zip = document.getElementById('zip').value.trim();
+
+      if (!comp) { showError('Please enter your Carrier / Company Legal Name'); return false; }
+      if (!owner) { showError('Please enter the Authorized Officer / Owner Name'); return false; }
+      if (!email || !email.includes('@')) { showError('Please enter a valid official dispatch email'); return false; }
+      if (!phone) { showError('Please enter a valid business phone number'); return false; }
+      if (!addr || !city || !state || !zip) { showError('Please complete your full business physical address'); return false; }
+      return true;
+    }
+
+    if (step === 2) {
+      const mc = document.getElementById('mc_number').value.trim();
+      const dot = document.getElementById('dot_number').value.trim();
+      if (!mc && !dot) { showError('Please provide at least your MC# or USDOT#'); return false; }
+
+      const equipChecked = document.querySelectorAll('input[name="equipment_types"]:checked');
+      if (equipChecked.length === 0) { showError('Please select at least one equipment type operated'); return false; }
+      return true;
+    }
+
+    if (step === 3) {
+      const mcFile = document.getElementById('file_mc_cert').files[0];
+      const coiFile = document.getElementById('file_coi').files[0];
+      const w9File = document.getElementById('file_w9').files[0];
+      const signer = document.getElementById('signer_name').value.trim();
+      const agreed = document.getElementById('agree_terms').checked;
+
+      if (!mcFile) { showError('Please attach your FMCSA Operating Authority Certificate'); return false; }
+      if (!coiFile) { showError('Please attach your Certificate of Insurance (COI)'); return false; }
+      if (!w9File) { showError('Please attach your signed Form W-9'); return false; }
+
+      if (sigMode === 'draw' && !hasDrawn) {
+        showError('Please sign your signature on the signature pad'); return false;
+      }
+      if (sigMode === 'type' && !document.getElementById('typed-sig-input').value.trim()) {
+        showError('Please type your full legal name in the signature box'); return false;
+      }
+      if (!signer) { showError('Please enter the signer legal full name'); return false; }
+      if (!agreed) { showError('You must acknowledge the dispatch authorization agreement to proceed'); return false; }
+      return true;
+    }
+    return true;
+  }
+
+  function goToStep(step) {
+    if (step > currentStep && !validateStep(currentStep)) {
+      return;
+    }
+    hideError();
+
+    document.querySelectorAll('.wizard-step-pane').forEach(p => p.style.display = 'none');
+    document.getElementById(`step-pane-${step}`).style.display = 'block';
+
+    // Update indicators
+    for (let i = 1; i <= 3; i++) {
+      const ind = document.getElementById(`step-indicator-${i}`);
+      ind.classList.remove('active', 'completed');
+      if (i < step) ind.classList.add('completed');
+      if (i === step) ind.classList.add('active');
+    }
+
+    // Update progress line
+    const progress = document.getElementById('wizard-progress');
+    if (step === 1) progress.style.width = '0%';
+    if (step === 2) progress.style.width = '50%';
+    if (step === 3) progress.style.width = '100%';
+
+    currentStep = step;
+    window.scrollTo({ top: document.querySelector('.wizard-card').offsetTop - 80, behavior: 'smooth' });
+  }
+
+  // Handle Form Submission
+  document.getElementById('carrier-setup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!validateStep(3)) return;
+
+    const btnSubmit = document.getElementById('btn-submit-setup');
+    const textSpan = document.getElementById('submit-btn-text');
+    const spinnerSpan = document.getElementById('submit-btn-spinner');
+
+    btnSubmit.disabled = true;
+    textSpan.style.display = 'none';
+    spinnerSpan.style.display = 'inline';
+
+    try {
+      const form = document.getElementById('carrier-setup-form');
+      const formData = new FormData(form);
+
+      // Collect equipment types as array or list
+      const selectedEquips = Array.from(document.querySelectorAll('input[name="equipment_types"]:checked')).map(c => c.value);
+      formData.delete('equipment_types');
+      selectedEquips.forEach(eq => formData.append('equipment_types', eq));
+
+      // Append signature data
+      formData.append('signature_type', sigMode);
+      if (sigMode === 'draw') {
+        const dataUrl = canvas.toDataURL('image/png');
+        formData.append('signature_data', dataUrl);
+      } else {
+        const typedVal = document.getElementById('typed-sig-input').value.trim();
+        formData.append('signature_data', typedVal);
+      }
+
+      const res = await fetch('/api/carrier-setup/submit', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Failed to submit onboarding packet');
+      }
+
+      // Show success
+      document.getElementById('carrier-setup-form').style.display = 'none';
+      document.getElementById('wizard-steps-bar').style.display = 'none';
+      document.getElementById('form-error-banner').style.display = 'none';
+
+      document.getElementById('res-company-name').textContent = data.company_name || document.getElementById('company_name').value;
+      document.getElementById('res-mc-number').textContent = `MC# ${data.mc_number || document.getElementById('mc_number').value}`;
+      document.getElementById('setup-success-panel').style.display = 'block';
+
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    } catch (err) {
+      console.error(err);
+      showError(err.message || 'An error occurred during submission. Please try again.');
+      btnSubmit.disabled = false;
+      textSpan.style.display = 'inline';
+      spinnerSpan.style.display = 'none';
+    }
+  });
+</script>
+</body>
+</html>

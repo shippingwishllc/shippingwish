@@ -55,6 +55,7 @@
           <a href="/services"${active('/services.html', ['dispatch.html','load-booking.html','fleet-support.html','factoring.html','insurance.html','eld.html','dot-compliance.html'])}>Services ▾</a>
           <div class="nav-dropdown-menu" role="menu">
             <div class="dropdown-label">Operations</div>
+            <a href="/carrier-setup" role="menuitem" style="color:#facc15;font-weight:700;">⚡ Carrier Setup (Online)</a>
             <a href="/dispatch" role="menuitem">Fleet Operations Manager</a>
             <a href="/load-booking" role="menuitem">Load Booking</a>
             <a href="/fleet-support" role="menuitem">Fleet Support</a>
@@ -66,6 +67,7 @@
             <a href="/dot-compliance" role="menuitem">DOT Compliance</a>
           </div>
         </li>
+        <li><a href="/carrier-setup"${active('/carrier-setup.html')}>Carrier Setup</a></li>
         <li><a href="/pricing"${active('/pricing.html', ['checkout.html','checkout-success.html'])}>Pricing</a></li>
         <li><a href="/carrier-search"${active('/carrier-search.html')}>Carrier Lookup</a></li>
         <li><a href="/about"${active('/about.html')}>About</a></li>
@@ -74,6 +76,7 @@
       </ul>
       <div class="nav-actions">
         <div class="live-status" aria-live="polite"><span class="live-dot" aria-hidden="true"></span> 24/7 Desk</div>
+        <a href="/carrier-setup" class="btn btn-secondary btn-sm" id="nav-setup-btn" style="border-color:#eab308;color:#facc15;">Carrier Setup</a>
         <a href="/login" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
         <a href="/pricing" class="btn btn-primary btn-sm" id="nav-cta-btn">Start Free Week</a>
       </div>
@@ -84,6 +87,7 @@
   function mobileHtml() {
     return `
       <a href="/" data-nav-close>Home</a>
+      <a href="/carrier-setup" data-nav-close style="color:#facc15;font-weight:700;">⚡ Carrier Setup (Online)</a>
       <a href="/services" data-nav-close>Services</a>
       <a href="/dispatch" data-nav-close>Fleet Operations</a>
       <a href="/pricing" data-nav-close>Pricing</a>
@@ -92,6 +96,7 @@
       <a href="/blog" data-nav-close>Insights</a>
       <a href="/contact" data-nav-close>Contact</a>
       <div class="nav-mobile-cta-group">
+        <a href="/carrier-setup" class="btn btn-primary-amber" data-nav-close>Carrier Setup (Online) →</a>
         <a href="/login" class="btn btn-secondary-glass" data-nav-close>Sign In</a>
         <a href="/pricing" class="btn btn-primary-amber" data-nav-close>Start Free Week →</a>
       </div>`;
@@ -117,6 +122,7 @@
       <div class="footer-col">
         <h4>Services</h4>
         <ul>
+          <li><a href="/carrier-setup" style="color:#facc15;font-weight:600;">⚡ Carrier Setup (Online)</a></li>
           <li><a href="/dispatch">Fleet Operations Manager</a></li>
           <li><a href="/load-booking">Load Booking</a></li>
           <li><a href="/fleet-support">Fleet Support</a></li>
