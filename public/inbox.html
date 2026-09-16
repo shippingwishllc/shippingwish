@@ -21,6 +21,9 @@
       display:flex; flex-direction:column; padding:12px;
       height:var(--inbox-pane-h); min-height:var(--inbox-pane-h); max-height:var(--inbox-pane-h);
       overflow:hidden;
+      background: #ffffff;
+      border: 1px solid var(--border-default, #e2e8f0);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
     }
     #inbox-list {
       display:flex; flex-direction:column; gap:var(--inbox-item-gap);
@@ -29,59 +32,63 @@
     }
     .inbox-pagination {
       display:flex; justify-content:space-between; align-items:center; gap:12px;
-      padding-top:10px; margin-top:auto; border-top:1px solid var(--border-default);
+      padding-top:10px; margin-top:auto; border-top:1px solid var(--border-default, #e2e8f0);
       font-size:12px; color:var(--text-muted); flex-wrap:wrap; flex-shrink:0;
     }
     .inbox-pagination .pager-btns { display:flex; gap:8px; }
     .inbox-item {
-      border:1px solid var(--border-default); border-radius:12px; padding:10px 14px;
-      cursor:pointer; text-align:left; background:transparent; width:100%;
+      border:1px solid var(--border-default, #e2e8f0); border-radius:12px; padding:10px 14px;
+      cursor:pointer; text-align:left; background:#ffffff; width:100%;
       height:var(--inbox-item-h); min-height:var(--inbox-item-h); max-height:var(--inbox-item-h);
       overflow:hidden; flex-shrink:0;
+      transition: all 0.15s ease;
     }
     .inbox-item-preview {
-      font-size:12px; color:var(--text-muted); margin-top:4px;
+      font-size:12px; color:#64748b; margin-top:4px;
       overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
-    .inbox-item:hover { border-color: var(--color-amber-500, #f59e0b); }
-    .inbox-item.active { border-color: var(--color-amber-500, #f59e0b); background: rgba(245,158,11,0.08); }
-    .inbox-item.unread { background: rgba(245,158,11,0.06); }
+    .inbox-item:hover { border-color: var(--color-amber-500, #f59e0b); box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05); }
+    .inbox-item.active { border-color: var(--color-amber-500, #f59e0b); background: #fffbeb; box-shadow: 0 0 0 1px #f59e0b; }
+    .inbox-item.unread { background: #fefce8; border-left: 3.5px solid #d97706; }
     .msg-panel {
-      border:1px solid var(--border-default); border-radius:12px;
+      border:1px solid var(--border-default, #e2e8f0); border-radius:12px;
       height:var(--inbox-pane-h); min-height:var(--inbox-pane-h); max-height:var(--inbox-pane-h);
-      background: var(--bg-elevated, #fff);
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
       display:flex; flex-direction:column; overflow:hidden; padding:16px;
     }
     .msg-panel-empty {
-      margin:auto; text-align:center; color:var(--text-muted); padding:24px;
+      margin:auto; text-align:center; color:#64748b; padding:24px; font-size:14px;
     }
     .msg-panel-header { flex-shrink:0; margin-bottom:10px; }
     .msg-scroll-area {
       flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;
       padding-right:4px;
     }
-    .contact-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px 14px; margin:0 0 12px; padding:12px; border-radius:10px; background: rgba(15,23,42,0.04); font-size:12px; }
-    .contact-grid strong { display:block; font-size:10px; text-transform:uppercase; letter-spacing:0.04em; color: var(--text-muted); margin-bottom:2px; }
-    .msg-body { white-space:pre-wrap; font-size:14px; line-height:1.55; margin:0; }
-    .attach-list { display:flex; flex-direction:column; gap:8px; margin:0 0 12px; padding:10px; border-radius:10px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); }
-    .attach-item { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:13px; }
-    .reply-box { flex-shrink:0; margin-top:10px; padding-top:12px; border-top:1px solid var(--border-default); }
-    .reply-box textarea { width:100%; min-height:88px; max-height:120px; border-radius:10px; border:1px solid var(--border-default); padding:10px; font-family:inherit; font-size:14px; resize:vertical; }
-    .reply-from-note { font-size:11px; color:var(--text-muted); margin:0 0 8px; }
+    .contact-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px 14px; margin:0 0 12px; padding:12px; border-radius:10px; background: #f8fafc; font-size:12px; }
+    .contact-grid strong { display:block; font-size:10px; text-transform:uppercase; letter-spacing:0.04em; color: #64748b; margin-bottom:2px; }
+    .msg-body { white-space:pre-wrap; font-size:14px; line-height:1.65; margin:0; color:#0f172a; }
+    .attach-list { display:flex; flex-direction:column; gap:8px; margin:0 0 12px; padding:10px; border-radius:10px; background:#fffbeb; border:1px solid #fde68a; }
+    .attach-item { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:13px; color:#0f172a; }
+    .reply-box { flex-shrink:0; margin-top:10px; padding-top:12px; border-top:1.5px solid var(--border-default, #e2e8f0); }
+    .reply-box textarea { width:100%; min-height:88px; max-height:120px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#0f172a; padding:10px 12px; font-family:inherit; font-size:14px; resize:vertical; box-sizing:border-box; }
+    .reply-box textarea:focus { outline:none; border-color:#2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+    .reply-from-note { font-size:11.5px; color:#64748b; margin:0 0 8px; }
+    .inbox-kpi-row { display:flex; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+    .inbox-kpi-card { background:#ffffff; border:1px solid var(--border-default, #e2e8f0); border-radius:12px; padding:12px 20px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 3px rgba(15,23,42,0.04); min-width:180px; }
+    .inbox-kpi-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .inbox-kpi-icon.unread { background:rgba(245,158,11,0.12); color:#d97706; }
+    .inbox-kpi-icon.total { background:rgba(37,99,235,0.1); color:#2563eb; }
+    .inbox-kpi-val { font-size:24px; font-weight:800; color:#0f172a; line-height:1.1; }
+    .inbox-kpi-label { font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em; margin-top:2px; }
     @media (max-width: 900px) {
       .inbox-list-card, .msg-panel { height:auto; min-height:auto; max-height:none; }
       #inbox-list { height:auto; min-height:auto; max-height:none; overflow:visible; }
       .inbox-item { height:auto; min-height:84px; max-height:none; }
     }
-    /* Keep inbox in one viewport — scroll only inside email panel, not whole page */
     .inbox-page-content {
       padding-top: var(--space-6);
       padding-bottom: var(--space-6);
-    }
-    @media (min-width: 901px) {
-      .inbox-page-content .stat-card-grid {
-        margin-bottom: var(--space-4) !important;
-      }
     }
   </style>
 </head>
@@ -103,14 +110,20 @@
       </div>
     </header>
     <main class="app-content inbox-page-content">
-      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
-        <div class="stat-kpi-card">
-          <div class="stat-kpi-top"><span class="stat-kpi-title">Unread replies</span><div class="stat-kpi-icon">📬</div></div>
-          <div class="stat-kpi-val" id="kpi-unread">0</div>
+      <div class="inbox-kpi-row">
+        <div class="inbox-kpi-card">
+          <div class="inbox-kpi-icon unread">📬</div>
+          <div>
+            <div class="inbox-kpi-val" id="kpi-unread">0</div>
+            <div class="inbox-kpi-label">Unread replies</div>
+          </div>
         </div>
-        <div class="stat-kpi-card">
-          <div class="stat-kpi-top"><span class="stat-kpi-title">Loaded messages</span><div class="stat-kpi-icon">✉️</div></div>
-          <div class="stat-kpi-val" id="kpi-total">0</div>
+        <div class="inbox-kpi-card">
+          <div class="inbox-kpi-icon total">✉️</div>
+          <div>
+            <div class="inbox-kpi-val" id="kpi-total">0</div>
+            <div class="inbox-kpi-label">Total Loaded</div>
+          </div>
         </div>
       </div>
       <div class="inbox-layout">
@@ -283,6 +296,8 @@
     }
   }
 
+  let currentOpenedMessage = null;
+
   async function openMessage(id) {
     selectedId = id;
     document.querySelectorAll('.inbox-item').forEach(el => el.classList.remove('active'));
@@ -299,6 +314,7 @@
       return;
     }
     const m = data.message;
+    currentOpenedMessage = m;
 
     // Mark read when opened
     if (!m.is_read) {
@@ -354,41 +370,53 @@
       </div>
 
       <div class="msg-scroll-area">
-        <div style="background:rgba(15,23,42,0.05);border:1px solid var(--border-default);border-radius:10px;padding:12px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;font-size:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:8px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">
             <div>
-              <strong style="color:var(--text-muted);text-transform:uppercase;font-size:10px;letter-spacing:0.04em;">Carrier / Recipient</strong>
-              <div style="font-size:14px;font-weight:800;color:#f59e0b;margin-top:2px;">
-                ${escapeHtml(m.company_name || m.owner_name || m.peer_name || 'Carrier')} ${m.mc_number ? `<span style="font-size:12px;color:var(--text-muted);">(${escapeHtml(m.mc_number)})</span>` : ''}
+              <strong style="color:#64748b;text-transform:uppercase;font-size:10px;letter-spacing:0.04em;">Carrier / Recipient</strong>
+              <div style="font-size:15px;font-weight:800;color:#d97706;margin-top:2px;">
+                ${escapeHtml(m.company_name || m.owner_name || m.peer_name || 'Carrier')} ${m.mc_number ? `<span style="font-size:12px;color:#64748b;">(${escapeHtml(m.mc_number)})</span>` : ''}
               </div>
             </div>
             <div>
               ${matchedLead}
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:8px;color:var(--text-muted);">
-            <div><strong>From:</strong> <span style="color:var(--text-primary);">${escapeHtml(m.from_email || 'operations@shippingwish.com')}</span></div>
-            <div><strong>To:</strong> <span style="color:var(--text-primary);">${escapeHtml(m.peer_email || m.to_email || '—')}</span></div>
-            <div><strong>Phone:</strong> ${m.phone ? `<a href="tel:${escapeHtml(m.phone)}" style="color:#60a5fa;">${escapeHtml(m.phone)}</a>` : '—'}</div>
-            <div><strong>Sales Rep:</strong> <span style="color:var(--text-primary);">${escapeHtml(m.sales_rep_name || 'Unassigned')}</span></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:8px;color:#64748b;">
+            <div><strong style="color:#475569;">From:</strong> <span style="color:#0f172a;font-weight:600;">${escapeHtml(m.from_email || 'operations@shippingwish.com')}</span></div>
+            <div><strong style="color:#475569;">To:</strong> <span style="color:#0f172a;font-weight:600;">${escapeHtml(m.peer_email || m.to_email || '—')}</span></div>
+            <div><strong style="color:#475569;">Phone:</strong> ${m.phone ? `<a href="tel:${escapeHtml(m.phone)}" style="color:#2563eb;font-weight:600;">${escapeHtml(m.phone)}</a>` : '—'}</div>
+            <div><strong style="color:#475569;">Sales Rep:</strong> <span style="color:#0f172a;font-weight:600;">${escapeHtml(m.sales_rep_name || 'Unassigned')}</span></div>
           </div>
         </div>
 
         ${attachHtml}
 
-        <div style="background:var(--bg-elevated, #0f172a);border:1px solid var(--border-default);border-radius:10px;padding:16px;margin-bottom:14px;">
-          ${bodyText
-            ? `<div style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.6;color:var(--text-primary);">${escapeHtml(bodyText)}</div>`
-            : (hasHtml
-              ? `<div style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.6;color:var(--text-primary);">${escapeHtml(stripHtml(m.body_html))}</div>`
-              : `<p class="text-muted" style="margin:0;">Email body preview is loading...</p>`)}
+        <div style="background:#ffffff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,0.04);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#64748b;">Email Message Body</span>
+            ${hasHtml && bodyText ? `
+              <div style="display:flex;gap:6px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-fmt-html-${m.id}" style="font-size:11px;padding:2px 8px;background:#0f172a;color:#fff;" onclick="toggleEmailFormat(${m.id}, 'html')">Formatted</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-fmt-text-${m.id}" style="font-size:11px;padding:2px 8px;" onclick="toggleEmailFormat(${m.id}, 'text')">Plain text</button>
+              </div>` : ''}
+          </div>
+          <div id="email-content-box-${m.id}">
+            ${hasHtml ? `
+              <iframe id="email-frame-${m.id}" style="width:100%;border:none;min-height:220px;background:#ffffff;display:block;" srcdoc="${escapeHtml(sanitizeIframeHtml(m.body_html))}" onload="autoResizeIframe(this)"></iframe>
+            ` : (bodyText ? `
+              <div style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.65;color:#0f172a;word-break:break-word;">${escapeHtml(bodyText)}</div>
+            ` : `
+              <p style="color:#64748b;font-style:italic;margin:0;">(Empty message body)</p>
+            `)}
+          </div>
         </div>
       </div>
 
       <div class="reply-box">
-        <h3 style="margin:0 0 6px;font-size:14px;">Reply from portal</h3>
-        <p class="reply-from-note">Reply will send from <strong>${escapeHtml(replyFrom)}</strong> to <strong>${escapeHtml(m.peer_email || m.from_email || '')}</strong> (same thread).</p>
-        <textarea id="reply-text-${m.id}" placeholder="Type your reply…"></textarea>
+        <h3 style="margin:0 0 6px;font-size:14px;font-weight:700;color:#0f172a;">Reply from portal</h3>
+        <p class="reply-from-note" style="font-size:11.5px;color:#64748b;margin:0 0 8px;">Reply will send from <strong style="color:#0f172a;">${escapeHtml(replyFrom)}</strong> to <strong style="color:#0f172a;">${escapeHtml(m.peer_email || m.from_email || '')}</strong> (same thread).</p>
+        <textarea id="reply-text-${m.id}" placeholder="Type your reply to carrier…" style="width:100%;min-height:84px;border:1.5px solid #cbd5e1;border-radius:10px;padding:12px;font-family:inherit;font-size:14px;box-sizing:border-box;color:#0f172a;background:#ffffff;"></textarea>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
           <button type="button" class="btn btn-primary btn-sm" onclick="sendReply(${m.id})">Send reply</button>
         </div>
@@ -443,11 +471,71 @@
     }
   }
 
+  function sanitizeIframeHtml(html) {
+    if (!html) return '';
+    const clean = String(html).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    const baseStyle = `<style>
+      html, body {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+        margin: 0 !important;
+        padding: 8px 12px !important;
+        word-break: break-word !important;
+      }
+      a { color: #2563eb !important; text-decoration: underline; }
+      img { max-width: 100% !important; height: auto !important; }
+      table { max-width: 100% !important; }
+      blockquote { border-left: 3px solid #cbd5e1 !important; margin: 8px 0 !important; padding-left: 12px !important; color: #475569 !important; }
+    </style>`;
+    return baseStyle + clean;
+  }
+
+  function autoResizeIframe(iframe) {
+    try {
+      if (!iframe) return;
+      const doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+      if (doc && doc.body) {
+        const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 200);
+        iframe.style.height = (height + 24) + 'px';
+      }
+    } catch (e) {
+      iframe.style.height = '420px';
+    }
+  }
+
+  function toggleEmailFormat(id, mode) {
+    const box = document.getElementById('email-content-box-' + id);
+    const btnHtml = document.getElementById('btn-fmt-html-' + id);
+    const btnText = document.getElementById('btn-fmt-text-' + id);
+    if (!box || !currentOpenedMessage || currentOpenedMessage.id !== id) return;
+
+    if (mode === 'html') {
+      if (btnHtml) { btnHtml.style.background = '#0f172a'; btnHtml.style.color = '#fff'; }
+      if (btnText) { btnText.style.background = ''; btnText.style.color = ''; }
+      box.innerHTML = `
+        <iframe id="email-frame-${id}" style="width:100%;border:none;min-height:220px;background:#ffffff;display:block;" srcdoc="${escapeHtml(sanitizeIframeHtml(currentOpenedMessage.body_html))}" onload="autoResizeIframe(this)"></iframe>
+      `;
+    } else {
+      if (btnText) { btnText.style.background = '#0f172a'; btnText.style.color = '#fff'; }
+      if (btnHtml) { btnHtml.style.background = ''; btnHtml.style.color = ''; }
+      const txt = (currentOpenedMessage.body_text || '').trim();
+      box.innerHTML = `
+        <div style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.65;color:#0f172a;word-break:break-word;">${escapeHtml(txt || '(No plain text available)')}</div>
+      `;
+    }
+  }
+
   window.loadInbox = loadInbox;
   window.openMessage = openMessage;
   window.goInboxPage = goInboxPage;
   window.sendReply = sendReply;
   window.trashEmail = trashEmail;
+  window.autoResizeIframe = autoResizeIframe;
+  window.toggleEmailFormat = toggleEmailFormat;
+  window.sanitizeIframeHtml = sanitizeIframeHtml;
 
   async function init() {
     await checkAuth();
