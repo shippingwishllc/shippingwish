@@ -92,30 +92,335 @@
       border-color: #2563eb;
     }
 
-    /* Filters Layout */
-    .filter-grid-v2 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px;
-      align-items: flex-end;
+    /* Search Card Container & Professional Dispatch Grid */
+    .search-card-container {
+      background: var(--color-surface-card, #ffffff);
+      border: 1px solid var(--border-default, #e2e8f0);
+      border-radius: var(--radius-2xl, 16px);
+      padding: 22px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     }
-    .quick-preset-pill {
+
+    .search-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .tab-title-edit-input {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-primary);
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.15s;
+      width: 100%;
+      max-width: 380px;
+    }
+    .tab-title-edit-input:hover, .tab-title-edit-input:focus {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .tab-meta-badge {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* 1. Schedule Toolbar (Dates) - Clean, Roomy, Dedicated */
+    .schedule-toolbar {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .schedule-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .schedule-label {
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .schedule-presets {
+      display: inline-flex;
+      background: #ffffff;
+      padding: 3px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      gap: 4px;
+    }
+    .sched-pill {
+      border: none;
+      background: transparent;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
-      padding: 2px 8px;
+      gap: 5px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .sched-pill:hover {
       background: #f1f5f9;
+      color: #0f172a;
+    }
+    .sched-pill.active {
+      background: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+    }
+    .sched-pill .sched-sub {
+      font-size: 10.5px;
+      font-weight: 600;
+      opacity: 0.75;
+    }
+    .sched-pill.active .sched-sub {
+      opacity: 0.95;
+      color: #fbbf24;
+    }
+    .schedule-date-input-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .schedule-date-input {
+      height: 36px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+    }
+    .schedule-date-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .date-status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .status-today {
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+    }
+    .status-tomorrow {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+    }
+    .status-advance {
+      background: #faf5ff;
+      color: #7c3aed;
+      border: 1px solid #e9d5ff;
+    }
+
+    /* 2. Routing Fields Grid - Spacious & Organized */
+    .routing-fields-grid {
+      display: grid;
+      grid-template-columns: minmax(230px, 1.4fr) minmax(230px, 1.4fr) minmax(170px, 1.1fr) minmax(180px, 1.1fr) minmax(110px, 0.7fr) auto;
+      gap: 14px;
+      align-items: flex-end;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 1380px) {
+      .routing-fields-grid {
+        grid-template-columns: 1.4fr 1.4fr 1.1fr 1fr;
+      }
+      .routing-actions-col {
+        grid-column: span 2;
+      }
+    }
+    @media (max-width: 880px) {
+      .routing-fields-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .routing-actions-col {
+        grid-column: span 2;
+      }
+    }
+    @media (max-width: 580px) {
+      .routing-fields-grid {
+        grid-template-columns: 1fr;
+      }
+      .routing-actions-col {
+        grid-column: span 1;
+      }
+    }
+
+    .routing-field-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .field-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    .radius-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #2563eb;
+      background: #eff6ff;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #dbeafe;
+    }
+
+    .field-input-combo {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .combo-text {
+      flex: 1;
+      min-width: 0;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .combo-radius {
+      width: 90px;
+      flex-shrink: 0;
+      font-weight: 700;
+      font-size: 12.5px;
+      background-color: #f8fafc;
+    }
+
+    .routing-actions-col {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn-search-primary {
+      height: 40px;
+      padding: 0 18px;
+      font-size: 13px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #ffffff;
+      border: 1px solid #b45309;
+      box-shadow: 0 2px 5px rgba(217, 119, 6, 0.25);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-search-primary:hover {
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(217, 119, 6, 0.35);
+    }
+    .btn-ai-match {
+      height: 40px;
+      padding: 0 15px;
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-ai-match:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
+      transform: translateY(-1px);
+    }
+
+    /* 3. Quick Destinations Bar */
+    .quick-lanes-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-top: 14px;
+      border-top: 1px solid #f1f5f9;
+    }
+    .quick-lanes-label {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #64748b;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .quick-lanes-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .quick-lane-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      background: #f8fafc;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 600;
       color: #334155;
       cursor: pointer;
       transition: all 0.12s ease;
     }
-    .quick-preset-pill:hover {
+    .quick-lane-pill:hover {
       background: #e2e8f0;
       border-color: #94a3b8;
       color: #0f172a;
+      transform: translateY(-1px);
     }
 
     /* Deadhead badges */
@@ -256,53 +561,75 @@
       </div>
 
       <!-- SEARCH & AI LANE MATCHER CARD -->
-      <div style="background:var(--color-surface-card, #ffffff);border:1px solid var(--border-default, #e2e8f0);border-radius:var(--radius-2xl, 16px);padding:var(--space-6, 22px);margin-bottom:var(--space-6, 24px);box-shadow:var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));">
+      <div class="search-card-container">
         
-        <!-- Tab Meta Header -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:18px;">🚛</span>
-            <input type="text" id="tab-custom-title" onchange="updateCurrentTabTitle(this.value)" style="font-size:15px;font-weight:800;color:var(--text-primary);border:1px solid transparent;background:none;padding:2px 6px;border-radius:6px;" title="Click to rename tab" placeholder="e.g. Truck #101 - Dry Van (Dallas)">
+        <!-- Tab Meta Header & Quick Rename -->
+        <div class="search-card-header">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:240px;">
+            <span style="font-size:20px;">🚛</span>
+            <input type="text" id="tab-custom-title" onchange="updateCurrentTabTitle(this.value)" 
+                   class="tab-title-edit-input" title="Click to rename tab" placeholder="e.g. Truck #101 - Dry Van (Dallas)">
           </div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <span style="font-size:11.5px;color:var(--text-muted);" id="tab-search-meta">Configuring Search Tab</span>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="resetActiveTabFilters()">↺ Reset Tab</button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="tab-meta-badge" id="tab-search-meta">Configuring Search Tab</span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="resetActiveTabFilters()" style="display:inline-flex;align-items:center;gap:4px;">
+              <span>↺</span> Reset Tab
+            </button>
           </div>
         </div>
 
-        <div class="filter-grid-v2">
-          <!-- Carrier Selection -->
-          <div class="form-group" id="carrier-select-group" style="margin:0;">
-            <label class="form-label" for="search-carrier-id" style="font-size:11px;font-weight:700;">Target Carrier Fleet</label>
-            <select id="search-carrier-id" class="form-select" onchange="syncActiveTabField('carrierId', this.value)">
-              <option value="">Select carrier to dispatch...</option>
-            </select>
+        <!-- 1. DEDICATED PICKUP SCHEDULE & DATES TOOLBAR (TOP TIER) -->
+        <div class="schedule-toolbar">
+          <div class="schedule-toolbar-left">
+            <div class="schedule-label">
+              <span style="font-size:14px;">📅</span>
+              <span>Pickup Schedule:</span>
+            </div>
+
+            <!-- Quick Preset Segmented Buttons -->
+            <div class="schedule-presets">
+              <button type="button" class="sched-pill active" id="pill-today" onclick="applyDatePreset('today')">
+                ⚡ Today <span class="sched-sub">(Ready Now)</span>
+              </button>
+              <button type="button" class="sched-pill" id="pill-tomorrow" onclick="applyDatePreset('tomorrow')">
+                📅 Tomorrow <span class="sched-sub">(Reload)</span>
+              </button>
+              <button type="button" class="sched-pill" id="pill-2days" onclick="applyDatePreset('+2days')">
+                🗓️ +2 Days
+              </button>
+              <button type="button" class="sched-pill" id="pill-advance" onclick="triggerDatePicker()">
+                🗓️ Advance / Custom
+              </button>
+            </div>
+
+            <!-- Clean Date Input -->
+            <div class="schedule-date-input-wrap">
+              <input type="date" id="search-date" class="form-input schedule-date-input" 
+                     onchange="onDateInputChange(this.value)" title="Choose exact pickup date">
+            </div>
           </div>
 
-          <!-- Pickup Date Filter & Presets -->
-          <div class="form-group" style="margin:0;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <label class="form-label" for="search-date" style="font-size:11px;font-weight:700;">📅 Pickup Date</label>
-              <span id="date-relative-label" style="font-size:10px;font-weight:700;color:#059669;">Today</span>
-            </div>
-            <input type="date" id="search-date" class="form-input" onchange="syncActiveTabField('pickupDate', this.value); updateDateLabel();" style="font-size:12.5px;padding:6px 8px;">
-            <div style="display:flex;gap:3px;margin-top:4px;">
-              <button type="button" class="quick-preset-pill" onclick="applyDatePreset('today')" style="padding:1px 5px;font-size:10px;">Today</button>
-              <button type="button" class="quick-preset-pill" onclick="applyDatePreset('tomorrow')" style="padding:1px 5px;font-size:10px;">Tomorrow</button>
-              <button type="button" class="quick-preset-pill" onclick="applyDatePreset('+2days')" style="padding:1px 5px;font-size:10px;">+2 Days</button>
-              <button type="button" class="quick-preset-pill" onclick="applyDatePreset('+3days')" style="padding:1px 5px;font-size:10px;">Advance</button>
+          <div class="schedule-toolbar-right">
+            <div id="date-relative-label" class="date-status-indicator status-today">
+              ⚡ Today (Ready to Dispatch)
             </div>
           </div>
+        </div>
 
-          <!-- Origin & DHO -->
-          <div class="form-group" style="margin:0;">
-            <div style="display:flex;justify-content:space-between;">
-              <label class="form-label" for="search-origin" style="font-size:11px;font-weight:700;">Origin City / State</label>
-              <span style="font-size:10px;font-weight:700;color:#2563eb;">DHO Radius</span>
+        <!-- 2. ROUTING & EQUIPMENT SEARCH GRID (MIDDLE TIER) -->
+        <div class="routing-fields-grid">
+          
+          <!-- Origin City & DHO -->
+          <div class="routing-field-col">
+            <div class="field-header">
+              <label class="form-label field-label" for="search-origin">Origin City, State</label>
+              <span class="radius-tag">DHO Radius</span>
             </div>
-            <div style="display:flex;gap:4px;">
-              <input type="text" id="search-origin" class="form-input" value="Dallas, TX" placeholder="e.g. Dallas, TX" onchange="syncActiveTabField('origin', this.value)" style="flex:2;">
-              <select id="search-dho" class="form-select" onchange="syncActiveTabField('dho', this.value)" style="flex:1;min-width:75px;" title="Deadhead Origin Radius">
+            <div class="field-input-combo">
+              <input type="text" id="search-origin" class="form-input combo-text" value="Dallas, TX" 
+                     placeholder="e.g. Dallas, TX" onchange="syncActiveTabField('origin', this.value)">
+              <select id="search-dho" class="form-select combo-radius" onchange="syncActiveTabField('dho', this.value)" title="Deadhead Origin Radius">
+                <option value="25">25 mi</option>
                 <option value="50">50 mi</option>
                 <option value="100" selected>100 mi</option>
                 <option value="150">150 mi</option>
@@ -311,15 +638,17 @@
             </div>
           </div>
 
-          <!-- Destination & DHD -->
-          <div class="form-group" style="margin:0;">
-            <div style="display:flex;justify-content:space-between;">
-              <label class="form-label" for="search-dest" style="font-size:11px;font-weight:700;">Destination(s) / States</label>
-              <span style="font-size:10px;font-weight:700;color:#2563eb;">DHD Radius</span>
+          <!-- Destination(s) & DHD -->
+          <div class="routing-field-col">
+            <div class="field-header">
+              <label class="form-label field-label" for="search-dest">Destination(s) / States</label>
+              <span class="radius-tag">DHD Radius</span>
             </div>
-            <div style="display:flex;gap:4px;">
-              <input type="text" id="search-dest" class="form-input" value="TX, WY, CO" placeholder="e.g. Cheyenne, WY or TX, WY, CO" onchange="syncActiveTabField('dest', this.value)" style="flex:2;">
-              <select id="search-dhd" class="form-select" onchange="syncActiveTabField('dhd', this.value)" style="flex:1;min-width:75px;" title="Deadhead Destination Radius">
+            <div class="field-input-combo">
+              <input type="text" id="search-dest" class="form-input combo-text" value="TX, WY, CO" 
+                     placeholder="e.g. Cheyenne, WY or TX, WY, CO" onchange="syncActiveTabField('dest', this.value)">
+              <select id="search-dhd" class="form-select combo-radius" onchange="syncActiveTabField('dhd', this.value)" title="Deadhead Destination Radius">
+                <option value="25">25 mi</option>
                 <option value="50" selected>50 mi</option>
                 <option value="100">100 mi</option>
                 <option value="150">150 mi</option>
@@ -329,44 +658,67 @@
           </div>
 
           <!-- Equipment Type -->
-          <div class="form-group" style="margin:0;">
-            <label class="form-label" for="search-equipment" style="font-size:11px;font-weight:700;">Equipment Type</label>
-            <select id="search-equipment" class="form-select" onchange="syncActiveTabField('equipment', this.value)">
+          <div class="routing-field-col">
+            <div class="field-header">
+              <label class="form-label field-label" for="search-equipment">Equipment Type</label>
+            </div>
+            <select id="search-equipment" class="form-select" onchange="syncActiveTabField('equipment', this.value)" style="font-weight:600;">
               <option value="53ft Dry Van" selected>53ft Dry Van</option>
-              <option value="53ft Reefer">53ft Reefer (Temperature)</option>
+              <option value="53ft Reefer">53ft Reefer (Temp)</option>
               <option value="Flatbed / Step Deck">Flatbed / Step Deck</option>
               <option value="Power Only">Power Only</option>
               <option value="Box Truck">Box Truck</option>
             </select>
           </div>
 
+          <!-- Target Carrier Fleet (Staff only) -->
+          <div class="routing-field-col" id="carrier-select-group">
+            <div class="field-header">
+              <label class="form-label field-label" for="search-carrier-id">Assign Carrier Fleet</label>
+            </div>
+            <select id="search-carrier-id" class="form-select" onchange="syncActiveTabField('carrierId', this.value)">
+              <option value="">Select carrier...</option>
+            </select>
+          </div>
+
           <!-- Min RPM -->
-          <div class="form-group" style="margin:0;">
-            <label class="form-label" for="search-min-rpm" style="font-size:11px;font-weight:700;">Min $/Mile (RPM)</label>
-            <input type="number" step="0.05" id="search-min-rpm" class="form-input" value="2.85" placeholder="e.g. 2.85" onchange="syncActiveTabField('minRpm', this.value)">
+          <div class="routing-field-col">
+            <div class="field-header">
+              <label class="form-label field-label" for="search-min-rpm">Min $/Mile</label>
+            </div>
+            <div style="position:relative;">
+              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--text-muted);font-size:13px;">$</span>
+              <input type="number" step="0.05" id="search-min-rpm" class="form-input" value="2.85" 
+                     placeholder="2.85" onchange="syncActiveTabField('minRpm', this.value)" style="padding-left:24px;font-weight:700;">
+            </div>
           </div>
 
-          <!-- Search Action Buttons -->
-          <div style="display:flex;gap:8px;">
-            <button type="button" class="btn btn-primary" id="btn-run-search" onclick="runActiveTabSearch()" style="flex:1;">
-              🔍 Search Loads
+          <!-- Action Buttons -->
+          <div class="routing-actions-col">
+            <button type="button" class="btn-search-primary" id="btn-run-search" onclick="runActiveTabSearch()">
+              <span>🔍</span> Search Loads
             </button>
-            <button type="button" class="btn btn-secondary" id="btn-run-ai" onclick="runActiveTabAiMatch()" style="flex:1;" title="Run AI Smart Matching Engine">
-              ⚡ AI Match
+            <button type="button" class="btn-ai-match" id="btn-run-ai" onclick="runActiveTabAiMatch()" title="Run AI Smart Matching Engine">
+              <span>⚡</span> AI Match
             </button>
           </div>
         </div>
 
-        <!-- Multi-State Quick Suggestions Pill Bar -->
-        <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Quick States:</span>
-          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('TX, WY, CO')">TX, WY, CO</button>
-          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('WY, MT, ID')">WY, MT, ID</button>
-          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('Midwest (IL, IN, OH, MI)')">Midwest (IL, IN, OH, MI)</button>
-          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('Southeast (GA, FL, NC, SC, TN)')">Southeast (GA, FL, NC, SC, TN)</button>
-          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('West (CA, AZ, NV, UT, WA)')">West (CA, AZ, NV, UT, WA)</button>
-          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('Anywhere / All 48 States')">All 48 States</button>
+        <!-- 3. QUICK DESTINATION LANES (BOTTOM TIER) -->
+        <div class="quick-lanes-bar">
+          <div class="quick-lanes-label">
+            <span>⚡ QUICK DESTINATIONS:</span>
+          </div>
+          <div class="quick-lanes-pills">
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('TX, WY, CO')">TX, WY, CO</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('WY, MT, ID')">WY, MT, ID</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Midwest (IL, IN, OH, MI)')">Midwest (IL, IN, OH, MI)</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Southeast (GA, FL, NC, SC, TN)')">Southeast (GA, FL, NC, SC, TN)</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('West (CA, AZ, NV, UT, WA)')">West (CA, AZ, NV, UT, WA)</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Anywhere / All 48 States')">All 48 States</button>
+          </div>
         </div>
+
       </div>
 
       <!-- AI SUMMARY HIGHLIGHT CARD (Shown after AI Match) -->
@@ -639,12 +991,20 @@
   let SELECTED_LOAD_FOR_OFFER = null;
 
   function getTodayString() {
-    return new Date().toISOString().slice(0, 10);
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
   }
 
   function getOffsetDateString(daysOffset) {
-    const d = new Date(Date.now() + (daysOffset * 86400000));
-    return d.toISOString().slice(0, 10);
+    const d = new Date();
+    d.setDate(d.getDate() + daysOffset);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
   }
 
   // Multi-Tab State (like DAT One) with Date Tracking
@@ -707,25 +1067,86 @@
     return '';
   }
 
-  function updateDateLabel() {
-    const val = document.getElementById('search-date').value;
-    const labelEl = document.getElementById('date-relative-label');
-    if (!labelEl) return;
+  function triggerDatePicker() {
+    const input = document.getElementById('search-date');
+    if (input) {
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+      } else {
+        input.focus();
+      }
+    }
+  }
+
+  function onDateInputChange(val) {
+    syncActiveTabField('pickupDate', val);
+    updateDateUI(val);
+    runActiveTabSearch();
+  }
+
+  function applyDatePreset(presetType) {
+    let dateStr = getTodayString();
+    if (presetType === 'tomorrow') {
+      dateStr = getOffsetDateString(1);
+    } else if (presetType === '+2days') {
+      dateStr = getOffsetDateString(2);
+    } else if (presetType === 'advance') {
+      triggerDatePicker();
+      return;
+    }
+
+    const input = document.getElementById('search-date');
+    if (input) input.value = dateStr;
+    syncActiveTabField('pickupDate', dateStr);
+    updateDateUI(dateStr);
+    runActiveTabSearch();
+  }
+
+  function updateDateUI(dateStr) {
     const today = getTodayString();
     const tmrw = getOffsetDateString(1);
-    if (val === today) {
-      labelEl.textContent = 'Today (Ready Now)';
-      labelEl.style.color = '#059669';
-    } else if (val === tmrw) {
-      labelEl.textContent = 'Tomorrow Reload';
-      labelEl.style.color = '#2563eb';
-    } else if (val > tmrw) {
-      labelEl.textContent = 'Advance Booking';
-      labelEl.style.color = '#7c3aed';
+    const day2 = getOffsetDateString(2);
+
+    const pillToday = document.getElementById('pill-today');
+    const pillTmrw = document.getElementById('pill-tomorrow');
+    const pill2Days = document.getElementById('pill-2days');
+    const pillAdvance = document.getElementById('pill-advance');
+    const labelEl = document.getElementById('date-relative-label');
+
+    // Reset active classes
+    [pillToday, pillTmrw, pill2Days, pillAdvance].forEach(btn => {
+      if (btn) btn.classList.remove('active');
+    });
+
+    if (!labelEl) return;
+    labelEl.className = 'date-status-indicator';
+
+    if (dateStr === today) {
+      if (pillToday) pillToday.classList.add('active');
+      labelEl.classList.add('status-today');
+      labelEl.innerHTML = '⚡ <strong>Today</strong> (Ready to Dispatch)';
+    } else if (dateStr === tmrw) {
+      if (pillTmrw) pillTmrw.classList.add('active');
+      labelEl.classList.add('status-tomorrow');
+      labelEl.innerHTML = '📅 <strong>Tomorrow</strong> (Reload Planning)';
+    } else if (dateStr === day2) {
+      if (pill2Days) pill2Days.classList.add('active');
+      labelEl.classList.add('status-advance');
+      labelEl.innerHTML = '🗓️ <strong>+2 Days</strong> (' + formatDisplayDate(dateStr) + ')';
+    } else if (dateStr > tmrw) {
+      if (pillAdvance) pillAdvance.classList.add('active');
+      labelEl.classList.add('status-advance');
+      labelEl.innerHTML = '🗓️ <strong>Advance Booking</strong> (' + formatDisplayDate(dateStr) + ')';
     } else {
-      labelEl.textContent = 'Past / Immediate';
-      labelEl.style.color = '#64748b';
+      labelEl.classList.add('status-today');
+      labelEl.innerHTML = '⏱️ Immediate (' + formatDisplayDate(dateStr) + ')';
     }
+  }
+
+  // Alias for backward compatibility
+  function updateDateLabel() {
+    const val = document.getElementById('search-date') ? document.getElementById('search-date').value : getTodayString();
+    updateDateUI(val);
   }
 
   // 1. Initialize Page
@@ -849,7 +1270,7 @@
     document.getElementById('search-equipment').value = tab.equipment || '53ft Dry Van';
     document.getElementById('search-min-rpm').value = tab.minRpm || '2.85';
     document.getElementById('search-date').value = tab.pickupDate || getTodayString();
-    updateDateLabel();
+    updateDateUI(tab.pickupDate || getTodayString());
 
     const carrierSelect = document.getElementById('search-carrier-id');
     if (carrierSelect) carrierSelect.value = tab.carrierId || '';
@@ -1384,6 +1805,9 @@
   window.resetActiveTabFilters = resetActiveTabFilters;
   window.applyDestPreset = applyDestPreset;
   window.applyDatePreset = applyDatePreset;
+  window.triggerDatePicker = triggerDatePicker;
+  window.onDateInputChange = onDateInputChange;
+  window.updateDateUI = updateDateUI;
   window.updateDateLabel = updateDateLabel;
   window.syncActiveTabField = syncActiveTabField;
   window.openOfferModal = openOfferModal;
