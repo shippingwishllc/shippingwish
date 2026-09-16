@@ -3,175 +3,909 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Load Board Management & Booking Services — Shipping Wish LLC</title>
-  <meta name="description" content="Load board management and load booking services for trucking fleets. Professional load boards and private broker network access.">
+  <title>Load Board &amp; AI Freight Match | Shipping Wish LLC ERP TMS</title>
+  <meta name="description" content="Enterprise Load Board Management & AI Freight Matching Workstation for Shipping Wish LLC. Search live DAT and 123Loadboard freight, match high-RPM lanes, and dispatch carrier offers.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      align-items: flex-end;
+    }
+    .load-match-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .load-match-high { background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .load-match-mid { background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .ai-banner-box {
+      background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(37,99,235,0.05) 100%);
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: var(--radius-xl);
+      padding: 16px 20px;
+      margin-bottom: var(--space-6);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(3px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal-card {
+      background: #ffffff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 580px;
+      border: 1px solid var(--border-default, #e2e8f0);
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+  </style>
 </head>
-<body>
+<body class="app-body">
 
-<!-- NAV -->
-<nav class="nav" role="navigation" aria-label="Main navigation">
-  <div class="nav-inner">
-    <a href="/" class="nav-logo" aria-label="Shipping Wish LLC Home">
-      <div class="nav-logo-mark" aria-hidden="true">SW</div>
-      <div class="nav-logo-text">Shipping <span>Wish</span></div>
-    </a>
+<!-- ======================================================== -->
+<!-- 1. AUTHENTICATED ENTERPRISE ERP / TMS WORKSPACE           -->
+<!-- ======================================================== -->
+<div id="erp-shell" class="app-shell" style="display:none;">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
 
-    <ul class="nav-links" role="list">
-      <li><a href="/">Home</a></li>
-      <li class="nav-item-dropdown">
-        <a href="/services" class="active">Services ▾</a>
-        <div class="nav-dropdown-menu" role="menu">
-          <div class="dropdown-label">Dispatch</div>
-          <a href="/dispatch" role="menuitem">Freight Dispatch</a>
-          <a href="/load-booking" role="menuitem">Load Booking</a>
-          <a href="/fleet-support" role="menuitem">Fleet & Driver Support</a>
-          <div class="dropdown-label">Financial</div>
-          <a href="/factoring" role="menuitem">Factoring Assistance</a>
-          <a href="/insurance" role="menuitem">Insurance Services</a>
-          <div class="dropdown-label">Technology</div>
-          <a href="/eld" role="menuitem">ELD & Telematics</a>
-          <a href="/dot-compliance" role="menuitem">DOT Compliance</a>
-        </div>
-      </li>
-      <li><a href="/about">About</a></li>
-      <li><a href="/pricing">Pricing</a></li>
-      <li><a href="/contact">Contact</a></li>
-    </ul>
-
-    <div class="nav-actions">
-      <div class="live-status" aria-live="polite">
-        <span class="live-dot" aria-hidden="true"></span>
-        Dispatch Active
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+    <!-- TOP APP HEADER -->
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">
+          Load Board &amp; AI Freight Match Engine
+        </h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">
+          Live DAT &amp; 123Loadboard lane matching, AI RPM rate optimization, and instant carrier booking
+        </p>
       </div>
-      <a href="/login" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
-      <a href="/contact" class="btn btn-primary btn-sm" id="nav-cta-btn">Get Started</a>
-    </div>
 
-    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</nav>
+      <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+        <div class="live-status" aria-live="polite">
+          <span class="live-dot" aria-hidden="true"></span>
+          DAT Freight Feed Live
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('search-origin').focus();">
+          🔍 Find Loads
+        </button>
+        <div id="notif-container"></div>
+      </div>
+    </header>
 
-<!-- Mobile nav -->
-<div class="nav-mobile" id="nav-mobile" role="dialog" aria-modal="true" aria-label="Mobile navigation">
-  <a href="/">Home</a>
-  <a href="/services">Services</a>
-  <a href="/factoring">Factoring</a>
-  <a href="/insurance">Insurance</a>
-  <a href="/eld">ELD</a>
-  <a href="/dot-compliance">DOT Compliance</a>
-  <a href="/about">About</a>
-  <a href="/contact">Contact</a>
-  <div class="nav-mobile-cta-group">
-    <a href="/login" class="btn btn-secondary-glass">🔑 Sign In to Portal</a>
-    <a href="/contact" class="btn btn-primary-amber">Get Started →</a>
+    <!-- CONTENT BODY -->
+    <main class="app-content">
+
+      <!-- AI INTELLIGENCE BANNER -->
+      <div class="ai-banner-box">
+        <span style="font-size:28px;line-height:1;">🎯</span>
+        <div style="font-size:13px;line-height:1.6;color:var(--text-primary);flex:1;">
+          <strong style="color:var(--color-amber-500);font-size:14px;">Autonomous Freight Matching Engine:</strong>
+          Our system continuously indexes high-paying broker postings from DAT and private freight exchanges. Set your origin and target $/mile to instantly generate profitable lane recommendations and send direct dispatch offers to carrier fleets!
+        </div>
+      </div>
+
+      <!-- KPI METRIC CARDS -->
+      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Active Board Loads</span>
+            <div class="stat-kpi-icon">🎯</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-board-loads">1,840+</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:6px;">Live DAT &amp; Broker Freight Corridors</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Market Average RPM</span>
+            <div class="stat-kpi-icon">📈</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-avg-rpm">$3.18 / mi</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:6px;">National Average Rate (Dry Van / Reefer)</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Pending Offers</span>
+            <div class="stat-kpi-icon">📬</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-pending-offers">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:6px;">Loads awaiting carrier approval</div>
+        </div>
+
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top">
+            <span class="stat-kpi-title">Autonomous Bids</span>
+            <div class="stat-kpi-icon">🤖</div>
+          </div>
+          <div class="stat-kpi-val" id="kpi-active-bids">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:6px;">AI broker inquiries in negotiation</div>
+        </div>
+      </div>
+
+      <!-- SEARCH & AI LANE MATCHER CARD -->
+      <div style="background:var(--color-surface-card, #ffffff);border:1px solid var(--border-default, #e2e8f0);border-radius:var(--radius-2xl, 16px);padding:var(--space-6, 24px);margin-bottom:var(--space-6, 24px);box-shadow:var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <h2 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0;">⚡ Search Freight &amp; Run AI Lane Matcher</h2>
+            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0;">Query live loads across major U.S. lanes with instant rate calculations.</p>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="resetSearch()">↺ Reset Filters</button>
+          </div>
+        </div>
+
+        <div class="filter-grid">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" for="search-origin" style="font-size:11px;font-weight:700;">Origin City / State</label>
+            <input type="text" id="search-origin" class="form-input" value="Dallas, TX" placeholder="e.g. Dallas, TX">
+          </div>
+
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" for="search-dest" style="font-size:11px;font-weight:700;">Destination City / State</label>
+            <input type="text" id="search-dest" class="form-input" value="Atlanta, GA" placeholder="e.g. Atlanta, GA">
+          </div>
+
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" for="search-equipment" style="font-size:11px;font-weight:700;">Equipment Type</label>
+            <select id="search-equipment" class="form-select">
+              <option value="53ft Dry Van" selected>53ft Dry Van</option>
+              <option value="53ft Reefer">53ft Reefer (Refrigerated)</option>
+              <option value="Flatbed / Step Deck">Flatbed / Step Deck</option>
+              <option value="Power Only">Power Only</option>
+              <option value="Box Truck">Box Truck</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" for="search-min-rpm" style="font-size:11px;font-weight:700;">Min $/Mile (RPM)</label>
+            <input type="number" step="0.05" id="search-min-rpm" class="form-input" value="2.85" placeholder="e.g. 2.85">
+          </div>
+
+          <div class="form-group" id="carrier-select-group" style="margin:0;">
+            <label class="form-label" for="target-carrier-id" style="font-size:11px;font-weight:700;">Target Carrier Fleet</label>
+            <select id="target-carrier-id" class="form-select">
+              <option value="">Select carrier to dispatch...</option>
+            </select>
+          </div>
+
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn btn-primary" id="btn-run-ai-match" onclick="runAiMatch()" style="flex:1;">
+              ⚡ Run AI Match
+            </button>
+            <button type="button" class="btn btn-secondary" id="btn-run-search" onclick="runBoardSearch()" style="flex:1;">
+              🔍 Search
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI SUMMARY HIGHLIGHT CARD (Shown after AI Match) -->
+      <div id="ai-summary-card" style="display:none;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#1e3a8a;">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:4px;">
+          <span>🤖</span> AI Lane Analysis &amp; High-Yield Freight Match:
+        </div>
+        <div id="ai-summary-text" style="line-height:1.5;"></div>
+      </div>
+
+      <!-- LIVE FREIGHT RESULTS TABLE -->
+      <div class="tms-table-card" style="margin-bottom:var(--space-8);">
+        <div class="tms-table-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <h3 style="font-size:var(--text-base);font-weight:800;margin:0;display:flex;align-items:center;gap:8px;">
+              <span>📋</span> Available Board Loads &amp; AI Matches
+            </h3>
+            <p style="font-size:var(--text-xs);color:var(--text-muted);margin:2px 0 0;">
+              Real-time load board results with calculated carrier payout and instant booking actions.
+            </p>
+          </div>
+          <div id="board-search-status" style="font-size:12px;color:var(--text-muted);font-weight:600;"></div>
+        </div>
+
+        <div class="tms-table-wrapper">
+          <table class="tms-table-v2" id="board-loads-table">
+            <thead>
+              <tr>
+                <th>Broker &amp; MC#</th>
+                <th>Lane (Origin ➔ Destination)</th>
+                <th>Equipment / Weight</th>
+                <th>Distance</th>
+                <th>Rate &amp; RPM</th>
+                <th>AI Profit Score</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="board-loads-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Querying live load boards...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ACTIVE CARRIER OFFERS & NEGOTIATIONS -->
+      <div class="tms-table-card">
+        <div class="tms-table-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <h3 style="font-size:var(--text-base);font-weight:800;margin:0;display:flex;align-items:center;gap:8px;">
+              <span>📬</span> Active Load Offers &amp; Carrier Bids Ledger
+            </h3>
+            <p style="font-size:var(--text-xs);color:var(--text-muted);margin:2px 0 0;">
+              Track dispatched load offers, carrier approvals, autonomous broker negotiations, and confirmations.
+            </p>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="loadOffers()">↺ Refresh Offers</button>
+        </div>
+
+        <div class="tms-table-wrapper">
+          <table class="tms-table-v2" id="offers-table">
+            <thead>
+              <tr>
+                <th>Offer #</th>
+                <th>Carrier Client</th>
+                <th>Broker</th>
+                <th>Lane</th>
+                <th>Rate / RPM</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="offers-tbody">
+              <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Loading active offers...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
   </div>
 </div>
 
-<!-- HERO -->
-<section class="section" style="background:var(--color-gray-900);padding:var(--space-20) 0 var(--space-16);border-bottom:1px solid rgba(255,255,255,0.08);">
-  <div class="container" style="max-width:var(--container-xl);">
-    <div style="max-width:760px;">
-      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-amber-400);margin-bottom:var(--space-3);">Professional Load Boards</div>
-      <h1 style="font-size:clamp(2.25rem, 5vw, 3.5rem);font-weight:900;color:#fff;line-height:1.1;margin-bottom:var(--space-4);">
-        Load Board Management &<br><span style="color:var(--color-amber-400);">Strategic Lane Matching</span>
-      </h1>
-      <p style="font-size:var(--text-lg);color:rgba(255,255,255,0.7);line-height:1.6;margin-bottom:var(--space-8);">
-        Never sit empty waiting for loads. We continuously monitor premium load boards and direct broker relationships to keep your trucks moving in high-paying lanes.
-      </p>
-      <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;">
-        <a href="/contact?service=load-booking" class="btn btn-primary btn-xl" id="btn-hero-booking-start">Book High-Paying Loads →</a>
-        <a href="tel:+19177370021" class="btn btn-secondary btn-xl" id="btn-hero-booking-call">📞 Call Dispatch Desk</a>
-      </div>
+<!-- ======================================================== -->
+<!-- MODAL: SEND LOAD OFFER TO CARRIER CLIENT                  -->
+<!-- ======================================================== -->
+<div class="modal-backdrop" id="sendOfferModal" role="dialog" aria-modal="true" aria-labelledby="modal-offer-title">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid #e2e8f0;">
+      <h3 id="modal-offer-title" style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">
+        🎯 Send Load Offer to Carrier Client
+      </h3>
+      <button type="button" onclick="closeOfferModal()" style="background:none;border:none;font-size:22px;color:#64748b;cursor:pointer;line-height:1;">&times;</button>
     </div>
-  </div>
-</section>
 
-<!-- MAIN CONTENT -->
-<section class="section" style="padding:var(--space-16) 0;">
-  <div class="container" style="max-width:var(--container-xl);">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-12);align-items:center;" class="responsive-grid-2col">
+    <form id="offerForm" onsubmit="submitOfferForm(event)" style="padding:22px;">
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:4px;" id="modal-lane-summary">Dallas, TX ➔ Atlanta, GA</div>
+        <div style="color:#64748b;font-size:12px;" id="modal-broker-summary">Broker: C.H. Robinson · 53ft Dry Van · 720 mi</div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label required" for="modal-carrier-id" style="font-size:12px;font-weight:700;">Select Carrier Client</label>
+        <select id="modal-carrier-id" class="form-select" required>
+          <option value="">Select carrier to receive load offer...</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label required" for="modal-rate" style="font-size:12px;font-weight:700;">Agreed Gross Rate ($)</label>
+          <input type="number" step="0.01" id="modal-rate" class="form-input" required>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="modal-miles" style="font-size:12px;font-weight:700;">Total Miles</label>
+          <input type="number" id="modal-miles" class="form-input" readonly>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:18px;">
+        <label class="form-label" for="modal-notes" style="font-size:12px;font-weight:700;">Dispatcher Note for Driver / Carrier (Optional)</label>
+        <textarea id="modal-notes" class="form-input" rows="2" placeholder="Driver has reload planned in Atlanta for Tuesday morning. High priority."></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="btn btn-secondary" onclick="closeOfferModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-offer">Send Offer to Carrier →</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- 2. PUBLIC MARKETING & PORTAL LAUNCH VIEW                  -->
+<!-- (Displayed if user is not authenticated)                  -->
+<!-- ======================================================== -->
+<div id="marketing-shell" style="display:none;">
+
+  <!-- TOP PUBLIC NAV -->
+  <nav class="nav" role="navigation" aria-label="Main navigation"></nav>
+
+  <!-- PROMINENT ERP/TMS LAUNCH BANNER -->
+  <section style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);padding:28px 0;border-bottom:2px solid var(--color-amber-500, #f59e0b);">
+    <div class="container" style="max-width:var(--container-xl);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
       <div>
-        <h2 style="font-size:var(--text-2xl);font-weight:800;color:var(--text-primary);margin-bottom:var(--space-4);">
-          Strategic Load Sourcing & Deadhead Reduction
-        </h2>
-        <p style="font-size:var(--text-base);color:var(--text-secondary);line-height:1.6;margin-bottom:var(--space-6);">
-          Our operations managers use live market data to keep you in dense freight corridors — higher RPM, fewer empty miles.
-        </p>
-
-        <div style="display:flex;flex-direction:column;gap:var(--space-4);">
-          <div style="display:flex;gap:var(--space-3);">
-            <div style="width:28px;height:28px;border-radius:50%;background:rgba(245,158,11,0.15);color:var(--color-amber-600);display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0;">✓</div>
-            <div>
-              <strong style="color:var(--text-primary);font-size:15px;">We book — you don’t buy a load board:</strong>
-              <div style="font-size:13px;color:var(--text-secondary);">Our desk uses professional load boards. Freight offers land in your TMS for approval.</div>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:var(--space-3);">
-            <div style="width:28px;height:28px;border-radius:50%;background:rgba(245,158,11,0.15);color:var(--color-amber-600);display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0;">✓</div>
-            <div>
-              <strong style="color:var(--text-primary);font-size:15px;">Pre-Calculated Reload Planning:</strong>
-              <div style="font-size:13px;color:var(--text-secondary);">We search and negotiate your next reload before your truck even finishes unloading.</div>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:var(--space-3);">
-            <div style="width:28px;height:28px;border-radius:50%;background:rgba(245,158,11,0.15);color:var(--color-amber-600);display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0;">✓</div>
-            <div>
-              <strong style="color:var(--text-primary);font-size:15px;">Strict Rate Minimum Adherence:</strong>
-              <div style="font-size:13px;color:var(--text-secondary);">We strictly respect your minimum RPM ($/mi) requirements and preferred home time.</div>
-            </div>
-          </div>
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-amber-400);">
+          ⚡ Enterprise Logistics Technology
         </div>
+        <h2 style="font-size:22px;font-weight:900;color:#ffffff;margin:4px 0 0;">
+          Shipping Wish Enterprise ERP / TMS Load Board
+        </h2>
+        <p style="font-size:13px;color:rgba(255,255,255,0.7);margin:4px 0 0;">
+          Log in to your account to query live DAT &amp; 123Loadboard lanes, run AI smart matching, and dispatch loads.
+        </p>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="/login?redirect=/load-booking" class="btn btn-primary btn-lg" id="btn-mkt-open-tms">
+          🔑 Sign In to ERP / TMS Load Board
+        </a>
+        <a href="/pricing" class="btn btn-secondary btn-lg" id="btn-mkt-start-trial">
+          ⚡ Start 7-Day Free Trial
+        </a>
+      </div>
+    </div>
+  </section>
 
-        <div style="margin-top:var(--space-8);">
-          <a href="/contact" class="btn btn-primary btn-lg" id="btn-booking-page-contact">Request Dedicated Load Booking →</a>
+  <!-- HERO -->
+  <section class="section" style="background:var(--color-gray-900);padding:var(--space-20) 0 var(--space-16);border-bottom:1px solid rgba(255,255,255,0.08);">
+    <div class="container" style="max-width:var(--container-xl);">
+      <div style="max-width:760px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-amber-400);margin-bottom:var(--space-3);">Professional Load Boards</div>
+        <h1 style="font-size:clamp(2.25rem, 5vw, 3.5rem);font-weight:900;color:#fff;line-height:1.1;margin-bottom:var(--space-4);">
+          Load Board Management &amp;<br><span style="color:var(--color-amber-400);">Strategic Lane Matching</span>
+        </h1>
+        <p style="font-size:var(--text-lg);color:rgba(255,255,255,0.7);line-height:1.6;margin-bottom:var(--space-8);">
+          Never sit empty waiting for loads. We continuously monitor premium load boards and direct broker relationships to keep your trucks moving in high-paying lanes.
+        </p>
+        <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;">
+          <a href="/login?redirect=/load-booking" class="btn btn-primary btn-xl" id="btn-hero-booking-start">Open ERP / TMS Load Board →</a>
+          <a href="/contact?service=load-booking" class="btn btn-secondary btn-xl" id="btn-hero-booking-contact">Request Dispatch Desk</a>
+          <a href="tel:+19177370021" class="btn btn-secondary btn-xl" id="btn-hero-booking-call">📞 Call Dispatch Desk</a>
         </div>
       </div>
+    </div>
+  </section>
 
-      <div style="background:var(--color-gray-900);border-radius:var(--radius-2xl);padding:var(--space-8);border:1px solid rgba(255,255,255,0.1);">
-        <h3 style="font-size:var(--text-xl);font-weight:800;color:#fff;margin-bottom:var(--space-4);">Supported Equipment Types</h3>
-        <div style="display:flex;flex-direction:column;gap:var(--space-3);">
-          <div style="background:rgba(255,255,255,0.04);padding:var(--space-4);border-radius:var(--radius-xl);border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;">
-            🚛 53ft Dry Van Freight
+  <!-- MAIN MARKETING CONTENT -->
+  <section class="section" style="padding:var(--space-16) 0;">
+    <div class="container" style="max-width:var(--container-xl);">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-12);align-items:center;" class="responsive-grid-2col">
+        <div>
+          <h2 style="font-size:var(--text-2xl);font-weight:800;color:var(--text-primary);margin-bottom:var(--space-4);">
+            Strategic Load Sourcing &amp; Deadhead Reduction
+          </h2>
+          <p style="font-size:var(--text-base);color:var(--text-secondary);line-height:1.6;margin-bottom:var(--space-6);">
+            Our operations managers use live market data to keep you in dense freight corridors — higher RPM, fewer empty miles.
+          </p>
+
+          <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+            <div style="display:flex;gap:var(--space-3);">
+              <div style="width:28px;height:28px;border-radius:50%;background:rgba(245,158,11,0.15);color:var(--color-amber-600);display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0;">✓</div>
+              <div>
+                <strong style="color:var(--text-primary);font-size:15px;">We book — you don’t buy a load board:</strong>
+                <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Our desk uses professional load boards. Freight offers land in your TMS for approval.</div>
+                <a href="/login?redirect=/load-booking" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+                  <span>🖥️</span> Open ERP / TMS Portal →
+                </a>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:var(--space-3);">
+              <div style="width:28px;height:28px;border-radius:50%;background:rgba(245,158,11,0.15);color:var(--color-amber-600);display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0;">✓</div>
+              <div>
+                <strong style="color:var(--text-primary);font-size:15px;">Pre-Calculated Reload Planning:</strong>
+                <div style="font-size:13px;color:var(--text-secondary);">We search and negotiate your next reload before your truck even finishes unloading.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:var(--space-3);">
+              <div style="width:28px;height:28px;border-radius:50%;background:rgba(245,158,11,0.15);color:var(--color-amber-600);display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0;">✓</div>
+              <div>
+                <strong style="color:var(--text-primary);font-size:15px;">Strict Rate Minimum Adherence:</strong>
+                <div style="font-size:13px;color:var(--text-secondary);">We strictly respect your minimum RPM ($/mi) requirements and preferred home time.</div>
+              </div>
+            </div>
           </div>
-          <div style="background:rgba(255,255,255,0.04);padding:var(--space-4);border-radius:var(--radius-xl);border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;">
-            ❄️ 53ft Reefer (Temperature Controlled)
+
+          <div style="margin-top:var(--space-8);display:flex;gap:12px;flex-wrap:wrap;">
+            <a href="/login?redirect=/load-booking" class="btn btn-primary btn-lg" id="btn-booking-page-tms">Launch ERP / TMS Load Board →</a>
+            <a href="/contact" class="btn btn-secondary btn-lg" id="btn-booking-page-contact">Request Dedicated Load Booking</a>
           </div>
-          <div style="background:rgba(255,255,255,0.04);padding:var(--space-4);border-radius:var(--radius-xl);border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;">
-            🏗️ 48ft / 53ft Flatbed & Step Deck
-          </div>
-          <div style="background:rgba(255,255,255,0.04);padding:var(--space-4);border-radius:var(--radius-xl);border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;">
-            ⚡ Power Only & Box Trucks
+        </div>
+
+        <div style="background:var(--color-gray-900);border-radius:var(--radius-2xl);padding:var(--space-8);border:1px solid rgba(255,255,255,0.1);">
+          <h3 style="font-size:var(--text-xl);font-weight:800;color:#fff;margin-bottom:var(--space-4);">Supported Equipment Types</h3>
+          <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+            <div style="background:rgba(255,255,255,0.04);padding:var(--space-4);border-radius:var(--radius-xl);border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;">
+              🚛 53ft Dry Van Freight
+            </div>
+            <div style="background:rgba(255,255,255,0.04);padding:var(--space-4);border-radius:var(--radius-xl);border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;">
+              ❄️ 53ft Reefer (Temperature Controlled)
+            </div>
+            <div style="background:rgba(255,255,255,0.04);padding:var(--space-4);border-radius:var(--radius-xl);border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;">
+              🏗️ 48ft / 53ft Flatbed &amp; Step Deck
+            </div>
+            <div style="background:rgba(255,255,255,0.04);padding:var(--space-4);border-radius:var(--radius-xl);border:1px solid rgba(255,255,255,0.08);color:#fff;font-weight:700;">
+              ⚡ Power Only &amp; Box Trucks
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- FOOTER -->
-<footer style="background:var(--color-gray-900);padding:var(--space-12) 0 var(--space-8);color:#fff;border-top:1px solid rgba(255,255,255,0.08);">
-  <div class="container" style="max-width:var(--container-xl);text-align:center;">
-    <div style="font-size:14px;color:rgba(255,255,255,0.5);">© 2026 Shipping Wish LLC. 19266 Coastal Hwy, Rehoboth Beach, DE 19971. All rights reserved.</div>
-  </div>
-</footer>
+  <!-- PUBLIC FOOTER -->
+  <footer class="footer" style="background:var(--color-gray-900);padding:var(--space-12) 0 var(--space-8);color:#fff;border-top:1px solid rgba(255,255,255,0.08);">
+    <div class="container" style="max-width:var(--container-xl);text-align:center;">
+      <div style="font-size:14px;color:rgba(255,255,255,0.5);">© 2026 Shipping Wish LLC. 19266 Coastal Hwy, Rehoboth Beach, DE 19971. All rights reserved.</div>
+    </div>
+  </footer>
+</div>
 
+<!-- ======================================================== -->
+<!-- SCRIPT: AUTH GATING, LOAD BOARD, AI MATCHER & OFFERS     -->
+<!-- ======================================================== -->
 <script>
-  const hamburger = document.getElementById('nav-hamburger');
-  const mobileNav = document.getElementById('nav-mobile');
-  if (hamburger && mobileNav) {
-    hamburger.addEventListener('click', () => {
-      const isOpen = mobileNav.classList.toggle('open');
-      hamburger.setAttribute('aria-expanded', isOpen);
-      document.body.style.overflow = isOpen ? 'hidden' : '';
-    });
+  let CURRENT_USER = null;
+  let CURRENT_LOADS = [];
+  let CARRIERS_LIST = [];
+  let SELECTED_LOAD_FOR_OFFER = null;
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // 1. Initialize Page
+  async function init() {
+    try {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        CURRENT_USER = data.user;
+      }
+    } catch (e) {
+      CURRENT_USER = null;
+    }
+
+    if (CURRENT_USER) {
+      // Authenticated ERP User -> Show Enterprise TMS Workspace
+      document.body.className = 'app-body';
+      document.getElementById('erp-shell').style.display = 'flex';
+      document.getElementById('marketing-shell').style.display = 'none';
+
+      // Load app-shell.js dynamically
+      loadAppShellScript();
+
+      // Configure role-based UI
+      const isStaff = ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
+      const carrierGroup = document.getElementById('carrier-select-group');
+      if (!isStaff && carrierGroup) {
+        carrierGroup.style.display = 'none';
+      }
+
+      // Load data
+      if (isStaff) {
+        loadCarriersDropdown();
+      }
+      runBoardSearch();
+      loadOffers();
+    } else {
+      // Unauthenticated Visitor -> Show Public Marketing View
+      document.body.className = 'marketing';
+      document.getElementById('erp-shell').style.display = 'none';
+      document.getElementById('marketing-shell').style.display = 'block';
+
+      // Load site-chrome.js for public nav & footer
+      loadSiteChromeScript();
+    }
+  }
+
+  function loadAppShellScript() {
+    if (document.querySelector('script[src*="app-shell.js"]')) return;
+    const s = document.createElement('script');
+    s.src = '/js/app-shell.js?v=22';
+    document.body.appendChild(s);
+  }
+
+  function loadSiteChromeScript() {
+    if (document.querySelector('script[src*="site-chrome.js"]')) return;
+    const s = document.createElement('script');
+    s.src = '/js/site-chrome.js';
+    document.body.appendChild(s);
+  }
+
+  // 2. Load Carriers for Staff Dropdown
+  async function loadCarriersDropdown() {
+    try {
+      const res = await fetch('/api/carriers', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      CARRIERS_LIST = data.carriers || [];
+
+      const select1 = document.getElementById('target-carrier-id');
+      const select2 = document.getElementById('modal-carrier-id');
+      const options = CARRIERS_LIST.map(c => 
+        `<option value="${c.id}">${escapeHtml(c.company_name || c.name || 'Carrier')} ${c.mc_number ? `(${escapeHtml(c.mc_number)})` : ''}</option>`
+      ).join('');
+
+      if (select1) select1.innerHTML = '<option value="">Select carrier to dispatch...</option>' + options;
+      if (select2) select2.innerHTML = '<option value="">Select carrier to receive load offer...</option>' + options;
+    } catch (e) {
+      console.warn('Could not load carriers:', e);
+    }
+  }
+
+  // 3. Search Load Board
+  async function runBoardSearch() {
+    const origin = document.getElementById('search-origin').value.trim();
+    const destination = document.getElementById('search-dest').value.trim();
+    const equipmentType = document.getElementById('search-equipment').value;
+    const minRpm = document.getElementById('search-min-rpm').value;
+
+    const tbody = document.getElementById('board-loads-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">Querying live load boards...</td></tr>';
+    document.getElementById('ai-summary-card').style.display = 'none';
+
+    try {
+      const qs = new URLSearchParams({
+        origin: origin || 'Dallas, TX',
+        destination: destination || 'Atlanta, GA',
+        equipmentType: equipmentType || '53ft Dry Van',
+        minRpm: minRpm || '2.85'
+      });
+
+      const res = await fetch('/api/loadboard/search?' + qs.toString(), { credentials: 'include' });
+      const data = await res.json();
+      CURRENT_LOADS = data.loads || [];
+      renderBoardLoadsTable(CURRENT_LOADS);
+
+      const statusEl = document.getElementById('board-search-status');
+      if (statusEl) {
+        statusEl.textContent = `Found ${CURRENT_LOADS.length} active loads (${data.provider || 'DAT Freight Feed'})`;
+      }
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#b91c1c;">Could not load board freight. Please try again.</td></tr>';
+    }
+  }
+
+  // 4. Run AI Lane Matcher
+  async function runAiMatch() {
+    const origin = document.getElementById('search-origin').value.trim();
+    const destination = document.getElementById('search-dest').value.trim();
+    const equipmentType = document.getElementById('search-equipment').value;
+    const minRpm = document.getElementById('search-min-rpm').value;
+    const carrierId = document.getElementById('target-carrier-id') ? document.getElementById('target-carrier-id').value : null;
+
+    const tbody = document.getElementById('board-loads-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">⚡ AI is analyzing live rate corridors and matching trucks...</td></tr>';
+
+    try {
+      const res = await fetch('/api/loadboard/ai-match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          currentCity: origin || 'Dallas, TX',
+          desiredDestination: destination || 'Atlanta, GA',
+          equipmentType: equipmentType || '53ft Dry Van',
+          targetRpm: minRpm || '2.85',
+          carrierId: carrierId || undefined
+        })
+      });
+
+      const data = await res.json();
+      CURRENT_LOADS = data.matches || [];
+      renderBoardLoadsTable(CURRENT_LOADS);
+
+      const summaryCard = document.getElementById('ai-summary-card');
+      const summaryText = document.getElementById('ai-summary-text');
+      if (summaryCard && summaryText) {
+        summaryText.textContent = data.ai_summary || `AI identified ${CURRENT_LOADS.length} high-profit freight matches exceeding minimum RPM target.`;
+        summaryCard.style.display = 'block';
+      }
+
+      const statusEl = document.getElementById('board-search-status');
+      if (statusEl) {
+        statusEl.textContent = `⚡ AI Match complete: ${CURRENT_LOADS.length} optimal matches`;
+      }
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#b91c1c;">AI matching encountered an error. Please try standard search.</td></tr>';
+    }
+  }
+
+  function resetSearch() {
+    document.getElementById('search-origin').value = 'Dallas, TX';
+    document.getElementById('search-dest').value = 'Atlanta, GA';
+    document.getElementById('search-equipment').value = '53ft Dry Van';
+    document.getElementById('search-min-rpm').value = '2.85';
+    document.getElementById('ai-summary-card').style.display = 'none';
+    runBoardSearch();
+  }
+
+  // 5. Render Board Loads Table
+  function renderBoardLoadsTable(loads) {
+    const tbody = document.getElementById('board-loads-tbody');
+    if (!loads.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No loads found matching criteria. Try adjusting origin/dest or lowering target RPM.</td></tr>';
+      return;
+    }
+
+    const isStaff = CURRENT_USER && ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
+
+    tbody.innerHTML = loads.map((load, idx) => {
+      const score = parseFloat(load.ai_score || 95);
+      const pillClass = score >= 92 ? 'load-match-high' : 'load-match-mid';
+
+      const mailtoSubject = encodeURIComponent(`Rate Confirmation & Inquiry: ${load.pickup_location} to ${load.delivery_location}`);
+      const mailtoBody = encodeURIComponent(`Hi ${load.broker_name},\n\nWe have an available empty truck ready to book your posted load:\n• Lane: ${load.pickup_location} -> ${load.delivery_location}\n• Equipment: ${load.equipment_type}\n• Rate: $${load.rate}\n\nPlease confirm availability and send Rate Confirmation.\n\nThank you,\nShipping Wish LLC Dispatch Desk\n+1 (917) 737-0021`);
+      const mailtoLink = `mailto:${encodeURIComponent(load.broker_email || 'dispatch@broker.com')}?subject=${mailtoSubject}&body=${mailtoBody}`;
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(load.broker_name || 'Freight Broker')}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(load.broker_mc || 'MC-ON-FILE')}</div>
+            ${load.broker_phone ? `<a href="tel:${escapeHtml(load.broker_phone)}" style="font-size:11px;color:#2563eb;font-weight:600;">📞 ${escapeHtml(load.broker_phone)}</a>` : ''}
+          </td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">
+              ${escapeHtml(load.pickup_location)} ➔ ${escapeHtml(load.delivery_location)}
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);">
+              PU: ${escapeHtml(load.pickup_date || 'Today')} · DEL: ${escapeHtml(load.delivery_date || 'Direct')}
+            </div>
+          </td>
+          <td>
+            <span class="badge badge-booked" style="font-size:11px;padding:3px 8px;">${escapeHtml(load.equipment_type || '53ft Dry Van')}</span>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${load.weight ? `${load.weight.toLocaleString()} lbs` : 'Standard'}</div>
+          </td>
+          <td>
+            <span style="font-weight:600;">${load.miles} mi</span>
+          </td>
+          <td>
+            <div style="font-weight:800;color:#059669;font-size:14px;">$${Number(load.rate).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;">$${load.rpm}/mi</div>
+          </td>
+          <td>
+            <span class="load-match-pill ${pillClass}">
+              <span>⚡</span> ${score}% AI Match
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              ${isStaff ? `
+                <button type="button" class="btn btn-primary btn-sm" onclick="openOfferModal(${idx})">
+                  Dispatch Offer
+                </button>
+              ` : `
+                <a href="${mailtoLink}" class="btn btn-primary btn-sm">
+                  Inquire Rate
+                </a>
+              `}
+              <a href="${mailtoLink}" class="btn btn-secondary btn-sm" title="Email Broker Directly">
+                ✉️
+              </a>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // 6. Offer Modal Handling
+  function openOfferModal(loadIndex) {
+    SELECTED_LOAD_FOR_OFFER = CURRENT_LOADS[loadIndex];
+    if (!SELECTED_LOAD_FOR_OFFER) return;
+
+    document.getElementById('modal-lane-summary').textContent = 
+      `${SELECTED_LOAD_FOR_OFFER.pickup_location} ➔ ${SELECTED_LOAD_FOR_OFFER.delivery_location}`;
+    document.getElementById('modal-broker-summary').textContent = 
+      `Broker: ${SELECTED_LOAD_FOR_OFFER.broker_name} · ${SELECTED_LOAD_FOR_OFFER.equipment_type} · ${SELECTED_LOAD_FOR_OFFER.miles} mi · Posted: $${SELECTED_LOAD_FOR_OFFER.rate} ($${SELECTED_LOAD_FOR_OFFER.rpm}/mi)`;
+
+    document.getElementById('modal-rate').value = SELECTED_LOAD_FOR_OFFER.rate;
+    document.getElementById('modal-miles').value = SELECTED_LOAD_FOR_OFFER.miles;
+
+    // Default carrier selection if pre-selected in header
+    const topCarrier = document.getElementById('target-carrier-id');
+    if (topCarrier && topCarrier.value) {
+      document.getElementById('modal-carrier-id').value = topCarrier.value;
+    }
+
+    document.getElementById('sendOfferModal').classList.add('active');
+  }
+
+  function closeOfferModal() {
+    document.getElementById('sendOfferModal').classList.remove('active');
+    SELECTED_LOAD_FOR_OFFER = null;
+  }
+
+  async function submitOfferForm(e) {
+    e.preventDefault();
+    if (!SELECTED_LOAD_FOR_OFFER) return;
+
+    const carrierId = document.getElementById('modal-carrier-id').value;
+    const rate = document.getElementById('modal-rate').value;
+    const miles = document.getElementById('modal-miles').value;
+    const notes = document.getElementById('modal-notes').value;
+
+    if (!carrierId) {
+      alert('Please select a Carrier Client to dispatch this offer to.');
+      return;
+    }
+
+    const btn = document.getElementById('btn-submit-offer');
+    btn.disabled = true;
+    btn.textContent = 'Sending Offer…';
+
+    try {
+      const res = await fetch('/api/loadboard/offers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          carrierId,
+          brokerName: SELECTED_LOAD_FOR_OFFER.broker_name,
+          brokerMc: SELECTED_LOAD_FOR_OFFER.broker_mc,
+          brokerPhone: SELECTED_LOAD_FOR_OFFER.broker_phone,
+          brokerEmail: SELECTED_LOAD_FOR_OFFER.broker_email,
+          pickupLocation: SELECTED_LOAD_FOR_OFFER.pickup_location,
+          pickupState: SELECTED_LOAD_FOR_OFFER.pickup_state,
+          pickupDate: SELECTED_LOAD_FOR_OFFER.pickup_date,
+          deliveryLocation: SELECTED_LOAD_FOR_OFFER.delivery_location,
+          deliveryState: SELECTED_LOAD_FOR_OFFER.delivery_state,
+          deliveryDate: SELECTED_LOAD_FOR_OFFER.delivery_date,
+          rate,
+          miles,
+          rpm: (parseFloat(rate) / parseFloat(miles)).toFixed(2),
+          equipmentType: SELECTED_LOAD_FOR_OFFER.equipment_type,
+          notes
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Could not send offer.');
+      } else {
+        alert('Load offer successfully dispatched! It is now visible in the carrier portal.');
+        closeOfferModal();
+        loadOffers();
+      }
+    } catch (err) {
+      alert('Network error while dispatching offer.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Offer to Carrier →';
+    }
+  }
+
+  // 7. Load Active Offers
+  async function loadOffers() {
+    const tbody = document.getElementById('offers-tbody');
+    try {
+      const res = await fetch('/api/loadboard/offers', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const offers = data.offers || [];
+
+      // Update KPI counters
+      const pendingCount = offers.filter(o => o.status === 'pending').length;
+      const biddingCount = offers.filter(o => o.broker_negotiation_status === 'bidding' || o.status === 'accepted').length;
+      const pendEl = document.getElementById('kpi-pending-offers');
+      const bidEl = document.getElementById('kpi-active-bids');
+      if (pendEl) pendEl.textContent = String(pendingCount);
+      if (bidEl) bidEl.textContent = String(biddingCount);
+
+      if (!offers.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">No active load offers yet. Dispatched offers will appear here.</td></tr>';
+        return;
+      }
+
+      const isCarrier = CURRENT_USER && (CURRENT_USER.role === 'carrier' || CURRENT_USER.role === 'driver');
+
+      tbody.innerHTML = offers.map(o => {
+        let statusBadge = '<span class="badge badge-pending">Pending</span>';
+        if (o.status === 'accepted') statusBadge = '<span class="badge badge-paid">Driver Approved</span>';
+        if (o.status === 'declined') statusBadge = '<span class="badge badge-error">Declined</span>';
+        if (o.status === 'booked') statusBadge = '<span class="badge badge-booked">Booked & Confirmed</span>';
+        if (o.broker_negotiation_status === 'bidding') statusBadge = '<span class="badge badge-assigned">AI Bidding with Broker</span>';
+
+        return `
+          <tr>
+            <td><strong>#${o.id}</strong></td>
+            <td>
+              <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(o.carrier_company || o.carrier_name || 'Carrier Client')}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(o.carrier_mc || '')}</div>
+            </td>
+            <td>
+              <div style="font-weight:600;">${escapeHtml(o.broker_name || 'Broker')}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(o.broker_mc || '')}</div>
+            </td>
+            <td>
+              <div style="font-weight:600;">${escapeHtml(o.pickup_location)} ➔ ${escapeHtml(o.delivery_location)}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${o.miles ? `${o.miles} mi` : ''} · ${escapeHtml(o.equipment_type || '')}</div>
+            </td>
+            <td>
+              <div style="font-weight:800;color:#059669;">$${Number(o.rate).toLocaleString(undefined, {minimumFractionDigits:2})}</div>
+              <div style="font-size:11px;color:var(--text-muted);">$${o.rpm || ''}/mi</div>
+            </td>
+            <td>${statusBadge}</td>
+            <td style="font-size:11.5px;color:var(--text-muted);">${new Date(o.created_at).toLocaleDateString()}</td>
+            <td>
+              ${isCarrier && o.status === 'pending' ? `
+                <div style="display:flex;gap:6px;">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="respondOffer(${o.id}, 'accepted')">Accept</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="respondOffer(${o.id}, 'declined')">Decline</button>
+                </div>
+              ` : `
+                <span style="font-size:12px;color:var(--text-muted);">—</span>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Could not refresh offers.</td></tr>';
+    }
+  }
+
+  // 8. Respond to Offer (Carrier / Driver)
+  async function respondOffer(offerId, response) {
+    if (!confirm(`Are you sure you want to ${response} this load offer?`)) return;
+
+    try {
+      const res = await fetch(`/api/loadboard/offers/${offerId}/respond`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ response })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Could not update offer status.');
+      } else {
+        alert(`Offer #${offerId} ${response}! ${data.negotiation ? data.negotiation.message : ''}`);
+        loadOffers();
+      }
+    } catch (e) {
+      alert('Network error while responding to offer.');
+    }
+  }
+
+  // Expose global functions for onclick handlers
+  window.runBoardSearch = runBoardSearch;
+  window.runAiMatch = runAiMatch;
+  window.resetSearch = resetSearch;
+  window.openOfferModal = openOfferModal;
+  window.closeOfferModal = closeOfferModal;
+  window.submitOfferForm = submitOfferForm;
+  window.loadOffers = loadOffers;
+  window.respondOffer = respondOffer;
+
+  // Start on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 </script>
-<script src="/js/site-chrome.js"></script>
 </body>
 </html>
