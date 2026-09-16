@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Load Board &amp; AI Freight Match | Shipping Wish LLC ERP TMS</title>
-  <meta name="description" content="Enterprise Load Board Management & AI Freight Matching Workstation for Shipping Wish LLC. Search live DAT and 123Loadboard freight, match high-RPM lanes, track DHO/DHD, and dispatch carrier offers across multi-truck search tabs.">
+  <meta name="description" content="Enterprise Load Board Management & AI Freight Matching Workstation for Shipping Wish LLC. Search live DAT and 123Loadboard freight by pickup dates (Today, Tomorrow, Advance), track DHO/DHD, and dispatch carrier offers across multi-truck search tabs.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
   <style>
@@ -95,7 +95,7 @@
     /* Filters Layout */
     .filter-grid-v2 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 12px;
       align-items: flex-end;
     }
@@ -187,7 +187,7 @@
           Load Board &amp; AI Freight Match Engine
         </h1>
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">
-          DAT One multi-truck workspace, DHO/DHD radius tracking, multi-state routing, and carrier dispatching
+          DAT One multi-truck workspace, date-wise searches (Today, Tomorrow, Advance), DHO/DHD tracking &amp; carrier booking
         </p>
       </div>
 
@@ -279,6 +279,21 @@
             </select>
           </div>
 
+          <!-- Pickup Date Filter & Presets -->
+          <div class="form-group" style="margin:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label class="form-label" for="search-date" style="font-size:11px;font-weight:700;">📅 Pickup Date</label>
+              <span id="date-relative-label" style="font-size:10px;font-weight:700;color:#059669;">Today</span>
+            </div>
+            <input type="date" id="search-date" class="form-input" onchange="syncActiveTabField('pickupDate', this.value); updateDateLabel();" style="font-size:12.5px;padding:6px 8px;">
+            <div style="display:flex;gap:3px;margin-top:4px;">
+              <button type="button" class="quick-preset-pill" onclick="applyDatePreset('today')" style="padding:1px 5px;font-size:10px;">Today</button>
+              <button type="button" class="quick-preset-pill" onclick="applyDatePreset('tomorrow')" style="padding:1px 5px;font-size:10px;">Tomorrow</button>
+              <button type="button" class="quick-preset-pill" onclick="applyDatePreset('+2days')" style="padding:1px 5px;font-size:10px;">+2 Days</button>
+              <button type="button" class="quick-preset-pill" onclick="applyDatePreset('+3days')" style="padding:1px 5px;font-size:10px;">Advance</button>
+            </div>
+          </div>
+
           <!-- Origin & DHO -->
           <div class="form-group" style="margin:0;">
             <div style="display:flex;justify-content:space-between;">
@@ -287,7 +302,7 @@
             </div>
             <div style="display:flex;gap:4px;">
               <input type="text" id="search-origin" class="form-input" value="Dallas, TX" placeholder="e.g. Dallas, TX" onchange="syncActiveTabField('origin', this.value)" style="flex:2;">
-              <select id="search-dho" class="form-select" onchange="syncActiveTabField('dho', this.value)" style="flex:1;min-width:80px;" title="Deadhead Origin Radius">
+              <select id="search-dho" class="form-select" onchange="syncActiveTabField('dho', this.value)" style="flex:1;min-width:75px;" title="Deadhead Origin Radius">
                 <option value="50">50 mi</option>
                 <option value="100" selected>100 mi</option>
                 <option value="150">150 mi</option>
@@ -304,7 +319,7 @@
             </div>
             <div style="display:flex;gap:4px;">
               <input type="text" id="search-dest" class="form-input" value="TX, WY, CO" placeholder="e.g. Cheyenne, WY or TX, WY, CO" onchange="syncActiveTabField('dest', this.value)" style="flex:2;">
-              <select id="search-dhd" class="form-select" onchange="syncActiveTabField('dhd', this.value)" style="flex:1;min-width:80px;" title="Deadhead Destination Radius">
+              <select id="search-dhd" class="form-select" onchange="syncActiveTabField('dhd', this.value)" style="flex:1;min-width:75px;" title="Deadhead Destination Radius">
                 <option value="50" selected>50 mi</option>
                 <option value="100">100 mi</option>
                 <option value="150">150 mi</option>
@@ -371,7 +386,7 @@
               <span id="active-tab-results-badge" class="badge badge-booked" style="font-size:11px;">0 loads</span>
             </h3>
             <p style="font-size:var(--text-xs);color:var(--text-muted);margin:2px 0 0;">
-              Real-time load board results with exact origin/dest deadhead miles (DHO/DHD), RPM calculations, and instant dispatching.
+              Real-time load board results filtered by pickup date (Today, Tomorrow, Advance), DHO/DHD deadhead, and RPM rate.
             </p>
           </div>
           <div id="board-search-status" style="font-size:12px;color:var(--text-muted);font-weight:600;"></div>
@@ -616,18 +631,27 @@
 </div>
 
 <!-- ======================================================== -->
-<!-- SCRIPT: MULTI-TAB SEARCH STATE & LOAD BOARD ENGINE       -->
+<!-- SCRIPT: MULTI-TAB SEARCH STATE & DATE-WISE LOAD ENGINE   -->
 <!-- ======================================================== -->
 <script>
   let CURRENT_USER = null;
   let CARRIERS_LIST = [];
   let SELECTED_LOAD_FOR_OFFER = null;
 
-  // Multi-Tab State (like DAT One)
+  function getTodayString() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function getOffsetDateString(daysOffset) {
+    const d = new Date(Date.now() + (daysOffset * 86400000));
+    return d.toISOString().slice(0, 10);
+  }
+
+  // Multi-Tab State (like DAT One) with Date Tracking
   let SEARCH_TABS = [
     {
       id: 1,
-      title: 'Truck 1 (Dallas, TX)',
+      title: 'Truck 1 (Dallas ➔ WY · Today)',
       carrierId: '',
       origin: 'Dallas, TX',
       dho: '100',
@@ -635,12 +659,13 @@
       dhd: '50',
       equipment: '53ft Dry Van',
       minRpm: '2.85',
+      pickupDate: getTodayString(),
       results: [],
       aiSummary: null
     },
     {
       id: 2,
-      title: 'Truck 2 (Chicago, IL)',
+      title: 'Truck 2 (Chicago ➔ GA · Tomorrow)',
       carrierId: '',
       origin: 'Chicago, IL',
       dho: '100',
@@ -648,6 +673,7 @@
       dhd: '50',
       equipment: '53ft Reefer',
       minRpm: '3.10',
+      pickupDate: getOffsetDateString(1),
       results: [],
       aiSummary: null
     }
@@ -657,6 +683,49 @@
 
   function escapeHtml(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatDisplayDate(dateStr) {
+    if (!dateStr) return 'Flexible';
+    const parts = String(dateStr).trim().split('-');
+    if (parts.length !== 3) return dateStr;
+    const d = new Date(Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 12, 0, 0));
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+
+  function getDateStatusBadge(dateStr) {
+    if (!dateStr) return '';
+    const today = getTodayString();
+    const tmrw = getOffsetDateString(1);
+    if (dateStr === today) {
+      return '<span class="badge badge-paid" style="font-size:10px;padding:2px 6px;">⚡ Today</span>';
+    } else if (dateStr === tmrw) {
+      return '<span class="badge badge-booked" style="font-size:10px;padding:2px 6px;">📅 Tomorrow</span>';
+    } else if (dateStr > tmrw) {
+      return '<span class="badge" style="background:#ede9fe;color:#5b21b6;font-size:10px;padding:2px 6px;">🗓️ Advance</span>';
+    }
+    return '';
+  }
+
+  function updateDateLabel() {
+    const val = document.getElementById('search-date').value;
+    const labelEl = document.getElementById('date-relative-label');
+    if (!labelEl) return;
+    const today = getTodayString();
+    const tmrw = getOffsetDateString(1);
+    if (val === today) {
+      labelEl.textContent = 'Today (Ready Now)';
+      labelEl.style.color = '#059669';
+    } else if (val === tmrw) {
+      labelEl.textContent = 'Tomorrow Reload';
+      labelEl.style.color = '#2563eb';
+    } else if (val > tmrw) {
+      labelEl.textContent = 'Advance Booking';
+      labelEl.style.color = '#7c3aed';
+    } else {
+      labelEl.textContent = 'Past / Immediate';
+      labelEl.style.color = '#64748b';
+    }
   }
 
   // 1. Initialize Page
@@ -779,6 +848,8 @@
     document.getElementById('search-dhd').value = tab.dhd || '50';
     document.getElementById('search-equipment').value = tab.equipment || '53ft Dry Van';
     document.getElementById('search-min-rpm').value = tab.minRpm || '2.85';
+    document.getElementById('search-date').value = tab.pickupDate || getTodayString();
+    updateDateLabel();
 
     const carrierSelect = document.getElementById('search-carrier-id');
     if (carrierSelect) carrierSelect.value = tab.carrierId || '';
@@ -820,6 +891,7 @@
     tab.dhd = document.getElementById('search-dhd').value;
     tab.equipment = document.getElementById('search-equipment').value;
     tab.minRpm = document.getElementById('search-min-rpm').value;
+    tab.pickupDate = document.getElementById('search-date').value || getTodayString();
 
     const carrierSelect = document.getElementById('search-carrier-id');
     if (carrierSelect) tab.carrierId = carrierSelect.value;
@@ -843,7 +915,7 @@
     TAB_COUNTER++;
     const newTab = {
       id: TAB_COUNTER,
-      title: `Truck ${TAB_COUNTER} (New Search)`,
+      title: `Truck ${TAB_COUNTER} (Tomorrow Reload)`,
       carrierId: '',
       origin: 'Atlanta, GA',
       dho: '100',
@@ -851,6 +923,7 @@
       dhd: '50',
       equipment: '53ft Dry Van',
       minRpm: '2.95',
+      pickupDate: getOffsetDateString(1),
       results: [],
       aiSummary: null
     };
@@ -887,12 +960,29 @@
     tab.equipment = '53ft Dry Van';
     tab.minRpm = '2.85';
     tab.carrierId = '';
+    tab.pickupDate = getTodayString();
     loadTabInputs(tab.id);
   }
 
   function applyDestPreset(presetValue) {
     document.getElementById('search-dest').value = presetValue;
     syncActiveTabField('dest', presetValue);
+    runActiveTabSearch();
+  }
+
+  function applyDatePreset(presetType) {
+    let dateStr = getTodayString();
+    if (presetType === 'tomorrow') {
+      dateStr = getOffsetDateString(1);
+    } else if (presetType === '+2days') {
+      dateStr = getOffsetDateString(2);
+    } else if (presetType === '+3days') {
+      dateStr = getOffsetDateString(3);
+    }
+
+    document.getElementById('search-date').value = dateStr;
+    syncActiveTabField('pickupDate', dateStr);
+    updateDateLabel();
     runActiveTabSearch();
   }
 
@@ -904,7 +994,7 @@
     const tab = getActiveTab();
 
     const tbody = document.getElementById('board-loads-tbody');
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:35px;color:var(--text-muted);">Querying live load boards with DHO/DHD routing...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:35px;color:var(--text-muted);">Querying live load boards with DHO/DHD routing & date matching...</td></tr>';
     document.getElementById('ai-summary-card').style.display = 'none';
 
     try {
@@ -914,7 +1004,8 @@
         equipmentType: tab.equipment || '53ft Dry Van',
         minRpm: tab.minRpm || '2.85',
         dho: tab.dho || '100',
-        dhd: tab.dhd || '50'
+        dhd: tab.dhd || '50',
+        pickupDate: tab.pickupDate || getTodayString()
       });
 
       const res = await fetch('/api/loadboard/search?' + qs.toString(), { credentials: 'include' });
@@ -926,7 +1017,7 @@
       renderTabsBar();
 
       document.getElementById('active-tab-results-badge').textContent = `${tab.results.length} loads`;
-      document.getElementById('board-search-status').textContent = `Found ${tab.results.length} loads (${data.provider || 'DAT Freight Feed'})`;
+      document.getElementById('board-search-status').textContent = `Found ${tab.results.length} loads for ${formatDisplayDate(tab.pickupDate)} (${data.provider || 'DAT Freight Feed'})`;
     } catch (e) {
       tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:35px;color:#b91c1c;">Could not load board freight. Please check your connection.</td></tr>';
     }
@@ -951,7 +1042,8 @@
           targetRpm: tab.minRpm || '2.85',
           carrierId: tab.carrierId || undefined,
           dho: tab.dho || '100',
-          dhd: tab.dhd || '50'
+          dhd: tab.dhd || '50',
+          pickupDate: tab.pickupDate || getTodayString()
         })
       });
 
@@ -970,19 +1062,19 @@
       }
 
       document.getElementById('active-tab-results-badge').textContent = `${tab.results.length} AI matches`;
-      document.getElementById('board-search-status').textContent = `⚡ AI Match complete: ${tab.results.length} optimal matches`;
+      document.getElementById('board-search-status').textContent = `⚡ AI Match complete for ${formatDisplayDate(tab.pickupDate)}: ${tab.results.length} optimal matches`;
     } catch (e) {
       tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:35px;color:#b91c1c;">AI matching encountered an error. Please try standard search.</td></tr>';
     }
   }
 
   // ==========================================
-  // RENDER TABLE WITH DHO, DHD & EXACT CITIES
+  // RENDER TABLE WITH DATES, DHO, DHD & CITIES
   // ==========================================
   function renderBoardLoadsTable(loads) {
     const tbody = document.getElementById('board-loads-tbody');
     if (!loads.length) {
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:45px;color:var(--text-muted);">No loads found matching criteria. Try increasing DHO/DHD radius or expanding destination states.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:45px;color:var(--text-muted);">No loads found matching criteria. Try increasing DHO/DHD radius, changing date, or expanding destination states.</td></tr>';
       return;
     }
 
@@ -997,8 +1089,12 @@
       const dhoClass = dhoMiles <= 25 ? 'low' : (dhoMiles <= 60 ? 'mid' : '');
       const dhdClass = dhdMiles <= 25 ? 'low' : (dhdMiles <= 60 ? 'mid' : '');
 
-      const mailtoSubject = encodeURIComponent(`Rate Confirmation & Inquiry: ${load.pickup_location} to ${load.delivery_location} (DAT ID: ${load.id})`);
-      const mailtoBody = encodeURIComponent(`Hi ${load.broker_name} Dispatch,\n\nWe have an empty truck ready to book your posted load:\n• Lane: ${load.pickup_location} -> ${load.delivery_location}\n• Equipment: ${load.equipment_type}\n• Miles: ${load.miles} mi\n• Rate: $${load.rate}\n\nPlease confirm availability and send Rate Confirmation to dispatch@shippingwish.com.\n\nThank you,\nShipping Wish LLC Dispatch Desk\n+1 (917) 737-0021`);
+      const dateBadge = getDateStatusBadge(load.pickup_date);
+      const formattedPuDate = formatDisplayDate(load.pickup_date);
+      const formattedDelDate = formatDisplayDate(load.delivery_date);
+
+      const mailtoSubject = encodeURIComponent(`Rate Confirmation & Inquiry: ${load.pickup_location} to ${load.delivery_location} (PU: ${load.pickup_date})`);
+      const mailtoBody = encodeURIComponent(`Hi ${load.broker_name} Dispatch,\n\nWe have an empty truck ready to book your posted load:\n• Lane: ${load.pickup_location} -> ${load.delivery_location}\n• Pickup Date: ${load.pickup_date}\n• Delivery Date: ${load.delivery_date}\n• Equipment: ${load.equipment_type}\n• Miles: ${load.miles} mi\n• Rate: $${load.rate}\n\nPlease confirm availability and send Rate Confirmation to dispatch@shippingwish.com.\n\nThank you,\nShipping Wish LLC Dispatch Desk\n+1 (917) 737-0021`);
       const mailtoLink = `mailto:${encodeURIComponent(load.broker_email || 'dispatch@broker.com')}?subject=${mailtoSubject}&body=${mailtoBody}`;
 
       return `
@@ -1010,23 +1106,24 @@
             </span>
           </td>
 
-          <!-- Pickup Location -->
+          <!-- Pickup Location & Exact Date -->
           <td>
             <div style="font-weight:800;color:var(--text-primary);font-size:13.5px;">
               ${escapeHtml(load.pickup_location)}
             </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
-              📅 PU: ${escapeHtml(load.pickup_date || 'Today')}
+            <div style="font-size:11.5px;color:#0f172a;margin-top:2px;display:flex;align-items:center;gap:5px;">
+              <span>📅 ${formattedPuDate}</span>
+              ${dateBadge}
             </div>
           </td>
 
-          <!-- Delivery Location -->
+          <!-- Delivery Location & Date -->
           <td>
             <div style="font-weight:800;color:#2563eb;font-size:13.5px;">
               ${escapeHtml(load.delivery_location)}
             </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
-              📅 DEL: ${escapeHtml(load.delivery_date || 'Direct')}
+            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">
+              🏁 DEL: ${formattedDelDate} ${load.transit_days ? `<span style="color:#64748b;">(${load.transit_days}d transit)</span>` : ''}
             </div>
           </td>
 
@@ -1105,7 +1202,7 @@
     if (!SELECTED_LOAD_FOR_OFFER) return;
 
     document.getElementById('modal-lane-summary').textContent = 
-      `${SELECTED_LOAD_FOR_OFFER.pickup_location} ➔ ${SELECTED_LOAD_FOR_OFFER.delivery_location}`;
+      `${SELECTED_LOAD_FOR_OFFER.pickup_location} ➔ ${SELECTED_LOAD_FOR_OFFER.delivery_location} (PU: ${formatDisplayDate(SELECTED_LOAD_FOR_OFFER.pickup_date)})`;
     document.getElementById('modal-broker-summary').textContent = 
       `Broker: ${SELECTED_LOAD_FOR_OFFER.broker_name} (${SELECTED_LOAD_FOR_OFFER.broker_mc}) · ${SELECTED_LOAD_FOR_OFFER.equipment_type} · ${SELECTED_LOAD_FOR_OFFER.miles} mi · DHO: ${SELECTED_LOAD_FOR_OFFER.dho} mi · DHD: ${SELECTED_LOAD_FOR_OFFER.dhd} mi · Posted: $${SELECTED_LOAD_FOR_OFFER.rate} ($${SELECTED_LOAD_FOR_OFFER.rpm}/mi)`;
 
@@ -1286,6 +1383,8 @@
   window.updateCurrentTabTitle = updateCurrentTabTitle;
   window.resetActiveTabFilters = resetActiveTabFilters;
   window.applyDestPreset = applyDestPreset;
+  window.applyDatePreset = applyDatePreset;
+  window.updateDateLabel = updateDateLabel;
   window.syncActiveTabField = syncActiveTabField;
   window.openOfferModal = openOfferModal;
   window.closeOfferModal = closeOfferModal;
