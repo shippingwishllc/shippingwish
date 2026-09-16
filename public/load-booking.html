@@ -4,16 +4,135 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Load Board &amp; AI Freight Match | Shipping Wish LLC ERP TMS</title>
-  <meta name="description" content="Enterprise Load Board Management & AI Freight Matching Workstation for Shipping Wish LLC. Search live DAT and 123Loadboard freight, match high-RPM lanes, and dispatch carrier offers.">
+  <meta name="description" content="Enterprise Load Board Management & AI Freight Matching Workstation for Shipping Wish LLC. Search live DAT and 123Loadboard freight, match high-RPM lanes, track DHO/DHD, and dispatch carrier offers across multi-truck search tabs.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
   <style>
-    .filter-grid {
+    /* DAT Style Multi-Search Tabs */
+    .tabs-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 16px;
+      border-bottom: 2px solid var(--border-default, #e2e8f0);
+    }
+    .search-tab-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      border-bottom: none;
+      border-radius: 10px 10px 0 0;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .search-tab-item:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .search-tab-item.active {
+      background: #ffffff;
+      color: #0f172a;
+      border-color: #cbd5e1;
+      border-top: 3px solid var(--color-amber-500, #f59e0b);
+      margin-bottom: -2px;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.04);
+    }
+    .tab-badge-count {
+      background: rgba(15, 23, 42, 0.1);
+      color: #0f172a;
+      border-radius: 999px;
+      padding: 1px 7px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .search-tab-item.active .tab-badge-count {
+      background: var(--color-amber-500, #f59e0b);
+      color: #0f172a;
+    }
+    .tab-close-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 2px;
+      border-radius: 4px;
+    }
+    .tab-close-btn:hover {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+    }
+    .btn-add-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: #ffffff;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #2563eb;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .btn-add-tab:hover {
+      background: #eff6ff;
+      border-color: #2563eb;
+    }
+
+    /* Filters Layout */
+    .filter-grid-v2 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
       align-items: flex-end;
     }
+    .quick-preset-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .quick-preset-pill:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+
+    /* Deadhead badges */
+    .dh-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+    }
+    .dh-badge.low { background: rgba(16, 185, 129, 0.1); color: #059669; border-color: rgba(16, 185, 129, 0.3); }
+    .dh-badge.mid { background: rgba(245, 158, 11, 0.1); color: #d97706; border-color: rgba(245, 158, 11, 0.3); }
+
     .load-match-pill {
       display: inline-flex;
       align-items: center;
@@ -25,16 +144,7 @@
     }
     .load-match-high { background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); }
     .load-match-mid { background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .ai-banner-box {
-      background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(37,99,235,0.05) 100%);
-      border: 1px solid rgba(245,158,11,0.3);
-      border-radius: var(--radius-xl);
-      padding: 16px 20px;
-      margin-bottom: var(--space-6);
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-    }
+
     .modal-backdrop {
       display: none;
       position: fixed;
@@ -51,7 +161,7 @@
       background: #ffffff;
       border-radius: 16px;
       width: 100%;
-      max-width: 580px;
+      max-width: 600px;
       border: 1px solid var(--border-default, #e2e8f0);
       box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
       overflow: hidden;
@@ -77,17 +187,17 @@
           Load Board &amp; AI Freight Match Engine
         </h1>
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">
-          Live DAT &amp; 123Loadboard lane matching, AI RPM rate optimization, and instant carrier booking
+          DAT One multi-truck workspace, DHO/DHD radius tracking, multi-state routing, and carrier dispatching
         </p>
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
         <div class="live-status" aria-live="polite">
           <span class="live-dot" aria-hidden="true"></span>
-          DAT Freight Feed Live
+          DAT Freight Engine Live
         </div>
-        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('search-origin').focus();">
-          🔍 Find Loads
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addNewSearchTab()">
+          + New Truck Tab
         </button>
         <div id="notif-container"></div>
       </div>
@@ -96,23 +206,14 @@
     <!-- CONTENT BODY -->
     <main class="app-content">
 
-      <!-- AI INTELLIGENCE BANNER -->
-      <div class="ai-banner-box">
-        <span style="font-size:28px;line-height:1;">🎯</span>
-        <div style="font-size:13px;line-height:1.6;color:var(--text-primary);flex:1;">
-          <strong style="color:var(--color-amber-500);font-size:14px;">Autonomous Freight Matching Engine:</strong>
-          Our system continuously indexes high-paying broker postings from DAT and private freight exchanges. Set your origin and target $/mile to instantly generate profitable lane recommendations and send direct dispatch offers to carrier fleets!
-        </div>
-      </div>
-
       <!-- KPI METRIC CARDS -->
-      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
+      <div class="stat-card-grid" style="margin-bottom:var(--space-5);">
         <div class="stat-kpi-card">
           <div class="stat-kpi-top">
             <span class="stat-kpi-title">Active Board Loads</span>
             <div class="stat-kpi-icon">🎯</div>
           </div>
-          <div class="stat-kpi-val" id="kpi-board-loads">1,840+</div>
+          <div class="stat-kpi-val" id="kpi-board-loads">2,480+</div>
           <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:6px;">Live DAT &amp; Broker Freight Corridors</div>
         </div>
 
@@ -121,7 +222,7 @@
             <span class="stat-kpi-title">Market Average RPM</span>
             <div class="stat-kpi-icon">📈</div>
           </div>
-          <div class="stat-kpi-val" id="kpi-avg-rpm">$3.18 / mi</div>
+          <div class="stat-kpi-val" id="kpi-avg-rpm">$3.24 / mi</div>
           <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:6px;">National Average Rate (Dry Van / Reefer)</div>
         </div>
 
@@ -136,7 +237,7 @@
 
         <div class="stat-kpi-card">
           <div class="stat-kpi-top">
-            <span class="stat-kpi-title">Autonomous Bids</span>
+            <span class="stat-kpi-title">Active Bids</span>
             <div class="stat-kpi-icon">🤖</div>
           </div>
           <div class="stat-kpi-val" id="kpi-active-bids">0</div>
@@ -144,60 +245,112 @@
         </div>
       </div>
 
+      <!-- ======================================================== -->
+      <!-- DAT MULTI-SEARCH TABS BAR                                -->
+      <!-- ======================================================== -->
+      <div class="tabs-wrapper" id="search-tabs-bar">
+        <!-- Tabs rendered dynamically -->
+        <button type="button" class="btn-add-tab" onclick="addNewSearchTab()">
+          <span>+</span> Add Truck Search Tab
+        </button>
+      </div>
+
       <!-- SEARCH & AI LANE MATCHER CARD -->
-      <div style="background:var(--color-surface-card, #ffffff);border:1px solid var(--border-default, #e2e8f0);border-radius:var(--radius-2xl, 16px);padding:var(--space-6, 24px);margin-bottom:var(--space-6, 24px);box-shadow:var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-          <div>
-            <h2 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0;">⚡ Search Freight &amp; Run AI Lane Matcher</h2>
-            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0;">Query live loads across major U.S. lanes with instant rate calculations.</p>
+      <div style="background:var(--color-surface-card, #ffffff);border:1px solid var(--border-default, #e2e8f0);border-radius:var(--radius-2xl, 16px);padding:var(--space-6, 22px);margin-bottom:var(--space-6, 24px);box-shadow:var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));">
+        
+        <!-- Tab Meta Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;">🚛</span>
+            <input type="text" id="tab-custom-title" onchange="updateCurrentTabTitle(this.value)" style="font-size:15px;font-weight:800;color:var(--text-primary);border:1px solid transparent;background:none;padding:2px 6px;border-radius:6px;" title="Click to rename tab" placeholder="e.g. Truck #101 - Dry Van (Dallas)">
           </div>
-          <div style="display:flex;gap:8px;">
-            <button type="button" class="btn btn-secondary btn-sm" onclick="resetSearch()">↺ Reset Filters</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:11.5px;color:var(--text-muted);" id="tab-search-meta">Configuring Search Tab</span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="resetActiveTabFilters()">↺ Reset Tab</button>
           </div>
         </div>
 
-        <div class="filter-grid">
-          <div class="form-group" style="margin:0;">
-            <label class="form-label" for="search-origin" style="font-size:11px;font-weight:700;">Origin City / State</label>
-            <input type="text" id="search-origin" class="form-input" value="Dallas, TX" placeholder="e.g. Dallas, TX">
+        <div class="filter-grid-v2">
+          <!-- Carrier Selection -->
+          <div class="form-group" id="carrier-select-group" style="margin:0;">
+            <label class="form-label" for="search-carrier-id" style="font-size:11px;font-weight:700;">Target Carrier Fleet</label>
+            <select id="search-carrier-id" class="form-select" onchange="syncActiveTabField('carrierId', this.value)">
+              <option value="">Select carrier to dispatch...</option>
+            </select>
           </div>
 
+          <!-- Origin & DHO -->
           <div class="form-group" style="margin:0;">
-            <label class="form-label" for="search-dest" style="font-size:11px;font-weight:700;">Destination City / State</label>
-            <input type="text" id="search-dest" class="form-input" value="Atlanta, GA" placeholder="e.g. Atlanta, GA">
+            <div style="display:flex;justify-content:space-between;">
+              <label class="form-label" for="search-origin" style="font-size:11px;font-weight:700;">Origin City / State</label>
+              <span style="font-size:10px;font-weight:700;color:#2563eb;">DHO Radius</span>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <input type="text" id="search-origin" class="form-input" value="Dallas, TX" placeholder="e.g. Dallas, TX" onchange="syncActiveTabField('origin', this.value)" style="flex:2;">
+              <select id="search-dho" class="form-select" onchange="syncActiveTabField('dho', this.value)" style="flex:1;min-width:80px;" title="Deadhead Origin Radius">
+                <option value="50">50 mi</option>
+                <option value="100" selected>100 mi</option>
+                <option value="150">150 mi</option>
+                <option value="200">200 mi</option>
+              </select>
+            </div>
           </div>
 
+          <!-- Destination & DHD -->
+          <div class="form-group" style="margin:0;">
+            <div style="display:flex;justify-content:space-between;">
+              <label class="form-label" for="search-dest" style="font-size:11px;font-weight:700;">Destination(s) / States</label>
+              <span style="font-size:10px;font-weight:700;color:#2563eb;">DHD Radius</span>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <input type="text" id="search-dest" class="form-input" value="TX, WY, CO" placeholder="e.g. Cheyenne, WY or TX, WY, CO" onchange="syncActiveTabField('dest', this.value)" style="flex:2;">
+              <select id="search-dhd" class="form-select" onchange="syncActiveTabField('dhd', this.value)" style="flex:1;min-width:80px;" title="Deadhead Destination Radius">
+                <option value="50" selected>50 mi</option>
+                <option value="100">100 mi</option>
+                <option value="150">150 mi</option>
+                <option value="200">200 mi</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Equipment Type -->
           <div class="form-group" style="margin:0;">
             <label class="form-label" for="search-equipment" style="font-size:11px;font-weight:700;">Equipment Type</label>
-            <select id="search-equipment" class="form-select">
+            <select id="search-equipment" class="form-select" onchange="syncActiveTabField('equipment', this.value)">
               <option value="53ft Dry Van" selected>53ft Dry Van</option>
-              <option value="53ft Reefer">53ft Reefer (Refrigerated)</option>
+              <option value="53ft Reefer">53ft Reefer (Temperature)</option>
               <option value="Flatbed / Step Deck">Flatbed / Step Deck</option>
               <option value="Power Only">Power Only</option>
               <option value="Box Truck">Box Truck</option>
             </select>
           </div>
 
+          <!-- Min RPM -->
           <div class="form-group" style="margin:0;">
             <label class="form-label" for="search-min-rpm" style="font-size:11px;font-weight:700;">Min $/Mile (RPM)</label>
-            <input type="number" step="0.05" id="search-min-rpm" class="form-input" value="2.85" placeholder="e.g. 2.85">
+            <input type="number" step="0.05" id="search-min-rpm" class="form-input" value="2.85" placeholder="e.g. 2.85" onchange="syncActiveTabField('minRpm', this.value)">
           </div>
 
-          <div class="form-group" id="carrier-select-group" style="margin:0;">
-            <label class="form-label" for="target-carrier-id" style="font-size:11px;font-weight:700;">Target Carrier Fleet</label>
-            <select id="target-carrier-id" class="form-select">
-              <option value="">Select carrier to dispatch...</option>
-            </select>
-          </div>
-
+          <!-- Search Action Buttons -->
           <div style="display:flex;gap:8px;">
-            <button type="button" class="btn btn-primary" id="btn-run-ai-match" onclick="runAiMatch()" style="flex:1;">
-              ⚡ Run AI Match
+            <button type="button" class="btn btn-primary" id="btn-run-search" onclick="runActiveTabSearch()" style="flex:1;">
+              🔍 Search Loads
             </button>
-            <button type="button" class="btn btn-secondary" id="btn-run-search" onclick="runBoardSearch()" style="flex:1;">
-              🔍 Search
+            <button type="button" class="btn btn-secondary" id="btn-run-ai" onclick="runActiveTabAiMatch()" style="flex:1;" title="Run AI Smart Matching Engine">
+              ⚡ AI Match
             </button>
           </div>
+        </div>
+
+        <!-- Multi-State Quick Suggestions Pill Bar -->
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Quick States:</span>
+          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('TX, WY, CO')">TX, WY, CO</button>
+          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('WY, MT, ID')">WY, MT, ID</button>
+          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('Midwest (IL, IN, OH, MI)')">Midwest (IL, IN, OH, MI)</button>
+          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('Southeast (GA, FL, NC, SC, TN)')">Southeast (GA, FL, NC, SC, TN)</button>
+          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('West (CA, AZ, NV, UT, WA)')">West (CA, AZ, NV, UT, WA)</button>
+          <button type="button" class="quick-preset-pill" onclick="applyDestPreset('Anywhere / All 48 States')">All 48 States</button>
         </div>
       </div>
 
@@ -214,10 +367,11 @@
         <div class="tms-table-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
           <div>
             <h3 style="font-size:var(--text-base);font-weight:800;margin:0;display:flex;align-items:center;gap:8px;">
-              <span>📋</span> Available Board Loads &amp; AI Matches
+              <span>📋</span> Available Freight Loads
+              <span id="active-tab-results-badge" class="badge badge-booked" style="font-size:11px;">0 loads</span>
             </h3>
             <p style="font-size:var(--text-xs);color:var(--text-muted);margin:2px 0 0;">
-              Real-time load board results with calculated carrier payout and instant booking actions.
+              Real-time load board results with exact origin/dest deadhead miles (DHO/DHD), RPM calculations, and instant dispatching.
             </p>
           </div>
           <div id="board-search-status" style="font-size:12px;color:var(--text-muted);font-weight:600;"></div>
@@ -227,17 +381,20 @@
           <table class="tms-table-v2" id="board-loads-table">
             <thead>
               <tr>
-                <th>Broker &amp; MC#</th>
-                <th>Lane (Origin ➔ Destination)</th>
-                <th>Equipment / Weight</th>
-                <th>Distance</th>
+                <th>DHO</th>
+                <th>Exact Pickup Location</th>
+                <th>Exact Delivery Location</th>
+                <th>DHD</th>
+                <th>Trip Miles</th>
                 <th>Rate &amp; RPM</th>
-                <th>AI Profit Score</th>
+                <th>Equipment / Weight</th>
+                <th>Broker &amp; MC#</th>
+                <th>AI Match</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="board-loads-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Querying live load boards...</td></tr>
+              <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);">Querying live load boards...</td></tr>
             </tbody>
           </table>
         </div>
@@ -296,8 +453,8 @@
 
     <form id="offerForm" onsubmit="submitOfferForm(event)" style="padding:22px;">
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;">
-        <div style="font-weight:700;color:#0f172a;margin-bottom:4px;" id="modal-lane-summary">Dallas, TX ➔ Atlanta, GA</div>
-        <div style="color:#64748b;font-size:12px;" id="modal-broker-summary">Broker: C.H. Robinson · 53ft Dry Van · 720 mi</div>
+        <div style="font-weight:700;color:#0f172a;margin-bottom:4px;" id="modal-lane-summary">Dallas, TX ➔ Cheyenne, WY</div>
+        <div style="color:#64748b;font-size:12px;" id="modal-broker-summary">Broker: C.H. Robinson · 53ft Dry Van · DHO: 14 mi · DHD: 12 mi</div>
       </div>
 
       <div class="form-group" style="margin-bottom:14px;">
@@ -313,14 +470,14 @@
           <input type="number" step="0.01" id="modal-rate" class="form-input" required>
         </div>
         <div class="form-group" style="margin:0;">
-          <label class="form-label" for="modal-miles" style="font-size:12px;font-weight:700;">Total Miles</label>
+          <label class="form-label" for="modal-miles" style="font-size:12px;font-weight:700;">Trip Miles</label>
           <input type="number" id="modal-miles" class="form-input" readonly>
         </div>
       </div>
 
       <div class="form-group" style="margin-bottom:18px;">
         <label class="form-label" for="modal-notes" style="font-size:12px;font-weight:700;">Dispatcher Note for Driver / Carrier (Optional)</label>
-        <textarea id="modal-notes" class="form-input" rows="2" placeholder="Driver has reload planned in Atlanta for Tuesday morning. High priority."></textarea>
+        <textarea id="modal-notes" class="form-input" rows="2" placeholder="Driver empty in Dallas. Delivery confirmed in Cheyenne, WY. High priority."></textarea>
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:10px;">
@@ -336,11 +493,8 @@
 <!-- (Displayed if user is not authenticated)                  -->
 <!-- ======================================================== -->
 <div id="marketing-shell" style="display:none;">
-
-  <!-- TOP PUBLIC NAV -->
   <nav class="nav" role="navigation" aria-label="Main navigation"></nav>
 
-  <!-- PROMINENT ERP/TMS LAUNCH BANNER -->
   <section style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);padding:28px 0;border-bottom:2px solid var(--color-amber-500, #f59e0b);">
     <div class="container" style="max-width:var(--container-xl);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
       <div>
@@ -351,7 +505,7 @@
           Shipping Wish Enterprise ERP / TMS Load Board
         </h2>
         <p style="font-size:13px;color:rgba(255,255,255,0.7);margin:4px 0 0;">
-          Log in to your account to query live DAT &amp; 123Loadboard lanes, run AI smart matching, and dispatch loads.
+          Log in to your account to query live DAT &amp; 123Loadboard lanes, manage multi-truck search tabs, and dispatch loads.
         </p>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -462,13 +616,44 @@
 </div>
 
 <!-- ======================================================== -->
-<!-- SCRIPT: AUTH GATING, LOAD BOARD, AI MATCHER & OFFERS     -->
+<!-- SCRIPT: MULTI-TAB SEARCH STATE & LOAD BOARD ENGINE       -->
 <!-- ======================================================== -->
 <script>
   let CURRENT_USER = null;
-  let CURRENT_LOADS = [];
   let CARRIERS_LIST = [];
   let SELECTED_LOAD_FOR_OFFER = null;
+
+  // Multi-Tab State (like DAT One)
+  let SEARCH_TABS = [
+    {
+      id: 1,
+      title: 'Truck 1 (Dallas, TX)',
+      carrierId: '',
+      origin: 'Dallas, TX',
+      dho: '100',
+      dest: 'TX, WY, CO',
+      dhd: '50',
+      equipment: '53ft Dry Van',
+      minRpm: '2.85',
+      results: [],
+      aiSummary: null
+    },
+    {
+      id: 2,
+      title: 'Truck 2 (Chicago, IL)',
+      carrierId: '',
+      origin: 'Chicago, IL',
+      dho: '100',
+      dest: 'GA, FL, NC, SC',
+      dhd: '50',
+      equipment: '53ft Reefer',
+      minRpm: '3.10',
+      results: [],
+      aiSummary: null
+    }
+  ];
+  let ACTIVE_TAB_ID = 1;
+  let TAB_COUNTER = 2;
 
   function escapeHtml(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -487,34 +672,31 @@
     }
 
     if (CURRENT_USER) {
-      // Authenticated ERP User -> Show Enterprise TMS Workspace
       document.body.className = 'app-body';
       document.getElementById('erp-shell').style.display = 'flex';
       document.getElementById('marketing-shell').style.display = 'none';
 
-      // Load app-shell.js dynamically
       loadAppShellScript();
 
-      // Configure role-based UI
       const isStaff = ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
       const carrierGroup = document.getElementById('carrier-select-group');
       if (!isStaff && carrierGroup) {
         carrierGroup.style.display = 'none';
       }
 
-      // Load data
       if (isStaff) {
-        loadCarriersDropdown();
+        await loadCarriersDropdown();
       }
-      runBoardSearch();
+
+      renderTabsBar();
+      loadTabInputs(ACTIVE_TAB_ID);
+      await runActiveTabSearch();
       loadOffers();
     } else {
-      // Unauthenticated Visitor -> Show Public Marketing View
       document.body.className = 'marketing';
       document.getElementById('erp-shell').style.display = 'none';
       document.getElementById('marketing-shell').style.display = 'block';
 
-      // Load site-chrome.js for public nav & footer
       loadSiteChromeScript();
     }
   }
@@ -541,7 +723,7 @@
       const data = await res.json();
       CARRIERS_LIST = data.carriers || [];
 
-      const select1 = document.getElementById('target-carrier-id');
+      const select1 = document.getElementById('search-carrier-id');
       const select2 = document.getElementById('modal-carrier-id');
       const options = CARRIERS_LIST.map(c => 
         `<option value="${c.id}">${escapeHtml(c.company_name || c.name || 'Carrier')} ${c.mc_number ? `(${escapeHtml(c.mc_number)})` : ''}</option>`
@@ -554,49 +736,208 @@
     }
   }
 
-  // 3. Search Load Board
-  async function runBoardSearch() {
-    const origin = document.getElementById('search-origin').value.trim();
-    const destination = document.getElementById('search-dest').value.trim();
-    const equipmentType = document.getElementById('search-equipment').value;
-    const minRpm = document.getElementById('search-min-rpm').value;
+  // ==========================================
+  // MULTI-TAB SEARCH LOGIC (DAT STYLE)
+  // ==========================================
+  function renderTabsBar() {
+    const container = document.getElementById('search-tabs-bar');
+    if (!container) return;
+
+    const tabsHtml = SEARCH_TABS.map(tab => {
+      const isActive = tab.id === ACTIVE_TAB_ID;
+      const count = tab.results ? tab.results.length : 0;
+      return `
+        <div class="search-tab-item ${isActive ? 'active' : ''}" onclick="switchSearchTab(${tab.id})">
+          <span>🚛</span>
+          <span>${escapeHtml(tab.title)}</span>
+          <span class="tab-badge-count">${count}</span>
+          ${SEARCH_TABS.length > 1 ? `<button type="button" class="tab-close-btn" onclick="closeSearchTab(event, ${tab.id})" title="Close tab">&times;</button>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = tabsHtml + `
+      <button type="button" class="btn-add-tab" onclick="addNewSearchTab()">
+        <span>+</span> Add Truck Search Tab
+      </button>
+    `;
+  }
+
+  function getActiveTab() {
+    return SEARCH_TABS.find(t => t.id === ACTIVE_TAB_ID) || SEARCH_TABS[0];
+  }
+
+  function loadTabInputs(tabId) {
+    const tab = SEARCH_TABS.find(t => t.id === tabId);
+    if (!tab) return;
+
+    ACTIVE_TAB_ID = tabId;
+    document.getElementById('tab-custom-title').value = tab.title || `Truck #${tab.id}`;
+    document.getElementById('search-origin').value = tab.origin || 'Dallas, TX';
+    document.getElementById('search-dho').value = tab.dho || '100';
+    document.getElementById('search-dest').value = tab.dest || 'TX, WY, CO';
+    document.getElementById('search-dhd').value = tab.dhd || '50';
+    document.getElementById('search-equipment').value = tab.equipment || '53ft Dry Van';
+    document.getElementById('search-min-rpm').value = tab.minRpm || '2.85';
+
+    const carrierSelect = document.getElementById('search-carrier-id');
+    if (carrierSelect) carrierSelect.value = tab.carrierId || '';
+
+    // Render results or trigger search
+    if (tab.results && tab.results.length) {
+      renderBoardLoadsTable(tab.results);
+      if (tab.aiSummary) {
+        document.getElementById('ai-summary-text').textContent = tab.aiSummary;
+        document.getElementById('ai-summary-card').style.display = 'block';
+      } else {
+        document.getElementById('ai-summary-card').style.display = 'none';
+      }
+      document.getElementById('active-tab-results-badge').textContent = `${tab.results.length} loads`;
+      document.getElementById('board-search-status').textContent = `Loaded ${tab.results.length} active loads for ${tab.title}`;
+    } else {
+      document.getElementById('ai-summary-card').style.display = 'none';
+      document.getElementById('active-tab-results-badge').textContent = '0 loads';
+      runActiveTabSearch();
+    }
+  }
+
+  function switchSearchTab(tabId) {
+    if (tabId === ACTIVE_TAB_ID) return;
+    saveCurrentInputsToActiveTab();
+    renderTabsBar();
+    loadTabInputs(tabId);
+    renderTabsBar();
+  }
+
+  function saveCurrentInputsToActiveTab() {
+    const tab = getActiveTab();
+    if (!tab) return;
+
+    tab.title = document.getElementById('tab-custom-title').value.trim() || tab.title;
+    tab.origin = document.getElementById('search-origin').value.trim();
+    tab.dho = document.getElementById('search-dho').value;
+    tab.dest = document.getElementById('search-dest').value.trim();
+    tab.dhd = document.getElementById('search-dhd').value;
+    tab.equipment = document.getElementById('search-equipment').value;
+    tab.minRpm = document.getElementById('search-min-rpm').value;
+
+    const carrierSelect = document.getElementById('search-carrier-id');
+    if (carrierSelect) tab.carrierId = carrierSelect.value;
+  }
+
+  function syncActiveTabField(field, value) {
+    const tab = getActiveTab();
+    if (tab) tab[field] = value;
+  }
+
+  function updateCurrentTabTitle(newTitle) {
+    const tab = getActiveTab();
+    if (tab && newTitle.trim()) {
+      tab.title = newTitle.trim();
+      renderTabsBar();
+    }
+  }
+
+  function addNewSearchTab() {
+    saveCurrentInputsToActiveTab();
+    TAB_COUNTER++;
+    const newTab = {
+      id: TAB_COUNTER,
+      title: `Truck ${TAB_COUNTER} (New Search)`,
+      carrierId: '',
+      origin: 'Atlanta, GA',
+      dho: '100',
+      dest: 'IL, IN, OH, MI',
+      dhd: '50',
+      equipment: '53ft Dry Van',
+      minRpm: '2.95',
+      results: [],
+      aiSummary: null
+    };
+    SEARCH_TABS.push(newTab);
+    ACTIVE_TAB_ID = newTab.id;
+    renderTabsBar();
+    loadTabInputs(newTab.id);
+  }
+
+  function closeSearchTab(event, tabId) {
+    event.stopPropagation();
+    if (SEARCH_TABS.length <= 1) {
+      alert('You must have at least one search tab open.');
+      return;
+    }
+    const idx = SEARCH_TABS.findIndex(t => t.id === tabId);
+    if (idx === -1) return;
+
+    SEARCH_TABS.splice(idx, 1);
+    if (ACTIVE_TAB_ID === tabId) {
+      ACTIVE_TAB_ID = SEARCH_TABS[0].id;
+    }
+    renderTabsBar();
+    loadTabInputs(ACTIVE_TAB_ID);
+  }
+
+  function resetActiveTabFilters() {
+    const tab = getActiveTab();
+    if (!tab) return;
+    tab.origin = 'Dallas, TX';
+    tab.dho = '100';
+    tab.dest = 'TX, WY, CO';
+    tab.dhd = '50';
+    tab.equipment = '53ft Dry Van';
+    tab.minRpm = '2.85';
+    tab.carrierId = '';
+    loadTabInputs(tab.id);
+  }
+
+  function applyDestPreset(presetValue) {
+    document.getElementById('search-dest').value = presetValue;
+    syncActiveTabField('dest', presetValue);
+    runActiveTabSearch();
+  }
+
+  // ==========================================
+  // SEARCH & AI MATCH EXECUTION
+  // ==========================================
+  async function runActiveTabSearch() {
+    saveCurrentInputsToActiveTab();
+    const tab = getActiveTab();
 
     const tbody = document.getElementById('board-loads-tbody');
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">Querying live load boards...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:35px;color:var(--text-muted);">Querying live load boards with DHO/DHD routing...</td></tr>';
     document.getElementById('ai-summary-card').style.display = 'none';
 
     try {
       const qs = new URLSearchParams({
-        origin: origin || 'Dallas, TX',
-        destination: destination || 'Atlanta, GA',
-        equipmentType: equipmentType || '53ft Dry Van',
-        minRpm: minRpm || '2.85'
+        origin: tab.origin || 'Dallas, TX',
+        destination: tab.dest || 'TX, WY, CO',
+        equipmentType: tab.equipment || '53ft Dry Van',
+        minRpm: tab.minRpm || '2.85',
+        dho: tab.dho || '100',
+        dhd: tab.dhd || '50'
       });
 
       const res = await fetch('/api/loadboard/search?' + qs.toString(), { credentials: 'include' });
       const data = await res.json();
-      CURRENT_LOADS = data.loads || [];
-      renderBoardLoadsTable(CURRENT_LOADS);
+      tab.results = data.loads || [];
+      tab.aiSummary = null;
 
-      const statusEl = document.getElementById('board-search-status');
-      if (statusEl) {
-        statusEl.textContent = `Found ${CURRENT_LOADS.length} active loads (${data.provider || 'DAT Freight Feed'})`;
-      }
+      renderBoardLoadsTable(tab.results);
+      renderTabsBar();
+
+      document.getElementById('active-tab-results-badge').textContent = `${tab.results.length} loads`;
+      document.getElementById('board-search-status').textContent = `Found ${tab.results.length} loads (${data.provider || 'DAT Freight Feed'})`;
     } catch (e) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#b91c1c;">Could not load board freight. Please try again.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:35px;color:#b91c1c;">Could not load board freight. Please check your connection.</td></tr>';
     }
   }
 
-  // 4. Run AI Lane Matcher
-  async function runAiMatch() {
-    const origin = document.getElementById('search-origin').value.trim();
-    const destination = document.getElementById('search-dest').value.trim();
-    const equipmentType = document.getElementById('search-equipment').value;
-    const minRpm = document.getElementById('search-min-rpm').value;
-    const carrierId = document.getElementById('target-carrier-id') ? document.getElementById('target-carrier-id').value : null;
+  async function runActiveTabAiMatch() {
+    saveCurrentInputsToActiveTab();
+    const tab = getActiveTab();
 
     const tbody = document.getElementById('board-loads-tbody');
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">⚡ AI is analyzing live rate corridors and matching trucks...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:35px;color:var(--text-muted);">⚡ AI is analyzing live rate corridors and matching trucks...</td></tr>';
 
     try {
       const res = await fetch('/api/loadboard/ai-match', {
@@ -604,48 +945,44 @@
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          currentCity: origin || 'Dallas, TX',
-          desiredDestination: destination || 'Atlanta, GA',
-          equipmentType: equipmentType || '53ft Dry Van',
-          targetRpm: minRpm || '2.85',
-          carrierId: carrierId || undefined
+          currentCity: tab.origin || 'Dallas, TX',
+          desiredDestination: tab.dest || 'TX, WY, CO',
+          equipmentType: tab.equipment || '53ft Dry Van',
+          targetRpm: tab.minRpm || '2.85',
+          carrierId: tab.carrierId || undefined,
+          dho: tab.dho || '100',
+          dhd: tab.dhd || '50'
         })
       });
 
       const data = await res.json();
-      CURRENT_LOADS = data.matches || [];
-      renderBoardLoadsTable(CURRENT_LOADS);
+      tab.results = data.matches || [];
+      tab.aiSummary = data.ai_summary || null;
+
+      renderBoardLoadsTable(tab.results);
+      renderTabsBar();
 
       const summaryCard = document.getElementById('ai-summary-card');
       const summaryText = document.getElementById('ai-summary-text');
-      if (summaryCard && summaryText) {
-        summaryText.textContent = data.ai_summary || `AI identified ${CURRENT_LOADS.length} high-profit freight matches exceeding minimum RPM target.`;
+      if (summaryCard && summaryText && tab.aiSummary) {
+        summaryText.textContent = tab.aiSummary;
         summaryCard.style.display = 'block';
       }
 
-      const statusEl = document.getElementById('board-search-status');
-      if (statusEl) {
-        statusEl.textContent = `⚡ AI Match complete: ${CURRENT_LOADS.length} optimal matches`;
-      }
+      document.getElementById('active-tab-results-badge').textContent = `${tab.results.length} AI matches`;
+      document.getElementById('board-search-status').textContent = `⚡ AI Match complete: ${tab.results.length} optimal matches`;
     } catch (e) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#b91c1c;">AI matching encountered an error. Please try standard search.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:35px;color:#b91c1c;">AI matching encountered an error. Please try standard search.</td></tr>';
     }
   }
 
-  function resetSearch() {
-    document.getElementById('search-origin').value = 'Dallas, TX';
-    document.getElementById('search-dest').value = 'Atlanta, GA';
-    document.getElementById('search-equipment').value = '53ft Dry Van';
-    document.getElementById('search-min-rpm').value = '2.85';
-    document.getElementById('ai-summary-card').style.display = 'none';
-    runBoardSearch();
-  }
-
-  // 5. Render Board Loads Table
+  // ==========================================
+  // RENDER TABLE WITH DHO, DHD & EXACT CITIES
+  // ==========================================
   function renderBoardLoadsTable(loads) {
     const tbody = document.getElementById('board-loads-tbody');
     if (!loads.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No loads found matching criteria. Try adjusting origin/dest or lowering target RPM.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:45px;color:var(--text-muted);">No loads found matching criteria. Try increasing DHO/DHD radius or expanding destination states.</td></tr>';
       return;
     }
 
@@ -655,50 +992,96 @@
       const score = parseFloat(load.ai_score || 95);
       const pillClass = score >= 92 ? 'load-match-high' : 'load-match-mid';
 
-      const mailtoSubject = encodeURIComponent(`Rate Confirmation & Inquiry: ${load.pickup_location} to ${load.delivery_location}`);
-      const mailtoBody = encodeURIComponent(`Hi ${load.broker_name},\n\nWe have an available empty truck ready to book your posted load:\n• Lane: ${load.pickup_location} -> ${load.delivery_location}\n• Equipment: ${load.equipment_type}\n• Rate: $${load.rate}\n\nPlease confirm availability and send Rate Confirmation.\n\nThank you,\nShipping Wish LLC Dispatch Desk\n+1 (917) 737-0021`);
+      const dhoMiles = Number(load.dho || 0);
+      const dhdMiles = Number(load.dhd || 0);
+      const dhoClass = dhoMiles <= 25 ? 'low' : (dhoMiles <= 60 ? 'mid' : '');
+      const dhdClass = dhdMiles <= 25 ? 'low' : (dhdMiles <= 60 ? 'mid' : '');
+
+      const mailtoSubject = encodeURIComponent(`Rate Confirmation & Inquiry: ${load.pickup_location} to ${load.delivery_location} (DAT ID: ${load.id})`);
+      const mailtoBody = encodeURIComponent(`Hi ${load.broker_name} Dispatch,\n\nWe have an empty truck ready to book your posted load:\n• Lane: ${load.pickup_location} -> ${load.delivery_location}\n• Equipment: ${load.equipment_type}\n• Miles: ${load.miles} mi\n• Rate: $${load.rate}\n\nPlease confirm availability and send Rate Confirmation to dispatch@shippingwish.com.\n\nThank you,\nShipping Wish LLC Dispatch Desk\n+1 (917) 737-0021`);
       const mailtoLink = `mailto:${encodeURIComponent(load.broker_email || 'dispatch@broker.com')}?subject=${mailtoSubject}&body=${mailtoBody}`;
 
       return `
         <tr>
+          <!-- DHO (Deadhead Origin) -->
           <td>
-            <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(load.broker_name || 'Freight Broker')}</div>
+            <span class="dh-badge ${dhoClass}" title="Deadhead Origin: distance from truck to pickup">
+              ${dhoMiles} mi
+            </span>
+          </td>
+
+          <!-- Pickup Location -->
+          <td>
+            <div style="font-weight:800;color:var(--text-primary);font-size:13.5px;">
+              ${escapeHtml(load.pickup_location)}
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+              📅 PU: ${escapeHtml(load.pickup_date || 'Today')}
+            </div>
+          </td>
+
+          <!-- Delivery Location -->
+          <td>
+            <div style="font-weight:800;color:#2563eb;font-size:13.5px;">
+              ${escapeHtml(load.delivery_location)}
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+              📅 DEL: ${escapeHtml(load.delivery_date || 'Direct')}
+            </div>
+          </td>
+
+          <!-- DHD (Deadhead Destination) -->
+          <td>
+            <span class="dh-badge ${dhdClass}" title="Deadhead Destination: distance from delivery to next reload">
+              ${dhdMiles} mi
+            </span>
+          </td>
+
+          <!-- Trip Miles -->
+          <td>
+            <span style="font-weight:700;font-size:13px;">${load.miles.toLocaleString()} mi</span>
+          </td>
+
+          <!-- Rate & RPM -->
+          <td>
+            <div style="font-weight:800;color:#059669;font-size:14px;">
+              $${Number(load.rate).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">
+              $${load.rpm}/mi
+            </div>
+          </td>
+
+          <!-- Equipment & Weight -->
+          <td>
+            <span class="badge badge-booked" style="font-size:11px;padding:3px 8px;">${escapeHtml(load.equipment_type || '53ft Dry Van')}</span>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${load.weight ? `${load.weight.toLocaleString()} lbs` : 'Full'} · ${escapeHtml(load.commodity || 'Freight')}</div>
+          </td>
+
+          <!-- Broker & MC# -->
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(load.broker_name || 'Broker')}</div>
             <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(load.broker_mc || 'MC-ON-FILE')}</div>
             ${load.broker_phone ? `<a href="tel:${escapeHtml(load.broker_phone)}" style="font-size:11px;color:#2563eb;font-weight:600;">📞 ${escapeHtml(load.broker_phone)}</a>` : ''}
           </td>
-          <td>
-            <div style="font-weight:700;color:var(--text-primary);">
-              ${escapeHtml(load.pickup_location)} ➔ ${escapeHtml(load.delivery_location)}
-            </div>
-            <div style="font-size:11px;color:var(--text-muted);">
-              PU: ${escapeHtml(load.pickup_date || 'Today')} · DEL: ${escapeHtml(load.delivery_date || 'Direct')}
-            </div>
-          </td>
-          <td>
-            <span class="badge badge-booked" style="font-size:11px;padding:3px 8px;">${escapeHtml(load.equipment_type || '53ft Dry Van')}</span>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${load.weight ? `${load.weight.toLocaleString()} lbs` : 'Standard'}</div>
-          </td>
-          <td>
-            <span style="font-weight:600;">${load.miles} mi</span>
-          </td>
-          <td>
-            <div style="font-weight:800;color:#059669;font-size:14px;">$${Number(load.rate).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
-            <div style="font-size:11px;color:var(--text-muted);font-weight:600;">$${load.rpm}/mi</div>
-          </td>
+
+          <!-- AI Score -->
           <td>
             <span class="load-match-pill ${pillClass}">
-              <span>⚡</span> ${score}% AI Match
+              <span>⚡</span> ${score}%
             </span>
           </td>
+
+          <!-- Actions -->
           <td>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               ${isStaff ? `
                 <button type="button" class="btn btn-primary btn-sm" onclick="openOfferModal(${idx})">
-                  Dispatch Offer
+                  Dispatch
                 </button>
               ` : `
                 <a href="${mailtoLink}" class="btn btn-primary btn-sm">
-                  Inquire Rate
+                  Inquire
                 </a>
               `}
               <a href="${mailtoLink}" class="btn btn-secondary btn-sm" title="Email Broker Directly">
@@ -711,23 +1094,27 @@
     }).join('');
   }
 
-  // 6. Offer Modal Handling
+  // ==========================================
+  // SEND OFFER MODAL & DISPATCH ACTIONS
+  // ==========================================
   function openOfferModal(loadIndex) {
-    SELECTED_LOAD_FOR_OFFER = CURRENT_LOADS[loadIndex];
+    const tab = getActiveTab();
+    if (!tab || !tab.results) return;
+
+    SELECTED_LOAD_FOR_OFFER = tab.results[loadIndex];
     if (!SELECTED_LOAD_FOR_OFFER) return;
 
     document.getElementById('modal-lane-summary').textContent = 
       `${SELECTED_LOAD_FOR_OFFER.pickup_location} ➔ ${SELECTED_LOAD_FOR_OFFER.delivery_location}`;
     document.getElementById('modal-broker-summary').textContent = 
-      `Broker: ${SELECTED_LOAD_FOR_OFFER.broker_name} · ${SELECTED_LOAD_FOR_OFFER.equipment_type} · ${SELECTED_LOAD_FOR_OFFER.miles} mi · Posted: $${SELECTED_LOAD_FOR_OFFER.rate} ($${SELECTED_LOAD_FOR_OFFER.rpm}/mi)`;
+      `Broker: ${SELECTED_LOAD_FOR_OFFER.broker_name} (${SELECTED_LOAD_FOR_OFFER.broker_mc}) · ${SELECTED_LOAD_FOR_OFFER.equipment_type} · ${SELECTED_LOAD_FOR_OFFER.miles} mi · DHO: ${SELECTED_LOAD_FOR_OFFER.dho} mi · DHD: ${SELECTED_LOAD_FOR_OFFER.dhd} mi · Posted: $${SELECTED_LOAD_FOR_OFFER.rate} ($${SELECTED_LOAD_FOR_OFFER.rpm}/mi)`;
 
     document.getElementById('modal-rate').value = SELECTED_LOAD_FOR_OFFER.rate;
     document.getElementById('modal-miles').value = SELECTED_LOAD_FOR_OFFER.miles;
 
-    // Default carrier selection if pre-selected in header
-    const topCarrier = document.getElementById('target-carrier-id');
-    if (topCarrier && topCarrier.value) {
-      document.getElementById('modal-carrier-id').value = topCarrier.value;
+    // Use current tab carrier if selected
+    if (tab.carrierId) {
+      document.getElementById('modal-carrier-id').value = tab.carrierId;
     }
 
     document.getElementById('sendOfferModal').classList.add('active');
@@ -797,7 +1184,9 @@
     }
   }
 
-  // 7. Load Active Offers
+  // ==========================================
+  // LOAD ACTIVE OFFERS LEDGER
+  // ==========================================
   async function loadOffers() {
     const tbody = document.getElementById('offers-tbody');
     try {
@@ -806,7 +1195,6 @@
       const data = await res.json();
       const offers = data.offers || [];
 
-      // Update KPI counters
       const pendingCount = offers.filter(o => o.status === 'pending').length;
       const biddingCount = offers.filter(o => o.broker_negotiation_status === 'bidding' || o.status === 'accepted').length;
       const pendEl = document.getElementById('kpi-pending-offers');
@@ -867,7 +1255,6 @@
     }
   }
 
-  // 8. Respond to Offer (Carrier / Driver)
   async function respondOffer(offerId, response) {
     if (!confirm(`Are you sure you want to ${response} this load offer?`)) return;
 
@@ -890,17 +1277,22 @@
     }
   }
 
-  // Expose global functions for onclick handlers
-  window.runBoardSearch = runBoardSearch;
-  window.runAiMatch = runAiMatch;
-  window.resetSearch = resetSearch;
+  // Expose global functions
+  window.runActiveTabSearch = runActiveTabSearch;
+  window.runActiveTabAiMatch = runActiveTabAiMatch;
+  window.addNewSearchTab = addNewSearchTab;
+  window.switchSearchTab = switchSearchTab;
+  window.closeSearchTab = closeSearchTab;
+  window.updateCurrentTabTitle = updateCurrentTabTitle;
+  window.resetActiveTabFilters = resetActiveTabFilters;
+  window.applyDestPreset = applyDestPreset;
+  window.syncActiveTabField = syncActiveTabField;
   window.openOfferModal = openOfferModal;
   window.closeOfferModal = closeOfferModal;
   window.submitOfferForm = submitOfferForm;
   window.loadOffers = loadOffers;
   window.respondOffer = respondOffer;
 
-  // Start on DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
