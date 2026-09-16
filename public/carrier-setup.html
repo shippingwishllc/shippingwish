@@ -16,9 +16,9 @@
   <link rel="stylesheet" href="/css/marketing.css">
   <style>
     .setup-wrap {
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
-      padding: 40px 20px 80px;
+      padding: 48px 24px 96px;
     }
     .setup-hero {
       text-align: center;
@@ -28,29 +28,30 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(234, 179, 8, 0.15);
-      border: 1px solid rgba(234, 179, 8, 0.35);
-      color: #facc15;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      color: #92400e;
       font-size: 13px;
       font-weight: 700;
-      padding: 6px 16px;
+      padding: 7px 18px;
       border-radius: 9999px;
-      margin-bottom: 16px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      margin-bottom: 18px;
+      letter-spacing: 0.3px;
+      box-shadow: 0 1px 3px rgba(217, 119, 6, 0.1);
     }
     .setup-title {
-      font-size: clamp(28px, 4vw, 42px);
+      font-size: clamp(30px, 4.5vw, 44px);
       font-weight: 800;
-      color: #ffffff;
+      color: #0f172a;
       line-height: 1.2;
-      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
     }
     .setup-subtitle {
-      font-size: 16px;
-      color: #94a3b8;
-      max-width: 680px;
-      margin: 0 auto 24px;
+      font-size: 16.5px;
+      color: #475569;
+      max-width: 720px;
+      margin: 0 auto 26px;
       line-height: 1.6;
     }
 
@@ -59,19 +60,21 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 20px;
+      gap: 12px;
       margin-top: 20px;
     }
     .setup-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 13px;
-      color: #cbd5e1;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 6px 14px;
-      border-radius: 6px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #334155;
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      padding: 8px 18px;
+      border-radius: 9999px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     }
 
     /* Wizard steps navigation */
@@ -80,27 +83,30 @@
       align-items: center;
       justify-content: space-between;
       position: relative;
-      margin: 32px 0 40px;
+      margin: 36px 0 44px;
+      padding: 0 20px;
     }
     .wizard-steps::before {
       content: '';
       position: absolute;
-      top: 20px;
-      left: 40px;
-      right: 40px;
-      height: 3px;
-      background: rgba(255, 255, 255, 0.1);
+      top: 22px;
+      left: 52px;
+      right: 52px;
+      height: 4px;
+      background: #e2e8f0;
+      border-radius: 999px;
       z-index: 1;
     }
     .wizard-progress-line {
       position: absolute;
-      top: 20px;
-      left: 40px;
+      top: 22px;
+      left: 52px;
       width: 0%;
-      height: 3px;
-      background: #eab308;
+      height: 4px;
+      background: linear-gradient(90deg, #0f172a, #2563eb);
+      border-radius: 999px;
       z-index: 2;
-      transition: width 0.3s ease;
+      transition: width 0.35s ease;
     }
     .step-item {
       position: relative;
@@ -108,75 +114,93 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       cursor: default;
     }
     .step-circle {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      background: #0f172a;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      color: #94a3b8;
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      color: #64748b;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
       font-size: 15px;
-      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+      transition: all 0.25s ease;
     }
     .step-item.active .step-circle {
-      background: #eab308;
-      border-color: #eab308;
-      color: #0a192f;
-      box-shadow: 0 0 16px rgba(234, 179, 8, 0.4);
+      background: #0f172a;
+      border-color: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
     }
     .step-item.completed .step-circle {
       background: #10b981;
       border-color: #10b981;
       color: #ffffff;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
     }
     .step-label {
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 600;
-      color: #94a3b8;
+      color: #64748b;
       text-align: center;
+      transition: color 0.2s ease;
     }
     .step-item.active .step-label {
-      color: #facc15;
+      color: #0f172a;
+      font-weight: 700;
     }
     .step-item.completed .step-label {
-      color: #e2e8f0;
+      color: #059669;
+      font-weight: 600;
     }
 
     /* Form Container */
     .wizard-card {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(12px);
-      border-radius: 16px;
-      padding: 36px 32px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 44px 40px;
+      box-shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.04);
+      position: relative;
+    }
+    .wizard-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #0f172a 0%, #2563eb 50%, #d97706 100%);
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
     }
     @media (max-width: 640px) {
-      .wizard-card { padding: 24px 18px; }
-      .wizard-steps::before { left: 20px; right: 20px; }
-      .step-label { font-size: 11px; }
+      .wizard-card { padding: 26px 20px; }
+      .wizard-steps::before { left: 24px; right: 24px; }
+      .wizard-progress-line { left: 24px; }
+      .step-label { font-size: 11.5px; }
     }
 
     .section-heading {
-      font-size: 20px;
-      font-weight: 700;
-      color: #ffffff;
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
       margin-bottom: 6px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      letter-spacing: -0.01em;
     }
     .section-subheading {
-      font-size: 14px;
-      color: #94a3b8;
-      margin-bottom: 24px;
+      font-size: 14.5px;
+      color: #64748b;
+      margin-bottom: 28px;
       line-height: 1.5;
     }
 
@@ -196,48 +220,61 @@
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 7px;
     }
     .form-group label {
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 600;
-      color: #cbd5e1;
+      color: #1e293b;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
     .form-group label .req {
-      color: #ef4444;
+      color: #dc2626;
       font-weight: 700;
-      margin-left: 2px;
+      margin-left: 3px;
     }
     .form-group label .opt {
-      font-size: 11px;
+      font-size: 11.5px;
       color: #64748b;
       font-weight: normal;
     }
     .form-control {
-      background: rgba(2, 6, 23, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 8px;
-      padding: 11px 14px;
-      font-size: 14px;
-      color: #ffffff;
-      transition: all 0.2s;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14.5px;
+      color: #0f172a;
+      font-weight: 500;
+      transition: all 0.2s ease;
       width: 100%;
       box-sizing: border-box;
+      font-family: inherit;
     }
     .form-control:focus {
       outline: none;
-      border-color: #eab308;
-      box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2);
+      border-color: #2563eb;
+      background: #ffffff;
+      box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.15);
     }
     .form-control::placeholder {
-      color: #475569;
+      color: #94a3b8;
+      font-weight: 400;
+    }
+    select.form-control {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+      padding-right: 40px;
+      cursor: pointer;
     }
     select.form-control option {
-      background: #0f172a;
-      color: #ffffff;
+      background: #ffffff;
+      color: #0f172a;
     }
 
     /* Equipment Selection Grid */
@@ -248,61 +285,67 @@
       margin-bottom: 24px;
     }
     .equip-card {
-      background: rgba(2, 6, 23, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 8px;
-      padding: 12px 14px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 16px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       cursor: pointer;
       transition: all 0.2s ease;
       user-select: none;
     }
     .equip-card:hover {
-      border-color: rgba(234, 179, 8, 0.5);
-      background: rgba(234, 179, 8, 0.05);
+      border-color: #cbd5e1;
+      background: #f1f5f9;
     }
     .equip-card.selected {
-      border-color: #eab308;
-      background: rgba(234, 179, 8, 0.12);
+      border-color: #2563eb;
+      background: #eff6ff;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
     }
     .equip-card input[type="checkbox"] {
-      accent-color: #eab308;
-      width: 16px;
-      height: 16px;
+      accent-color: #2563eb;
+      width: 18px;
+      height: 18px;
       cursor: pointer;
     }
     .equip-name {
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 600;
-      color: #f8fafc;
+      color: #1e293b;
+    }
+    .equip-card.selected .equip-name {
+      color: #1d4ed8;
+      font-weight: 700;
     }
 
     /* File Dropzone */
     .upload-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 18px;
+      gap: 20px;
       margin-bottom: 28px;
     }
     .dropzone {
-      border: 2px dashed rgba(255, 255, 255, 0.2);
-      border-radius: 10px;
-      padding: 20px;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 24px 16px;
       text-align: center;
-      background: rgba(2, 6, 23, 0.4);
+      background: #f8fafc;
       cursor: pointer;
       transition: all 0.2s ease;
       position: relative;
     }
     .dropzone:hover, .dropzone.dragover {
-      border-color: #eab308;
-      background: rgba(234, 179, 8, 0.05);
+      border-color: #2563eb;
+      background: #eff6ff;
     }
     .dropzone.has-file {
       border-color: #10b981;
-      background: rgba(16, 185, 129, 0.08);
+      border-style: solid;
+      background: #ecfdf5;
     }
     .dropzone input[type="file"] {
       position: absolute;
@@ -311,46 +354,50 @@
       cursor: pointer;
     }
     .dz-icon {
-      font-size: 26px;
+      font-size: 28px;
       margin-bottom: 8px;
       display: block;
     }
     .dz-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
-      color: #ffffff;
+      color: #0f172a;
       margin-bottom: 4px;
     }
     .dz-hint {
-      font-size: 11px;
-      color: #94a3b8;
+      font-size: 12px;
+      color: #64748b;
       line-height: 1.4;
     }
     .dz-filename {
-      font-size: 12px;
-      color: #34d399;
-      font-weight: 600;
-      margin-top: 6px;
+      font-size: 13px;
+      color: #047857;
+      font-weight: 700;
+      margin-top: 8px;
       word-break: break-all;
     }
 
     /* Agreement box */
     .legal-box {
-      background: rgba(2, 6, 23, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 16px;
-      font-size: 12px;
-      color: #94a3b8;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 18px 20px;
+      font-size: 13px;
+      color: #334155;
       height: 140px;
       overflow-y: auto;
       line-height: 1.6;
       margin-bottom: 24px;
     }
     .legal-box h4 {
-      color: #e2e8f0;
-      margin: 10px 0 4px;
-      font-size: 12px;
+      color: #0f172a;
+      margin: 12px 0 4px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .legal-box h4:first-child {
+      margin-top: 0;
     }
     .legal-box p {
       margin-bottom: 8px;
@@ -363,24 +410,26 @@
       margin-bottom: 12px;
     }
     .sig-tab {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #cbd5e1;
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-size: 12px;
+      background: #f1f5f9;
+      border: 1.5px solid #cbd5e1;
+      color: #475569;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
     .sig-tab.active {
-      background: #eab308;
-      border-color: #eab308;
-      color: #0a192f;
+      background: #0f172a;
+      border-color: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
     }
     .canvas-container {
       position: relative;
-      border: 2px dashed rgba(255, 255, 255, 0.2);
-      border-radius: 8px;
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
       background: #ffffff;
       overflow: hidden;
       margin-bottom: 8px;
@@ -398,17 +447,17 @@
     }
     .typed-preview {
       font-family: 'Brush Script MT', 'Dancing Script', 'Pacifico', cursive, sans-serif;
-      font-size: 32px;
+      font-size: 34px;
       color: #0f172a;
-      background: #ffffff;
+      background: #f8fafc;
       padding: 24px;
-      border-radius: 8px;
+      border-radius: 10px;
       text-align: center;
       min-height: 80px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border: 2px dashed #cbd5e1;
     }
     .sig-actions {
       display: flex;
@@ -419,13 +468,14 @@
     .btn-clear-sig {
       background: none;
       border: none;
-      color: #94a3b8;
-      font-size: 12px;
+      color: #dc2626;
+      font-size: 12.5px;
+      font-weight: 600;
       cursor: pointer;
       text-decoration: underline;
     }
     .btn-clear-sig:hover {
-      color: #f87171;
+      color: #b91c1c;
     }
 
     /* Checkbox acknowledgment */
@@ -433,24 +483,27 @@
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      margin: 20px 0;
-      padding: 14px;
-      background: rgba(234, 179, 8, 0.05);
-      border: 1px solid rgba(234, 179, 8, 0.2);
-      border-radius: 8px;
+      margin: 24px 0;
+      padding: 16px 18px;
+      background: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: 10px;
     }
     .ack-group input[type="checkbox"] {
       margin-top: 3px;
       width: 18px;
       height: 18px;
-      accent-color: #eab308;
+      accent-color: #d97706;
       cursor: pointer;
     }
     .ack-group label {
-      font-size: 13px;
-      color: #cbd5e1;
+      font-size: 13.5px;
+      color: #78350f;
       line-height: 1.5;
       cursor: pointer;
+    }
+    .ack-group label strong {
+      color: #92400e;
     }
 
     /* Buttons */
@@ -458,42 +511,45 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 32px;
-      padding-top: 24px;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 36px;
+      padding-top: 28px;
+      border-top: 1.5px solid #e2e8f0;
     }
     .btn-next {
-      background: #eab308;
-      color: #0a192f;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
       font-weight: 700;
       border: none;
-      padding: 12px 28px;
-      border-radius: 8px;
+      padding: 14px 32px;
+      border-radius: 10px;
       font-size: 15px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2);
     }
     .btn-next:hover {
-      background: #facc15;
-      box-shadow: 0 0 16px rgba(234, 179, 8, 0.4);
+      background: #1e3a5f;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.3);
+      transform: translateY(-1px);
     }
     .btn-prev {
-      background: rgba(255, 255, 255, 0.1);
-      color: #cbd5e1;
+      background: #ffffff;
+      color: #334155;
       font-weight: 600;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
+      border: 1.5px solid #cbd5e1;
+      padding: 13px 24px;
+      border-radius: 10px;
       font-size: 14px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
     }
     .btn-prev:hover {
-      background: rgba(255, 255, 255, 0.18);
-      color: #ffffff;
+      background: #f8fafc;
+      color: #0f172a;
+      border-color: #94a3b8;
     }
 
     /* Success Screen */
@@ -503,34 +559,34 @@
       padding: 40px 20px;
     }
     .success-icon {
-      width: 72px;
-      height: 72px;
+      width: 76px;
+      height: 76px;
       background: #10b981;
       color: #ffffff;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 36px;
+      font-size: 38px;
       margin-bottom: 24px;
-      box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
     }
     .success-panel h2 {
       font-size: 28px;
       font-weight: 800;
-      color: #ffffff;
+      color: #0f172a;
       margin-bottom: 12px;
     }
     .success-panel p {
       font-size: 16px;
-      color: #94a3b8;
+      color: #475569;
       max-width: 580px;
       margin: 0 auto 28px;
       line-height: 1.6;
     }
     .success-summary {
-      background: rgba(2, 6, 23, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
       border-radius: 12px;
       padding: 24px;
       max-width: 520px;
@@ -540,24 +596,26 @@
     .summary-row {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 0;
+      border-bottom: 1px solid #e2e8f0;
       font-size: 14px;
     }
     .summary-row:last-child { border-bottom: none; }
     .summary-label { color: #64748b; }
-    .summary-val { color: #f8fafc; font-weight: 600; }
+    .summary-val { color: #0f172a; font-weight: 700; }
 
     /* Alert / Validation Error */
     .alert-banner {
       display: none;
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.4);
-      color: #fca5a5;
-      padding: 12px 16px;
-      border-radius: 8px;
+      background: #fef2f2;
+      border: 1.5px solid #fecaca;
+      color: #991b1b;
+      padding: 14px 18px;
+      border-radius: 10px;
       font-size: 14px;
-      margin-bottom: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 6px rgba(239, 68, 68, 0.08);
     }
   </style>
 </head>
@@ -572,10 +630,10 @@
       Complete your carrier agreement, upload your active MC authority &amp; COI, and activate your dedicated operations manager in under 5 minutes. 100% digital — keep all broker rate confirmations directly.
     </p>
     <div class="setup-highlights">
-      <span class="setup-pill">✓ Instant Packet Counter-Signed</span>
-      <span class="setup-pill">✓ Keep 100% Broker Pay</span>
-      <span class="setup-pill">✓ 2-Hour Dispatch Assignment SLA</span>
-      <span class="setup-pill">📞 24/7 Hotline: +1 (551) 400-6300</span>
+      <span class="setup-pill"><span style="color:#10b981;font-weight:bold;">✓</span> Instant Packet Counter-Signed</span>
+      <span class="setup-pill"><span style="color:#10b981;font-weight:bold;">✓</span> Keep 100% Broker Pay</span>
+      <span class="setup-pill"><span style="color:#2563eb;font-weight:bold;">⏱</span> 2-Hour Dispatch Assignment SLA</span>
+      <span class="setup-pill"><span style="color:#d97706;font-weight:bold;">📞</span> 24/7 Hotline: +1 (551) 400-6300</span>
     </div>
   </div>
 
@@ -933,7 +991,7 @@
         </div>
         <div class="summary-row">
           <span class="summary-label">Dedicated Dispatcher SLA:</span>
-          <span class="summary-val" style="color:#facc15;">Within 2 Hours</span>
+          <span class="summary-val" style="color:#d97706;font-weight:700;">Within 2 Hours</span>
         </div>
         <div class="summary-row">
           <span class="summary-label">24/7 Dispatch Desk:</span>
