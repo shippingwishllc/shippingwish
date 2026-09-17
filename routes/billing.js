@@ -23,9 +23,9 @@ const PLANS = {
     amount_cents: parseInt(process.env.STRIPE_PLAN_LOADBOARD_CENTS || '1900', 10),
     price_env: 'STRIPE_PRICE_LOADBOARD',
     interval: 'month',
-    description: 'Instant self-dispatch access to Live DAT AI Freight Search, Direct Broker Contacts, and FMCSA Authority & Credit Score Check.',
+    description: 'Instant self-dispatch access to 50-State Live Spot Freight AI Search, Direct Broker Contacts, and FMCSA Authority & Credit Score Check.',
     features: [
-      'Unlimited 50-State Live DAT AI Freight Search',
+      'Unlimited 50-State Live Spot Freight AI Search',
       'Unmasked Direct Broker Phone Numbers & Emails',
       'Freight Brokers & FMCSA Authority Check (Credit Score, $75k Bond, DTP)',
       'Dynamic RPM & Deadhead Corridors Calculator',
@@ -687,7 +687,7 @@ async function handleLoadBoardCheckoutRequest(req, res) {
             currency: 'usd',
             product_data: {
               name: 'Carrier AI Load Board & FMCSA Authority Suite',
-              description: 'Instant self-dispatch access: Live DAT freight, direct unmasked broker contacts, and FMCSA credit score checks.'
+              description: 'Instant self-dispatch access: Live spot market freight, direct unmasked broker contacts, and FMCSA credit score checks.'
             },
             unit_amount: 1900,
             recurring: { interval: 'month' }

@@ -513,14 +513,14 @@
             Shipping Wish <span style="font-size:12px;color:#f59e0b;font-weight:700;margin-left:4px;">AI Load Board</span>
           </a>
           <span style="font-size:12px;color:#94a3b8;border-left:1px solid #334155;padding-left:12px;display:inline-block;">
-            ⚡ Freemium Live DAT Search · 50 States
+            ⚡ Live Spot Freight Search · 50 States (Preview Mode)
           </span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
-          <a href="/login?redirect=/load-booking" class="btn btn-secondary btn-sm" style="font-weight:700;color:#fff;border-color:#475569;">
+          <a href="/login?redirect=/load-booking" class="btn btn-secondary btn-sm" style="font-weight:700;background:rgba(255,255,255,0.08);color:#f8fafc;border:1px solid rgba(255,255,255,0.25);text-decoration:none;padding:6px 14px;border-radius:8px;">
             🔑 Sign In
           </a>
-          <button type="button" class="btn btn-primary btn-sm" onclick="openLoadBoardSubscribeModal()" style="font-weight:800;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="openLoadBoardSubscribeModal()" style="font-weight:800;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;padding:6px 16px;border-radius:8px;cursor:pointer;">
             ⚡ Unlock Full AI Load Board ($19/mo)
           </button>
         </div>
@@ -534,14 +534,14 @@
           Load Board &amp; AI Freight Match Engine
         </h1>
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">
-          DAT One multi-truck workspace, date-wise searches (Today, Tomorrow, Advance), DHO/DHD tracking &amp; carrier booking
+          Nationwide multi-truck workspace, date-wise freight match (Today, Tomorrow, Advance), DHO/DHD tracking &amp; carrier booking
         </p>
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
         <div class="live-status" aria-live="polite">
           <span class="live-dot" aria-hidden="true"></span>
-          DAT Freight Engine Live
+          SPOT FREIGHT ENGINE LIVE
         </div>
         <button type="button" class="btn btn-secondary btn-sm" onclick="addNewSearchTab()">
           + New Truck Tab
@@ -561,7 +561,7 @@
             <div class="stat-kpi-icon">🎯</div>
           </div>
           <div class="stat-kpi-val" id="kpi-board-loads">2,480+</div>
-          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:6px;">Live DAT &amp; Broker Freight Corridors</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:6px;">Live Spot Market &amp; Broker Corridors</div>
         </div>
 
         <div class="stat-kpi-card">
@@ -832,7 +832,7 @@
             🔒 SUBSCRIBER ACCESS RESTRICTED · 12 MORE LOADS LOCKED
           </div>
           <h3 style="font-size:26px;font-weight:900;color:#fff;margin:0 0 10px;">
-            Unlock All 500+ Daily Live DAT Loads &amp; Direct Broker Contacts
+            Unlock All 500+ Daily Live Spot Freight Loads &amp; Direct Broker Contacts
           </h3>
           <p style="font-size:14px;color:#cbd5e1;max-width:720px;margin:0 auto 22px;line-height:1.6;">
             Get direct, unmasked freight broker phone numbers, direct emails, lane negotiation tools, and complete access to the <strong>Freight Brokers &amp; FMCSA Authority Check</strong> ($75k BMC-84 bond verification &amp; credit score due diligence).
@@ -958,7 +958,7 @@
             Unlock AI Load Board &amp; FMCSA Authority Suite
           </h3>
           <p style="font-size:13px;color:#cbd5e1;margin:0;">
-            Direct broker phone numbers, live DAT freight, and FMCSA credit score checks.
+            Direct broker phone numbers, live spot market freight, and FMCSA credit score checks.
           </p>
         </div>
         <button type="button" style="background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;line-height:1;" onclick="closeLoadBoardSubscribeModal()">&times;</button>
@@ -1020,7 +1020,7 @@
 
       <div style="background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:16px;font-size:12px;color:#64748b;line-height:1.5;">
         <strong style="color:#0f172a;">What’s included in your $19/mo pass:</strong>
-        <div style="margin-top:4px;">✓ Unlimited live 50-state DAT AI freight searches</div>
+        <div style="margin-top:4px;">✓ Unlimited live 50-state AI spot freight searches</div>
         <div>✓ Unmasked direct broker phone numbers &amp; emails</div>
         <div>✓ Freight Brokers &amp; FMCSA Authority Check (Credit Score, $75k Bond, DTP)</div>
       </div>
@@ -1053,7 +1053,7 @@
           Shipping Wish Enterprise ERP / TMS Load Board
         </h2>
         <p style="font-size:13px;color:rgba(255,255,255,0.7);margin:4px 0 0;">
-          Log in to your account to query live DAT &amp; 123Loadboard lanes, manage multi-truck search tabs, and dispatch loads.
+          Log in to your account to query nationwide freight lanes, manage multi-truck search tabs, and dispatch loads.
         </p>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -1447,7 +1447,7 @@
       if (data.user) {
         CURRENT_USER = data.user;
         closeLoadBoardSubscribeModal();
-        alert('🎉 Welcome! Your $19/mo Carrier AI Load Board & FMCSA Authority Suite pass has been activated. All live DAT loads and direct broker contacts are now unlocked!');
+        alert('🎉 Welcome! Your $19/mo Carrier AI Load Board & FMCSA Authority Suite pass has been activated. All live spot freight loads and direct broker contacts are now unlocked!');
         await init();
       }
     } catch (err) {
@@ -1791,7 +1791,7 @@
       renderTabsBar();
 
       document.getElementById('active-tab-results-badge').textContent = `${tab.results.length} loads`;
-      document.getElementById('board-search-status').textContent = `Found ${tab.results.length} loads for ${formatDisplayDate(tab.pickupDate)} (${data.provider || 'DAT Freight Feed'})`;
+      document.getElementById('board-search-status').textContent = `Found ${tab.results.length} loads for ${formatDisplayDate(tab.pickupDate)} (${data.provider || 'Spot Freight Network'})`;
     } catch (e) {
       tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:35px;color:#b91c1c;">Could not load board freight. Please check your connection.</td></tr>';
     }

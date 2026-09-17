@@ -206,7 +206,7 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
     const delDate = delDateObj.toISOString().slice(0, 10);
 
     loads.push({
-      id: `DAT-${2600 + i}`,
+      id: `SW-${2600 + i}`,
       broker_name: broker.name,
       broker_mc: broker.mc,
       broker_phone: broker.phone,
@@ -385,14 +385,14 @@ router.get('/search', optionalAuth, async (req, res) => {
       }));
       return res.json({
         ok: true,
-        provider: process.env.DAT_API_KEY ? 'DAT Live API' : 'DAT Freight Search Engine',
+        provider: process.env.DAT_API_KEY ? 'DAT Live API' : 'Shipping Wish Spot Freight Network',
         preview_mode: false,
         total_loads: loads.length,
         loads
       });
     }
 
-    // Unauthenticated Guest or Unpaid Carrier: Return Freemium Teaser Loads
+    // Unauthenticated Guest or Unpaid Carrier: Return Preview Loads
     const loads = rawLoads.map((load, idx) => {
       if (idx < 3) {
         // Teaser loads: full lane & rate details, but masked direct phone/email
@@ -419,7 +419,7 @@ router.get('/search', optionalAuth, async (req, res) => {
 
     res.json({
       ok: true,
-      provider: 'DAT Freight Engine (Freemium Preview)',
+      provider: 'Shipping Wish Spot Freight Network (Guest Preview)',
       preview_mode: true,
       total_loads: rawLoads.length,
       unlocked_count: 3,
@@ -443,7 +443,7 @@ router.post('/ai-match', requireAuth, async (req, res) => {
 
     res.json({
       ok: true,
-      ai_summary: `AI analyzed 60+ live DAT postings for ${currentCity || 'Origin'} ➔ ${desiredDestination || 'Destination'} picking up ${pickupDate || 'Today'}. Found ${topMatches.length} high-profit matches exceeding $${targetRpm || '2.85'}/mi with verified broker credit.`,
+      ai_summary: `AI analyzed 60+ live spot freight postings for ${currentCity || 'Origin'} ➔ ${desiredDestination || 'Destination'} picking up ${pickupDate || 'Today'}. Found ${topMatches.length} high-profit matches exceeding $${targetRpm || '2.85'}/mi with verified broker credit.`,
       matches: topMatches
     });
   } catch (err) {
