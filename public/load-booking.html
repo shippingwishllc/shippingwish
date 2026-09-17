@@ -471,6 +471,25 @@
       box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
       overflow: hidden;
     }
+    #erp-shell.guest-mode {
+      display: block !important;
+      grid-template-columns: 1fr !important;
+    }
+    #erp-shell.guest-mode #app-sidebar,
+    #erp-shell.guest-mode .app-sidebar-backdrop {
+      display: none !important;
+    }
+    #erp-shell.guest-mode .app-main {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    .locked-row {
+      filter: blur(3.5px);
+      opacity: 0.45;
+      user-select: none;
+      pointer-events: none;
+      background: #f8fafc;
+    }
   </style>
 </head>
 <body class="app-body">
@@ -485,6 +504,29 @@
 
   <!-- MAIN WORKSPACE -->
   <div class="app-main">
+    <!-- GUEST TOP BANNER (Visible only when not signed in) -->
+    <div id="guest-header-banner" style="display:none;background:linear-gradient(135deg, #0b1120 0%, #1e293b 100%);padding:14px 24px;border-bottom:2px solid #f59e0b;color:#fff;width:100%;box-sizing:border-box;">
+      <div style="max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <a href="/" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#fff;font-weight:900;font-size:16px;">
+            <span style="background:#f59e0b;color:#0f172a;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;">SW</span>
+            Shipping Wish <span style="font-size:12px;color:#f59e0b;font-weight:700;margin-left:4px;">AI Load Board</span>
+          </a>
+          <span style="font-size:12px;color:#94a3b8;border-left:1px solid #334155;padding-left:12px;display:inline-block;">
+            ⚡ Freemium Live DAT Search · 50 States
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <a href="/login?redirect=/load-booking" class="btn btn-secondary btn-sm" style="font-weight:700;color:#fff;border-color:#475569;">
+            🔑 Sign In
+          </a>
+          <button type="button" class="btn btn-primary btn-sm" onclick="openLoadBoardSubscribeModal()" style="font-weight:800;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;">
+            ⚡ Unlock Full AI Load Board ($19/mo)
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- TOP APP HEADER -->
     <header class="app-header">
       <div>
@@ -783,10 +825,38 @@
             </tbody>
           </table>
         </div>
+
+        <!-- CONVERSION PAYWALL CARD FOR LOCKED LOADS -->
+        <div id="board-paywall-banner" style="display:none;background:linear-gradient(135deg, #0b1120 0%, #1e293b 100%);border:2px solid #f59e0b;border-radius:16px;padding:36px 28px;margin-top:24px;color:#fff;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.35);">
+          <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.2);color:#f59e0b;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:5px 14px;border-radius:20px;border:1px solid rgba(245,158,11,0.3);margin-bottom:14px;">
+            🔒 SUBSCRIBER ACCESS RESTRICTED · 12 MORE LOADS LOCKED
+          </div>
+          <h3 style="font-size:26px;font-weight:900;color:#fff;margin:0 0 10px;">
+            Unlock All 500+ Daily Live DAT Loads &amp; Direct Broker Contacts
+          </h3>
+          <p style="font-size:14px;color:#cbd5e1;max-width:720px;margin:0 auto 22px;line-height:1.6;">
+            Get direct, unmasked freight broker phone numbers, direct emails, lane negotiation tools, and complete access to the <strong>Freight Brokers &amp; FMCSA Authority Check</strong> ($75k BMC-84 bond verification &amp; credit score due diligence).
+          </p>
+          <div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:24px;">
+            <div style="font-size:36px;font-weight:900;color:#f59e0b;">$19 <span style="font-size:14px;color:#94a3b8;font-weight:500;">/ month</span></div>
+            <div style="text-align:left;font-size:12.5px;color:#cbd5e1;line-height:1.5;">
+              <div>✓ Cancel anytime · Instant automated activation</div>
+              <div>✓ Unlimited 50-state freight search + FMCSA broker due diligence</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary btn-xl" onclick="openLoadBoardSubscribeModal()" style="font-weight:800;padding:14px 34px;font-size:16px;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;box-shadow:0 6px 20px rgba(245,158,11,0.35);cursor:pointer;">
+              ⚡ Unlock Full AI Load Board ($19/mo) &rarr;
+            </button>
+            <a href="/login?redirect=/load-booking" class="btn btn-secondary btn-xl" style="font-weight:700;padding:14px 24px;font-size:15px;color:#fff;border-color:#475569;">
+              🔑 Already a Member? Sign In
+            </a>
+          </div>
+        </div>
       </div>
 
       <!-- ACTIVE CARRIER OFFERS & NEGOTIATIONS -->
-      <div class="tms-table-card">
+      <div class="tms-table-card" id="carrier-offers-card">
         <div class="tms-table-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
           <div>
             <h3 style="font-size:var(--text-base);font-weight:800;margin:0;display:flex;align-items:center;gap:8px;">
@@ -868,6 +938,99 @@
       <div style="display:flex;justify-content:flex-end;gap:10px;">
         <button type="button" class="btn btn-secondary" onclick="closeOfferModal()">Cancel</button>
         <button type="submit" class="btn btn-primary" id="btn-submit-offer">Send Offer to Carrier →</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: SUBSCRIBE TO AI LOAD BOARD ($19/MO)               -->
+<!-- ======================================================== -->
+<div class="modal-backdrop" id="loadboard-subscribe-modal" role="dialog" aria-modal="true" aria-labelledby="modal-sub-title">
+  <div class="modal-card" style="max-width:540px;">
+    <div style="background:linear-gradient(135deg, #0b1120 0%, #1e293b 100%);color:#fff;padding:24px;border-bottom:2px solid #f59e0b;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <span style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#f59e0b;background:rgba(245,158,11,0.15);padding:3px 10px;border-radius:20px;border:1px solid rgba(245,158,11,0.3);">
+            ⚡ Instant Automated Access
+          </span>
+          <h3 id="modal-sub-title" style="font-size:20px;font-weight:900;color:#fff;margin:10px 0 4px;">
+            Unlock AI Load Board &amp; FMCSA Authority Suite
+          </h3>
+          <p style="font-size:13px;color:#cbd5e1;margin:0;">
+            Direct broker phone numbers, live DAT freight, and FMCSA credit score checks.
+          </p>
+        </div>
+        <button type="button" style="background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;line-height:1;" onclick="closeLoadBoardSubscribeModal()">&times;</button>
+      </div>
+
+      <!-- Pricing Strip -->
+      <div style="margin-top:16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);padding:12px 16px;border-radius:10px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;font-weight:700;">Monthly Subscription</div>
+          <div style="font-size:24px;font-weight:900;color:#f59e0b;">$19 <span style="font-size:13px;color:#94a3b8;font-weight:500;">/ month</span></div>
+        </div>
+        <div style="text-align:right;font-size:12px;color:#34d399;font-weight:700;">
+          ✓ Cancel Anytime<br>
+          <span style="color:#cbd5e1;font-weight:400;">Billed securely</span>
+        </div>
+      </div>
+    </div>
+
+    <form id="form-subscribe-loadboard" onsubmit="handleLoadBoardSubscribe(event)" style="padding:24px;">
+      <div id="sub-error-alert" style="display:none;background:#fef2f2;border:1px solid #f87171;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Full Name *</label>
+          <input type="text" id="sub-name" class="input-field" placeholder="John Doe" required style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Company Name *</label>
+          <input type="text" id="sub-company" class="input-field" placeholder="Acme Logistics LLC" required style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Phone Number *</label>
+          <input type="tel" id="sub-phone" class="input-field" placeholder="(555) 000-0000" required style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Email Address *</label>
+          <input type="email" id="sub-email" class="input-field" placeholder="carrier@company.com" required style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">MC# (Optional)</label>
+          <input type="text" id="sub-mc" class="input-field" placeholder="MC-123456" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">USDOT# (Optional)</label>
+          <input type="text" id="sub-dot" class="input-field" placeholder="1234567" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Create Password *</label>
+        <input type="password" id="sub-password" class="input-field" placeholder="Choose account password" required minlength="6" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+      </div>
+
+      <div style="background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:16px;font-size:12px;color:#64748b;line-height:1.5;">
+        <strong style="color:#0f172a;">What’s included in your $19/mo pass:</strong>
+        <div style="margin-top:4px;">✓ Unlimited live 50-state DAT AI freight searches</div>
+        <div>✓ Unmasked direct broker phone numbers &amp; emails</div>
+        <div>✓ Freight Brokers &amp; FMCSA Authority Check (Credit Score, $75k Bond, DTP)</div>
+      </div>
+
+      <button type="submit" id="btn-submit-sub" class="btn btn-primary btn-block btn-lg" style="font-weight:800;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;box-shadow:0 4px 14px rgba(245,158,11,0.35);padding:12px;width:100%;cursor:pointer;">
+        ⚡ Activate AI Load Board Pass ($19/mo)
+      </button>
+
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-muted);">
+        Already have an account? <a href="/login?redirect=/load-booking" style="color:#2563eb;font-weight:700;">Sign in here</a>
       </div>
     </form>
   </div>
@@ -1179,10 +1342,17 @@
       CURRENT_USER = null;
     }
 
+    const erpShell = document.getElementById('erp-shell');
+    const guestBanner = document.getElementById('guest-header-banner');
+    const mktShell = document.getElementById('marketing-shell');
+
+    document.body.className = 'app-body';
+    erpShell.style.display = 'grid';
+    if (mktShell) mktShell.style.display = 'none';
+
     if (CURRENT_USER) {
-      document.body.className = 'app-body';
-      document.getElementById('erp-shell').style.display = 'flex';
-      document.getElementById('marketing-shell').style.display = 'none';
+      erpShell.classList.remove('guest-mode');
+      if (guestBanner) guestBanner.style.display = 'none';
 
       loadAppShellScript();
 
@@ -1192,20 +1362,86 @@
         carrierGroup.style.display = 'none';
       }
 
+      const offersCard = document.getElementById('carrier-offers-card');
+      if (offersCard) offersCard.style.display = 'block';
+
       if (isStaff) {
         await loadCarriersDropdown();
       }
-
-      renderTabsBar();
-      loadTabInputs(ACTIVE_TAB_ID);
-      await runActiveTabSearch();
       loadOffers();
     } else {
-      document.body.className = 'marketing';
-      document.getElementById('erp-shell').style.display = 'none';
-      document.getElementById('marketing-shell').style.display = 'block';
+      erpShell.classList.add('guest-mode');
+      if (guestBanner) guestBanner.style.display = 'block';
 
-      loadSiteChromeScript();
+      const carrierGroup = document.getElementById('carrier-select-group');
+      if (carrierGroup) carrierGroup.style.display = 'none';
+
+      const offersCard = document.getElementById('carrier-offers-card');
+      if (offersCard) offersCard.style.display = 'none';
+    }
+
+    renderTabsBar();
+    loadTabInputs(ACTIVE_TAB_ID);
+    await runActiveTabSearch();
+  }
+
+  function openLoadBoardSubscribeModal() {
+    const m = document.getElementById('loadboard-subscribe-modal');
+    if (m) m.classList.add('active');
+  }
+
+  function closeLoadBoardSubscribeModal() {
+    const m = document.getElementById('loadboard-subscribe-modal');
+    if (m) m.classList.remove('active');
+  }
+
+  async function handleLoadBoardSubscribe(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-sub');
+    const errAlert = document.getElementById('sub-error-alert');
+    if (errAlert) errAlert.style.display = 'none';
+
+    btn.disabled = true;
+    btn.textContent = 'Activating pass...';
+
+    const payload = {
+      name: document.getElementById('sub-name').value.trim(),
+      company: document.getElementById('sub-company').value.trim(),
+      phone: document.getElementById('sub-phone').value.trim(),
+      email: document.getElementById('sub-email').value.trim(),
+      mc_number: document.getElementById('sub-mc').value.trim(),
+      dot_number: document.getElementById('sub-dot').value.trim(),
+      password: document.getElementById('sub-password').value.trim()
+    };
+
+    try {
+      const res = await fetch('/api/billing/subscribe-loadboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Could not complete subscription.');
+      }
+
+      CURRENT_USER = data.user;
+      closeLoadBoardSubscribeModal();
+
+      alert('🎉 Welcome! Your $19/mo Carrier AI Load Board & FMCSA Authority Suite pass has been activated. All live DAT loads and direct broker contacts are now unlocked!');
+
+      await init();
+    } catch (err) {
+      if (errAlert) {
+        errAlert.textContent = err.message || 'Error subscribing. Please try again.';
+        errAlert.style.display = 'block';
+      } else {
+        alert(err.message || 'Error subscribing.');
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⚡ Activate AI Load Board Pass ($19/mo)';
     }
   }
 
@@ -1600,6 +1836,11 @@
     }
 
     const isStaff = CURRENT_USER && ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
+    const hasLocked = loads.some(l => l.is_locked);
+    const paywallBanner = document.getElementById('board-paywall-banner');
+    if (paywallBanner) {
+      paywallBanner.style.display = hasLocked ? 'block' : 'none';
+    }
 
     tbody.innerHTML = loads.map((load, idx) => {
       const score = parseFloat(load.ai_score || 95);
@@ -1614,9 +1855,88 @@
       const formattedPuDate = formatDisplayDate(load.pickup_date);
       const formattedDelDate = formatDisplayDate(load.delivery_date);
 
+      if (load.is_locked) {
+        return `
+          <tr class="locked-row">
+            <!-- DHO -->
+            <td><span class="dh-badge">-- mi</span></td>
+            <!-- Pickup -->
+            <td>
+              <div style="font-weight:800;color:var(--text-primary);font-size:13.5px;">${escapeHtml(load.pickup_location)}</div>
+              <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">📅 ${formattedPuDate}</div>
+            </td>
+            <!-- Delivery -->
+            <td>
+              <div style="font-weight:800;color:#2563eb;font-size:13.5px;">${escapeHtml(load.delivery_location)}</div>
+              <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">🏁 DEL: ${formattedDelDate}</div>
+            </td>
+            <!-- DHD -->
+            <td><span class="dh-badge">-- mi</span></td>
+            <!-- Miles -->
+            <td><span style="font-weight:700;font-size:13px;">${load.miles.toLocaleString()} mi</span></td>
+            <!-- Rate -->
+            <td>
+              <div style="font-weight:800;color:#059669;font-size:14px;">$${Number(load.rate).toLocaleString()}</div>
+              <div style="font-size:11px;color:#94a3b8;font-weight:700;">$${load.rpm}/mi</div>
+            </td>
+            <!-- Equipment -->
+            <td><span class="badge badge-booked" style="font-size:11px;padding:3px 8px;">${escapeHtml(load.equipment_type || '53ft Dry Van')}</span></td>
+            <!-- Broker -->
+            <td>
+              <div style="font-weight:700;color:#94a3b8;">🔒 Verified Broker</div>
+              <div style="font-size:11px;color:#94a3b8;">MC-******</div>
+            </td>
+            <!-- AI Score -->
+            <td><span class="load-match-pill load-match-mid">⚡ ${score}%</span></td>
+            <!-- Actions -->
+            <td>
+              <button type="button" class="btn btn-primary btn-sm" onclick="openLoadBoardSubscribeModal()" style="font-weight:800;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;">
+                🔒 Unlock
+              </button>
+            </td>
+          </tr>
+        `;
+      }
+
       const mailtoSubject = encodeURIComponent(`Rate Confirmation & Inquiry: ${load.pickup_location} to ${load.delivery_location} (PU: ${load.pickup_date})`);
       const mailtoBody = encodeURIComponent(`Hi ${load.broker_name} Dispatch,\n\nWe have an empty truck ready to book your posted load:\n• Lane: ${load.pickup_location} -> ${load.delivery_location}\n• Pickup Date: ${load.pickup_date}\n• Delivery Date: ${load.delivery_date}\n• Equipment: ${load.equipment_type}\n• Miles: ${load.miles} mi\n• Rate: $${load.rate}\n\nPlease confirm availability and send Rate Confirmation to dispatch@shippingwish.com.\n\nThank you,\nShipping Wish LLC Dispatch Desk\n+1 (917) 737-0021`);
       const mailtoLink = `mailto:${encodeURIComponent(load.broker_email || 'dispatch@broker.com')}?subject=${mailtoSubject}&body=${mailtoBody}`;
+
+      let brokerHtml = '';
+      if (load.is_teaser) {
+        brokerHtml = `
+          <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(load.broker_name || 'Broker')}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(load.broker_mc || 'MC-ON-FILE')}</div>
+          <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:10.5px;padding:2px 7px;cursor:pointer;margin-top:3px;display:inline-block;font-weight:700;" onclick="openLoadBoardSubscribeModal()" title="Subscribe to view direct broker phone number">
+            🔒 (800) ***-**** (Pass)
+          </span>
+        `;
+      } else {
+        brokerHtml = `
+          <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(load.broker_name || 'Broker')}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(load.broker_mc || 'MC-ON-FILE')}</div>
+          ${load.broker_phone ? `<a href="tel:${escapeHtml(load.broker_phone)}" style="font-size:11px;color:#2563eb;font-weight:600;">📞 ${escapeHtml(load.broker_phone)}</a>` : ''}
+        `;
+      }
+
+      let actionsHtml = '';
+      if (isStaff) {
+        actionsHtml = `
+          <button type="button" class="btn btn-primary btn-sm" onclick="openOfferModal(${idx})">Dispatch</button>
+          <a href="${mailtoLink}" class="btn btn-secondary btn-sm" title="Email Broker Directly">✉️</a>
+        `;
+      } else if (load.is_teaser) {
+        actionsHtml = `
+          <button type="button" class="btn btn-primary btn-sm" onclick="openLoadBoardSubscribeModal()" style="font-weight:800;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;">
+            ⚡ Unlock Pass
+          </button>
+        `;
+      } else {
+        actionsHtml = `
+          <a href="${mailtoLink}" class="btn btn-primary btn-sm">Inquire</a>
+          <a href="${mailtoLink}" class="btn btn-secondary btn-sm" title="Email Broker Directly">✉️</a>
+        `;
+      }
 
       return `
         <tr>
@@ -1680,9 +2000,7 @@
 
           <!-- Broker & MC# -->
           <td>
-            <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(load.broker_name || 'Broker')}</div>
-            <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(load.broker_mc || 'MC-ON-FILE')}</div>
-            ${load.broker_phone ? `<a href="tel:${escapeHtml(load.broker_phone)}" style="font-size:11px;color:#2563eb;font-weight:600;">📞 ${escapeHtml(load.broker_phone)}</a>` : ''}
+            ${brokerHtml}
           </td>
 
           <!-- AI Score -->
@@ -1695,18 +2013,7 @@
           <!-- Actions -->
           <td>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              ${isStaff ? `
-                <button type="button" class="btn btn-primary btn-sm" onclick="openOfferModal(${idx})">
-                  Dispatch
-                </button>
-              ` : `
-                <a href="${mailtoLink}" class="btn btn-primary btn-sm">
-                  Inquire
-                </a>
-              `}
-              <a href="${mailtoLink}" class="btn btn-secondary btn-sm" title="Email Broker Directly">
-                ✉️
-              </a>
+              ${actionsHtml}
             </div>
           </td>
         </tr>

@@ -181,7 +181,7 @@
         <ul>
           <li><a href="/about">About Shipping Wish LLC</a></li>
           <li><a href="/about#team">Executive Leadership</a></li>
-          <li><a href="/about#compliance">Delaware Corporate Filings</a></li>
+          <li><a href="/about#compliance">Corporate Legal Filings</a></li>
           <li><a href="/blog">Freight Insights &amp; Blog</a></li>
           <li><a href="/contact">24/7 Operations Desk</a></li>
           <li><a href="/contact?subject=careers">Dispatcher Careers</a></li>
@@ -212,7 +212,7 @@
           TMS &amp; Desk Systems Operational (99.98% SLA)
         </span>
         <span>&bull;</span>
-        <span>Delaware LLC Registered Entity</span>
+        <span>Verified Freight Operations Desk &amp; TMS</span>
         <span>&bull;</span>
         <span>Integrated with <a href="https://advancetracksystem.com" target="_blank" rel="noopener" style="color:#38bdf8;font-weight:700;text-decoration:underline;">Advance Track AI Telematics</a></span>
       </div>

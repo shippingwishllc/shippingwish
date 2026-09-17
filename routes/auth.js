@@ -342,7 +342,7 @@ router.get('/me', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE users SET signup_ip = $1 WHERE id = $2 AND signup_ip IS NULL', [clientIp, req.user.id]);
     const result = await pool.query(
-      `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, address, is_suspended, signup_ip, created_at, organization_id, trial_ends_at, email_verified_at
+      `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, address, is_suspended, signup_ip, created_at, organization_id, trial_ends_at, email_verified_at, weekly_plan
        FROM users WHERE id = $1`,
       [req.user.id]
     );

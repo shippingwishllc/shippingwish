@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const pool = require('../db');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requireRole, JWT_SECRET, setAuthCookie } = require('../middleware/auth');
 const { sendBrandedEmail } = require('../utils/mailer');
 const { buildTemplate, COMPANY, APP_URL, escapeHtml } = require('../utils/email-templates');
 
@@ -14,6 +16,22 @@ function getStripe() {
 }
 
 const PLANS = {
+  loadboard_ai_pass: {
+    key: 'loadboard_ai_pass',
+    name: 'Carrier AI Load Board & FMCSA Authority Suite',
+    trucks: 'Self-Dispatch',
+    amount_cents: parseInt(process.env.STRIPE_PLAN_LOADBOARD_CENTS || '1900', 10),
+    price_env: 'STRIPE_PRICE_LOADBOARD',
+    interval: 'month',
+    description: 'Instant self-dispatch access to Live DAT AI Freight Search, Direct Broker Contacts, and FMCSA Authority & Credit Score Check.',
+    features: [
+      'Unlimited 50-State Live DAT AI Freight Search',
+      'Unmasked Direct Broker Phone Numbers & Emails',
+      'Freight Brokers & FMCSA Authority Check (Credit Score, $75k Bond, DTP)',
+      'Dynamic RPM & Deadhead Corridors Calculator',
+      'Instant Self-Dispatch Carrier Cockpit'
+    ]
+  },
   solo_weekly: {
     key: 'solo_weekly',
     name: 'Owner Operator — Dedicated Fleet Manager',
@@ -504,6 +522,120 @@ router.get('/session/:id', async (req, res) => {
     });
   } catch (err) {
     res.status(404).json({ error: 'Checkout session not found' });
+  }
+});
+
+// Instant AI Load Board Pass Subscription ($19/mo)
+router.post('/subscribe-loadboard', async (req, res) => {
+  try {
+    const { name, company, phone, email, mc_number, dot_number, password } = req.body || {};
+
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return res.status(400).json({ error: 'A valid email address is required.' });
+    }
+    const cleanName = String(name || company || cleanEmail.split('@')[0]).trim();
+    if (!cleanName) {
+      return res.status(400).json({ error: 'Name or company name is required.' });
+    }
+
+    // 1. Upsert Lead in CRM
+    const leadId = await upsertWebsiteLead({
+      email: cleanEmail,
+      name: cleanName,
+      company: String(company || '').trim(),
+      phone: String(phone || '').trim(),
+      mcNumber: String(mc_number || '').trim(),
+      usdot: String(dot_number || '').trim(),
+      planKey: 'loadboard_ai_pass',
+      status: 'active'
+    });
+
+    // 2. Check or Create User
+    let user;
+    const existingUser = await pool.query('SELECT * FROM users WHERE lower(email) = $1', [cleanEmail]);
+    if (existingUser.rows.length) {
+      user = existingUser.rows[0];
+      await pool.query(
+        `UPDATE users SET
+           weekly_plan = 'loadboard_ai_pass',
+           company_name = COALESCE(NULLIF($2,''), company_name),
+           phone = COALESCE(NULLIF($3,''), phone),
+           mc_number = COALESCE(NULLIF($4,''), mc_number),
+           dot_number = COALESCE(NULLIF($5,''), dot_number)
+         WHERE id = $1`,
+        [user.id, company || '', phone || '', mc_number || '', dot_number || '']
+      );
+    } else {
+      const pass = String(password || '').trim() || (Math.random().toString(36).slice(-8) + 'Aa1');
+      const hash = await bcrypt.hash(pass, 10);
+      const insUser = await pool.query(
+        `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, weekly_plan, email_verified_at)
+         VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, 'loadboard_ai_pass', now())
+         RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, weekly_plan`,
+        [cleanName, cleanEmail, hash, company || null, phone || null, mc_number || null, dot_number || null]
+      );
+      user = insUser.rows[0];
+    }
+
+    // 3. Upsert Active Subscription Record
+    await pool.query(
+      `INSERT INTO billing_subscriptions (user_id, lead_id, plan_key, amount_cents, interval, status, current_period_end)
+       VALUES ($1, $2, 'loadboard_ai_pass', 1900, 'month', 'active', now() + interval '30 days')`,
+      [user.id, leadId || null]
+    );
+
+    // 4. Issue Auth Cookie & JWT Token
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        weekly_plan: 'loadboard_ai_pass'
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    setAuthCookie(res, token);
+
+    // 5. Send welcome email asynchronously
+    try {
+      await sendBrandedEmail({
+        to: cleanEmail,
+        subject: 'Your AI Load Board & FMCSA Authority Pass is Active!',
+        html: `
+          <div style="font-family:sans-serif;color:#0f172a;max-width:600px;margin:0 auto;">
+            <h2 style="color:#f59e0b;">Welcome to Shipping Wish AI Load Board!</h2>
+            <p>Hi ${escapeHtml(cleanName)},</p>
+            <p>Your self-dispatch subscription to <strong>Carrier AI Load Board &amp; FMCSA Authority Suite ($19/mo)</strong> has been activated!</p>
+            <ul style="line-height:1.8;">
+              <li><strong>Live AI Load Board:</strong> <a href="${APP_URL}/load-booking">${APP_URL}/load-booking</a></li>
+              <li><strong>Broker Credit &amp; FMCSA Authority Check:</strong> <a href="${APP_URL}/brokers">${APP_URL}/brokers</a></li>
+            </ul>
+            <p>You can now search all 50-state freight lanes and see direct broker contact info unmasked.</p>
+          </div>
+        `,
+        text: `Welcome to Shipping Wish AI Load Board!\nYour pass is active. Access your tools here: ${APP_URL}/load-booking and ${APP_URL}/brokers`
+      });
+    } catch (_) { /* non-fatal email */ }
+
+    res.json({
+      ok: true,
+      message: 'Carrier AI Load Board & FMCSA Authority Suite pass activated!',
+      redirect: '/load-booking',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        company_name: user.company_name,
+        weekly_plan: 'loadboard_ai_pass'
+      }
+    });
+  } catch (err) {
+    console.error('subscribe-loadboard error:', err);
+    res.status(500).json({ error: err.message || 'Could not complete load board subscription.' });
   }
 });
 

@@ -89,7 +89,7 @@ app.use('/api/fuel', carrierApiGate, require('./routes/fuel'));
 app.use('/api/ifta', carrierApiGate, require('./routes/ifta'));
 app.use('/api/invoices', carrierApiGate, require('./routes/invoices'));
 app.use('/api/portal', carrierApiGate, require('./routes/portal'));
-app.use('/api/loadboard', carrierApiGate, require('./routes/loadboard'));
+app.use('/api/loadboard', require('./routes/loadboard'));
 app.use('/api/crm', require('./routes/crm'));             // CRM Carrier Leads, Dispositions & Daily Tasks
 app.use('/api/email', require('./routes/email'));         // 1-Click branded outreach, inbound replies, unsubscribe
 app.use('/api/billing', require('./routes/billing'));     // Weekly Stripe retainers + checkout links

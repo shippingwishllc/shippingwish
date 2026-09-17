@@ -34,6 +34,20 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
+function optionalAuth(req, res, next) {
+  const token = req.cookies ? req.cookies.sw_token : null;
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+  } catch (e) {
+    req.user = null;
+  }
+  next();
+}
+
 // Helper used in auth.js route to set the session cookie
 function setAuthCookie(res, token) {
   res.cookie('sw_token', token, {
@@ -44,4 +58,5 @@ function setAuthCookie(res, token) {
   });
 }
 
-module.exports = { requireAuth, requireRole, requireSuperAdmin, JWT_SECRET, setAuthCookie };
+module.exports = { requireAuth, requireRole, requireSuperAdmin, optionalAuth, JWT_SECRET, setAuthCookie };
+

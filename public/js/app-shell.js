@@ -24,6 +24,7 @@
   function clearRoleCache() {
     try {
       sessionStorage.removeItem(ROLE_CACHE_KEY);
+      sessionStorage.removeItem(PLAN_CACHE_KEY);
       sessionStorage.removeItem(SIDEBAR_HTML_KEY);
     } catch (_) { /* ignore */ }
   }
@@ -117,6 +118,15 @@
     { key: 'driver', href: '/driver-app', icon: '📱', label: 'My load' }
   ];
 
+  const LOADBOARD_MEMBER_LINKS = [
+    { section: 'Self-Dispatch AI Suite' },
+    { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Live AI Load Board' },
+    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Credit & FMCSA Check' },
+    { key: 'calculator', href: '/services#calculator', icon: '📈', label: 'RPM & Lane Calculator' },
+    { section: 'My Account' },
+    { key: 'home', href: '/carrier-overview', icon: '⚙️', label: 'Subscription & Profile' }
+  ];
+
   const PAGE_KEY = {
     'admin-dashboard.html': 'overview',
     'dispatcher-dashboard.html': 'dispatch',
@@ -147,6 +157,12 @@
   }
 
   let CURRENT_ROLE = '';
+  let CURRENT_PLAN = '';
+  const PLAN_CACHE_KEY = 'sw_portal_plan';
+
+  function isLoadboardSubscriber() {
+    return CURRENT_PLAN === 'loadboard_ai_pass';
+  }
 
   function isCarrierRole(role) {
     return role === 'carrier' || role === 'carrier_admin';
@@ -221,7 +237,10 @@
 
   function linkItemsForRole(role) {
     if (role === 'driver') return DRIVER_LINKS;
-    if (isCarrierRole(role)) return CARRIER_LINKS;
+    if (isCarrierRole(role)) {
+      if (isLoadboardSubscriber()) return LOADBOARD_MEMBER_LINKS;
+      return CARRIER_LINKS;
+    }
     const staff = STAFF_LINKS.filter((item) => {
       if (!item.adminOnly) return true;
       return role === 'admin' || role === 'super_admin';
@@ -247,18 +266,11 @@
     if (!CURRENT_ROLE) return loadingSidebarHtml();
     const carrier = isCarrierRole(CURRENT_ROLE);
     const driver = CURRENT_ROLE === 'driver';
-    // #region agent log
-    dbgLog('app-shell.js:sidebarHtml', 'building sidebar HTML', {
-      currentRole: CURRENT_ROLE || '(empty)',
-      carrier,
-      driver,
-      linkSet: driver ? 'driver' : carrier ? 'carrier' : 'staff'
-    }, 'D');
-    // #endregion
+    const loadboardSub = isLoadboardSubscriber();
     const active = activeKey();
-    const tag = driver ? 'Driver app' : carrier ? 'Your TMS' : 'Operations';
-    const home = driver ? '/driver-app' : carrier ? '/carrier-overview' : '/admin-dashboard';
-    const links = driver ? DRIVER_LINKS : carrier ? CARRIER_LINKS : STAFF_LINKS.concat(extraLinks());
+    const tag = driver ? 'Driver app' : loadboardSub ? 'AI Load Pass' : carrier ? 'Your TMS' : 'Operations';
+    const home = driver ? '/driver-app' : loadboardSub ? '/load-booking' : carrier ? '/carrier-overview' : '/admin-dashboard';
+    const links = driver ? DRIVER_LINKS : loadboardSub ? LOADBOARD_MEMBER_LINKS : carrier ? CARRIER_LINKS : STAFF_LINKS.concat(extraLinks());
     return `
       <div class="sidebar-nav-scroll">
         <a href="${home}" class="sidebar-brand">
@@ -275,7 +287,7 @@
           <div class="avatar" id="user-avatar-initials" style="background:var(--color-amber-500);color:#0f172a;font-weight:800;">SW</div>
           <div style="flex:1;min-width:0;">
             <div class="truncate" id="user-name-display" style="font-size:13px;font-weight:700;color:#fff;">Signed in</div>
-            <div id="user-role-display" style="font-size:11px;color:rgba(255,255,255,0.45);">Portal</div>
+            <div id="user-role-display" style="font-size:11px;color:rgba(255,255,255,0.45);">${loadboardSub ? 'AI Load Pass' : 'Portal'}</div>
           </div>
         </div>
         <button type="button" class="btn btn-light btn-block btn-sm" id="shell-logout-btn">Sign out</button>
@@ -343,6 +355,7 @@
   function mountSidebarContent(aside) {
     const cached = sessionStorage.getItem(ROLE_CACHE_KEY) || '';
     CURRENT_ROLE = cached;
+    CURRENT_PLAN = sessionStorage.getItem(PLAN_CACHE_KEY) || '';
     if (isSidebarBooted(aside) && cached && !sidebarNeedsRebuild(aside)) {
       syncActiveNav(aside);
       aside.classList.add('shell-mounted');
@@ -633,12 +646,15 @@
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         const prevRole = sessionStorage.getItem(ROLE_CACHE_KEY) || '';
+        const prevPlan = sessionStorage.getItem(PLAN_CACHE_KEY) || '';
         CURRENT_ROLE = (data && data.user && data.user.role) || '';
+        CURRENT_PLAN = (data && data.user && data.user.weekly_plan) || (data && data.access && data.access.subscription && data.access.subscription.plan_key) || '';
         if (CURRENT_ROLE) sessionStorage.setItem(ROLE_CACHE_KEY, CURRENT_ROLE);
+        if (CURRENT_PLAN) sessionStorage.setItem(PLAN_CACHE_KEY, CURRENT_PLAN);
 
         const navReady = aside.classList.contains('shell-content-ready')
           && aside.querySelectorAll('a.sidebar-nav-link').length > 0;
-        const skipRebuild = CURRENT_ROLE && CURRENT_ROLE === prevRole && navReady;
+        const skipRebuild = CURRENT_ROLE && CURRENT_ROLE === prevRole && CURRENT_PLAN === prevPlan && navReady;
 
         if (skipRebuild) {
           syncActiveNav(aside);

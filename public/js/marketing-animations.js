@@ -94,9 +94,57 @@
     });
   }
 
+  function initLiveLoadboardTicker() {
+    const card = document.getElementById('hero-load-card');
+    if (!card) return;
+
+    fetch('/api/loadboard/public-stats')
+      .then(res => res.json())
+      .then(data => {
+        if (!data || !data.ok) return;
+
+        // Update KPIs
+        const kpiLoads = document.getElementById('hero-kpi-loads');
+        if (kpiLoads && data.loads_today) kpiLoads.textContent = data.loads_today;
+
+        const kpiRpm = document.getElementById('hero-kpi-rpm');
+        if (kpiRpm && data.avg_rpm) kpiRpm.textContent = data.avg_rpm;
+
+        const corridors = data.live_corridors;
+        if (!corridors || !corridors.length) return;
+
+        let currentIndex = 0;
+        setInterval(() => {
+          currentIndex = (currentIndex + 1) % corridors.length;
+          const c = corridors[currentIndex];
+
+          card.style.opacity = '0.35';
+          setTimeout(() => {
+            const idEl = document.getElementById('hero-load-id');
+            const metricsEl = document.getElementById('hero-load-metrics');
+            const payEl = document.getElementById('hero-load-pay');
+            const origEl = document.getElementById('hero-load-origin');
+            const destEl = document.getElementById('hero-load-dest');
+            const noteEl = document.getElementById('hero-load-note');
+
+            if (idEl) idEl.textContent = c.id;
+            if (metricsEl) metricsEl.textContent = `${c.miles} mi · $${c.rpm.toFixed(2)} / mi · ${c.equipment}`;
+            if (payEl) payEl.textContent = Number(c.rate).toLocaleString();
+            if (origEl) origEl.textContent = c.origin;
+            if (destEl) destEl.textContent = c.destination;
+            if (noteEl) noteEl.textContent = `${c.broker} (${c.commodity}). Direct broker pay goes to your bank.`;
+
+            card.style.opacity = '1';
+          }, 250);
+        }, 4500);
+      })
+      .catch(() => {});
+  }
+
   function init() {
     initHeroMetric();
     initMotionBlocks();
+    initLiveLoadboardTicker();
   }
 
   if (document.readyState === 'loading') {

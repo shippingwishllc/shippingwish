@@ -94,30 +94,33 @@
     <div class="mkt-panel">
       <div class="mkt-panel-top">
         <span>Carrier Operations Portal</span>
-        <span class="mkt-live"><span class="mkt-live-dot"></span> Live desk</span>
+        <span class="mkt-live"><span class="mkt-live-dot"></span> <span id="hero-live-status-text">Live desk &amp; AI load stream</span></span>
       </div>
-      <div class="mkt-load">
+      <div class="mkt-load" id="hero-load-card" style="transition:opacity 0.3s ease;">
         <div style="display:flex;justify-content:space-between;font-size:12px;opacity:.7;margin-bottom:8px;">
-          <span>LOAD SW-98401</span>
-          <span>715 mi · $4.82 / mi</span>
+          <span id="hero-load-id">LOAD SW-98401</span>
+          <span id="hero-load-metrics">715 mi · $4.82 / mi</span>
         </div>
-        <strong class="mkt-load-pay">$<span data-hero-metric="3450" data-decimals="0" data-format="currency">3,450</span></strong>
+        <strong class="mkt-load-pay">$<span id="hero-load-pay" data-hero-metric="3450" data-decimals="0" data-format="currency">3,450</span></strong>
         <div class="mkt-load-route">
-          <span>Chicago, IL</span>
+          <span id="hero-load-origin">Chicago, IL</span>
           <span class="mkt-load-line" aria-hidden="true"></span>
-          <span>Atlanta, GA</span>
+          <span id="hero-load-dest">Atlanta, GA</span>
         </div>
-        <p style="margin:14px 0 0;font-size:12px;opacity:.75;line-height:1.5;">Booked by your operations manager. Freight pay goes to your company. Your weekly plan is billed separately on Stripe.</p>
+        <p id="hero-load-note" style="margin:14px 0 0;font-size:12px;opacity:.75;line-height:1.5;">Booked by your operations manager. Freight pay goes to your company. Your weekly plan is billed separately on Stripe.</p>
+        <a href="/load-booking" class="btn btn-primary btn-sm btn-block" style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;padding:10px 14px;border-radius:10px;text-decoration:none;box-shadow:0 4px 12px rgba(245,158,11,0.25);">
+          <span>🎯</span> Search 500+ Live AI Loads &rarr;
+        </a>
       </div>
       <div class="mkt-hero-kpis">
         <div class="mkt-hero-kpi">
           <span class="mkt-hero-kpi-icon">🚛</span>
-          <span class="mkt-hero-kpi-val">12</span>
+          <span class="mkt-hero-kpi-val" id="hero-kpi-loads">86</span>
           <span class="mkt-hero-kpi-label">Loads today</span>
         </div>
         <div class="mkt-hero-kpi">
           <span class="mkt-hero-kpi-icon">📈</span>
-          <span class="mkt-hero-kpi-val">$4.82</span>
+          <span class="mkt-hero-kpi-val" id="hero-kpi-rpm">$4.48</span>
           <span class="mkt-hero-kpi-label">Avg RPM</span>
         </div>
         <div class="mkt-hero-kpi">
