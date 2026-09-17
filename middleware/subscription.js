@@ -9,7 +9,7 @@ const ACTIVE_SUB_STATUSES = ['trialing', 'active'];
  */
 async function getCarrierAccess(userId, email) {
   const userRes = await pool.query(
-    `SELECT id, role, is_suspended, trial_ends_at, email_verified_at, created_at
+    `SELECT id, role, is_suspended, trial_ends_at, email_verified_at, created_at, weekly_plan
      FROM users WHERE id = $1`,
     [userId]
   );
@@ -22,6 +22,24 @@ async function getCarrierAccess(userId, email) {
     return { allowed: false, reason: 'suspended', message: 'Account suspended. Contact Shipping Wish support.' };
   }
 
+  if (user.weekly_plan === 'canceled') {
+    return {
+      allowed: false,
+      reason: 'canceled',
+      message: 'Your subscription was canceled and portal access has ended. Contact Shipping Wish support to reactivate.',
+      checkoutUrl: '/signup?reactivate=1'
+    };
+  }
+
+  if (user.weekly_plan === 'pending_card') {
+    return {
+      allowed: false,
+      reason: 'pending_card',
+      message: 'Credit card capture is required to activate your 7-day free trial ($0 due today).',
+      checkoutUrl: '/signup'
+    };
+  }
+
   const subRes = await pool.query(
     `SELECT b.* FROM billing_subscriptions b
      LEFT JOIN crm_leads l ON l.id = b.lead_id
@@ -31,6 +49,16 @@ async function getCarrierAccess(userId, email) {
   ).catch(() => ({ rows: [] }));
 
   const sub = subRes.rows[0] || null;
+
+  if (sub && String(sub.status || '').toLowerCase() === 'canceled') {
+    return {
+      allowed: false,
+      reason: 'canceled',
+      message: 'Your subscription was canceled and portal access has ended. Contact Shipping Wish support to reactivate.',
+      checkoutUrl: '/signup?reactivate=1'
+    };
+  }
+
   if (sub && ACTIVE_SUB_STATUSES.includes(String(sub.status || '').toLowerCase())) {
     return {
       allowed: true,

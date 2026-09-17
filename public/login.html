@@ -356,6 +356,13 @@
     driver: '/driver-app'
   };
 
+  const loginParams = new URLSearchParams(location.search);
+  if (loginParams.get('canceled') === '1') {
+    alertBox.textContent = 'Your subscription has been successfully canceled. Your card will not be charged, and your portal access has ended.';
+    alertBox.className = 'form-alert success';
+    alertBox.style.display = 'block';
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     alertBox.style.display = 'none';

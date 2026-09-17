@@ -513,49 +513,77 @@ router.get('/session/:id', async (req, res) => {
     const email = session.customer_details?.email || session.customer_email || (session.metadata && session.metadata.email);
     let portalReady = false;
 
-    // Fulfill loadboard_ai_pass subscription immediately upon successful checkout return
-    if (session.metadata && session.metadata.plan_key === 'loadboard_ai_pass') {
-      const subId = sub ? sub.id : session.subscription;
-      const custId = session.customer && typeof session.customer === 'object' ? session.customer.id : session.customer;
+    // Fulfill subscription immediately upon successful checkout return
+    const planKey = (session.metadata && session.metadata.plan_key) || req.query.plan || 'solo_weekly';
+    const subId = sub ? sub.id : session.subscription;
+    const custId = session.customer && typeof session.customer === 'object' ? session.customer.id : session.customer;
 
-      if (session.payment_status === 'paid' || session.status === 'complete' || (sub && sub.status === 'active')) {
-        let userId = session.metadata.user_id ? parseInt(session.metadata.user_id, 10) : null;
-        if (!userId && email) {
-          const uRow = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1) LIMIT 1', [email]);
-          if (uRow.rows.length) userId = uRow.rows[0].id;
-        }
+    if (session.payment_status === 'paid' || session.status === 'complete' || (sub && (sub.status === 'active' || sub.status === 'trialing'))) {
+      let userId = session.metadata && session.metadata.user_id ? parseInt(session.metadata.user_id, 10) : null;
+      if (!userId && email) {
+        const uRow = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1) LIMIT 1', [email]);
+        if (uRow.rows.length) userId = uRow.rows[0].id;
+      }
 
-        if (userId) {
-          await pool.query(
-            `UPDATE users SET weekly_plan = 'loadboard_ai_pass', role = 'carrier', email_verified_at = COALESCE(email_verified_at, now())
-             WHERE id = $1`,
-            [userId]
-          );
-        } else if (email) {
-          await pool.query(
-            `UPDATE users SET weekly_plan = 'loadboard_ai_pass', role = 'carrier', email_verified_at = COALESCE(email_verified_at, now())
-             WHERE lower(email) = lower($1)`,
-            [email]
-          );
-        }
+      const trialEndsAt = sub && sub.trial_end
+        ? new Date(sub.trial_end * 1000)
+        : (planKey === 'loadboard_ai_pass' ? null : new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000));
+      const periodEnd = sub && sub.current_period_end
+        ? new Date(sub.current_period_end * 1000)
+        : (planKey === 'loadboard_ai_pass' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : trialEndsAt);
+      const subStatus = sub ? sub.status : (planKey === 'loadboard_ai_pass' ? 'active' : 'trialing');
 
+      if (userId) {
         await pool.query(
-          `UPDATE billing_subscriptions SET
-             status = 'active',
-             stripe_subscription_id = COALESCE($1, stripe_subscription_id),
-             stripe_customer_id = COALESCE($2, stripe_customer_id),
-             current_period_end = now() + interval '30 days',
-             updated_at = now()
-           WHERE stripe_checkout_session_id = $3`,
-          [subId ? String(subId) : null, custId ? String(custId) : null, req.params.id]
+          `UPDATE users SET
+             weekly_plan = $1,
+             role = 'carrier',
+             email_verified_at = COALESCE(email_verified_at, now()),
+             trial_ends_at = COALESCE($2, trial_ends_at),
+             stripe_customer_id = COALESCE($3, stripe_customer_id)
+           WHERE id = $4`,
+          [planKey, trialEndsAt, custId ? String(custId) : null, userId]
         );
+      } else if (email) {
+        await pool.query(
+          `UPDATE users SET
+             weekly_plan = $1,
+             role = 'carrier',
+             email_verified_at = COALESCE(email_verified_at, now()),
+             trial_ends_at = COALESCE($2, trial_ends_at),
+             stripe_customer_id = COALESCE($3, stripe_customer_id)
+           WHERE lower(email) = lower($4)`,
+          [planKey, trialEndsAt, custId ? String(custId) : null, email]
+        );
+      }
 
-        // Auto-login carrier directly via auth cookie
+      await pool.query(
+        `UPDATE billing_subscriptions SET
+           status = $1,
+           stripe_subscription_id = COALESCE($2, stripe_subscription_id),
+           stripe_customer_id = COALESCE($3, stripe_customer_id),
+           current_period_end = $4,
+           updated_at = now()
+         WHERE stripe_checkout_session_id = $5`,
+        [subStatus, subId ? String(subId) : null, custId ? String(custId) : null, periodEnd, req.params.id]
+      );
+
+      // Auto-login carrier directly via auth cookie
+      if (email) {
         const u = await pool.query(`SELECT * FROM users WHERE lower(email) = lower($1) LIMIT 1`, [email]);
         if (u.rows.length) {
           const userObj = u.rows[0];
           const token = jwt.sign(
-            { id: userObj.id, email: userObj.email, role: userObj.role, name: userObj.name, weekly_plan: 'loadboard_ai_pass' },
+            {
+              id: userObj.id,
+              email: userObj.email,
+              role: userObj.role,
+              name: userObj.name,
+              weekly_plan: planKey,
+              company_name: userObj.company_name,
+              organization_id: userObj.organization_id || null,
+              carrier_id: userObj.id
+            },
             JWT_SECRET,
             { expiresIn: '7d' }
           );
@@ -806,6 +834,284 @@ async function handleLoadBoardCheckoutRequest(req, res) {
 
 router.post('/subscribe-loadboard', handleLoadBoardCheckoutRequest);
 router.post('/create-loadboard-checkout', handleLoadBoardCheckoutRequest);
+
+// Create Stripe Checkout for 7-Day Free Trial ($0 Due Today) with Required Card Capture
+async function handleTrialSignupCheckoutRequest(req, res) {
+  try {
+    const { name, company, phone, email, mc_number, mcNumber, dot_number, dotNumber, password, plan_key } = req.body || {};
+
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return res.status(400).json({ error: 'A valid business email address is required.' });
+    }
+    const cleanPassword = String(password || '').trim();
+    if (!cleanPassword || cleanPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long.' });
+    }
+    const cleanName = String(name || company || cleanEmail.split('@')[0]).trim();
+    if (!cleanName) {
+      return res.status(400).json({ error: 'Full name is required.' });
+    }
+    const cleanPhone = String(phone || '').trim();
+    if (!cleanPhone) {
+      return res.status(400).json({ error: 'Phone number is required.' });
+    }
+    const mc = String(mc_number || mcNumber || '').trim();
+    const dot = String(dot_number || dotNumber || '').trim();
+    const chosenPlanKey = PLANS[plan_key] ? plan_key : 'solo_weekly';
+    const plan = PLANS[chosenPlanKey];
+
+    // 1. Check existing user
+    let user;
+    const existingUser = await pool.query('SELECT * FROM users WHERE lower(email) = $1', [cleanEmail]);
+    if (existingUser.rows.length) {
+      user = existingUser.rows[0];
+      if (['super_admin', 'admin', 'dispatcher', 'sales_rep'].includes(user.role)) {
+        return res.status(400).json({
+          error: 'This email is already registered to a staff account. Please sign in or use another email.'
+        });
+      }
+
+      // Check if user already has an active or trialing subscription
+      const subCheck = await pool.query(
+        `SELECT status, plan_key FROM billing_subscriptions
+         WHERE user_id = $1 AND status IN ('trialing', 'active')
+         ORDER BY id DESC LIMIT 1`,
+        [user.id]
+      );
+      if (subCheck.rows.length && user.weekly_plan !== 'canceled' && user.weekly_plan !== 'pending_card') {
+        return res.status(400).json({
+          error: 'An active account already exists for this email. Please sign in at /login.'
+        });
+      }
+
+      // Update password hash and carrier info for pending card verification
+      const hash = await bcrypt.hash(cleanPassword, 10);
+      await pool.query(
+        `UPDATE users SET
+           password_hash = $1,
+           name = COALESCE(NULLIF($2,''), name),
+           company_name = COALESCE(NULLIF($3,''), company_name),
+           phone = COALESCE(NULLIF($4,''), phone),
+           mc_number = COALESCE(NULLIF($5,''), mc_number),
+           dot_number = COALESCE(NULLIF($6,''), dot_number),
+           weekly_plan = 'pending_card'
+         WHERE id = $7`,
+        [hash, cleanName, company || cleanName, cleanPhone, mc || '', dot || '', user.id]
+      );
+    } else {
+      // 2. Create new carrier user with chosen password and pending_card status
+      const hash = await bcrypt.hash(cleanPassword, 10);
+      const insUser = await pool.query(
+        `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, weekly_plan)
+         VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, 'pending_card')
+         RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, weekly_plan`,
+        [cleanName, cleanEmail, hash, company || cleanName, cleanPhone, mc || null, dot || null]
+      );
+      user = insUser.rows[0];
+    }
+
+    // 3. Upsert Lead in CRM
+    const leadId = await upsertWebsiteLead({
+      email: cleanEmail,
+      name: cleanName,
+      company: String(company || cleanName).trim(),
+      phone: cleanPhone,
+      mcNumber: mc,
+      usdot: dot,
+      planKey: plan.key,
+      status: 'new',
+      extraNote: `Carrier 7-day free trial signup (${plan.name}). Stripe card verification initiated ($0 due today).`
+    });
+
+    // 4. Check Stripe Integration
+    const stripe = getStripe();
+    if (stripe) {
+      // Create real Stripe Checkout Session for 7-Day Free Trial ($0 today) with required card capture
+      const session = await stripe.checkout.sessions.create({
+        mode: 'subscription',
+        customer_email: cleanEmail,
+        client_reference_id: String(user.id),
+        billing_address_collection: 'required',
+        phone_number_collection: { enabled: true },
+        payment_method_collection: 'always',
+        allow_promotion_codes: true,
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Shipping Wish Dedicated Operations Desk & Full TMS Suite',
+              description: '7-Day Free Trial ($0 due today). Includes Full TMS Portal, Dedicated Operations Desk, 50-State Spot Freight AI Load Board & FMCSA Authority Check. Then $149/week. Cancel anytime.'
+            },
+            unit_amount: plan.amount_cents,
+            recurring: { interval: 'week' }
+          },
+          quantity: 1
+        }],
+        subscription_data: {
+          trial_period_days: TRIAL_DAYS,
+          trial_settings: {
+            end_behavior: { missing_payment_method: 'cancel' }
+          },
+          metadata: {
+            user_id: String(user.id),
+            lead_id: leadId ? String(leadId) : '',
+            plan_key: plan.key,
+            company: String(company || cleanName)
+          }
+        },
+        success_url: `${APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}&plan=${plan.key}&email=${encodeURIComponent(cleanEmail)}`,
+        cancel_url: `${APP_URL}/signup?canceled=1`,
+        metadata: {
+          user_id: String(user.id),
+          lead_id: leadId ? String(leadId) : '',
+          email: cleanEmail,
+          plan_key: plan.key,
+          name: cleanName,
+          company: String(company || cleanName),
+          phone: cleanPhone,
+          mc_number: mc,
+          dot_number: dot
+        },
+        custom_text: {
+          submit: {
+            message: `Card is saved securely. $0 due today. Full TMS Portal, Dedicated Operations Desk, and AI Load Board access is free for ${TRIAL_DAYS} days. Cancel anytime in your portal before day ${TRIAL_DAYS} to never be charged.`
+          }
+        }
+      });
+
+      await pool.query(
+        `INSERT INTO billing_subscriptions (user_id, lead_id, stripe_checkout_session_id, plan_key, amount_cents, interval, status)
+         VALUES ($1, $2, $3, $4, $5, 'week', 'incomplete')`,
+        [user.id, leadId, session.id, plan.key, plan.amount_cents]
+      );
+
+      return res.json({
+        ok: true,
+        url: session.url,
+        session_id: session.id,
+        message: 'Redirecting to secure Stripe Checkout.'
+      });
+    }
+
+    // 5. Fallback simulation if Stripe key is not live/test
+    const trialEnds = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+    await pool.query(
+      `UPDATE users SET weekly_plan = $1, email_verified_at = COALESCE(email_verified_at, now()), trial_ends_at = $2 WHERE id = $3`,
+      [plan.key, trialEnds, user.id]
+    );
+    await pool.query(
+      `INSERT INTO billing_subscriptions (user_id, lead_id, plan_key, amount_cents, interval, status, current_period_end)
+       VALUES ($1, $2, $3, $4, 'week', 'trialing', $5)`,
+      [user.id, leadId || null, plan.key, plan.amount_cents, trialEnds]
+    );
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: 'carrier',
+        company_name: user.company_name,
+        weekly_plan: plan.key
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    setAuthCookie(res, token);
+
+    return res.json({
+      ok: true,
+      simulated: true,
+      url: `${APP_URL}/checkout-success?plan=${plan.key}&email=${encodeURIComponent(cleanEmail)}&simulated=1`,
+      redirect: `${APP_URL}/checkout-success?plan=${plan.key}&email=${encodeURIComponent(cleanEmail)}&simulated=1`,
+      message: '7-day trial activated!'
+    });
+  } catch (err) {
+    console.error('handleTrialSignupCheckoutRequest error:', err);
+    res.status(500).json({ error: err.message || 'Could not start 7-day trial checkout.' });
+  }
+}
+
+// Carrier In-Portal Subscription Cancellation
+async function handleCancelSubscriptionRequest(req, res) {
+  try {
+    const userId = req.user.id;
+
+    // 1. Fetch user and subscription
+    const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (!userRes.rows.length) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    const user = userRes.rows[0];
+
+    const subRes = await pool.query(
+      `SELECT * FROM billing_subscriptions
+       WHERE user_id = $1 AND status IN ('trialing', 'active', 'incomplete')
+       ORDER BY id DESC LIMIT 1`,
+      [userId]
+    );
+
+    const sub = subRes.rows[0];
+    const stripe = getStripe();
+
+    // 2. If Stripe subscription exists, cancel on Stripe immediately
+    if (stripe && sub && sub.stripe_subscription_id) {
+      try {
+        await stripe.subscriptions.cancel(sub.stripe_subscription_id);
+      } catch (stripeErr) {
+        console.warn('Stripe subscription cancel warning:', stripeErr.message);
+      }
+    }
+
+    // 3. Mark subscription as canceled in database
+    if (sub) {
+      await pool.query(
+        `UPDATE billing_subscriptions SET status = 'canceled', updated_at = now() WHERE id = $1`,
+        [sub.id]
+      );
+    } else {
+      await pool.query(
+        `UPDATE billing_subscriptions SET status = 'canceled', updated_at = now() WHERE user_id = $1`,
+        [userId]
+      );
+    }
+
+    // 4. Revoke carrier access on user record
+    await pool.query(
+      `UPDATE users SET weekly_plan = 'canceled', trial_ends_at = now() WHERE id = $1`,
+      [userId]
+    );
+
+    // 5. Clear session cookie
+    res.clearCookie('sw_token');
+
+    // 6. Notify staff
+    await notifyStaff({
+      subject: `⚠️ Subscription Canceled — ${user.company_name || user.name} (${user.email})`,
+      html: `<p>A carrier canceled their subscription from within their portal.</p>
+             <p><strong>Company:</strong> ${escapeHtml(user.company_name || '')}<br>
+             <strong>Name:</strong> ${escapeHtml(user.name || '')}<br>
+             <strong>Email:</strong> ${escapeHtml(user.email)}<br>
+             <strong>Phone:</strong> ${escapeHtml(user.phone || '')}<br>
+             <strong>MC:</strong> ${escapeHtml(user.mc_number || '-')}<br>
+             <strong>Status:</strong> Subscription canceled, access revoked, $0 future charges.</p>`,
+      text: `Subscription Canceled: ${user.company_name || user.name} (${user.email}). Access revoked.`
+    });
+
+    res.json({
+      ok: true,
+      message: 'Your subscription has been canceled. Your card will not be charged, and your portal access has been revoked.'
+    });
+  } catch (err) {
+    console.error('Cancel subscription error:', err);
+    res.status(500).json({ error: err.message || 'Could not cancel subscription.' });
+  }
+}
+
+router.post('/create-trial-checkout', handleTrialSignupCheckoutRequest);
+router.post('/signup-trial', handleTrialSignupCheckoutRequest);
+router.post('/cancel-mine', requireAuth, handleCancelSubscriptionRequest);
 
 
 router.post('/weekly-link', requireAuth, requireRole('dispatcher', 'admin', 'super_admin', 'sales_rep'), async (req, res) => {

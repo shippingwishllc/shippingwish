@@ -311,6 +311,34 @@ router.post('/login', rateLimit(10, 60000), async (req, res) => {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Invalid email or password.' });
     
+    // Check carrier subscription & cancellation state
+    if (isCarrierRole(user.role)) {
+      const access = await getCarrierAccess(user.id, user.email);
+      if (!access.allowed) {
+        if (access.reason === 'canceled' || user.weekly_plan === 'canceled') {
+          return res.status(403).json({
+            error: 'Your subscription was canceled and your portal access has ended. Contact Shipping Wish support to reactivate.'
+          });
+        }
+        if (access.reason === 'pending_card' || user.weekly_plan === 'pending_card') {
+          return res.status(403).json({
+            error: 'Card capture required. Please complete signup to activate your 7-day free trial ($0 due today).',
+            checkoutUrl: '/signup'
+          });
+        }
+        if (access.reason === 'trial_expired') {
+          return res.status(403).json({
+            error: 'Your 7-day free trial has ended. Please restart your weekly subscription on Stripe to continue.',
+            checkoutUrl: access.checkoutUrl || '/checkout?plan=solo_weekly'
+          });
+        }
+        return res.status(403).json({
+          error: access.message || 'Subscription required to access the carrier portal.',
+          checkoutUrl: access.checkoutUrl || '/checkout?plan=solo_weekly'
+        });
+      }
+    }
+
     // Update IP for existing users if missing or on login
     await pool.query('UPDATE users SET signup_ip = $1 WHERE id = $2', [clientIp, user.id]);
 
@@ -351,6 +379,10 @@ router.get('/me', requireAuth, async (req, res) => {
     if (user.deleted_at) {
       res.clearCookie('sw_token');
       return res.status(403).json({ error: 'Account removed. Contact admin if this was a mistake.' });
+    }
+    if (isCarrierRole(user.role) && user.weekly_plan === 'canceled') {
+      res.clearCookie('sw_token');
+      return res.status(403).json({ error: 'Subscription canceled. Portal access has ended.', reason: 'canceled' });
     }
     const payload = { ok: true, user };
     if (isCarrierRole(user.role)) {

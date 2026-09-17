@@ -100,6 +100,26 @@
           <p id="manager-line" style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);"></p>
           <p id="sub-line" style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);"></p>
           <div id="checklist-box" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+          <div id="subscription-manage-card" style="margin-top:16px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                  <span style="font-size:16px;">💳</span>
+                  <strong id="sub-card-plan-name" style="font-size:14px;color:#0f172a;">Owner Operator — Dedicated Operations Desk & Full TMS Suite</strong>
+                  <span id="sub-card-status-badge" class="badge" style="background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;">7-Day Free Trial ($0 Charged)</span>
+                </div>
+                <div id="sub-card-detail" style="font-size:12.5px;color:#64748b;">
+                  $0 charged today. 7-day free trial active. Complete TMS, Dedicated Operations Desk, and AI Load Board included.
+                </div>
+              </div>
+              <div>
+                <button type="button" id="btn-cancel-subscription" class="btn btn-outline btn-sm" style="color:#dc2626;border-color:#fca5a5;background:#fff;font-weight:700;padding:6px 14px;" onclick="handleCancelSubscriptionClick()">
+                  ❌ Cancel Subscription
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="tms-table-card" id="compliance-card" style="margin-bottom:24px;display:none;">
@@ -235,14 +255,43 @@
       const sub = home.subscription;
       const access = home.access;
       const subEl = document.getElementById('sub-line');
+      const planNameEl = document.getElementById('sub-card-plan-name');
+      const statusBadgeEl = document.getElementById('sub-card-status-badge');
+      const detailEl = document.getElementById('sub-card-detail');
+
       if (access && access.mode === 'portal_trial') {
-        subEl.textContent = `Portal trial: ${access.trialDaysLeft} day(s) left of full TMS access. Add Stripe weekly plan before trial ends to stay active ($0 due today).`;
+        const daysLeft = access.trialDaysLeft != null ? access.trialDaysLeft : 7;
+        subEl.textContent = `Portal trial: ${daysLeft} day(s) left of full TMS access. Automated weekly plan starts after 7 days ($0 charged today).`;
+        if (planNameEl) planNameEl.textContent = 'Owner Operator — Dedicated Operations Desk & Full TMS Suite';
+        if (statusBadgeEl) {
+          statusBadgeEl.textContent = `7-Day Free Trial (${daysLeft}d left)`;
+          statusBadgeEl.style.background = '#d1fae5';
+          statusBadgeEl.style.color = '#065f46';
+        }
+        if (detailEl) {
+          detailEl.textContent = `$0 charged today. 7-day trial active. Full TMS Portal, Dedicated Dispatcher, and AI Load Board unlocked. Cancel anytime with 1 click to never be charged.`;
+        }
       } else if (access && access.mode === 'subscription') {
-        subEl.textContent = `Weekly operations plan: ${sub?.plan_key || 'weekly'} · status ${sub?.status || 'active'}.`;
+        const pKey = sub?.plan_key || 'solo_weekly';
+        const pName = pKey === 'loadboard_ai_pass'
+          ? 'Carrier AI Load Board & FMCSA Authority Suite ($19/mo)'
+          : (pKey === 'fleet_weekly' ? 'Small Fleet Operations Desk' : (pKey === 'command_weekly' ? 'Fleet Command Operations Team' : 'Owner Operator — Dedicated Operations Desk'));
+        subEl.textContent = `Weekly operations plan: ${pName} · status ${sub?.status || 'active'}.`;
+        if (planNameEl) planNameEl.textContent = pName;
+        if (statusBadgeEl) {
+          statusBadgeEl.textContent = sub?.status === 'trialing' ? '7-Day Free Trial' : 'Subscription Active';
+          statusBadgeEl.style.background = '#d1fae5';
+          statusBadgeEl.style.color = '#065f46';
+        }
+        if (detailEl) {
+          detailEl.textContent = sub?.status === 'trialing'
+            ? `$0 charged today. 7-day trial active. Cancel anytime before trial ends to avoid weekly billing.`
+            : `Your dedicated operations desk subscription is active. All TMS and load finding features unlocked.`;
+        }
       } else if (sub) {
         subEl.textContent = `Weekly operations plan: ${sub.plan_key || 'weekly'} · status ${sub.status || 'active'}.`;
       } else {
-        subEl.textContent = 'Complete Stripe weekly plan to keep TMS active after your 7-day portal trial.';
+        subEl.textContent = 'Active carrier operations plan.';
       }
 
       document.getElementById('checklist-box').innerHTML = (home.checklist || []).map((c) => `
@@ -400,6 +449,49 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
+
+  async function handleCancelSubscriptionClick() {
+    const ok = confirm(
+      "Are you sure you want to cancel your subscription?\n\n" +
+      "• If you cancel within your 7-day trial, your card will NEVER be charged ($0.00).\n" +
+      "• Your carrier portal access, AI load board, and TMS features will end immediately.\n\n" +
+      "Click OK to confirm cancellation."
+    );
+    if (!ok) return;
+
+    const btn = document.getElementById('btn-cancel-subscription');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Canceling subscription...';
+    }
+
+    try {
+      const res = await fetch('/api/billing/cancel-mine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Could not cancel subscription. Please contact support.');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '❌ Cancel Subscription';
+        }
+        return;
+      }
+
+      alert('Your subscription has been canceled. Your card was not charged, and your portal access has been revoked.');
+      window.location.href = '/login?canceled=1';
+    } catch (err) {
+      alert('Network error while canceling subscription. Please try again or contact support.');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '❌ Cancel Subscription';
+      }
+    }
+  }
+  window.handleCancelSubscriptionClick = handleCancelSubscriptionClick;
 
   async function logout() {
     try {
