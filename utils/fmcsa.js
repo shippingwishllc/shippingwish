@@ -2,7 +2,7 @@ const FMCSA_HOST = 'mobile.fmcsa.dot.gov';
 const SAFER_HOST = 'safer.fmcsa.dot.gov';
 const { sanitizeEmail } = require('./email-valid');
 
-async function httpsRequest(url, timeoutMs = 12000) {
+async function httpsRequest(url, timeoutMs = 8000) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -69,7 +69,7 @@ function parseQcBody(body) {
   throw new Error('FMCSA returned non-JSON');
 }
 
-async function httpsJson(url, timeoutMs = 18000) {
+async function httpsJson(url, timeoutMs = 12000) {
   const { status, body } = await httpsRequest(url, timeoutMs);
   if (status >= 400) {
     const err = new Error(`FMCSA HTTP ${status}`);
@@ -131,8 +131,8 @@ function classifyQuery(q, mode = 'auto') {
   if (forced !== 'auto') {
     if (forced === 'phone') return { type: 'phone', value: num || raw };
     if (forced === 'email') return { type: 'email', value: raw.toLowerCase() };
-    if (forced === 'mc') return { type: 'mc', value: num };
-    if (forced === 'dot') return { type: 'dot', value: num };
+    if (forced === 'mc') return { type: 'mc', value: num || raw };
+    if (forced === 'dot') return { type: 'dot', value: num || raw };
     if (forced === 'state') return { type: 'state', value: raw.toUpperCase().slice(0, 2) };
     if (forced === 'name') return { type: 'name', value: raw };
   }
@@ -140,24 +140,35 @@ function classifyQuery(q, mode = 'auto') {
   if (raw.includes('@')) {
     return { type: 'email', value: raw.toLowerCase() };
   }
-  if (/^(MC[-\s]?)?\d{4,8}$/i.test(raw) && num.length >= 4 && num.length <= 8) {
+
+  // Explicit MC match: MC 173267, MC# 173267, MC#173267, mc-173267, #173267:
+  if (/^(MC|#)\s*#?\s*[-]?\s*\d+/i.test(raw)) {
     return { type: 'mc', value: num };
   }
-  if (/^(USDOT|DOT)[-\s]?\d{5,8}$/i.test(raw)) {
+
+  // Explicit DOT match: USDOT 243678, DOT# 243678, USDOT#243678, DOT-243678:
+  if (/^(USDOT|DOT)\s*#?\s*[-]?\s*\d+/i.test(raw)) {
     return { type: 'dot', value: num };
   }
+
+  // 2-letter state
   if (/^[A-Z]{2}$/i.test(raw)) {
     return { type: 'state', value: raw.toUpperCase() };
   }
+
+  // Pure digits: 4 to 8 digits defaults to MC number in freight dispatching
+  if (/^\d{4,8}$/.test(raw)) {
+    return { type: 'mc', value: num };
+  }
+
+  // Phone number (10-11 digits)
   if (num.length >= 10 && num.length <= 11 && /^[\d\s().+-]+$/.test(raw)) {
     return { type: 'phone', value: num.length === 11 && num.startsWith('1') ? num.slice(1) : num };
   }
   if (num.length >= 7 && num.length <= 9 && /^[\d\s().+-]+$/.test(raw)) {
     return { type: 'phone', value: num };
   }
-  if (num.length >= 6 && num.length <= 8 && !/[a-z]/i.test(raw)) {
-    return { type: 'dot', value: num };
-  }
+
   return { type: 'name', value: raw };
 }
 
@@ -474,6 +485,9 @@ async function searchCensusRows(classified) {
     label = `census/mc/${classified.value}`;
     rows = await censusQuery({ docket1: classified.value, docket1prefix: 'MC', $limit: '10' });
     if (!rows.length) rows = await censusQuery({ docket1: classified.value, $limit: '10' });
+    if (!rows.length) rows = await censusQuery({ docket2: classified.value, docket2prefix: 'MC', $limit: '10' });
+    if (!rows.length) rows = await censusQuery({ docket2: classified.value, $limit: '10' });
+    if (!rows.length) rows = await censusQuery({ docket3: classified.value, $limit: '10' });
   } else if (classified.type === 'dot') {
     label = `census/dot/${classified.value}`;
     rows = await censusQuery({ dot_number: classified.value, $limit: '10' });
