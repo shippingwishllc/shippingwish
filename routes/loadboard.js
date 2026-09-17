@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { lookupZip, getZipForCityState, parseOriginWithZip, parseDestinationsWithZip } = require('../utils/us-zipcodes');
 
 const router = express.Router();
 
@@ -119,23 +120,13 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
   const maxDhd = Math.max(0, parseInt(dhdMax, 10) || 100);
   const baseTargetRpm = Math.max(parseFloat(minRpm || 0), (Math.random() * 0.9 + 2.90));
 
-  const orig = parseOriginInfo(origin);
+  const orig = parseOriginWithZip(origin);
   const origCitiesPool = STATE_FREIGHT_CITIES[orig.state] || [`${orig.city}, ${orig.state}`];
 
-  // Parse destination states or city
-  let destStates = parseDestinationStates(destination);
-  let specificDestCity = null;
-
-  if (!destStates.length) {
-    if (destination && destination.trim()) {
-      const parts = destination.split(',').map(s => s.trim());
-      if (parts.length >= 2) {
-        specificDestCity = destination.trim();
-        const st = parts[1].toUpperCase().slice(0, 2);
-        if (STATE_FREIGHT_CITIES[st]) destStates = [st];
-      }
-    }
-  }
+  // Parse destination states, city, or zip code
+  const parsedDest = parseDestinationsWithZip(destination);
+  let destStates = parsedDest.states;
+  let specificDest = parsedDest.specificDest;
 
   if (!destStates.length) {
     destStates = ['WY', 'CO', 'TX', 'GA', 'IL', 'FL', 'PA', 'TN', 'OH', 'MO'];
@@ -161,15 +152,19 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
     // Pickup location & DHO calculation
     let puCity = orig.city;
     let puState = orig.state;
+    let puZip = orig.zip;
     let dho = 0;
 
     if (i === 0) {
       puCity = orig.city;
+      puState = orig.state;
+      puZip = orig.zip;
       dho = Math.floor(Math.random() * 10) + 2; // direct local pickup
     } else {
       const candidate = origCitiesPool[i % origCitiesPool.length];
       puCity = candidate.split(',')[0].trim();
       puState = candidate.split(',')[1].trim();
+      puZip = getZipForCityState(puCity, puState);
       dho = puCity.toLowerCase() === orig.city.toLowerCase()
         ? Math.floor(Math.random() * 14) + 4
         : Math.min(maxDho, Math.floor(Math.random() * (maxDho - 15)) + 15);
@@ -178,13 +173,17 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
     // Delivery location & DHD calculation
     let delCity = '';
     let delState = targetState;
-    if (specificDestCity && i % 2 === 0) {
-      delCity = specificDestCity.split(',')[0].trim();
-      delState = (specificDestCity.split(',')[1] || targetState).trim();
+    let delZip = '';
+
+    if (specificDest && (i % 2 === 0 || destStates.length === 1)) {
+      delCity = specificDest.city;
+      delState = specificDest.state;
+      delZip = specificDest.zip;
     } else {
       const candidate = destCitiesPool[Math.floor(Math.random() * destCitiesPool.length)];
       delCity = candidate.split(',')[0].trim();
       delState = candidate.split(',')[1].trim();
+      delZip = getZipForCityState(delCity, delState);
     }
 
     const dhd = Math.min(maxDhd, Math.floor(Math.random() * (maxDhd * 0.75)) + 8);
@@ -214,11 +213,13 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
       broker_email: broker.email,
       pickup_city: puCity,
       pickup_state: puState,
-      pickup_location: `${puCity}, ${puState}`,
+      pickup_zip: puZip,
+      pickup_location: `${puCity}, ${puState} ${puZip}`,
       dho,
       delivery_city: delCity,
       delivery_state: delState,
-      delivery_location: `${delCity}, ${delState}`,
+      delivery_zip: delZip,
+      delivery_location: `${delCity}, ${delState} ${delZip}`,
       dhd,
       pickup_date: puDate,
       delivery_date: delDate,
@@ -237,6 +238,16 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
 
   return loads.sort((a, b) => b.rpm - a.rpm);
 }
+
+// 0. Live Zip Code Lookup & Auto-Complete
+router.get('/zip-lookup', (req, res) => {
+  const q = String(req.query.q || req.query.zip || '').trim();
+  const info = lookupZip(q);
+  if (info) {
+    return res.json({ ok: true, found: true, ...info });
+  }
+  return res.json({ ok: true, found: false, message: 'ZIP code not recognized' });
+});
 
 // 1. Search Load Board (Manual or API with Date Filtering)
 router.get('/search', requireAuth, async (req, res) => {

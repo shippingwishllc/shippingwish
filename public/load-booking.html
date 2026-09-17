@@ -619,15 +619,15 @@
         <!-- 2. ROUTING & EQUIPMENT SEARCH GRID (MIDDLE TIER) -->
         <div class="routing-fields-grid">
           
-          <!-- Origin City & DHO -->
+          <!-- Origin (City, State or ZIP) & DHO -->
           <div class="routing-field-col">
             <div class="field-header">
-              <label class="form-label field-label" for="search-origin">Origin City, State</label>
+              <label class="form-label field-label" for="search-origin">Origin (City, State or ZIP)</label>
               <span class="radius-tag">DHO Radius</span>
             </div>
             <div class="field-input-combo">
               <input type="text" id="search-origin" class="form-input combo-text" value="Dallas, TX" 
-                     placeholder="e.g. Dallas, TX" onchange="syncActiveTabField('origin', this.value)">
+                     placeholder="e.g. 75201 or Dallas, TX" oninput="handleOriginZipInput(this.value)" onchange="syncActiveTabField('origin', this.value)">
               <select id="search-dho" class="form-select combo-radius" onchange="syncActiveTabField('dho', this.value)" title="Deadhead Origin Radius">
                 <option value="25">25 mi</option>
                 <option value="50">50 mi</option>
@@ -636,17 +636,18 @@
                 <option value="200">200 mi</option>
               </select>
             </div>
+            <div id="origin-zip-hint" style="display:none;font-size:11px;color:#2563eb;font-weight:700;margin-top:3px;"></div>
           </div>
 
           <!-- Destination(s) & DHD -->
           <div class="routing-field-col">
             <div class="field-header">
-              <label class="form-label field-label" for="search-dest">Destination(s) / States</label>
+              <label class="form-label field-label" for="search-dest">Destination(s) / States or ZIP</label>
               <span class="radius-tag">DHD Radius</span>
             </div>
             <div class="field-input-combo">
               <input type="text" id="search-dest" class="form-input combo-text" value="TX, WY, CO" 
-                     placeholder="e.g. Cheyenne, WY or TX, WY, CO" onchange="syncActiveTabField('dest', this.value)">
+                     placeholder="e.g. 82001, Cheyenne, WY or TX, WY, CO" oninput="handleDestZipInput(this.value)" onchange="syncActiveTabField('dest', this.value)">
               <select id="search-dhd" class="form-select combo-radius" onchange="syncActiveTabField('dhd', this.value)" title="Deadhead Destination Radius">
                 <option value="25">25 mi</option>
                 <option value="50" selected>50 mi</option>
@@ -655,6 +656,7 @@
                 <option value="200">200 mi</option>
               </select>
             </div>
+            <div id="dest-zip-hint" style="display:none;font-size:11px;color:#2563eb;font-weight:700;margin-top:3px;"></div>
           </div>
 
           <!-- Equipment Type -->
@@ -716,6 +718,22 @@
             <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Southeast (GA, FL, NC, SC, TN)')">Southeast (GA, FL, NC, SC, TN)</button>
             <button type="button" class="quick-lane-pill" onclick="applyDestPreset('West (CA, AZ, NV, UT, WA)')">West (CA, AZ, NV, UT, WA)</button>
             <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Anywhere / All 48 States')">All 48 States</button>
+          </div>
+        </div>
+
+        <!-- 4. QUICK FREIGHT HUB ZIPs -->
+        <div class="quick-lanes-bar" style="margin-top:8px;background:rgba(37,99,235,0.04);border:1px dashed #bfdbfe;border-radius:10px;padding:8px 14px;">
+          <div class="quick-lanes-label" style="font-size:11px;font-weight:800;color:#1e40af;">
+            <span>📮 POPULAR FREIGHT ZIPs:</span>
+          </div>
+          <div class="quick-lanes-pills" style="gap:6px;">
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyOriginZipPreset('75201', 'Dallas, TX')">📍 75201 (Dallas, TX)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyOriginZipPreset('60601', 'Chicago, IL')">📍 60601 (Chicago, IL)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyOriginZipPreset('30301', 'Atlanta, GA')">📍 30301 (Atlanta, GA)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyOriginZipPreset('90001', 'Los Angeles, CA')">📍 90001 (LA, CA)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyDestZipPreset('82001', 'Cheyenne, WY')">🏁 82001 (Cheyenne, WY)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyDestZipPreset('80202', 'Denver, CO')">🏁 80202 (Denver, CO)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyDestZipPreset('19104', 'Philadelphia, PA')">🏁 19104 (Philly, PA)</button>
           </div>
         </div>
 
@@ -1271,6 +1289,8 @@
     document.getElementById('search-min-rpm').value = tab.minRpm || '2.85';
     document.getElementById('search-date').value = tab.pickupDate || getTodayString();
     updateDateUI(tab.pickupDate || getTodayString());
+    handleOriginZipInput(tab.origin || 'Dallas, TX');
+    handleDestZipInput(tab.dest || 'TX, WY, CO');
 
     const carrierSelect = document.getElementById('search-carrier-id');
     if (carrierSelect) carrierSelect.value = tab.carrierId || '';
@@ -1388,6 +1408,86 @@
   function applyDestPreset(presetValue) {
     document.getElementById('search-dest').value = presetValue;
     syncActiveTabField('dest', presetValue);
+    runActiveTabSearch();
+  }
+
+  const CLIENT_ZIP_DIRECTORY = {
+    '75201': 'Dallas, TX', '75001': 'Dallas, TX', '75247': 'Dallas, TX', '76102': 'Fort Worth, TX',
+    '77002': 'Houston, TX', '77015': 'Houston, TX', '78205': 'San Antonio, TX', '78701': 'Austin, TX',
+    '78040': 'Laredo, TX', '79901': 'El Paso, TX', '79101': 'Amarillo, TX',
+    '82001': 'Cheyenne, WY', '82601': 'Casper, WY', '82070': 'Laramie, WY', '82716': 'Gillette, WY',
+    '60601': 'Chicago, IL', '60638': 'Chicago, IL', '60431': 'Joliet, IL', '61101': 'Rockford, IL',
+    '30301': 'Atlanta, GA', '30336': 'Atlanta, GA', '31401': 'Savannah, GA', '30901': 'Augusta, GA',
+    '90001': 'Los Angeles, CA', '91761': 'Ontario, CA', '93301': 'Bakersfield, CA', '95202': 'Stockton, CA',
+    '80202': 'Denver, CO', '80012': 'Aurora, CO', '80903': 'Colorado Springs, CO',
+    '19104': 'Philadelphia, PA', '15222': 'Pittsburgh, PA', '17101': 'Harrisburg, PA', '17050': 'Mechanicsburg, PA',
+    '07102': 'Newark, NJ', '08817': 'Edison, NJ', '10001': 'New York, NY', '14202': 'Buffalo, NY',
+    '43215': 'Columbus, OH', '45202': 'Cincinnati, OH', '44114': 'Cleveland, OH',
+    '46204': 'Indianapolis, IN', '48226': 'Detroit, MI', '37201': 'Nashville, TN', '38103': 'Memphis, TN',
+    '28202': 'Charlotte, NC', '29401': 'Charleston, SC', '32202': 'Jacksonville, FL', '32801': 'Orlando, FL',
+    '33602': 'Tampa, FL', '33101': 'Miami, FL', '35203': 'Birmingham, AL', '85001': 'Phoenix, AZ',
+    '84101': 'Salt Lake City, UT', '83702': 'Boise, ID', '97201': 'Portland, OR', '98101': 'Seattle, WA',
+    '64106': 'Kansas City, MO', '63101': 'St. Louis, MO', '50309': 'Des Moines, IA', '68102': 'Omaha, NE',
+    '53202': 'Milwaukee, WI', '55401': 'Minneapolis, MN', '70112': 'New Orleans, LA', '72201': 'Little Rock, AR',
+    '73102': 'Oklahoma City, OK'
+  };
+
+  function handleOriginZipInput(val) {
+    const hint = document.getElementById('origin-zip-hint');
+    if (!hint) return;
+    const digits = (val || '').match(/\b\d{5}\b/);
+    if (digits) {
+      const zip = digits[0];
+      const match = CLIENT_ZIP_DIRECTORY[zip];
+      hint.style.display = 'block';
+      if (match) {
+        hint.innerHTML = `📍 ZIP Detected: <strong>${escapeHtml(match)}</strong> (${zip})`;
+      } else {
+        hint.innerHTML = `📍 ZIP Detected: <strong>Postal Area #${zip}</strong>`;
+      }
+    } else {
+      hint.style.display = 'none';
+    }
+  }
+
+  function handleDestZipInput(val) {
+    const hint = document.getElementById('dest-zip-hint');
+    if (!hint) return;
+    const digits = (val || '').match(/\b\d{5}\b/);
+    if (digits) {
+      const zip = digits[0];
+      const match = CLIENT_ZIP_DIRECTORY[zip];
+      hint.style.display = 'block';
+      if (match) {
+        hint.innerHTML = `🏁 Destination ZIP: <strong>${escapeHtml(match)}</strong> (${zip})`;
+      } else {
+        hint.innerHTML = `🏁 Destination ZIP: <strong>Postal Area #${zip}</strong>`;
+      }
+    } else {
+      hint.style.display = 'none';
+    }
+  }
+
+  function applyOriginZipPreset(zip, label) {
+    const input = document.getElementById('search-origin');
+    input.value = `${label} ${zip}`;
+    syncActiveTabField('origin', input.value);
+    handleOriginZipInput(zip);
+    const tab = getActiveTab();
+    if (tab) {
+      tab.title = `Truck #${tab.id} (${zip})`;
+      const titleInput = document.getElementById('tab-custom-title');
+      if (titleInput) titleInput.value = tab.title;
+      renderTabsBar();
+    }
+    runActiveTabSearch();
+  }
+
+  function applyDestZipPreset(zip, label) {
+    const input = document.getElementById('search-dest');
+    input.value = `${label} ${zip}`;
+    syncActiveTabField('dest', input.value);
+    handleDestZipInput(zip);
     runActiveTabSearch();
   }
 
@@ -1529,8 +1629,9 @@
 
           <!-- Pickup Location & Exact Date -->
           <td>
-            <div style="font-weight:800;color:var(--text-primary);font-size:13.5px;">
-              ${escapeHtml(load.pickup_location)}
+            <div style="font-weight:800;color:var(--text-primary);font-size:13.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span>${escapeHtml(load.pickup_location)}</span>
+              ${load.pickup_zip ? `<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:1px 6px;font-weight:700;border-radius:4px;">📮 ${escapeHtml(load.pickup_zip)}</span>` : ''}
             </div>
             <div style="font-size:11.5px;color:#0f172a;margin-top:2px;display:flex;align-items:center;gap:5px;">
               <span>📅 ${formattedPuDate}</span>
@@ -1540,8 +1641,9 @@
 
           <!-- Delivery Location & Date -->
           <td>
-            <div style="font-weight:800;color:#2563eb;font-size:13.5px;">
-              ${escapeHtml(load.delivery_location)}
+            <div style="font-weight:800;color:#2563eb;font-size:13.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span>${escapeHtml(load.delivery_location)}</span>
+              ${load.delivery_zip ? `<span class="badge" style="background:#f8fafc;color:#475569;border:1px solid #cbd5e1;font-size:10.5px;padding:1px 6px;font-weight:700;border-radius:4px;">📮 ${escapeHtml(load.delivery_zip)}</span>` : ''}
             </div>
             <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">
               🏁 DEL: ${formattedDelDate} ${load.transit_days ? `<span style="color:#64748b;">(${load.transit_days}d transit)</span>` : ''}
