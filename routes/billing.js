@@ -11,7 +11,7 @@ const TRIAL_DAYS = parseInt(process.env.STRIPE_TRIAL_DAYS || '7', 10);
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
-  if (!key || !/^sk_(test|live)_/.test(key)) return null;
+  if (!key || !/^(sk|rk)_(test|live)_/.test(key)) return null;
   return require('stripe')(key);
 }
 
@@ -497,20 +497,80 @@ router.post('/checkout', async (req, res) => {
 router.get('/session/:id', async (req, res) => {
   try {
     const stripe = getStripe();
-    if (!stripe) return res.json({ ok: false, simulated: true });
+    if (!stripe) {
+      return res.json({
+        ok: true,
+        simulated: true,
+        plan_key: req.query.plan || 'loadboard_ai_pass',
+        portal_ready: true
+      });
+    }
+
     const session = await stripe.checkout.sessions.retrieve(req.params.id, {
       expand: ['subscription', 'customer']
     });
     const sub = session.subscription && typeof session.subscription === 'object' ? session.subscription : null;
-    const email = session.customer_details?.email || session.customer_email;
+    const email = session.customer_details?.email || session.customer_email || (session.metadata && session.metadata.email);
     let portalReady = false;
-    if (email) {
+
+    // Fulfill loadboard_ai_pass subscription immediately upon successful checkout return
+    if (session.metadata && session.metadata.plan_key === 'loadboard_ai_pass') {
+      const subId = sub ? sub.id : session.subscription;
+      const custId = session.customer && typeof session.customer === 'object' ? session.customer.id : session.customer;
+
+      if (session.payment_status === 'paid' || session.status === 'complete' || (sub && sub.status === 'active')) {
+        let userId = session.metadata.user_id ? parseInt(session.metadata.user_id, 10) : null;
+        if (!userId && email) {
+          const uRow = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1) LIMIT 1', [email]);
+          if (uRow.rows.length) userId = uRow.rows[0].id;
+        }
+
+        if (userId) {
+          await pool.query(
+            `UPDATE users SET weekly_plan = 'loadboard_ai_pass', role = 'carrier', email_verified_at = COALESCE(email_verified_at, now())
+             WHERE id = $1`,
+            [userId]
+          );
+        } else if (email) {
+          await pool.query(
+            `UPDATE users SET weekly_plan = 'loadboard_ai_pass', role = 'carrier', email_verified_at = COALESCE(email_verified_at, now())
+             WHERE lower(email) = lower($1)`,
+            [email]
+          );
+        }
+
+        await pool.query(
+          `UPDATE billing_subscriptions SET
+             status = 'active',
+             stripe_subscription_id = COALESCE($1, stripe_subscription_id),
+             stripe_customer_id = COALESCE($2, stripe_customer_id),
+             current_period_end = now() + interval '30 days',
+             updated_at = now()
+           WHERE stripe_checkout_session_id = $3`,
+          [subId ? String(subId) : null, custId ? String(custId) : null, req.params.id]
+        );
+
+        // Auto-login carrier directly via auth cookie
+        const u = await pool.query(`SELECT * FROM users WHERE lower(email) = lower($1) LIMIT 1`, [email]);
+        if (u.rows.length) {
+          const userObj = u.rows[0];
+          const token = jwt.sign(
+            { id: userObj.id, email: userObj.email, role: userObj.role, name: userObj.name, weekly_plan: 'loadboard_ai_pass' },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+          );
+          setAuthCookie(res, token);
+          portalReady = true;
+        }
+      }
+    } else if (email) {
       const u = await pool.query(
         `SELECT id FROM users WHERE lower(email) = lower($1) AND role IN ('carrier','carrier_admin') LIMIT 1`,
         [email]
       );
       portalReady = u.rows.length > 0;
     }
+
     res.json({
       ok: true,
       email,
@@ -521,12 +581,13 @@ router.get('/session/:id', async (req, res) => {
       portal_ready: portalReady
     });
   } catch (err) {
+    console.error('Session retrieve error:', err);
     res.status(404).json({ error: 'Checkout session not found' });
   }
 });
 
-// Instant AI Load Board Pass Subscription ($19/mo)
-router.post('/subscribe-loadboard', async (req, res) => {
+// Create Stripe Checkout or Direct Subscription for AI Load Board Pass ($19/mo)
+async function handleLoadBoardCheckoutRequest(req, res) {
   try {
     const { name, company, phone, email, mc_number, dot_number, password } = req.body || {};
 
@@ -534,58 +595,156 @@ router.post('/subscribe-loadboard', async (req, res) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       return res.status(400).json({ error: 'A valid email address is required.' });
     }
+    const cleanPassword = String(password || '').trim();
+    if (!cleanPassword || cleanPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
     const cleanName = String(name || company || cleanEmail.split('@')[0]).trim();
     if (!cleanName) {
-      return res.status(400).json({ error: 'Name or company name is required.' });
+      return res.status(400).json({ error: 'Full name is required.' });
+    }
+    const cleanPhone = String(phone || '').trim();
+    if (!cleanPhone) {
+      return res.status(400).json({ error: 'Phone number is required.' });
     }
 
-    // 1. Upsert Lead in CRM
-    const leadId = await upsertWebsiteLead({
-      email: cleanEmail,
-      name: cleanName,
-      company: String(company || '').trim(),
-      phone: String(phone || '').trim(),
-      mcNumber: String(mc_number || '').trim(),
-      usdot: String(dot_number || '').trim(),
-      planKey: 'loadboard_ai_pass',
-      status: 'active'
-    });
-
-    // 2. Check or Create User
+    // 1. Check existing user
     let user;
     const existingUser = await pool.query('SELECT * FROM users WHERE lower(email) = $1', [cleanEmail]);
     if (existingUser.rows.length) {
       user = existingUser.rows[0];
+      if (['super_admin', 'admin', 'dispatcher', 'sales_rep'].includes(user.role)) {
+        return res.status(400).json({
+          error: 'This email is already registered to a staff account. Please sign in or use another email.'
+        });
+      }
+
+      // Check if user already has an active load board subscription
+      const subCheck = await pool.query(
+        `SELECT status, plan_key FROM billing_subscriptions
+         WHERE user_id = $1 AND plan_key = 'loadboard_ai_pass' AND status = 'active'
+         ORDER BY id DESC LIMIT 1`,
+        [user.id]
+      );
+      if (subCheck.rows.length && user.weekly_plan === 'loadboard_ai_pass') {
+        return res.status(400).json({
+          error: 'You already have an active $19/mo subscription! Please sign in at /login to use the Load Board.'
+        });
+      }
+
+      // Update password and info for pending activation
+      const hash = await bcrypt.hash(cleanPassword, 10);
       await pool.query(
         `UPDATE users SET
-           weekly_plan = 'loadboard_ai_pass',
+           password_hash = $1,
            company_name = COALESCE(NULLIF($2,''), company_name),
            phone = COALESCE(NULLIF($3,''), phone),
            mc_number = COALESCE(NULLIF($4,''), mc_number),
-           dot_number = COALESCE(NULLIF($5,''), dot_number)
-         WHERE id = $1`,
-        [user.id, company || '', phone || '', mc_number || '', dot_number || '']
+           dot_number = COALESCE(NULLIF($5,''), dot_number),
+           weekly_plan = 'loadboard_ai_pass_pending'
+         WHERE id = $6`,
+        [hash, company || '', cleanPhone, mc_number || '', dot_number || '', user.id]
       );
     } else {
-      const pass = String(password || '').trim() || (Math.random().toString(36).slice(-8) + 'Aa1');
-      const hash = await bcrypt.hash(pass, 10);
+      // 2. Create new user with the carrier's specified password hash
+      const hash = await bcrypt.hash(cleanPassword, 10);
       const insUser = await pool.query(
         `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, weekly_plan, email_verified_at)
-         VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, 'loadboard_ai_pass', now())
+         VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, 'loadboard_ai_pass_pending', now())
          RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, weekly_plan`,
-        [cleanName, cleanEmail, hash, company || null, phone || null, mc_number || null, dot_number || null]
+        [cleanName, cleanEmail, hash, company || cleanName, cleanPhone, mc_number || null, dot_number || null]
       );
       user = insUser.rows[0];
     }
 
-    // 3. Upsert Active Subscription Record
+    // 3. Upsert Lead in CRM
+    const leadId = await upsertWebsiteLead({
+      email: cleanEmail,
+      name: cleanName,
+      company: String(company || '').trim(),
+      phone: cleanPhone,
+      mcNumber: String(mc_number || '').trim(),
+      usdot: String(dot_number || '').trim(),
+      planKey: 'loadboard_ai_pass',
+      status: 'new',
+      extraNote: 'Carrier AI Load Board Pass signup ($19/mo). Stripe checkout initiated.'
+    });
+
+    // 4. Check Stripe Integration
+    const stripe = getStripe();
+    if (stripe) {
+      // Create real Stripe Checkout Session for $19/mo subscription
+      const session = await stripe.checkout.sessions.create({
+        mode: 'subscription',
+        customer_email: cleanEmail,
+        client_reference_id: String(user.id),
+        billing_address_collection: 'auto',
+        phone_number_collection: { enabled: true },
+        payment_method_collection: 'always',
+        allow_promotion_codes: true,
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Carrier AI Load Board & FMCSA Authority Suite',
+              description: 'Instant self-dispatch access: Live DAT freight, direct unmasked broker contacts, and FMCSA credit score checks.'
+            },
+            unit_amount: 1900,
+            recurring: { interval: 'month' }
+          },
+          quantity: 1
+        }],
+        success_url: `${APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}&plan=loadboard_ai_pass&email=${encodeURIComponent(cleanEmail)}`,
+        cancel_url: `${APP_URL}/load-booking?canceled=1`,
+        metadata: {
+          user_id: String(user.id),
+          lead_id: leadId ? String(leadId) : '',
+          email: cleanEmail,
+          plan_key: 'loadboard_ai_pass',
+          company: String(company || ''),
+          phone: cleanPhone,
+          mc_number: String(mc_number || ''),
+          dot_number: String(dot_number || '')
+        },
+        subscription_data: {
+          metadata: {
+            user_id: String(user.id),
+            plan_key: 'loadboard_ai_pass',
+            company: String(company || '')
+          }
+        },
+        custom_text: {
+          submit: {
+            message: 'Billed at $19/month for self-dispatch load board & FMCSA authority check access. Cancel anytime.'
+          }
+        }
+      });
+
+      await pool.query(
+        `INSERT INTO billing_subscriptions (user_id, lead_id, stripe_checkout_session_id, plan_key, amount_cents, interval, status)
+         VALUES ($1, $2, $3, 'loadboard_ai_pass', 1900, 'month', 'incomplete')`,
+        [user.id, leadId, session.id]
+      );
+
+      return res.json({
+        ok: true,
+        url: session.url,
+        session_id: session.id,
+        message: 'Redirecting to secure Stripe Checkout.'
+      });
+    }
+
+    // 5. Fallback if Stripe key is not set or in test mode
+    await pool.query(
+      `UPDATE users SET weekly_plan = 'loadboard_ai_pass', email_verified_at = COALESCE(email_verified_at, now()) WHERE id = $1`,
+      [user.id]
+    );
     await pool.query(
       `INSERT INTO billing_subscriptions (user_id, lead_id, plan_key, amount_cents, interval, status, current_period_end)
        VALUES ($1, $2, 'loadboard_ai_pass', 1900, 'month', 'active', now() + interval '30 days')`,
       [user.id, leadId || null]
     );
 
-    // 4. Issue Auth Cookie & JWT Token
     const token = jwt.sign(
       {
         id: user.id,
@@ -599,7 +758,7 @@ router.post('/subscribe-loadboard', async (req, res) => {
     );
     setAuthCookie(res, token);
 
-    // 5. Send welcome email asynchronously
+    // Send welcome email asynchronously
     try {
       await sendBrandedEmail({
         to: cleanEmail,
@@ -609,6 +768,11 @@ router.post('/subscribe-loadboard', async (req, res) => {
             <h2 style="color:#f59e0b;">Welcome to Shipping Wish AI Load Board!</h2>
             <p>Hi ${escapeHtml(cleanName)},</p>
             <p>Your self-dispatch subscription to <strong>Carrier AI Load Board &amp; FMCSA Authority Suite ($19/mo)</strong> has been activated!</p>
+            <p>You can sign in anytime at <a href="${APP_URL}/login">${APP_URL}/login</a> using:</p>
+            <div style="background:#f8fafc;padding:12px 16px;border-radius:8px;border:1px solid #e2e8f0;margin:12px 0;">
+              <div><strong>Login Email:</strong> ${escapeHtml(cleanEmail)}</div>
+              <div><strong>Password:</strong> The password you created at signup</div>
+            </div>
             <ul style="line-height:1.8;">
               <li><strong>Live AI Load Board:</strong> <a href="${APP_URL}/load-booking">${APP_URL}/load-booking</a></li>
               <li><strong>Broker Credit &amp; FMCSA Authority Check:</strong> <a href="${APP_URL}/brokers">${APP_URL}/brokers</a></li>
@@ -616,14 +780,15 @@ router.post('/subscribe-loadboard', async (req, res) => {
             <p>You can now search all 50-state freight lanes and see direct broker contact info unmasked.</p>
           </div>
         `,
-        text: `Welcome to Shipping Wish AI Load Board!\nYour pass is active. Access your tools here: ${APP_URL}/load-booking and ${APP_URL}/brokers`
+        text: `Welcome to Shipping Wish AI Load Board!\nYour pass is active. Login at ${APP_URL}/login using ${cleanEmail}. Tools: ${APP_URL}/load-booking and ${APP_URL}/brokers`
       });
     } catch (_) { /* non-fatal email */ }
 
     res.json({
       ok: true,
-      message: 'Carrier AI Load Board & FMCSA Authority Suite pass activated!',
-      redirect: '/load-booking',
+      simulated: true,
+      redirect: `/checkout-success?plan=loadboard_ai_pass&email=${encodeURIComponent(cleanEmail)}&simulated=1`,
+      message: 'Account created and pass activated!',
       user: {
         id: user.id,
         name: user.name,
@@ -634,10 +799,14 @@ router.post('/subscribe-loadboard', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('subscribe-loadboard error:', err);
+    console.error('handleLoadBoardCheckoutRequest error:', err);
     res.status(500).json({ error: err.message || 'Could not complete load board subscription.' });
   }
-});
+}
+
+router.post('/subscribe-loadboard', handleLoadBoardCheckoutRequest);
+router.post('/create-loadboard-checkout', handleLoadBoardCheckoutRequest);
+
 
 router.post('/weekly-link', requireAuth, requireRole('dispatcher', 'admin', 'super_admin', 'sales_rep'), async (req, res) => {
   try {
@@ -800,6 +969,58 @@ async function handleStripeEvent(event) {
       }
     } catch (err) {
       console.error('billing checkout.session.completed db:', err.message);
+    }
+
+    if (meta.plan_key === 'loadboard_ai_pass') {
+      try {
+        let userId = meta.user_id ? parseInt(meta.user_id, 10) : null;
+        if (userId) {
+          await pool.query(
+            `UPDATE users SET weekly_plan = 'loadboard_ai_pass', role = 'carrier', email_verified_at = COALESCE(email_verified_at, now()) WHERE id = $1`,
+            [userId]
+          );
+        } else if (email) {
+          await pool.query(
+            `UPDATE users SET weekly_plan = 'loadboard_ai_pass', role = 'carrier', email_verified_at = COALESCE(email_verified_at, now()) WHERE lower(email) = lower($1)`,
+            [email]
+          );
+        }
+        await pool.query(
+          `UPDATE billing_subscriptions SET status = 'active', current_period_end = now() + interval '30 days', updated_at = now() WHERE stripe_checkout_session_id = $1`,
+          [sessionId]
+        );
+        if (email) {
+          await sendBrandedEmail({
+            to: email,
+            subject: 'Your AI Load Board & FMCSA Authority Pass is Active!',
+            html: `
+              <div style="font-family:sans-serif;color:#0f172a;max-width:600px;margin:0 auto;">
+                <h2 style="color:#f59e0b;">Welcome to Shipping Wish AI Load Board!</h2>
+                <p>Hi ${escapeHtml(meta.name || meta.company || 'Carrier')},</p>
+                <p>Your self-dispatch subscription to <strong>Carrier AI Load Board &amp; FMCSA Authority Suite ($19/mo)</strong> is now active!</p>
+                <p>You can sign in anytime at <a href="${APP_URL}/login">${APP_URL}/login</a> using your email and the password you created during signup.</p>
+                <ul style="line-height:1.8;">
+                  <li><strong>Live AI Load Board:</strong> <a href="${APP_URL}/load-booking">${APP_URL}/load-booking</a></li>
+                  <li><strong>Broker Credit &amp; FMCSA Authority Check:</strong> <a href="${APP_URL}/brokers">${APP_URL}/brokers</a></li>
+                </ul>
+                <p>Direct broker phone numbers, live freight, and credit scores are unmasked.</p>
+              </div>
+            `,
+            text: `Welcome to Shipping Wish AI Load Board!\nYour pass is active. Login at ${APP_URL}/login using ${email}. Tools: ${APP_URL}/load-booking and ${APP_URL}/brokers`
+          });
+        }
+        await notifyStaff({
+          subject: `New $19/mo AI Load Board Subscriber — ${meta.company || meta.name || email}`,
+          html: `<p>A carrier subscribed to the $19/mo AI Load Board &amp; FMCSA Authority pass via Stripe.</p>
+                 <p><strong>${escapeHtml(meta.name || '')}</strong> (${escapeHtml(meta.company || '')})<br>
+                 Email: ${escapeHtml(email)} · Phone: ${escapeHtml(meta.phone || '')}<br>
+                 MC: ${escapeHtml(meta.mc_number || '-')} · USDOT: ${escapeHtml(meta.usdot || '-')}</p>`,
+          text: `New $19/mo AI Load Board subscriber: ${meta.name || ''} / ${meta.company || ''} / ${email} / ${meta.phone || ''}`
+        });
+      } catch (err) {
+        console.error('loadboard_ai_pass webhook fulfillment error:', err.message);
+      }
+      return;
     }
 
     const plan = PLANS[meta.plan_key] || PLANS.solo_weekly;

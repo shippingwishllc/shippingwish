@@ -3328,8 +3328,14 @@ body .container {
   font-size: 12px;
 }
 
-.modal-backdrop:not(.open) {
+.modal-backdrop:not(.open):not(.active) {
   display: none !important;
 }
+
+.modal-backdrop.active,
+.modal-backdrop.open {
+  display: flex !important;
+}
+
 
 
