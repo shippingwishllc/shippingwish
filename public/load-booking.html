@@ -490,6 +490,577 @@
       pointer-events: none;
       background: #f8fafc;
     }
+
+    /* ========================================================== */
+    /* ULTRA-RESPONSIVE MOBILE STYLES FOR LOAD BOOKING & BOARD    */
+    /* ========================================================== */
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    #erp-shell {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    .app-main {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    .app-content {
+      max-width: 100vw;
+      box-sizing: border-box;
+    }
+
+    /* Mobile Cards Grid & Load Card Styling */
+    .mobile-cards-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .mobile-load-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      position: relative;
+    }
+    .mobile-load-card:hover {
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
+    .mobile-load-card.locked-card {
+      background: #f8fafc;
+      border: 1.5px dashed #cbd5e1;
+    }
+
+    .card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .card-date-badge {
+      font-size: 12px;
+      font-weight: 800;
+      color: #0f172a;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .card-lane-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #f8fafc;
+      border: 1px solid #edf2f7;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .card-lane-endpoint {
+      flex: 1;
+      min-width: 0;
+    }
+    .card-lane-label {
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 2px;
+    }
+    .card-lane-city {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-lane-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+    .card-lane-miles {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    .card-lane-arrow {
+      font-size: 16px;
+      color: #3b82f6;
+      line-height: 1;
+    }
+
+    .card-financials-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 2px 0;
+    }
+    .card-rate-val {
+      font-size: 20px;
+      font-weight: 900;
+      color: #059669;
+      line-height: 1.1;
+    }
+    .card-rpm-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      margin-top: 3px;
+    }
+    .card-broker-info {
+      text-align: right;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .card-actions-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding-top: 4px;
+    }
+    .card-actions-row .btn {
+      flex: 1;
+      justify-content: center;
+      text-align: center;
+      height: 40px;
+      font-size: 13.5px;
+      font-weight: 800;
+      border-radius: 8px;
+    }
+
+    /* View Switcher */
+    .view-toggle-wrap {
+      display: inline-flex;
+      background: #f1f5f9;
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      gap: 2px;
+    }
+    .view-toggle-btn {
+      border: none;
+      background: transparent;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .view-toggle-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .mobile-table-swipe-hint {
+      display: none;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #2563eb;
+      text-align: center;
+      background: #eff6ff;
+      border-bottom: 1px solid #dbeafe;
+      padding: 7px 12px;
+    }
+
+    /* By default on screen <= 820px: show cards, hide table wrapper */
+    @media (max-width: 820px) {
+      .mobile-table-swipe-hint {
+        display: block;
+      }
+      body:not(.force-table-view) .tms-table-wrapper {
+        display: none !important;
+      }
+      body:not(.force-table-view) .mobile-table-swipe-hint {
+        display: none !important;
+      }
+      body:not(.force-table-view) #board-loads-cards-container {
+        display: flex !important;
+      }
+      body.force-table-view .tms-table-wrapper {
+        display: block !important;
+      }
+      body.force-table-view .mobile-table-swipe-hint {
+        display: block !important;
+      }
+      body.force-table-view #board-loads-cards-container {
+        display: none !important;
+      }
+
+      /* Offers card */
+      body:not(.force-table-view) #offers-table-wrapper {
+        display: none !important;
+      }
+      body:not(.force-table-view) #offers-cards-container {
+        display: flex !important;
+      }
+      body.force-table-view #offers-table-wrapper {
+        display: block !important;
+      }
+      body.force-table-view #offers-cards-container {
+        display: none !important;
+      }
+    }
+
+    /* On desktop > 820px: show table by default, hide cards unless user chose cards */
+    @media (min-width: 821px) {
+      body:not(.force-cards-view) .tms-table-wrapper {
+        display: block !important;
+      }
+      body:not(.force-cards-view) #board-loads-cards-container {
+        display: none !important;
+      }
+      body.force-cards-view .tms-table-wrapper {
+        display: none !important;
+      }
+      body.force-cards-view #board-loads-cards-container {
+        display: flex !important;
+      }
+
+      body:not(.force-cards-view) #offers-table-wrapper {
+        display: block !important;
+      }
+      body:not(.force-cards-view) #offers-cards-container {
+        display: none !important;
+      }
+      body.force-cards-view #offers-table-wrapper {
+        display: none !important;
+      }
+      body.force-cards-view #offers-cards-container {
+        display: flex !important;
+      }
+    }
+
+    /* Prevent iOS auto-zoom */
+    @media (max-width: 768px) {
+      input.form-input, select.form-select, input.input-field, textarea.form-input {
+        font-size: 16px !important;
+      }
+    }
+
+    /* Full Mobile Screen Media Queries */
+    @media (max-width: 768px) {
+      .app-content {
+        padding: 12px 10px !important;
+      }
+      .tms-table-card {
+        border-radius: 14px !important;
+        margin-bottom: 18px !important;
+      }
+      .tms-table-header {
+        padding: 12px 14px !important;
+      }
+      .tms-table-wrapper {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Guest Header Banner */
+      #guest-header-banner {
+        padding: 10px 12px !important;
+      }
+      .guest-banner-inner {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+      }
+      .guest-banner-subtitle {
+        display: none !important;
+      }
+      .guest-banner-actions {
+        display: flex !important;
+        width: 100% !important;
+        gap: 8px !important;
+      }
+      .guest-banner-actions .btn {
+        flex: 1 !important;
+        justify-content: center !important;
+        text-align: center !important;
+        padding: 8px 10px !important;
+        font-size: 12.5px !important;
+      }
+
+      /* App Header */
+      .app-header {
+        padding: 12px 12px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+      }
+      .app-header h1 {
+        font-size: 17px !important;
+      }
+      .app-header p {
+        font-size: 11.5px !important;
+        line-height: 1.35 !important;
+      }
+      .app-header-controls {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        gap: 8px !important;
+      }
+
+      /* KPI Cards 2x2 Grid */
+      .stat-card-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        margin-bottom: 14px !important;
+      }
+      .stat-kpi-card {
+        padding: 10px 12px !important;
+        border-radius: 12px !important;
+      }
+      .stat-kpi-top {
+        margin-bottom: 2px !important;
+      }
+      .stat-kpi-title {
+        font-size: 10.5px !important;
+        line-height: 1.2 !important;
+      }
+      .stat-kpi-icon {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 12px !important;
+        border-radius: 6px !important;
+      }
+      .stat-kpi-val {
+        font-size: 18px !important;
+        font-weight: 900 !important;
+        margin-top: 2px !important;
+      }
+      .stat-kpi-desc {
+        display: none !important;
+      }
+
+      /* Multi-Search Tabs */
+      .tabs-wrapper {
+        gap: 6px !important;
+        margin-bottom: 12px !important;
+        padding-bottom: 4px !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      .search-tab-item {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+        border-radius: 8px 8px 0 0 !important;
+        flex-shrink: 0 !important;
+      }
+      .btn-add-tab {
+        padding: 6px 10px !important;
+        font-size: 11.5px !important;
+        flex-shrink: 0 !important;
+      }
+
+      /* Search Card */
+      .search-card-container {
+        padding: 14px 12px !important;
+        border-radius: 14px !important;
+        margin-bottom: 16px !important;
+      }
+      .search-card-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+      }
+      .tab-title-edit-input {
+        font-size: 13.5px !important;
+        max-width: 100% !important;
+        padding: 4px 6px !important;
+      }
+      .search-card-header-actions {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+      }
+
+      /* Pickup Schedule Toolbar */
+      .schedule-toolbar {
+        padding: 8px 10px !important;
+        margin-bottom: 12px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+      }
+      .schedule-toolbar-left {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        width: 100% !important;
+      }
+      .schedule-presets {
+        display: flex !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        gap: 4px !important;
+        padding: 3px !important;
+      }
+      .schedule-presets::-webkit-scrollbar {
+        display: none !important;
+      }
+      .sched-pill {
+        flex-shrink: 0 !important;
+        padding: 6px 10px !important;
+        font-size: 11.5px !important;
+      }
+      .schedule-date-input-wrap {
+        width: 100% !important;
+        display: flex !important;
+      }
+      .schedule-date-input {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        height: 38px !important;
+      }
+      .schedule-toolbar-right {
+        width: 100% !important;
+      }
+      .date-status-indicator {
+        width: 100% !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        font-size: 11.5px !important;
+        padding: 5px 10px !important;
+      }
+
+      /* Routing Fields */
+      .routing-fields-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        margin-bottom: 12px !important;
+      }
+      .field-label {
+        font-size: 12px !important;
+      }
+      .combo-radius {
+        width: 78px !important;
+      }
+      .routing-actions-col {
+        grid-column: 1 !important;
+        display: flex !important;
+        gap: 8px !important;
+        width: 100% !important;
+        margin-top: 4px !important;
+      }
+      .btn-search-primary {
+        flex: 1.2 !important;
+        height: 44px !important;
+        justify-content: center !important;
+        font-size: 14px !important;
+      }
+      .btn-ai-match {
+        flex: 1 !important;
+        height: 44px !important;
+        justify-content: center !important;
+        font-size: 13.5px !important;
+      }
+
+      /* Quick Lanes Chips */
+      .quick-lanes-bar {
+        padding-top: 10px !important;
+        gap: 6px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+      .quick-lanes-pills {
+        display: flex !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        width: 100% !important;
+        gap: 6px !important;
+        padding-bottom: 4px !important;
+        flex-wrap: nowrap !important;
+      }
+      .quick-lanes-pills::-webkit-scrollbar {
+        display: none !important;
+      }
+      .quick-lane-pill {
+        flex-shrink: 0 !important;
+        padding: 5px 10px !important;
+        font-size: 11px !important;
+      }
+
+      /* Conversion Paywall Banner */
+      #board-paywall-banner {
+        padding: 20px 14px !important;
+        border-radius: 14px !important;
+        margin-top: 16px !important;
+      }
+      #board-paywall-banner h3 {
+        font-size: 18px !important;
+        line-height: 1.3 !important;
+        margin-bottom: 8px !important;
+      }
+      #board-paywall-banner p {
+        font-size: 12.5px !important;
+        line-height: 1.5 !important;
+        margin-bottom: 14px !important;
+      }
+      #board-paywall-banner .btn-xl {
+        width: 100% !important;
+        padding: 12px 16px !important;
+        font-size: 14px !important;
+        justify-content: center !important;
+        text-align: center !important;
+        box-sizing: border-box !important;
+      }
+
+      /* Modals Mobile */
+      .modal-backdrop {
+        padding: 8px !important;
+        align-items: flex-start !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+      .modal-card {
+        max-height: 94vh !important;
+        overflow-y: auto !important;
+        border-radius: 14px !important;
+        margin: auto 0 !important;
+      }
+      .modal-card form {
+        padding: 16px 14px !important;
+      }
+      .modal-grid-2col {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+    }
   </style>
 </head>
 <body class="app-body">
@@ -798,13 +1369,29 @@
               <span id="active-tab-results-badge" class="badge badge-booked" style="font-size:11px;">0 loads</span>
             </h3>
             <p style="font-size:var(--text-xs);color:var(--text-muted);margin:2px 0 0;">
-              Real-time load board results filtered by pickup date (Today, Tomorrow, Advance), DHO/DHD deadhead, and RPM rate.
+              Real-time spot freight filtered by pickup date, DHO/DHD deadhead, and RPM rate.
             </p>
           </div>
-          <div id="board-search-status" style="font-size:12px;color:var(--text-muted);font-weight:600;"></div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div id="board-search-status" style="font-size:12px;color:var(--text-muted);font-weight:600;"></div>
+            <div class="view-toggle-wrap" id="load-view-toggle">
+              <button type="button" class="view-toggle-btn active" id="btn-view-cards" onclick="setLoadViewMode('cards')">📱 Cards</button>
+              <button type="button" class="view-toggle-btn" id="btn-view-table" onclick="setLoadViewMode('table')">📊 Table</button>
+            </div>
+          </div>
         </div>
 
-        <div class="tms-table-wrapper">
+        <div class="mobile-table-swipe-hint">
+          <span>👈 Swipe horizontally to view all 10 table columns 👉</span>
+        </div>
+
+        <!-- MOBILE FREIGHT CARDS CONTAINER -->
+        <div id="board-loads-cards-container" class="mobile-cards-grid">
+          <div style="text-align:center;padding:35px 15px;color:var(--text-muted);font-size:13px;">Querying live load boards...</div>
+        </div>
+
+        <!-- SPREADSHEET TABLE CONTAINER -->
+        <div class="tms-table-wrapper" id="board-loads-table-wrapper">
           <table class="tms-table-v2" id="board-loads-table">
             <thead>
               <tr>
@@ -827,28 +1414,28 @@
         </div>
 
         <!-- CONVERSION PAYWALL CARD FOR LOCKED LOADS -->
-        <div id="board-paywall-banner" style="display:none;background:linear-gradient(135deg, #0b1120 0%, #1e293b 100%);border:2px solid #f59e0b;border-radius:16px;padding:36px 28px;margin-top:24px;color:#fff;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.35);">
-          <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.2);color:#f59e0b;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:5px 14px;border-radius:20px;border:1px solid rgba(245,158,11,0.3);margin-bottom:14px;">
+        <div id="board-paywall-banner" style="display:none;background:linear-gradient(135deg, #0b1120 0%, #1e293b 100%);border:2px solid #f59e0b;border-radius:16px;padding:28px 20px;margin-top:20px;color:#fff;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.35);">
+          <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.2);color:#f59e0b;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:5px 14px;border-radius:20px;border:1px solid rgba(245,158,11,0.3);margin-bottom:12px;">
             🔒 SUBSCRIBER ACCESS RESTRICTED · 12 MORE LOADS LOCKED
           </div>
-          <h3 style="font-size:26px;font-weight:900;color:#fff;margin:0 0 10px;">
+          <h3 style="font-size:22px;font-weight:900;color:#fff;margin:0 0 10px;line-height:1.3;">
             Unlock All 500+ Daily Live Spot Freight Loads &amp; Direct Broker Contacts
           </h3>
-          <p style="font-size:14px;color:#cbd5e1;max-width:720px;margin:0 auto 22px;line-height:1.6;">
+          <p style="font-size:13.5px;color:#cbd5e1;max-width:720px;margin:0 auto 20px;line-height:1.55;">
             Get direct, unmasked freight broker phone numbers, direct emails, lane negotiation tools, and complete access to the <strong>Freight Brokers &amp; FMCSA Authority Check</strong> ($75k BMC-84 bond verification &amp; credit score due diligence).
           </p>
-          <div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:24px;">
-            <div style="font-size:36px;font-weight:900;color:#f59e0b;">$19 <span style="font-size:14px;color:#94a3b8;font-weight:500;">/ month</span></div>
-            <div style="text-align:left;font-size:12.5px;color:#cbd5e1;line-height:1.5;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+            <div style="font-size:32px;font-weight:900;color:#f59e0b;">$19 <span style="font-size:14px;color:#94a3b8;font-weight:500;">/ month</span></div>
+            <div style="text-align:left;font-size:12px;color:#cbd5e1;line-height:1.5;">
               <div>✓ Cancel anytime · Instant automated activation</div>
               <div>✓ Unlimited 50-state freight search + FMCSA broker due diligence</div>
             </div>
           </div>
-          <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
-            <button type="button" class="btn btn-primary btn-xl" onclick="openLoadBoardSubscribeModal()" style="font-weight:800;padding:14px 34px;font-size:16px;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;box-shadow:0 6px 20px rgba(245,158,11,0.35);cursor:pointer;border-radius:10px;">
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary btn-xl" onclick="openLoadBoardSubscribeModal()" style="font-weight:800;padding:12px 28px;font-size:15px;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;box-shadow:0 6px 20px rgba(245,158,11,0.35);cursor:pointer;border-radius:10px;">
               ⚡ Unlock Full AI Load Board ($19/mo) &rarr;
             </button>
-            <a href="/login?redirect=/load-booking" class="btn btn-secondary btn-xl" style="font-weight:700;padding:14px 24px;font-size:15px;background:rgba(255,255,255,0.08);color:#f8fafc;border:1px solid rgba(255,255,255,0.25);text-decoration:none;display:inline-flex;align-items:center;border-radius:10px;">
+            <a href="/login?redirect=/load-booking" class="btn btn-secondary btn-xl" style="font-weight:700;padding:12px 20px;font-size:14.5px;background:rgba(255,255,255,0.08);color:#f8fafc;border:1px solid rgba(255,255,255,0.25);text-decoration:none;display:inline-flex;align-items:center;border-radius:10px;">
               🔑 Already a Member? Sign In
             </a>
           </div>
@@ -869,7 +1456,11 @@
           <button type="button" class="btn btn-secondary btn-sm" onclick="loadOffers()">↺ Refresh Offers</button>
         </div>
 
-        <div class="tms-table-wrapper">
+        <!-- MOBILE OFFERS CARDS CONTAINER -->
+        <div id="offers-cards-container" class="mobile-cards-grid"></div>
+
+        <!-- OFFERS SPREADSHEET TABLE -->
+        <div class="tms-table-wrapper" id="offers-table-wrapper">
           <table class="tms-table-v2" id="offers-table">
             <thead>
               <tr>
@@ -919,7 +1510,7 @@
         </select>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div class="form-group" style="margin:0;">
           <label class="form-label required" for="modal-rate" style="font-size:12px;font-weight:700;">Agreed Gross Rate ($)</label>
           <input type="number" step="0.01" id="modal-rate" class="form-input" required>
@@ -980,7 +1571,7 @@
     <form id="form-subscribe-loadboard" onsubmit="handleLoadBoardSubscribe(event)" style="padding:24px;">
       <div id="sub-error-alert" style="display:none;background:#fef2f2;border:1px solid #f87171;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
         <div>
           <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Full Name *</label>
           <input type="text" id="sub-name" class="input-field" placeholder="John Doe" required style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
@@ -991,7 +1582,7 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
         <div>
           <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Phone Number *</label>
           <input type="tel" id="sub-phone" class="input-field" placeholder="(555) 000-0000" required style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
@@ -1002,7 +1593,7 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
         <div>
           <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">MC# (Optional)</label>
           <input type="text" id="sub-mc" class="input-field" placeholder="MC-123456" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
@@ -1843,12 +2434,43 @@
   }
 
   // ==========================================
+  // VIEW SWITCHER STATE (CARDS VS SPREADSHEET TABLE)
+  // ==========================================
+  let CURRENT_LOAD_VIEW_MODE = sessionStorage.getItem('sw_load_view_mode') || (window.innerWidth <= 820 ? 'cards' : 'table');
+
+  function updateViewToggleUI() {
+    const btnCards = document.getElementById('btn-view-cards');
+    const btnTable = document.getElementById('btn-view-table');
+    if (CURRENT_LOAD_VIEW_MODE === 'cards') {
+      document.body.classList.add('force-cards-view');
+      document.body.classList.remove('force-table-view');
+      if (btnCards) btnCards.classList.add('active');
+      if (btnTable) btnTable.classList.remove('active');
+    } else {
+      document.body.classList.add('force-table-view');
+      document.body.classList.remove('force-cards-view');
+      if (btnCards) btnCards.classList.remove('active');
+      if (btnTable) btnTable.classList.add('active');
+    }
+  }
+
+  window.setLoadViewMode = function(mode) {
+    CURRENT_LOAD_VIEW_MODE = mode;
+    sessionStorage.setItem('sw_load_view_mode', mode);
+    updateViewToggleUI();
+  };
+
+  // ==========================================
   // RENDER TABLE WITH DATES, DHO, DHD & CITIES
   // ==========================================
   function renderBoardLoadsTable(loads) {
     const tbody = document.getElementById('board-loads-tbody');
+    const cardsContainer = document.getElementById('board-loads-cards-container');
+
     if (!loads.length) {
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:45px;color:var(--text-muted);">No loads found matching criteria. Try increasing DHO/DHD radius, changing date, or expanding destination states.</td></tr>';
+      const emptyMsg = 'No loads found matching criteria. Try increasing DHO/DHD radius, changing date, or expanding destination states.';
+      if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:45px;color:var(--text-muted);">${emptyMsg}</td></tr>`;
+      if (cardsContainer) cardsContainer.innerHTML = `<div style="text-align:center;padding:35px 15px;color:var(--text-muted);font-size:13.5px;background:#f8fafc;border-radius:12px;border:1px dashed #cbd5e1;">🔍 ${emptyMsg}</div>`;
       return;
     }
 
@@ -1859,7 +2481,10 @@
       paywallBanner.style.display = hasLocked ? 'block' : 'none';
     }
 
-    tbody.innerHTML = loads.map((load, idx) => {
+    let rowsHtml = '';
+    let cardsHtml = '';
+
+    loads.forEach((load, idx) => {
       const score = parseFloat(load.ai_score || 95);
       const pillClass = score >= 92 ? 'load-match-high' : 'load-match-mid';
 
@@ -1873,7 +2498,7 @@
       const formattedDelDate = formatDisplayDate(load.delivery_date);
 
       if (load.is_locked) {
-        return `
+        rowsHtml += `
           <tr class="locked-row">
             <!-- DHO -->
             <td><span class="dh-badge">-- mi</span></td>
@@ -1913,6 +2538,53 @@
             </td>
           </tr>
         `;
+
+        cardsHtml += `
+          <div class="mobile-load-card locked-card">
+            <div class="card-top-row">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <span class="card-date-badge">📅 ${formattedPuDate}</span>
+                <span class="badge badge-booked" style="font-size:11px;">${escapeHtml(load.equipment_type || '53ft Dry Van')}</span>
+              </div>
+              <span class="load-match-pill load-match-mid">⚡ ${score}% Match</span>
+            </div>
+
+            <div class="card-lane-row" style="filter:blur(2px);opacity:0.6;user-select:none;">
+              <div class="card-lane-endpoint">
+                <div class="card-lane-label">PICKUP</div>
+                <div class="card-lane-city">${escapeHtml(load.pickup_location)}</div>
+                <div class="card-lane-sub"><span class="dh-badge">-- mi DHO</span></div>
+              </div>
+              <div class="card-lane-connector">
+                <div class="card-lane-miles">${load.miles.toLocaleString()} mi</div>
+                <div class="card-lane-arrow">➔</div>
+              </div>
+              <div class="card-lane-endpoint" style="text-align:right;">
+                <div class="card-lane-label">DELIVERY</div>
+                <div class="card-lane-city" style="color:#2563eb;">${escapeHtml(load.delivery_location)}</div>
+                <div class="card-lane-sub"><span class="dh-badge">-- mi DHD</span></div>
+              </div>
+            </div>
+
+            <div class="card-financials-row">
+              <div>
+                <div class="card-rate-val">$${Number(load.rate).toLocaleString()}</div>
+                <div class="card-rpm-val">$${load.rpm}/mi · ${load.miles.toLocaleString()} mi</div>
+              </div>
+              <div class="card-broker-info">
+                <div style="font-weight:700;color:#94a3b8;">🔒 Verified Broker</div>
+                <div style="font-size:11px;color:#94a3b8;">MC-******</div>
+              </div>
+            </div>
+
+            <div class="card-actions-row">
+              <button type="button" class="btn btn-primary" onclick="openLoadBoardSubscribeModal()" style="font-weight:800;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;">
+                🔒 Unlock Direct Broker Contacts ($19/mo)
+              </button>
+            </div>
+          </div>
+        `;
+        return;
       }
 
       const mailtoSubject = encodeURIComponent(`Rate Confirmation & Inquiry: ${load.pickup_location} to ${load.delivery_location} (PU: ${load.pickup_date})`);
@@ -1955,7 +2627,8 @@
         `;
       }
 
-      return `
+      // 1. Table row HTML
+      rowsHtml += `
         <tr>
           <!-- DHO (Deadhead Origin) -->
           <td>
@@ -2035,7 +2708,58 @@
           </td>
         </tr>
       `;
-    }).join('');
+
+      // 2. Mobile Card HTML
+      cardsHtml += `
+        <div class="mobile-load-card">
+          <div class="card-top-row">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span class="card-date-badge">📅 ${formattedPuDate}</span>
+              ${dateBadge}
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="badge badge-booked" style="font-size:11px;">${escapeHtml(load.equipment_type || '53ft Dry Van')}</span>
+              <span class="load-match-pill ${pillClass}">⚡ ${score}%</span>
+            </div>
+          </div>
+
+          <div class="card-lane-row">
+            <div class="card-lane-endpoint">
+              <div class="card-lane-label">PICKUP</div>
+              <div class="card-lane-city">${escapeHtml(load.pickup_location)}</div>
+              <div class="card-lane-sub"><span class="dh-badge ${dhoClass}">📍 ${dhoMiles} mi DHO</span></div>
+            </div>
+            <div class="card-lane-connector">
+              <div class="card-lane-miles">${load.miles.toLocaleString()} mi</div>
+              <div class="card-lane-arrow">➔</div>
+            </div>
+            <div class="card-lane-endpoint" style="text-align:right;">
+              <div class="card-lane-label">DELIVERY</div>
+              <div class="card-lane-city" style="color:#2563eb;">${escapeHtml(load.delivery_location)}</div>
+              <div class="card-lane-sub"><span class="dh-badge ${dhdClass}">🏁 ${dhdMiles} mi DHD</span></div>
+            </div>
+          </div>
+
+          <div class="card-financials-row">
+            <div>
+              <div class="card-rate-val">$${Number(load.rate).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+              <div class="card-rpm-val">⚡ $${load.rpm}/mi · ${load.weight ? `${load.weight.toLocaleString()} lbs` : 'Full'}</div>
+            </div>
+            <div class="card-broker-info">
+              ${brokerHtml}
+            </div>
+          </div>
+
+          <div class="card-actions-row">
+            ${actionsHtml}
+          </div>
+        </div>
+      `;
+    });
+
+    if (tbody) tbody.innerHTML = rowsHtml;
+    if (cardsContainer) cardsContainer.innerHTML = cardsHtml;
+    updateViewToggleUI();
   }
 
   // ==========================================
@@ -2146,8 +2870,13 @@
       if (pendEl) pendEl.textContent = String(pendingCount);
       if (bidEl) bidEl.textContent = String(biddingCount);
 
+      const offersCardsContainer = document.getElementById('offers-cards-container');
+
       if (!offers.length) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">No active load offers yet. Dispatched offers will appear here.</td></tr>';
+        if (offersCardsContainer) {
+          offersCardsContainer.innerHTML = '<div style="text-align:center;padding:25px 15px;color:var(--text-muted);font-size:13px;background:#f8fafc;border-radius:10px;border:1px dashed #cbd5e1;">No active load offers yet. Dispatched offers will appear here.</div>';
+        }
         return;
       }
 
@@ -2194,8 +2923,60 @@
           </tr>
         `;
       }).join('');
+
+      if (offersCardsContainer) {
+        offersCardsContainer.innerHTML = offers.map(o => {
+          let statusBadge = '<span class="badge badge-pending">Pending</span>';
+          if (o.status === 'accepted') statusBadge = '<span class="badge badge-paid">Approved</span>';
+          if (o.status === 'declined') statusBadge = '<span class="badge badge-error">Declined</span>';
+          if (o.status === 'booked') statusBadge = '<span class="badge badge-booked">Booked</span>';
+          if (o.broker_negotiation_status === 'bidding') statusBadge = '<span class="badge badge-assigned">AI Bidding</span>';
+
+          return `
+            <div class="mobile-load-card">
+              <div class="card-top-row">
+                <div style="font-weight:800;color:#0f172a;font-size:13px;">Offer #${o.id} · <span style="color:#64748b;font-weight:600;">${new Date(o.created_at).toLocaleDateString()}</span></div>
+                ${statusBadge}
+              </div>
+              <div class="card-lane-row">
+                <div class="card-lane-endpoint">
+                  <div class="card-lane-label">PICKUP</div>
+                  <div class="card-lane-city">${escapeHtml(o.pickup_location)}</div>
+                </div>
+                <div class="card-lane-connector">
+                  <div class="card-lane-arrow">➔</div>
+                </div>
+                <div class="card-lane-endpoint" style="text-align:right;">
+                  <div class="card-lane-label">DELIVERY</div>
+                  <div class="card-lane-city" style="color:#2563eb;">${escapeHtml(o.delivery_location)}</div>
+                </div>
+              </div>
+              <div class="card-financials-row">
+                <div>
+                  <div class="card-rate-val">$${Number(o.rate).toLocaleString(undefined, {minimumFractionDigits:2})}</div>
+                  <div class="card-rpm-val">${o.rpm ? `$${o.rpm}/mi · ` : ''}${o.miles ? `${o.miles} mi` : ''} · ${escapeHtml(o.equipment_type || '')}</div>
+                </div>
+                <div class="card-broker-info">
+                  <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(o.broker_name || 'Broker')}</div>
+                  <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(o.broker_mc || '')}</div>
+                </div>
+              </div>
+              ${isCarrier && o.status === 'pending' ? `
+                <div class="card-actions-row">
+                  <button type="button" class="btn btn-primary" onclick="respondOffer(${o.id}, 'accepted')">✓ Accept Offer</button>
+                  <button type="button" class="btn btn-secondary" onclick="respondOffer(${o.id}, 'declined')">✕ Decline</button>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+      }
     } catch (e) {
       tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Could not refresh offers.</td></tr>';
+      const offersCardsContainer = document.getElementById('offers-cards-container');
+      if (offersCardsContainer) {
+        offersCardsContainer.innerHTML = '<div style="text-align:center;padding:25px;color:#b91c1c;">Could not refresh offers.</div>';
+      }
     }
   }
 
