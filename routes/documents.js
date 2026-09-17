@@ -47,7 +47,21 @@ const upload = multer({
 router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file was uploaded.' });
   
-  const { loadId, carrierId, category } = req.body;
+  let { loadId, carrierId, category } = req.body;
+  const isCarrier = ['carrier', 'carrier_admin'].includes(req.user.role);
+
+  // If carrier, enforce carrierId = req.user.id and verify load belongs to them
+  if (isCarrier) {
+    carrierId = req.user.id;
+    if (loadId) {
+      const checkLoad = await pool.query('SELECT id FROM loads WHERE id = $1 AND carrier_id = $2', [loadId, req.user.id]);
+      if (!checkLoad.rows.length) {
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        return res.status(403).json({ error: 'You cannot upload documents for a load not assigned to you.' });
+      }
+    }
+  }
+
   const validCategories = ['rate_confirmation', 'bol', 'pod', 'carrier_packet', 'insurance', 'w9', 'mc_certificate', 'invoice', 'other'];
   const cat = validCategories.includes(category) ? category : 'other';
 
@@ -77,6 +91,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
 // List documents (by loadId, carrierId, or all for admin)
 router.get('/', requireAuth, async (req, res) => {
   const { loadId, carrierId, category } = req.query;
+  const isCarrier = ['carrier', 'carrier_admin'].includes(req.user.role);
   try {
     let query = `
       SELECT d.*, u.name AS uploader_name
@@ -85,22 +100,21 @@ router.get('/', requireAuth, async (req, res) => {
       WHERE 1=1`;
     let params = [];
 
+    if (isCarrier) {
+      params.push(req.user.id);
+      query += ` AND (d.carrier_id = $${params.length} OR d.load_id IN (SELECT id FROM loads WHERE carrier_id = $${params.length}))`;
+    } else if (carrierId) {
+      params.push(parseInt(carrierId, 10));
+      query += ` AND d.carrier_id = $${params.length}`;
+    }
+
     if (loadId) {
       params.push(parseInt(loadId, 10));
       query += ` AND d.load_id = $${params.length}`;
     }
-    if (carrierId) {
-      params.push(parseInt(carrierId, 10));
-      query += ` AND d.carrier_id = $${params.length}`;
-    }
     if (category) {
       params.push(category);
       query += ` AND d.category = $${params.length}`;
-    }
-
-    if (req.user.role === 'carrier' && !loadId && !carrierId) {
-      params.push(req.user.id);
-      query += ` AND (d.carrier_id = $${params.length} OR d.load_id IN (SELECT id FROM loads WHERE carrier_id = $${params.length}))`;
     }
 
     query += ` ORDER BY d.uploaded_at DESC`;
@@ -200,8 +214,16 @@ router.post('/:id/replace', requireAuth, upload.single('file'), async (req, res)
 
   try {
     const docResult = await pool.query('SELECT * FROM documents WHERE id = $1', [id]);
-    if (!docResult.rows.length) return res.status(404).json({ error: 'Document not found.' });
+    if (!docResult.rows.length) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ error: 'Document not found.' });
+    }
     const doc = docResult.rows[0];
+
+    if (!await userCanAccessDocument(req, doc)) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(403).json({ error: 'Access denied.' });
+    }
 
     const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin';
 
@@ -313,6 +335,13 @@ router.delete('/:id', requireAuth, async (req, res) => {
     const result = await pool.query('SELECT * FROM documents WHERE id = $1', [req.params.id]);
     if (!result.rows.length) return res.status(404).json({ error: 'Document not found.' });
     const doc = result.rows[0];
+
+    const isAdmin = ['admin', 'super_admin'].includes(req.user.role);
+    const isOwner = doc.uploaded_by === req.user.id || (['carrier', 'carrier_admin'].includes(req.user.role) && doc.carrier_id === req.user.id);
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: 'Access denied. You cannot delete this document.' });
+    }
 
     if (fs.existsSync(doc.filepath)) {
       fs.unlinkSync(doc.filepath);

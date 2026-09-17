@@ -50,9 +50,10 @@ function optionalAuth(req, res, next) {
 
 // Helper used in auth.js route to set the session cookie
 function setAuthCookie(res, token) {
+  const isSecure = process.env.NODE_ENV === 'production' || (process.env.APP_URL && process.env.APP_URL.startsWith('https://'));
   res.cookie('sw_token', token, {
     httpOnly: true,
-    secure: IS_PRODUCTION,
+    secure: isSecure,
     sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });

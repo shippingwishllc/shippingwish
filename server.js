@@ -16,6 +16,21 @@ const carrierApiGate = [requireAuth, requireCarrierSubscription];
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Security: Hide Express technology signature
+app.disable('x-powered-by');
+
+// Security: Enforce standard HTTP Security Headers
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  next();
+});
+
 const ADMIN_EMAILS = [process.env.ADMIN_EMAIL_1, process.env.ADMIN_EMAIL_2].filter(Boolean);
 
 // Stripe signatures require the raw body. These must be registered BEFORE express.json().
@@ -42,38 +57,14 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ---------- Health & DB Diagnostic Endpoint ----------
-app.get('/api/health', async (req, res) => {
-  const pool = require('./db');
-  const envKeys = Object.keys(process.env).filter(k => 
-    k.toUpperCase().includes('POSTGRES') || 
-    k.toUpperCase().includes('DATABASE') || 
-    k.toUpperCase().includes('NEON') || 
-    k.toUpperCase().includes('STORAGE') || 
-    k.toUpperCase().includes('PG')
-  );
+// Security: Protect /uploads — require authentication so sensitive carrier files are not publicly scrapable
+app.use('/uploads', requireAuth, express.static(path.join(__dirname, 'uploads')));
 
-  let dbStatus = 'connecting';
-  let dbError = null;
-  let userCount = 0;
-
-  try {
-    const qRes = await pool.query('SELECT count(*) FROM users');
-    userCount = parseInt(qRes.rows[0].count, 10);
-    dbStatus = 'connected';
-  } catch (err) {
-    dbStatus = 'error';
-    dbError = err.message;
-  }
-
+// ---------- Health Endpoint (Sanitized - Zero Information Leakage) ----------
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    db_status: dbStatus,
-    db_error: dbError,
-    users_in_db: userCount,
-    env_keys_found: envKeys,
     timestamp: new Date().toISOString()
   });
 });

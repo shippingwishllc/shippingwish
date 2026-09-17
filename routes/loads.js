@@ -39,7 +39,13 @@ async function denyIfNoLoadAccess(req, res, load) {
 
 // Endpoint: Fetch last delivery location & date for next load / reload suggestion
 router.get('/last-delivery', requireAuth, async (req, res) => {
-  const { carrierId, driverId } = req.query;
+  let { carrierId, driverId } = req.query;
+
+  if (['carrier', 'carrier_admin'].includes(req.user.role)) {
+    carrierId = req.user.id;
+    driverId = null;
+  }
+
   if (!carrierId && !driverId) {
     return res.json({ lastDelivery: null });
   }

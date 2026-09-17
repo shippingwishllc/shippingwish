@@ -98,6 +98,28 @@ router.get('/load/:loadId', requireAuth, async (req, res) => {
   const { loadId } = req.params;
 
   try {
+    const loadRes = await pool.query('SELECT id, carrier_id, dispatcher_id, driver_id FROM loads WHERE id = $1', [loadId]);
+    if (!loadRes.rows.length) return res.status(404).json({ error: 'Load not found.' });
+    const load = loadRes.rows[0];
+    const role = req.user.role;
+
+    if (['carrier', 'carrier_admin'].includes(role) && load.carrier_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (role === 'dispatcher' && load.dispatcher_id && load.dispatcher_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (role === 'driver') {
+      const dr = await pool.query(
+        `SELECT id FROM drivers WHERE user_id = $1 OR (email IS NOT NULL AND lower(email) = lower($2))`,
+        [req.user.id, req.user.email || '']
+      );
+      const ids = dr.rows.map((r) => r.id);
+      if (!load.driver_id || !ids.includes(load.driver_id)) {
+        return res.status(403).json({ error: 'Access denied.' });
+      }
+    }
+
     const eventsRes = await pool.query(
       `SELECT t.*, u.name AS driver_name
        FROM tracking_events t
@@ -117,16 +139,30 @@ router.get('/load/:loadId', requireAuth, async (req, res) => {
 // GET /api/tracking/driver/latest — Get latest location of active drivers
 router.get('/driver/latest', requireAuth, async (req, res) => {
   try {
-    const latestRes = await pool.query(
-      `SELECT DISTINCT ON (t.driver_id)
+    let query = `
+      SELECT DISTINCT ON (t.driver_id)
          t.id, t.driver_id, t.load_id, t.latitude, t.longitude, t.location_name, t.status, t.ping_time,
          u.name AS driver_name, u.phone AS driver_phone,
          l.load_number
        FROM tracking_events t
        JOIN users u ON u.id = t.driver_id
        LEFT JOIN loads l ON l.id = t.load_id
-       ORDER BY t.driver_id, t.ping_time DESC`
-    );
+       WHERE 1=1`;
+    let params = [];
+
+    if (['carrier', 'carrier_admin'].includes(req.user.role)) {
+      params.push(req.user.id);
+      query += ` AND (l.carrier_id = $1 OR t.driver_id IN (SELECT user_id FROM drivers WHERE carrier_id = $1))`;
+    } else if (req.user.role === 'driver') {
+      params.push(req.user.id);
+      query += ` AND t.driver_id = $1`;
+    } else if (req.user.role === 'dispatcher') {
+      params.push(req.user.id);
+      query += ` AND (l.dispatcher_id = $1 OR l.dispatcher_id IS NULL)`;
+    }
+
+    query += ` ORDER BY t.driver_id, t.ping_time DESC`;
+    const latestRes = await pool.query(query, params);
 
     res.json({ drivers: latestRes.rows });
   } catch (err) {

@@ -533,7 +533,12 @@ router.patch('/offers/:id/respond', requireAuth, async (req, res) => {
     if (!offerRes.rows.length) return res.status(404).json({ error: 'Offer not found.' });
     const offer = offerRes.rows[0];
 
-    if (req.user.role === 'carrier' && offer.carrier_id !== req.user.id) {
+    if (['carrier', 'carrier_admin'].includes(req.user.role) && offer.carrier_id !== req.user.id) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'You do not have access to this offer.' });
+    }
+    if (req.user.role === 'dispatcher' && offer.dispatcher_id && offer.dispatcher_id !== req.user.id) {
+      await client.query('ROLLBACK');
       return res.status(403).json({ error: 'You do not have access to this offer.' });
     }
 
@@ -716,8 +721,21 @@ router.post('/broker-counter-reply', requireAuth, async (req, res) => {
   try {
     await client.query('BEGIN');
     const offerRes = await client.query('SELECT * FROM load_offers WHERE id = $1', [offer_id]);
-    if (!offerRes.rows.length) return res.status(404).json({ error: 'Offer not found.' });
+    if (!offerRes.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Offer not found.' });
+    }
     const offer = offerRes.rows[0];
+
+    const role = req.user.role;
+    if (['carrier', 'carrier_admin'].includes(role) && offer.carrier_id !== req.user.id) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (role === 'dispatcher' && offer.dispatcher_id && offer.dispatcher_id !== req.user.id) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'Access denied.' });
+    }
 
     const counterRateNum = parseFloat(counter_rate);
     const miles = parseFloat(offer.miles || 1);
@@ -800,6 +818,18 @@ router.post('/broker-counter-reply', requireAuth, async (req, res) => {
 // 8. Get AI Negotiation Timeline History
 router.get('/negotiations/:offerId', requireAuth, async (req, res) => {
   try {
+    const offerRes = await pool.query('SELECT carrier_id, dispatcher_id FROM load_offers WHERE id = $1', [req.params.offerId]);
+    if (!offerRes.rows.length) return res.status(404).json({ error: 'Offer not found.' });
+    const offer = offerRes.rows[0];
+    const role = req.user.role;
+
+    if (['carrier', 'carrier_admin'].includes(role) && offer.carrier_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (role === 'dispatcher' && offer.dispatcher_id && offer.dispatcher_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
     const result = await pool.query(
       `SELECT * FROM ai_load_negotiations WHERE offer_id = $1 ORDER BY created_at ASC`,
       [req.params.offerId]

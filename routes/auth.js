@@ -30,36 +30,7 @@ function rateLimit(maxAttempts = 10, windowMs = 60000) {
   };
 }
 
-router.get('/debug-db', async (req, res) => {
-  const envKeys = Object.keys(process.env).filter(k => 
-    k.toLowerCase().includes('postg') || 
-    k.toLowerCase().includes('data') || 
-    k.toLowerCase().includes('neon') || 
-    k.toLowerCase().includes('stor') || 
-    k.toLowerCase().includes('pg')
-  );
-  
-  try {
-    const testRes = await pool.query('SELECT current_database(), current_user, now()');
-    const userCount = await pool.query('SELECT count(*) FROM users');
-    const sampleUsers = await pool.query('SELECT id, email, role FROM users LIMIT 5');
-    res.json({
-      ok: true,
-      connected_db: testRes.rows[0],
-      users_in_db: parseInt(userCount.rows[0].count, 10),
-      users_sample: sampleUsers.rows,
-      detected_env_keys: envKeys
-    });
-  } catch (err) {
-    res.status(500).json({
-      ok: false,
-      error_message: err.message,
-      error_code: err.code,
-      error_detail: err.detail,
-      detected_env_keys: envKeys
-    });
-  }
-});
+
 
 function signToken(user) {
   return jwt.sign(
@@ -426,10 +397,17 @@ router.post('/users', requireAuth, requireRole('admin', 'super_admin'), async (r
   }
   
   if (role === 'super_admin') {
+    if (req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only Super Admin can create Super Admin accounts.' });
+    }
     const countRes = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'super_admin'");
     if (parseInt(countRes.rows[0].count, 10) >= 2) {
       return res.status(400).json({ error: 'Maximum 2 Super Admin accounts allowed.' });
     }
+  }
+
+  if (role === 'admin' && req.user.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Only Super Admin can create Admin accounts.' });
   }
 
   try {

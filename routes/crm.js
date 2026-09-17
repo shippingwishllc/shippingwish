@@ -7,6 +7,9 @@ const { sanitizeEmail, emailValidationError } = require('../utils/email-valid');
 const { ensureCrmLeadsTable } = require('../utils/ensure-growth-schema');
 const { ensureSmsMessagesTable } = require('../utils/sms-inbox');
 
+// Security: CRM is strictly an internal company operations tool — Carriers & Drivers are Forbidden
+router.use(requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep'));
+
 // ============================================================
 // FMCSA API — Search US Carriers by Name, MC#, or DOT#
 // Free government API: ai.fmcsa.dot.gov

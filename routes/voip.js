@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
+const staffOnly = requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep');
 const { SMS_TEMPLATES } = require('../utils/email-templates');
 const {
   normalizePhone,
@@ -140,7 +141,7 @@ async function sendTemplatedSms({ lead_id, to_number, template_key, company_name
 }
 
 // POST /api/voip/click-to-call - Trigger 1-Click OpenPhone / MightyCall Call
-router.post('/click-to-call', requireAuth, async (req, res) => {
+router.post('/click-to-call', requireAuth, staffOnly, async (req, res) => {
   try {
     const { lead_id, to_number, provider } = req.body;
 
@@ -184,7 +185,7 @@ router.post('/click-to-call', requireAuth, async (req, res) => {
 });
 
 // POST /api/voip/send-sms - Trigger 1-Click SMS (via Twilio when configured, else log only)
-router.post('/send-sms', requireAuth, async (req, res) => {
+router.post('/send-sms', requireAuth, staffOnly, async (req, res) => {
   try {
     const { lead_id, to_number, message, provider } = req.body;
 
@@ -299,7 +300,7 @@ router.get('/logs', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/send-template-sms', requireAuth, async (req, res) => {
+router.post('/send-template-sms', requireAuth, staffOnly, async (req, res) => {
   try {
     const { lead_id, to_number, template_key, company_name, load_summary } = req.body;
     if (!to_number) return res.status(400).json({ error: 'Phone number is required' });

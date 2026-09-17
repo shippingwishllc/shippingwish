@@ -244,9 +244,9 @@ async function handleSendOutreach(req, res) {
   }
 }
 
-router.post('/send-outreach', requireAuth, handleSendOutreach);
+router.post('/send-outreach', requireAuth, staffEmailOnly, handleSendOutreach);
 
-router.post('/onboarding-packet', requireAuth, (req, res) => {
+router.post('/onboarding-packet', requireAuth, staffEmailOnly, (req, res) => {
   req.body.template_key = req.body.template_key || 'onboarding';
   req.body.lead_id = req.body.lead_id || req.body.leadId;
   req.body.recipient_email = req.body.recipient_email || req.body.email;
@@ -255,7 +255,7 @@ router.post('/onboarding-packet', requireAuth, (req, res) => {
 });
 
 // Multipart endpoint for sending emails with file attachments (PDFs, images, agreements)
-router.post('/send-with-attachments', requireAuth, emailUpload.array('attachments', 5), async (req, res) => {
+router.post('/send-with-attachments', requireAuth, staffEmailOnly, emailUpload.array('attachments', 5), async (req, res) => {
   try {
     const toAddress = String(req.body.to || req.body.recipient_email || req.body.email || '').trim().toLowerCase();
     if (!toAddress || !isValidEmail(toAddress)) {
@@ -312,7 +312,7 @@ router.post('/send-with-attachments', requireAuth, emailUpload.array('attachment
 });
 
 // GET /api/email/logs
-router.get('/logs', requireAuth, async (req, res) => {
+router.get('/logs', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT e.*, u.name as sender_name
