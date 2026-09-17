@@ -92,172 +92,249 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
     const maxLimit = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
     const targetStates = Array.isArray(states) && states.length ? states : ['TX', 'FL', 'GA', 'IL', 'CA'];
 
+    // Pre-load all existing leads into in-memory Sets for ultra-fast deduplication
+    const existingRows = await pool.query(`
+      SELECT LOWER(TRIM(mc_number)) AS mc, LOWER(TRIM(dot_number)) AS dot, 
+             LOWER(TRIM(phone)) AS phone, LOWER(TRIM(email)) AS email 
+      FROM crm_leads
+    `);
+    const existingMcs = new Set(existingRows.rows.map(r => r.mc).filter(Boolean));
+    const existingDots = new Set(existingRows.rows.map(r => r.dot).filter(Boolean));
+    const existingPhones = new Set(existingRows.rows.map(r => r.phone).filter(Boolean));
+    const existingEmails = new Set(existingRows.rows.map(r => r.email).filter(Boolean));
+
     let scrapedCount = 0;
     let skippedDuplicates = 0;
     let excludedBanned = 0;
     let importedLeads = [];
-    let emailsSent = 0;
-    let smsSent = 0;
+    let pendingOutreach = [];
 
+    // Iterate through states
     for (const stateCode of targetStates) {
       if (importedLeads.length >= maxLimit) break;
 
-      let fmcsaRes;
-      try {
-        fmcsaRes = await searchFmcsa(stateCode, { mode: 'state' });
-      } catch (err) {
-        console.warn(`FMCSA search for state ${stateCode} failed:`, err.message);
-        continue;
-      }
-
-      const rawCarriers = fmcsaRes.carriers || [];
-
-      for (const c of rawCarriers) {
+      // Allow up to 2 offset attempts per state if needed to reach maxLimit
+      for (let page = 0; page < 2; page++) {
         if (importedLeads.length >= maxLimit) break;
-        scrapedCount++;
+        const pageOffset = page * 35 + Math.floor(Math.random() * 25);
 
-        // Filter 1: Authority Status MUST be Active Authorized
-        const statusStr = String(c.authority_status || c.status || '').toUpperCase();
-        if (statusStr.includes('INACTIVE') || statusStr.includes('REVOKED') || statusStr.includes('SUSPENDED')) {
-          excludedBanned++;
-          continue;
+        let fmcsaRes;
+        try {
+          fmcsaRes = await searchFmcsa(stateCode, { mode: 'state', offset: pageOffset });
+        } catch (err) {
+          console.warn(`FMCSA search for state ${stateCode} offset ${pageOffset} failed:`, err.message);
+          break;
         }
 
-        // Filter 2: Banned Equipment Exclusions (Buses, Agriculture, Hazmat Liquid Tankers, Household Movers)
-        const compName = String(c.company_name || '').toLowerCase();
-        const cargoDesc = String(c.equipment_type || c.cargo_carried || '').toLowerCase();
+        const rawCarriers = fmcsaRes.carriers || [];
+        if (!rawCarriers.length) break;
 
-        const isBannedCategory = 
-          compName.includes('bus') || compName.includes('limo') || compName.includes('charter') || compName.includes('tours') ||
-          compName.includes('farm') || compName.includes('ranch') || compName.includes('cattle') || compName.includes('livestock') ||
-          compName.includes('moving') || compName.includes('movers') || compName.includes('van lines') ||
-          cargoDesc.includes('passenger') || cargoDesc.includes('school bus') || cargoDesc.includes('farm supp') || cargoDesc.includes('household');
+        for (const c of rawCarriers) {
+          if (importedLeads.length >= maxLimit) break;
+          scrapedCount++;
 
-        if (isBannedCategory) {
-          excludedBanned++;
-          continue;
-        }
-
-        // Filter 3: Check Duplicate in CRM Database
-        const exists = await pool.query(
-          `SELECT id FROM crm_leads 
-           WHERE (mc_number <> '' AND mc_number = $1)
-              OR (phone <> '' AND phone = $2)
-              OR (email <> '' AND lower(email) = lower($3))
-              OR (dot_number <> '' AND dot_number = $4)
-           LIMIT 1`,
-          [c.mc_number || '', c.phone || '', c.email || '', c.dot_number || '']
-        );
-
-        if (exists.rows.length > 0) {
-          skippedDuplicates++;
-          continue;
-        }
-
-        // Filter 4: Check if Phone or Email is Opted Out / Unsubscribed (TCPA Guard)
-        if (c.phone) {
-          const { isPhoneOptedOut } = require('../utils/sms-inbox');
-          if (await isPhoneOptedOut(c.phone)) {
+          // Filter 1: USDOT Status MUST NOT be Inactive, Revoked or Suspended
+          const statusStr = String(c.authority_status || c.status || c.usdot_status || '').toUpperCase();
+          if (statusStr.includes('INACTIVE') || statusStr.includes('REVOKED') || statusStr.includes('SUSPENDED')) {
             excludedBanned++;
             continue;
           }
-        }
-        if (c.email) {
-          const { isUnsubscribed } = require('../utils/mailer');
-          if (await isUnsubscribed(c.email)) {
+
+          // Filter 2: Must have at least a phone number or email address
+          const cleanPhone = String(c.phone || '').trim();
+          const cleanEmail = String(c.email || '').trim();
+          if (!cleanPhone && !cleanEmail) {
             excludedBanned++;
             continue;
           }
+
+          // Filter 3: Banned Category Exclusions (Passenger buses, limos, cattle/livestock, moving vans)
+          const compName = String(c.company_name || '').toLowerCase();
+          const cargoDesc = String(c.equipment_type || c.cargo_carried || '').toLowerCase();
+
+          const isBannedCategory = 
+            compName.includes('bus') || compName.includes('limo') || compName.includes('charter') || compName.includes('tours') ||
+            compName.includes('farm') || compName.includes('ranch') || compName.includes('cattle') || compName.includes('livestock') ||
+            compName.includes('moving') || compName.includes('movers') || compName.includes('van lines') ||
+            cargoDesc.includes('passenger') || cargoDesc.includes('school bus') || cargoDesc.includes('farm supp') || cargoDesc.includes('household');
+
+          if (isBannedCategory) {
+            excludedBanned++;
+            continue;
+          }
+
+          // Filter 4: In-Memory Deduplication Check (ultra-fast, zero DB round-trips per carrier)
+          const lowerMc = String(c.mc_number || '').trim().toLowerCase();
+          const lowerDot = String(c.dot_number || '').trim().toLowerCase();
+          const lowerPhone = cleanPhone.toLowerCase();
+          const lowerEmail = cleanEmail.toLowerCase();
+
+          if ((lowerMc && existingMcs.has(lowerMc)) ||
+              (lowerDot && existingDots.has(lowerDot)) ||
+              (lowerPhone && existingPhones.has(lowerPhone)) ||
+              (lowerEmail && existingEmails.has(lowerEmail))) {
+            skippedDuplicates++;
+            continue;
+          }
+
+          // Filter 5: TCPA Opt-Out Guard & Email Unsubscribe Check
+          if (cleanPhone) {
+            try {
+              const { isPhoneOptedOut } = require('../utils/sms-inbox');
+              if (await isPhoneOptedOut(cleanPhone)) {
+                excludedBanned++;
+                continue;
+              }
+            } catch {}
+          }
+          if (cleanEmail) {
+            try {
+              const { isUnsubscribed } = require('../utils/mailer');
+              if (await isUnsubscribed(cleanEmail)) {
+                excludedBanned++;
+                continue;
+              }
+            } catch {}
+          }
+
+          // Map equipment type to standard target freight equipment
+          let matchedEquip = '53ft Dry Van';
+          if (cargoDesc.includes('reefer') || cargoDesc.includes('cold') || cargoDesc.includes('frozen') || compName.includes('reefer')) {
+            matchedEquip = 'Reefer';
+          } else if (cargoDesc.includes('flatbed') || cargoDesc.includes('step') || cargoDesc.includes('heavy') || compName.includes('flatbed')) {
+            matchedEquip = 'Flatbed';
+          } else if (cargoDesc.includes('box') || compName.includes('box') || compName.includes('expedit')) {
+            matchedEquip = 'Box Truck';
+          } else if (cargoDesc.includes('power') || compName.includes('power')) {
+            matchedEquip = 'Power Only';
+          }
+
+          // AI Personalized Outreach Copy
+          const stateName = c.state || stateCode;
+          const ownerName = c.owner_name || 'Fleet Manager';
+          const numUnits = c.num_trucks || 1;
+
+          const emailSubject = `Dedicated Freight & Load Booking for ${c.company_name} (${matchedEquip} Fleet)`;
+          const emailBodyText = `Hi ${ownerName},\n\n` +
+            `Shipping Wish LLC dispatch team noticed ${c.company_name} is actively operating ${numUnits} ${matchedEquip} unit(s) out of ${stateName}.\n\n` +
+            `We provide 24/7 dedicated dispatch, high-paying freight rate negotiation ($3.20/mile avg), and load board booking — you keep 100% of your gross pay with $0 upfront fees.\n\n` +
+            `Would you be open to reviewing our current load availability for ${stateName}?\n\n` +
+            `Best regards,\nShipping Wish Operations Team\nhttps://www.shippingwish.com`;
+
+          const emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
+            `<p>Shipping Wish LLC dispatch team noticed <strong>${c.company_name}</strong> is actively operating ${numUnits} ${matchedEquip} unit(s) out of <strong>${stateName}</strong>.</p>` +
+            `<p>We provide 24/7 dedicated dispatch, high-paying freight rate negotiation ($3.20/mile avg), and load board booking — you keep 100% of your gross pay with $0 upfront fees.</p>` +
+            `<p><a href="https://www.shippingwish.com/services" style="background:#f59e0b;color:#0f172a;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">View Dispatch Services &amp; Load Rates &rarr;</a></p>`;
+
+          const smsText = `Hi ${ownerName}, Shipping Wish LLC has premium ${matchedEquip} freight out of ${stateName}. We book loads 24/7 & you keep 100% pay. Check rates: https://www.shippingwish.com or reply YES.`;
+
+          // Save lead in PostgreSQL CRM table
+          const insertRes = await pool.query(
+            `INSERT INTO crm_leads (
+              company_name, owner_name, phone, email,
+              mc_number, dot_number, equipment_type, num_trucks,
+              target_lanes, sales_rep_id, status, notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'contacted', $11)
+            RETURNING *`,
+            [
+              c.company_name,
+              ownerName,
+              cleanPhone,
+              cleanEmail,
+              c.mc_number || '',
+              c.dot_number || '',
+              matchedEquip,
+              numUnits,
+              stateName,
+              req.user ? req.user.id : null,
+              `Imported via AI Auto-Prospecting Bot for ${stateName} (${matchedEquip})`
+            ]
+          );
+
+          const newLead = insertRes.rows[0];
+
+          // Immediately register in existing sets to avoid any duplicates within the same batch run
+          if (lowerMc) existingMcs.add(lowerMc);
+          if (lowerDot) existingDots.add(lowerDot);
+          if (lowerPhone) existingPhones.add(lowerPhone);
+          if (lowerEmail) existingEmails.add(lowerEmail);
+
+          const leadItem = {
+            id: newLead.id,
+            company_name: newLead.company_name,
+            mc_number: newLead.mc_number,
+            dot_number: newLead.dot_number,
+            state: stateName,
+            equipment_type: matchedEquip,
+            phone: newLead.phone,
+            email: newLead.email,
+            email_sent: false,
+            sms_sent: false,
+            raw_email: cleanEmail,
+            raw_phone: cleanPhone,
+            email_subject: emailSubject,
+            email_text: emailBodyText,
+            email_html: emailHtml,
+            sms_text: smsText
+          };
+
+          importedLeads.push(leadItem);
+          pendingOutreach.push(leadItem);
         }
+      }
+    }
 
-        // Map equipment type to standard target freight equipment
-        let matchedEquip = '53ft Dry Van';
-        if (cargoDesc.includes('reefer') || cargoDesc.includes('cold') || cargoDesc.includes('frozen') || compName.includes('reefer')) {
-          matchedEquip = 'Reefer';
-        } else if (cargoDesc.includes('flatbed') || cargoDesc.includes('step') || cargoDesc.includes('heavy') || compName.includes('flatbed')) {
-          matchedEquip = 'Flatbed';
-        } else if (cargoDesc.includes('box') || compName.includes('box') || compName.includes('expedit')) {
-          matchedEquip = 'Box Truck';
-        } else if (cargoDesc.includes('power') || compName.includes('power')) {
-          matchedEquip = 'Power Only';
-        }
+    // Dispatch all email and SMS messages concurrently in parallel with timeout safeguards
+    let emailsSent = 0;
+    let smsSent = 0;
 
-        // AI Personalized Copy Generation
-        const stateName = c.state || stateCode;
-        const ownerName = c.owner_name || 'Fleet Manager';
-        const numUnits = c.num_trucks || 1;
+    const outreachPromises = pendingOutreach.map(async (leadItem) => {
+      const ops = [];
 
-        const emailSubject = `Dedicated Freight & Load Booking for ${c.company_name} (${matchedEquip} Fleet)`;
-        const emailBodyText = `Hi ${ownerName},\n\n` +
-          `Shipping Wish LLC dispatch team noticed ${c.company_name} is actively operating ${numUnits} ${matchedEquip} unit(s) out of ${stateName}.\n\n` +
-          `We provide 24/7 dedicated dispatch, high-paying freight rate negotiation ($3.20/mile avg), and load board booking — you keep 100% of your gross pay with $0 upfront fees.\n\n` +
-          `Would you be open to reviewing our current load availability for ${stateName}?\n\n` +
-          `Best regards,\nShipping Wish Operations Team\nhttps://www.shippingwish.com`;
-
-        const smsText = `Hi ${ownerName}, Shipping Wish LLC has premium ${matchedEquip} freight out of ${stateName}. We book loads 24/7 & you keep 100% pay. Check rates: https://www.shippingwish.com or reply YES.`;
-
-        // Save lead in PostgreSQL CRM table
-        const insertRes = await pool.query(
-          `INSERT INTO crm_leads (
-            company_name, owner_name, phone, email,
-            mc_number, dot_number, equipment_type, num_trucks,
-            target_lanes, sales_rep_id, status, notes
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'contacted', $11)
-          RETURNING *`,
-          [
-            c.company_name,
-            ownerName,
-            c.phone || '',
-            c.email || '',
-            c.mc_number || '',
-            c.dot_number || '',
-            matchedEquip,
-            numUnits,
-            stateName,
-            req.user ? req.user.id : null,
-            `Imported via AI Auto-Prospecting Bot for ${stateName} (${matchedEquip})`
-          ]
-        );
-
-        const newLead = insertRes.rows[0];
-
-        // Send Email Outreach if enabled and email present
-        let emailSentStatus = false;
-        if (send_email && c.email) {
+      // Email dispatch
+      if (send_email && leadItem.raw_email) {
+        ops.push((async () => {
           try {
             const { sendBrandedEmail } = require('../utils/mailer');
-            await sendBrandedEmail({
-              to: c.email,
-              subject: emailSubject,
-              text: emailBodyText,
-              html: `<p>Hi <strong>${ownerName}</strong>,</p><p>Shipping Wish LLC dispatch team noticed <strong>${c.company_name}</strong> is actively operating ${numUnits} ${matchedEquip} unit(s) out of <strong>${stateName}</strong>.</p><p>We provide 24/7 dedicated dispatch, high-paying freight rate negotiation ($3.20/mile avg), and load board booking — you keep 100% of your gross pay with $0 upfront fees.</p><p><a href="https://www.shippingwish.com/services" style="background:#f59e0b;color:#0f172a;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">View Dispatch Services &amp; Load Rates →</a></p>`,
-              leadId: newLead.id,
-              sentBy: req.user ? req.user.id : null,
-              emailType: 'ai_prospecting'
-            });
-            emailSentStatus = true;
+            await Promise.race([
+              sendBrandedEmail({
+                to: leadItem.raw_email,
+                subject: leadItem.email_subject,
+                text: leadItem.email_text,
+                html: leadItem.email_html,
+                leadId: leadItem.id,
+                sentBy: req.user ? req.user.id : null,
+                emailType: 'ai_prospecting'
+              }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 2500))
+            ]);
+            leadItem.email_sent = true;
             emailsSent++;
           } catch (eErr) {
             console.warn('AI Campaign email error:', eErr.message);
           }
-        }
+        })());
+      }
 
-        // Send SMS Outreach if enabled and phone present
-        let smsSentStatus = false;
-        if (send_sms && c.phone) {
+      // SMS dispatch
+      if (send_sms && leadItem.raw_phone) {
+        ops.push((async () => {
           try {
             const { sendTwilioSms } = require('./voip');
             const { logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
-            const smsRes = await sendTwilioSms(c.phone, smsText);
-            if (smsRes.status === 'sent' || smsRes.status === 'logged') {
-              smsSentStatus = true;
+            const smsRes = await Promise.race([
+              sendTwilioSms(leadItem.raw_phone, leadItem.sms_text),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 2500))
+            ]);
+            if (smsRes && (smsRes.status === 'sent' || smsRes.status === 'logged')) {
+              leadItem.sms_sent = true;
               smsSent++;
               await logSmsMessage({
                 direction: 'outbound',
                 from_number: OUR_NUMBER,
-                to_number: c.phone,
-                body: smsRes.body || smsText,
-                lead_id: newLead.id,
+                to_number: leadItem.raw_phone,
+                body: smsRes.body || leadItem.sms_text,
+                lead_id: leadItem.id,
                 sent_by: req.user ? req.user.id : null,
                 twilio_sid: smsRes.sid,
                 disposition: smsRes.status,
@@ -267,32 +344,26 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
           } catch (sErr) {
             console.warn('AI Campaign SMS error:', sErr.message);
           }
-        }
-
-        importedLeads.push({
-          id: newLead.id,
-          company_name: newLead.company_name,
-          mc_number: newLead.mc_number,
-          dot_number: newLead.dot_number,
-          state: stateName,
-          equipment_type: matchedEquip,
-          phone: newLead.phone,
-          email: newLead.email,
-          email_sent: emailSentStatus,
-          sms_sent: smsSentStatus
-        });
+        })());
       }
-    }
+
+      await Promise.allSettled(ops);
+    });
+
+    await Promise.allSettled(outreachPromises);
+
+    // Clean up internal properties before responding
+    const clientLeads = importedLeads.map(({ raw_email, raw_phone, email_subject, email_text, email_html, sms_text, ...rest }) => rest);
 
     res.json({
       ok: true,
       processed: scrapedCount,
-      imported: importedLeads.length,
+      imported: clientLeads.length,
       emails_sent: emailsSent,
       sms_sent: smsSent,
       skipped_duplicates: skippedDuplicates,
       filtered_out: excludedBanned,
-      leads: importedLeads
+      leads: clientLeads
     });
   } catch (err) {
     console.error('AI Prospecting Campaign error:', err);

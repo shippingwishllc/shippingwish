@@ -821,7 +821,14 @@
     const list = document.getElementById('ai-bot-leads-list');
 
     const stateSelect = document.getElementById('ai-bot-states');
-    const selectedStates = Array.from(stateSelect.selectedOptions).map(o => o.value);
+    let selectedStates = Array.from(stateSelect.selectedOptions).map(o => o.value);
+    if (!selectedStates.length) {
+      selectedStates = ['TX', 'FL', 'GA', 'IL', 'CA'];
+      Array.from(stateSelect.options).forEach(opt => {
+        if (selectedStates.includes(opt.value)) opt.selected = true;
+      });
+    }
+
     const limit = document.getElementById('ai-bot-limit').value;
     const sendEmail = document.getElementById('ai-bot-email').checked;
     const sendSms = document.getElementById('ai-bot-sms').checked;
@@ -831,14 +838,18 @@
 
     resultsBox.style.display = 'block';
     header.textContent = '⏳ AI Autonomous Campaign In Progress...';
-    summary.textContent = `Scanning FMCSA census for ${selectedStates.join(', ')}... Filtering active freight equipment...`;
+    summary.textContent = `Scanning FMCSA registry for ${selectedStates.join(', ')}... Filtering active freight equipment & verifying contact details...`;
     list.innerHTML = '';
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000);
 
     try {
       const res = await fetch('/api/crm/ai-prospect-campaign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        signal: controller.signal,
         body: JSON.stringify({
           states: selectedStates,
           limit: parseInt(limit, 10),
@@ -847,9 +858,11 @@
         })
       });
 
-      const data = await res.json();
+      clearTimeout(timeoutId);
       btn.disabled = false;
       btn.textContent = '🚀 Run AI Prospecting Campaign →';
+
+      const data = await res.json();
 
       if (!res.ok) {
         header.textContent = '❌ AI Campaign Failed';
@@ -857,22 +870,38 @@
         return;
       }
 
-      header.textContent = `✅ AI Campaign Complete! (${data.imported} New Carriers Contacted)`;
-      summary.innerHTML = `
-        <strong>Scraped/Processed:</strong> ${data.processed} | 
-        <strong>Imported to CRM:</strong> ${data.imported} | 
-        <strong>Emails Sent:</strong> ${data.emails_sent} | 
-        <strong>SMS Sent:</strong> ${data.sms_sent} | 
-        <strong>Skipped Duplicates:</strong> ${data.skipped_duplicates} | 
-        <strong>Filtered Banned/Inactive:</strong> ${data.filtered_out}
-      `;
+      if (data.imported === 0) {
+        header.textContent = `ℹ️ No New Carriers in this Batch (${data.skipped_duplicates} already in CRM)`;
+        summary.innerHTML = `
+          <strong>Scanned:</strong> ${data.processed} | 
+          <strong>Already in CRM:</strong> ${data.skipped_duplicates} | 
+          <strong>Filtered Banned/Inactive:</strong> ${data.filtered_out}<br>
+          <span style="color:var(--text-muted);">Tip: Click "Run AI Prospecting Campaign" again to pull the next batch of fresh carriers or select additional states!</span>
+        `;
+      } else {
+        header.textContent = `✅ AI Campaign Complete! (${data.imported} New Carriers Contacted)`;
+        summary.innerHTML = `
+          <strong>Scraped/Processed:</strong> ${data.processed} | 
+          <strong>Imported to CRM:</strong> ${data.imported} | 
+          <strong>Emails Sent:</strong> ${data.emails_sent} | 
+          <strong>SMS Sent:</strong> ${data.sms_sent} | 
+          <strong>Skipped Duplicates:</strong> ${data.skipped_duplicates} | 
+          <strong>Filtered Banned/Inactive:</strong> ${data.filtered_out}
+        `;
+      }
 
       const leads = data.leads || [];
       if (leads.length) {
         list.innerHTML = leads.map(l => `
-          <div style="background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="background:rgba(255,255,255,0.05);padding:10px 14px;border-radius:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #f59e0b;">
             <div>
-              <strong style="color:#fff;">${escapeHtml(l.company_name)}</strong> (${escapeHtml(l.mc_number)}) &bull; ${escapeHtml(l.equipment_type)} &bull; 📍 ${escapeHtml(l.state)}
+              <strong style="color:#fff;">${escapeHtml(l.company_name)}</strong> 
+              ${l.mc_number ? `<span style="color:var(--text-muted);margin-left:4px;">(${escapeHtml(l.mc_number)})</span>` : ''} 
+              ${l.dot_number ? `<span style="color:var(--text-muted);margin-left:4px;">DOT# ${escapeHtml(l.dot_number)}</span>` : ''} 
+              &bull; <span style="color:#f59e0b;font-weight:600;">${escapeHtml(l.equipment_type)}</span> 
+              &bull; 📍 ${escapeHtml(l.state)}
+              ${l.phone ? `<span style="margin-left:8px;color:var(--text-muted);">📞 ${escapeHtml(l.phone)}</span>` : ''}
+              ${l.email ? `<span style="margin-left:8px;color:var(--text-muted);">✉️ ${escapeHtml(l.email)}</span>` : ''}
             </div>
             <div style="display:flex;gap:6px;">
               ${l.email_sent ? '<span class="badge badge-paid">✉️ Email Sent</span>' : ''}
@@ -882,12 +911,18 @@
         `).join('');
       }
 
-      loadLeads();
+      if (typeof loadLeads === 'function') {
+        loadLeads();
+      }
     } catch (err) {
+      clearTimeout(timeoutId);
       btn.disabled = false;
       btn.textContent = '🚀 Run AI Prospecting Campaign →';
-      header.textContent = '❌ Connection Error';
-      summary.textContent = err.message;
+      header.textContent = '❌ Campaign Interrupted';
+      summary.textContent = err.name === 'AbortError' 
+        ? 'Request timed out after 55s. Some leads may have already been saved to your CRM table below.'
+        : err.message;
+      if (typeof loadLeads === 'function') loadLeads();
     }
   }
 
