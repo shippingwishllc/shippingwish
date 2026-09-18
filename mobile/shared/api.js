@@ -390,6 +390,26 @@ class MobileApiClient {
       body: holderData
     });
   }
+
+  // --- ELD Electronic Logbook & FMCSA HOS Compliance ---
+  async switchDutyStatus(dutyStatus, meta = {}) {
+    return this.request('/api/eld/status-change', {
+      method: 'POST',
+      body: { duty_status: dutyStatus, ...meta }
+    });
+  }
+
+  async getDriverHosClocks(driverId) {
+    return this.request(`/api/eld/clocks/${driverId}`, { method: 'GET' });
+  }
+
+  async getFleetEldStatus() {
+    return this.request('/api/eld/fleet-status', { method: 'GET' });
+  }
+
+  getDailyLogPdfUrl(driverId) {
+    return `${this.getBaseUrl()}/api/eld/logs/daily/${driverId}/pdf`;
+  }
 }
 
 export const api = new MobileApiClient();

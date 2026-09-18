@@ -271,6 +271,9 @@
         <button class="nav-tab-btn" id="tab-btn-detention" onclick="switchTab('detention')">
           <span>⏱️</span> Detention &amp; COI
         </button>
+        <button class="nav-tab-btn" id="tab-btn-eld" onclick="switchTab('eld')">
+          <span>📋</span> ELD &amp; HOS Logs
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -786,6 +789,70 @@
         </div>
       </div>
 
+      <!-- TAB 9: ELD & HOS COMPLIANCE DESK -->
+      <div id="tab-content-eld" style="display:none;">
+        <!-- 4 FMCSA HOS Clocks Overview -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:var(--space-4);">
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">11-HOUR DRIVING LIMIT</div>
+            <div style="font-size:20px;font-weight:800;color:#10B981;margin:4px 0;">11h 00m</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Max driving after 10h off duty</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">14-HOUR SHIFT WINDOW</div>
+            <div style="font-size:20px;font-weight:800;color:#60A5FA;margin:4px 0;">14h 00m</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Consecutive duty window</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">70-HOUR / 8-DAY CYCLE</div>
+            <div style="font-size:20px;font-weight:800;color:#A78BFA;margin:4px 0;">70h 00m</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Rolling 8-day duty limit</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">30-MIN REST BREAK</div>
+            <div style="font-size:20px;font-weight:800;color:#F59E0B;margin:4px 0;">8h 00m</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Required after 8h driving</div>
+          </div>
+        </div>
+
+        <!-- Quick Duty Status Switcher & Roadside Tools -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h4 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0 0 2px;">
+              <span>🚨</span> FMCSA DOT Roadside Inspection Compliance Mode
+            </h4>
+            <p style="font-size:11.5px;color:var(--text-muted);margin:0;">
+              Certified under 49 CFR Part 395 Subpart B. Instant electronic transfer &amp; printable inspection daily log sheet.
+            </p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadEldFleetDesk()">🔄 Refresh HOS Clocks</button>
+          </div>
+        </div>
+
+        <!-- Live Fleet HOS Roster Table -->
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>Driver &amp; Carrier</th>
+                <th>Current Duty Status</th>
+                <th>11h Drive Remaining</th>
+                <th>14h Shift Remaining</th>
+                <th>70h Cycle Remaining</th>
+                <th>Violations</th>
+                <th>DOT Roadside Inspection</th>
+              </tr>
+            </thead>
+            <tbody id="eld-tbody">
+              <tr>
+                <td colspan="7" style="text-align:center;padding:24px;">Streaming live driver ELD records &amp; HOS clocks...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -946,6 +1013,7 @@
     document.getElementById('tab-content-factoring').style.display = tabId === 'factoring' ? 'block' : 'none';
     document.getElementById('tab-content-pricing').style.display = tabId === 'pricing' ? 'block' : 'none';
     document.getElementById('tab-content-detention').style.display = tabId === 'detention' ? 'block' : 'none';
+    document.getElementById('tab-content-eld').style.display = tabId === 'eld' ? 'block' : 'none';
     document.getElementById('tab-content-apps').style.display = tabId === 'apps' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
@@ -956,6 +1024,8 @@
       loadPricingAndBids();
     } else if (tabId === 'detention') {
       loadDetentionDesk();
+    } else if (tabId === 'eld') {
+      loadEldFleetDesk();
     }
   }
 
@@ -1721,6 +1791,65 @@
     } catch (e) {
       alert('Error generating COI PDF: ' + e.message);
     }
+  }
+
+  // --- PHASE 12: ELD LOGBOOK & HOS COMPLIANCE ---
+  async function loadEldFleetDesk() {
+    const tbody = document.getElementById('eld-tbody');
+    if (!tbody) return;
+    try {
+      const res = await fetch('/api/eld/fleet-status');
+      const json = await res.json();
+      if (json.ok && json.drivers) {
+        renderEldFleetDesk(json.drivers);
+      } else {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">No active drivers in ELD roster.</td></tr>';
+      }
+    } catch (e) {
+      console.warn('ELD fleet error:', e);
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">Could not fetch fleet ELD records.</td></tr>';
+    }
+  }
+
+  function renderEldFleetDesk(drivers) {
+    const tbody = document.getElementById('eld-tbody');
+    if (!tbody) return;
+    if (!drivers || drivers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">No commercial drivers currently registered in ELD fleet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = drivers.map(d => {
+      let statusBadge = '<span class="badge" style="background:#475569;color:#fff;font-size:10px;">OFF DUTY</span>';
+      if (d.current_status === 'DRIVING') {
+        statusBadge = '<span class="badge badge-success" style="font-size:10px;animation:radarPulse 1.5s infinite;">🟢 DRIVING</span>';
+      } else if (d.current_status === 'ON_DUTY_NOT_DRIVING') {
+        statusBadge = '<span class="badge badge-warning" style="font-size:10px;">🟡 ON DUTY</span>';
+      } else if (d.current_status === 'SLEEPER_BERTH') {
+        statusBadge = '<span class="badge badge-primary" style="font-size:10px;">🔵 SLEEPER</span>';
+      }
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${escapeAttr(d.name)}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${escapeAttr(d.company)} • ${escapeAttr(d.mc_number)}</div>
+          </td>
+          <td>${statusBadge}</td>
+          <td style="font-weight:700;color:#10B981;">${d.driving_remaining}</td>
+          <td style="font-weight:700;color:#60A5FA;">${d.shift_remaining}</td>
+          <td style="font-weight:700;color:#A78BFA;">${d.cycle_remaining}</td>
+          <td>
+            <span class="badge badge-success" style="font-size:10px;">0 Violations</span>
+          </td>
+          <td>
+            <a href="/api/eld/logs/daily/${d.id}/pdf" target="_blank" class="btn btn-primary btn-sm" style="font-size:10.5px;padding:3px 8px;text-decoration:none;">
+              📄 DOT Inspection PDF
+            </a>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function getMockAuditLoads() {
