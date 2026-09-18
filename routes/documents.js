@@ -18,6 +18,19 @@ async function userCanAccessDocument(req, doc) {
     }
     return false;
   }
+  if (role === 'driver') {
+    if (doc.uploaded_by === req.user.id) return true;
+    if (doc.load_id) {
+      const dr = await pool.query(
+        `SELECT id FROM drivers WHERE user_id = $1 OR (email IS NOT NULL AND lower(email) = lower($2))`,
+        [req.user.id, req.user.email || '']
+      );
+      const ids = dr.rows.map((r) => r.id);
+      const lr = await pool.query('SELECT driver_id FROM loads WHERE id = $1', [doc.load_id]);
+      if (lr.rows.length && ids.includes(lr.rows[0].driver_id)) return true;
+    }
+    return false;
+  }
   return false;
 }
 
@@ -49,6 +62,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
   
   let { loadId, carrierId, category } = req.body;
   const isCarrier = ['carrier', 'carrier_admin'].includes(req.user.role);
+  const isDriver = req.user.role === 'driver';
 
   // If carrier, enforce carrierId = req.user.id and verify load belongs to them
   if (isCarrier) {
@@ -60,6 +74,21 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
         return res.status(403).json({ error: 'You cannot upload documents for a load not assigned to you.' });
       }
     }
+  }
+
+  // If driver, verify load is assigned to them
+  if (isDriver && loadId) {
+    const dr = await pool.query(
+      `SELECT id FROM drivers WHERE user_id = $1 OR (email IS NOT NULL AND lower(email) = lower($2))`,
+      [req.user.id, req.user.email || '']
+    );
+    const ids = dr.rows.map((r) => r.id);
+    const checkLoad = await pool.query('SELECT id, driver_id, carrier_id FROM loads WHERE id = $1', [loadId]);
+    if (!checkLoad.rows.length || !ids.includes(checkLoad.rows[0].driver_id)) {
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(403).json({ error: 'You cannot upload documents for a load not assigned to you.' });
+    }
+    if (!carrierId) carrierId = checkLoad.rows[0].carrier_id;
   }
 
   const validCategories = ['rate_confirmation', 'bol', 'pod', 'carrier_packet', 'insurance', 'w9', 'mc_certificate', 'invoice', 'other'];

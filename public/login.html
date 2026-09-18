@@ -357,8 +357,18 @@
   };
 
   const loginParams = new URLSearchParams(location.search);
+  const isLoggedOut = loginParams.get('logged_out') === '1' || loginParams.get('signout') === '1';
+
   if (loginParams.get('canceled') === '1') {
     alertBox.textContent = 'Your subscription has been successfully canceled. Your card will not be charged, and your portal access has ended.';
+    alertBox.className = 'form-alert success';
+    alertBox.style.display = 'block';
+  } else if (isLoggedOut) {
+    try { sessionStorage.clear(); } catch (_) {}
+    try { localStorage.clear(); } catch (_) {}
+    document.cookie = 'sw_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    fetch('/api/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    alertBox.textContent = 'You have been signed out successfully.';
     alertBox.className = 'form-alert success';
     alertBox.style.display = 'block';
   }
@@ -405,16 +415,18 @@
     }
   });
 
-  // If already logged in, redirect
-  fetch('/api/me', { credentials: 'include' })
-    .then(r => r.ok ? r.json() : null)
-    .then(data => {
-      if (data && data.user) {
-        const role = data.user.role;
-        window.location.href = ROLE_REDIRECT[role] || '/carrier-overview';
-      }
-    })
-    .catch(() => {});
+  // If already logged in, redirect (skip if user just signed out)
+  if (!isLoggedOut) {
+    fetch('/api/me', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && data.user) {
+          const role = data.user.role;
+          window.location.href = ROLE_REDIRECT[role] || '/carrier-overview';
+        }
+      })
+      .catch(() => {});
+  }
 </script>
 
 </body>

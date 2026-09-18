@@ -442,8 +442,16 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-function logout() {
-  fetch('/api/logout', { method: 'POST' }).then(() => {
-    window.location.href = '/login';
-  });
+async function logout() {
+  try {
+    try { sessionStorage.clear(); } catch (_) {}
+    try { localStorage.clear(); } catch (_) {}
+    document.cookie = 'sw_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'sw_token=; Path=/; Domain=.shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'sw_token=; Path=/; Domain=shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    window.location.replace('/login?logged_out=1');
+  } catch (e) {
+    window.location.replace('/login?logged_out=1');
+  }
 }

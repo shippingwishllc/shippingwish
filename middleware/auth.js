@@ -2,8 +2,16 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
+function extractToken(req) {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  return req.cookies ? req.cookies.sw_token : null;
+}
+
 function requireAuth(req, res, next) {
-  const token = req.cookies.sw_token;
+  const token = extractToken(req);
   if (!token) return res.status(401).json({ error: 'Not signed in.' });
   try {
     req.user = jwt.verify(token, JWT_SECRET);
@@ -35,7 +43,7 @@ function requireSuperAdmin(req, res, next) {
 }
 
 function optionalAuth(req, res, next) {
-  const token = req.cookies ? req.cookies.sw_token : null;
+  const token = extractToken(req);
   if (!token) {
     req.user = null;
     return next();
@@ -55,9 +63,33 @@ function setAuthCookie(res, token) {
     httpOnly: true,
     secure: isSecure,
     sameSite: 'lax',
+    path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
 }
 
-module.exports = { requireAuth, requireRole, requireSuperAdmin, optionalAuth, JWT_SECRET, setAuthCookie };
+function clearAuthCookie(res, req) {
+  const isSecure = process.env.NODE_ENV === 'production' || (process.env.APP_URL && process.env.APP_URL.startsWith('https://')) || (req && (req.secure || req.headers['x-forwarded-proto'] === 'https'));
+  
+  const clearOpts = {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: 'lax',
+    path: '/'
+  };
+
+  res.clearCookie('sw_token', clearOpts);
+  res.clearCookie('sw_token', { path: '/' });
+  res.clearCookie('sw_token', { path: '/', domain: '.shippingwish.com' });
+  res.clearCookie('sw_token', { path: '/', domain: 'shippingwish.com' });
+
+  // Force Set-Cookie headers with 1970 expiration and Max-Age=0 across all domain variants
+  res.header('Set-Cookie', [
+    `sw_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`,
+    `sw_token=; Path=/; Domain=.shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`,
+    `sw_token=; Path=/; Domain=shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`
+  ]);
+}
+
+module.exports = { requireAuth, requireRole, requireSuperAdmin, optionalAuth, JWT_SECRET, setAuthCookie, clearAuthCookie };
 

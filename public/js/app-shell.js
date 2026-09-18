@@ -336,12 +336,20 @@
     if (!btn || btn.dataset.shellBound === '1') return;
     btn.dataset.shellBound = '1';
     btn.disabled = false;
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      btn.textContent = 'Signing out...';
       clearRoleCache();
-      if (typeof window.logout === 'function') return window.logout();
-      fetch('/api/logout', { method: 'POST', credentials: 'include' }).finally(() => {
-        window.location.href = '/login';
-      });
+      try { sessionStorage.clear(); } catch (_) {}
+      try { localStorage.clear(); } catch (_) {}
+      document.cookie = 'sw_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'sw_token=; Path=/; Domain=.shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'sw_token=; Path=/; Domain=shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      try {
+        await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      } catch (_) {}
+      window.location.replace('/login?logged_out=1');
     });
   }
 

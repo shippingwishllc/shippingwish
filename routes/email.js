@@ -185,7 +185,7 @@ async function handleSendOutreach(req, res) {
       }
     }
 
-    const fromSender = from_address || 'Shipping Wish Operations <operations@shippingwish.com>';
+    const fromSender = from_address || process.env.MAIL_FROM || 'Shipping Wish Operations <operations@shippingwish.com>';
 
     const sendRes = await sendBrandedEmail({
       to: toAddress,
@@ -231,10 +231,14 @@ async function handleSendOutreach(req, res) {
       }
     }
 
+    const isDevLog = sendRes.status === 'logged_no_resend_key';
     res.json({
       ok: true,
-      message: `Outreach email sent to ${toAddress}${finalAttachments.length ? ' with ' + finalAttachments.length + ' attachment(s)' : ''}`,
+      message: isDevLog
+        ? `⚠️ RESEND_API_KEY is not configured in .env. Email was logged in database, but was NOT actually sent to ${toAddress}.`
+        : `Outreach email sent to ${toAddress}${finalAttachments.length ? ' with ' + finalAttachments.length + ' attachment(s)' : ''}`,
       email_id: sendRes.id,
+      status: sendRes.status,
       sms: smsResult,
       attachments_count: finalAttachments.length
     });
@@ -265,7 +269,7 @@ router.post('/send-with-attachments', requireAuth, staffEmailOnly, emailUpload.a
     const subject = String(req.body.subject || '').trim() || 'Shipping Wish LLC — Dispatch Operations';
     const message = String(req.body.message || req.body.body || '').trim();
     const leadId = req.body.lead_id ? parseInt(req.body.lead_id, 10) : null;
-    const fromSender = req.body.from || 'Shipping Wish Operations <operations@shippingwish.com>';
+    const fromSender = req.body.from || process.env.MAIL_FROM || 'Shipping Wish Operations <operations@shippingwish.com>';
 
     const attachments = (req.files || []).map(f => ({
       filename: f.originalname,

@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
-const { requireAuth, requireRole, requireSuperAdmin, JWT_SECRET, setAuthCookie } = require('../middleware/auth');
+const { requireAuth, requireRole, requireSuperAdmin, JWT_SECRET, setAuthCookie, clearAuthCookie } = require('../middleware/auth');
 const { sendBrandedEmail } = require('../utils/mailer');
 const { COMPANY, APP_URL, escapeHtml, buildTemplate } = require('../utils/email-templates');
 const { getCarrierAccess, TRIAL_DAYS, isCarrierRole } = require('../middleware/subscription');
@@ -228,7 +228,8 @@ router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
     const user = result.rows[0];
     await pool.query('DELETE FROM signup_pending WHERE id = $1', [pending.id]);
 
-    setAuthCookie(res, signToken(user));
+    const token = signToken(user);
+    setAuthCookie(res, token);
     await createPortalSignupLead(user, {
       company: pending.company_name,
       phone: pending.phone,
@@ -246,7 +247,7 @@ router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
     }))).catch((err) => console.error('Signup notify:', err.message));
 
     const access = await getCarrierAccess(user.id, user.email);
-    res.json({ ok: true, user, access, trialDays: TRIAL_DAYS });
+    res.json({ ok: true, token, user, access, trialDays: TRIAL_DAYS });
   } catch (err) {
     console.error('verify-otp error:', err);
     res.status(500).json({ error: 'Could not verify code right now.' });
@@ -313,7 +314,8 @@ router.post('/login', rateLimit(10, 60000), async (req, res) => {
     // Update IP for existing users if missing or on login
     await pool.query('UPDATE users SET signup_ip = $1 WHERE id = $2', [clientIp, user.id]);
 
-    setAuthCookie(res, signToken(user));
+    const token = signToken(user);
+    setAuthCookie(res, token);
     const userOut = {
       id: user.id,
       name: user.name,
@@ -324,7 +326,7 @@ router.post('/login', rateLimit(10, 60000), async (req, res) => {
       mc_number: user.mc_number,
       signup_ip: clientIp
     };
-    const payload = { ok: true, user: userOut };
+    const payload = { ok: true, token, user: userOut };
     if (isCarrierRole(user.role)) {
       payload.access = await getCarrierAccess(user.id, user.email);
     }
@@ -341,18 +343,18 @@ router.get('/me', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE users SET signup_ip = $1 WHERE id = $2 AND signup_ip IS NULL', [clientIp, req.user.id]);
     const result = await pool.query(
-      `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, address, is_suspended, signup_ip, created_at, organization_id, trial_ends_at, email_verified_at, weekly_plan
+      `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, address, is_suspended, signup_ip, created_at, trial_ends_at, email_verified_at, weekly_plan
        FROM users WHERE id = $1`,
       [req.user.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'User not found.' });
     const user = result.rows[0];
     if (user.deleted_at) {
-      res.clearCookie('sw_token');
+      clearAuthCookie(res, req);
       return res.status(403).json({ error: 'Account removed. Contact admin if this was a mistake.' });
     }
     if (isCarrierRole(user.role) && user.weekly_plan === 'canceled') {
-      res.clearCookie('sw_token');
+      clearAuthCookie(res, req);
       return res.status(403).json({ error: 'Subscription canceled. Portal access has ended.', reason: 'canceled' });
     }
     const payload = { ok: true, user };
@@ -366,9 +368,9 @@ router.get('/me', requireAuth, async (req, res) => {
 });
 
 // Logout
-router.post('/logout', (req, res) => {
-  res.clearCookie('sw_token');
-  res.json({ ok: true });
+router.all(['/logout', '/signout'], (req, res) => {
+  clearAuthCookie(res, req);
+  res.json({ ok: true, message: 'Logged out successfully.' });
 });
 
 // ADMIN & SUPER ADMIN: List all users (with role filter)

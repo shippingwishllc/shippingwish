@@ -127,12 +127,15 @@ async function sendTemplatedSms({ lead_id, to_number, template_key, company_name
     );
   }
 
+  const twilioConfigured = Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
   return {
     message: smsStatus === 'sent'
       ? `SMS sent via Twilio to ${to_number}`
       : smsStatus === 'opted_out'
         ? 'This number replied STOP. Do not text them.'
-        : `SMS logged (${smsStatus})`,
+        : !twilioConfigured
+          ? `⚠️ Twilio is not configured (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN missing in .env). SMS was saved to database logs, but was NOT sent to carrier's phone.`
+          : `SMS logged (${smsStatus})`,
     status: smsStatus,
     twilio_sid: twilioSid,
     sms_log: result.rows[0],
