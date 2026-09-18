@@ -70,7 +70,10 @@
             <div id="user-role-display" style="font-size:11px;color:rgba(255,255,255,0.45);">Portal</div>
           </div>
         </div>
-        <button type="button" class="btn btn-light btn-block btn-sm" id="shell-logout-btn" disabled>Sign out</button>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button type="button" class="btn btn-secondary btn-block btn-sm" id="shell-change-pwd-btn" style="font-size:11px;padding:4px 6px;flex:1;" disabled>🔑 Password</button>
+          <button type="button" class="btn btn-light btn-block btn-sm" id="shell-logout-btn" style="font-size:11px;padding:4px 6px;flex:1;" disabled>Sign out</button>
+        </div>
       </div>`;
   }
 
@@ -290,7 +293,10 @@
             <div id="user-role-display" style="font-size:11px;color:rgba(255,255,255,0.45);">${loadboardSub ? 'AI Load Pass' : 'Portal'}</div>
           </div>
         </div>
-        <button type="button" class="btn btn-light btn-block btn-sm" id="shell-logout-btn">Sign out</button>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button type="button" class="btn btn-secondary btn-block btn-sm" id="shell-change-pwd-btn" style="font-size:11px;padding:4px 6px;flex:1;">🔑 Password</button>
+          <button type="button" class="btn btn-light btn-block btn-sm" id="shell-logout-btn" style="font-size:11px;padding:4px 6px;flex:1;">Sign out</button>
+        </div>
       </div>`;
   }
 
@@ -350,6 +356,116 @@
         await fetch('/api/logout', { method: 'POST', credentials: 'include' });
       } catch (_) {}
       window.location.replace('/login?logged_out=1');
+    });
+  }
+
+  function openChangePasswordModal() {
+    let modal = document.getElementById('shell-pwd-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'shell-pwd-modal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+      modal.innerHTML = `
+        <div style="background:#fff;border-radius:16px;max-width:400px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;font-family:inherit;">
+          <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">🔒 Change Password</h3>
+            <button type="button" id="shell-pwd-close" style="background:none;border:none;font-size:22px;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
+          </div>
+          <form id="shell-pwd-form" style="padding:20px;display:flex;flex-direction:column;gap:12px;">
+            <div id="shell-pwd-alert" style="display:none;padding:10px;border-radius:8px;font-size:12px;font-weight:600;"></div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;">Current Password (Optional if admin)</label>
+              <input type="password" id="shell-pwd-cur" class="form-input" style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;" placeholder="Current password">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;">New Password (Min 8 chars)</label>
+              <input type="password" id="shell-pwd-new" required class="form-input" style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;" placeholder="New password" minlength="8">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;">Confirm New Password</label>
+              <input type="password" id="shell-pwd-confirm" required class="form-input" style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;" placeholder="Confirm new password" minlength="8">
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+              <button type="button" id="shell-pwd-cancel" class="btn btn-secondary btn-sm" style="padding:6px 14px;border-radius:8px;">Cancel</button>
+              <button type="submit" id="shell-pwd-submit" class="btn btn-primary btn-sm" style="padding:6px 16px;border-radius:8px;font-weight:800;background:#f59e0b;color:#0f172a;border:none;">Save Password</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      const closeModal = () => { modal.style.display = 'none'; };
+      document.getElementById('shell-pwd-close').onclick = closeModal;
+      document.getElementById('shell-pwd-cancel').onclick = closeModal;
+
+      document.getElementById('shell-pwd-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const alertBox = document.getElementById('shell-pwd-alert');
+        const submitBtn = document.getElementById('shell-pwd-submit');
+        const cur = document.getElementById('shell-pwd-cur').value;
+        const newPwd = document.getElementById('shell-pwd-new').value;
+        const confirmPwd = document.getElementById('shell-pwd-confirm').value;
+
+        if (newPwd !== confirmPwd) {
+          alertBox.style.display = 'block';
+          alertBox.style.background = '#fee2e2';
+          alertBox.style.color = '#991b1b';
+          alertBox.textContent = 'New passwords do not match!';
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+        try {
+          const res = await fetch('/api/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ current_password: cur, new_password: newPwd })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            alertBox.style.display = 'block';
+            alertBox.style.background = '#fee2e2';
+            alertBox.style.color = '#991b1b';
+            alertBox.textContent = data.error || 'Failed to update password.';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save Password';
+            return;
+          }
+          alertBox.style.display = 'block';
+          alertBox.style.background = '#dcfce7';
+          alertBox.style.color = '#166534';
+          alertBox.textContent = '✅ Password changed successfully!';
+          submitBtn.textContent = 'Saved!';
+          setTimeout(() => {
+            closeModal();
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save Password';
+            document.getElementById('shell-pwd-form').reset();
+            alertBox.style.display = 'none';
+          }, 1800);
+        } catch (err) {
+          alertBox.style.display = 'block';
+          alertBox.style.background = '#fee2e2';
+          alertBox.style.color = '#991b1b';
+          alertBox.textContent = 'Network error. Try again.';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Save Password';
+        }
+      };
+    }
+    modal.style.display = 'flex';
+  }
+
+  function ensureChangePassword() {
+    const btn = document.getElementById('shell-change-pwd-btn');
+    if (!btn || btn.dataset.shellBound === '1') return;
+    btn.dataset.shellBound = '1';
+    btn.disabled = false;
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openChangePasswordModal();
     });
   }
 
@@ -647,6 +763,7 @@
 
     mountSidebarContent(aside);
     ensureLogout();
+    ensureChangePassword();
     mountMobile();
     setupShellNav();
 
@@ -679,6 +796,7 @@
           aside.classList.add('shell-content-ready');
           persistSidebarHtml(aside);
           ensureLogout();
+          ensureChangePassword();
         }
 
         aside.classList.add('shell-mounted');

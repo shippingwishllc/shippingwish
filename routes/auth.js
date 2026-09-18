@@ -373,6 +373,33 @@ router.all(['/logout', '/signout'], (req, res) => {
   res.json({ ok: true, message: 'Logged out successfully.' });
 });
 
+// Change Password for logged in user
+router.post('/change-password', requireAuth, async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+    if (!new_password || String(new_password).length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters long.' });
+    }
+
+    const userRes = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
+    if (!userRes.rows.length) return res.status(404).json({ error: 'User not found.' });
+
+    // Validate current password if provided
+    if (current_password) {
+      const valid = await bcrypt.compare(current_password, userRes.rows[0].password_hash);
+      if (!valid) return res.status(400).json({ error: 'Current password is incorrect.' });
+    }
+
+    const newHash = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id]);
+
+    res.json({ ok: true, message: 'Password changed successfully!' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ error: 'Failed to change password.' });
+  }
+});
+
 // ADMIN & SUPER ADMIN: List all users (with role filter)
 router.get('/users', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
