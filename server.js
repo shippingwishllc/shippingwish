@@ -123,6 +123,8 @@ app.use('/api/loads', require('./routes/ratecon-esign'));          // Digital Ra
 app.use('/api/factoring', require('./routes/factoring-quickpay')); // 24-Hour QuickPay, Factoring NOA & POD Audit Engine
 app.use('/api/rates', require('./routes/rate-benchmark'));          // Spot Market Rate Benchmark Engine & Lane Pricing
 app.use('/api/bids', require('./routes/load-bids'));                // Instant Book-It-Now & Counter-Offer Bidding Engine
+app.use('/api/detention', require('./routes/detention-billing'));   // Automated GPS Detention Clock & Accessorial Invoicing
+app.use('/api/coi', require('./routes/coi-generator'));             // Instant On-Demand ACORD 25 Certificate of Insurance Desk
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

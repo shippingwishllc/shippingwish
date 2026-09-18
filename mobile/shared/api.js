@@ -351,6 +351,45 @@ class MobileApiClient {
   async getBiddingStats() {
     return this.request('/api/bids/stats/summary', { method: 'GET' });
   }
+
+  // --- Automated Detention Clock & Accessorial Invoicing ---
+  async checkinDetention(loadId, stopType = 'shipper', coords = { lat: 32.7767, lon: -96.7970 }) {
+    return this.request('/api/detention/checkin', {
+      method: 'POST',
+      body: { load_id: loadId, stop_type: stopType, gps_lat: coords.lat, gps_lon: coords.lon }
+    });
+  }
+
+  async checkoutDetention(loadId, stopType = 'shipper', accessorials = {}) {
+    return this.request('/api/detention/checkout', {
+      method: 'POST',
+      body: { load_id: loadId, stop_type: stopType, ...accessorials }
+    });
+  }
+
+  async getDetentionDetails(loadId) {
+    return this.request(`/api/detention/load/${loadId}`, { method: 'GET' });
+  }
+
+  async getActiveDwellings() {
+    return this.request('/api/detention/active', { method: 'GET' });
+  }
+
+  getDetentionInvoicePdfUrl(loadId) {
+    return `${this.getBaseUrl()}/api/detention/invoice/${loadId}/pdf`;
+  }
+
+  // --- Instant On-Demand ACORD 25 COI Desk ---
+  async getCoiPreview() {
+    return this.request('/api/coi/preview', { method: 'GET' });
+  }
+
+  async generateBrokerCoi(holderData = {}) {
+    return this.request('/api/coi/generate', {
+      method: 'POST',
+      body: holderData
+    });
+  }
 }
 
 export const api = new MobileApiClient();

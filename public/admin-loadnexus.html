@@ -268,6 +268,9 @@
         <button class="nav-tab-btn" id="tab-btn-pricing" onclick="switchTab('pricing')">
           <span>📈</span> Spot Rates &amp; Bids
         </button>
+        <button class="nav-tab-btn" id="tab-btn-detention" onclick="switchTab('detention')">
+          <span>⏱️</span> Detention &amp; COI
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -671,6 +674,118 @@
         </div>
       </div>
 
+      <!-- TAB 8: DETENTION CLOCK & COI DESK -->
+      <div id="tab-content-detention" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4);">
+          <!-- Instant ACORD 25 COI Generator -->
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-5);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+                <span>🛡️</span> Instant ACORD-25 Certificate of Insurance (COI)
+              </h3>
+              <span class="badge badge-success" style="font-size:10px;">$1M Auto / $100K Cargo</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 14px;">
+              Generate an official vector ACORD 25 COI with your freight broker added as Certificate Holder in 60 seconds.
+            </p>
+
+            <div class="form-group" style="margin-bottom:10px;">
+              <label class="form-label" style="font-size:11px;">Broker / Certificate Holder Company</label>
+              <input type="text" id="coi-holder-company" class="form-input" value="C.H. Robinson Worldwide, Inc." placeholder="e.g. Total Quality Logistics / Echo Global">
+            </div>
+
+            <div class="form-group" style="margin-bottom:10px;">
+              <label class="form-label" style="font-size:11px;">Certificate Holder Physical Address</label>
+              <input type="text" id="coi-holder-address" class="form-input" value="14701 Charlson Rd, Eden Prairie, MN 55347" placeholder="Street, City, State, ZIP">
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label" style="font-size:11px;">Broker Onboarding Email</label>
+              <input type="email" id="coi-holder-email" class="form-input" value="carrier_onboarding@chrobinson.com">
+            </div>
+
+            <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.3);border-radius:8px;padding:10px;margin-bottom:14px;font-size:11px;color:#93C5FD;">
+              🛡️ <strong>Coverage Endorsement:</strong> Additional Insured for Auto ($1,000,000 CSL) and Loss Payee for Motor Truck Cargo ($100,000 Broad Form). Primary &amp; Non-Contributory.
+            </div>
+
+            <button class="btn btn-primary btn-sm" onclick="generateBrokerCoiPdf()" style="width:100%;justify-content:center;">
+              📑 Generate &amp; Download ACORD 25 Certificate (PDF)
+            </button>
+          </div>
+
+          <!-- Detention Policy & Rates Card -->
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-5);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+                <span>⏱️</span> Detention &amp; Accessorial Billing Policy
+              </h3>
+              <span class="badge badge-warning" style="font-size:10px;">$75.00 / Hour</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 14px;">
+              Enforced by automated GPS geofencing. Free dwell time is automatically deducted before billing.
+            </p>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;font-size:12px;">
+              <div style="background:#0E1A2D;padding:10px;border-radius:8px;">
+                <span style="color:var(--text-muted);font-size:11px;">Standard Free Dwell:</span><br>
+                <strong style="color:#10B981;font-size:14px;">2 Hours (120 Mins)</strong>
+              </div>
+              <div style="background:#0E1A2D;padding:10px;border-radius:8px;">
+                <span style="color:var(--text-muted);font-size:11px;">Hourly Detention Rate:</span><br>
+                <strong style="color:#60A5FA;font-size:14px;">$75.00 / Hour</strong>
+              </div>
+              <div style="background:#0E1A2D;padding:10px;border-radius:8px;">
+                <span style="color:var(--text-muted);font-size:11px;">Billing Increments:</span><br>
+                <strong style="color:#fff;font-size:13px;">15 Mins ($18.75/ea)</strong>
+              </div>
+              <div style="background:#0E1A2D;padding:10px;border-radius:8px;">
+                <span style="color:var(--text-muted);font-size:11px;">TONU / Layover Standard:</span><br>
+                <strong style="color:#fff;font-size:13px;">$250 TONU • $350 Layover</strong>
+              </div>
+            </div>
+
+            <div style="background:#070F1E;border:1px solid #1E3E62;border-radius:8px;padding:10px;font-size:11.5px;color:var(--text-secondary);">
+              📍 <strong>Telematics Geofence Clock:</strong> Driver app automatically triggers check-in within 0.8 miles of dock. GPS audit timestamps are stamped on the supplemental accessorial invoice PDF.
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Dock Dwell & Detention Monitor -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);flex-wrap:wrap;gap:10px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>🚨</span> Live Dock Dwell &amp; Detention Monitor
+            </h3>
+            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0;">
+              Active drivers dwelling at shipper/receiver facilities. Red alert triggered once 2 hours free time expires.
+            </p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadDetentionDesk()">🔄 Refresh Dwell Clock</button>
+        </div>
+
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>Load &amp; Stop</th>
+                <th>Carrier / Unit</th>
+                <th>Dock Arrival</th>
+                <th>Elapsed Dwell</th>
+                <th>Free Time</th>
+                <th>Billable Detention</th>
+                <th>Accrued Due</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="detention-tbody">
+              <tr>
+                <td colspan="8" style="text-align:center;padding:24px;">Scanning active dock check-ins...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -830,6 +945,7 @@
     document.getElementById('tab-content-telematics').style.display = tabId === 'telematics' ? 'block' : 'none';
     document.getElementById('tab-content-factoring').style.display = tabId === 'factoring' ? 'block' : 'none';
     document.getElementById('tab-content-pricing').style.display = tabId === 'pricing' ? 'block' : 'none';
+    document.getElementById('tab-content-detention').style.display = tabId === 'detention' ? 'block' : 'none';
     document.getElementById('tab-content-apps').style.display = tabId === 'apps' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
@@ -838,6 +954,8 @@
       loadFactoringSubmissions();
     } else if (tabId === 'pricing') {
       loadPricingAndBids();
+    } else if (tabId === 'detention') {
+      loadDetentionDesk();
     }
   }
 
@@ -1489,6 +1607,119 @@
       }
     } catch (e) {
       alert('Error sending counter offer.');
+    }
+  }
+
+  // --- PHASE 11: DETENTION CLOCK & COI DESK ---
+  async function loadDetentionDesk() {
+    const tbody = document.getElementById('detention-tbody');
+    if (!tbody) return;
+    try {
+      const res = await fetch('/api/detention/active');
+      const json = await res.json();
+      if (json.ok && json.active_dwells) {
+        renderDetentionDesk(json.active_dwells);
+      } else {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No trucks currently dwelling at docks.</td></tr>';
+      }
+    } catch (e) {
+      console.warn('Detention desk fetch error:', e);
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Could not fetch active detention monitor.</td></tr>';
+    }
+  }
+
+  function renderDetentionDesk(dwells) {
+    const tbody = document.getElementById('detention-tbody');
+    if (!tbody) return;
+    if (!dwells || dwells.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">All fleet trucks in transit or clear of dock dwell time.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = dwells.map(d => {
+      const isDetentionActive = d.detention_active;
+      const statusBadge = isDetentionActive
+        ? `<span class="badge badge-danger" style="font-size:10px;animation:radarPulse 1.5s infinite;">🚨 DETENTION ACTIVE</span>`
+        : `<span class="badge badge-success" style="font-size:10px;">⏳ Free Time Dwell</span>`;
+
+      const arrivalFormatted = new Date(d.arrived_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:800;color:var(--text-primary);">Load #${escapeAttr(d.load_number || d.load_id)}</div>
+            <div style="font-size:11px;color:var(--color-primary-light);">${(d.stop_type || 'shipper').toUpperCase()} DOCK</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${escapeAttr(d.carrier_company || d.carrier_name || 'Carrier Partner')}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${escapeAttr(d.carrier_mc || 'MC-Active')}</div>
+          </td>
+          <td style="font-weight:600;color:var(--text-primary);">${arrivalFormatted}</td>
+          <td style="font-weight:700;color:${isDetentionActive ? '#EF4444' : '#60A5FA'};">${d.live_dwell_minutes} Mins</td>
+          <td style="font-size:11.5px;color:var(--text-muted);">120 Mins (2h)</td>
+          <td style="font-weight:700;color:${isDetentionActive ? '#EF4444' : 'var(--text-muted)'};">${Math.max(0, d.live_dwell_minutes - 120)} Mins</td>
+          <td style="font-weight:800;color:#10B981;font-size:13.5px;">$${d.accrued_detention_amount.toFixed(2)}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-primary btn-sm" onclick="executeDetentionCheckout(${d.load_id}, '${d.stop_type}')" style="font-size:10.5px;padding:3px 8px;">Log Departure</button>
+              <a href="/api/detention/invoice/${d.load_id}/pdf" target="_blank" class="btn btn-secondary btn-sm" style="font-size:10.5px;padding:3px 8px;text-decoration:none;">📑 Invoice PDF</a>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  async function executeDetentionCheckout(loadId, stopType) {
+    const lumper = prompt('Enter lumper fee reimbursement amount ($), or 0 if none:', '0');
+    if (lumper === null) return;
+
+    try {
+      const res = await fetch('/api/detention/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ load_id: loadId, stop_type: stopType, lumper_amount: parseFloat(lumper) || 0 })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert(data.message || 'Dock departure logged successfully!');
+        loadDetentionDesk();
+      } else {
+        alert('Error: ' + (data.error || 'Could not checkout.'));
+      }
+    } catch (e) {
+      alert('Error logging departure.');
+    }
+  }
+
+  async function generateBrokerCoiPdf() {
+    const holderCompany = document.getElementById('coi-holder-company').value || 'C.H. Robinson Worldwide, Inc.';
+    const holderAddress = document.getElementById('coi-holder-address').value || '14701 Charlson Rd, Eden Prairie, MN 55347';
+    const holderEmail = document.getElementById('coi-holder-email').value || 'carrier_onboarding@chrobinson.com';
+
+    try {
+      const res = await fetch('/api/coi/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          holder_company: holderCompany,
+          holder_address: holderAddress,
+          holder_email: holderEmail
+        })
+      });
+
+      if (!res.ok) throw new Error('COI generation failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ACORD25_COI_${holderCompany.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Error generating COI PDF: ' + e.message);
     }
   }
 
