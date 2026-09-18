@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "LoadNexus Broker",
+    "slug": "loadnexus-broker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#070F1E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.loadnexus.broker"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#070F1E"
+      },
+      "package": "com.loadnexus.broker"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

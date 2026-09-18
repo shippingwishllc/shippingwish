@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "LoadNexus Carrier",
+    "slug": "loadnexus-carrier",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#070F1E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.loadnexus.carrier"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#070F1E"
+      },
+      "package": "com.loadnexus.carrier"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

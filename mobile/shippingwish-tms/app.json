@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Shipping Wish TMS",
+    "slug": "shippingwish-tms",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0B192C"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shippingwish.tms"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B192C"
+      },
+      "package": "com.shippingwish.tms"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

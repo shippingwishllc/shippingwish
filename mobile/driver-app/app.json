@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Shipping Wish Driver",
+    "slug": "shippingwish-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0B192C"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shippingwish.driver",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Shipping Wish Driver requires camera access to scan and upload signed Bill of Lading (BOL) and Proof of Delivery (POD) receipts.",
+        "NSLocationWhenInUseUsageDescription": "Shipping Wish Driver requires location access to provide shippers and brokers with real-time GPS tracking of active freight."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B192C"
+      },
+      "package": "com.shippingwish.driver",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
