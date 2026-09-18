@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '22';
+  const SIDEBAR_VERSION = '23';
   // #endregion
 
   function clearRoleCache() {
@@ -72,7 +72,7 @@
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;">
           <button type="button" class="btn btn-secondary btn-block btn-sm" id="shell-change-pwd-btn" style="font-size:11px;padding:4px 6px;flex:1;" disabled>🔑 Password</button>
-          <button type="button" class="btn btn-light btn-block btn-sm" id="shell-logout-btn" style="font-size:11px;padding:4px 6px;flex:1;" disabled>Sign out</button>
+          <button type="button" class="btn btn-light btn-block btn-sm" id="shell-logout-btn" onclick="window.swForceLogout?window.swForceLogout():(window.logout?window.logout():null)" style="font-size:11px;padding:4px 6px;flex:1;">Sign out</button>
         </div>
       </div>`;
   }
@@ -295,7 +295,7 @@
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;">
           <button type="button" class="btn btn-secondary btn-block btn-sm" id="shell-change-pwd-btn" style="font-size:11px;padding:4px 6px;flex:1;">🔑 Password</button>
-          <button type="button" class="btn btn-light btn-block btn-sm" id="shell-logout-btn" style="font-size:11px;padding:4px 6px;flex:1;">Sign out</button>
+          <button type="button" class="btn btn-light btn-block btn-sm" id="shell-logout-btn" onclick="window.swForceLogout?window.swForceLogout():(window.logout?window.logout():null)" style="font-size:11px;padding:4px 6px;flex:1;">Sign out</button>
         </div>
       </div>`;
   }
@@ -337,27 +337,53 @@
     });
   }
 
-  function ensureLogout() {
-    const btn = document.getElementById('shell-logout-btn');
-    if (!btn || btn.dataset.shellBound === '1') return;
-    btn.dataset.shellBound = '1';
-    btn.disabled = false;
-    btn.addEventListener('click', async (e) => {
-      e.preventDefault();
+  let logoutInProgress = false;
+  async function doLogout() {
+    if (logoutInProgress) return;
+    logoutInProgress = true;
+    const btn = document.getElementById('shell-logout-btn') || document.getElementById('logout-btn');
+    if (btn) {
       btn.disabled = true;
       btn.textContent = 'Signing out...';
-      clearRoleCache();
-      try { sessionStorage.clear(); } catch (_) {}
-      try { localStorage.clear(); } catch (_) {}
-      document.cookie = 'sw_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      document.cookie = 'sw_token=; Path=/; Domain=.shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      document.cookie = 'sw_token=; Path=/; Domain=shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      try {
-        await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-      } catch (_) {}
-      window.location.replace('/login?logged_out=1');
-    });
+    }
+    clearRoleCache();
+    try { sessionStorage.clear(); } catch (_) {}
+    try { localStorage.clear(); } catch (_) {}
+    const past = 'Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'sw_token=; Path=/; Expires=' + past;
+    document.cookie = 'sw_token=; Path=/; Domain=.shippingwish.com; Expires=' + past;
+    document.cookie = 'sw_token=; Path=/; Domain=shippingwish.com; Expires=' + past;
+    try {
+      const logoutPromise = fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 600));
+      await Promise.race([logoutPromise, timeoutPromise]);
+    } catch (_) {}
+    window.location.replace('/login?logged_out=1');
   }
+
+  function ensureLogout() {
+    window.logout = doLogout;
+    window.swForceLogout = doLogout;
+    const btn = document.getElementById('shell-logout-btn');
+    if (btn) {
+      btn.disabled = false;
+      if (btn.dataset.shellBound !== '1') {
+        btn.dataset.shellBound = '1';
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          doLogout();
+        });
+      }
+    }
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('#shell-logout-btn, #logout-btn, [data-action="logout"]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    doLogout();
+  }, true);
 
   function openChangePasswordModal() {
     let modal = document.getElementById('shell-pwd-modal');
