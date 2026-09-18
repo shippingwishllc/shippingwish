@@ -2,18 +2,15 @@
 // Shared configuration for all 4 mobile apps (Driver App, LoadNexus Carrier, Shipping Wish TMS, LoadNexus Broker)
 
 export const CONFIG = {
-  // Production server URL
-  PROD_API_URL: 'https://shippingwish.com',
+  // Live Vercel SaaS Production Server URL (All mobile apps connect directly to Vercel)
+  LIVE_VERCEL_URL: 'https://shippingwish.com',
 
-  // Local development fallback (replace with your local IP when testing via Expo Go on physical phone, e.g. 'http://192.168.1.50:3000')
+  // Local fallback (only if specifically needed for offline debugging)
   DEV_API_URL: 'http://localhost:3000',
 
-  // Default active API URL
+  // Default active API URL: Operates 100% with Vercel Cloud SaaS
   get API_BASE() {
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
-      return this.DEV_API_URL;
-    }
-    return this.PROD_API_URL;
+    return this.LIVE_VERCEL_URL;
   },
 
   APP_NAMES: {
