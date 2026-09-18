@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Load Board &amp; AI Freight Match | Shipping Wish LLC ERP TMS</title>
-  <meta name="description" content="Enterprise Load Board Management & AI Freight Matching Workstation for Shipping Wish LLC. Search live DAT and 123Loadboard freight by pickup dates (Today, Tomorrow, Advance), track DHO/DHD, and dispatch carrier offers across multi-truck search tabs.">
+  <title>LoadNexus™ Freight &amp; Capacity Exchange | Shipping Wish LLC</title>
+  <meta name="description" content="LoadNexus™ Enterprise Freight, Capacity &amp; Broker Exchange by Shipping Wish LLC. Anti-Double Brokering security guard, real broker credit scores (Days-To-Pay), and 4-app mobile suite.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css">
   <style>
@@ -1101,18 +1101,21 @@
     <!-- TOP APP HEADER -->
     <header class="app-header">
       <div>
-        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">
-          Load Board &amp; AI Freight Match Engine
+        <h1 style="font-size:var(--text-lg);font-weight:900;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>⚡</span> LoadNexus™ Freight &amp; Capacity Exchange
         </h1>
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">
-          Nationwide multi-truck workspace, date-wise freight match (Today, Tomorrow, Advance), DHO/DHD tracking &amp; carrier booking
+          The Enterprise Freight, Capacity &amp; Broker Exchange by Shipping Wish LLC • Anti-Double Brokering Guard Active
         </p>
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+        <a href="/admin-loadnexus" class="btn btn-primary btn-sm" style="background:#0B192C;border:1px solid #3B82F6;">
+          🛡️ LoadNexus Command Center
+        </a>
         <div class="live-status" aria-live="polite">
           <span class="live-dot" aria-hidden="true"></span>
-          SPOT FREIGHT ENGINE LIVE
+          LOADNEXUS LIVE
         </div>
         <button type="button" class="btn btn-secondary btn-sm" onclick="addNewSearchTab()">
           + New Truck Tab
@@ -1123,6 +1126,23 @@
 
     <!-- CONTENT BODY -->
     <main class="app-content">
+
+      <!-- LOADNEXUS 4-APP MOBILE SUITE BANNER -->
+      <div style="background:linear-gradient(135deg, rgba(11,25,44,0.95), rgba(30,62,98,0.85));border:1px solid rgba(59,130,246,0.3);border-radius:var(--radius-xl);padding:14px 20px;margin-bottom:var(--space-5);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:#3B82F6;display:flex;align-items:center;justify-content:center;font-size:20px;">📱</div>
+          <div>
+            <div style="color:#fff;font-weight:800;font-size:14px;">LoadNexus &amp; Shipping Wish 4-App Mobile Suite (Expo Go • iOS &amp; Android)</div>
+            <div style="color:var(--text-secondary);font-size:12px;">Dedicated Driver Console, Carrier Loadboard, Fleet TMS, and Broker Exchange connected to live cloud.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="badge badge-success" style="font-size:11px;font-weight:700;">Driver Console</span>
+          <span class="badge badge-primary" style="font-size:11px;font-weight:700;">Carrier Board</span>
+          <span class="badge badge-secondary" style="font-size:11px;font-weight:700;">Fleet TMS</span>
+          <span class="badge badge-warning" style="font-size:11px;font-weight:700;">Broker App</span>
+        </div>
+      </div>
 
       <!-- KPI METRIC CARDS -->
       <div class="stat-card-grid" style="margin-bottom:var(--space-5);">
