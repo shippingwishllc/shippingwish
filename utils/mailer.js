@@ -48,6 +48,7 @@ async function sendBrandedEmail({
   cc,
   transactional,
   from: fromOverride,
+  replyTo: replyToOverride,
   attachments
 }) {
   if (!to) throw new Error('Recipient email is required');
@@ -61,7 +62,7 @@ async function sendBrandedEmail({
   const from = fromOverride || (isTx
     ? (process.env.MAIL_FROM_TRANSACTIONAL || process.env.MAIL_FROM_NOREPLY || mailFrom())
     : mailFrom());
-  const replyTo = replyToAddress(leadId);
+  const replyTo = replyToOverride || replyToAddress(leadId);
   const headers = isTx
     ? undefined
     : {

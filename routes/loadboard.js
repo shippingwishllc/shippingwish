@@ -5,6 +5,14 @@ const { lookupZip, getZipForCityState, parseOriginWithZip, parseDestinationsWith
 
 const router = express.Router();
 
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // Major US Freight Cities Map for Exact City/State Generation
 const STATE_FREIGHT_CITIES = {
   AL: ['Birmingham, AL', 'Mobile, AL', 'Montgomery, AL', 'Huntsville, AL'],
@@ -837,6 +845,316 @@ router.get('/negotiations/:offerId', requireAuth, async (req, res) => {
     res.json({ ok: true, negotiations: result.rows });
   } catch (err) {
     res.status(500).json({ error: 'Could not load negotiation history.' });
+  }
+});
+
+// 9. Customer Carriers Roster (Manage Multiple Carriers for Subscribers & Dispatchers)
+// GET /api/loadboard/my-carriers
+router.get('/my-carriers', requireAuth, async (req, res) => {
+  try {
+    // 1. Fetch user's primary profile as Carrier #1
+    const userRes = await pool.query(
+      `SELECT id, name, email, company_name, phone, mc_number, dot_number, role FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+    const u = userRes.rows[0] || {};
+    const primaryCarrier = {
+      id: 'primary',
+      company_name: u.company_name || u.name || 'Primary Carrier',
+      mc_number: u.mc_number || '',
+      dot_number: u.dot_number || '',
+      contact_name: u.name || '',
+      contact_email: u.email || '',
+      contact_phone: u.phone || '',
+      equipment_type: '53ft Dry Van',
+      is_primary: true
+    };
+
+    // 2. Fetch any custom carriers added by this customer/dispatcher
+    const customRes = await pool.query(
+      `SELECT id, company_name, mc_number, dot_number, contact_name, contact_email, contact_phone, equipment_type, is_default, created_at
+       FROM customer_carriers WHERE user_id = $1 ORDER BY created_at ASC`,
+      [req.user.id]
+    );
+
+    const customCarriers = customRes.rows.map(c => ({
+      ...c,
+      is_primary: false
+    }));
+
+    res.json({
+      ok: true,
+      carriers: [primaryCarrier, ...customCarriers],
+      isStaff: ['super_admin', 'admin', 'dispatcher', 'sales_rep'].includes(req.user.role)
+    });
+  } catch (err) {
+    console.error('Fetch my-carriers error:', err);
+    res.status(500).json({ error: 'Could not load your carrier roster.' });
+  }
+});
+
+// POST /api/loadboard/my-carriers (Add a new carrier to roster)
+router.post('/my-carriers', requireAuth, async (req, res) => {
+  try {
+    const { company_name, mc_number, dot_number, contact_name, contact_email, contact_phone, equipment_type } = req.body;
+    if (!company_name || !company_name.trim()) {
+      return res.status(400).json({ error: 'Carrier Company Name is required.' });
+    }
+    if (!mc_number || !mc_number.trim()) {
+      return res.status(400).json({ error: 'Carrier MC Number is required.' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO customer_carriers (user_id, company_name, mc_number, dot_number, contact_name, contact_email, contact_phone, equipment_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        req.user.id,
+        company_name.trim(),
+        mc_number.trim(),
+        (dot_number || '').trim(),
+        (contact_name || req.user.name || '').trim(),
+        (contact_email || req.user.email || '').trim(),
+        (contact_phone || req.user.phone || '').trim(),
+        equipment_type || '53ft Dry Van'
+      ]
+    );
+
+    res.json({
+      ok: true,
+      message: `Carrier ${company_name} (MC# ${mc_number}) added to your dispatch roster!`,
+      carrier: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Add customer carrier error:', err);
+    res.status(500).json({ error: 'Could not add carrier to your roster.' });
+  }
+});
+
+// DELETE /api/loadboard/my-carriers/:id (Remove carrier from roster)
+router.delete('/my-carriers/:id', requireAuth, async (req, res) => {
+  try {
+    const carrierId = parseInt(req.params.id, 10);
+    if (isNaN(carrierId)) {
+      return res.status(400).json({ error: 'Invalid carrier ID.' });
+    }
+    const result = await pool.query(
+      `DELETE FROM customer_carriers WHERE id = $1 AND user_id = $2 RETURNING id, company_name`,
+      [carrierId, req.user.id]
+    );
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'Carrier not found in your roster.' });
+    }
+    res.json({ ok: true, message: `Carrier ${result.rows[0].company_name} removed from your roster.` });
+  } catch (err) {
+    console.error('Delete customer carrier error:', err);
+    res.status(500).json({ error: 'Could not remove carrier.' });
+  }
+});
+
+// 10. Dual-Mode Broker Rate Inquiry & Booking Email
+// POST /api/loadboard/inquire-broker
+router.post('/inquire-broker', requireAuth, async (req, res) => {
+  try {
+    const {
+      brokerName,
+      brokerEmail,
+      brokerMc,
+      pickupLocation,
+      deliveryLocation,
+      pickupDate,
+      deliveryDate,
+      equipmentType,
+      miles,
+      rate,
+      carrierCompany,
+      carrierMc,
+      carrierDot,
+      contactName,
+      contactPhone,
+      contactEmail,
+      notes
+    } = req.body;
+
+    if (!brokerEmail || brokerEmail.includes('locked@') || !brokerEmail.includes('@')) {
+      return res.status(400).json({ error: 'Valid broker email address is required to dispatch rate inquiry.' });
+    }
+
+    const isStaff = ['super_admin', 'admin', 'dispatcher', 'sales_rep'].includes(req.user.role);
+    const { sendBrandedEmail } = require('../utils/mailer');
+
+    // Email variables configuration
+    let fromAddress;
+    let replyToAddress;
+    let senderSignature;
+    let rateConNotice;
+    const carrierNameStr = carrierCompany || req.user.company_name || req.user.name || 'Contracted Motor Carrier';
+    const carrierMcStr = carrierMc || req.user.mc_number || 'Pending';
+    const carrierDotStr = carrierDot || req.user.dot_number || '';
+    const agentName = contactName || req.user.name || 'Freight Dispatch Desk';
+    const agentPhone = contactPhone || req.user.phone || '+1 (917) 737-0021';
+    const agentEmail = contactEmail || req.user.email;
+    const rateNum = Number(rate || 0);
+    const milesNum = Number(miles || 0);
+    const rpmStr = milesNum > 0 && rateNum > 0 ? `$${(rateNum / milesNum).toFixed(2)}/mi` : '';
+
+    if (isStaff) {
+      // 🏢 Internal Staff: Official Shipping Wish LLC Domain
+      fromAddress = process.env.MAIL_FROM || 'Shipping Wish LLC Dispatch <dispatch@shippingwish.com>';
+      replyToAddress = 'dispatch@shippingwish.com';
+      rateConNotice = 'Please confirm truck availability and send official Rate Confirmation to dispatch@shippingwish.com.';
+      senderSignature = `
+        <strong>Shipping Wish LLC Dispatch Desk</strong><br>
+        Direct Desk: +1 (917) 737-0021<br>
+        Email: dispatch@shippingwish.com<br>
+        Web: https://www.shippingwish.com
+      `;
+    } else {
+      // 🚛 External Subscriber: Personal Email Reply-To & Carrier Profile
+      fromAddress = `"${carrierNameStr}" <dispatch@shippingwish.com>`;
+      replyToAddress = agentEmail;
+      rateConNotice = `Please confirm truck availability and send official Rate Confirmation directly to <strong>${escapeHtml(agentEmail)}</strong>.`;
+      senderSignature = `
+        <strong>${escapeHtml(agentName)}</strong> | Freight Dispatch<br>
+        <strong>${escapeHtml(carrierNameStr)}</strong><br>
+        MC#: ${escapeHtml(carrierMcStr)}${carrierDotStr ? ` · USDOT#: ${escapeHtml(carrierDotStr)}` : ''}<br>
+        Direct Phone: ${escapeHtml(agentPhone)}<br>
+        Email: <a href="mailto:${escapeHtml(agentEmail)}">${escapeHtml(agentEmail)}</a>
+      `;
+    }
+
+    const emailSubject = `Rate Inquiry & Booking Request: ${pickupLocation || 'Origin'} ➔ ${deliveryLocation || 'Destination'} (PU: ${pickupDate || 'Immediate'}) — MC# ${carrierMcStr}`;
+
+    const textBody = `
+Hi ${brokerName || 'Broker'} Dispatch,
+
+We have an empty truck ready to book your posted load:
+• Lane: ${pickupLocation} ➔ ${deliveryLocation}
+• Pickup Date: ${pickupDate || 'Immediate'}
+• Delivery Date: ${deliveryDate || 'As Agreed'}
+• Equipment: ${equipmentType || '53ft Dry Van'}
+• Trip Distance: ${milesNum.toLocaleString()} miles
+• Proposed Gross Rate: $${rateNum.toLocaleString()} ${rpmStr ? `(${rpmStr})` : ''}
+
+Carrier Authority:
+• Motor Carrier: ${carrierNameStr}
+• MC Number: ${carrierMcStr}
+• USDOT Number: ${carrierDotStr || 'N/A'}
+• Dispatcher / Contact: ${agentName} (${agentPhone} | ${agentEmail})
+${notes ? `• Driver Status: ${notes}\n` : ''}
+${isStaff ? 'Please send Rate Confirmation to dispatch@shippingwish.com.' : `Please send Rate Confirmation to ${agentEmail}.`}
+
+Thank you,
+${agentName}
+${carrierNameStr} (MC# ${carrierMcStr})
+${agentPhone} | ${agentEmail}
+    `.trim();
+
+    const htmlBody = `
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:620px;margin:0 auto;color:#1e293b;line-height:1.6;">
+  <div style="background:#0f172a;padding:20px 24px;border-radius:12px 12px 0 0;color:#ffffff;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#f59e0b;margin-bottom:4px;">
+      🚛 Official Load Booking &amp; Rate Inquiry
+    </div>
+    <h2 style="margin:0;font-size:18px;font-weight:800;color:#ffffff;">
+      ${escapeHtml(pickupLocation)} ➔ ${escapeHtml(deliveryLocation)}
+    </h2>
+    <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
+      Carrier Authority: <strong>${escapeHtml(carrierNameStr)}</strong> (MC# ${escapeHtml(carrierMcStr)})
+    </div>
+  </div>
+
+  <div style="background:#ffffff;border:1px solid #e2e8f0;border-top:none;padding:24px;border-radius:0 0 12px 12px;">
+    <p style="margin:0 0 16px;font-size:14px;">
+      Hi <strong>${escapeHtml(brokerName || 'Broker')} Dispatch</strong>,
+    </p>
+    <p style="font-size:14px;color:#334155;margin:0 0 16px;">
+      We have an empty truck staged and ready to book your posted load on this lane. Please find our operating credentials and booking proposal below:
+    </p>
+
+    <!-- Load Details Box -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:18px;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr>
+          <td style="padding:6px 0;color:#64748b;width:35%;">Pickup:</td>
+          <td style="padding:6px 0;font-weight:700;color:#0f172a;">${escapeHtml(pickupLocation)} (${escapeHtml(pickupDate || 'Immediate')})</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:#64748b;">Delivery:</td>
+          <td style="padding:6px 0;font-weight:700;color:#2563eb;">${escapeHtml(deliveryLocation)} (${escapeHtml(deliveryDate || 'Direct')})</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:#64748b;">Equipment:</td>
+          <td style="padding:6px 0;font-weight:700;color:#0f172a;">${escapeHtml(equipmentType || '53ft Dry Van')}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:#64748b;">Distance:</td>
+          <td style="padding:6px 0;font-weight:700;color:#0f172a;">${milesNum.toLocaleString()} miles</td>
+        </tr>
+        <tr style="border-top:1px solid #e2e8f0;">
+          <td style="padding:10px 0 6px;color:#16a34a;font-weight:800;font-size:14px;">Proposed Rate:</td>
+          <td style="padding:10px 0 6px;font-weight:900;color:#16a34a;font-size:16px;">
+            $${rateNum.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+            ${rpmStr ? `<span style="font-size:12px;font-weight:600;color:#64748b;">(${rpmStr})</span>` : ''}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Carrier Credentials Box -->
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;margin-bottom:18px;font-size:13px;">
+      <div style="font-weight:800;color:#1e3a8a;margin-bottom:6px;">📋 Carrier Operating Credentials:</div>
+      <div style="color:#1e40af;">• Company: <strong>${escapeHtml(carrierNameStr)}</strong></div>
+      <div style="color:#1e40af;">• MC Number: <strong>${escapeHtml(carrierMcStr)}</strong>${carrierDotStr ? ` &nbsp;·&nbsp; USDOT: <strong>${escapeHtml(carrierDotStr)}</strong>` : ''}</div>
+      <div style="color:#1e40af;">• Dispatcher / Contact: <strong>${escapeHtml(agentName)}</strong> (${escapeHtml(agentPhone)})</div>
+      ${notes ? `<div style="color:#047857;margin-top:6px;font-weight:600;">• Status / Notes: ${escapeHtml(notes)}</div>` : ''}
+    </div>
+
+    <p style="font-size:14px;color:#0f172a;margin:0 0 20px;">
+      ${rateConNotice}
+    </p>
+
+    <div style="border-top:1px solid #e2e8f0;padding-top:16px;font-size:13px;color:#475569;">
+      ${senderSignature}
+    </div>
+  </div>
+</div>
+    `.trim();
+
+    // Send email via Resend
+    let emailSent = false;
+    let emailNotice = '';
+    try {
+      await sendBrandedEmail({
+        to: brokerEmail,
+        subject: emailSubject,
+        text: textBody,
+        html: htmlBody,
+        from: fromAddress,
+        replyTo: replyToAddress,
+        emailType: 'broker_inquiry',
+        transactional: true
+      });
+      emailSent = true;
+    } catch (sendErr) {
+      console.warn('[LOADBOARD] Broker inquiry email notice:', sendErr.message);
+      emailNotice = sendErr.message;
+    }
+
+    res.json({
+      ok: true,
+      emailSent,
+      message: emailSent
+        ? `Official Rate Inquiry dispatched to ${brokerName || 'Broker'} (${brokerEmail})!`
+        : `Inquiry recorded for ${carrierNameStr} (Reply-To: ${replyToAddress}).`,
+      replyTo: replyToAddress,
+      from: fromAddress,
+      isStaff,
+      emailNotice: emailNotice || undefined
+    });
+  } catch (err) {
+    console.error('Inquire broker error:', err);
+    res.status(500).json({ error: err.message || 'Could not send inquiry to broker.' });
   }
 });
 

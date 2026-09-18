@@ -1286,13 +1286,14 @@
             </select>
           </div>
 
-          <!-- Target Carrier Fleet (Staff only) -->
-          <div class="routing-field-col" id="carrier-select-group">
-            <div class="field-header">
-              <label class="form-label field-label" for="search-carrier-id">Assign Carrier Fleet</label>
+          <!-- Target Carrier Fleet / Active Carrier Authority -->
+          <div class="routing-field-col" id="carrier-select-group" style="min-width:210px;">
+            <div class="field-header" style="display:flex;justify-content:space-between;align-items:center;">
+              <label class="form-label field-label" for="search-carrier-id" id="carrier-select-label" style="margin:0;">Active Carrier</label>
+              <button type="button" id="btn-quick-add-carrier" onclick="openAddCarrierModal()" style="display:none;background:none;border:none;color:#2563eb;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;" title="Add another carrier to your roster">+ Add Carrier</button>
             </div>
-            <select id="search-carrier-id" class="form-select" onchange="syncActiveTabField('carrierId', this.value)">
-              <option value="">Select carrier...</option>
+            <select id="search-carrier-id" class="form-select" onchange="handleCarrierChange(this.value)">
+              <option value="">Select carrier authority...</option>
             </select>
           </div>
 
@@ -1529,6 +1530,185 @@
       <div style="display:flex;justify-content:flex-end;gap:10px;">
         <button type="button" class="btn btn-secondary" onclick="closeOfferModal()">Cancel</button>
         <button type="submit" class="btn btn-primary" id="btn-submit-offer">Send Offer to Carrier →</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: INQUIRE / BOOK LOAD WITH BROKER                   -->
+<!-- ======================================================== -->
+<div class="modal-backdrop" id="inquireBrokerModal" role="dialog" aria-modal="true" aria-labelledby="modal-inquire-title">
+  <div class="modal-card" style="max-width:620px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid #e2e8f0;background:#0f172a;border-radius:14px 14px 0 0;color:#fff;">
+      <div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#f59e0b;">
+          🚛 Book Load / Rate Inquiry
+        </div>
+        <h3 id="modal-inquire-title" style="margin:4px 0 0;font-size:16px;font-weight:800;color:#fff;">
+          Inquire with Broker
+        </h3>
+      </div>
+      <button type="button" onclick="closeBrokerInquireModal()" style="background:none;border:none;font-size:24px;color:#94a3b8;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+
+    <form id="inquireForm" onsubmit="submitBrokerInquiry(event)" style="padding:22px;">
+      <div id="inquire-alert" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+
+      <!-- Lane & Broker Strip -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+          <div style="font-weight:800;color:#0f172a;font-size:15px;" id="inquire-lane-summary">Dallas, TX ➔ Cheyenne, WY</div>
+          <div style="font-weight:800;color:#16a34a;font-size:15px;" id="inquire-rate-badge">$2,850 ($3.35/mi)</div>
+        </div>
+        <div style="color:#64748b;font-size:12px;" id="inquire-broker-summary">
+          Broker: <strong>C.H. Robinson</strong> (MC-159021) · dispatch@chrobinson.com
+        </div>
+      </div>
+
+      <!-- Carrier Authority Selection -->
+      <div class="form-group" style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <label class="form-label required" for="inquire-carrier-select" style="font-size:12px;font-weight:700;margin:0;">
+            Operating Carrier Authority (MC#)
+          </label>
+          <button type="button" onclick="openAddCarrierModal()" style="background:none;border:none;color:#2563eb;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;">
+            + Add Another Carrier
+          </button>
+        </div>
+        <select id="inquire-carrier-select" class="form-select" onchange="onInquireCarrierSelected(this.value)" required>
+          <option value="">Select carrier authority...</option>
+        </select>
+        <div id="inquire-carrier-badge" style="font-size:11.5px;color:#475569;margin-top:4px;"></div>
+      </div>
+
+      <!-- 2-col Rate & Equipment -->
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label required" for="inquire-rate" style="font-size:12px;font-weight:700;">Proposed Gross Rate ($)</label>
+          <input type="number" step="10" id="inquire-rate" class="form-input" required oninput="updateInquireEmailPreview()">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="inquire-equipment" style="font-size:12px;font-weight:700;">Equipment Type</label>
+          <input type="text" id="inquire-equipment" class="form-input" oninput="updateInquireEmailPreview()">
+        </div>
+      </div>
+
+      <!-- 2-col Contact Name & Phone -->
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label required" for="inquire-contact-name" style="font-size:12px;font-weight:700;">Booking Agent / Dispatcher Name</label>
+          <input type="text" id="inquire-contact-name" class="form-input" required oninput="updateInquireEmailPreview()">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label required" for="inquire-contact-phone" style="font-size:12px;font-weight:700;">Direct Phone Number</label>
+          <input type="tel" id="inquire-contact-phone" class="form-input" required oninput="updateInquireEmailPreview()">
+        </div>
+      </div>
+
+      <!-- Contact Email (Where Rate Con is Sent) -->
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label required" for="inquire-contact-email" style="font-size:12px;font-weight:700;">
+          Rate Confirmation / Reply Email <span id="inquire-email-source-hint" style="color:#2563eb;font-weight:600;">(Your Login / Company Inbox)</span>
+        </label>
+        <input type="email" id="inquire-contact-email" class="form-input" required oninput="updateInquireEmailPreview()">
+      </div>
+
+      <!-- Dispatcher Notes -->
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label" for="inquire-notes" style="font-size:12px;font-weight:700;">Driver Staging &amp; Notes for Broker</label>
+        <textarea id="inquire-notes" class="form-input" rows="2" placeholder="Driver empty nearby. Ready for immediate pickup. Please send Rate Con." oninput="updateInquireEmailPreview()"></textarea>
+      </div>
+
+      <!-- Live Email Preview Box -->
+      <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px;margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:#64748b;">
+            ✉️ Live Message Preview
+          </span>
+          <span id="inquire-preview-sender-type" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:#dbeafe;color:#1e40af;">
+            Replying with your company email
+          </span>
+        </div>
+        <div id="inquire-email-preview-text" style="font-size:12px;color:#334155;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:10px;max-height:130px;overflow-y:auto;white-space:pre-wrap;font-family:monospace;line-height:1.45;"></div>
+      </div>
+
+      <!-- Two Action Buttons -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeBrokerInquireModal()">Cancel</button>
+        <button type="button" class="btn btn-secondary" id="btn-open-inquire-mailto" onclick="launchInquireMailClient()" style="font-weight:700;color:#0f172a;border-color:#94a3b8;" title="Open in your default email program (Gmail, Outlook, Apple Mail)">
+          📬 Open in My Email Client
+        </button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-inquire-system" style="font-weight:800;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">
+          ⚡ Send via System (Reply-To My Email)
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: ADD CARRIER TO ROSTER                             -->
+<!-- ======================================================== -->
+<div class="modal-backdrop" id="addCarrierModal" role="dialog" aria-modal="true" aria-labelledby="modal-addcarrier-title">
+  <div class="modal-card" style="max-width:500px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid #e2e8f0;">
+      <div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2563eb;">
+          🚛 Carrier Authority Roster
+        </div>
+        <h3 id="modal-addcarrier-title" style="margin:4px 0 0;font-size:16px;font-weight:800;color:#0f172a;">
+          Add Carrier / Truck Authority
+        </h3>
+      </div>
+      <button type="button" onclick="closeAddCarrierModal()" style="background:none;border:none;font-size:24px;color:#64748b;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+
+    <form id="form-add-carrier" onsubmit="submitAddCarrierForm(event)" style="padding:22px;">
+      <div id="addcarrier-error-alert" style="display:none;background:#fef2f2;border:1px solid #f87171;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label required" for="new-carrier-company" style="font-size:12px;font-weight:700;">Carrier Company Name *</label>
+        <input type="text" id="new-carrier-company" class="form-input" placeholder="e.g. Apex Express Logistics LLC" required>
+      </div>
+
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label required" for="new-carrier-mc" style="font-size:12px;font-weight:700;">MC Number *</label>
+          <input type="text" id="new-carrier-mc" class="form-input" placeholder="MC-123456" required>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="new-carrier-dot" style="font-size:12px;font-weight:700;">USDOT Number (Optional)</label>
+          <input type="text" id="new-carrier-dot" class="form-input" placeholder="1234567">
+        </div>
+      </div>
+
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="new-carrier-equip" style="font-size:12px;font-weight:700;">Primary Equipment</label>
+          <select id="new-carrier-equip" class="form-select">
+            <option value="53ft Dry Van">53ft Dry Van</option>
+            <option value="53ft Reefer">53ft Reefer</option>
+            <option value="Flatbed">Flatbed</option>
+            <option value="Step Deck">Step Deck</option>
+            <option value="Power Only">Power Only</option>
+            <option value="Box Truck">Box Truck</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="new-carrier-phone" style="font-size:12px;font-weight:700;">Dispatch Phone</label>
+          <input type="tel" id="new-carrier-phone" class="form-input" placeholder="(555) 000-0000">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:18px;">
+        <label class="form-label" for="new-carrier-email" style="font-size:12px;font-weight:700;">Carrier Email for Rate Cons (Optional)</label>
+        <input type="email" id="new-carrier-email" class="form-input" placeholder="carrier@domain.com">
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="btn btn-secondary" onclick="closeAddCarrierModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-add-carrier" style="font-weight:800;">+ Save Carrier to Roster</button>
       </div>
     </form>
   </div>
@@ -1949,16 +2129,25 @@
 
       const isStaff = ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
       const carrierGroup = document.getElementById('carrier-select-group');
-      if (!isStaff && carrierGroup) {
-        carrierGroup.style.display = 'none';
+      const carrierLabel = document.getElementById('carrier-select-label');
+      const btnQuickAdd = document.getElementById('btn-quick-add-carrier');
+
+      if (carrierGroup) {
+        carrierGroup.style.display = 'block';
+      }
+
+      if (isStaff) {
+        if (carrierLabel) carrierLabel.textContent = 'Assign Carrier Client';
+        if (btnQuickAdd) btnQuickAdd.style.display = 'none';
+        await loadCarriersDropdown();
+      } else {
+        if (carrierLabel) carrierLabel.textContent = 'Active Carrier Authority';
+        if (btnQuickAdd) btnQuickAdd.style.display = 'inline-block';
+        await loadMyCarriersDropdown();
       }
 
       const offersCard = document.getElementById('carrier-offers-card');
       if (offersCard) offersCard.style.display = 'block';
-
-      if (isStaff) {
-        await loadCarriersDropdown();
-      }
       loadOffers();
     } else {
       erpShell.classList.add('guest-mode');
@@ -2086,6 +2275,56 @@
     } catch (e) {
       console.warn('Could not load carriers:', e);
     }
+  }
+
+  // 2b. Load Carriers for External Subscribers / Dispatchers
+  let MY_CARRIERS_LIST = [];
+  let SELECTED_ACTIVE_CARRIER = null;
+
+  async function loadMyCarriersDropdown() {
+    try {
+      const res = await fetch('/api/loadboard/my-carriers', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      MY_CARRIERS_LIST = data.carriers || [];
+
+      const select1 = document.getElementById('search-carrier-id');
+      if (!select1) return;
+
+      const options = MY_CARRIERS_LIST.map(c => {
+        const mcLabel = c.mc_number ? ` (MC# ${escapeHtml(c.mc_number)})` : '';
+        const primeLabel = c.is_primary ? ' [Primary]' : '';
+        return `<option value="${c.id}">🚛 ${escapeHtml(c.company_name)}${mcLabel}${primeLabel}</option>`;
+      }).join('');
+
+      select1.innerHTML = options + '<option value="__add_new__">➕ + Add New Carrier / Truck...</option>';
+
+      if (MY_CARRIERS_LIST.length > 0) {
+        SELECTED_ACTIVE_CARRIER = MY_CARRIERS_LIST[0];
+        select1.value = SELECTED_ACTIVE_CARRIER.id;
+      }
+    } catch (e) {
+      console.warn('Could not load my-carriers:', e);
+    }
+  }
+
+  function handleCarrierChange(val) {
+    if (val === '__add_new__') {
+      openAddCarrierModal();
+      if (SELECTED_ACTIVE_CARRIER) {
+        const sel = document.getElementById('search-carrier-id');
+        if (sel) sel.value = SELECTED_ACTIVE_CARRIER.id;
+      }
+      return;
+    }
+    const isStaff = CURRENT_USER && ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
+    if (!isStaff) {
+      const found = MY_CARRIERS_LIST.find(c => String(c.id) === String(val));
+      if (found) {
+        SELECTED_ACTIVE_CARRIER = found;
+      }
+    }
+    syncActiveTabField('carrierId', val);
   }
 
   // ==========================================
@@ -2609,21 +2848,21 @@
       }
 
       let actionsHtml = '';
-      if (isStaff) {
-        actionsHtml = `
-          <button type="button" class="btn btn-primary btn-sm" onclick="openOfferModal(${idx})">Dispatch</button>
-          <a href="${mailtoLink}" class="btn btn-secondary btn-sm" title="Email Broker Directly">✉️</a>
-        `;
-      } else if (load.is_teaser) {
+      if (load.is_teaser) {
         actionsHtml = `
           <button type="button" class="btn btn-primary btn-sm" onclick="openLoadBoardSubscribeModal()" style="font-weight:800;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);color:#0f172a;border:none;">
             ⚡ Unlock Pass
           </button>
         `;
+      } else if (isStaff) {
+        actionsHtml = `
+          <button type="button" class="btn btn-primary btn-sm" onclick="openOfferModal(${idx})" title="Send Offer to Carrier Client">Dispatch</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openBrokerInquireModal(${idx})" title="Inquire / Email Broker (Official Shipping Wish domain)">✉️ Inquire</button>
+        `;
       } else {
         actionsHtml = `
-          <a href="${mailtoLink}" class="btn btn-primary btn-sm">Inquire</a>
-          <a href="${mailtoLink}" class="btn btn-secondary btn-sm" title="Email Broker Directly">✉️</a>
+          <button type="button" class="btn btn-primary btn-sm" onclick="openBrokerInquireModal(${idx})" title="Inquire & Book Load with Broker">⚡ Inquire / Book</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openBrokerInquireModal(${idx})" title="Email Broker Directly">✉️</button>
         `;
       }
 
@@ -2849,6 +3088,389 @@
     } finally {
       btn.disabled = false;
       btn.textContent = 'Send Offer to Carrier →';
+    }
+  }
+
+  // ==========================================
+  // BROKER RATE INQUIRY & MULTI-CARRIER DISPATCH
+  // ==========================================
+  let SELECTED_LOAD_FOR_INQUIRY = null;
+
+  function openBrokerInquireModal(loadIndex) {
+    const tab = getActiveTab();
+    if (!tab || !tab.results) return;
+
+    SELECTED_LOAD_FOR_INQUIRY = tab.results[loadIndex];
+    if (!SELECTED_LOAD_FOR_INQUIRY) return;
+    const load = SELECTED_LOAD_FOR_INQUIRY;
+
+    if (load.is_teaser) {
+      openLoadBoardSubscribeModal();
+      return;
+    }
+
+    const isStaff = CURRENT_USER && ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
+
+    const milesNum = Number(load.miles || 0);
+    const rateNum = Number(load.rate || 0);
+    const rpmStr = milesNum > 0 && rateNum > 0 ? `$${(rateNum / milesNum).toFixed(2)}/mi` : '';
+
+    const laneSummaryEl = document.getElementById('inquire-lane-summary');
+    const rateBadgeEl = document.getElementById('inquire-rate-badge');
+    const brokerSummaryEl = document.getElementById('inquire-broker-summary');
+
+    if (laneSummaryEl) {
+      laneSummaryEl.textContent = `${load.pickup_location} ➔ ${load.delivery_location} (${load.pickup_date || 'Immediate'})`;
+    }
+    if (rateBadgeEl) {
+      rateBadgeEl.textContent = `$${rateNum.toLocaleString()} ${rpmStr ? `(${rpmStr})` : ''}`;
+    }
+    if (brokerSummaryEl) {
+      brokerSummaryEl.innerHTML = `Broker: <strong>${escapeHtml(load.broker_name || 'Broker')}</strong> (${escapeHtml(load.broker_mc || 'MC-ON-FILE')}) · <span>${escapeHtml(load.broker_email || 'dispatch@broker.com')}</span>`;
+    }
+
+    // Populate carrier select in modal
+    const carrierSelect = document.getElementById('inquire-carrier-select');
+    let carrierOptions = '';
+    const carrierList = isStaff ? CARRIERS_LIST : MY_CARRIERS_LIST;
+
+    if (carrierList && carrierList.length > 0) {
+      carrierOptions = carrierList.map(c => {
+        const mcLabel = c.mc_number ? ` (MC# ${escapeHtml(c.mc_number)})` : '';
+        const comp = c.company_name || c.name || 'Carrier';
+        return `<option value="${c.id}">${escapeHtml(comp)}${mcLabel}</option>`;
+      }).join('');
+    } else {
+      const comp = CURRENT_USER ? (CURRENT_USER.company_name || CURRENT_USER.name) : 'Motor Carrier';
+      const mc = CURRENT_USER ? (CURRENT_USER.mc_number || 'Pending') : '';
+      carrierOptions = `<option value="primary">${escapeHtml(comp)} ${mc ? `(MC# ${escapeHtml(mc)})` : ''}</option>`;
+    }
+    if (carrierSelect) carrierSelect.innerHTML = carrierOptions;
+
+    // Default select active carrier
+    if (SELECTED_ACTIVE_CARRIER && carrierSelect) {
+      carrierSelect.value = SELECTED_ACTIVE_CARRIER.id;
+    }
+
+    // Rate & Equipment
+    const rateInput = document.getElementById('inquire-rate');
+    const equipInput = document.getElementById('inquire-equipment');
+    if (rateInput) rateInput.value = rateNum;
+    if (equipInput) equipInput.value = load.equipment_type || '53ft Dry Van';
+
+    // Contact fields
+    const nameInput = document.getElementById('inquire-contact-name');
+    const phoneInput = document.getElementById('inquire-contact-phone');
+    const emailInput = document.getElementById('inquire-contact-email');
+    const hintEl = document.getElementById('inquire-email-source-hint');
+    const previewSenderTypeEl = document.getElementById('inquire-preview-sender-type');
+
+    if (isStaff) {
+      if (nameInput) nameInput.value = 'Shipping Wish LLC Dispatch Desk';
+      if (phoneInput) phoneInput.value = '+1 (917) 737-0021';
+      if (emailInput) emailInput.value = 'dispatch@shippingwish.com';
+      if (hintEl) hintEl.textContent = '(Official Shipping Wish LLC Domain)';
+      if (previewSenderTypeEl) {
+        previewSenderTypeEl.textContent = '🏢 Sending from @shippingwish.com';
+        previewSenderTypeEl.style.background = '#fef3c7';
+        previewSenderTypeEl.style.color = '#92400e';
+      }
+    } else {
+      if (nameInput) nameInput.value = CURRENT_USER ? CURRENT_USER.name : '';
+      if (phoneInput) phoneInput.value = CURRENT_USER ? (CURRENT_USER.phone || '') : '';
+      if (emailInput) emailInput.value = CURRENT_USER ? CURRENT_USER.email : '';
+      if (hintEl) hintEl.textContent = '(Your Personal Login / Company Inbox)';
+      if (previewSenderTypeEl) {
+        previewSenderTypeEl.textContent = '🚛 Reply-To goes to your email inbox';
+        previewSenderTypeEl.style.background = '#dbeafe';
+        previewSenderTypeEl.style.color = '#1e40af';
+      }
+    }
+
+    const notesInput = document.getElementById('inquire-notes');
+    if (notesInput) {
+      notesInput.value = 'Empty truck staged nearby. Ready for immediate pickup. Please confirm availability and send Rate Con.';
+    }
+
+    if (carrierSelect) {
+      onInquireCarrierSelected(carrierSelect.value);
+    }
+
+    const alertEl = document.getElementById('inquire-alert');
+    if (alertEl) alertEl.style.display = 'none';
+
+    const m = document.getElementById('inquireBrokerModal');
+    if (m) {
+      m.classList.add('active');
+      m.style.setProperty('display', 'flex', 'important');
+    }
+  }
+
+  function closeBrokerInquireModal() {
+    const m = document.getElementById('inquireBrokerModal');
+    if (m) {
+      m.classList.remove('active');
+      m.style.setProperty('display', 'none', 'important');
+    }
+    SELECTED_LOAD_FOR_INQUIRY = null;
+  }
+
+  function onInquireCarrierSelected(carrierVal) {
+    const isStaff = CURRENT_USER && ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
+    const list = isStaff ? CARRIERS_LIST : MY_CARRIERS_LIST;
+    const carrier = list.find(c => String(c.id) === String(carrierVal)) || (list.length ? list[0] : null);
+
+    const badgeEl = document.getElementById('inquire-carrier-badge');
+    if (carrier && badgeEl) {
+      const mc = carrier.mc_number || (CURRENT_USER ? CURRENT_USER.mc_number : 'Pending');
+      const dot = carrier.dot_number || (CURRENT_USER ? CURRENT_USER.dot_number : '');
+      badgeEl.innerHTML = `Operating Authority: <strong>MC# ${escapeHtml(mc)}</strong>${dot ? ` · USDOT# <strong>${escapeHtml(dot)}</strong>` : ''}`;
+    }
+
+    updateInquireEmailPreview();
+  }
+
+  function getInquirePayload() {
+    if (!SELECTED_LOAD_FOR_INQUIRY) return null;
+    const isStaff = CURRENT_USER && ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
+    const list = isStaff ? CARRIERS_LIST : MY_CARRIERS_LIST;
+    const carrierSelect = document.getElementById('inquire-carrier-select');
+    const carrierVal = carrierSelect ? carrierSelect.value : 'primary';
+    const carrier = list.find(c => String(c.id) === String(carrierVal)) || (list.length ? list[0] : {});
+
+    const carrierCompany = carrier.company_name || carrier.name || (CURRENT_USER ? CURRENT_USER.company_name : 'Motor Carrier');
+    const carrierMc = carrier.mc_number || (CURRENT_USER ? CURRENT_USER.mc_number : 'Pending');
+    const carrierDot = carrier.dot_number || (CURRENT_USER ? CURRENT_USER.dot_number : '');
+
+    const rateVal = document.getElementById('inquire-rate') ? document.getElementById('inquire-rate').value : SELECTED_LOAD_FOR_INQUIRY.rate;
+    const equipVal = document.getElementById('inquire-equipment') ? document.getElementById('inquire-equipment').value.trim() : (SELECTED_LOAD_FOR_INQUIRY.equipment_type || '53ft Dry Van');
+    const nameVal = document.getElementById('inquire-contact-name') ? document.getElementById('inquire-contact-name').value.trim() : (CURRENT_USER ? CURRENT_USER.name : '');
+    const phoneVal = document.getElementById('inquire-contact-phone') ? document.getElementById('inquire-contact-phone').value.trim() : (CURRENT_USER ? CURRENT_USER.phone : '');
+    const emailVal = document.getElementById('inquire-contact-email') ? document.getElementById('inquire-contact-email').value.trim() : (CURRENT_USER ? CURRENT_USER.email : '');
+    const notesVal = document.getElementById('inquire-notes') ? document.getElementById('inquire-notes').value.trim() : '';
+
+    return {
+      brokerName: SELECTED_LOAD_FOR_INQUIRY.broker_name || 'Broker',
+      brokerEmail: SELECTED_LOAD_FOR_INQUIRY.broker_email || 'dispatch@broker.com',
+      brokerMc: SELECTED_LOAD_FOR_INQUIRY.broker_mc || '',
+      pickupLocation: SELECTED_LOAD_FOR_INQUIRY.pickup_location,
+      deliveryLocation: SELECTED_LOAD_FOR_INQUIRY.delivery_location,
+      pickupDate: SELECTED_LOAD_FOR_INQUIRY.pickup_date,
+      deliveryDate: SELECTED_LOAD_FOR_INQUIRY.delivery_date,
+      equipmentType: equipVal,
+      miles: Number(SELECTED_LOAD_FOR_INQUIRY.miles || 0),
+      rate: Number(rateVal || 0),
+      carrierCompany,
+      carrierMc,
+      carrierDot,
+      contactName: nameVal,
+      contactPhone: phoneVal,
+      contactEmail: emailVal,
+      notes: notesVal
+    };
+  }
+
+  function updateInquireEmailPreview() {
+    const p = getInquirePayload();
+    if (!p) return;
+    const isStaff = CURRENT_USER && ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
+    const rpmStr = p.miles > 0 && p.rate > 0 ? `$${(p.rate / p.miles).toFixed(2)}/mi` : '';
+
+    const preview = `To: ${p.brokerEmail}
+Subject: Rate Inquiry & Booking Request: ${p.pickupLocation} ➔ ${p.deliveryLocation} — MC# ${p.carrierMc}
+${isStaff ? 'From: Shipping Wish LLC Dispatch <dispatch@shippingwish.com>\nReply-To: dispatch@shippingwish.com' : `From: "${p.carrierCompany}" <dispatch@shippingwish.com>\nReply-To: ${p.contactEmail}`}
+
+Hi ${p.brokerName} Dispatch,
+
+We have an empty truck ready to book your posted load:
+• Lane: ${p.pickupLocation} ➔ ${p.deliveryLocation}
+• Pickup: ${p.pickupDate || 'Immediate'}
+• Equipment: ${p.equipmentType} · ${p.miles.toLocaleString()} mi
+• Proposed Gross Rate: $${p.rate.toLocaleString()} ${rpmStr ? `(${rpmStr})` : ''}
+
+Carrier Authority:
+• Motor Carrier: ${p.carrierCompany}
+• MC Number: ${p.carrierMc}${p.carrierDot ? ` · USDOT: ${p.carrierDot}` : ''}
+• Dispatcher / Contact: ${p.contactName} (${p.contactPhone} | ${p.contactEmail})
+${p.notes ? `• Driver Status: ${p.notes}\n` : ''}
+${isStaff ? 'Please send Rate Confirmation to dispatch@shippingwish.com.' : `Please send Rate Confirmation directly to ${p.contactEmail}.`}
+
+Thank you,
+${p.contactName} | ${p.carrierCompany} (MC# ${p.carrierMc})`;
+
+    const previewEl = document.getElementById('inquire-email-preview-text');
+    if (previewEl) previewEl.textContent = preview;
+  }
+
+  function launchInquireMailClient() {
+    const p = getInquirePayload();
+    if (!p) return;
+    const isStaff = CURRENT_USER && ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
+    const rpmStr = p.miles > 0 && p.rate > 0 ? `$${(p.rate / p.miles).toFixed(2)}/mi` : '';
+
+    const subject = `Rate Inquiry & Booking Request: ${p.pickupLocation} ➔ ${p.deliveryLocation} (PU: ${p.pickupDate || 'Immediate'}) — MC# ${p.carrierMc}`;
+    const body = `Hi ${p.brokerName} Dispatch,\n\nWe have an empty truck ready to book your posted load:\n• Lane: ${p.pickupLocation} ➔ ${p.deliveryLocation}\n• Pickup Date: ${p.pickupDate || 'Immediate'}\n• Equipment: ${p.equipmentType}\n• Distance: ${p.miles.toLocaleString()} miles\n• Proposed Rate: $${p.rate.toLocaleString()} ${rpmStr ? `(${rpmStr})` : ''}\n\nCarrier Authority:\n• Company: ${p.carrierCompany}\n• MC Number: ${p.carrierMc}${p.carrierDot ? `\n• USDOT Number: ${p.carrierDot}` : ''}\n• Contact Agent: ${p.contactName} (${p.contactPhone})\n${p.notes ? `• Notes: ${p.notes}\n` : ''}\n${isStaff ? 'Please send Rate Confirmation to dispatch@shippingwish.com.' : `Please send Rate Confirmation to ${p.contactEmail}.`}\n\nThank you,\n${p.contactName}\n${p.carrierCompany}\nPhone: ${p.contactPhone}`;
+
+    const mailto = `mailto:${encodeURIComponent(p.brokerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+  }
+
+  async function submitBrokerInquiry(e) {
+    e.preventDefault();
+    const p = getInquirePayload();
+    if (!p) return;
+
+    const btn = document.getElementById('btn-submit-inquire-system');
+    const alertEl = document.getElementById('inquire-alert');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Dispatching to Broker...';
+    }
+    if (alertEl) alertEl.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/loadboard/inquire-broker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(p)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Failed to dispatch inquiry to broker.');
+      }
+
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '⚡ Send via System (Reply-To My Email)';
+      }
+
+      if (alertEl) {
+        alertEl.style.background = '#ecfdf5';
+        alertEl.style.border = '1px solid #6ee7b7';
+        alertEl.style.color = '#065f46';
+        alertEl.style.display = 'block';
+        alertEl.innerHTML = `✓ <strong>Rate Inquiry Dispatched!</strong> Email sent to <strong>${escapeHtml(p.brokerName)}</strong> (${escapeHtml(p.brokerEmail)}). Broker replies will land in <strong>${escapeHtml(data.replyTo)}</strong>!`;
+      }
+
+      setTimeout(() => {
+        closeBrokerInquireModal();
+      }, 2500);
+    } catch (err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '⚡ Send via System (Reply-To My Email)';
+      }
+      if (alertEl) {
+        alertEl.style.background = '#fef2f2';
+        alertEl.style.border = '1px solid #f87171';
+        alertEl.style.color = '#991b1b';
+        alertEl.style.display = 'block';
+        alertEl.textContent = err.message || 'Could not send inquiry.';
+      } else {
+        alert(err.message || 'Could not send inquiry.');
+      }
+    }
+  }
+
+  function quickOpenMailClient(loadIdx) {
+    openBrokerInquireModal(loadIdx);
+    launchInquireMailClient();
+  }
+
+  // ==========================================
+  // ADD CARRIER TO ROSTER MODAL
+  // ==========================================
+  function openAddCarrierModal() {
+    const m = document.getElementById('addCarrierModal');
+    if (m) {
+      m.classList.add('active');
+      m.style.setProperty('display', 'flex', 'important');
+    }
+    const errAlert = document.getElementById('addcarrier-error-alert');
+    if (errAlert) errAlert.style.display = 'none';
+
+    // Prefill default phone and email
+    const phoneInput = document.getElementById('new-carrier-phone');
+    const emailInput = document.getElementById('new-carrier-email');
+    if (phoneInput && CURRENT_USER && CURRENT_USER.phone) phoneInput.value = CURRENT_USER.phone;
+    if (emailInput && CURRENT_USER && CURRENT_USER.email) emailInput.value = CURRENT_USER.email;
+  }
+
+  function closeAddCarrierModal() {
+    const m = document.getElementById('addCarrierModal');
+    if (m) {
+      m.classList.remove('active');
+      m.style.setProperty('display', 'none', 'important');
+    }
+  }
+
+  async function submitAddCarrierForm(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-add-carrier');
+    const errAlert = document.getElementById('addcarrier-error-alert');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Saving carrier...';
+    }
+    if (errAlert) errAlert.style.display = 'none';
+
+    const payload = {
+      company_name: document.getElementById('new-carrier-company').value.trim(),
+      mc_number: document.getElementById('new-carrier-mc').value.trim(),
+      dot_number: document.getElementById('new-carrier-dot').value.trim(),
+      equipment_type: document.getElementById('new-carrier-equip').value,
+      contact_phone: document.getElementById('new-carrier-phone').value.trim(),
+      contact_email: document.getElementById('new-carrier-email').value.trim()
+    };
+
+    try {
+      const res = await fetch('/api/loadboard/my-carriers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Could not save carrier.');
+      }
+
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '+ Save Carrier to Roster';
+      }
+      document.getElementById('form-add-carrier').reset();
+      closeAddCarrierModal();
+
+      alert(`✓ Carrier "${payload.company_name}" (MC# ${payload.mc_number}) added to your dispatch roster!`);
+      await loadMyCarriersDropdown();
+
+      // If Inquire modal is currently active, re-select this new carrier
+      const inquireModal = document.getElementById('inquireBrokerModal');
+      if (inquireModal && (inquireModal.classList.contains('active') || inquireModal.style.display === 'flex') && data.carrier) {
+        SELECTED_ACTIVE_CARRIER = data.carrier;
+        const inquireCarrierSel = document.getElementById('inquire-carrier-select');
+        if (inquireCarrierSel) {
+          const opt = document.createElement('option');
+          opt.value = data.carrier.id;
+          opt.textContent = `${data.carrier.company_name} (MC# ${data.carrier.mc_number})`;
+          inquireCarrierSel.appendChild(opt);
+          inquireCarrierSel.value = data.carrier.id;
+          onInquireCarrierSelected(data.carrier.id);
+        }
+      }
+    } catch (err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '+ Save Carrier to Roster';
+      }
+      if (errAlert) {
+        errAlert.textContent = err.message || 'Error saving carrier.';
+        errAlert.style.display = 'block';
+      } else {
+        alert(err.message || 'Error saving carrier.');
+      }
     }
   }
 
