@@ -4,7 +4,15 @@
   "description": "Shipping Wish LLC - Truck Dispatch Services website with backend (Resend email + auth)",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "mobile:driver": "npm --prefix mobile/driver-app start",
+    "mobile:carrier": "npm --prefix mobile/loadnexus-carrier start",
+    "mobile:tms": "npm --prefix mobile/shippingwish-tms start",
+    "mobile:broker": "npm --prefix mobile/loadnexus-broker start",
+    "mobile:driver:tunnel": "npm --prefix mobile/driver-app start -- --tunnel",
+    "mobile:carrier:tunnel": "npm --prefix mobile/loadnexus-carrier start -- --tunnel",
+    "mobile:tms:tunnel": "npm --prefix mobile/shippingwish-tms start -- --tunnel",
+    "mobile:broker:tunnel": "npm --prefix mobile/loadnexus-broker start -- --tunnel"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
