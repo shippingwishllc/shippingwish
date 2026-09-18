@@ -290,6 +290,30 @@ class MobileApiClient {
       body: { signer_name: signerName, signature_data: signatureData }
     });
   }
+
+  // --- Freight Factoring & Instant QuickPay ---
+  async submitFactoring(loadId, paymentMethod = 'quickpay_24h', factoringData = {}) {
+    return this.request('/api/factoring/submit', {
+      method: 'POST',
+      body: {
+        load_id: loadId,
+        payment_method: paymentMethod,
+        ...factoringData
+      }
+    });
+  }
+
+  async getFactoringSubmissions() {
+    return this.request('/api/factoring/submissions', { method: 'GET' });
+  }
+
+  async approveFactoringPayout(submissionId) {
+    return this.request(`/api/factoring/approve/${submissionId}`, { method: 'POST' });
+  }
+
+  getFactoringPacketPdfUrl(submissionId) {
+    return `${this.getBaseUrl()}/api/factoring/packet/${submissionId}/pdf`;
+  }
 }
 
 export const api = new MobileApiClient();

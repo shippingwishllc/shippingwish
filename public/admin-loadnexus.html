@@ -262,6 +262,9 @@
         <button class="nav-tab-btn" id="tab-btn-telematics" onclick="switchTab('telematics')">
           <span>🛰️</span> Live Fleet Telematics
         </button>
+        <button class="nav-tab-btn" id="tab-btn-factoring" onclick="switchTab('factoring')">
+          <span>💰</span> Factoring &amp; QuickPay
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -502,6 +505,43 @@
         </div>
       </div>
 
+      <!-- TAB 6: FACTORING & QUICKPAY AUDIT DESK -->
+      <div id="tab-content-factoring" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);flex-wrap:wrap;gap:10px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>💰</span> Instant QuickPay &amp; Freight Factoring Audit Desk
+            </h3>
+            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0;">
+              Audit consignee Proof of Delivery (POD), verify TriumphPay / RTS Notice of Assignment (NOA), and release same-day ACH disbursements.
+            </p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadFactoringSubmissions()">🔄 Refresh Settlements</button>
+        </div>
+
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>Settlement &amp; Load</th>
+                <th>Carrier Company &amp; MC</th>
+                <th>Remit Option / NOA</th>
+                <th>Gross Freight</th>
+                <th>QuickPay Fee</th>
+                <th>Net Payout</th>
+                <th>Audit Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="factoring-tbody">
+              <tr>
+                <td colspan="8" style="text-align:center;padding:24px;">Loading factoring settlements &amp; QuickPay requests...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -625,10 +665,13 @@
     document.getElementById('tab-content-scores').style.display = tabId === 'scores' ? 'block' : 'none';
     document.getElementById('tab-content-stream').style.display = tabId === 'stream' ? 'block' : 'none';
     document.getElementById('tab-content-telematics').style.display = tabId === 'telematics' ? 'block' : 'none';
+    document.getElementById('tab-content-factoring').style.display = tabId === 'factoring' ? 'block' : 'none';
     document.getElementById('tab-content-apps').style.display = tabId === 'apps' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
+    } else if (tabId === 'factoring') {
+      loadFactoringSubmissions();
     }
   }
 
@@ -969,6 +1012,95 @@
 
   function escapeAttr(s) {
     return String(s || '').replace(/"/g, '&quot;');
+  }
+
+  async function loadFactoringSubmissions() {
+    const tbody = document.getElementById('factoring-tbody');
+    if (!tbody) return;
+    try {
+      const res = await fetch('/api/factoring/submissions');
+      const json = await res.json();
+      if (json.ok && json.submissions) {
+        renderFactoringSubmissions(json.submissions);
+      } else {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No factoring or QuickPay submissions found.</td></tr>';
+      }
+    } catch (e) {
+      console.warn('Factoring fetch error:', e);
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Could not fetch factoring settlements.</td></tr>';
+    }
+  }
+
+  function renderFactoringSubmissions(list) {
+    const tbody = document.getElementById('factoring-tbody');
+    if (!tbody) return;
+    if (!list || list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No active QuickPay or Factoring submissions in queue.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = list.map(s => {
+      const isApproved = s.status === 'approved';
+      const statusBadge = isApproved
+        ? '<span class="badge badge-success" style="font-size:10px;">✓ ACH Approved</span>'
+        : '<span class="badge badge-warning" style="font-size:10px;">⏳ Under Audit</span>';
+
+      const methodLabel = s.payment_method === 'quickpay_24h' ? '⚡ 24h QuickPay (2%)'
+        : s.payment_method === 'quickpay_48h' ? '⚡ 48h QuickPay (1%)'
+        : `📑 Factoring NOA (${escapeAttr(s.factoring_company || 'TriumphPay')})`;
+
+      const approveBtn = isApproved
+        ? `<span style="font-size:11px;color:var(--color-success);font-weight:700;">✓ Disbursed</span>`
+        : `<button class="btn btn-primary btn-sm" onclick="executeApprovePayout(${s.id})" style="font-size:11px;padding:4px 8px;">⚡ Release ACH</button>`;
+
+      const packetBtn = `<a href="/api/factoring/packet/${s.id}/pdf" target="_blank" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 8px;text-decoration:none;">📑 PDF Packet</a>`;
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:800;color:var(--text-primary);">Settlement #${s.id}</div>
+            <div style="font-size:11px;color:var(--text-muted);">Load #${escapeAttr(s.load_number || s.load_id)} • ${escapeAttr(s.pickup_location || 'Origin')} ➔ ${escapeAttr(s.delivery_location || 'Dest')}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${escapeAttr(s.carrier_company || s.carrier_name || 'Carrier')}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${escapeAttr(s.carrier_mc || 'MC-Pending')}</div>
+          </td>
+          <td>
+            <span style="font-size:11.5px;color:var(--color-primary-light);font-weight:600;">${methodLabel}</span>
+            <div style="font-size:10px;color:var(--text-muted);">${escapeAttr(s.remit_bank_name || 'Bank ACH')} (****${escapeAttr(s.remit_account_last4 || '4821')})</div>
+          </td>
+          <td style="font-weight:700;color:var(--text-primary);">$${Number(s.gross_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td style="color:var(--color-danger);font-weight:600;">-$${Number(s.fee_amount).toFixed(2)} (${s.fee_percent}%)</td>
+          <td style="font-weight:800;color:#10B981;font-size:13px;">$${Number(s.net_payout).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center;">
+              ${approveBtn}
+              ${packetBtn}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  async function executeApprovePayout(subId) {
+    if (!confirm('Approve settlement #' + subId + ' and initiate same-day ACH wire payout to carrier?')) return;
+    try {
+      const res = await fetch('/api/factoring/approve/' + subId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert(data.message || 'Payout approved successfully!');
+        loadFactoringSubmissions();
+      } else {
+        alert('Error: ' + (data.error || 'Could not approve payout.'));
+      }
+    } catch (e) {
+      alert('Error approving payout.');
+    }
   }
 
   function getMockAuditLoads() {

@@ -120,6 +120,7 @@ app.use('/api/mobile', require('./routes/mobile-push'));           // Mobile Pus
 app.use('/api/loads', require('./routes/load-messages'));          // In-App Load Messaging, Attachments & Unified Audit Timeline
 app.use('/api/carrier-vetting', require('./routes/carrier-vetting')); // FMCSA Authority, Insurance & Safety Vetting Engine
 app.use('/api/loads', require('./routes/ratecon-esign'));          // Digital Rate Confirmation PDF Generator & E-Signature Engine
+app.use('/api/factoring', require('./routes/factoring-quickpay')); // 24-Hour QuickPay, Factoring NOA & POD Audit Engine
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {
