@@ -121,6 +121,8 @@ app.use('/api/loads', require('./routes/load-messages'));          // In-App Loa
 app.use('/api/carrier-vetting', require('./routes/carrier-vetting')); // FMCSA Authority, Insurance & Safety Vetting Engine
 app.use('/api/loads', require('./routes/ratecon-esign'));          // Digital Rate Confirmation PDF Generator & E-Signature Engine
 app.use('/api/factoring', require('./routes/factoring-quickpay')); // 24-Hour QuickPay, Factoring NOA & POD Audit Engine
+app.use('/api/rates', require('./routes/rate-benchmark'));          // Spot Market Rate Benchmark Engine & Lane Pricing
+app.use('/api/bids', require('./routes/load-bids'));                // Instant Book-It-Now & Counter-Offer Bidding Engine
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

@@ -314,6 +314,43 @@ class MobileApiClient {
   getFactoringPacketPdfUrl(submissionId) {
     return `${this.getBaseUrl()}/api/factoring/packet/${submissionId}/pdf`;
   }
+
+  // --- Spot Rate Benchmark & Lane Pricing ---
+  async getRateBenchmark(origin, destination, equipment = 'reefer', dieselPrice = 3.65) {
+    const query = new URLSearchParams({ origin, destination, equipment, diesel_price: dieselPrice }).toString();
+    return this.request(`/api/rates/benchmark?${query}`, { method: 'GET' });
+  }
+
+  async getTopLanesBenchmark() {
+    return this.request('/api/rates/top-lanes', { method: 'GET' });
+  }
+
+  // --- Instant Book-It-Now & Counter-Offer Bidding ---
+  async submitLoadBid(bidData) {
+    return this.request('/api/bids/submit', {
+      method: 'POST',
+      body: bidData
+    });
+  }
+
+  async getLoadBids(loadId) {
+    return this.request(`/api/bids/load/${loadId}`, { method: 'GET' });
+  }
+
+  async getMyBids() {
+    return this.request('/api/bids/my-bids', { method: 'GET' });
+  }
+
+  async respondToBid(bidId, action, counterAmount = null, counterNotes = null) {
+    return this.request(`/api/bids/${bidId}/respond`, {
+      method: 'POST',
+      body: { action, counter_amount: counterAmount, counter_notes: counterNotes }
+    });
+  }
+
+  async getBiddingStats() {
+    return this.request('/api/bids/stats/summary', { method: 'GET' });
+  }
 }
 
 export const api = new MobileApiClient();

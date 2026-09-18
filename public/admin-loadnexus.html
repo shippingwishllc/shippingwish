@@ -265,6 +265,9 @@
         <button class="nav-tab-btn" id="tab-btn-factoring" onclick="switchTab('factoring')">
           <span>💰</span> Factoring &amp; QuickPay
         </button>
+        <button class="nav-tab-btn" id="tab-btn-pricing" onclick="switchTab('pricing')">
+          <span>📈</span> Spot Rates &amp; Bids
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -542,6 +545,132 @@
         </div>
       </div>
 
+      <!-- TAB 7: SPOT RATE BENCHMARK & BIDS DESK -->
+      <div id="tab-content-pricing" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4);">
+          <!-- Lane Rate Calculator -->
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-5);">
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0 0 4px;display:flex;align-items:center;gap:8px;">
+              <span>📈</span> Spot Market Rate Benchmark Calculator
+            </h3>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 14px;">
+              Calibrated with DAT Freight &amp; USDA 2026 Spot Market Index with dynamic Fuel Surcharge (FSC).
+            </p>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <div class="form-group">
+                <label class="form-label" style="font-size:11px;">Origin Market</label>
+                <input type="text" id="calc-origin" class="form-input" value="Dallas, TX" placeholder="City, State">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size:11px;">Destination Market</label>
+                <input type="text" id="calc-dest" class="form-input" value="Atlanta, GA" placeholder="City, State">
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+              <div class="form-group">
+                <label class="form-label" style="font-size:11px;">Equipment Type</label>
+                <select id="calc-eq" class="form-select">
+                  <option value="reefer">53ft Reefer (Refrigerated)</option>
+                  <option value="dry_van">53ft Dry Van</option>
+                  <option value="flatbed">48ft/53ft Flatbed</option>
+                  <option value="step_deck">Step Deck / Lowboy</option>
+                  <option value="box_truck">26ft Straight Box Truck</option>
+                  <option value="power_only">Power Only (Tractor)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size:11px;">US EIA Diesel Benchmark ($/gal)</label>
+                <input type="number" step="0.01" id="calc-diesel" class="form-input" value="3.65">
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-sm" onclick="calculateSpotRate()" style="width:100%;justify-content:center;margin-bottom:14px;">
+              ⚡ Calculate Spot Market Benchmark
+            </button>
+
+            <!-- Results Output -->
+            <div id="pricing-results" style="background:#070F1E;border:1px solid #1E3E62;border-radius:10px;padding:12px;display:none;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span id="res-lane-text" style="font-weight:800;color:#fff;font-size:13px;">Dallas, TX ➔ Atlanta, GA</span>
+                <span id="res-distance" style="font-size:11.5px;color:#93C5FD;font-weight:700;">782 Road Miles • ~16 hrs</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+                <div style="background:#0E1A2D;padding:8px;border-radius:6px;text-align:center;">
+                  <div style="font-size:10px;color:var(--text-muted);">LOW SPOT</div>
+                  <div id="res-low-rate" style="font-size:15px;font-weight:800;color:#94A3B8;">$2,229</div>
+                  <div id="res-low-rpm" style="font-size:10px;color:#64748B;">$2.85/mi</div>
+                </div>
+                <div style="background:rgba(37,99,235,0.2);border:1px solid #2563EB;padding:8px;border-radius:6px;text-align:center;">
+                  <div style="font-size:10px;color:#93C5FD;font-weight:800;">MARKET AVG</div>
+                  <div id="res-avg-rate" style="font-size:16px;font-weight:800;color:#60A5FA;">$2,542</div>
+                  <div id="res-avg-rpm" style="font-size:10px;color:#93C5FD;">$3.25/mi</div>
+                </div>
+                <div style="background:#0E1A2D;padding:8px;border-radius:6px;text-align:center;">
+                  <div style="font-size:10px;color:var(--text-muted);">HIGH PEAK</div>
+                  <div id="res-high-rate" style="font-size:15px;font-weight:800;color:#34D399;">$3,089</div>
+                  <div id="res-high-rpm" style="font-size:10px;color:#10B981;">$3.95/mi</div>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);">
+                <span id="res-fsc">Fuel Surcharge: $0.40/mi ($312.80 total)</span>
+                <span id="res-demand" style="color:#10B981;font-weight:700;">Demand: 5.8:1 (High)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top National Freight Corridors -->
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-5);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+                <span>🚚</span> Top High-Volume Corridors (Live Index)
+              </h3>
+              <span class="badge badge-success" style="font-size:10px;">EIA Diesel: $3.65</span>
+            </div>
+            <div id="top-lanes-container" style="display:grid;grid-template-columns:1fr;gap:8px;">
+              <!-- Injected via loadTopLanes -->
+              <div style="text-align:center;padding:20px;color:var(--text-muted);">Loading national benchmark lanes...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Carrier Bids & Negotiation Desk -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);flex-wrap:wrap;gap:10px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>🤝</span> Carrier Instant "Book-Now" &amp; Counter-Offer Bids Queue
+            </h3>
+            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0;">
+              Real-time bids submitted from LoadNexus Carrier &amp; Driver mobile apps. Awarding a bid locks the load and generates the RateCon.
+            </p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadBidsQueue()">🔄 Refresh Bids</button>
+        </div>
+
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>Bid # &amp; Load</th>
+                <th>Carrier / MC</th>
+                <th>Type</th>
+                <th>Offered Rate</th>
+                <th>Equipment / Unit</th>
+                <th>Availability</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bids-tbody">
+              <tr>
+                <td colspan="8" style="text-align:center;padding:24px;">Loading active bidding queue...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -649,6 +778,40 @@
   </div>
 </div>
 
+<!-- MODAL: BROKER COUNTER BID -->
+<div id="modal-counter-bid" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:440px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>🤝</span> Counter Carrier Offer
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeCounterBidModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="counter-bid-id">
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Carrier's Current Offer</label>
+      <input type="text" id="counter-current-offer" class="form-input" disabled style="opacity:0.8;font-weight:700;">
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Your Counter Rate ($ USD)</label>
+      <input type="number" id="counter-new-rate" class="form-input" placeholder="e.g. 2950">
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label" style="font-size:11px;">Negotiation Note (Optional)</label>
+      <input type="text" id="counter-notes" class="form-input" placeholder="e.g. Firm rate, ready for immediate loading dock dispatch">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeCounterBidModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="submitBrokerCounter()">Send Counter Offer</button>
+    </div>
+  </div>
+</div>
+
 <script>
   let brokersData = [];
   let loadsData = [];
@@ -666,12 +829,15 @@
     document.getElementById('tab-content-stream').style.display = tabId === 'stream' ? 'block' : 'none';
     document.getElementById('tab-content-telematics').style.display = tabId === 'telematics' ? 'block' : 'none';
     document.getElementById('tab-content-factoring').style.display = tabId === 'factoring' ? 'block' : 'none';
+    document.getElementById('tab-content-pricing').style.display = tabId === 'pricing' ? 'block' : 'none';
     document.getElementById('tab-content-apps').style.display = tabId === 'apps' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
     } else if (tabId === 'factoring') {
       loadFactoringSubmissions();
+    } else if (tabId === 'pricing') {
+      loadPricingAndBids();
     }
   }
 
@@ -1100,6 +1266,229 @@
       }
     } catch (e) {
       alert('Error approving payout.');
+    }
+  }
+
+  // --- PHASE 10: SPOT RATES & BIDS MANAGEMENT ---
+  async function loadPricingAndBids() {
+    loadTopLanes();
+    loadBidsQueue();
+    calculateSpotRate();
+  }
+
+  async function calculateSpotRate() {
+    const origin = document.getElementById('calc-origin').value || 'Dallas, TX';
+    const dest = document.getElementById('calc-dest').value || 'Atlanta, GA';
+    const eq = document.getElementById('calc-eq').value || 'reefer';
+    const diesel = document.getElementById('calc-diesel').value || '3.65';
+
+    try {
+      const res = await fetch(`/api/rates/benchmark?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&equipment=${encodeURIComponent(eq)}&diesel_price=${encodeURIComponent(diesel)}`);
+      const json = await res.json();
+      if (json.ok && json.pricing_model) {
+        const p = json.pricing_model;
+        const l = json.lane;
+        document.getElementById('pricing-results').style.display = 'block';
+        document.getElementById('res-lane-text').textContent = `${l.origin} ➔ ${l.destination}`;
+        document.getElementById('res-distance').textContent = `${l.distance_miles.toLocaleString()} Road Miles • ~${l.estimated_transit_hours} hrs`;
+        
+        document.getElementById('res-low-rate').textContent = `$${p.low_spot.total_rate.toLocaleString()}`;
+        document.getElementById('res-low-rpm').textContent = `$${p.low_spot.all_in_rpm.toFixed(2)}/mi`;
+
+        document.getElementById('res-avg-rate').textContent = `$${p.market_average.total_rate.toLocaleString()}`;
+        document.getElementById('res-avg-rpm').textContent = `$${p.market_average.all_in_rpm.toFixed(2)}/mi`;
+
+        document.getElementById('res-high-rate').textContent = `$${p.high_spot.total_rate.toLocaleString()}`;
+        document.getElementById('res-high-rpm').textContent = `$${p.high_spot.all_in_rpm.toFixed(2)}/mi`;
+
+        document.getElementById('res-fsc').textContent = `Fuel Surcharge: $${p.fuel_surcharge.fsc_per_mile.toFixed(2)}/mi ($${p.fuel_surcharge.total_fsc.toFixed(2)} total)`;
+        document.getElementById('res-demand').textContent = `Demand: ${json.market_metrics.load_to_truck_ratio}`;
+      }
+    } catch (e) {
+      console.warn('Spot rate calc error:', e);
+    }
+  }
+
+  async function loadTopLanes() {
+    const container = document.getElementById('top-lanes-container');
+    if (!container) return;
+    try {
+      const res = await fetch('/api/rates/top-lanes');
+      const json = await res.json();
+      if (json.ok && json.corridors) {
+        container.innerHTML = json.corridors.map(c => `
+          <div style="background:#0E1A2D;border:1px solid #1E3E62;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:700;color:#fff;font-size:12px;">${escapeAttr(c.origin)} ➔ ${escapeAttr(c.destination)}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${escapeAttr(c.equipment)} • ${c.miles} mi</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:800;color:#60A5FA;font-size:13px;">$${c.avg_rate.toLocaleString()} <span style="font-size:10px;color:var(--text-muted);">($${c.rpm}/mi)</span></div>
+              <span class="badge ${c.trend.startsWith('+') ? 'badge-success' : 'badge-warning'}" style="font-size:9.5px;padding:1px 6px;">${c.trend}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+    } catch (e) {
+      console.warn('Top lanes error:', e);
+    }
+  }
+
+  async function loadBidsQueue() {
+    const tbody = document.getElementById('bids-tbody');
+    if (!tbody) return;
+    try {
+      let allBids = [];
+      for (const load of loadsData.slice(0, 10)) {
+        try {
+          const res = await fetch(`/api/bids/load/${load.id}`);
+          const json = await res.json();
+          if (json.ok && json.bids) {
+            allBids = allBids.concat(json.bids.map(b => ({ ...b, load_number: load.load_number || load.id, corridor: `${load.pickup_location || 'Origin'} ➔ ${load.delivery_location || 'Dest'}` })));
+          }
+        } catch (e) {}
+      }
+
+      if (allBids.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No carrier bids or counter-offers currently pending in queue.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = allBids.map(b => {
+        const isAccepted = b.status === 'accepted';
+        const isRejected = b.status === 'rejected';
+        const isCountered = b.status === 'countered';
+
+        let badge = '<span class="badge badge-warning" style="font-size:10px;">Submitted</span>';
+        if (isAccepted) badge = '<span class="badge badge-success" style="font-size:10px;">✓ Accepted &amp; Awarded</span>';
+        if (isRejected) badge = '<span class="badge badge-danger" style="font-size:10px;">Declined</span>';
+        if (isCountered) badge = `<span class="badge badge-primary" style="font-size:10px;">Counter: $${Number(b.counter_amount).toLocaleString()}</span>`;
+
+        let actionBtns = '';
+        if (b.status === 'submitted') {
+          actionBtns = `
+            <div style="display:flex;gap:4px;">
+              <button class="btn btn-primary btn-sm" onclick="executeAcceptBid(${b.id})" style="font-size:10.5px;padding:3px 7px;">⚡ Award</button>
+              <button class="btn btn-secondary btn-sm" onclick="openCounterBidModal(${b.id}, ${b.offered_rate})" style="font-size:10.5px;padding:3px 7px;">🤝 Counter</button>
+              <button class="btn btn-danger btn-sm" onclick="executeDeclineBid(${b.id})" style="font-size:10.5px;padding:3px 7px;">✕</button>
+            </div>
+          `;
+        } else if (isAccepted) {
+          actionBtns = `<a href="/api/loads/${b.load_id}/ratecon/pdf" target="_blank" class="btn btn-secondary btn-sm" style="font-size:10.5px;padding:3px 7px;text-decoration:none;">📄 RateCon PDF</a>`;
+        } else {
+          actionBtns = `<span style="font-size:11px;color:var(--text-muted);">-</span>`;
+        }
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:800;color:var(--text-primary);">Bid #${b.id}</div>
+              <div style="font-size:11px;color:var(--text-muted);">Load #${escapeAttr(b.load_number)} • ${escapeAttr(b.corridor)}</div>
+            </td>
+            <td>
+              <div style="font-weight:700;color:var(--text-primary);">${escapeAttr(b.carrier_company || b.carrier_name || 'Carrier Partner')}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${escapeAttr(b.carrier_mc || 'MC-Authorized')}</div>
+            </td>
+            <td>
+              <span class="badge ${b.bid_type === 'book_now' ? 'badge-success' : 'badge-primary'}" style="font-size:10px;">
+                ${b.bid_type === 'book_now' ? '⚡ BOOK NOW' : '🤝 COUNTER'}
+              </span>
+            </td>
+            <td style="font-weight:800;color:#10B981;font-size:13.5px;">$${Number(b.offered_rate).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+            <td>
+              <div style="font-size:12px;color:var(--text-primary);">${escapeAttr(b.driver_name || 'Assigned Driver')}</div>
+              <div style="font-size:11px;color:var(--text-muted);">Unit: ${escapeAttr(b.truck_unit || 'Fleet Tractor')}</div>
+            </td>
+            <td style="font-size:12px;color:var(--text-secondary);">${escapeAttr(b.ready_time || 'Immediate')}</td>
+            <td>${badge}</td>
+            <td>${actionBtns}</td>
+          </tr>
+        `;
+      }).join('');
+    } catch (e) {
+      console.warn('Bids queue error:', e);
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Could not fetch bids queue.</td></tr>';
+    }
+  }
+
+  async function executeAcceptBid(bidId) {
+    if (!confirm('Accept Bid #' + bidId + ' and instantly award load to this carrier? (This will auto-generate the official RateCon)')) return;
+    try {
+      const res = await fetch(`/api/bids/${bidId}/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'accepted' })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert(data.message || 'Bid accepted successfully!');
+        loadBidsQueue();
+        loadAllTelemetryData();
+      } else {
+        alert('Error: ' + (data.error || 'Could not accept bid.'));
+      }
+    } catch (e) {
+      alert('Error accepting bid.');
+    }
+  }
+
+  async function executeDeclineBid(bidId) {
+    if (!confirm('Decline Bid #' + bidId + '?')) return;
+    try {
+      const res = await fetch(`/api/bids/${bidId}/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'rejected' })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert('Bid declined.');
+        loadBidsQueue();
+      } else {
+        alert('Error: ' + (data.error || 'Could not decline bid.'));
+      }
+    } catch (e) {
+      alert('Error declining bid.');
+    }
+  }
+
+  function openCounterBidModal(bidId, offeredRate) {
+    document.getElementById('counter-bid-id').value = bidId;
+    document.getElementById('counter-current-offer').value = '$' + Number(offeredRate).toLocaleString();
+    document.getElementById('counter-new-rate').value = Math.round(Number(offeredRate) * 0.95);
+    document.getElementById('modal-counter-bid').style.display = 'flex';
+  }
+
+  function closeCounterBidModal() {
+    document.getElementById('modal-counter-bid').style.display = 'none';
+  }
+
+  async function submitBrokerCounter() {
+    const bidId = document.getElementById('counter-bid-id').value;
+    const rate = document.getElementById('counter-new-rate').value;
+    const notes = document.getElementById('counter-notes').value;
+
+    if (!rate || parseFloat(rate) <= 0) {
+      alert('Please enter a valid counter rate.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/bids/${bidId}/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'counter', counter_amount: rate, counter_notes: notes })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert(data.message || 'Counter offer sent to carrier!');
+        closeCounterBidModal();
+        loadBidsQueue();
+      } else {
+        alert('Error: ' + (data.error || 'Could not send counter.'));
+      }
+    } catch (e) {
+      alert('Error sending counter offer.');
     }
   }
 
