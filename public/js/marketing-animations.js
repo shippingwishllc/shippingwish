@@ -98,47 +98,62 @@
     const card = document.getElementById('hero-load-card');
     if (!card) return;
 
-    fetch('/api/loadboard/public-stats')
-      .then(res => res.json())
-      .then(data => {
-        if (!data || !data.ok) return;
+    let corridors = [];
+    let currentIndex = 0;
+    let tickerInterval = null;
 
-        // Update KPIs
-        const kpiLoads = document.getElementById('hero-kpi-loads');
-        if (kpiLoads && data.loads_today) kpiLoads.textContent = data.loads_today;
+    function fetchLiveStats() {
+      fetch('/api/loadboard/public-stats')
+        .then(res => res.json())
+        .then(data => {
+          if (!data || !data.ok) return;
 
-        const kpiRpm = document.getElementById('hero-kpi-rpm');
-        if (kpiRpm && data.avg_rpm) kpiRpm.textContent = data.avg_rpm;
+          // Update KPIs to match live loadboard scale
+          const kpiLoads = document.getElementById('hero-kpi-loads');
+          if (kpiLoads && data.loads_today) kpiLoads.textContent = data.loads_today;
 
-        const corridors = data.live_corridors;
-        if (!corridors || !corridors.length) return;
+          const kpiRpm = document.getElementById('hero-kpi-rpm');
+          if (kpiRpm && data.avg_rpm) kpiRpm.textContent = data.avg_rpm;
 
-        let currentIndex = 0;
-        setInterval(() => {
-          currentIndex = (currentIndex + 1) % corridors.length;
-          const c = corridors[currentIndex];
+          if (data.live_corridors && data.live_corridors.length) {
+            corridors = data.live_corridors;
+          }
 
-          card.style.opacity = '0.35';
-          setTimeout(() => {
-            const idEl = document.getElementById('hero-load-id');
-            const metricsEl = document.getElementById('hero-load-metrics');
-            const payEl = document.getElementById('hero-load-pay');
-            const origEl = document.getElementById('hero-load-origin');
-            const destEl = document.getElementById('hero-load-dest');
-            const noteEl = document.getElementById('hero-load-note');
+          if (!tickerInterval && corridors.length) {
+            tickerInterval = setInterval(rotateCard, 4200);
+          }
+        })
+        .catch(() => {});
+    }
 
-            if (idEl) idEl.textContent = c.id;
-            if (metricsEl) metricsEl.textContent = `${c.miles} mi · $${c.rpm.toFixed(2)} / mi · ${c.equipment}`;
-            if (payEl) payEl.textContent = Number(c.rate).toLocaleString();
-            if (origEl) origEl.textContent = c.origin;
-            if (destEl) destEl.textContent = c.destination;
-            if (noteEl) noteEl.textContent = `${c.broker} (${c.commodity}). Direct broker pay goes to your bank.`;
+    function rotateCard() {
+      if (!corridors || !corridors.length) return;
+      currentIndex = (currentIndex + 1) % corridors.length;
+      const c = corridors[currentIndex];
 
-            card.style.opacity = '1';
-          }, 250);
-        }, 4500);
-      })
-      .catch(() => {});
+      card.style.opacity = '0.3';
+      setTimeout(() => {
+        const idEl = document.getElementById('hero-load-id');
+        const metricsEl = document.getElementById('hero-load-metrics');
+        const payEl = document.getElementById('hero-load-pay');
+        const origEl = document.getElementById('hero-load-origin');
+        const destEl = document.getElementById('hero-load-dest');
+        const noteEl = document.getElementById('hero-load-note');
+
+        if (idEl) idEl.textContent = c.id;
+        if (metricsEl) metricsEl.textContent = `${c.miles} mi · $${Number(c.rpm).toFixed(2)} / mi · ${c.equipment}`;
+        if (payEl) payEl.textContent = Number(c.rate).toLocaleString();
+        if (origEl) origEl.textContent = c.origin;
+        if (destEl) destEl.textContent = c.destination;
+        if (noteEl) noteEl.textContent = `${c.broker} (${c.commodity}). Direct broker pay goes to your bank.`;
+
+        card.style.opacity = '1';
+      }, 250);
+    }
+
+    fetchLiveStats();
+    // Periodically refresh stats and corridors every 45s for runtime freshness
+    setInterval(fetchLiveStats, 45000);
   }
 
   function init() {

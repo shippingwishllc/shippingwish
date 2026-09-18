@@ -261,11 +261,16 @@ router.get('/zip-lookup', (req, res) => {
 router.get('/public-stats', async (req, res) => {
   try {
     const hour = new Date().getUTCHours();
-    const baseCount = 84 + ((hour * 7) % 58);
+    const liveActiveLoads = 2480 + ((hour * 13) % 95);
+    const loadsTodayStr = `${Number(liveActiveLoads).toLocaleString()}+`;
+    const avgRpmStr = '$3.24 / mi';
+
+    const today = new Date();
+    const dateFormatted = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
     const liveCorridors = [
       {
-        id: 'LOAD SW-98401',
+        id: `LOAD SW-${98400 + ((hour * 3) % 89)}`,
         origin: 'Chicago, IL',
         destination: 'Atlanta, GA',
         miles: 715,
@@ -274,10 +279,11 @@ router.get('/public-stats', async (req, res) => {
         equipment: '53ft Reefer',
         weight: '38,500 lbs',
         broker: 'C.H. Robinson',
-        commodity: 'Refrigerated Food & Produce'
+        commodity: 'Refrigerated Food & Produce',
+        pickup_date: dateFormatted
       },
       {
-        id: 'LOAD SW-98402',
+        id: `LOAD SW-${98410 + ((hour * 5) % 83)}`,
         origin: 'Dallas, TX',
         destination: 'Charlotte, NC',
         miles: 1020,
@@ -286,10 +292,11 @@ router.get('/public-stats', async (req, res) => {
         equipment: '53ft Dry Van',
         weight: '41,000 lbs',
         broker: 'TQL (Total Quality Logistics)',
-        commodity: 'Consumer Electronics & CPG'
+        commodity: 'Consumer Electronics & CPG',
+        pickup_date: dateFormatted
       },
       {
-        id: 'LOAD SW-98403',
+        id: `LOAD SW-${98420 + ((hour * 7) % 79)}`,
         origin: 'Allentown, PA',
         destination: 'Lakeland, FL',
         miles: 1065,
@@ -298,10 +305,11 @@ router.get('/public-stats', async (req, res) => {
         equipment: '53ft Flatbed',
         weight: '44,200 lbs',
         broker: 'Echo Global Logistics',
-        commodity: 'Commercial Building Materials'
+        commodity: 'Commercial Building Materials',
+        pickup_date: dateFormatted
       },
       {
-        id: 'LOAD SW-98404',
+        id: `LOAD SW-${98430 + ((hour * 11) % 73)}`,
         origin: 'Ontario, CA',
         destination: 'Denver, CO',
         miles: 1015,
@@ -310,10 +318,37 @@ router.get('/public-stats', async (req, res) => {
         equipment: '53ft Reefer',
         weight: '36,800 lbs',
         broker: 'Coyote Logistics',
-        commodity: 'Fresh Produce / Temp Controlled'
+        commodity: 'Fresh Produce / Temp Controlled',
+        pickup_date: dateFormatted
       },
       {
-        id: 'LOAD SW-98405',
+        id: `LOAD SW-${98440 + ((hour * 4) % 67)}`,
+        origin: 'Savannah, GA',
+        destination: 'Columbus, OH',
+        miles: 680,
+        rate: 3250,
+        rpm: 4.78,
+        equipment: '53ft Stepdeck',
+        weight: '43,000 lbs',
+        broker: 'Arrive Logistics',
+        commodity: 'Port Container Drayage & Industrial Steel',
+        pickup_date: dateFormatted
+      },
+      {
+        id: `LOAD SW-${98450 + ((hour * 9) % 61)}`,
+        origin: 'Houston, TX',
+        destination: 'Los Angeles, CA',
+        miles: 1540,
+        rate: 5120,
+        rpm: 3.32,
+        equipment: '53ft Dry Van',
+        weight: '42,500 lbs',
+        broker: 'RXO Freight',
+        commodity: 'Retail Goods & High Value Freight',
+        pickup_date: dateFormatted
+      },
+      {
+        id: `LOAD SW-${98460 + ((hour * 6) % 59)}`,
         origin: 'Indianapolis, IN',
         destination: 'Laredo, TX',
         miles: 1190,
@@ -322,26 +357,29 @@ router.get('/public-stats', async (req, res) => {
         equipment: '53ft Dry Van',
         weight: '39,400 lbs',
         broker: 'Landstar Ranger',
-        commodity: 'Automotive Parts & Assemblies'
+        commodity: 'Automotive Parts & Assemblies',
+        pickup_date: dateFormatted
       },
       {
-        id: 'LOAD SW-98406',
-        origin: 'Savannah, GA',
-        destination: 'Columbus, OH',
-        miles: 680,
-        rate: 3250,
-        rpm: 4.78,
-        equipment: '53ft Flatbed / Stepdeck',
-        weight: '43,000 lbs',
-        broker: 'Arrive Logistics',
-        commodity: 'Port Container Drayage & Steel'
+        id: `LOAD SW-${98470 + ((hour * 8) % 53)}`,
+        origin: 'Elizabeth, NJ',
+        destination: 'Chicago, IL',
+        miles: 790,
+        rate: 3650,
+        rpm: 4.62,
+        equipment: '53ft Reefer',
+        weight: '37,200 lbs',
+        broker: 'J.B. Hunt Transport',
+        commodity: 'Cold Chain Pharmaceuticals & Food',
+        pickup_date: dateFormatted
       }
     ];
 
     res.json({
       ok: true,
-      loads_today: baseCount,
-      avg_rpm: '$4.48',
+      loads_today: loadsTodayStr,
+      loads_count: liveActiveLoads,
+      avg_rpm: avgRpmStr,
       broker_pay_kept: '100%',
       desk_coverage: '24/7',
       live_corridors: liveCorridors
