@@ -99,7 +99,6 @@
       <a href="/blog" data-nav-close>Insights</a>
       <a href="/contact" data-nav-close>Contact</a>
       <div class="nav-mobile-cta-group">
-        <a href="/carrier-setup" class="btn btn-primary-amber" data-nav-close>Carrier Setup (Online) →</a>
         <a href="/login" class="btn btn-secondary-glass" data-nav-close>Sign In</a>
         <a href="/pricing" class="btn btn-primary-amber" data-nav-close>Start Free Week →</a>
       </div>`;
