@@ -91,8 +91,8 @@
       <a href="/" data-nav-close>Home</a>
       <a href="/carrier-setup" data-nav-close style="color:#facc15;font-weight:700;">⚡ Carrier Setup (Online)</a>
       <a href="/load-booking" data-nav-close>LoadNexus™ Freight Board</a>
-      <a href="/mobile-apps" data-nav-close style="color:#60a5fa;font-weight:700;">📱 4 Mobile Apps (Expo Go)</a>
-      <a href="/app-downloads" data-nav-close style="color:#34d399;font-weight:700;">📥 App Downloads (APK)</a>
+      <a href="/mobile-apps" data-nav-close style="color:#60a5fa;font-weight:700;">📱 Mobile Apps (iOS &amp; Android)</a>
+      <a href="/app-downloads" data-nav-close style="color:#34d399;font-weight:700;">📥 Mobile Downloads</a>
       <a href="/services" data-nav-close>Services</a>
       <a href="/dispatch" data-nav-close>Fleet Operations</a>
       <a href="/pricing" data-nav-close>Pricing</a>
