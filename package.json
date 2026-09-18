@@ -12,7 +12,11 @@
     "mobile:driver:tunnel": "npm --prefix mobile/driver-app start -- --tunnel",
     "mobile:carrier:tunnel": "npm --prefix mobile/loadnexus-carrier start -- --tunnel",
     "mobile:tms:tunnel": "npm --prefix mobile/shippingwish-tms start -- --tunnel",
-    "mobile:broker:tunnel": "npm --prefix mobile/loadnexus-broker start -- --tunnel"
+    "mobile:broker:tunnel": "npm --prefix mobile/loadnexus-broker start -- --tunnel",
+    "build:driver:apk": "npm --prefix mobile/driver-app run eas-build",
+    "build:carrier:apk": "npm --prefix mobile/loadnexus-carrier run eas-build",
+    "build:tms:apk": "npm --prefix mobile/shippingwish-tms run eas-build",
+    "build:broker:apk": "npm --prefix mobile/loadnexus-broker run eas-build"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

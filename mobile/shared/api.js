@@ -254,6 +254,21 @@ class MobileApiClient {
   async getLiveFleet() {
     return this.request('/api/tracking/live-fleet', { method: 'GET' });
   }
+
+  // --- Smart Matchmaking Engine ---
+  async getTruckMatches(filters = {}) {
+    const query = new URLSearchParams(filters).toString();
+    return this.request(`/api/loadboard/matches/truck?${query}`, { method: 'GET' });
+  }
+
+  async getLoadMatches(filters = {}) {
+    const query = new URLSearchParams(filters).toString();
+    return this.request(`/api/loadboard/matches/load?${query}`, { method: 'GET' });
+  }
+
+  async getLiveMatchesBoard() {
+    return this.request('/api/loadboard/matches/live-board', { method: 'GET' });
+  }
 }
 
 export const api = new MobileApiClient();

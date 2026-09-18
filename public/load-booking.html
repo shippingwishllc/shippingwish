@@ -2272,7 +2272,7 @@
   function loadSiteChromeScript() {
     if (document.querySelector('script[src*="site-chrome.js"]')) return;
     const s = document.createElement('script');
-    s.src = '/js/site-chrome.js';
+    s.src = '/js/site-chrome.js?v=2';
     document.body.appendChild(s);
   }
 

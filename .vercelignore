@@ -1,0 +1,5 @@
+mobile/
+nyclimowish/
+scratch/
+*.log
+.env*
