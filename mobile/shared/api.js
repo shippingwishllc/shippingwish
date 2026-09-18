@@ -269,6 +269,27 @@ class MobileApiClient {
   async getLiveMatchesBoard() {
     return this.request('/api/loadboard/matches/live-board', { method: 'GET' });
   }
+
+  // --- Carrier FMCSA Safety Vetting ---
+  async vetCarrier(mcOrDot) {
+    return this.request(`/api/carrier-vetting/${encodeURIComponent(mcOrDot)}`, { method: 'GET' });
+  }
+
+  // --- Digital Rate Confirmation (RateCon) & E-Signature ---
+  async getRateConPreview(loadId) {
+    return this.request(`/api/loads/${loadId}/ratecon/preview`, { method: 'GET' });
+  }
+
+  getRateConPdfUrl(loadId) {
+    return `${this.getBaseUrl()}/api/loads/${loadId}/ratecon/pdf`;
+  }
+
+  async signRateCon(loadId, signerName, signatureData = null) {
+    return this.request(`/api/loads/${loadId}/ratecon/sign`, {
+      method: 'POST',
+      body: { signer_name: signerName, signature_data: signatureData }
+    });
+  }
 }
 
 export const api = new MobileApiClient();

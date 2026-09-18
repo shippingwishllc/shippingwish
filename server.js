@@ -118,6 +118,8 @@ app.use('/api/public', require('./routes/public-tools'));        // Public FMCSA
 app.use('/api/carrier-setup', require('./routes/carrier-setup'));  // Public Digital Carrier Setup & Onboarding
 app.use('/api/mobile', require('./routes/mobile-push'));           // Mobile Push Token Registration & Notifications
 app.use('/api/loads', require('./routes/load-messages'));          // In-App Load Messaging, Attachments & Unified Audit Timeline
+app.use('/api/carrier-vetting', require('./routes/carrier-vetting')); // FMCSA Authority, Insurance & Safety Vetting Engine
+app.use('/api/loads', require('./routes/ratecon-esign'));          // Digital Rate Confirmation PDF Generator & E-Signature Engine
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {
