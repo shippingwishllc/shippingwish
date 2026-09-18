@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoadNexus &amp; Shipping Wish 4-App Mobile Suite | iOS &amp; Android</title>
+  <meta name="description" content="Experience the 4-app dedicated mobile ecosystem for LoadNexus and Shipping Wish LLC: Driver Console, Carrier Loadboard, Fleet TMS, and Broker Exchange. Powered by Expo Go for iOS and Android.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css?v=20260918-m2">
+  <link rel="stylesheet" href="/css/marketing.css?v=20260918-m2">
+  <style>
+    .mobile-hero {
+      background: radial-gradient(circle at 50% 20%, rgba(30, 62, 98, 0.45) 0%, rgba(7, 15, 30, 1) 80%);
+      padding: 70px 20px 50px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .mobile-apps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin: 40px 0;
+    }
+    .app-feature-card {
+      background: #0B192C;
+      border: 1px solid #1E3E62;
+      border-radius: 18px;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .app-feature-card:hover {
+      transform: translateY(-4px);
+      border-color: #3B82F6;
+    }
+    .app-badge-pill {
+      align-self: flex-start;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .feature-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 20px;
+    }
+    .feature-list li {
+      font-size: 13px;
+      color: #94A3B8;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feature-list li strong {
+      color: #F8FAFC;
+    }
+    .command-box {
+      background: #070F1E;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #38BDF8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .step-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+    .step-card {
+      background: #0E1A2D;
+      border: 1px solid #1E3E62;
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+    .step-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      background: #3B82F6;
+      color: #fff;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body class="marketing" style="background:#070F1E;color:#F8FAFC;">
+<nav class="nav" role="navigation" aria-label="Main navigation"></nav>
+
+<!-- HERO SECTION -->
+<section class="mobile-hero">
+  <div class="mkt-wrap" style="max-width:880px;margin:0 auto;">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;color:#60A5FA;margin-bottom:16px;">
+      <span>📱</span> EXPO GO • NATIVE ANDROID &amp; IOS ECOSYSTEM
+    </div>
+    <h1 style="font-size:clamp(28px, 4.5vw, 46px);font-weight:900;color:#FFFFFF;margin:0 0 16px;letter-spacing:-0.5px;line-height:1.2;">
+      4 Dedicated Mobile Applications for Modern Freight Operations
+    </h1>
+    <p style="font-size:16px;color:#94A3B8;line-height:1.6;margin:0 auto 28px;max-width:720px;">
+      Instead of one cluttered app, every role in your logistics network receives an authoritative, high-performance console connected in real time to the live Vercel cloud SaaS.
+    </p>
+
+    <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;">
+      <a href="/load-booking" class="btn btn-primary btn-xl" style="background:#2563EB;border:none;">
+        Open Web Loadboard →
+      </a>
+      <a href="/admin-loadnexus" class="btn btn-secondary btn-xl" style="border-color:#3B82F6;color:#93C5FD;">
+        Superadmin Command Center
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- THE 4 MOBILE APPLICATIONS -->
+<section style="padding:60px 20px;">
+  <div class="mkt-wrap" style="max-width:1200px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:30px;">
+      <div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#3B82F6;text-transform:uppercase;">PERSONA ARCHITECTURE</div>
+      <h2 style="font-size:28px;font-weight:900;color:#FFFFFF;margin:6px 0 0;">Dedicated Apps Built for Maximum Speed</h2>
+    </div>
+
+    <div class="mobile-apps-grid">
+
+      <!-- APP 1: DRIVER CONSOLE -->
+      <div class="app-feature-card">
+        <div>
+          <span class="app-badge-pill" style="background:rgba(16,185,129,0.15);color:#10B981;border:1px solid rgba(16,185,129,0.3);">
+            App 1: On-The-Road
+          </span>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="font-size:32px;">🚛</div>
+            <div>
+              <h3 style="font-size:18px;font-weight:800;color:#fff;margin:0;">Driver Console</h3>
+              <div style="font-size:12px;color:#38BDF8;">CDL Drivers on Highway</div>
+            </div>
+          </div>
+          <p style="font-size:13px;color:#94A3B8;line-height:1.5;">
+            Assigned trips with appointment times, turn-by-turn navigation, and digital dispatch updates.
+          </p>
+          <ul class="feature-list">
+            <li><span>✓</span> <strong>1-Tap Navigation:</strong> Google Maps &amp; Apple Maps</li>
+            <li><span>✓</span> <strong>1-Tap Status:</strong> Arrived, Loaded, In Transit, Delivered</li>
+            <li><span>✓</span> <strong>Camera Scanner:</strong> Signed BOL &amp; POD photo upload</li>
+            <li><span>✓</span> <strong>GPS Telematics:</strong> Live broker tracking breadcrumbs</li>
+            <li><span>✓</span> <strong>Pre-Trip Check:</strong> 6-point DOT compliance audit</li>
+          </ul>
+        </div>
+        <div class="command-box">
+          <span>Run in Expo Go:</span>
+          <code>mobile/driver-app</code>
+        </div>
+      </div>
+
+      <!-- APP 2: LOADNEXUS CARRIER -->
+      <div class="app-feature-card">
+        <div>
+          <span class="app-badge-pill" style="background:rgba(59,130,246,0.15);color:#60A5FA;border:1px solid rgba(59,130,246,0.3);">
+            App 2: Freight Exchange
+          </span>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="font-size:32px;">⚡</div>
+            <div>
+              <h3 style="font-size:18px;font-weight:800;color:#fff;margin:0;">LoadNexus Carrier</h3>
+              <div style="font-size:12px;color:#38BDF8;">Motor Carriers &amp; Dispatchers</div>
+            </div>
+          </div>
+          <p style="font-size:13px;color:#94A3B8;line-height:1.5;">
+            50-state load board with verified spot freight, truck capacity broadcasting, and broker credit scores.
+          </p>
+          <ul class="feature-list">
+            <li><span>✓</span> <strong>50-State Search:</strong> Filter by Origin, Dest, Trailer &amp; RPM</li>
+            <li><span>✓</span> <strong>1-Click Booking:</strong> Send rate offer &amp; carrier packet</li>
+            <li><span>✓</span> <strong>Post Truck Capacity:</strong> Broadcast equipment to brokers</li>
+            <li><span>✓</span> <strong>Broker Scores:</strong> Real Days-To-Pay &amp; $75k bond check</li>
+            <li><span>✓</span> <strong>Anti-Double Brokering:</strong> Verified broker seal</li>
+          </ul>
+        </div>
+        <div class="command-box">
+          <span>Run in Expo Go:</span>
+          <code>mobile/loadnexus-carrier</code>
+        </div>
+      </div>
+
+      <!-- APP 3: SHIPPING WISH TMS -->
+      <div class="app-feature-card">
+        <div>
+          <span class="app-badge-pill" style="background:rgba(139,92,246,0.15);color:#C084FC;border:1px solid rgba(139,92,246,0.3);">
+            App 3: Fleet Operations
+          </span>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="font-size:32px;">🖥️</div>
+            <div>
+              <h3 style="font-size:18px;font-weight:800;color:#fff;margin:0;">Shipping Wish TMS</h3>
+              <div style="font-size:12px;color:#38BDF8;">Fleet Owners &amp; Operations</div>
+            </div>
+          </div>
+          <p style="font-size:13px;color:#94A3B8;line-height:1.5;">
+            Central management of moving dispatches, live fleet GPS map, document vault, and accounting.
+          </p>
+          <ul class="feature-list">
+            <li><span>✓</span> <strong>Dispatches Board:</strong> Live active fleet assignments</li>
+            <li><span>✓</span> <strong>Live Telematics Map:</strong> Driver speeds &amp; current location</li>
+            <li><span>✓</span> <strong>Document Vault:</strong> RateCon, BOL, and POD inspector</li>
+            <li><span>✓</span> <strong>Factoring &amp; Invoices:</strong> Monthly revenue tracker</li>
+            <li><span>✓</span> <strong>1-Tap Contact:</strong> Direct driver calling &amp; texting</li>
+          </ul>
+        </div>
+        <div class="command-box">
+          <span>Run in Expo Go:</span>
+          <code>mobile/shippingwish-tms</code>
+        </div>
+      </div>
+
+      <!-- APP 4: LOADNEXUS BROKER -->
+      <div class="app-feature-card">
+        <div>
+          <span class="app-badge-pill" style="background:rgba(245,158,11,0.15);color:#FBBF24;border:1px solid rgba(245,158,11,0.3);">
+            App 4: Shippers &amp; 3PL
+          </span>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="font-size:32px;">🏢</div>
+            <div>
+              <h3 style="font-size:18px;font-weight:800;color:#fff;margin:0;">LoadNexus Broker</h3>
+              <div style="font-size:12px;color:#38BDF8;">Freight Brokers &amp; Shippers</div>
+            </div>
+          </div>
+          <p style="font-size:13px;color:#94A3B8;line-height:1.5;">
+            Post spot freight with anti-double brokering certification and search verified carrier trucks.
+          </p>
+          <ul class="feature-list">
+            <li><span>✓</span> <strong>Post Spot Freight:</strong> Broadcast loads across 50 states</li>
+            <li><span>✓</span> <strong>Anti-Fraud Gate:</strong> Direct contract verification seal</li>
+            <li><span>✓</span> <strong>Search Carrier Trucks:</strong> View available capacity</li>
+            <li><span>✓</span> <strong>Brokered Tracking:</strong> Live shipment ETA telematics</li>
+            <li><span>✓</span> <strong>Carrier Vetting:</strong> Instant FMCSA authority check</li>
+          </ul>
+        </div>
+        <div class="command-box">
+          <span>Run in Expo Go:</span>
+          <code>mobile/loadnexus-broker</code>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW TO RUN IN EXPO GO -->
+<section style="background:#0B192C;padding:60px 20px;border-top:1px solid rgba(255,255,255,0.08);border-bottom:1px solid rgba(255,255,255,0.08);">
+  <div class="mkt-wrap" style="max-width:960px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:30px;">
+      <h2 style="font-size:26px;font-weight:900;color:#FFFFFF;margin:0 0 8px;">Run Any App in 60 Seconds with Expo Go</h2>
+      <p style="font-size:14px;color:#94A3B8;margin:0;">No App Store or Google Play compilation needed for testing — launch directly on your physical smartphone.</p>
+    </div>
+
+    <div class="step-card-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h4 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;">Install Expo Go</h4>
+        <p style="font-size:12px;color:#94A3B8;margin:0;">Download the free <strong>Expo Go</strong> app from the Google Play Store (Android) or Apple App Store (iOS).</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h4 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;">Start from Terminal</h4>
+        <p style="font-size:12px;color:#94A3B8;margin:0;">Navigate to the app directory (e.g. <code>mobile/driver-app</code>) and run <code>npx expo start</code>.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h4 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;">Scan &amp; Launch</h4>
+        <p style="font-size:12px;color:#94A3B8;margin:0;">Scan the terminal QR code with Expo Go (Android) or Camera (iOS). The app opens live connected to Vercel!</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOTTOM CTA -->
+<section style="padding:60px 20px;text-align:center;">
+  <div class="mkt-wrap" style="max-width:700px;margin:0 auto;">
+    <h2 style="font-size:26px;font-weight:900;color:#fff;margin:0 0 12px;">Ready to Experience LoadNexus?</h2>
+    <p style="font-size:14px;color:#94A3B8;margin:0 0 24px;">Join thousands of carriers and brokers using enterprise dispatch technology.</p>
+    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+      <a href="/load-booking" class="btn btn-primary btn-xl" style="background:#2563EB;border:none;">Access LoadNexus Board</a>
+      <a href="/pricing" class="btn btn-secondary btn-xl">View Operations Plans</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" role="contentinfo"></footer>
+<script src="/js/site-chrome.js"></script>
+</body>
+</html>
