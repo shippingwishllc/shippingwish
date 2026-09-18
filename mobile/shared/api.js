@@ -218,7 +218,44 @@ class MobileApiClient {
   async getInvoices() {
     return this.request('/api/invoices', { method: 'GET' });
   }
+
+  // --- Mobile Push Notifications ---
+  async registerPushToken(token, platform = 'expo', appName = 'shippingwish') {
+    return this.request('/api/mobile/push-token', {
+      method: 'POST',
+      body: { token, platform, appName }
+    });
+  }
+
+  async unregisterPushToken(token = null) {
+    return this.request('/api/mobile/push-token', {
+      method: 'DELETE',
+      body: { token }
+    });
+  }
+
+  // --- In-App Load Messaging & Timeline ---
+  async getLoadMessages(loadId) {
+    return this.request(`/api/loads/${loadId}/messages`, { method: 'GET' });
+  }
+
+  async sendLoadMessage(loadId, message, attachments = []) {
+    return this.request(`/api/loads/${loadId}/messages`, {
+      method: 'POST',
+      body: { message, attachments }
+    });
+  }
+
+  async getLoadTimeline(loadId) {
+    return this.request(`/api/loads/${loadId}/timeline`, { method: 'GET' });
+  }
+
+  // --- Live Fleet Telematics ---
+  async getLiveFleet() {
+    return this.request('/api/tracking/live-fleet', { method: 'GET' });
+  }
 }
 
 export const api = new MobileApiClient();
 export default api;
+

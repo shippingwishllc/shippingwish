@@ -259,6 +259,9 @@
         <button class="nav-tab-btn" id="tab-btn-stream" onclick="switchTab('stream')">
           <span>⚡</span> Live Spot &amp; Capacity Stream
         </button>
+        <button class="nav-tab-btn" id="tab-btn-telematics" onclick="switchTab('telematics')">
+          <span>🛰️</span> Live Fleet Telematics
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -462,6 +465,43 @@
         </div>
       </div>
 
+      <!-- TAB 5: LIVE FLEET GPS TELEMATICS -->
+      <div id="tab-content-telematics" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);flex-wrap:wrap;gap:10px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>🛰️</span> Live Driver Telematics &amp; Fleet GPS Radar
+            </h3>
+            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0;">
+              Real-time telemetry stream from Shipping Wish Driver Console &amp; Carrier mobile apps.
+            </p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadFleetTelematics()">🔄 Refresh Fleet GPS</button>
+        </div>
+
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>Driver &amp; Unit</th>
+                <th>Company / Carrier</th>
+                <th>Current Status</th>
+                <th>Location / Highway Corridor</th>
+                <th>GPS Coordinates</th>
+                <th>Speed &amp; Heading</th>
+                <th>Active Load</th>
+                <th>Last Ping</th>
+              </tr>
+            </thead>
+            <tbody id="telematics-tbody">
+              <tr>
+                <td colspan="8" style="text-align:center;padding:24px;">Streaming live fleet coordinates...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -564,7 +604,12 @@
     document.getElementById('tab-content-radar').style.display = tabId === 'radar' ? 'block' : 'none';
     document.getElementById('tab-content-scores').style.display = tabId === 'scores' ? 'block' : 'none';
     document.getElementById('tab-content-stream').style.display = tabId === 'stream' ? 'block' : 'none';
+    document.getElementById('tab-content-telematics').style.display = tabId === 'telematics' ? 'block' : 'none';
     document.getElementById('tab-content-apps').style.display = tabId === 'apps' ? 'block' : 'none';
+
+    if (tabId === 'telematics') {
+      loadFleetTelematics();
+    }
   }
 
   async function loadAllTelemetryData() {
@@ -604,6 +649,67 @@
       // Fallback demo audit loads
       renderRadarLoads(getMockAuditLoads());
     }
+
+    // 4. Live Fleet Telematics
+    loadFleetTelematics();
+  }
+
+  async function loadFleetTelematics() {
+    try {
+      const res = await fetch('/api/tracking/live-fleet');
+      const json = await res.json();
+      if (json.ok && json.fleet) {
+        renderFleetTelematics(json.fleet);
+      }
+    } catch (e) {
+      console.warn('Fleet telematics fetch error:', e);
+    }
+  }
+
+  function renderFleetTelematics(fleet) {
+    const tbody = document.getElementById('telematics-tbody');
+    if (!tbody) return;
+    if (!fleet || fleet.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;">No active drivers on duty.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = fleet.map(d => {
+      const statusBadge = d.status === 'in_transit' 
+        ? '<span class="badge badge-success">🚚 IN TRANSIT</span>'
+        : d.status === 'loading'
+        ? '<span class="badge badge-warning">📦 LOADING</span>'
+        : '<span class="badge badge-primary">📍 ' + escapeAttr((d.status || 'ON DUTY').toUpperCase()) + '</span>';
+
+      const timeAgo = d.ping_time ? new Date(d.ping_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live';
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:#fff;">${escapeAttr(d.driver_name)}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${escapeAttr(d.phone || 'N/A')}</div>
+          </td>
+          <td>
+            <div style="font-weight:600;color:var(--text-primary);">${escapeAttr(d.company || 'Fleet')}</div>
+          </td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="font-weight:700;color:#60A5FA;">${escapeAttr(d.location_name || 'En route')}</div>
+          </td>
+          <td>
+            <code style="font-size:11px;color:#34D399;">${Number(d.latitude || 0).toFixed(4)}°, ${Number(d.longitude || 0).toFixed(4)}°</code>
+          </td>
+          <td>
+            <div style="font-weight:700;color:#fff;">${d.speed || 0} mph</div>
+            <div style="font-size:10px;color:var(--text-muted);">Heading ${d.heading || 0}°</div>
+          </td>
+          <td>
+            ${d.load_number ? '<span class="badge badge-secondary" style="font-weight:700;">#' + escapeAttr(d.load_number) + '</span>' : '<span style="color:var(--text-muted);font-size:11px;">Bobtail / Available</span>'}
+          </td>
+          <td style="font-size:11px;color:var(--text-muted);">${timeAgo}</td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function renderRadarLoads(loads) {

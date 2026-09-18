@@ -115,6 +115,8 @@ app.use('/api/settings', require('./routes/settings'));          // Website CMS 
 app.use('/api/blog', require('./routes/blog'));                  // SEO Freight Blog & Admin Articles Manager
 app.use('/api/public', require('./routes/public-tools'));        // Public FMCSA carrier lookup (rate limited)
 app.use('/api/carrier-setup', require('./routes/carrier-setup'));  // Public Digital Carrier Setup & Onboarding
+app.use('/api/mobile', require('./routes/mobile-push'));           // Mobile Push Token Registration & Notifications
+app.use('/api/loads', require('./routes/load-messages'));          // In-App Load Messaging, Attachments & Unified Audit Timeline
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {
