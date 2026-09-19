@@ -619,6 +619,57 @@ class MobileApiClient {
   getShortPayPdfUrl(id) {
     return `${this.getBaseUrl()}/api/freight-audit/${id}/short-pay-pdf`;
   }
+
+  // --- Phase 20: Shipper Enterprise Contract Rates & Dedicated RFP Tender Bidding ---
+  async getShipperContractsRoster() {
+    return this.request('/api/shipper-contracts/roster', { method: 'GET' });
+  }
+
+  async createShipperContract(contractData) {
+    return this.request('/api/shipper-contracts/contracts/create', {
+      method: 'POST',
+      body: contractData
+    });
+  }
+
+  async createContractLane(laneData) {
+    return this.request('/api/shipper-contracts/lanes/create', {
+      method: 'POST',
+      body: laneData
+    });
+  }
+
+  async simulateLaneTender(laneId, tenderData) {
+    return this.request(`/api/shipper-contracts/lanes/${laneId}/tender-simulate`, {
+      method: 'POST',
+      body: tenderData
+    });
+  }
+
+  async createShipperRfp(rfpData) {
+    return this.request('/api/shipper-contracts/rfps/create', {
+      method: 'POST',
+      body: rfpData
+    });
+  }
+
+  async submitRfpBid(rfpId, bidData) {
+    return this.request(`/api/shipper-contracts/rfps/${rfpId}/bid`, {
+      method: 'POST',
+      body: bidData
+    });
+  }
+
+  async awardRfpBid(bidId, awardData) {
+    return this.request(`/api/shipper-contracts/bids/${bidId}/award`, {
+      method: 'POST',
+      body: awardData
+    });
+  }
+
+  getContractAwardPdfUrl(contractId) {
+    return `${this.getBaseUrl()}/api/shipper-contracts/contracts/${contractId}/award-pdf`;
+  }
 }
 
 export const api = new MobileApiClient();

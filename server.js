@@ -133,6 +133,7 @@ app.use('/api/claims', require('./routes/cargo-claims'));            // Carmack 
 app.use('/api/multistop', require('./routes/multistop-cube'));        // Multi-Stop Consolidated LTL, Multi-Drop Routing & Pallet Cube Engine
 app.use('/api/ltl-pools', require('./routes/ltl-pooling'));          // Dynamic Multi-Order LTL Pooling & Corridor Consolidation Engine
 app.use('/api/freight-audit', require('./routes/freight-audit'));    // Automated Freight Invoice Audit & 3-Way Match Engine
+app.use('/api/shipper-contracts', require('./routes/shipper-contracts')); // Shipper Enterprise Contract Rates & Dedicated RFP Tender Bidding Desk
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

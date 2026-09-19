@@ -295,6 +295,9 @@
         <button class="nav-tab-btn" id="tab-btn-audit" onclick="switchTab('audit')">
           <span>⚖️</span> 3-Way Freight Audit
         </button>
+        <button class="nav-tab-btn" id="tab-btn-contracts" onclick="switchTab('contracts')">
+          <span>📜</span> Shipper Contracts &amp; RFP
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1343,6 +1346,113 @@
         </div>
       </div>
 
+      <!-- TAB 17: SHIPPER ENTERPRISE CONTRACT RATES & DEDICATED RFP TENDER DESK -->
+      <div id="tab-content-contracts" style="display:none;">
+        <!-- Top Action Bar -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h4 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0 0 2px;">
+              <span>📜</span> Shipper Enterprise Contract Rates &amp; Dedicated RFP Tender Desk
+            </h4>
+            <p style="font-size:11.5px;color:var(--text-muted);margin:0;">
+              High-volume dedicated freight lanes, multi-tier carrier routing guides, DOE-pegged fuel surcharges, and multi-round RFP tender awards.
+            </p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="loadShipperContractsDesk()">🔄 Refresh Contracts</button>
+            <button class="btn btn-secondary btn-sm" onclick="openAddContractModal()">+ Master Contract</button>
+            <button class="btn btn-primary btn-sm" style="background:#2563EB;" onclick="openAddLaneModal()">+ Add Dedicated Lane</button>
+            <button class="btn btn-primary btn-sm" style="background:#059669;" onclick="openAddRfpModal()">+ Launch RFP Tender</button>
+          </div>
+        </div>
+
+        <!-- 4 Enterprise Contract KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:var(--space-4);">
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">ACTIVE CONTRACT LANES</div>
+            <div style="font-size:20px;font-weight:800;color:#2563EB;margin:4px 0;" id="contract-kpi-lanes">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Dedicated corridor routes</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">COMMITTED WEEKLY VOLUME</div>
+            <div style="font-size:20px;font-weight:800;color:#10B981;margin:4px 0;" id="contract-kpi-volume">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Loads/week dedicated</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">PRIMARY ACCEPTANCE RATE</div>
+            <div style="font-size:20px;font-weight:800;color:#F59E0B;margin:4px 0;" id="contract-kpi-acceptance">0.0%</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Tier 1 routing compliance</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">EST. QUARTERLY SAVINGS ($)</div>
+            <div style="font-size:20px;font-weight:800;color:#8B5CF6;margin:4px 0;" id="contract-kpi-savings">$0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Savings vs spot benchmark</div>
+          </div>
+        </div>
+
+        <!-- Section 1: Dedicated Contract Lanes & Routing Guide Table -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h4 style="font-size:13px;font-weight:800;color:var(--text-primary);margin:0;">
+              🛣️ 1. Dedicated Contract Lanes &amp; Routing Guide Waterfall
+            </h4>
+            <span style="font-size:11px;color:var(--text-muted);">Tier 1 Primary ➔ Tier 2 Backup ➔ Spot Overflow Trigger</span>
+          </div>
+          <div class="table-container">
+            <table class="ln-table">
+              <thead>
+                <tr>
+                  <th>Lane Code &amp; Shipper</th>
+                  <th>Corridor &amp; Equip</th>
+                  <th>Committed Vol</th>
+                  <th>Contract Rate &amp; Linehaul</th>
+                  <th>Active DOE FSC</th>
+                  <th>Tier 1 Primary Carrier</th>
+                  <th>Tier 2 &amp; Surge Multipliers</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="contracts-lanes-tbody">
+                <tr>
+                  <td colspan="8" style="text-align:center;padding:24px;">Streaming dedicated contract lanes...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 2: Enterprise Shipper RFP Tenders & Bidding Desk -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h4 style="font-size:13px;font-weight:800;color:var(--text-primary);margin:0;">
+              ⚖️ 2. Enterprise Shipper RFP Tenders &amp; Bidding Cycles
+            </h4>
+            <span style="font-size:11px;color:var(--text-muted);">Round 1 Bids ➔ Round 2 BAFO ➔ Contract Award Agreements</span>
+          </div>
+          <div class="table-container">
+            <table class="ln-table">
+              <thead>
+                <tr>
+                  <th>RFP # &amp; Title</th>
+                  <th>Shipper Account</th>
+                  <th>Bidding Round</th>
+                  <th>Submission Deadline</th>
+                  <th>Target Annual Vol</th>
+                  <th>Carrier Bids Received</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="contracts-rfp-tbody">
+                <tr>
+                  <td colspan="8" style="text-align:center;padding:24px;">Streaming active RFP tenders...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -2361,6 +2471,316 @@
   </div>
 </div>
 
+<!-- MODAL: ADD SHIPPER MASTER CONTRACT -->
+<div id="modal-add-contract" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:560px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);border-bottom:1px solid var(--border-subtle);padding-bottom:12px;">
+      <h3 style="font-size:15px;font-weight:800;color:var(--text-primary);margin:0;">
+        <span>📜</span> Create Shipper Master Contract
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddContractModal()">✕</button>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Shipper Company Name *</label>
+      <input type="text" id="contract-shipper-name" class="form-input" placeholder="e.g. Target Global Supply Chain LLC">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Contact Representative</label>
+        <input type="text" id="contract-contact-name" class="form-input" placeholder="VP Transportation">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Contact Email</label>
+        <input type="email" id="contract-contact-email" class="form-input" placeholder="logistics@shipper.com">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Effective Date *</label>
+        <input type="date" id="contract-eff-date" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Expiration Date *</label>
+        <input type="date" id="contract-exp-date" class="form-input">
+      </div>
+    </div>
+
+    <div style="background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:800;color:#2563EB;margin-bottom:8px;">⛽ DOE DIESEL FUEL SURCHARGE PEGGING</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">Base Diesel ($/gal)</label>
+          <input type="number" step="0.05" id="contract-fuel-base" class="form-input" value="1.20">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">Standard MPG</label>
+          <input type="number" step="0.1" id="contract-fuel-mpg" class="form-input" value="6.0">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">Annual Loads Vol</label>
+          <input type="number" id="contract-annual-vol" class="form-input" value="520">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label" style="font-size:11px;">Contract Terms &amp; Accessorial Rules</label>
+      <textarea id="contract-notes" class="form-input" rows="2" placeholder="Standard 2hr free time detention, clean POD within 24h, 120min primary right of refusal..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddContractModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#2563EB;" onclick="submitAddContract()">Create Master Contract</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD DEDICATED CONTRACT LANE & ROUTING GUIDE -->
+<div id="modal-add-lane" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:680px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);border-bottom:1px solid var(--border-subtle);padding-bottom:12px;">
+      <h3 style="font-size:15px;font-weight:800;color:var(--text-primary);margin:0;">
+        <span>🛣️</span> Add Dedicated Contract Lane &amp; Routing Guide
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddLaneModal()">✕</button>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Select Shipper Contract *</label>
+      <select id="lane-contract-id" class="form-input"></select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr 2fr 1fr;gap:8px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Origin City *</label>
+        <input type="text" id="lane-orig-city" class="form-input" placeholder="e.g. Atlanta">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">State *</label>
+        <input type="text" id="lane-orig-state" class="form-input" placeholder="GA" maxlength="2">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Dest City *</label>
+        <input type="text" id="lane-dest-city" class="form-input" placeholder="e.g. Chicago">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">State *</label>
+        <input type="text" id="lane-dest-state" class="form-input" placeholder="IL" maxlength="2">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:14px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:10.5px;">Equipment</label>
+        <select id="lane-equip" class="form-input">
+          <option value="dry_van">53ft Dry Van</option>
+          <option value="reefer">53ft Reefer</option>
+          <option value="flatbed">48/53ft Flatbed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:10.5px;">Mileage (mi)</label>
+        <input type="number" id="lane-miles" class="form-input" value="720">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:10.5px;">Committed Vol/Wk</label>
+        <input type="number" id="lane-weekly-vol" class="form-input" value="12">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:10.5px;">Rate/Mile ($)</label>
+        <input type="number" step="0.05" id="lane-rpm" class="form-input" value="2.45">
+      </div>
+    </div>
+
+    <!-- Multi-Tier Routing Guide Assignment -->
+    <div style="background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+      <div style="font-size:11.5px;font-weight:800;color:var(--text-primary);margin-bottom:8px;">🎯 CARRIER ROUTING GUIDE WATERFALL</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <!-- Tier 1 Primary -->
+        <div style="background:var(--surface-card);border:1px solid #93C5FD;border-radius:var(--radius-sm);padding:10px;">
+          <div style="font-size:10.5px;font-weight:800;color:#2563EB;margin-bottom:6px;">🥇 TIER 1 PRIMARY CARRIER</div>
+          <div class="form-group" style="margin-bottom:6px;">
+            <label class="form-label" style="font-size:10px;">Carrier Name</label>
+            <input type="text" id="lane-tier1-name" class="form-input" value="Apex Freightlines LLC">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Carrier MC #</label>
+            <input type="text" id="lane-tier1-mc" class="form-input" value="MC-981244">
+          </div>
+        </div>
+
+        <!-- Tier 2 Backup -->
+        <div style="background:var(--surface-card);border:1px solid #FCD34D;border-radius:var(--radius-sm);padding:10px;">
+          <div style="font-size:10.5px;font-weight:800;color:#D97706;margin-bottom:6px;">🥈 TIER 2 BACKUP CARRIER</div>
+          <div class="form-group" style="margin-bottom:6px;">
+            <label class="form-label" style="font-size:10px;">Carrier Name</label>
+            <input type="text" id="lane-tier2-name" class="form-input" value="Southeastern Transport Partners">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:10px;">MC #</label>
+              <input type="text" id="lane-tier2-mc" class="form-input" value="MC-440219">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:10px;">Multiplier</label>
+              <input type="number" step="0.01" id="lane-tier2-mult" class="form-input" value="1.05">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">Surge Capacity Multiplier (&gt;120% Vol)</label>
+          <input type="number" step="0.05" id="lane-surge-mult" class="form-input" value="1.20">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">Primary Tender Timeout (Mins)</label>
+          <input type="number" id="lane-timeout-mins" class="form-input" value="120">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddLaneModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#2563EB;" onclick="submitAddLane()">Save Contract Lane</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ROUTING GUIDE WATERFALL SIMULATOR -->
+<div id="modal-tender-waterfall" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:680px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);border-bottom:1px solid var(--border-subtle);padding-bottom:12px;">
+      <h3 style="font-size:15px;font-weight:800;color:var(--text-primary);margin:0;">
+        <span>🎯</span> Routing Guide Tender Waterfall Simulator
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeTenderWaterfallModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="sim-lane-id">
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Lane Information</label>
+      <input type="text" id="sim-lane-info" class="form-input" readonly style="background:var(--surface-sunken);font-weight:700;">
+    </div>
+
+    <!-- Simulator Controls -->
+    <div style="background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:800;color:var(--text-primary);margin-bottom:8px;">SIMULATOR CONTROLS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:center;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">Weekly Tender Volume</label>
+          <input type="number" id="sim-tender-vol" class="form-input" value="5" min="1">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding-top:16px;">
+          <input type="checkbox" id="sim-force-primary-reject" style="cursor:pointer;">
+          <label for="sim-force-primary-reject" style="font-size:11px;cursor:pointer;">Force Primary Reject</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding-top:16px;">
+          <input type="checkbox" id="sim-force-secondary-reject" style="cursor:pointer;">
+          <label for="sim-force-secondary-reject" style="font-size:11px;cursor:pointer;">Force Secondary Reject</label>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-primary btn-sm" style="background:#2563EB;" onclick="runTenderSimulation()">⚡ Run Waterfall Tender Simulation</button>
+      </div>
+    </div>
+
+    <!-- Simulation Output Display -->
+    <div id="sim-results-panel" style="display:none;">
+      <div style="background:var(--surface-card);border:1px solid #93C5FD;border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:11px;font-weight:800;color:#2563EB;">FINAL TENDER DISPOSITION</span>
+          <span id="sim-disp-badge" class="status-badge status-active" style="font-size:11px;font-weight:800;">AWARDED PRIMARY</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;text-align:center;">
+          <div>
+            <div style="font-size:10px;color:var(--text-muted);">AWARDED CARRIER</div>
+            <div style="font-size:13px;font-weight:800;color:var(--text-primary);margin-top:2px;" id="sim-awarded-carrier">-</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text-muted);">LINEHAUL PAY</div>
+            <div style="font-size:14px;font-weight:800;color:#2563EB;margin-top:2px;" id="sim-linehaul-pay">$0.00</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text-muted);">DOE FSC (CPM)</div>
+            <div style="font-size:14px;font-weight:800;color:#059669;margin-top:2px;" id="sim-fsc-pay">$0.00</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text-muted);">ALL-IN TOTAL</div>
+            <div style="font-size:15px;font-weight:800;color:#0F172A;margin-top:2px;" id="sim-total-pay">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Waterfall Steps Chronology -->
+      <div style="font-size:11.5px;font-weight:800;color:var(--text-primary);margin-bottom:8px;">WATERFALL CASCADE LOG</div>
+      <div id="sim-steps-container" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="closeTenderWaterfallModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LAUNCH SHIPPER RFP TENDER -->
+<div id="modal-add-rfp" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:540px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);border-bottom:1px solid var(--border-subtle);padding-bottom:12px;">
+      <h3 style="font-size:15px;font-weight:800;color:var(--text-primary);margin:0;">
+        <span>⚖️</span> Launch Enterprise Shipper RFP Tender
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddRfpModal()">✕</button>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">RFP Tender Title *</label>
+      <input type="text" id="rfp-title" class="form-input" placeholder="e.g. Q4 Peak Retail Surge Corridor RFP">
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Shipper Company Name *</label>
+      <input type="text" id="rfp-shipper" class="form-input" placeholder="e.g. Procter & Gamble Logistics LLC">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Bidding Round</label>
+        <select id="rfp-round" class="form-input">
+          <option value="ROUND_1">Round 1 (Initial Bids)</option>
+          <option value="ROUND_2_BAFO">Round 2 (Best &amp; Final Offer)</option>
+          <option value="FINAL_AWARD">Final Award Allocation</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Bid Deadline *</label>
+        <input type="date" id="rfp-deadline" class="form-input">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Corridor Lanes Count</label>
+        <input type="number" id="rfp-lanes-count" class="form-input" value="3">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Committed Annual Volume</label>
+        <input type="number" id="rfp-annual-vol" class="form-input" value="1000">
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddRfpModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#059669;" onclick="submitAddRfp()">Launch RFP &amp; Invite Carriers</button>
+    </div>
+  </div>
+</div>
+
 <script>
   let brokersData = [];
   let loadsData = [];
@@ -2389,6 +2809,7 @@
     document.getElementById('tab-content-multistop').style.display = tabId === 'multistop' ? 'block' : 'none';
     document.getElementById('tab-content-ltlpools').style.display = tabId === 'ltlpools' ? 'block' : 'none';
     document.getElementById('tab-content-audit').style.display = tabId === 'audit' ? 'block' : 'none';
+    document.getElementById('tab-content-contracts').style.display = tabId === 'contracts' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -2414,6 +2835,8 @@
       loadLtlPoolsDesk();
     } else if (tabId === 'audit') {
       loadFreightAuditDesk();
+    } else if (tabId === 'contracts') {
+      loadShipperContractsDesk();
     }
   }
 
@@ -5094,6 +5517,428 @@
       }
     } catch (e) {
       alert('Network error approving invoice full pay.');
+    }
+  }
+
+  // =============================================================
+  // TAB 17: SHIPPER CONTRACTS & DEDICATED RFP TENDER DESK
+  // =============================================================
+  let shipperContractsList = [];
+  let contractLanesList = [];
+  let shipperRfpsList = [];
+
+  async function loadShipperContractsDesk() {
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/shipper-contracts/roster', {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        shipperContractsList = data.contracts || [];
+        contractLanesList = data.lanes || [];
+        shipperRfpsList = data.rfps || [];
+
+        // Update KPIs
+        const k = data.kpis || {};
+        document.getElementById('contract-kpi-lanes').textContent = k.active_contract_lanes || 0;
+        document.getElementById('contract-kpi-volume').textContent = (k.committed_weekly_volume || 0) + ' /wk';
+        document.getElementById('contract-kpi-acceptance').textContent = (k.primary_acceptance_rate || 95.0) + '%';
+        document.getElementById('contract-kpi-savings').textContent = '$' + Number(k.estimated_quarterly_savings || 0).toLocaleString('en-US');
+
+        // Populate contract dropdown in Add Lane modal
+        const contractSelect = document.getElementById('lane-contract-id');
+        if (contractSelect) {
+          contractSelect.innerHTML = shipperContractsList.map(c => 
+            `<option value="${c.id}">${c.contract_number} - ${c.shipper_name} ($${parseFloat(c.current_fuel_surcharge_cpm).toFixed(3)} FSC)</option>`
+          ).join('');
+        }
+
+        renderContractLanesTable(contractLanesList);
+        renderRfpsTable(shipperRfpsList);
+      } else {
+        document.getElementById('contracts-lanes-tbody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#EF4444;padding:20px;">${data.error || 'Failed to load contract records.'}</td></tr>`;
+      }
+    } catch (e) {
+      console.error('Error loading shipper contracts desk:', e);
+      document.getElementById('contracts-lanes-tbody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#EF4444;padding:20px;">Network error connecting to Contracts API.</td></tr>`;
+    }
+  }
+
+  function renderContractLanesTable(lanes) {
+    const tbody = document.getElementById('contracts-lanes-tbody');
+    if (!lanes || lanes.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">No dedicated contract lanes configured yet. Click "+ Add Dedicated Lane" to set up routing guides.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = lanes.map(lane => {
+      const fscRate = parseFloat(lane.current_fuel_surcharge_cpm || 0.442);
+      const fscTotal = Math.round(fscRate * parseInt(lane.mileage) * 100) / 100;
+      const allInTotal = Math.round((parseFloat(lane.contract_linehaul_flat) + fscTotal) * 100) / 100;
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);font-size:12px;">${lane.lane_code}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${lane.shipper_name || 'Shipper'}</div>
+            <div style="font-size:10px;color:#2563EB;">Ctr: ${lane.contract_number || 'CTR-2026'}</div>
+          </td>
+          <td>
+            <div style="font-weight:600;color:var(--text-primary);font-size:12px;">${lane.origin_city}, ${lane.origin_state} ➔ ${lane.dest_city}, ${lane.dest_state}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${lane.equipment_type.toUpperCase()} | ${lane.mileage} miles</div>
+          </td>
+          <td>
+            <div style="font-weight:800;color:#10B981;font-size:13px;">${lane.committed_weekly_volume} loads/wk</div>
+            <div style="font-size:10.5px;color:var(--text-muted);">~${parseInt(lane.committed_weekly_volume) * 52} / year</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:#2563EB;font-size:12.5px;">$${parseFloat(lane.contract_rate_per_mile).toFixed(2)}/mi</div>
+            <div style="font-size:10.5px;color:var(--text-muted);">Linehaul: $${Number(lane.contract_linehaul_flat).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:#059669;font-size:12px;">+$${fscRate.toFixed(3)}/mi</div>
+            <div style="font-size:10.5px;color:var(--text-muted);">FSC: $${fscTotal.toFixed(2)}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-primary);">All-in: $${allInTotal.toFixed(2)}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);font-size:12px;">${lane.tier1_carrier_name || 'Primary Carrier'}</div>
+            <div style="font-size:10.5px;color:var(--text-muted);">${lane.tier1_carrier_mc || ''}</div>
+            <span class="status-badge status-active" style="font-size:9.5px;padding:2px 5px;margin-top:2px;">
+              ${lane.tier1_acceptance_rate}% Acceptance
+            </span>
+          </td>
+          <td>
+            <div style="font-size:11px;color:var(--text-primary);font-weight:600;">T2: ${lane.tier2_carrier_name || 'Secondary'} (+${Math.round((lane.tier2_rate_multiplier - 1) * 100)}%)</div>
+            <div style="font-size:10.5px;color:#D97706;font-weight:700;">Surge: ${lane.surge_capacity_multiplier}x (&gt;120% Vol)</div>
+            <div style="font-size:10px;color:var(--text-muted);">Timeout: ${lane.auto_tender_timeout_mins} mins</div>
+          </td>
+          <td>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              <button class="btn btn-sm btn-secondary" style="font-size:10px;padding:3px 7px;color:#2563EB;border-color:#2563EB;" onclick='openTenderWaterfallModal(${JSON.stringify(lane).replace(/'/g, "&#39;")})'>
+                ⚡ Waterfall Sim
+              </button>
+              <a href="/api/shipper-contracts/contracts/${lane.contract_id}/award-pdf" target="_blank" class="btn btn-sm btn-secondary" style="font-size:10px;padding:3px 7px;color:#059669;border-color:#059669;text-decoration:none;display:inline-flex;align-items:center;gap:3px;">
+                📄 Award PDF
+              </a>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderRfpsTable(rfps) {
+    const tbody = document.getElementById('contracts-rfp-tbody');
+    if (!rfps || rfps.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">No active RFP bidding tenders. Click "+ Launch RFP Tender" to start carrier bid solicitations.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rfps.map(rfp => {
+      let roundLabel = 'Round 1 Bids';
+      if (rfp.bid_round === 'ROUND_2_BAFO') roundLabel = 'Round 2 BAFO';
+      if (rfp.bid_round === 'FINAL_AWARD') roundLabel = 'Final Award';
+
+      const deadlineStr = rfp.bid_deadline ? String(rfp.bid_deadline).slice(0, 10) : 'N/A';
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);font-size:12px;">${rfp.rfp_number}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${rfp.title}</div>
+          </td>
+          <td>
+            <div style="font-weight:600;color:var(--text-primary);font-size:12px;">${rfp.shipper_name}</div>
+          </td>
+          <td>
+            <span class="status-badge status-pending" style="font-size:10px;font-weight:700;">
+              ${roundLabel}
+            </span>
+          </td>
+          <td>
+            <div style="font-size:11.5px;color:#EF4444;font-weight:700;">${deadlineStr}</div>
+            <div style="font-size:10px;color:var(--text-muted);">Starts: ${String(rfp.target_start_date).slice(0, 10)}</div>
+          </td>
+          <td>
+            <div style="font-weight:800;color:var(--text-primary);font-size:12.5px;">${rfp.total_annual_volume} loads/yr</div>
+            <div style="font-size:10.5px;color:var(--text-muted);">${rfp.total_lanes_count} dedicated lanes</div>
+          </td>
+          <td>
+            <span class="status-badge status-active" style="font-size:11px;font-weight:800;">
+              ${rfp.bids_count || 0} Carrier Bids
+            </span>
+          </td>
+          <td>
+            <span class="status-badge ${rfp.status === 'OPEN' ? 'status-active' : 'status-pending'}" style="font-size:10px;font-weight:700;">
+              ${rfp.status}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-primary" style="font-size:10px;padding:3px 8px;background:#059669;" onclick="alert('Viewing Bids for ' + '${rfp.rfp_number}' + ' - ' + '${rfp.bids_count || 0}' + ' bids evaluated.')">
+              View Bids (${rfp.bids_count || 0})
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function openAddContractModal() {
+    document.getElementById('contract-shipper-name').value = '';
+    document.getElementById('contract-contact-name').value = 'VP Transportation';
+    document.getElementById('contract-contact-email').value = 'logistics@shipper.com';
+    document.getElementById('contract-eff-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('contract-exp-date').value = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
+    document.getElementById('contract-fuel-base').value = 1.20;
+    document.getElementById('contract-fuel-mpg').value = 6.0;
+    document.getElementById('contract-annual-vol').value = 520;
+    document.getElementById('contract-notes').value = '';
+    document.getElementById('modal-add-contract').style.display = 'flex';
+  }
+
+  function closeAddContractModal() {
+    document.getElementById('modal-add-contract').style.display = 'none';
+  }
+
+  async function submitAddContract() {
+    const shipper = document.getElementById('contract-shipper-name').value.trim();
+    if (!shipper) {
+      alert('Please enter shipper company name.');
+      return;
+    }
+
+    const payload = {
+      shipper_name: shipper,
+      shipper_contact: document.getElementById('contract-contact-name').value.trim(),
+      shipper_email: document.getElementById('contract-contact-email').value.trim(),
+      effective_date: document.getElementById('contract-eff-date').value,
+      expiration_date: document.getElementById('contract-exp-date').value,
+      fuel_base_peg: parseFloat(document.getElementById('contract-fuel-base').value) || 1.20,
+      fuel_mpg_standard: parseFloat(document.getElementById('contract-fuel-mpg').value) || 6.0,
+      total_annual_volume: parseInt(document.getElementById('contract-annual-vol').value) || 520,
+      contract_notes: document.getElementById('contract-notes').value.trim()
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/shipper-contracts/contracts/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeAddContractModal();
+        loadShipperContractsDesk();
+      } else {
+        alert(data.error || 'Failed to create contract.');
+      }
+    } catch (e) {
+      alert('Network error creating contract.');
+    }
+  }
+
+  function openAddLaneModal() {
+    document.getElementById('lane-orig-city').value = '';
+    document.getElementById('lane-orig-state').value = '';
+    document.getElementById('lane-dest-city').value = '';
+    document.getElementById('lane-dest-state').value = '';
+    document.getElementById('lane-miles').value = 700;
+    document.getElementById('lane-weekly-vol').value = 10;
+    document.getElementById('lane-rpm').value = 2.45;
+    document.getElementById('lane-tier1-name').value = 'Apex Freightlines LLC';
+    document.getElementById('lane-tier1-mc').value = 'MC-981244';
+    document.getElementById('lane-tier2-name').value = 'Southeastern Transport Partners';
+    document.getElementById('lane-tier2-mc').value = 'MC-440219';
+    document.getElementById('lane-tier2-mult').value = 1.05;
+    document.getElementById('lane-surge-mult').value = 1.20;
+    document.getElementById('lane-timeout-mins').value = 120;
+    document.getElementById('modal-add-lane').style.display = 'flex';
+  }
+
+  function closeAddLaneModal() {
+    document.getElementById('modal-add-lane').style.display = 'none';
+  }
+
+  async function submitAddLane() {
+    const contractId = document.getElementById('lane-contract-id').value;
+    const oCity = document.getElementById('lane-orig-city').value.trim();
+    const oState = document.getElementById('lane-orig-state').value.trim();
+    const dCity = document.getElementById('lane-dest-city').value.trim();
+    const dState = document.getElementById('lane-dest-state').value.trim();
+
+    if (!contractId || !oCity || !oState || !dCity || !dState) {
+      alert('Please fill out contract, origin city/state, and destination city/state.');
+      return;
+    }
+
+    const payload = {
+      contract_id: parseInt(contractId),
+      origin_city: oCity,
+      origin_state: oState,
+      dest_city: dCity,
+      dest_state: dState,
+      equipment_type: document.getElementById('lane-equip').value,
+      mileage: parseInt(document.getElementById('lane-miles').value) || 700,
+      committed_weekly_volume: parseInt(document.getElementById('lane-weekly-vol').value) || 10,
+      contract_rate_per_mile: parseFloat(document.getElementById('lane-rpm').value) || 2.45,
+      tier1_carrier_name: document.getElementById('lane-tier1-name').value.trim(),
+      tier1_carrier_mc: document.getElementById('lane-tier1-mc').value.trim(),
+      tier2_carrier_name: document.getElementById('lane-tier2-name').value.trim(),
+      tier2_carrier_mc: document.getElementById('lane-tier2-mc').value.trim(),
+      tier2_rate_multiplier: parseFloat(document.getElementById('lane-tier2-mult').value) || 1.05,
+      surge_capacity_multiplier: parseFloat(document.getElementById('lane-surge-mult').value) || 1.20,
+      auto_tender_timeout_mins: parseInt(document.getElementById('lane-timeout-mins').value) || 120
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/shipper-contracts/lanes/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeAddLaneModal();
+        loadShipperContractsDesk();
+      } else {
+        alert(data.error || 'Failed to add contract lane.');
+      }
+    } catch (e) {
+      alert('Network error adding contract lane.');
+    }
+  }
+
+  function openTenderWaterfallModal(lane) {
+    document.getElementById('sim-lane-id').value = lane.id;
+    document.getElementById('sim-lane-info').value = `${lane.lane_code} | ${lane.origin_city}, ${lane.origin_state} ➔ ${lane.dest_city}, ${lane.dest_state} (${lane.mileage} mi, ${lane.equipment_type}) | Base Linehaul: $${lane.contract_linehaul_flat}`;
+    document.getElementById('sim-tender-vol').value = lane.committed_weekly_volume || 5;
+    document.getElementById('sim-force-primary-reject').checked = false;
+    document.getElementById('sim-force-secondary-reject').checked = false;
+    document.getElementById('sim-results-panel').style.display = 'none';
+    document.getElementById('modal-tender-waterfall').style.display = 'flex';
+  }
+
+  function closeTenderWaterfallModal() {
+    document.getElementById('modal-tender-waterfall').style.display = 'none';
+  }
+
+  async function runTenderSimulation() {
+    const laneId = document.getElementById('sim-lane-id').value;
+    const vol = parseInt(document.getElementById('sim-tender-vol').value) || 1;
+    const forcePrimary = document.getElementById('sim-force-primary-reject').checked;
+    const forceSecondary = document.getElementById('sim-force-secondary-reject').checked;
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/shipper-contracts/lanes/${laneId}/tender-simulate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          tender_volume: vol,
+          force_primary_reject: forcePrimary,
+          force_secondary_reject: forceSecondary
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        const s = data.simulation;
+        document.getElementById('sim-disp-badge').textContent = s.disposition.replace(/_/g, ' ');
+        document.getElementById('sim-disp-badge').className = `status-badge ${s.disposition === 'AWARDED_PRIMARY' ? 'status-active' : (s.disposition === 'AWARDED_SECONDARY' ? 'status-warning' : 'status-failed')}`;
+
+        document.getElementById('sim-awarded-carrier').textContent = s.awarded_carrier;
+        document.getElementById('sim-linehaul-pay').textContent = '$' + Number(s.final_linehaul).toFixed(2);
+        document.getElementById('sim-fsc-pay').textContent = '$' + Number(s.fuel_surcharge).toFixed(2);
+        document.getElementById('sim-total-pay').textContent = '$' + Number(s.final_total).toFixed(2);
+
+        const container = document.getElementById('sim-steps-container');
+        container.innerHTML = s.waterfall_steps.map(step => `
+          <div style="background:var(--surface-sunken);border-left:3px solid ${step.action === 'ACCEPTED' ? '#10B981' : (step.action === 'REJECTED' ? '#EF4444' : '#F59E0B')};border-radius:var(--radius-sm);padding:8px 12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:11px;font-weight:800;color:var(--text-primary);">Step ${step.step_num}: ${step.tier.replace(/_/g, ' ')} (${step.carrier_name})</span>
+              <span style="font-size:10.5px;font-weight:800;color:${step.action === 'ACCEPTED' ? '#10B981' : (step.action === 'REJECTED' ? '#EF4444' : '#F59E0B')};">${step.action}</span>
+            </div>
+            <div style="font-size:10.5px;color:var(--text-muted);margin-top:2px;">
+              Rate: $${step.rate_linehaul} linehaul + $${step.fuel_surcharge} FSC = <strong>$${step.total_rate}</strong> ${step.surge_applied ? '(Surge Multiplier Applied)' : ''}
+            </div>
+            <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">${step.notes}</div>
+          </div>
+        `).join('');
+
+        document.getElementById('sim-results-panel').style.display = 'block';
+      } else {
+        alert(data.error || 'Failed to simulate tender waterfall.');
+      }
+    } catch (e) {
+      alert('Network error simulating tender waterfall.');
+    }
+  }
+
+  function openAddRfpModal() {
+    document.getElementById('rfp-title').value = '';
+    document.getElementById('rfp-shipper').value = '';
+    document.getElementById('rfp-round').value = 'ROUND_1';
+    document.getElementById('rfp-deadline').value = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+    document.getElementById('rfp-lanes-count').value = 3;
+    document.getElementById('rfp-annual-vol').value = 1000;
+    document.getElementById('modal-add-rfp').style.display = 'flex';
+  }
+
+  function closeAddRfpModal() {
+    document.getElementById('modal-add-rfp').style.display = 'none';
+  }
+
+  async function submitAddRfp() {
+    const title = document.getElementById('rfp-title').value.trim();
+    const shipper = document.getElementById('rfp-shipper').value.trim();
+
+    if (!title || !shipper) {
+      alert('Please fill out title and shipper name.');
+      return;
+    }
+
+    const payload = {
+      title,
+      shipper_name: shipper,
+      bid_round: document.getElementById('rfp-round').value,
+      bid_deadline: document.getElementById('rfp-deadline').value,
+      total_lanes_count: parseInt(document.getElementById('rfp-lanes-count').value) || 3,
+      total_annual_volume: parseInt(document.getElementById('rfp-annual-vol').value) || 1000
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/shipper-contracts/rfps/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeAddRfpModal();
+        loadShipperContractsDesk();
+      } else {
+        alert(data.error || 'Failed to launch RFP.');
+      }
+    } catch (e) {
+      alert('Network error launching RFP.');
     }
   }
 </script>
