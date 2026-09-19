@@ -289,6 +289,9 @@
         <button class="nav-tab-btn" id="tab-btn-multistop" onclick="switchTab('multistop')">
           <span>📐</span> Pallet Cube &amp; Multi-Stop
         </button>
+        <button class="nav-tab-btn" id="tab-btn-ltlpools" onclick="switchTab('ltlpools')">
+          <span>🧩</span> LTL Pooling &amp; Corridors
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1204,6 +1207,73 @@
         </div>
       </div>
 
+      <!-- TAB 15: DYNAMIC MULTI-ORDER LTL POOLING & CORRIDOR CONSOLIDATION -->
+      <div id="tab-content-ltlpools" style="display:none;">
+        <!-- Top Action Bar -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h4 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0 0 2px;">
+              <span>🧩</span> Dynamic Multi-Order LTL Pooling &amp; Corridor Consolidation Engine
+            </h4>
+            <p style="font-size:11.5px;color:var(--text-muted);margin:0;">
+              Clustering compatible partial shipments along high-density freight corridors for maximized 25-35% gross profit margins and 1-click manifest dispatch.
+            </p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadLtlPoolsDesk()">🔄 Refresh Pools</button>
+            <button class="btn btn-primary btn-sm" style="background:#059669;" onclick="openAddPoolModal()">+ Assemble Corridor Pool</button>
+          </div>
+        </div>
+
+        <!-- 4 LTL Pooling KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:var(--space-4);">
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">TOTAL CONSOLIDATION POOLS</div>
+            <div style="font-size:20px;font-weight:800;color:#60A5FA;margin:4px 0;" id="pools-kpi-total">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Corridor pools assembled</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">ACTIVE READY POOLS</div>
+            <div style="font-size:20px;font-weight:800;color:#34D399;margin:4px 0;" id="pools-kpi-active">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Ready for carrier dispatch</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">POTENTIAL GROSS PROFIT ($)</div>
+            <div style="font-size:20px;font-weight:800;color:#10B981;margin:4px 0;" id="pools-kpi-profit">$0.00</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Consolidated net margin</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">AVG CONSOLIDATION MARGIN</div>
+            <div style="font-size:20px;font-weight:800;color:#A78BFA;margin:4px 0;" id="pools-kpi-margin">0%</div>
+            <div style="font-size:11px;color:var(--text-secondary);">vs 10-15% standard FTL margin</div>
+          </div>
+        </div>
+
+        <!-- Pools Roster Table -->
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>Pool # &amp; Corridor</th>
+                <th>Orders Pooled</th>
+                <th>Pallets &amp; Weight</th>
+                <th>Cube &amp; Payload %</th>
+                <th>Shipper Billing</th>
+                <th>Carrier Pay</th>
+                <th>Gross Margin ($ / %)</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="pools-tbody">
+              <tr>
+                <td colspan="9" style="text-align:center;padding:24px;">Streaming Dynamic LTL Consolidation Pools...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -1978,6 +2048,84 @@
   </div>
 </div>
 
+<!-- MODAL: ASSEMBLE CORRIDOR CONSOLIDATION POOL -->
+<div id="modal-add-pool" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:95%;max-width:840px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);border-bottom:1px solid var(--border-subtle);padding-bottom:12px;">
+      <div>
+        <h3 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0 0 2px;">
+          <span>🧩</span> Assemble Dynamic Corridor Consolidation Pool
+        </h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">
+          Cluster partial shipments along high-volume freight lanes to unlock 25-35% gross profit margins.
+        </p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddPoolModal()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:12px;margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Select Freight Corridor *</label>
+        <select id="pool-corridor-code" class="form-input" onchange="runLivePoolAnalysis()">
+          <option value="SOUTHEAST_TO_MIDWEST">Southeast to Midwest Corridor (I-75 / I-65: GA, FL, NC ➔ KY, OH, IN, IL)</option>
+          <option value="MIDWEST_TO_NORTHEAST">Midwest to Northeast Corridor (I-80 / I-90: IL, IN, OH ➔ PA, NY, NJ, MA)</option>
+          <option value="SOUTHEAST_TO_NORTHEAST">Southeast to Mid-Atlantic / Northeast (I-95: FL, GA ➔ VA, MD, PA, NJ, NY)</option>
+          <option value="TEXAS_TRIANGLE_REGIONAL">Texas Triangle &amp; Gulf Coast (I-35 / I-10 / I-45: TX, LA, OK, AR)</option>
+          <option value="WEST_COAST_I5">Pacific Coast Corridor (I-5: CA ➔ OR, WA)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Equipment Type *</label>
+        <select id="pool-equip-type" class="form-input" onchange="runLivePoolAnalysis()">
+          <option value="DRY_VAN_53">53ft Dry Van Standard (4,050 cu ft / 45,000 lbs)</option>
+          <option value="REEFER_53">53ft Refrigerated Trailer (3,600 cu ft / 43,500 lbs)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Candidate Orders Builder -->
+    <div style="background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:800;color:var(--text-primary);">📦 CANDIDATE LTL PARTIAL SHIPMENTS (ORDERS TO POOL)</span>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 8px;" onclick="addPoolOrderRow()">+ Add Partial Order</button>
+      </div>
+      <div id="pool-orders-container" style="display:flex;flex-direction:column;gap:8px;">
+        <!-- Dynamic order rows -->
+      </div>
+    </div>
+
+    <!-- Real-time Consolidated Economics & Capacity Panel -->
+    <div style="background:var(--surface-card);border:1px solid #A7F3D0;border-radius:var(--radius-md);padding:14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;text-align:center;">
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">TOTAL PALLETS / WEIGHT</div>
+        <div style="font-size:15px;font-weight:800;color:#0F172A;margin-top:2px;" id="sim-pool-pallets">0 Pallets / 0 lbs</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">TOTAL SHIPPER REVENUE</div>
+        <div style="font-size:15px;font-weight:800;color:#2563EB;margin-top:2px;" id="sim-pool-revenue">$0.00</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">TARGET CARRIER PAY</div>
+        <div style="font-size:15px;font-weight:800;color:#64748B;margin-top:2px;" id="sim-pool-carrier-pay">$0.00</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">GROSS PROFIT &amp; MARGIN</div>
+        <div style="font-size:15px;font-weight:800;color:#059669;margin-top:2px;" id="sim-pool-margin">$0.00 (0%)</div>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label" style="font-size:11px;">Consolidation &amp; Cross-Dock Notes</label>
+      <textarea id="pool-notes" class="form-input" rows="2" placeholder="Stowage instructions, cross-docking hub details, or appointment sequencing..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddPoolModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#059669;" onclick="submitAddPool()">Save &amp; Confirm Consolidation Pool</button>
+    </div>
+  </div>
+</div>
+
 <script>
   let brokersData = [];
   let loadsData = [];
@@ -2004,6 +2152,7 @@
     document.getElementById('tab-content-dq').style.display = tabId === 'dq' ? 'block' : 'none';
     document.getElementById('tab-content-claims').style.display = tabId === 'claims' ? 'block' : 'none';
     document.getElementById('tab-content-multistop').style.display = tabId === 'multistop' ? 'block' : 'none';
+    document.getElementById('tab-content-ltlpools').style.display = tabId === 'ltlpools' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -2025,6 +2174,8 @@
       loadClaimsDesk();
     } else if (tabId === 'multistop') {
       loadMultiStopDesk();
+    } else if (tabId === 'ltlpools') {
+      loadLtlPoolsDesk();
     }
   }
 
@@ -4109,6 +4260,252 @@
       }
     } catch (e) {
       alert('Network error creating manifest.');
+    }
+  }
+
+  // ==========================================
+  // TAB 15: LTL POOLING & CORRIDOR DESK
+  // ==========================================
+  let ltlPoolsRecords = [];
+  let currentPoolOrders = [];
+
+  async function loadLtlPoolsDesk() {
+    const tbody = document.getElementById('pools-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;">Streaming Dynamic LTL Consolidation Pools...</td></tr>';
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/ltl-pools/roster', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.success) {
+        ltlPoolsRecords = data.pools || [];
+
+        document.getElementById('pools-kpi-total').textContent = data.kpis.total_pools;
+        document.getElementById('pools-kpi-active').textContent = data.kpis.active_pools;
+        document.getElementById('pools-kpi-profit').textContent = '$' + parseFloat(data.kpis.total_profit_potential).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('pools-kpi-margin').textContent = data.kpis.avg_margin_pct + '%';
+
+        renderLtlPoolsTable(ltlPoolsRecords);
+      } else {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#EF4444;padding:24px;">${data.error || 'Failed to load pools.'}</td></tr>`;
+      }
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#EF4444;padding:24px;">Network error loading pools.</td></tr>';
+    }
+  }
+
+  function renderLtlPoolsTable(pools) {
+    const tbody = document.getElementById('pools-tbody');
+    if (!tbody) return;
+
+    if (!pools || pools.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">No consolidation pools active. Click "+ Assemble Corridor Pool" to group LTL orders.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = pools.map(p => {
+      const isConverted = p.status === 'CONVERTED_TO_MANIFEST';
+      let statusBadge = '#10B981';
+      if (p.status === 'SUGGESTED') statusBadge = '#F59E0B';
+      else if (p.status === 'CONFIRMED') statusBadge = '#3B82F6';
+      else if (isConverted) statusBadge = '#6366F1';
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:800;color:var(--text-primary);">${p.pool_number}</div>
+            <div style="font-size:11px;color:#6366F1;">${p.corridor_name}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;">${p.total_orders_count} Partial Orders</div>
+            <div style="font-size:11px;color:var(--text-muted);">${p.equipment_type}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;">${p.total_pallets} Pallets</div>
+            <div style="font-size:11px;color:var(--text-muted);">${parseInt(p.total_weight_lbs).toLocaleString()} lbs</div>
+          </td>
+          <td>
+            <div style="font-size:11.5px;font-weight:700;color:#6366F1;">Cube: ${p.cube_utilization_pct}%</div>
+            <div style="font-size:11px;color:var(--text-muted);">Weight: ${p.weight_utilization_pct}%</div>
+          </td>
+          <td>
+            <div style="font-weight:800;color:#2563EB;">$${parseFloat(p.total_shipper_revenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div style="font-size:10.5px;color:var(--text-muted);">Sum of shippers</div>
+          </td>
+          <td>
+            <div style="font-weight:800;color:#64748B;">$${parseFloat(p.carrier_target_pay).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div style="font-size:10.5px;color:var(--text-muted);">Linehaul + stops</div>
+          </td>
+          <td>
+            <div style="font-weight:800;color:#10B981;">+$${parseFloat(p.gross_profit_margin).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div style="font-size:11px;color:#059669;font-weight:700;">${p.margin_pct}% Margin</div>
+          </td>
+          <td>
+            <span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:800;background:${statusBadge}22;color:${statusBadge};border:1px solid ${statusBadge};">
+              ${p.status}
+            </span>
+          </td>
+          <td>
+            ${isConverted ? `
+              <button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 7px;" onclick="switchTab('multistop')">
+                View Manifest ➔
+              </button>
+            ` : `
+              <button class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 7px;background:#059669;" onclick="convertPoolToManifest(${p.id})">
+                ⚡ Convert Manifest
+              </button>
+            `}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  async function convertPoolToManifest(id) {
+    if (!confirm('Convert this consolidation pool into a formal Multi-Stop Manifest with LIFO trailer stowage?')) return;
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/ltl-pools/${id}/convert-manifest`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || 'Manifest created successfully!');
+        loadLtlPoolsDesk();
+        switchTab('multistop');
+      } else {
+        alert(data.error || 'Failed to convert pool to manifest.');
+      }
+    } catch (e) {
+      alert('Network error converting pool.');
+    }
+  }
+
+  function openAddPoolModal() {
+    currentPoolOrders = [
+      { order_id: 'LTL-ORD-201', shipper: 'Georgia Chemical & Plastics', origin_city: 'Atlanta', origin_state: 'GA', dest_city: 'Nashville', dest_state: 'TN', pallets: 8, weight_lbs: 11200, shipper_billed_rate: 980 },
+      { order_id: 'LTL-ORD-202', shipper: 'Piedmont Automotive Components', origin_city: 'Chattanooga', origin_state: 'TN', dest_city: 'Louisville', dest_state: 'KY', pallets: 10, weight_lbs: 13500, shipper_billed_rate: 1250 },
+      { order_id: 'LTL-ORD-203', shipper: 'Southern Medical Packaging', origin_city: 'Macon', origin_state: 'GA', dest_city: 'Indianapolis', dest_state: 'IN', pallets: 6, weight_lbs: 7200, shipper_billed_rate: 920 }
+    ];
+
+    renderPoolOrdersContainer();
+    runLivePoolAnalysis();
+
+    document.getElementById('modal-add-pool').style.display = 'flex';
+  }
+
+  function closeAddPoolModal() {
+    document.getElementById('modal-add-pool').style.display = 'none';
+  }
+
+  function renderPoolOrdersContainer() {
+    const c = document.getElementById('pool-orders-container');
+    if (!c) return;
+
+    c.innerHTML = currentPoolOrders.map((ord, idx) => `
+      <div style="display:grid;grid-template-columns:1.4fr 110px 110px 65px 75px 75px 30px;gap:8px;align-items:center;background:var(--surface-card);padding:8px;border-radius:6px;border:1px solid var(--border-subtle);">
+        <input type="text" class="form-input" style="font-size:11px;padding:4px;" placeholder="Shipper Name" value="${ord.shipper || ''}" oninput="currentPoolOrders[${idx}].shipper = this.value">
+        <input type="text" class="form-input" style="font-size:11px;padding:4px;" placeholder="Origin City, ST" value="${ord.origin_city}, ${ord.origin_state}" oninput="const p = this.value.split(','); currentPoolOrders[${idx}].origin_city = (p[0]||'').trim(); currentPoolOrders[${idx}].origin_state = (p[1]||'').trim();">
+        <input type="text" class="form-input" style="font-size:11px;padding:4px;" placeholder="Dest City, ST" value="${ord.dest_city}, ${ord.dest_state}" oninput="const p = this.value.split(','); currentPoolOrders[${idx}].dest_city = (p[0]||'').trim(); currentPoolOrders[${idx}].dest_state = (p[1]||'').trim();">
+        <input type="number" class="form-input" style="font-size:11px;padding:4px;" placeholder="Pallets" value="${ord.pallets || 1}" oninput="currentPoolOrders[${idx}].pallets = parseInt(this.value,10)||1; runLivePoolAnalysis();">
+        <input type="number" class="form-input" style="font-size:11px;padding:4px;" placeholder="Weight" value="${ord.weight_lbs || 0}" oninput="currentPoolOrders[${idx}].weight_lbs = parseFloat(this.value)||0; runLivePoolAnalysis();">
+        <input type="number" class="form-input" style="font-size:11px;padding:4px;" placeholder="Bill ($)" value="${ord.shipper_billed_rate || 0}" oninput="currentPoolOrders[${idx}].shipper_billed_rate = parseFloat(this.value)||0; runLivePoolAnalysis();">
+        <button type="button" class="btn btn-ghost btn-sm" style="color:#EF4444;padding:0;" onclick="removePoolOrderRow(${idx})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function addPoolOrderRow() {
+    currentPoolOrders.push({
+      order_id: 'LTL-ORD-' + (currentPoolOrders.length + 101),
+      shipper: 'New Shipper Client',
+      origin_city: 'Atlanta',
+      origin_state: 'GA',
+      dest_city: 'Cincinnati',
+      dest_state: 'OH',
+      pallets: 5,
+      weight_lbs: 6500,
+      shipper_billed_rate: 800
+    });
+    renderPoolOrdersContainer();
+    runLivePoolAnalysis();
+  }
+
+  function removePoolOrderRow(idx) {
+    if (currentPoolOrders.length <= 2) {
+      return alert('A consolidation pool must contain at least 2 partial shipments.');
+    }
+    currentPoolOrders.splice(idx, 1);
+    renderPoolOrdersContainer();
+    runLivePoolAnalysis();
+  }
+
+  async function runLivePoolAnalysis() {
+    const corridor = document.getElementById('pool-corridor-code').value;
+    const equip = document.getElementById('pool-equip-type').value;
+
+    try {
+      const res = await fetch('/api/ltl-pools/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          corridor_code: corridor,
+          equipment_type: equip,
+          orders: currentPoolOrders
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('sim-pool-pallets').textContent = `${data.total_pallets} / ${data.max_pallets_capacity} Pallets (${parseInt(data.total_weight_lbs).toLocaleString()} lbs)`;
+        document.getElementById('sim-pool-revenue').textContent = '$' + parseFloat(data.total_shipper_revenue).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('sim-pool-carrier-pay').textContent = '$' + parseFloat(data.carrier_target_pay).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        
+        const marginEl = document.getElementById('sim-pool-margin');
+        marginEl.textContent = `+$${parseFloat(data.gross_profit_margin).toLocaleString('en-US', { minimumFractionDigits: 2 })} (${data.margin_pct}%)`;
+        marginEl.style.color = data.margin_pct > 20 ? '#059669' : '#D97706';
+      }
+    } catch (e) {
+      console.error('Pool analysis error:', e);
+    }
+  }
+
+  async function submitAddPool() {
+    const corridor = document.getElementById('pool-corridor-code').value;
+    const equip = document.getElementById('pool-equip-type').value;
+    const notes = document.getElementById('pool-notes').value;
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/ltl-pools/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          corridor_code: corridor,
+          equipment_type: equip,
+          orders: currentPoolOrders,
+          pool_notes: notes
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        closeAddPoolModal();
+        loadLtlPoolsDesk();
+      } else {
+        alert(data.error || 'Failed to assemble pool.');
+      }
+    } catch (e) {
+      alert('Network error assembling pool.');
     }
   }
 </script>

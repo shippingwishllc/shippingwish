@@ -131,6 +131,7 @@ app.use('/api/dvir', require('./routes/dvir-safety'));                // FMCSA 4
 app.use('/api/dq', require('./routes/driver-qualification'));        // FMCSA 49 CFR Part 391 Driver Qualification (DQ) Compliance Vault
 app.use('/api/claims', require('./routes/cargo-claims'));            // Carmack Amendment 49 U.S.C. § 14706 Cargo Claims & OS&D Vault
 app.use('/api/multistop', require('./routes/multistop-cube'));        // Multi-Stop Consolidated LTL, Multi-Drop Routing & Pallet Cube Engine
+app.use('/api/ltl-pools', require('./routes/ltl-pooling'));          // Dynamic Multi-Order LTL Pooling & Corridor Consolidation Engine
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

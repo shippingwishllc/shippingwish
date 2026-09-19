@@ -561,6 +561,31 @@ class MobileApiClient {
   getMultiStopManifestPdfUrl(id) {
     return `${this.getBaseUrl()}/api/multistop/${id}/pdf`;
   }
+
+  // --- Phase 18: Dynamic Multi-Order LTL Pooling & Corridor Consolidation ---
+  async analyzeLtlPool(poolData) {
+    return this.request('/api/ltl-pools/analyze', {
+      method: 'POST',
+      body: poolData
+    });
+  }
+
+  async getLtlPools() {
+    return this.request('/api/ltl-pools/roster', { method: 'GET' });
+  }
+
+  async createLtlPool(poolData) {
+    return this.request('/api/ltl-pools/create', {
+      method: 'POST',
+      body: poolData
+    });
+  }
+
+  async convertLtlPoolToManifest(id) {
+    return this.request(`/api/ltl-pools/${id}/convert-manifest`, {
+      method: 'POST'
+    });
+  }
 }
 
 export const api = new MobileApiClient();
