@@ -292,6 +292,9 @@
         <button class="nav-tab-btn" id="tab-btn-ltlpools" onclick="switchTab('ltlpools')">
           <span>🧩</span> LTL Pooling &amp; Corridors
         </button>
+        <button class="nav-tab-btn" id="tab-btn-audit" onclick="switchTab('audit')">
+          <span>⚖️</span> 3-Way Freight Audit
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1274,6 +1277,72 @@
         </div>
       </div>
 
+      <!-- TAB 16: AUTOMATED FREIGHT INVOICE AUDIT & 3-WAY MATCH -->
+      <div id="tab-content-audit" style="display:none;">
+        <!-- Top Action Bar -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h4 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0 0 2px;">
+              <span>⚖️</span> Automated Freight Invoice Audit &amp; 3-Way Match Desk
+            </h4>
+            <p style="font-size:11.5px;color:var(--text-muted);margin:0;">
+              Auditing Carrier Invoices vs Signed RateCon vs Delivery POD &amp; Receipts to eliminate rate inflation, unverified detention, and issue Short-Pay notices.
+            </p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadFreightAuditDesk()">🔄 Refresh Audits</button>
+            <button class="btn btn-primary btn-sm" style="background:#D97706;" onclick="openAddAuditModal()">+ Submit Invoice for Audit</button>
+          </div>
+        </div>
+
+        <!-- 4 Freight Audit KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:var(--space-4);">
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">TOTAL INVOICES AUDITED</div>
+            <div style="font-size:20px;font-weight:800;color:#60A5FA;margin:4px 0;" id="audit-kpi-total">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Carrier freight bills</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">PERFECT 3-WAY MATCHES</div>
+            <div style="font-size:20px;font-weight:800;color:#10B981;margin:4px 0;" id="audit-kpi-matches">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Clean zero-discrepancy</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">OVERBILLING DETECTED ($)</div>
+            <div style="font-size:20px;font-weight:800;color:#EF4444;margin:4px 0;" id="audit-kpi-overbilling">$0.00</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Variance exposure flagged</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">SHORT-PAY RECOVERIES ($)</div>
+            <div style="font-size:20px;font-weight:800;color:#F59E0B;margin:4px 0;" id="audit-kpi-recoveries">$0.00</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Saved via deduction notices</div>
+          </div>
+        </div>
+
+        <!-- Audit Roster Table -->
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>Audit # &amp; Invoice</th>
+                <th>Carrier of Record</th>
+                <th>RateCon Authorized</th>
+                <th>Billed Invoice</th>
+                <th>Variance ($ / %)</th>
+                <th>3-Way Match Status</th>
+                <th>Audit Disposition</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="audit-tbody">
+              <tr>
+                <td colspan="8" style="text-align:center;padding:24px;">Streaming Automated 3-Way Freight Audits...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -2126,6 +2195,172 @@
   </div>
 </div>
 
+<!-- MODAL: SUBMIT CARRIER INVOICE FOR 3-WAY AUDIT -->
+<div id="modal-add-audit" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:95%;max-width:760px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);border-bottom:1px solid var(--border-subtle);padding-bottom:12px;">
+      <div>
+        <h3 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0 0 2px;">
+          <span>⚖️</span> Submit Carrier Invoice for 3-Way Audit
+        </h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">
+          Real-time cross-audit against signed RateCon linehaul, lumper receipts, and GPS detention dwell.
+        </p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddAuditModal()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Carrier Invoice # *</label>
+        <input type="text" id="audit-inv-num" class="form-input" placeholder="e.g. INV-99210">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Invoice Date *</label>
+        <input type="date" id="audit-inv-date" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Load Reference #</label>
+        <input type="text" id="audit-load-ref" class="form-input" placeholder="e.g. SW-SPOT-8821">
+      </div>
+    </div>
+
+    <!-- RateCon Authorized vs Invoiced Billed Comparison -->
+    <div style="background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <!-- Left: Authorized RateCon -->
+        <div style="border-right:1px solid var(--border-subtle);padding-right:12px;">
+          <div style="font-size:11.5px;font-weight:800;color:#2563EB;margin-bottom:8px;">📄 1. RATECON AUTHORIZED AMOUNTS</div>
+          <div class="form-group" style="margin-bottom:8px;">
+            <label class="form-label" style="font-size:10.5px;">Authorized Linehaul ($)</label>
+            <input type="number" id="audit-ratecon-linehaul" class="form-input" value="2000" oninput="runLiveAuditCheck()">
+          </div>
+          <div class="form-group" style="margin-bottom:8px;">
+            <label class="form-label" style="font-size:10.5px;">Authorized Accessorials ($)</label>
+            <input type="number" id="audit-ratecon-accessorials" class="form-input" value="0" oninput="runLiveAuditCheck()">
+          </div>
+        </div>
+
+        <!-- Right: Carrier Billed Breakdown -->
+        <div>
+          <div style="font-size:11.5px;font-weight:800;color:#D97706;margin-bottom:8px;">📥 2. CARRIER BILLED BREAKDOWN</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:10.5px;">Billed Linehaul ($)</label>
+              <input type="number" id="audit-billed-linehaul" class="form-input" value="2250" oninput="runLiveAuditCheck()">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:10.5px;">Billed Detention ($)</label>
+              <input type="number" id="audit-billed-detention" class="form-input" value="150" oninput="runLiveAuditCheck()">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:10.5px;">Billed Lumper ($)</label>
+              <input type="number" id="audit-billed-lumper" class="form-input" value="100" oninput="runLiveAuditCheck()">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:10.5px;">Fuel / Misc Surcharge ($)</label>
+              <input type="number" id="audit-billed-fuel" class="form-input" value="0" oninput="runLiveAuditCheck()">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Document Verification Checklist -->
+    <div style="background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;">
+      <div style="font-size:11.5px;font-weight:800;color:var(--text-primary);margin-bottom:10px;">📋 3. DOCUMENT VERIFICATION AUDIT</div>
+      <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;">
+          <input type="checkbox" id="audit-chk-pod" checked onchange="runLiveAuditCheck()"> Clean Signed POD Attached
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;">
+          <input type="checkbox" id="audit-chk-lumper" onchange="runLiveAuditCheck()"> Stamped Lumper Receipt Matched
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;">
+          <input type="checkbox" id="audit-chk-detention" onchange="runLiveAuditCheck()"> GPS Geofence Dwell &gt; 2h Free Time
+        </label>
+      </div>
+    </div>
+
+    <!-- Live Discrepancy & Variance Indicator Panel -->
+    <div style="background:var(--surface-card);border:1px solid #FDE68A;border-radius:var(--radius-md);padding:14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;text-align:center;">
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">TOTAL AUTHORIZED</div>
+        <div style="font-size:15px;font-weight:800;color:#2563EB;margin-top:2px;" id="sim-audit-auth">$2,000.00</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">TOTAL BILLED</div>
+        <div style="font-size:15px;font-weight:800;color:#0F172A;margin-top:2px;" id="sim-audit-billed">$2,500.00</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">VARIANCE EXPOSURE</div>
+        <div style="font-size:15px;font-weight:800;color:#EF4444;margin-top:2px;" id="sim-audit-variance">+$500.00</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">DISPOSITION</div>
+        <div style="font-size:12px;font-weight:800;color:#D97706;margin-top:4px;" id="sim-audit-disposition">OVERBILLING DETECTED</div>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label" style="font-size:11px;">Audit Notes &amp; Findings</label>
+      <textarea id="audit-notes" class="form-input" rows="2" placeholder="Note discrepancies, ratecon clauses, or carrier communication..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddAuditModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#D97706;" onclick="submitAddAudit()">Run 3-Way Audit &amp; Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EXECUTE SHORT-PAY & DEDUCTION NOTICE -->
+<div id="modal-short-pay" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:540px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);border-bottom:1px solid var(--border-subtle);padding-bottom:12px;">
+      <h3 style="font-size:15px;font-weight:800;color:var(--text-primary);margin:0;">
+        <span>⚖️</span> Authorize Short-Pay &amp; Issue Deduction Notice
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeShortPayModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="sp-audit-id">
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Audit Reference &amp; Carrier</label>
+      <input type="text" id="sp-audit-info" class="form-input" readonly style="background:var(--surface-sunken);">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Billed Invoice Amount ($)</label>
+        <input type="text" id="sp-billed-amount" class="form-input" readonly style="background:var(--surface-sunken);">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Disallowed Deduction ($) *</label>
+        <input type="number" id="sp-deduction-amount" class="form-input" oninput="updateShortPayNetCleared()">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Net Cleared ACH Remittance ($)</label>
+      <input type="text" id="sp-net-cleared" class="form-input" readonly style="background:#ECFDF5;font-weight:800;color:#059669;">
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label" style="font-size:11px;">Statutory Deduction Justification / Notice Terms</label>
+      <textarea id="sp-resolution-notes" class="form-input" rows="3" placeholder="Disallowance per Rate Confirmation terms. Billed unauthorized linehaul markup and unreceipted lumper..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeShortPayModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#059669;" onclick="submitShortPay()">Execute Short-Pay &amp; Generate Notice</button>
+    </div>
+  </div>
+</div>
+
 <script>
   let brokersData = [];
   let loadsData = [];
@@ -2153,6 +2388,7 @@
     document.getElementById('tab-content-claims').style.display = tabId === 'claims' ? 'block' : 'none';
     document.getElementById('tab-content-multistop').style.display = tabId === 'multistop' ? 'block' : 'none';
     document.getElementById('tab-content-ltlpools').style.display = tabId === 'ltlpools' ? 'block' : 'none';
+    document.getElementById('tab-content-audit').style.display = tabId === 'audit' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -2176,6 +2412,8 @@
       loadMultiStopDesk();
     } else if (tabId === 'ltlpools') {
       loadLtlPoolsDesk();
+    } else if (tabId === 'audit') {
+      loadFreightAuditDesk();
     }
   }
 
@@ -4506,6 +4744,356 @@
       }
     } catch (e) {
       alert('Network error assembling pool.');
+    }
+  }
+
+  // =============================================================
+  // TAB 16: FREIGHT AUDIT & 3-WAY MATCH DESK
+  // =============================================================
+  let freightAuditsList = [];
+
+  async function loadFreightAuditDesk() {
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/freight-audit/roster', {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        freightAuditsList = data.audits || [];
+        
+        // Update KPIs
+        const k = data.kpis || {};
+        document.getElementById('audit-kpi-total').textContent = k.total_audited || 0;
+        document.getElementById('audit-kpi-matches').textContent = k.perfect_matches || 0;
+        document.getElementById('audit-kpi-overbilling').textContent = '$' + Number(k.overbilling_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('audit-kpi-recoveries').textContent = '$' + Number(k.short_pay_recoveries || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        renderFreightAuditTable(freightAuditsList);
+      } else {
+        document.getElementById('audit-tbody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#EF4444;padding:20px;">${data.error || 'Failed to load audit records.'}</td></tr>`;
+      }
+    } catch (e) {
+      console.error('Error loading freight audit desk:', e);
+      document.getElementById('audit-tbody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#EF4444;padding:20px;">Network error connecting to Freight Audit API.</td></tr>`;
+    }
+  }
+
+  function renderFreightAuditTable(audits) {
+    const tbody = document.getElementById('audit-tbody');
+    if (!audits || audits.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">No carrier invoice audits recorded yet. Click "+ Submit Invoice for Audit" to evaluate carrier freight bills.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = audits.map(a => {
+      const varianceVal = parseFloat(a.variance_amount || 0);
+      const variancePct = parseFloat(a.variance_pct || 0);
+      const isPositiveVar = varianceVal > 0;
+
+      let dispBadgeClass = 'status-active';
+      let dispLabel = a.audit_disposition || 'MATCH';
+      if (a.audit_disposition === 'OVERBILLING_DETECTED') {
+        dispBadgeClass = 'status-failed';
+        dispLabel = 'OVERBILLING DETECTED';
+      } else if (a.audit_disposition === 'MISSING_RECEIPTS') {
+        dispBadgeClass = 'status-warning';
+        dispLabel = 'MISSING RECEIPTS';
+      } else if (a.audit_disposition === 'SHORT_PAID') {
+        dispBadgeClass = 'status-pending';
+        dispLabel = 'SHORT-PAID & DEDUCTED';
+      } else if (a.audit_disposition === 'APPROVED_FULL_PAY') {
+        dispBadgeClass = 'status-active';
+        dispLabel = 'APPROVED FULL PAY';
+      } else if (a.audit_disposition === 'TOLERANCE_CLEARED') {
+        dispBadgeClass = 'status-active';
+        dispLabel = 'TOLERANCE CLEARED';
+      } else {
+        dispBadgeClass = 'status-active';
+        dispLabel = 'PERFECT 3-WAY MATCH';
+      }
+
+      // Check actions available
+      let actionsHtml = '';
+      if (a.audit_disposition === 'OVERBILLING_DETECTED' || a.audit_disposition === 'MISSING_RECEIPTS') {
+        actionsHtml = `
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="btn btn-sm btn-secondary" style="font-size:10px;padding:3px 7px;color:#059669;border-color:#059669;" onclick="approveAuditFullPay('${a.id}')">✓ Approve Full</button>
+            <button class="btn btn-sm btn-primary" style="font-size:10px;padding:3px 7px;background:#D97706;" onclick='openShortPayModal(${JSON.stringify(a).replace(/'/g, "&#39;")})'>⚖️ Short-Pay</button>
+          </div>
+        `;
+      } else if (a.audit_disposition === 'SHORT_PAID') {
+        actionsHtml = `
+          <a href="/api/freight-audit/${a.id}/short-pay-pdf" target="_blank" class="btn btn-sm btn-secondary" style="font-size:10px;padding:3px 7px;color:#2563EB;border-color:#2563EB;text-decoration:none;display:inline-flex;align-items:center;gap:3px;">
+            📄 Deduction PDF
+          </a>
+        `;
+      } else {
+        actionsHtml = `<span style="font-size:11px;color:#10B981;font-weight:700;">✓ Cleared for Pay</span>`;
+      }
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);font-size:12px;">${a.audit_number}</div>
+            <div style="font-size:11px;color:var(--text-muted);">Inv: ${a.invoice_number} | ${a.invoice_date ? String(a.invoice_date).slice(0, 10) : 'N/A'}</div>
+            ${a.load_number ? `<div style="font-size:10.5px;color:#2563EB;margin-top:2px;">Ref: ${a.load_number}</div>` : ''}
+          </td>
+          <td>
+            <div style="font-weight:600;color:var(--text-primary);font-size:12px;">${a.carrier_company || a.carrier_name || 'Assigned Carrier'}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${a.mc_number ? 'MC: ' + a.mc_number : 'Assigned Fleet'}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:#2563EB;font-size:12.5px;">$${Number(a.ratecon_total_authorized || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style="font-size:10.5px;color:var(--text-muted);">Linehaul: $${Number(a.ratecon_linehaul || 0).toFixed(0)} | Acc: $${Number(a.ratecon_authorized_accessorials || 0).toFixed(0)}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);font-size:12.5px;">$${Number(a.billed_total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style="font-size:10.5px;color:var(--text-muted);">L: $${Number(a.billed_linehaul || 0).toFixed(0)} | Det: $${Number(a.billed_detention || 0).toFixed(0)} | Lump: $${Number(a.billed_lumper || 0).toFixed(0)}</div>
+          </td>
+          <td>
+            <div style="font-weight:800;font-size:12px;color:${isPositiveVar ? '#EF4444' : '#10B981'};">
+              ${isPositiveVar ? '+' : ''}$${Number(varianceVal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div style="font-size:10.5px;color:var(--text-muted);">${variancePct > 0 ? '+' + variancePct.toFixed(1) + '%' : '0.0%'}</div>
+          </td>
+          <td>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              ${a.clean_pod_verified 
+                ? '<span class="status-badge status-active" style="font-size:9px;padding:2px 4px;">POD Clean</span>' 
+                : '<span class="status-badge status-failed" style="font-size:9px;padding:2px 4px;">No POD</span>'}
+              ${parseFloat(a.billed_lumper || 0) > 0 
+                ? (a.lumper_receipt_verified 
+                  ? '<span class="status-badge status-active" style="font-size:9px;padding:2px 4px;">Lumper OK</span>' 
+                  : '<span class="status-badge status-warning" style="font-size:9px;padding:2px 4px;">No Lumper Rcpt</span>') 
+                : ''}
+              ${parseFloat(a.billed_detention || 0) > 0 
+                ? (a.gps_detention_verified 
+                  ? '<span class="status-badge status-active" style="font-size:9px;padding:2px 4px;">GPS Valid</span>' 
+                  : '<span class="status-badge status-failed" style="font-size:9px;padding:2px 4px;">Unverif Dwell</span>') 
+                : ''}
+            </div>
+          </td>
+          <td>
+            <span class="status-badge ${dispBadgeClass}" style="font-weight:700;font-size:10px;">
+              ${dispLabel}
+            </span>
+            ${a.audit_disposition === 'SHORT_PAID' ? `
+              <div style="font-size:10px;color:#D97706;font-weight:700;margin-top:2px;">
+                Ded: -$${Number(a.deductions_amount || 0).toFixed(2)} | Net: $${Number(a.cleared_payment_amount || 0).toFixed(2)}
+              </div>
+            ` : ''}
+          </td>
+          <td>
+            ${actionsHtml}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function openAddAuditModal() {
+    document.getElementById('audit-inv-num').value = 'INV-' + Math.floor(100000 + Math.random() * 900000);
+    document.getElementById('audit-inv-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('audit-load-ref').value = 'SW-2026-' + Math.floor(1000 + Math.random() * 9000);
+    document.getElementById('audit-ratecon-linehaul').value = 2000;
+    document.getElementById('audit-ratecon-accessorials').value = 0;
+    document.getElementById('audit-billed-linehaul').value = 2250;
+    document.getElementById('audit-billed-detention').value = 150;
+    document.getElementById('audit-billed-lumper').value = 100;
+    document.getElementById('audit-billed-fuel').value = 0;
+    document.getElementById('audit-chk-pod').checked = true;
+    document.getElementById('audit-chk-lumper').checked = false;
+    document.getElementById('audit-chk-detention').checked = false;
+    document.getElementById('audit-notes').value = '';
+    runLiveAuditCheck();
+    document.getElementById('modal-add-audit').style.display = 'flex';
+  }
+
+  function closeAddAuditModal() {
+    document.getElementById('modal-add-audit').style.display = 'none';
+  }
+
+  function runLiveAuditCheck() {
+    const rcLinehaul = parseFloat(document.getElementById('audit-ratecon-linehaul').value) || 0;
+    const rcAcc = parseFloat(document.getElementById('audit-ratecon-accessorials').value) || 0;
+    const totalAuth = rcLinehaul + rcAcc;
+
+    const bLinehaul = parseFloat(document.getElementById('audit-billed-linehaul').value) || 0;
+    const bDetention = parseFloat(document.getElementById('audit-billed-detention').value) || 0;
+    const bLumper = parseFloat(document.getElementById('audit-billed-lumper').value) || 0;
+    const bFuel = parseFloat(document.getElementById('audit-billed-fuel').value) || 0;
+    const totalBilled = bLinehaul + bDetention + bLumper + bFuel;
+
+    const variance = Math.round((totalBilled - totalAuth) * 100) / 100;
+    const podOk = document.getElementById('audit-chk-pod').checked;
+    const lumperOk = document.getElementById('audit-chk-lumper').checked;
+    const detentionOk = document.getElementById('audit-chk-detention').checked;
+
+    document.getElementById('sim-audit-auth').textContent = '$' + totalAuth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('sim-audit-billed').textContent = '$' + totalBilled.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const varEl = document.getElementById('sim-audit-variance');
+    varEl.textContent = (variance > 0 ? '+' : '') + '$' + variance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    varEl.style.color = variance > 0 ? '#EF4444' : '#10B981';
+
+    const dispEl = document.getElementById('sim-audit-disposition');
+    if (variance === 0 && podOk && (!bLumper || lumperOk) && (!bDetention || detentionOk)) {
+      dispEl.textContent = 'PERFECT MATCH';
+      dispEl.style.color = '#10B981';
+    } else if (variance > 0 && variance <= 15 && podOk) {
+      dispEl.textContent = 'TOLERANCE CLEARED';
+      dispEl.style.color = '#2563EB';
+    } else if (!podOk || (bLumper > 0 && !lumperOk)) {
+      dispEl.textContent = 'MISSING RECEIPTS';
+      dispEl.style.color = '#D97706';
+    } else {
+      dispEl.textContent = 'OVERBILLING DETECTED';
+      dispEl.style.color = '#EF4444';
+    }
+  }
+
+  async function submitAddAudit() {
+    const invNum = document.getElementById('audit-inv-num').value.trim();
+    if (!invNum) {
+      alert('Please enter carrier invoice number.');
+      return;
+    }
+
+    const payload = {
+      invoice_number: invNum,
+      invoice_date: document.getElementById('audit-inv-date').value,
+      ratecon_linehaul: parseFloat(document.getElementById('audit-ratecon-linehaul').value) || 0,
+      ratecon_authorized_accessorials: parseFloat(document.getElementById('audit-ratecon-accessorials').value) || 0,
+      billed_linehaul: parseFloat(document.getElementById('audit-billed-linehaul').value) || 0,
+      billed_detention: parseFloat(document.getElementById('audit-billed-detention').value) || 0,
+      billed_lumper: parseFloat(document.getElementById('audit-billed-lumper').value) || 0,
+      billed_fuel_surcharge: parseFloat(document.getElementById('audit-billed-fuel').value) || 0,
+      clean_pod_verified: document.getElementById('audit-chk-pod').checked,
+      lumper_receipt_verified: document.getElementById('audit-chk-lumper').checked,
+      gps_detention_verified: document.getElementById('audit-chk-detention').checked,
+      audit_notes: document.getElementById('audit-notes').value.trim()
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/freight-audit/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        closeAddAuditModal();
+        loadFreightAuditDesk();
+      } else {
+        alert(data.error || 'Failed to submit invoice for audit.');
+      }
+    } catch (e) {
+      alert('Network error submitting invoice audit.');
+    }
+  }
+
+  function openShortPayModal(audit) {
+    document.getElementById('sp-audit-id').value = audit.id;
+    document.getElementById('sp-audit-info').value = `${audit.audit_number} | ${audit.carrier_company || audit.carrier_name || 'Carrier'} (Inv #${audit.invoice_number})`;
+    
+    const billed = parseFloat(audit.billed_total_amount || 0);
+    document.getElementById('sp-billed-amount').value = '$' + billed.toFixed(2);
+    
+    const defaultDeduction = parseFloat(audit.variance_amount || 0) > 0 ? parseFloat(audit.variance_amount) : 0;
+    document.getElementById('sp-deduction-amount').value = defaultDeduction.toFixed(2);
+
+    updateShortPayNetCleared();
+
+    const reasons = Array.isArray(audit.deduction_reasons) ? audit.deduction_reasons : [];
+    const reasonText = reasons.map(r => r.reason || r.item).join('. ');
+    document.getElementById('sp-resolution-notes').value = reasonText 
+      ? `Short-pay deduction per Rate Confirmation terms: ${reasonText}`
+      : 'Short-pay deduction for unauthorized rate markup and unverified accessorial fees.';
+
+    document.getElementById('modal-short-pay').style.display = 'flex';
+  }
+
+  function closeShortPayModal() {
+    document.getElementById('modal-short-pay').style.display = 'none';
+  }
+
+  function updateShortPayNetCleared() {
+    const rawBilled = document.getElementById('sp-billed-amount').value.replace('$', '').replace(/,/g, '');
+    const billed = parseFloat(rawBilled) || 0;
+    const deduction = parseFloat(document.getElementById('sp-deduction-amount').value) || 0;
+    const net = Math.max(0, billed - deduction);
+    document.getElementById('sp-net-cleared').value = '$' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  async function submitShortPay() {
+    const id = document.getElementById('sp-audit-id').value;
+    const deduction = parseFloat(document.getElementById('sp-deduction-amount').value) || 0;
+    const notes = document.getElementById('sp-resolution-notes').value.trim();
+
+    if (deduction <= 0) {
+      alert('Please specify a deduction amount greater than $0 to execute Short-Pay.');
+      return;
+    }
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/freight-audit/${id}/short-pay`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          deductions_amount: deduction,
+          resolution_notes: notes,
+          deduction_reasons: [{ item: 'Audit Disallowance', amount: deduction, reason: notes }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        closeShortPayModal();
+        loadFreightAuditDesk();
+        window.open(`/api/freight-audit/${id}/short-pay-pdf`, '_blank');
+      } else {
+        alert(data.error || 'Failed to execute short-pay.');
+      }
+    } catch (e) {
+      alert('Network error executing short-pay.');
+    }
+  }
+
+  async function approveAuditFullPay(auditId) {
+    if (!confirm('Are you sure you want to approve full payment for this invoice, waiving any flagged audit discrepancies?')) {
+      return;
+    }
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/freight-audit/${auditId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        loadFreightAuditDesk();
+      } else {
+        alert(data.error || 'Failed to approve full pay.');
+      }
+    } catch (e) {
+      alert('Network error approving invoice full pay.');
     }
   }
 </script>

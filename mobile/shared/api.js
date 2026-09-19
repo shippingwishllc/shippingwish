@@ -586,6 +586,39 @@ class MobileApiClient {
       method: 'POST'
     });
   }
+
+  // --- Phase 19: Automated Freight Invoice Audit & 3-Way Match ---
+  async getFreightAudits() {
+    return this.request('/api/freight-audit/roster', { method: 'GET' });
+  }
+
+  async getFreightAuditDetails(id) {
+    return this.request(`/api/freight-audit/${id}`, { method: 'GET' });
+  }
+
+  async submitFreightAudit(auditData) {
+    return this.request('/api/freight-audit/submit', {
+      method: 'POST',
+      body: auditData
+    });
+  }
+
+  async approveFreightAudit(id) {
+    return this.request(`/api/freight-audit/${id}/approve`, {
+      method: 'POST'
+    });
+  }
+
+  async executeShortPay(id, shortPayData) {
+    return this.request(`/api/freight-audit/${id}/short-pay`, {
+      method: 'POST',
+      body: shortPayData
+    });
+  }
+
+  getShortPayPdfUrl(id) {
+    return `${this.getBaseUrl()}/api/freight-audit/${id}/short-pay-pdf`;
+  }
 }
 
 export const api = new MobileApiClient();
