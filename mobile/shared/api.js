@@ -498,6 +498,35 @@ class MobileApiClient {
   getDriverDqPdfUrl(id) {
     return `${this.getBaseUrl()}/api/dq/${id}/pdf`;
   }
+
+  // --- Phase 16: Cargo Claims & OS&D Incident Resolution ---
+  async getClaimsRoster(filters = {}) {
+    const query = new URLSearchParams(filters).toString();
+    const endpoint = query ? `/api/claims/roster?${query}` : '/api/claims/roster';
+    return this.request(endpoint, { method: 'GET' });
+  }
+
+  async getClaimDetails(id) {
+    return this.request(`/api/claims/${id}`, { method: 'GET' });
+  }
+
+  async fileCargoClaim(claimData) {
+    return this.request('/api/claims/file', {
+      method: 'POST',
+      body: claimData
+    });
+  }
+
+  async settleCargoClaim(id, settlementData) {
+    return this.request(`/api/claims/${id}/settle`, {
+      method: 'POST',
+      body: settlementData
+    });
+  }
+
+  getClaimPdfUrl(id) {
+    return `${this.getBaseUrl()}/api/claims/${id}/pdf`;
+  }
 }
 
 export const api = new MobileApiClient();

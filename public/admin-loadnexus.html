@@ -283,6 +283,9 @@
         <button class="nav-tab-btn" id="tab-btn-dq" onclick="switchTab('dq')">
           <span>🪪</span> DQ Vault
         </button>
+        <button class="nav-tab-btn" id="tab-btn-claims" onclick="switchTab('claims')">
+          <span>📦</span> Cargo Claims &amp; OS&amp;D
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1065,6 +1068,72 @@
         </div>
       </div>
 
+      <!-- TAB 13: CARGO CLAIMS & OS&D DISPUTE VAULT -->
+      <div id="tab-content-claims" style="display:none;">
+        <!-- Top Action Bar -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h4 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0 0 2px;">
+              <span>📦</span> Carmack Amendment (49 U.S.C. § 14706) Cargo Claims &amp; OS&amp;D Vault
+            </h4>
+            <p style="font-size:11.5px;color:var(--text-muted);margin:0;">
+              Commercial freight loss, damage, shortage, and temperature deviation dispute resolution under 49 CFR Part 370.
+            </p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadClaimsDesk()">🔄 Refresh Claims</button>
+            <button class="btn btn-primary btn-sm" style="background:#BE123C;" onclick="openAddClaimModal()">+ File Cargo Claim</button>
+          </div>
+        </div>
+
+        <!-- 4 Claims KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:var(--space-4);">
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">TOTAL CLAIMS FILED</div>
+            <div style="font-size:20px;font-weight:800;color:#60A5FA;margin:4px 0;" id="claims-kpi-total">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Fleet OS&amp;D exceptions</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">OPEN EXPOSURE ($)</div>
+            <div style="font-size:20px;font-weight:800;color:#F87171;margin:4px 0;" id="claims-kpi-open">$0.00</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Active investigation exposure</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">SETTLED &amp; RESOLVED ($)</div>
+            <div style="font-size:20px;font-weight:800;color:#10B981;margin:4px 0;" id="claims-kpi-settled">$0.00</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Paid &amp; released claims</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">RESOLUTION RATE</div>
+            <div style="font-size:20px;font-weight:800;color:#A78BFA;margin:4px 0;" id="claims-kpi-rate">100%</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Closed / defended claims</div>
+          </div>
+        </div>
+
+        <!-- Claims Roster Table -->
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>Claim # &amp; Incident Type</th>
+                <th>Claimant &amp; Company</th>
+                <th>Delivery BOL &amp; Seal</th>
+                <th>Claimed Amount</th>
+                <th>Salvage Mitigation</th>
+                <th>Settled Amount</th>
+                <th>Disposition Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="claims-tbody">
+              <tr>
+                <td colspan="8" style="text-align:center;padding:24px;">Streaming Cargo Claims &amp; OS&amp;D incidents...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -1586,6 +1655,150 @@
   </div>
 </div>
 
+<!-- MODAL: FILE CARGO CLAIM -->
+<div id="modal-add-claim" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:95%;max-width:640px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>📦</span> File Cargo Loss, Damage &amp; OS&amp;D Claim (49 U.S.C. § 14706)
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddClaimModal()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Claimant Company *</label>
+        <input type="text" id="claim-company" class="form-input" placeholder="e.g. Apex Distribution Inc">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Authorized Contact Person *</label>
+        <input type="text" id="claim-name" class="form-input" placeholder="e.g. Robert Vance, Claims Mgr">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Contact Email &amp; Phone</label>
+        <input type="text" id="claim-contact" class="form-input" placeholder="e.g. claims@apexdist.com / (312) 555-9014">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Incident Category *</label>
+        <select id="claim-type" class="form-input">
+          <option value="DAMAGED">DAMAGED (Crushed / Pierced / Broken Freight)</option>
+          <option value="SHORTAGE">SHORTAGE (Piece Count Short vs BOL)</option>
+          <option value="OVERAGE">OVERAGE (Unmanifested Freight Delivered)</option>
+          <option value="THEFT_PILFERAGE">THEFT / PILFERAGE (Broken Seal / Missing Goods)</option>
+          <option value="CONCEALED_DAMAGE">CONCEALED DAMAGE (Post-Delivery Inspection)</option>
+          <option value="TEMPERATURE_DEVIATION">TEMPERATURE DEVIATION (Reefer Spoilage)</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:10.5px;">Delivery BOL Number</label>
+        <input type="text" id="claim-bol" class="form-input" placeholder="e.g. BOL-APX-88219" style="text-transform:uppercase;">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:10.5px;">Shipped Seal #</label>
+        <input type="text" id="claim-seal-shipped" class="form-input" placeholder="e.g. SEAL-99210" style="text-transform:uppercase;">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:10.5px;">Delivered Seal #</label>
+        <input type="text" id="claim-seal-delivered" class="form-input" placeholder="e.g. SEAL-99210" style="text-transform:uppercase;">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Total Claimed Amount ($ USD) *</label>
+        <input type="number" id="claim-amount" class="form-input" placeholder="e.g. 3450.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Estimated Salvage / Mitigation Value ($)</label>
+        <input type="number" id="claim-salvage" class="form-input" placeholder="e.g. 350.00" step="0.01" value="0.00">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Loss, Damage &amp; Incident Narrative *</label>
+      <textarea id="claim-loss-desc" class="form-input" rows="3" placeholder="Detail the damaged items, cartons, pulp temperature readings, pallet count, or delivery shortages..."></textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Cargo Insurer Name</label>
+        <input type="text" id="claim-insurer" class="form-input" placeholder="e.g. Great American Insurance">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Insurance Policy / Adjuster Ref #</label>
+        <input type="text" id="claim-ins-ref" class="form-input" placeholder="e.g. POL-CARGO-99412">
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddClaimModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#BE123C;" onclick="submitAddClaim()">Formally File Claim (Part 370)</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SETTLE / RESOLVE CARGO CLAIM -->
+<div id="modal-settle-claim" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:520px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>⚖️</span> Carmack Settlement &amp; Legal Disposition
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeSettleClaimModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="settle-claim-id">
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Claim Identification</label>
+      <input type="text" id="settle-claim-info" class="form-input" disabled style="opacity:0.7;">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Claimed vs Salvage</label>
+        <input type="text" id="settle-claim-financials" class="form-input" disabled style="opacity:0.7;">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Agreed Settlement Amount ($)</label>
+        <input type="number" id="settle-agreed-amount" class="form-input" placeholder="0.00" step="0.01">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Disposition Classification *</label>
+      <select id="settle-disposition-status" class="form-input">
+        <option value="SETTLED_AND_PAID">SETTLED_AND_PAID (Full &amp; Final Release)</option>
+        <option value="LIABILITY_ACCEPTED">LIABILITY_ACCEPTED (Awaiting Disbursement)</option>
+        <option value="INSURANCE_SUBROGATION">INSURANCE_SUBROGATION (Assigned to Underwriter)</option>
+        <option value="DENIED_IMPROPER_PACKAGING">DENIED: Improper Packaging (Shipper Fault Defense)</option>
+        <option value="DENIED_INHERENT_VICE">DENIED: Inherent Vice / Perishable Defect</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Insurer Claim / Check Remittance #</label>
+      <input type="text" id="settle-ins-ref" class="form-input" placeholder="e.g. ACH-REMIT-99401">
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label" style="font-size:11px;">Legal Accord &amp; Satisfaction Settlement Notes</label>
+      <textarea id="settle-resolution-notes" class="form-input" rows="3" placeholder="State settlement terms, releases executed, salvage assignment, or defense justification..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeSettleClaimModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#10B981;" onclick="submitSettleClaim()">Execute Settlement &amp; Release</button>
+    </div>
+  </div>
+</div>
+
 <script>
   let brokersData = [];
   let loadsData = [];
@@ -1610,6 +1823,7 @@
     document.getElementById('tab-content-apps').style.display = tabId === 'apps' ? 'block' : 'none';
     document.getElementById('tab-content-dvir').style.display = tabId === 'dvir' ? 'block' : 'none';
     document.getElementById('tab-content-dq').style.display = tabId === 'dq' ? 'block' : 'none';
+    document.getElementById('tab-content-claims').style.display = tabId === 'claims' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -1627,6 +1841,8 @@
       loadDvirDesk();
     } else if (tabId === 'dq') {
       loadDqDesk();
+    } else if (tabId === 'claims') {
+      loadClaimsDesk();
     }
   }
 
@@ -3136,6 +3352,243 @@
       }
     } catch (e) {
       alert('Network error renewing driver credentials.');
+    }
+  }
+
+  // --- PHASE 16: CARGO CLAIMS & OS&D DISPUTE VAULT ---
+  let claimsRecords = [];
+
+  async function loadClaimsDesk() {
+    const tbody = document.getElementById('claims-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Streaming Cargo Claims &amp; OS&amp;D incidents...</td></tr>';
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/claims/roster', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.ok && data.claims) {
+        claimsRecords = data.claims;
+        if (data.metrics) {
+          document.getElementById('claims-kpi-total').textContent = data.metrics.total_claims;
+          document.getElementById('claims-kpi-open').textContent = '$' + (data.metrics.open_exposure || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+          document.getElementById('claims-kpi-settled').textContent = '$' + (data.metrics.total_settled || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+          document.getElementById('claims-kpi-rate').textContent = (data.metrics.resolution_rate || 100) + '%';
+        }
+        renderClaimsDesk(data.claims);
+      } else {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#F87171;padding:24px;">Failed to load Cargo Claims records.</td></tr>';
+      }
+    } catch (e) {
+      console.error('Claims Load error:', e);
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#F87171;padding:24px;">Network error loading Cargo Claims.</td></tr>';
+    }
+  }
+
+  function renderClaimsDesk(claims) {
+    const tbody = document.getElementById('claims-tbody');
+    if (!tbody) return;
+    if (!claims || claims.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No cargo claims or OS&amp;D records found. Click "+ File Cargo Claim" to log one.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = claims.map(r => {
+      let statusBadge = '<span style="background:rgba(251,191,36,0.2);color:#FBBF24;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;">⚠️ UNDER INVESTIGATION</span>';
+      if (r.disposition_status === 'SETTLED_AND_PAID') {
+        statusBadge = '<span style="background:rgba(16,185,129,0.2);color:#10B981;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;">✅ SETTLED &amp; PAID</span>';
+      } else if (r.disposition_status === 'LIABILITY_ACCEPTED') {
+        statusBadge = '<span style="background:rgba(96,165,250,0.2);color:#60A5FA;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;">🔵 LIABILITY ACCEPTED</span>';
+      } else if (r.disposition_status === 'INSURANCE_SUBROGATION') {
+        statusBadge = '<span style="background:rgba(167,139,250,0.2);color:#A78BFA;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;">🛡️ SUBROGATED</span>';
+      } else if (r.disposition_status.startsWith('DENIED')) {
+        statusBadge = '<span style="background:rgba(239,68,68,0.2);color:#F87171;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;">⛔ CLAIM DENIED</span>';
+      }
+
+      let typeBadge = '<span style="background:rgba(148,163,184,0.2);color:#CBD5E1;padding:2px 6px;border-radius:3px;font-size:10px;">' + escapeAttr(r.incident_type) + '</span>';
+      if (r.incident_type === 'TEMPERATURE_DEVIATION') {
+        typeBadge = '<span style="background:rgba(6,182,212,0.2);color:#22D3EE;padding:2px 6px;border-radius:3px;font-size:10px;">❄️ TEMP DEVIATION</span>';
+      } else if (r.incident_type === 'THEFT_PILFERAGE') {
+        typeBadge = '<span style="background:rgba(239,68,68,0.2);color:#F87171;padding:2px 6px;border-radius:3px;font-size:10px;">🚨 THEFT/SEAL</span>';
+      } else if (r.incident_type === 'DAMAGED') {
+        typeBadge = '<span style="background:rgba(245,158,11,0.2);color:#FBBF24;padding:2px 6px;border-radius:3px;font-size:10px;">💥 DAMAGED</span>';
+      }
+
+      const claimedVal = parseFloat(r.claimed_amount) || 0;
+      const salvageVal = parseFloat(r.salvage_value) || 0;
+      const settledVal = parseFloat(r.settled_amount) || 0;
+      const netExposure = Math.max(0, claimedVal - salvageVal);
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${escapeAttr(r.claim_number)}</div>
+            <div style="margin-top:2px;">${typeBadge}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:#60A5FA;">${escapeAttr(r.claimant_company)}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${escapeAttr(r.claimant_name)}</div>
+          </td>
+          <td>
+            <div style="font-weight:600;">${escapeAttr(r.delivery_bol_number || 'No BOL')}</div>
+            <div style="font-size:10.5px;color:${r.seal_intact ? 'var(--text-muted)' : '#F87171'};">
+              ${r.seal_intact ? '🔒 Seal Intact' : '⚠️ Seal Broken'}
+            </div>
+          </td>
+          <td style="font-weight:700;color:#F87171;">$${claimedVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td>
+            <div style="font-size:11px;color:#10B981;">-$${salvageVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div style="font-size:10px;color:var(--text-muted);">Net: $${netExposure.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+          </td>
+          <td style="font-weight:700;color:${settledVal > 0 ? '#10B981' : 'var(--text-muted)'};">
+            ${settledVal > 0 ? '$' + settledVal.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '$0.00'}
+          </td>
+          <td>
+            ${statusBadge}
+            ${r.insurance_carrier_name ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${escapeAttr(r.insurance_carrier_name)}</div>` : ''}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <a href="/api/claims/${r.id}/pdf" target="_blank" class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 7px;text-decoration:none;">
+                📄 Carmack PDF
+              </a>
+              <button class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 7px;color:#FBBF24;" onclick="openSettleClaimModal(${r.id})">
+                ⚖️ Settle
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function openAddClaimModal() {
+    document.getElementById('claim-company').value = '';
+    document.getElementById('claim-name').value = '';
+    document.getElementById('claim-contact').value = '';
+    document.getElementById('claim-type').value = 'DAMAGED';
+    document.getElementById('claim-bol').value = '';
+    document.getElementById('claim-seal-shipped').value = '';
+    document.getElementById('claim-seal-delivered').value = '';
+    document.getElementById('claim-amount').value = '';
+    document.getElementById('claim-salvage').value = '0.00';
+    document.getElementById('claim-loss-desc').value = '';
+    document.getElementById('claim-insurer').value = 'Great American Insurance';
+    document.getElementById('claim-ins-ref').value = '';
+    document.getElementById('modal-add-claim').style.display = 'flex';
+  }
+
+  function closeAddClaimModal() {
+    document.getElementById('modal-add-claim').style.display = 'none';
+  }
+
+  async function submitAddClaim() {
+    const company = document.getElementById('claim-company').value;
+    const name = document.getElementById('claim-name').value;
+    const contact = document.getElementById('claim-contact').value;
+    const type = document.getElementById('claim-type').value;
+    const bol = document.getElementById('claim-bol').value;
+    const sealShip = document.getElementById('claim-seal-shipped').value;
+    const sealDel = document.getElementById('claim-seal-delivered').value;
+    const amount = document.getElementById('claim-amount').value;
+    const salvage = document.getElementById('claim-salvage').value;
+    const lossDesc = document.getElementById('claim-loss-desc').value;
+    const insurer = document.getElementById('claim-insurer').value;
+    const insRef = document.getElementById('claim-ins-ref').value;
+
+    if (!company || !name || !amount || !lossDesc) {
+      return alert('Claimant Company, Authorized Contact, Claimed Amount, and Loss Description are required.');
+    }
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/claims/file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          claimant_company: company,
+          claimant_name: name,
+          claimant_phone: contact,
+          incident_type: type,
+          delivery_bol_number: bol,
+          seal_number_shipped: sealShip,
+          seal_number_delivered: sealDel,
+          seal_intact: !sealShip || !sealDel || sealShip === sealDel,
+          claimed_amount: parseFloat(amount),
+          salvage_value: parseFloat(salvage) || 0.00,
+          loss_description: lossDesc,
+          insurance_carrier_name: insurer,
+          insurance_claim_ref: insRef
+        })
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        closeAddClaimModal();
+        loadClaimsDesk();
+      } else {
+        alert(data.error || 'Failed to file cargo claim.');
+      }
+    } catch (e) {
+      alert('Network error filing cargo claim.');
+    }
+  }
+
+  function openSettleClaimModal(id) {
+    const item = claimsRecords.find(x => x.id === id);
+    if (!item) return;
+
+    document.getElementById('settle-claim-id').value = item.id;
+    document.getElementById('settle-claim-info').value = `${item.claim_number} — ${item.claimant_company} (${item.incident_type})`;
+    document.getElementById('settle-claim-financials').value = `Claimed: $${parseFloat(item.claimed_amount).toFixed(2)} | Salvage: $${parseFloat(item.salvage_value).toFixed(2)}`;
+    document.getElementById('settle-agreed-amount').value = item.settled_amount > 0 ? item.settled_amount : item.claimed_amount;
+    document.getElementById('settle-disposition-status').value = item.disposition_status || 'SETTLED_AND_PAID';
+    document.getElementById('settle-ins-ref').value = item.insurance_claim_ref || 'ACH-REMIT-DIRECT';
+    document.getElementById('settle-resolution-notes').value = item.resolution_notes || 'Full and final settlement accord executed under Carmack Amendment statutory principles.';
+    document.getElementById('modal-settle-claim').style.display = 'flex';
+  }
+
+  function closeSettleClaimModal() {
+    document.getElementById('modal-settle-claim').style.display = 'none';
+  }
+
+  async function submitSettleClaim() {
+    const id = document.getElementById('settle-claim-id').value;
+    const status = document.getElementById('settle-disposition-status').value;
+    const amount = document.getElementById('settle-agreed-amount').value;
+    const insRef = document.getElementById('settle-ins-ref').value;
+    const notes = document.getElementById('settle-resolution-notes').value;
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/claims/${id}/settle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          disposition_status: status,
+          settled_amount: parseFloat(amount) || 0.00,
+          insurance_claim_ref: insRef,
+          resolution_notes: notes
+        })
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        closeSettleClaimModal();
+        loadClaimsDesk();
+      } else {
+        alert(data.error || 'Failed to settle cargo claim.');
+      }
+    } catch (e) {
+      alert('Network error settling cargo claim.');
     }
   }
 </script>

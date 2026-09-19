@@ -129,6 +129,7 @@ app.use('/api/eld', require('./routes/eld-compliance'));            // FMCSA 49 
 app.use('/api/ifta-tax', require('./routes/ifta-tax'));            // Automated IFTA Fuel Tax Engine, State Mileage Breakdown & Filing PDFs
 app.use('/api/dvir', require('./routes/dvir-safety'));                // FMCSA 49 CFR Part 396 Driver Vehicle Inspection Report (DVIR) & Defect Sign-off
 app.use('/api/dq', require('./routes/driver-qualification'));        // FMCSA 49 CFR Part 391 Driver Qualification (DQ) Compliance Vault
+app.use('/api/claims', require('./routes/cargo-claims'));            // Carmack Amendment 49 U.S.C. § 14706 Cargo Claims & OS&D Vault
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {
