@@ -316,6 +316,9 @@
         <button class="nav-tab-btn" id="tab-btn-rate-matrix" onclick="switchTab('rate-matrix')">
           <span>📊</span> Shipper Rate Matrix &amp; RFP
         </button>
+        <button class="nav-tab-btn" id="tab-btn-drayage" onclick="switchTab('drayage')">
+          <span>🚢</span> Drayage &amp; Intermodal Hub
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -2139,6 +2142,141 @@
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
             <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Algorithmic Contract Rating &amp; RFP Proposal Architecture</strong>
             To win and protect Fortune 500 dedicated shipper volume, LoadNexus™ implements a 4-tier contract pricing formula: (1) Standardized federal mileage bands preventing short-haul under-recovery with minimum flat charges ($550–$750 minimum); (2) Dynamic equipment multipliers compensating for temperature control (+22%), heavy haul (+28%), or specialized curtainside (+32%); (3) EIA/DOE weekly diesel fuel pegging with $0.05 increments per $0.01/mile surcharge adjustment; and (4) Volume commitment incentives (4% discount at $\ge 10$ loads/week, 7% at $\ge 20$ loads/week) bound by automated 98.5% On-Time Delivery SLAs.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 24: AUTONOMOUS DRAYAGE PORT & RAIL INTERMODAL DISPATCHER -->
+      <div id="tab-content-drayage" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);flex-wrap:wrap;gap:12px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>🚢</span> Autonomous Drayage Port &amp; Rail Intermodal Dispatcher
+              <span class="badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">UIIA &amp; OSRA-22 Compliant</span>
+            </h3>
+            <span style="font-size:12px;color:var(--text-muted);">
+              Marine terminal &amp; rail ramp gate appointments · Real-time Demurrage &amp; Per Diem countdown clocks · ISO 17712 container seal verification · Court-admissible EIR PDFs
+            </span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openCreateDrayageModal()">
+              <span>📦</span> + New Drayage Shipment
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="openBookGateModal()">
+              <span>🚪</span> + Book Terminal Gate
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="loadDrayageDesk()">
+              <span>🔄</span> Refresh Roster
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:var(--space-4);margin-bottom:var(--space-4);">
+          <div class="stat-card" style="border-left:4px solid #38bdf8;">
+            <div class="stat-label">ACTIVE INTERMODAL CONTAINERS</div>
+            <div class="stat-value" id="kpi-drayage-active" style="color:#38bdf8;">0</div>
+            <div class="stat-sub">Marine Ports &amp; Rail Ramps In-Transit</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #ef4444;">
+            <div class="stat-label">PER DIEM CRITICAL ALERTS</div>
+            <div class="stat-value" id="kpi-drayage-critical" style="color:#f87171;">0</div>
+            <div class="stat-sub">&le; 24h Free Time or Accruing Late Fees</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="stat-label">TERMINAL GATE APPOINTMENTS</div>
+            <div class="stat-value" id="kpi-drayage-appts" style="color:#34d399;">0</div>
+            <div class="stat-sub">Confirmed eModal / PierPass / Ramp Slots</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #f59e0b;">
+            <div class="stat-label">DEMURRAGE PREVENTED ($)</div>
+            <div class="stat-value" id="kpi-drayage-saved" style="color:#fbbf24;">$0.00</div>
+            <div class="stat-sub">Late Fee Penalties Averted via Automated Pulls</div>
+          </div>
+        </div>
+
+        <!-- Section 1: Active Intermodal Containers & Interchange Radar -->
+        <div style="margin-bottom:var(--space-4);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="drayage-search-input" class="form-input" placeholder="Search Container #, B/L, Seal, Consignee..." style="width:280px;" oninput="filterDrayageShipments()">
+              <select id="drayage-filter-facility" class="form-select" style="width:170px;" onchange="filterDrayageShipments()">
+                <option value="ALL">All Facilities</option>
+                <option value="MARINE_PORT">Marine Ports (LA/LB, NY, SAV)</option>
+                <option value="RAIL_RAMP">Class 1 Rail Ramps (BNSF, UP)</option>
+              </select>
+              <select id="drayage-filter-urgency" class="form-select" style="width:190px;" onchange="filterDrayageShipments()">
+                <option value="ALL">All Urgency Statuses</option>
+                <option value="CLEAR">Clear (>48h Free Time)</option>
+                <option value="EXPIRING_SOON">Expiring Soon (24-48h)</option>
+                <option value="CRITICAL_TODAY">Critical LFD Today (&le;24h)</option>
+                <option value="PER_DIEM_ACCRUING">Per Diem Accruing</option>
+              </select>
+            </div>
+            <span id="drayage-records-count" style="font-size:12px;color:var(--text-muted);">Showing 0 containers</span>
+          </div>
+
+          <div class="table-container" style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Container # &amp; Size</th>
+                  <th>Steamship Line / Facility</th>
+                  <th>Customs &amp; Seal</th>
+                  <th>Chassis Pool</th>
+                  <th>Last Free Day (LFD)</th>
+                  <th>Demurrage Countdown</th>
+                  <th>Gate Appt / PIN</th>
+                  <th>Drayage Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="drayage-containers-tbody">
+                <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">Loading drayage container shipments...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 2: Terminal Gate Appointments & Dual Transactions -->
+        <div style="margin-bottom:var(--space-4);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);">
+            <div>
+              <h4 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+                <span>🚪</span> Scheduled Terminal Gate Appointments &amp; Dual Turn Transactions
+              </h4>
+              <span style="font-size:11px;color:var(--text-muted);">eModal, PierPass, and Rail Ramp gate reservations with TWIC driver verification</span>
+            </div>
+            <span id="drayage-appts-count" style="font-size:12px;color:var(--text-muted);">0 appointments scheduled</span>
+          </div>
+
+          <div class="table-container" style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Appt Code &amp; Time</th>
+                  <th>Terminal / Ramp Facility</th>
+                  <th>Transaction Type</th>
+                  <th>Assigned Driver &amp; TWIC</th>
+                  <th>Tractor Unit</th>
+                  <th>Gate Slot Window</th>
+                  <th>Terminal PIN</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="drayage-appts-tbody">
+                <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Loading gate appointments...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- System Architecture Info Banner -->
+        <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:var(--radius-md);padding:14px;display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:20px;">🚢</span>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Autonomous Drayage &amp; Intermodal Architecture (UIIA / OSRA-22 Compliant)</strong>
+            Port and rail container movements represent the most demurrage-sensitive link in North American logistics. LoadNexus™ eliminates costly port storage and detention penalties ($150–$350/day per container) by synchronizing marine terminal appointments (eModal / PierPass), monitoring real-time Last Free Day (LFD) countdowns, validating ISO 17712 tamper-evident high-security seals, and generating court-admissible Equipment Interchange Receipts (EIR) with cryptographic SHA-256 proofs under the Federal Maritime Commission Ocean Shipping Reform Act (OSRA-22).
           </div>
         </div>
       </div>
@@ -4826,6 +4964,318 @@
   </div>
 </div>
 
+<!-- MODAL 1: CREATE DRAYAGE SHIPMENT -->
+<div id="modal-create-drayage" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:680px;padding:var(--space-6);box-shadow:var(--shadow-xl);margin:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>🚢</span> New Intermodal Drayage Shipment
+        </h3>
+        <span style="font-size:11px;color:var(--text-muted);">Ingest marine container or rail well-car shipment with UIIA compliance &amp; LFD countdown</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeCreateDrayageModal()">✕</button>
+    </div>
+
+    <!-- 1-Click Preset Demonstrators -->
+    <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:14px;">
+      <span style="font-size:11px;font-weight:700;color:var(--text-primary);display:block;margin-bottom:6px;">⚡ Quick Presets (1-Click Enterprise Ingestion):</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:11px;border:1px solid rgba(56,189,248,0.3);" onclick="setDrayagePreset('pola_import')">
+          🌊 Port of LA APM Pier 400 (40HC Import)
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:11px;border:1px solid rgba(239,68,68,0.3);color:#f87171;" onclick="setDrayagePreset('polb_critical')">
+          ⚠️ Port of Long Beach TTI (Critical LFD Today)
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:11px;border:1px solid rgba(16,185,129,0.3);color:#34d399;" onclick="setDrayagePreset('bnsf_rail')">
+          🚆 BNSF Chicago Logistics Park (53ft Domestic Rail)
+        </button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Container Number *</label>
+        <input type="text" id="new-drayage-container-num" class="form-input" placeholder="e.g. MSKU9281745" style="text-transform:uppercase;">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">ISO Size / Type</label>
+        <select id="new-drayage-size-type" class="form-select">
+          <option value="40HC">40ft High-Cube (40HC)</option>
+          <option value="20GP">20ft Standard (20GP)</option>
+          <option value="40GP">40ft Standard (40GP)</option>
+          <option value="45HC">45ft High-Cube (45HC)</option>
+          <option value="53DOM">53ft Domestic Intermodal Box</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Ocean Line / SCAC Code</label>
+        <input type="text" id="new-drayage-ocean-scac" class="form-input" placeholder="e.g. MAEU (Maersk), MSCU, CMDU, BNSF">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Bill of Lading #</label>
+        <input type="text" id="new-drayage-bol" class="form-input" placeholder="e.g. BOL-MAEU-881290">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Terminal / Rail Ramp Facility</label>
+        <input type="text" id="new-drayage-facility" class="form-input" placeholder="e.g. Port of Los Angeles - APM Terminals Pier 400">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Facility Type</label>
+        <select id="new-drayage-facility-type" class="form-select">
+          <option value="MARINE_PORT">Marine Port</option>
+          <option value="RAIL_RAMP">Class 1 Rail Ramp</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Last Free Day (LFD) *</label>
+        <input type="date" id="new-drayage-lfd" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Daily Detention / Per Diem Rate ($/Day)</label>
+        <input type="number" id="new-drayage-per-diem-rate" class="form-input" value="175.00" step="25">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Chassis Number</label>
+        <input type="text" id="new-drayage-chassis-num" class="form-input" placeholder="e.g. DCLI-99124">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Chassis Pool Provider</label>
+        <select id="new-drayage-chassis-pool" class="form-select">
+          <option value="DCLI">DCLI Chassis Pool</option>
+          <option value="TRAC_INTERMODAL">TRAC Intermodal</option>
+          <option value="FLEXIVAN">Flexi-Van</option>
+          <option value="PRIVATE_CHASSIS">Private / Motor Carrier Owned</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">ISO 17712 High-Sec Seal</label>
+        <input type="text" id="new-drayage-seal-num" class="form-input" placeholder="e.g. SL-881920">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Destination Consignee</label>
+        <input type="text" id="new-drayage-consignee" class="form-input" placeholder="e.g. Target Regional Distribution Center">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">City</label>
+        <input type="text" id="new-drayage-city" class="form-input" placeholder="e.g. Ontario">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">State</label>
+        <input type="text" id="new-drayage-state" class="form-input" placeholder="e.g. CA" maxlength="2">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Assigned Drayage Driver</label>
+        <input type="text" id="new-drayage-driver-name" class="form-input" placeholder="e.g. Alejandro Ramos">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Driver TWIC Card #</label>
+        <input type="text" id="new-drayage-driver-twic" class="form-input" placeholder="e.g. TWIC-CA-981244">
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closeCreateDrayageModal()">Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="submitCreateDrayage()">
+        <span>🚀</span> Ingest Intermodal Container
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 2: BOOK TERMINAL GATE APPOINTMENT -->
+<div id="modal-book-gate-appointment" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:540px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>🚪</span> Book Terminal Gate Appointment
+        </h3>
+        <span style="font-size:11px;color:var(--text-muted);">eModal / PierPass / Rail Gate Reservation &amp; Dual Turn Pairing</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeBookGateModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="book-gate-shipment-id">
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;font-weight:700;">Select Container Shipment *</label>
+      <select id="book-gate-shipment-select" class="form-select" onchange="onBookGateShipmentChange()">
+        <!-- Populated dynamically -->
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;font-weight:700;">Terminal / Rail Facility</label>
+      <input type="text" id="book-gate-facility-name" class="form-input" readonly style="background:var(--surface-muted);">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Transaction Type</label>
+        <select id="book-gate-tx-type" class="form-select">
+          <option value="IMPORT_PICKUP">Import Container Pickup</option>
+          <option value="DUAL_TRANSACTION">⚡ Dual Turn (Empty Return + Import Pickup)</option>
+          <option value="EMPTY_RETURN">Empty Container Return</option>
+          <option value="EXPORT_DROPOFF">Export Loaded Dropoff</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Gate Window Slot</label>
+        <select id="book-gate-slot-window" class="form-select">
+          <option value="08:00 - 10:00 Morning">08:00 - 10:00 Morning</option>
+          <option value="10:00 - 12:00 Midday">10:00 - 12:00 Midday</option>
+          <option value="12:00 - 14:00 Afternoon">12:00 - 14:00 Afternoon</option>
+          <option value="14:00 - 16:00 Evening">14:00 - 16:00 Evening</option>
+          <option value="18:00 - 22:00 Off-Peak PierPass">18:00 - 22:00 Off-Peak PierPass</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Driver Name</label>
+        <input type="text" id="book-gate-driver-name" class="form-input" value="Alejandro Ramos">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;font-weight:700;">Driver TWIC Card #</label>
+        <input type="text" id="book-gate-driver-twic" class="form-input" value="TWIC-CA-981244">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label class="form-label" style="font-size:11px;font-weight:700;">Tractor Unit / License Plate</label>
+      <input type="text" id="book-gate-tractor-unit" class="form-input" value="TRK-9904 (CA Apportioned)">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closeBookGateModal()">Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="submitBookGate()">
+        <span>🎫</span> Confirm Gate Reservation &amp; Issue PIN
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 3: VIEW DRAYAGE DOSSIER & EIR -->
+<div id="modal-view-drayage-dossier" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:760px;padding:var(--space-6);box-shadow:var(--shadow-xl);margin:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 id="dossier-drayage-header" style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>🚢</span> Container Interchange Dossier
+        </h3>
+        <span id="dossier-drayage-sub" style="font-size:11px;color:var(--text-muted);">Inspection records, TWIC check, and demurrage legal shield</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeDrayageDossierModal()">✕</button>
+    </div>
+
+    <!-- Cryptographic Hash Bar -->
+    <div style="background:#0f172a;border-radius:var(--radius-md);padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div>
+        <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;display:block;">Cryptographic Interchange Proof Hash</span>
+        <code id="dossier-drayage-hash" style="color:#38bdf8;font-size:11px;font-family:monospace;">HASH-VERIFYING...</code>
+      </div>
+      <span id="dossier-drayage-status-pill" class="badge" style="background:#38bdf8;color:#000;">DISPATCHED</span>
+    </div>
+
+    <!-- 4-Way Demurrage & Equipment Grid -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:10px;margin-bottom:14px;">
+      <div style="background:var(--surface-muted);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">LAST FREE DAY (LFD)</span>
+        <strong id="dossier-drayage-lfd" style="font-size:13px;color:var(--text-primary);">-</strong>
+      </div>
+      <div style="background:var(--surface-muted);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">DWELL STATUS</span>
+        <strong id="dossier-drayage-dwell-status" style="font-size:13px;color:#38bdf8;">-</strong>
+      </div>
+      <div style="background:var(--surface-muted);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">ACCRUED PER DIEM</span>
+        <strong id="dossier-drayage-penalty" style="font-size:13px;color:#34d399;">$0.00</strong>
+      </div>
+      <div style="background:var(--surface-muted);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">GATE PIN / STATUS</span>
+        <strong id="dossier-drayage-gate-pin" style="font-size:13px;color:#fbbf24;">CONFIRMED</strong>
+      </div>
+    </div>
+
+    <!-- Equipment & Seal Details Grid -->
+    <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;margin-bottom:14px;font-size:12px;">
+      <strong style="font-size:12px;color:var(--text-primary);display:block;margin-bottom:8px;">Equipment Interchange Verification</strong>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><span style="color:var(--text-muted);">Chassis ID:</span> <strong id="dossier-drayage-chassis" style="color:var(--text-primary);">-</strong></div>
+        <div><span style="color:var(--text-muted);">Chassis Pool:</span> <strong id="dossier-drayage-pool" style="color:var(--text-primary);">-</strong></div>
+        <div><span style="color:var(--text-muted);">ISO 17712 Seal:</span> <strong id="dossier-drayage-seal" style="color:#10b981;">-</strong></div>
+        <div><span style="color:var(--text-muted);">Customs &amp; Freight:</span> <strong id="dossier-drayage-customs" style="color:var(--text-primary);">-</strong></div>
+        <div><span style="color:var(--text-muted);">Assigned Driver:</span> <strong id="dossier-drayage-driver" style="color:var(--text-primary);">-</strong></div>
+        <div><span style="color:var(--text-muted);">Consignee:</span> <strong id="dossier-drayage-consignee" style="color:var(--text-primary);">-</strong></div>
+      </div>
+    </div>
+
+    <!-- Section: Lifecycle Status Update -->
+    <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:var(--radius-md);padding:12px;margin-bottom:14px;">
+      <strong style="font-size:11.5px;color:var(--text-primary);display:block;margin-bottom:8px;">Update Drayage Workflow Status</strong>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <select id="dossier-drayage-status-select" class="form-select" style="font-size:11px;width:240px;">
+          <option value="PENDING_DISPATCH">Pending Dispatch</option>
+          <option value="DISPATCHED">Dispatched to Port / Ramp</option>
+          <option value="GATE_IN_PULLED">Gate In / Container Pulled</option>
+          <option value="DELIVERED_UNLOADED">Delivered to Consignee / Unloaded</option>
+          <option value="EMPTY_RETURNED">Empty Container Returned to Terminal</option>
+          <option value="COMPLETED">Completed / Settled</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="submitDrayageStatusUpdate()">
+          Update Status
+        </button>
+      </div>
+    </div>
+
+    <!-- Section: File Port Congestion Waiver Dispute -->
+    <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-md);padding:12px;margin-bottom:16px;">
+      <strong style="font-size:11.5px;color:#f87171;display:block;margin-bottom:6px;">⚠️ File OSRA-22 Per Diem / Demurrage Waiver Dispute</strong>
+      <span style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:8px;">If terminal gate congestion or chassis shortages prevented return prior to LFD, log statutory dispute:</span>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <select id="dossier-dispute-type-select" class="form-select" style="font-size:11px;width:220px;">
+          <option value="PORT_CONGESTION_DISPUTE">Terminal Gate Congestion / Long Queues</option>
+          <option value="CHASSIS_SPLIT_WAIVER">Chassis Shortage / Split Location</option>
+          <option value="CRANE_OUTAGE_DISPUTE">Terminal Crane / IT System Outage</option>
+          <option value="DUAL_TRANSACTION_DENIAL">Dual Transaction Slot Cancelled</option>
+        </select>
+        <input type="text" id="dossier-dispute-reason-input" class="form-input" placeholder="Dispute details &amp; gate incident notes..." style="font-size:11px;flex:1;min-width:200px;">
+        <button class="btn btn-sm" style="background:#dc2626;color:#fff;border:none;" onclick="submitDrayageDispute()">
+          File Waiver Claim
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer Controls -->
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div id="drayage-pdf-container">
+        <!-- PDF download button injected here -->
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeDrayageDossierModal()">Close Dossier</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function getAuthToken() {
     return localStorage.getItem('token') || localStorage.getItem('auth_token') || sessionStorage.getItem('token') || '';
@@ -4865,6 +5315,7 @@
     document.getElementById('tab-content-credentialing').style.display = tabId === 'credentialing' ? 'block' : 'none';
     document.getElementById('tab-content-bond-watchdog').style.display = tabId === 'bond-watchdog' ? 'block' : 'none';
     document.getElementById('tab-content-rate-matrix').style.display = tabId === 'rate-matrix' ? 'block' : 'none';
+    document.getElementById('tab-content-drayage').style.display = tabId === 'drayage' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -4904,6 +5355,8 @@
       loadBondWatchdogDesk();
     } else if (tabId === 'rate-matrix') {
       loadRateMatrixDesk();
+    } else if (tabId === 'drayage') {
+      loadDrayageDesk();
     }
   }
 
@@ -10374,6 +10827,483 @@
       }
     } catch (err) {
       alert('Network error updating proposal status.');
+    }
+  }
+
+  // =============================================================
+  // Phase 27: Autonomous Drayage Port & Rail Intermodal Hub
+  // =============================================================
+  let drayageShipmentsData = [];
+  let drayageAppointmentsData = [];
+  let currentDrayageContainerId = null;
+
+  async function loadDrayageDesk() {
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/drayage-intermodal/roster', {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error('Failed to load drayage roster:', data.error);
+        return;
+      }
+
+      // Update KPIs
+      if (data.kpis) {
+        document.getElementById('kpi-drayage-active').textContent = data.kpis.active_intermodal_loads || 0;
+        document.getElementById('kpi-drayage-critical').textContent = data.kpis.per_diem_critical_alerts || 0;
+        document.getElementById('kpi-drayage-appts').textContent = data.kpis.confirmed_gate_appointments || 0;
+        document.getElementById('kpi-drayage-saved').textContent = `$${parseFloat(data.kpis.demurrage_fees_prevented || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      }
+
+      drayageShipmentsData = data.shipments || [];
+      drayageAppointmentsData = data.appointments || [];
+
+      renderDrayageTables(drayageShipmentsData, drayageAppointmentsData);
+    } catch (err) {
+      console.error('Network error loading drayage desk:', err);
+    }
+  }
+
+  function renderDrayageTables(shipments, appts) {
+    // 1. Containers Table
+    const tbody = document.getElementById('drayage-containers-tbody');
+    document.getElementById('drayage-records-count').textContent = `Showing ${shipments.length} containers`;
+
+    if (!shipments || shipments.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">No drayage shipments matching filter.</td></tr>`;
+    } else {
+      tbody.innerHTML = shipments.map(s => {
+        let badgeColor = '#38bdf8';
+        if (s.demurrage_per_diem_status === 'CRITICAL_TODAY') badgeColor = '#f59e0b';
+        else if (s.demurrage_per_diem_status === 'PER_DIEM_ACCRUING') badgeColor = '#ef4444';
+        else if (s.demurrage_per_diem_status === 'CLEAR') badgeColor = '#10b981';
+
+        const lfdDate = s.last_free_day ? new Date(s.last_free_day).toISOString().split('T')[0] : 'N/A';
+
+        return `
+          <tr>
+            <td>
+              <strong style="color:#fff;font-family:monospace;font-size:13px;">${s.container_number}</strong>
+              <span class="badge" style="background:rgba(255,255,255,0.08);color:var(--text-muted);font-size:10px;margin-left:4px;">${s.size_type}</span>
+            </td>
+            <td>
+              <strong style="color:var(--text-primary);display:block;">${s.ocean_line_scac} · ${s.terminal_rail_facility}</strong>
+              <span style="font-size:11px;color:var(--text-muted);">${s.facility_type === 'MARINE_PORT' ? '⚓ Marine Terminal' : '🚆 Rail Ramp'} · B/L: ${s.bill_of_lading || 'N/A'}</span>
+            </td>
+            <td>
+              <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);font-size:10px;">${s.customs_hold_status}</span>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">🔒 ${s.seal_number || 'N/A'}</div>
+            </td>
+            <td>
+              <strong style="color:var(--text-primary);font-size:12px;">${s.chassis_number || 'TBD'}</strong>
+              <div style="font-size:11px;color:var(--text-muted);">${s.chassis_pool_provider}</div>
+            </td>
+            <td>
+              <strong style="color:var(--text-primary);">${lfdDate}</strong>
+            </td>
+            <td>
+              <span class="badge" style="background:${badgeColor}22;color:${badgeColor};border:1px solid ${badgeColor}55;font-weight:700;font-size:11px;">
+                ${s.status_label || s.demurrage_per_diem_status}
+              </span>
+            </td>
+            <td>
+              <strong style="color:#fbbf24;font-family:monospace;">${s.appointment_pin || 'NO_PIN'}</strong>
+              <div style="font-size:11px;color:var(--text-muted);">${s.gate_appointment_status}</div>
+            </td>
+            <td>
+              <span class="badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;font-size:11px;">${s.drayage_status}</span>
+            </td>
+            <td>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;" onclick="openDrayageDossierModal(${s.id})">
+                  Dossier &amp; Status
+                </button>
+                <a href="/api/drayage-intermodal/shipments/${s.id}/eir-pdf" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px;text-decoration:none;" title="Download EIR PDF">
+                  📄 EIR
+                </a>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 2. Appointments Table
+    const apptsTbody = document.getElementById('drayage-appts-tbody');
+    document.getElementById('drayage-appts-count').textContent = `${appts.length} appointments scheduled`;
+
+    if (!appts || appts.length === 0) {
+      apptsTbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">No terminal gate appointments on file.</td></tr>`;
+    } else {
+      apptsTbody.innerHTML = appts.map(a => `
+        <tr>
+          <td>
+            <strong style="color:var(--text-primary);font-family:monospace;">${a.appointment_code}</strong>
+            <div style="font-size:11px;color:var(--text-muted);">${new Date(a.appointment_time).toLocaleString()}</div>
+          </td>
+          <td>
+            <strong style="color:var(--text-primary);">${a.facility_name}</strong>
+            <div style="font-size:11px;color:var(--text-muted);">Container: ${a.container_number || 'N/A'} [${a.size_type || ''}]</div>
+          </td>
+          <td>
+            <span class="badge" style="background:${a.transaction_type === 'DUAL_TRANSACTION' ? 'rgba(16,185,129,0.15)' : 'rgba(56,189,248,0.15)'};color:${a.transaction_type === 'DUAL_TRANSACTION' ? '#34d399' : '#38bdf8'};font-weight:700;">
+              ${a.transaction_type === 'DUAL_TRANSACTION' ? '⚡ Dual Turn' : a.transaction_type}
+            </span>
+          </td>
+          <td>
+            <strong style="color:var(--text-primary);">${a.driver_name}</strong>
+            <div style="font-size:11px;color:var(--text-muted);">🪪 ${a.driver_twic_card}</div>
+          </td>
+          <td>${a.tractor_unit}</td>
+          <td>${a.slot_window}</td>
+          <td>
+            <code style="color:#fbbf24;font-size:12px;font-weight:700;">${a.terminal_pin || 'N/A'}</code>
+          </td>
+          <td>
+            <span class="badge badge-success" style="font-size:11px;">${a.status}</span>
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  function filterDrayageShipments() {
+    const q = (document.getElementById('drayage-search-input').value || '').trim().toLowerCase();
+    const facilityFilter = document.getElementById('drayage-filter-facility').value;
+    const urgencyFilter = document.getElementById('drayage-filter-urgency').value;
+
+    const filtered = drayageShipmentsData.filter(s => {
+      const matchQ = !q ||
+        (s.container_number && s.container_number.toLowerCase().includes(q)) ||
+        (s.bill_of_lading && s.bill_of_lading.toLowerCase().includes(q)) ||
+        (s.seal_number && s.seal_number.toLowerCase().includes(q)) ||
+        (s.destination_consignee && s.destination_consignee.toLowerCase().includes(q)) ||
+        (s.terminal_rail_facility && s.terminal_rail_facility.toLowerCase().includes(q));
+
+      const matchFacility = facilityFilter === 'ALL' || s.facility_type === facilityFilter;
+      const matchUrgency = urgencyFilter === 'ALL' || s.demurrage_per_diem_status === urgencyFilter;
+
+      return matchQ && matchFacility && matchUrgency;
+    });
+
+    renderDrayageTables(filtered, drayageAppointmentsData);
+  }
+
+  function openCreateDrayageModal() {
+    const d = new Date();
+    d.setDate(d.getDate() + 4);
+    document.getElementById('new-drayage-lfd').value = d.toISOString().split('T')[0];
+    document.getElementById('modal-create-drayage').style.display = 'flex';
+  }
+
+  function closeCreateDrayageModal() {
+    document.getElementById('modal-create-drayage').style.display = 'none';
+  }
+
+  function setDrayagePreset(preset) {
+    const today = new Date();
+    if (preset === 'pola_import') {
+      const lfd = new Date(today);
+      lfd.setDate(today.getDate() + 4);
+      document.getElementById('new-drayage-container-num').value = `MSKU${Math.floor(1000000 + Math.random() * 9000000)}`;
+      document.getElementById('new-drayage-size-type').value = '40HC';
+      document.getElementById('new-drayage-ocean-scac').value = 'MAEU';
+      document.getElementById('new-drayage-facility').value = 'Port of Los Angeles - APM Terminals Pier 400';
+      document.getElementById('new-drayage-facility-type').value = 'MARINE_PORT';
+      document.getElementById('new-drayage-bol').value = `BOL-MAEU-${Math.floor(100000 + Math.random() * 900000)}`;
+      document.getElementById('new-drayage-lfd').value = lfd.toISOString().split('T')[0];
+      document.getElementById('new-drayage-per-diem-rate').value = '175.00';
+      document.getElementById('new-drayage-chassis-num').value = `DCLI-${Math.floor(10000 + Math.random() * 90000)}`;
+      document.getElementById('new-drayage-chassis-pool').value = 'DCLI';
+      document.getElementById('new-drayage-seal-num').value = `SL-${Math.floor(100000 + Math.random() * 900000)}`;
+      document.getElementById('new-drayage-consignee').value = 'Target Regional Distribution Center';
+      document.getElementById('new-drayage-city').value = 'Ontario';
+      document.getElementById('new-drayage-state').value = 'CA';
+      document.getElementById('new-drayage-driver-name').value = 'Alejandro Ramos';
+      document.getElementById('new-drayage-driver-twic').value = 'TWIC-CA-981244';
+    } else if (preset === 'polb_critical') {
+      document.getElementById('new-drayage-container-num').value = `CMAU${Math.floor(1000000 + Math.random() * 9000000)}`;
+      document.getElementById('new-drayage-size-type').value = '40HC';
+      document.getElementById('new-drayage-ocean-scac').value = 'CMDU';
+      document.getElementById('new-drayage-facility').value = 'Port of Long Beach - Total Terminals Intl (TTI)';
+      document.getElementById('new-drayage-facility-type').value = 'MARINE_PORT';
+      document.getElementById('new-drayage-bol').value = `BOL-CMA-${Math.floor(100000 + Math.random() * 900000)}`;
+      document.getElementById('new-drayage-lfd').value = today.toISOString().split('T')[0];
+      document.getElementById('new-drayage-per-diem-rate').value = '200.00';
+      document.getElementById('new-drayage-chassis-num').value = `TRAC-${Math.floor(10000 + Math.random() * 90000)}`;
+      document.getElementById('new-drayage-chassis-pool').value = 'TRAC_INTERMODAL';
+      document.getElementById('new-drayage-seal-num').value = `SL-${Math.floor(100000 + Math.random() * 900000)}`;
+      document.getElementById('new-drayage-consignee').value = 'Home Depot Logistics Inland Empire Hub';
+      document.getElementById('new-drayage-city').value = 'Moreno Valley';
+      document.getElementById('new-drayage-state').value = 'CA';
+      document.getElementById('new-drayage-driver-name').value = 'Marcus Washington';
+      document.getElementById('new-drayage-driver-twic').value = 'TWIC-CA-339182';
+    } else if (preset === 'bnsf_rail') {
+      const lfd = new Date(today);
+      lfd.setDate(today.getDate() + 3);
+      document.getElementById('new-drayage-container-num').value = `BNSU${Math.floor(1000000 + Math.random() * 9000000)}`;
+      document.getElementById('new-drayage-size-type').value = '53DOM';
+      document.getElementById('new-drayage-ocean-scac').value = 'BNSF';
+      document.getElementById('new-drayage-facility').value = 'BNSF Logistics Park Chicago (Corwith / LPC)';
+      document.getElementById('new-drayage-facility-type').value = 'RAIL_RAMP';
+      document.getElementById('new-drayage-bol').value = `BOL-BNSF-${Math.floor(100000 + Math.random() * 900000)}`;
+      document.getElementById('new-drayage-lfd').value = lfd.toISOString().split('T')[0];
+      document.getElementById('new-drayage-per-diem-rate').value = '150.00';
+      document.getElementById('new-drayage-chassis-num').value = `CHAS-BNSF-${Math.floor(100 + Math.random() * 900)}`;
+      document.getElementById('new-drayage-chassis-pool').value = 'PRIVATE_CHASSIS';
+      document.getElementById('new-drayage-seal-num').value = `SL-${Math.floor(100000 + Math.random() * 900000)}`;
+      document.getElementById('new-drayage-consignee').value = 'Walmart Supercenter Consolidation Hub';
+      document.getElementById('new-drayage-city').value = 'Elwood';
+      document.getElementById('new-drayage-state').value = 'IL';
+      document.getElementById('new-drayage-driver-name').value = 'Elijah Vance';
+      document.getElementById('new-drayage-driver-twic').value = 'TWIC-IL-884120';
+    }
+  }
+
+  async function submitCreateDrayage() {
+    const containerNum = (document.getElementById('new-drayage-container-num').value || '').trim();
+    const lfd = document.getElementById('new-drayage-lfd').value;
+
+    if (!containerNum || !lfd) {
+      alert('Container Number and Last Free Day (LFD) are required.');
+      return;
+    }
+
+    const payload = {
+      container_number: containerNum,
+      size_type: document.getElementById('new-drayage-size-type').value,
+      ocean_line_scac: document.getElementById('new-drayage-ocean-scac').value || 'MAEU',
+      terminal_rail_facility: document.getElementById('new-drayage-facility').value || 'Port of Los Angeles - APM Terminals Pier 400',
+      facility_type: document.getElementById('new-drayage-facility-type').value,
+      bill_of_lading: document.getElementById('new-drayage-bol').value,
+      last_free_day: lfd,
+      daily_per_diem_rate: parseFloat(document.getElementById('new-drayage-per-diem-rate').value) || 175.00,
+      chassis_number: document.getElementById('new-drayage-chassis-num').value,
+      chassis_pool_provider: document.getElementById('new-drayage-chassis-pool').value,
+      seal_number: document.getElementById('new-drayage-seal-num').value,
+      destination_consignee: document.getElementById('new-drayage-consignee').value,
+      destination_city: document.getElementById('new-drayage-city').value,
+      destination_state: document.getElementById('new-drayage-state').value,
+      assigned_driver_name: document.getElementById('new-drayage-driver-name').value,
+      assigned_driver_twic: document.getElementById('new-drayage-driver-twic').value
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/drayage-intermodal/shipments/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Intermodal shipment for container ${containerNum} successfully created!`);
+        closeCreateDrayageModal();
+        loadDrayageDesk();
+      } else {
+        alert(data.error || 'Failed to create drayage shipment.');
+      }
+    } catch (err) {
+      alert('Network error creating drayage shipment.');
+    }
+  }
+
+  function openBookGateModal(containerId) {
+    const select = document.getElementById('book-gate-shipment-select');
+    select.innerHTML = drayageShipmentsData.map(s => `
+      <option value="${s.id}" ${containerId && s.id === containerId ? 'selected' : ''}>
+        ${s.container_number} [${s.size_type}] — ${s.terminal_rail_facility}
+      </option>
+    `).join('');
+
+    onBookGateShipmentChange();
+    document.getElementById('modal-book-gate-appointment').style.display = 'flex';
+  }
+
+  function closeBookGateModal() {
+    document.getElementById('modal-book-gate-appointment').style.display = 'none';
+  }
+
+  function onBookGateShipmentChange() {
+    const select = document.getElementById('book-gate-shipment-select');
+    const selectedId = parseInt(select.value, 10);
+    const ship = drayageShipmentsData.find(s => s.id === selectedId);
+    if (ship) {
+      document.getElementById('book-gate-shipment-id').value = ship.id;
+      document.getElementById('book-gate-facility-name').value = ship.terminal_rail_facility;
+      if (ship.assigned_driver_name) {
+        document.getElementById('book-gate-driver-name').value = ship.assigned_driver_name;
+      }
+      if (ship.assigned_driver_twic) {
+        document.getElementById('book-gate-driver-twic').value = ship.assigned_driver_twic;
+      }
+    }
+  }
+
+  async function submitBookGate() {
+    const containerId = document.getElementById('book-gate-shipment-id').value || document.getElementById('book-gate-shipment-select').value;
+    const facility = document.getElementById('book-gate-facility-name').value;
+    if (!containerId || !facility) {
+      alert('Container and Facility are required.');
+      return;
+    }
+
+    const payload = {
+      container_id: parseInt(containerId, 10),
+      facility_name: facility,
+      transaction_type: document.getElementById('book-gate-tx-type').value,
+      slot_window: document.getElementById('book-gate-slot-window').value,
+      driver_name: document.getElementById('book-gate-driver-name').value,
+      driver_twic_card: document.getElementById('book-gate-driver-twic').value,
+      tractor_unit: document.getElementById('book-gate-tractor-unit').value
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/drayage-intermodal/appointments/book', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Terminal gate appointment ${data.appointment.appointment_code} confirmed! PIN: ${data.appointment.terminal_pin}`);
+        closeBookGateModal();
+        loadDrayageDesk();
+      } else {
+        alert(data.error || 'Failed to book terminal appointment.');
+      }
+    } catch (err) {
+      alert('Network error booking terminal appointment.');
+    }
+  }
+
+  async function openDrayageDossierModal(containerId) {
+    currentDrayageContainerId = containerId;
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/drayage-intermodal/shipments/${containerId}`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Failed to load container dossier.');
+        return;
+      }
+
+      const s = data.shipment;
+      document.getElementById('dossier-drayage-header').innerHTML = `<span>🚢</span> Container Interchange Dossier: ${s.container_number} [${s.size_type}]`;
+      document.getElementById('dossier-drayage-sub').textContent = `${s.ocean_line_scac} · ${s.terminal_rail_facility} · B/L: ${s.bill_of_lading || 'N/A'}`;
+      document.getElementById('dossier-drayage-hash').textContent = s.interchange_hash;
+      document.getElementById('dossier-drayage-status-pill').textContent = s.drayage_status;
+
+      document.getElementById('dossier-drayage-lfd').textContent = s.last_free_day ? new Date(s.last_free_day).toISOString().split('T')[0] : 'N/A';
+      document.getElementById('dossier-drayage-dwell-status').textContent = s.status_label || s.demurrage_per_diem_status;
+      document.getElementById('dossier-drayage-penalty').textContent = `$${parseFloat(s.accrued_demurrage_fee || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      document.getElementById('dossier-drayage-gate-pin').textContent = `${s.appointment_pin || 'NO_PIN'} (${s.gate_appointment_status})`;
+
+      document.getElementById('dossier-drayage-chassis').textContent = s.chassis_number || 'TBD';
+      document.getElementById('dossier-drayage-pool').textContent = s.chassis_pool_provider;
+      document.getElementById('dossier-drayage-seal').textContent = `${s.seal_number || 'N/A'} [${s.seal_match_status}]`;
+      document.getElementById('dossier-drayage-customs').textContent = `${s.customs_hold_status} / ${s.freight_hold_status}`;
+      document.getElementById('dossier-drayage-driver').textContent = `${s.assigned_driver_name || 'Unassigned'} (${s.assigned_driver_twic || 'NO_TWIC'})`;
+      document.getElementById('dossier-drayage-consignee').textContent = `${s.destination_consignee || 'N/A'} (${s.destination_city || ''}, ${s.destination_state || ''})`;
+
+      document.getElementById('dossier-drayage-status-select').value = s.drayage_status;
+
+      // PDF Button
+      document.getElementById('drayage-pdf-container').innerHTML = `
+        <a href="/api/drayage-intermodal/shipments/${s.id}/eir-pdf" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;">
+          <span>📄</span> Download Vector PDF EIR Gate Pass
+        </a>
+      `;
+
+      document.getElementById('modal-view-drayage-dossier').style.display = 'flex';
+    } catch (err) {
+      alert('Network error loading container dossier.');
+    }
+  }
+
+  function closeDrayageDossierModal() {
+    document.getElementById('modal-view-drayage-dossier').style.display = 'none';
+  }
+
+  async function submitDrayageStatusUpdate() {
+    if (!currentDrayageContainerId) return;
+    const status = document.getElementById('dossier-drayage-status-select').value;
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/drayage-intermodal/shipments/${currentDrayageContainerId}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          drayage_status: status,
+          notes: `Supervisor updated status to ${status}.`
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Drayage status updated to ${status}!`);
+        closeDrayageDossierModal();
+        loadDrayageDesk();
+      } else {
+        alert(data.error || 'Failed to update drayage status.');
+      }
+    } catch (err) {
+      alert('Network error updating drayage status.');
+    }
+  }
+
+  async function submitDrayageDispute() {
+    if (!currentDrayageContainerId) return;
+    const disputeType = document.getElementById('dossier-dispute-type-select').value;
+    const disputeReason = (document.getElementById('dossier-dispute-reason-input').value || '').trim();
+
+    if (!disputeReason) {
+      alert('Please enter dispute details & gate incident notes.');
+      return;
+    }
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/drayage-intermodal/shipments/${currentDrayageContainerId}/per-diem-dispute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          dispute_type: disputeType,
+          dispute_reason: disputeReason
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`OSRA-22 Per Diem Waiver Dispute claim filed! Status: ${data.dispute.dispute_status}`);
+        document.getElementById('dossier-dispute-reason-input').value = '';
+        closeDrayageDossierModal();
+        loadDrayageDesk();
+      } else {
+        alert(data.error || 'Failed to file dispute.');
+      }
+    } catch (err) {
+      alert('Network error filing dispute.');
     }
   }
 </script>

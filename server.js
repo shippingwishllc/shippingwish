@@ -140,6 +140,7 @@ app.use('/api/edi-gateway', require('./routes/edi-gateway'));              // Au
 app.use('/api/carrier-credentialing', require('./routes/carrier-credentialing')); // Automated Carrier Onboarding & W-9/COI/FMCSA Auto-Credentialing Engine
 app.use('/api/bond-watchdog', require('./routes/bond-watchdog'));       // Broker BMC-84 Surety Bond Watchdog & 30-Day Default Claim Generator
 app.use('/api/rate-matrix', require('./routes/rate-matrix'));           // Enterprise Shipper Rate Matrix & Instant Contract RFP Bidding Engine
+app.use('/api/drayage-intermodal', require('./routes/drayage-intermodal')); // Autonomous Drayage Port & Rail Intermodal Dispatcher
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

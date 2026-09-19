@@ -881,6 +881,47 @@ class MobileApiClient {
   getRfpProposalPdfUrl(proposalId) {
     return `${this.getBaseUrl()}/api/rate-matrix/proposals/${proposalId}/proposal-pdf`;
   }
+
+  // --- Phase 27: Autonomous Drayage Port & Rail Intermodal Dispatcher ---
+  async getDrayageIntermodalRoster() {
+    return this.request('/api/drayage-intermodal/roster', { method: 'GET' });
+  }
+
+  async createDrayageShipment(shipmentData) {
+    return this.request('/api/drayage-intermodal/shipments/create', {
+      method: 'POST',
+      body: shipmentData
+    });
+  }
+
+  async bookTerminalAppointment(appointmentData) {
+    return this.request('/api/drayage-intermodal/appointments/book', {
+      method: 'POST',
+      body: appointmentData
+    });
+  }
+
+  async updateDrayageShipmentStatus(shipmentId, statusData) {
+    return this.request(`/api/drayage-intermodal/shipments/${shipmentId}/status`, {
+      method: 'POST',
+      body: statusData
+    });
+  }
+
+  async submitPerDiemDispute(shipmentId, disputeData) {
+    return this.request(`/api/drayage-intermodal/shipments/${shipmentId}/per-diem-dispute`, {
+      method: 'POST',
+      body: disputeData
+    });
+  }
+
+  async getDrayageShipmentDetails(shipmentId) {
+    return this.request(`/api/drayage-intermodal/shipments/${shipmentId}`, { method: 'GET' });
+  }
+
+  getDrayageEirPdfUrl(shipmentId) {
+    return `${this.getBaseUrl()}/api/drayage-intermodal/shipments/${shipmentId}/eir-pdf`;
+  }
 }
 
 export const api = new MobileApiClient();
