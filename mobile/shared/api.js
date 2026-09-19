@@ -437,6 +437,34 @@ class MobileApiClient {
     if (carrierId) url += `?carrier_id=${carrierId}`;
     return url;
   }
+
+  // --- Phase 14: Electronic DVIR Vehicle Inspections ---
+  async submitDvir(dvirData) {
+    return this.request('/api/dvir/submit', {
+      method: 'POST',
+      body: dvirData
+    });
+  }
+
+  async getDvirHistory(filters = {}) {
+    const query = new URLSearchParams(filters).toString();
+    return this.request(`/api/dvir/history?${query}`, { method: 'GET' });
+  }
+
+  async getDvirDetails(id) {
+    return this.request(`/api/dvir/${id}`, { method: 'GET' });
+  }
+
+  async signoffMechanicDvir(dvirId, mechanicData) {
+    return this.request(`/api/dvir/${dvirId}/mechanic-signoff`, {
+      method: 'POST',
+      body: mechanicData
+    });
+  }
+
+  getDvirPdfUrl(dvirId) {
+    return `${this.getBaseUrl()}/api/dvir/${dvirId}/pdf`;
+  }
 }
 
 export const api = new MobileApiClient();

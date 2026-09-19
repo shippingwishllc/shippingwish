@@ -277,6 +277,9 @@
         <button class="nav-tab-btn" id="tab-btn-ifta" onclick="switchTab('ifta')">
           <span>⛽</span> IFTA Fuel Tax
         </button>
+        <button class="nav-tab-btn" id="tab-btn-dvir" onclick="switchTab('dvir')">
+          <span>🔧</span> DVIR Inspections
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -927,6 +930,72 @@
         </div>
       </div>
 
+      <!-- TAB 11: DVIR VEHICLE INSPECTIONS DESK -->
+      <div id="tab-content-dvir" style="display:none;">
+        <!-- Top Action Bar -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h4 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0 0 2px;">
+              <span>🔧</span> FMCSA Part 396 Driver Vehicle Inspection Report (DVIR) Desk
+            </h4>
+            <p style="font-size:11.5px;color:var(--text-muted);margin:0;">
+              Electronic pre-trip and post-trip safety audit logs with certified mechanic defect remediation.
+            </p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadDvirDesk()">🔄 Refresh Inspections</button>
+            <button class="btn btn-primary btn-sm" style="background:#10B981;" onclick="openAddDvirModal()">+ New Vehicle Inspection</button>
+          </div>
+        </div>
+
+        <!-- 4 DVIR KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:var(--space-4);">
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">TOTAL INSPECTIONS</div>
+            <div style="font-size:20px;font-weight:800;color:#60A5FA;margin:4px 0;" id="dvir-kpi-total">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Fleet pre-trip &amp; post-trip</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">CLEAN / PASS</div>
+            <div style="font-size:20px;font-weight:800;color:#10B981;margin:4px 0;" id="dvir-kpi-clean">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Zero safety defects found</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">DEFECTS FLAGGED</div>
+            <div style="font-size:20px;font-weight:800;color:#FBBF24;margin:4px 0;" id="dvir-kpi-defects">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Repairs pending / completed</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">OUT OF SERVICE (OOS)</div>
+            <div style="font-size:20px;font-weight:800;color:#F87171;margin:4px 0;" id="dvir-kpi-oos">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Dispatch clearance hold</div>
+          </div>
+        </div>
+
+        <!-- Inspections Roster Table -->
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>Inspection # &amp; Type</th>
+                <th>Equipment</th>
+                <th>Driver &amp; Odometer</th>
+                <th>Location</th>
+                <th>Safety Status</th>
+                <th>Defects Description</th>
+                <th>Mechanic Certification</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="dvir-tbody">
+              <tr>
+                <td colspan="8" style="text-align:center;padding:24px;">Streaming DVIR vehicle safety inspections...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -1150,6 +1219,137 @@
   </div>
 </div>
 
+<!-- MODAL: ADD DVIR INSPECTION -->
+<div id="modal-add-dvir" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:95%;max-width:620px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>🔧</span> Log DVIR Vehicle Safety Inspection
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddDvirModal()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Inspection Type</label>
+        <select id="dvir-type" class="form-input">
+          <option value="PRE_TRIP">Pre-Trip Inspection</option>
+          <option value="POST_TRIP">Post-Trip Inspection</option>
+          <option value="INTERMITTENT">Intermittent / En-Route</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Truck / Tractor #</label>
+        <input type="text" id="dvir-truck" class="form-input" placeholder="e.g. SW-TRK-104" style="text-transform:uppercase;">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Trailer # (Optional)</label>
+        <input type="text" id="dvir-trailer" class="form-input" placeholder="e.g. SW-TRL-5301" style="text-transform:uppercase;">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Odometer (Miles)</label>
+        <input type="number" id="dvir-odo" class="form-input" placeholder="e.g. 184500">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Inspection City</label>
+        <input type="text" id="dvir-city" class="form-input" placeholder="e.g. Dallas" value="Dallas">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">State</label>
+        <input type="text" id="dvir-state" class="form-input" placeholder="TX" maxlength="2" value="TX" style="text-transform:uppercase;">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;font-weight:700;">FMCSA 11-Point Vehicle Safety Checklist</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:6px;padding:10px;font-size:11.5px;">
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="chk-brakes" checked> Service &amp; Parking Brakes</label>
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="chk-steering" checked> Steering Mechanism</label>
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="chk-lights" checked> Lights &amp; Reflectors</label>
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="chk-tires" checked> Tires, Wheels &amp; Rims</label>
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="chk-wipers" checked> Windshield &amp; Wipers</label>
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="chk-mirrors" checked> Mirrors &amp; Vision</label>
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="chk-coupling" checked> Coupling / Fifth Wheel</label>
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="chk-horn" checked> Horn &amp; Defroster</label>
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="chk-emergency" checked> Emergency Kit / Triangles</label>
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="chk-exhaust" checked> Exhaust System &amp; Fluids</label>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Defects Found?</label>
+        <select id="dvir-defects-found" class="form-input" onchange="toggleDvirDefectsDetails(this.value)">
+          <option value="false">No Defects Found (Clean Pass)</option>
+          <option value="true">Yes — Safety Defects Discovered</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Safe to Operate?</label>
+        <select id="dvir-safe-to-operate" class="form-input">
+          <option value="true">Yes — Safe to Drive</option>
+          <option value="false">No — Out of Service (OOS Hold)</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="dvir-defect-box" class="form-group" style="margin-bottom:20px;display:none;">
+      <label class="form-label" style="font-size:11px;color:#F87171;">Defect Particulars &amp; Discovered Issues</label>
+      <textarea id="dvir-defect-desc" class="form-input" rows="2" placeholder="Detail any damaged parts, low tire pressures, brake air leaks, or broken lights..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddDvirModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#10B981;" onclick="submitAddDvir()">Digitally Sign &amp; Record DVIR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MECHANIC DVIR SIGNOFF -->
+<div id="modal-mechanic-signoff" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:500px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>🛠️</span> Certified Mechanic Defect Sign-Off
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeMechanicModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="mechanic-dvir-id">
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Inspection ID &amp; Vehicle</label>
+      <input type="text" id="mechanic-dvir-info" class="form-input" disabled style="opacity:0.7;">
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Reported Defect Summary</label>
+      <textarea id="mechanic-reported-defect" class="form-input" rows="2" disabled style="opacity:0.7;"></textarea>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Certified Mechanic / Tech Name</label>
+      <input type="text" id="mechanic-name" class="form-input" placeholder="e.g. John Doe, ASE Master Truck Technician">
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label" style="font-size:11px;">Repair Notes / Corrective Actions Taken</label>
+      <textarea id="mechanic-notes" class="form-input" rows="3" placeholder="Describe parts replaced, adjustments made, and return-to-service certification..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeMechanicModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#10B981;" onclick="submitMechanicSignoff()">Certify Repaired &amp; Clear OOS</button>
+    </div>
+  </div>
+</div>
+
 <script>
   let brokersData = [];
   let loadsData = [];
@@ -1172,6 +1372,7 @@
     document.getElementById('tab-content-eld').style.display = tabId === 'eld' ? 'block' : 'none';
     document.getElementById('tab-content-ifta').style.display = tabId === 'ifta' ? 'block' : 'none';
     document.getElementById('tab-content-apps').style.display = tabId === 'apps' ? 'block' : 'none';
+    document.getElementById('tab-content-dvir').style.display = tabId === 'dvir' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -1185,6 +1386,8 @@
       loadEldFleetDesk();
     } else if (tabId === 'ifta') {
       loadIftaDesk();
+    } else if (tabId === 'dvir') {
+      loadDvirDesk();
     }
   }
 
@@ -2186,6 +2389,233 @@
       { id: 102, load_number: 'SW-8943', pickup_location: 'Chicago, IL', delivery_location: 'Allentown, PA', rate: 2850, broker_name: 'Total Quality Logistics', status: 'verified' },
       { id: 103, load_number: 'SW-8940', pickup_location: 'Kansas City, MO', delivery_location: 'Dallas, TX', rate: 2100, broker_name: 'Landstar Ranger', status: 'verified' }
     ];
+  }
+
+  // --- PHASE 14: DVIR VEHICLE INSPECTIONS & MECHANIC REMEDIATION ---
+  let dvirRecords = [];
+
+  async function loadDvirDesk() {
+    const tbody = document.getElementById('dvir-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Streaming DVIR vehicle safety inspections...</td></tr>';
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/dvir/history', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.ok && data.inspections) {
+        dvirRecords = data.inspections;
+        if (data.metrics) {
+          document.getElementById('dvir-kpi-total').textContent = data.metrics.total;
+          document.getElementById('dvir-kpi-clean').textContent = data.metrics.clean;
+          document.getElementById('dvir-kpi-defects').textContent = data.metrics.with_defects;
+          document.getElementById('dvir-kpi-oos').textContent = data.metrics.out_of_service;
+        }
+        renderDvirDesk(data.inspections);
+      } else {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#F87171;padding:24px;">Failed to load DVIR inspections.</td></tr>';
+      }
+    } catch (e) {
+      console.error('DVIR Load error:', e);
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#F87171;padding:24px;">Network error loading DVIR inspections.</td></tr>';
+    }
+  }
+
+  function renderDvirDesk(inspections) {
+    const tbody = document.getElementById('dvir-tbody');
+    if (!tbody) return;
+    if (!inspections || inspections.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No DVIR inspection records found. Click "+ New Vehicle Inspection" to log one.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = inspections.map(r => {
+      const isOos = r.defects_found && !r.is_safe_to_operate && !r.mechanic_signed;
+      const statusBadge = isOos
+        ? '<span style="background:rgba(239,68,68,0.2);color:#F87171;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;">⛔ OUT OF SERVICE</span>'
+        : r.defects_found
+        ? (r.mechanic_signed 
+            ? '<span style="background:rgba(16,185,129,0.2);color:#10B981;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;">✅ DEFECTS REPAIRED</span>'
+            : '<span style="background:rgba(251,191,36,0.2);color:#FBBF24;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;">⚠️ DEFECTS NOTED</span>')
+        : '<span style="background:rgba(16,185,129,0.2);color:#10B981;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;">PASSED / CLEAN</span>';
+
+      const mechanicText = r.mechanic_signed
+        ? `<div style="font-size:11px;color:#10B981;font-weight:600;">Signed: ${escapeAttr(r.mechanic_name || 'Tech')}</div><div style="font-size:10px;color:var(--text-muted);">${escapeAttr(r.mechanic_repair_notes || 'Repaired')}</div>`
+        : (r.defects_found
+            ? `<button class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 6px;color:#FBBF24;" onclick="openMechanicModal(${r.id})">🛠️ Sign-Off Repair</button>`
+            : '<span style="font-size:11px;color:var(--text-muted);">N/A (No defects)</span>');
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">#DVIR-${r.id}</div>
+            <div style="font-size:11px;color:var(--text-secondary);">${escapeAttr(r.inspection_type || 'PRE_TRIP')}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:#60A5FA;">${escapeAttr(r.vehicle_truck_number || '')}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${escapeAttr(r.vehicle_trailer_number || 'No Trailer')}</div>
+          </td>
+          <td>
+            <div style="font-weight:600;">${escapeAttr(r.driver_name || 'Fleet Driver')}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${(r.odometer_miles || 0).toLocaleString()} mi</div>
+          </td>
+          <td>
+            <div>${escapeAttr(r.location_city || '')}, ${escapeAttr(r.location_state || '')}</div>
+            <div style="font-size:10px;color:var(--text-muted);">${new Date(r.created_at).toLocaleString()}</div>
+          </td>
+          <td>${statusBadge}</td>
+          <td style="max-width:200px;">
+            <div style="font-size:11.5px;color:${r.defects_found ? '#F87171' : 'var(--text-muted)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${escapeAttr(r.defect_details || (r.defects_found ? 'Defects discovered' : 'None'))}
+            </div>
+          </td>
+          <td>${mechanicText}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <a href="/api/dvir/${r.id}/pdf" target="_blank" class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 7px;text-decoration:none;">
+                📄 FMCSA PDF
+              </a>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function toggleDvirDefectsDetails(val) {
+    const box = document.getElementById('dvir-defect-box');
+    const safeSelect = document.getElementById('dvir-safe-to-operate');
+    if (val === 'true') {
+      box.style.display = 'block';
+      safeSelect.value = 'false';
+    } else {
+      box.style.display = 'none';
+      safeSelect.value = 'true';
+    }
+  }
+
+  function openAddDvirModal() {
+    document.getElementById('modal-add-dvir').style.display = 'flex';
+  }
+
+  function closeAddDvirModal() {
+    document.getElementById('modal-add-dvir').style.display = 'none';
+  }
+
+  async function submitAddDvir() {
+    const type = document.getElementById('dvir-type').value;
+    const truck = document.getElementById('dvir-truck').value;
+    const trailer = document.getElementById('dvir-trailer').value;
+    const odo = document.getElementById('dvir-odo').value;
+    const city = document.getElementById('dvir-city').value;
+    const state = document.getElementById('dvir-state').value;
+    const defectsFound = document.getElementById('dvir-defects-found').value === 'true';
+    const isSafe = document.getElementById('dvir-safe-to-operate').value === 'true';
+    const defectDetails = document.getElementById('dvir-defect-desc').value;
+
+    if (!truck || !odo) {
+      return alert('Truck Number and Odometer Reading are required.');
+    }
+
+    const checklist = {
+      service_brakes: document.getElementById('chk-brakes').checked,
+      parking_brake: document.getElementById('chk-brakes').checked,
+      steering_mechanism: document.getElementById('chk-steering').checked,
+      lighting_reflectors: document.getElementById('chk-lights').checked,
+      tires_wheels: document.getElementById('chk-tires').checked,
+      windshield_wipers: document.getElementById('chk-wipers').checked,
+      mirrors: document.getElementById('chk-mirrors').checked,
+      coupling_devices: document.getElementById('chk-coupling').checked,
+      horn: document.getElementById('chk-horn').checked,
+      emergency_equipment: document.getElementById('chk-emergency').checked,
+      exhaust_system: document.getElementById('chk-exhaust').checked
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/dvir/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          inspection_type: type,
+          vehicle_truck_number: truck,
+          vehicle_trailer_number: trailer,
+          odometer_miles: parseInt(odo, 10),
+          location_city: city,
+          location_state: state,
+          defects_found: defectsFound,
+          is_safe_to_operate: isSafe,
+          checklist_json: checklist,
+          defect_details: defectDetails
+        })
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        closeAddDvirModal();
+        loadDvirDesk();
+      } else {
+        alert(data.error || 'Failed to submit DVIR inspection.');
+      }
+    } catch (e) {
+      alert('Network error submitting DVIR inspection.');
+    }
+  }
+
+  function openMechanicModal(dvirId) {
+    const item = dvirRecords.find(r => r.id === dvirId);
+    if (!item) return;
+
+    document.getElementById('mechanic-dvir-id').value = item.id;
+    document.getElementById('mechanic-dvir-info').value = `#DVIR-${item.id} — Truck ${item.vehicle_truck_number} (${item.inspection_type})`;
+    document.getElementById('mechanic-reported-defect').value = item.defect_details || 'Defects reported by driver.';
+    document.getElementById('mechanic-name').value = 'Certified Fleet Tech';
+    document.getElementById('mechanic-notes').value = 'Defects inspected, repaired, and road tested in compliance with FMCSA 49 CFR Part 396.';
+    document.getElementById('modal-mechanic-signoff').style.display = 'flex';
+  }
+
+  function closeMechanicModal() {
+    document.getElementById('modal-mechanic-signoff').style.display = 'none';
+  }
+
+  async function submitMechanicSignoff() {
+    const id = document.getElementById('mechanic-dvir-id').value;
+    const name = document.getElementById('mechanic-name').value;
+    const notes = document.getElementById('mechanic-notes').value;
+
+    if (!name || !notes) {
+      return alert('Mechanic Name and Repair Notes are required.');
+    }
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/dvir/${id}/mechanic-signoff`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          mechanic_name: name,
+          mechanic_repair_notes: notes
+        })
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        closeMechanicModal();
+        loadDvirDesk();
+      } else {
+        alert(data.error || 'Failed to complete mechanic sign-off.');
+      }
+    } catch (e) {
+      alert('Network error completing mechanic sign-off.');
+    }
   }
 </script>
 
