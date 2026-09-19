@@ -527,6 +527,40 @@ class MobileApiClient {
   getClaimPdfUrl(id) {
     return `${this.getBaseUrl()}/api/claims/${id}/pdf`;
   }
+
+  // --- Phase 17: Multi-Stop Consolidated LTL & Pallet Cube Optimization ---
+  async calculatePalletCube(cubeData) {
+    return this.request('/api/multistop/calculate-cube', {
+      method: 'POST',
+      body: cubeData
+    });
+  }
+
+  async getMultiStopManifests() {
+    return this.request('/api/multistop/roster', { method: 'GET' });
+  }
+
+  async getMultiStopManifestDetails(id) {
+    return this.request(`/api/multistop/${id}`, { method: 'GET' });
+  }
+
+  async createMultiStopManifest(manifestData) {
+    return this.request('/api/multistop/create', {
+      method: 'POST',
+      body: manifestData
+    });
+  }
+
+  async updateMultiStopStatus(id, status) {
+    return this.request(`/api/multistop/${id}/status`, {
+      method: 'PATCH',
+      body: { status }
+    });
+  }
+
+  getMultiStopManifestPdfUrl(id) {
+    return `${this.getBaseUrl()}/api/multistop/${id}/pdf`;
+  }
 }
 
 export const api = new MobileApiClient();

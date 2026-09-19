@@ -286,6 +286,9 @@
         <button class="nav-tab-btn" id="tab-btn-claims" onclick="switchTab('claims')">
           <span>📦</span> Cargo Claims &amp; OS&amp;D
         </button>
+        <button class="nav-tab-btn" id="tab-btn-multistop" onclick="switchTab('multistop')">
+          <span>📐</span> Pallet Cube &amp; Multi-Stop
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1134,6 +1137,73 @@
         </div>
       </div>
 
+      <!-- TAB 14: MULTI-STOP CONSOLIDATED LTL & PALLET CUBE OPTIMIZATION -->
+      <div id="tab-content-multistop" style="display:none;">
+        <!-- Top Action Bar -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h4 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0 0 2px;">
+              <span>📐</span> Multi-Stop Consolidated LTL &amp; Pallet Cube Optimizer
+            </h4>
+            <p style="font-size:11.5px;color:var(--text-muted);margin:0;">
+              3D &amp; linear trailer capacity planning, Cube Out vs Weigh Out physics, LIFO stowage maps, and multi-drop out-of-route (OOR) analysis.
+            </p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadMultiStopDesk()">🔄 Refresh Manifests</button>
+            <button class="btn btn-primary btn-sm" style="background:#4F46E5;" onclick="openAddManifestModal()">+ Plan Multi-Stop Manifest</button>
+          </div>
+        </div>
+
+        <!-- 4 Multi-Stop KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:var(--space-4);">
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">TOTAL MANIFESTS</div>
+            <div style="font-size:20px;font-weight:800;color:#60A5FA;margin:4px 0;" id="multistop-kpi-total">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Consolidated plans</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">AVG CUBE UTILIZATION</div>
+            <div style="font-size:20px;font-weight:800;color:#818CF8;margin:4px 0;" id="multistop-kpi-cube">0%</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Trailer volume capacity</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">AVG WEIGHT PAYLOAD</div>
+            <div style="font-size:20px;font-weight:800;color:#34D399;margin:4px 0;" id="multistop-kpi-weight">0%</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Gross cargo payload</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">ACTIVE DISPATCH LEGS</div>
+            <div style="font-size:20px;font-weight:800;color:#FBBF24;margin:4px 0;" id="multistop-kpi-legs">0</div>
+            <div style="font-size:11px;color:var(--text-secondary);">In-transit drop stops</div>
+          </div>
+        </div>
+
+        <!-- Manifests Roster Table -->
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>Manifest # &amp; Equipment</th>
+                <th>Driver &amp; Trailer</th>
+                <th>Stops &amp; Route</th>
+                <th>Pallets &amp; Linear Ft</th>
+                <th>Weight &amp; Cube %</th>
+                <th>Bottleneck Limiter</th>
+                <th>Total Rate / Pay</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="multistop-tbody">
+              <tr>
+                <td colspan="9" style="text-align:center;padding:24px;">Streaming Multi-Stop Consolidated Manifests...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -1797,6 +1867,115 @@
       <button class="btn btn-primary btn-sm" style="background:#10B981;" onclick="submitSettleClaim()">Execute Settlement &amp; Release</button>
     </div>
   </div>
+<!-- MODAL: CREATE MULTI-STOP MANIFEST & PALLET CUBE SIMULATOR -->
+<div id="modal-add-manifest" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:95%;max-width:860px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);border-bottom:1px solid var(--border-subtle);padding-bottom:12px;">
+      <div>
+        <h3 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0 0 2px;">
+          <span>📐</span> Plan Multi-Stop Consolidated Manifest &amp; Pallet Cube
+        </h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">
+          3D &amp; linear trailer physics, LIFO stowage mapping, and stop-off accessorial calculations.
+        </p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddManifestModal()">✕</button>
+    </div>
+
+    <!-- Section 1: Equipment & Carrier Assignment -->
+    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Equipment Type *</label>
+        <select id="man-equip-type" class="form-input" onchange="runLiveCubeCalculation()">
+          <option value="DRY_VAN_53">53ft Dry Van Standard (4,050 cu ft / 45,000 lbs)</option>
+          <option value="REEFER_53">53ft Refrigerated Trailer (3,600 cu ft / 43,500 lbs)</option>
+          <option value="FLATBED_48">48ft Standard Flatbed (3,450 cu ft / 48,000 lbs)</option>
+          <option value="BOX_TRUCK_26">26ft Straight Box Truck (1,664 cu ft / 12,000 lbs)</option>
+          <option value="SPRINTER_VAN">Sprinter Cargo Van (400 cu ft / 3,500 lbs)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Trailer Number</label>
+        <input type="text" id="man-trailer-num" class="form-input" placeholder="e.g. TRL-5389">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Assigned Driver</label>
+        <input type="text" id="man-driver-name" class="form-input" placeholder="e.g. Clayton Vance">
+      </div>
+    </div>
+
+    <!-- Section 2: Sequential Route Stops (Pickups & Drops) -->
+    <div style="background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:800;color:var(--text-primary);">📍 SEQUENTIAL STOPS ITINERARY (LIFO UNLOAD ORDER)</span>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 8px;" onclick="addStopRow()">+ Add Stop</button>
+      </div>
+      <div id="man-stops-container" style="display:flex;flex-direction:column;gap:8px;">
+        <!-- Dynamic stop rows -->
+      </div>
+    </div>
+
+    <!-- Section 3: Pallet Groups & Physical Dimensions -->
+    <div style="background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:800;color:var(--text-primary);">📦 PALLET CARGO ITEMS &amp; STOWAGE DIMENSIONS</span>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 8px;" onclick="addPalletItemRow()">+ Add Pallet Cargo</button>
+      </div>
+      <div id="man-items-container" style="display:flex;flex-direction:column;gap:8px;">
+        <!-- Dynamic pallet rows -->
+      </div>
+    </div>
+
+    <!-- Real-time Physics & Bottleneck Live Indicator -->
+    <div style="background:var(--surface-card);border:1px solid #C7D2FE;border-radius:var(--radius-md);padding:14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;text-align:center;">
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">TOTAL PALLETS / LINEAR FT</div>
+        <div style="font-size:15px;font-weight:800;color:#6366F1;margin-top:2px;" id="sim-pallets-linear">0 Pallets / 0 ft</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">CUBE UTILIZATION (%)</div>
+        <div style="font-size:15px;font-weight:800;color:#4F46E5;margin-top:2px;" id="sim-cube-util">0%</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">WEIGHT PAYLOAD (%)</div>
+        <div style="font-size:15px;font-weight:800;color:#10B981;margin-top:2px;" id="sim-weight-util">0%</div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;color:var(--text-muted);font-weight:700;">LIMITING BOTTLENECK</div>
+        <div style="font-size:13px;font-weight:800;color:#D97706;margin-top:4px;" id="sim-limiting-factor">BALANCED</div>
+      </div>
+    </div>
+
+    <!-- Section 4: Mileage, Stop Fees & Pricing -->
+    <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Direct Line Miles</label>
+        <input type="number" id="man-direct-miles" class="form-input" value="450" oninput="runLivePriceCalculation()">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Sequenced Miles</label>
+        <input type="number" id="man-sequenced-miles" class="form-input" value="490" oninput="runLivePriceCalculation()">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Base Linehaul Rate ($)</label>
+        <input type="number" id="man-base-rate" class="form-input" value="1800" oninput="runLivePriceCalculation()">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Total Manifest Pay ($)</label>
+        <input type="number" id="man-total-rate" class="form-input" value="2000" readonly style="background:var(--surface-sunken);font-weight:800;color:#10B981;">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label" style="font-size:11px;">Dispatch / Consolidation Notes</label>
+      <textarea id="man-notes" class="form-input" rows="2" placeholder="Driver instructions, dock check-in procedures, or temperature handling..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddManifestModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#4F46E5;" onclick="submitAddManifest()">Generate &amp; Dispatch Manifest</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1824,6 +2003,7 @@
     document.getElementById('tab-content-dvir').style.display = tabId === 'dvir' ? 'block' : 'none';
     document.getElementById('tab-content-dq').style.display = tabId === 'dq' ? 'block' : 'none';
     document.getElementById('tab-content-claims').style.display = tabId === 'claims' ? 'block' : 'none';
+    document.getElementById('tab-content-multistop').style.display = tabId === 'multistop' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -1843,6 +2023,8 @@
       loadDqDesk();
     } else if (tabId === 'claims') {
       loadClaimsDesk();
+    } else if (tabId === 'multistop') {
+      loadMultiStopDesk();
     }
   }
 
@@ -3589,6 +3771,344 @@
       }
     } catch (e) {
       alert('Network error settling cargo claim.');
+    }
+  }
+
+  // ==========================================
+  // TAB 14: MULTI-STOP & PALLET CUBE DESK
+  // ==========================================
+  let multistopRecords = [];
+  let currentStops = [];
+  let currentPalletItems = [];
+
+  async function loadMultiStopDesk() {
+    const tbody = document.getElementById('multistop-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;">Streaming Multi-Stop Consolidated Manifests...</td></tr>';
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/multistop/roster', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.success) {
+        multistopRecords = data.manifests || [];
+
+        document.getElementById('multistop-kpi-total').textContent = data.kpis.total_manifests;
+        document.getElementById('multistop-kpi-cube').textContent = data.kpis.avg_cube_pct + '%';
+        document.getElementById('multistop-kpi-weight').textContent = data.kpis.avg_weight_pct + '%';
+        document.getElementById('multistop-kpi-legs').textContent = data.kpis.active_legs;
+
+        renderMultiStopTable(multistopRecords);
+      } else {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#EF4444;padding:24px;">${data.error || 'Failed to load manifests.'}</td></tr>`;
+      }
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#EF4444;padding:24px;">Network error loading manifests.</td></tr>';
+    }
+  }
+
+  function renderMultiStopTable(manifests) {
+    const tbody = document.getElementById('multistop-tbody');
+    if (!tbody) return;
+
+    if (!manifests || manifests.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">No multi-stop manifests found. Click "+ Plan Multi-Stop Manifest" to generate one.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = manifests.map(m => {
+      const stops = Array.isArray(m.stops_data) ? m.stops_data : JSON.parse(m.stops_data || '[]');
+      const origin = stops.length > 0 ? (stops[0].city + ', ' + stops[0].state) : 'Origin';
+      const finalDest = stops.length > 1 ? (stops[stops.length - 1].city + ', ' + stops[stops.length - 1].state) : 'Dest';
+
+      let statusBadge = '#64748B';
+      if (m.status === 'PLANNED') statusBadge = '#6366F1';
+      else if (m.status === 'DISPATCHED') statusBadge = '#3B82F6';
+      else if (m.status === 'IN_TRANSIT') statusBadge = '#F59E0B';
+      else if (m.status === 'COMPLETED') statusBadge = '#10B981';
+
+      let limitBadge = m.load_limiting_factor === 'CUBE_OUT' ? '#B45309' : (m.load_limiting_factor === 'WEIGH_OUT' ? '#047857' : '#475569');
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:800;color:var(--text-primary);">${m.manifest_number}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${m.equipment_type}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${m.driver_name || 'Unassigned'}</div>
+            <div style="font-size:11px;color:var(--text-secondary);">${m.trailer_number || 'N/A'}</div>
+          </td>
+          <td>
+            <div style="font-size:12px;font-weight:700;">${origin} ➔ ${finalDest}</div>
+            <div style="font-size:11px;color:#6366F1;">${m.total_stops} Stops (${m.sequenced_miles} mi • ${m.oor_pct}% OOR)</div>
+          </td>
+          <td>
+            <div style="font-weight:700;">${m.total_pallets} Pallets</div>
+            <div style="font-size:11px;color:var(--text-muted);">${m.linear_feet_used} Linear Ft</div>
+          </td>
+          <td>
+            <div style="font-size:11.5px;font-weight:700;color:${parseFloat(m.cube_utilization_pct) > 85 ? '#EF4444' : 'var(--text-primary)'};">Cube: ${m.cube_utilization_pct}%</div>
+            <div style="font-size:11px;color:var(--text-muted);">Weight: ${m.weight_utilization_pct}% (${parseInt(m.total_weight_lbs).toLocaleString()} lbs)</div>
+          </td>
+          <td>
+            <span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:800;background:${limitBadge}22;color:${limitBadge};border:1px solid ${limitBadge};">
+              ${m.load_limiting_factor}
+            </span>
+          </td>
+          <td>
+            <div style="font-weight:800;color:#10B981;">$${parseFloat(m.total_manifest_rate).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div style="font-size:10.5px;color:var(--text-muted);">$${m.stop_off_fees} stop fees</div>
+          </td>
+          <td>
+            <span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:800;background:${statusBadge}22;color:${statusBadge};border:1px solid ${statusBadge};">
+              ${m.status}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <a href="/api/multistop/${m.id}/pdf" target="_blank" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 7px;">
+                📄 PDF
+              </a>
+              ${m.status === 'PLANNED' ? `
+                <button class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 7px;background:#3B82F6;" onclick="updateManifestStatus(${m.id}, 'DISPATCHED')">
+                  🚀 Dispatch
+                </button>
+              ` : (m.status === 'DISPATCHED' ? `
+                <button class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 7px;background:#10B981;" onclick="updateManifestStatus(${m.id}, 'COMPLETED')">
+                  ✅ Deliver
+                </button>
+              ` : '')}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  async function updateManifestStatus(id, newStatus) {
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/multistop/${id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadMultiStopDesk();
+      } else {
+        alert(data.error || 'Failed to update manifest status.');
+      }
+    } catch (e) {
+      alert('Network error updating manifest status.');
+    }
+  }
+
+  function openAddManifestModal() {
+    currentStops = [
+      { sequence: 1, type: 'PICKUP', facility: 'Atlanta Logistics Hub', address: '120 Freight Way', city: 'Atlanta', state: 'GA', zip: '30301', appointment: '08:00', contact: 'Marcus Bell', phone: '(404) 555-1011', bol_ref: 'BOL-ATL-101', pallets: 12, weight_lbs: 16000 },
+      { sequence: 2, type: 'PICKUP', facility: 'Chattanooga Paper Mills', address: '450 Industrial Rd', city: 'Chattanooga', state: 'TN', zip: '37401', appointment: '12:00', contact: 'Angela Lee', phone: '(423) 555-3044', bol_ref: 'BOL-CHA-202', pallets: 10, weight_lbs: 14000 },
+      { sequence: 3, type: 'DELIVERY', facility: 'Nashville Distribution Center', address: '890 Commerce Blvd', city: 'Nashville', state: 'TN', zip: '37201', appointment: '16:30', contact: 'David Scott', phone: '(615) 555-8910', bol_ref: 'BOL-CHA-202', pallets: 10, weight_lbs: 14000 },
+      { sequence: 4, type: 'DELIVERY', facility: 'Louisville Gateway Terminal', address: '1000 Logistics Pkwy', city: 'Louisville', state: 'KY', zip: '40201', appointment: '21:00', contact: 'Rachel Clark', phone: '(502) 555-9800', bol_ref: 'BOL-ATL-101', pallets: 12, weight_lbs: 16000 }
+    ];
+
+    currentPalletItems = [
+      { description: 'Commercial Industrial Paper Rolls', pallets: 12, length_in: 48, width_in: 40, height_in: 60, weight_lbs_each: 1333, stackable: false, drop_sequence: 4 },
+      { description: 'Corrugated Packaging Cartons', pallets: 10, length_in: 48, width_in: 40, height_in: 50, weight_lbs_each: 1400, stackable: true, drop_sequence: 3 }
+    ];
+
+    renderStopsContainer();
+    renderPalletItemsContainer();
+    runLiveCubeCalculation();
+    runLivePriceCalculation();
+
+    document.getElementById('modal-add-manifest').style.display = 'flex';
+  }
+
+  function closeAddManifestModal() {
+    document.getElementById('modal-add-manifest').style.display = 'none';
+  }
+
+  function renderStopsContainer() {
+    const c = document.getElementById('man-stops-container');
+    if (!c) return;
+
+    c.innerHTML = currentStops.map((st, idx) => `
+      <div style="display:grid;grid-template-columns:85px 1fr 110px 80px 30px;gap:8px;align-items:center;background:var(--surface-card);padding:8px;border-radius:6px;border:1px solid var(--border-subtle);">
+        <select class="form-input" style="font-size:11px;padding:4px;" onchange="currentStops[${idx}].type = this.value">
+          <option value="PICKUP" ${st.type === 'PICKUP' ? 'selected' : ''}>PICKUP</option>
+          <option value="DELIVERY" ${st.type === 'DELIVERY' ? 'selected' : ''}>DELIVERY</option>
+        </select>
+        <input type="text" class="form-input" style="font-size:11px;padding:4px;" placeholder="Facility, Address" value="${st.facility || ''}" oninput="currentStops[${idx}].facility = this.value">
+        <input type="text" class="form-input" style="font-size:11px;padding:4px;" placeholder="City, ST" value="${st.city}, ${st.state}" oninput="const p = this.value.split(','); currentStops[${idx}].city = (p[0]||'').trim(); currentStops[${idx}].state = (p[1]||'').trim();">
+        <input type="text" class="form-input" style="font-size:11px;padding:4px;" placeholder="Appt" value="${st.appointment || ''}" oninput="currentStops[${idx}].appointment = this.value">
+        <button type="button" class="btn btn-ghost btn-sm" style="color:#EF4444;padding:0;" onclick="removeStopRow(${idx})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function addStopRow() {
+    const seq = currentStops.length + 1;
+    currentStops.push({
+      sequence: seq,
+      type: seq <= 2 ? 'PICKUP' : 'DELIVERY',
+      facility: 'New Facility',
+      address: '',
+      city: 'City',
+      state: 'ST',
+      zip: '',
+      appointment: '12:00',
+      contact: 'Dispatch',
+      phone: '',
+      bol_ref: 'BOL-' + seq,
+      pallets: 5,
+      weight_lbs: 6000
+    });
+    renderStopsContainer();
+    runLivePriceCalculation();
+  }
+
+  function removeStopRow(idx) {
+    if (currentStops.length <= 2) {
+      return alert('A multi-stop route must have at least 2 stops.');
+    }
+    currentStops.splice(idx, 1);
+    currentStops.forEach((st, i) => st.sequence = i + 1);
+    renderStopsContainer();
+    runLivePriceCalculation();
+  }
+
+  function renderPalletItemsContainer() {
+    const c = document.getElementById('man-items-container');
+    if (!c) return;
+
+    c.innerHTML = currentPalletItems.map((it, idx) => `
+      <div style="display:grid;grid-template-columns:1.5fr 70px 80px 85px 80px 30px;gap:8px;align-items:center;background:var(--surface-card);padding:8px;border-radius:6px;border:1px solid var(--border-subtle);">
+        <input type="text" class="form-input" style="font-size:11px;padding:4px;" placeholder="Item Description" value="${it.description || ''}" oninput="currentPalletItems[${idx}].description = this.value">
+        <input type="number" class="form-input" style="font-size:11px;padding:4px;" placeholder="Pallets" value="${it.pallets || 1}" oninput="currentPalletItems[${idx}].pallets = parseInt(this.value,10)||1; runLiveCubeCalculation();">
+        <input type="number" class="form-input" style="font-size:11px;padding:4px;" placeholder="Lbs Each" value="${it.weight_lbs_each || 0}" oninput="currentPalletItems[${idx}].weight_lbs_each = parseFloat(this.value)||0; runLiveCubeCalculation();">
+        <select class="form-input" style="font-size:11px;padding:4px;" onchange="currentPalletItems[${idx}].stackable = this.value === 'true'; runLiveCubeCalculation();">
+          <option value="false" ${!it.stackable ? 'selected' : ''}>No Stack</option>
+          <option value="true" ${it.stackable ? 'selected' : ''}>Stackable</option>
+        </select>
+        <select class="form-input" style="font-size:11px;padding:4px;" onchange="currentPalletItems[${idx}].drop_sequence = parseInt(this.value,10)">
+          <option value="4" ${it.drop_sequence === 4 ? 'selected' : ''}>Stop 4 (Nose)</option>
+          <option value="3" ${it.drop_sequence === 3 ? 'selected' : ''}>Stop 3 (Tail)</option>
+        </select>
+        <button type="button" class="btn btn-ghost btn-sm" style="color:#EF4444;padding:0;" onclick="removePalletItemRow(${idx})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function addPalletItemRow() {
+    currentPalletItems.push({
+      description: 'Palletized Freight',
+      pallets: 6,
+      length_in: 48,
+      width_in: 40,
+      height_in: 55,
+      weight_lbs_each: 1200,
+      stackable: false,
+      drop_sequence: currentStops.length
+    });
+    renderPalletItemsContainer();
+    runLiveCubeCalculation();
+  }
+
+  function removePalletItemRow(idx) {
+    if (currentPalletItems.length <= 1) {
+      return alert('Manifest must contain at least 1 pallet cargo item.');
+    }
+    currentPalletItems.splice(idx, 1);
+    renderPalletItemsContainer();
+    runLiveCubeCalculation();
+  }
+
+  async function runLiveCubeCalculation() {
+    const equip = document.getElementById('man-equip-type').value;
+    try {
+      const res = await fetch('/api/multistop/calculate-cube', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          equipment_type: equip,
+          items: currentPalletItems
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('sim-pallets-linear').textContent = `${data.total_pallets} Pallets / ${data.linear_feet_used} ft`;
+        document.getElementById('sim-cube-util').textContent = `${data.cube_utilization_pct}% (${data.total_cubic_ft} cu ft)`;
+        document.getElementById('sim-weight-util').textContent = `${data.weight_utilization_pct}% (${parseInt(data.total_weight_lbs).toLocaleString()} lbs)`;
+        
+        const limitEl = document.getElementById('sim-limiting-factor');
+        limitEl.textContent = data.load_limiting_factor;
+        if (data.load_limiting_factor === 'CUBE_OUT') {
+          limitEl.style.color = '#D97706';
+        } else if (data.load_limiting_factor === 'WEIGH_OUT') {
+          limitEl.style.color = '#059669';
+        } else {
+          limitEl.style.color = '#4F46E5';
+        }
+      }
+    } catch (e) {
+      console.error('Cube calc error:', e);
+    }
+  }
+
+  function runLivePriceCalculation() {
+    const base = parseFloat(document.getElementById('man-base-rate').value) || 0;
+    const interStops = Math.max(0, currentStops.length - 2);
+    const stopFees = interStops * 100;
+    const total = base + stopFees;
+    document.getElementById('man-total-rate').value = total;
+  }
+
+  async function submitAddManifest() {
+    const equip = document.getElementById('man-equip-type').value;
+    const trailer = document.getElementById('man-trailer-num').value || 'TRL-5390';
+    const driver = document.getElementById('man-driver-name').value || 'Clayton Vance';
+    const directMiles = parseFloat(document.getElementById('man-direct-miles').value) || 450;
+    const seqMiles = parseFloat(document.getElementById('man-sequenced-miles').value) || 490;
+    const baseRate = parseFloat(document.getElementById('man-base-rate').value) || 1800;
+    const notes = document.getElementById('man-notes').value;
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/multistop/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          equipment_type: equip,
+          trailer_number: trailer,
+          driver_name: driver,
+          stops: currentStops,
+          pallet_items: currentPalletItems,
+          direct_miles: directMiles,
+          sequenced_miles: seqMiles,
+          base_linehaul_rate: baseRate,
+          notes: notes
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        closeAddManifestModal();
+        loadMultiStopDesk();
+      } else {
+        alert(data.error || 'Failed to create multi-stop manifest.');
+      }
+    } catch (e) {
+      alert('Network error creating manifest.');
     }
   }
 </script>

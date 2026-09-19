@@ -130,6 +130,7 @@ app.use('/api/ifta-tax', require('./routes/ifta-tax'));            // Automated 
 app.use('/api/dvir', require('./routes/dvir-safety'));                // FMCSA 49 CFR Part 396 Driver Vehicle Inspection Report (DVIR) & Defect Sign-off
 app.use('/api/dq', require('./routes/driver-qualification'));        // FMCSA 49 CFR Part 391 Driver Qualification (DQ) Compliance Vault
 app.use('/api/claims', require('./routes/cargo-claims'));            // Carmack Amendment 49 U.S.C. § 14706 Cargo Claims & OS&D Vault
+app.use('/api/multistop', require('./routes/multistop-cube'));        // Multi-Stop Consolidated LTL, Multi-Drop Routing & Pallet Cube Engine
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {
