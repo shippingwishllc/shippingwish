@@ -134,6 +134,7 @@ app.use('/api/multistop', require('./routes/multistop-cube'));        // Multi-S
 app.use('/api/ltl-pools', require('./routes/ltl-pooling'));          // Dynamic Multi-Order LTL Pooling & Corridor Consolidation Engine
 app.use('/api/freight-audit', require('./routes/freight-audit'));    // Automated Freight Invoice Audit & 3-Way Match Engine
 app.use('/api/shipper-contracts', require('./routes/shipper-contracts')); // Shipper Enterprise Contract Rates & Dedicated RFP Tender Bidding Desk
+app.use('/api/dispatch-voice', require('./routes/dispatch-voice'));     // Autonomous AI Dispatch Voice Agent & Automated Driver Check-Call Bot
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

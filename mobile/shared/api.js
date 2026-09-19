@@ -670,6 +670,29 @@ class MobileApiClient {
   getContractAwardPdfUrl(contractId) {
     return `${this.getBaseUrl()}/api/shipper-contracts/contracts/${contractId}/award-pdf`;
   }
+
+  // --- Phase 21: Autonomous AI Dispatch Voice Agent & Check-Call Bot ---
+  async getVoiceCheckCalls() {
+    return this.request('/api/dispatch-voice/roster', { method: 'GET' });
+  }
+
+  async triggerAiCheckCall(callData) {
+    return this.request('/api/dispatch-voice/trigger', {
+      method: 'POST',
+      body: callData
+    });
+  }
+
+  async getVoiceCallDetails(callId) {
+    return this.request(`/api/dispatch-voice/calls/${callId}`, { method: 'GET' });
+  }
+
+  async overrideVoiceCheckCall(callId, overrideData) {
+    return this.request(`/api/dispatch-voice/calls/${callId}/manual-override`, {
+      method: 'POST',
+      body: overrideData
+    });
+  }
 }
 
 export const api = new MobileApiClient();

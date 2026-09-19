@@ -298,6 +298,9 @@
         <button class="nav-tab-btn" id="tab-btn-contracts" onclick="switchTab('contracts')">
           <span>📜</span> Shipper Contracts &amp; RFP
         </button>
+        <button class="nav-tab-btn" id="tab-btn-voice" onclick="switchTab('voice')">
+          <span>🎙️</span> AI Voice Dispatch
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1449,6 +1452,101 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 18: AUTONOMOUS AI DISPATCH VOICE AGENT & DRIVER CHECK-CALL BOT -->
+      <div id="tab-content-voice" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);flex-wrap:wrap;gap:12px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>🎙️</span> Autonomous AI Voice Dispatch Agent &amp; Check-Call Bot
+              <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);">TwiML IVR &amp; NLP</span>
+            </h3>
+            <span style="font-size:12px;color:var(--text-muted);">
+              Automated in-transit driver check-calls · NLP corridor/mile marker extraction · Live GPS telematics anti-spoofing
+            </span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="openTriggerCallModal()">
+              <span>📞</span> + Trigger AI Check-Call
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="loadDispatchVoiceDesk()">
+              <span>🔄</span> Refresh Desk
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:var(--space-4);margin-bottom:var(--space-4);">
+          <div class="stat-card" style="border-left:4px solid #3b82f6;">
+            <div class="stat-label">TOTAL CHECK-CALLS LOGGED</div>
+            <div class="stat-value" id="voice-kpi-total" style="color:#60a5fa;">0</div>
+            <div class="stat-sub">Autonomous AI voice sessions</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="stat-label">AUTONOMOUS RESOLUTION (%)</div>
+            <div class="stat-value" id="voice-kpi-resolution" style="color:#34d399;">98.2%</div>
+            <div class="stat-sub">Zero human dispatcher intervention</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #f59e0b;">
+            <div class="stat-label">SCHEDULE DELAY EXCEPTIONS</div>
+            <div class="stat-value" id="voice-kpi-delays" style="color:#fbbf24;">0</div>
+            <div class="stat-sub">Escalated to human floor team</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #8b5cf6;">
+            <div class="stat-label">GPS TELEMATICS MATCH ACCURACY</div>
+            <div class="stat-value" id="voice-kpi-accuracy" style="color:#a78bfa;">99.1%</div>
+            <div class="stat-sub">Spoken coords vs tractor breadcrumb</div>
+          </div>
+        </div>
+
+        <!-- Search and Filter Bar -->
+        <div style="display:flex;gap:12px;margin-bottom:var(--space-4);flex-wrap:wrap;align-items:center;">
+          <input type="text" id="voice-search-input" class="form-input" placeholder="Search driver, phone, carrier, load #..." style="max-width:320px;" oninput="filterVoiceCalls()">
+          <select id="voice-filter-sentiment" class="form-select" style="max-width:200px;" onchange="filterVoiceCalls()">
+            <option value="ALL">All Sentiments</option>
+            <option value="CALM">Calm / Routine</option>
+            <option value="STRESSED">Stressed / Frustrated</option>
+          </select>
+          <select id="voice-filter-exception" class="form-select" style="max-width:220px;" onchange="filterVoiceCalls()">
+            <option value="ALL">All Statuses</option>
+            <option value="NORMAL">Normal / Verified</option>
+            <option value="EXCEPTION">Exceptions Only (Delays/Mismatches)</option>
+          </select>
+        </div>
+
+        <!-- Check-Calls Table -->
+        <div class="table-container">
+          <table class="tms-table-v2">
+            <thead>
+              <tr>
+                <th>Call ID &amp; Time</th>
+                <th>Driver &amp; Carrier</th>
+                <th>Load Ref &amp; Route</th>
+                <th>Spoken Location &amp; MM</th>
+                <th>Estimated Delivery (ETA)</th>
+                <th>Telematics Anti-Spoofing</th>
+                <th>Sentiment</th>
+                <th>Call Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="voice-calls-tbody">
+              <tr>
+                <td colspan="9" style="text-align:center;padding:24px;">Connecting to AI Voice Dispatch Stream...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- System Architecture & Security Banner -->
+        <div style="margin-top:var(--space-4);background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-md);padding:16px;display:flex;gap:16px;align-items:flex-start;">
+          <div style="font-size:24px;">🤖</div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Autonomous Voice Dispatch &amp; Telematics Verification Protocol</strong>
+            Our AI voice agent autonomously conducts automated scheduled check-calls using TwiML voice gather synthesis. Spoken corridors, mile markers, and arrival ETAs are transcribed in real-time and extracted via natural language processing. Spoken locations are cross-validated against the tractor's live GPS breadcrumbs using the Haversine spherical distance model. If a location delta exceeds 35 miles or a delay exceeds 45 minutes, the system triggers an emergency dispatcher escalation flag.
           </div>
         </div>
       </div>
@@ -2781,7 +2879,195 @@
   </div>
 </div>
 
+<!-- MODAL: TRIGGER AI CHECK-CALL -->
+<div id="modal-trigger-call" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:620px;max-height:90vh;overflow-y:auto;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>🎙️</span> Trigger Autonomous AI Driver Check-Call
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeTriggerCallModal()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Driver Name</label>
+        <input type="text" id="voice-trigger-driver-name" class="form-input" value="Marcus Vance">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Driver Phone Number</label>
+        <input type="text" id="voice-trigger-driver-phone" class="form-input" value="+1 (404) 555-0192">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Carrier Name</label>
+        <input type="text" id="voice-trigger-carrier-name" class="form-input" value="Apex Freightlines LLC">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Load Reference ID</label>
+        <input type="text" id="voice-trigger-load-ref" class="form-input" value="SW-2026-8821">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Origin City</label>
+        <input type="text" id="voice-trigger-origin" class="form-input" value="Atlanta, GA">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Destination City</label>
+        <input type="text" id="voice-trigger-dest" class="form-input" value="Chicago, IL">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;display:flex;justify-content:space-between;">
+        <span>Simulated Driver Audio Utterance (Speech-to-Text Input)</span>
+        <span style="font-weight:normal;color:var(--text-muted);">Select preset or type custom:</span>
+      </label>
+      <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setVoicePreset(1)">Preset 1: On-Time I-65</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setVoicePreset(2)">Preset 2: 45m Traffic Delay</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setVoicePreset(3)">Preset 3: GPS Anti-Spoof Flag</button>
+      </div>
+      <textarea id="voice-trigger-speech" class="form-input" rows="3" style="resize:vertical;">Hey this is Marcus, I am on I-65 North passing Louisville near mile marker 130, cruising smooth. ETA Chicago is 4:30 PM.</textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Live Tractor Telematics Lat</label>
+        <input type="number" step="0.0001" id="voice-trigger-lat" class="form-input" value="38.2527">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Live Tractor Telematics Lon</label>
+        <input type="number" step="0.0001" id="voice-trigger-lon" class="form-input" value="-85.7585">
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeTriggerCallModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#2563eb;" onclick="submitTriggerCall()">Initiate AI Check-Call</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: VIEW AI CALL TRANSCRIPT & NLP TELEMETRY -->
+<div id="modal-view-transcript" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:700px;max-height:90vh;overflow-y:auto;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>🎧</span> AI Voice Check-Call Log &amp; NLP Extraction
+        </h3>
+        <span style="font-size:12px;color:var(--text-muted);" id="transcript-call-sid">Session ID: CA-VOICE-PENDING</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeTranscriptModal()">✕</button>
+    </div>
+
+    <!-- Call Summary Cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:16px;">
+      <div style="background:rgba(255,255,255,0.02);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Driver</div>
+        <div style="font-weight:700;font-size:13px;color:var(--text-primary);" id="transcript-driver">-</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.02);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Carrier / Load</div>
+        <div style="font-weight:700;font-size:13px;color:var(--text-primary);" id="transcript-carrier-load">-</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.02);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Duration / Sentiment</div>
+        <div style="font-weight:700;font-size:13px;color:var(--text-primary);" id="transcript-duration">-</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.02);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Audio Hash / Status</div>
+        <div style="font-weight:700;font-size:13px;color:var(--text-primary);" id="transcript-status">-</div>
+      </div>
+    </div>
+
+    <!-- Multi-Turn Conversational Dialogue Bubbles -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:8px;">
+        Multi-Turn Conversational Audio Transcript
+      </div>
+      <div id="transcript-dialog-container" style="display:flex;flex-direction:column;gap:10px;background:rgba(0,0,0,0.2);padding:14px;border-radius:var(--radius-md);max-height:260px;overflow-y:auto;border:1px solid var(--border-subtle);">
+        <!-- Dialogue bubbles will be rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- NLP & Telematics Extraction Card -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;margin-bottom:8px;">
+        🧠 NLP Logistics Extraction &amp; Telematics Verification
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px;">
+        <div><strong style="color:var(--text-muted);">Spoken Location:</strong> <span id="nlp-spoken-loc">-</span></div>
+        <div><strong style="color:var(--text-muted);">Corridor &amp; MM:</strong> <span id="nlp-corridor-mm">-</span></div>
+        <div><strong style="color:var(--text-muted);">Extracted ETA:</strong> <span id="nlp-eta">-</span></div>
+        <div><strong style="color:var(--text-muted);">Delay / Traffic:</strong> <span id="nlp-delay">-</span></div>
+        <div><strong style="color:var(--text-muted);">GPS Breadcrumb Delta:</strong> <span id="nlp-gps-delta">-</span></div>
+        <div><strong style="color:var(--text-muted);">Anti-Spoof Status:</strong> <span id="nlp-gps-status">-</span></div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border-subtle);font-size:12px;color:var(--text-secondary);">
+        <strong>AI Dispatch Summary:</strong> <span id="nlp-ai-summary">-</span>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <button class="btn btn-secondary btn-sm" id="btn-transcript-override" onclick="openOverrideFromTranscript()">
+        <span>✍️</span> Dispatcher Manual Override
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="closeTranscriptModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DISPATCHER MANUAL OVERRIDE -->
+<div id="modal-override-call" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:10000;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:440px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;">Manual Dispatcher Override</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeOverrideModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="override-call-id">
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Call Disposition Status</label>
+      <select id="override-call-status" class="form-select">
+        <option value="COMPLETED">COMPLETED (Routine Check-Call)</option>
+        <option value="OVERRIDDEN">OVERRIDDEN (Dispatcher Verified)</option>
+        <option value="EXCEPTION_RESOLVED">EXCEPTION_RESOLVED (Delay Approved)</option>
+        <option value="RETRY_REQUESTED">RETRY_REQUESTED (Call Driver Again)</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Exception Escalation Flag</label>
+      <select id="override-exception-flag" class="form-select">
+        <option value="false">Clear Exception (Green / Verified)</option>
+        <option value="true">Keep Escalated Flag (Yellow/Red Attention)</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label class="form-label" style="font-size:11px;">Dispatcher Override Notes</label>
+      <textarea id="override-notes" class="form-input" rows="3" placeholder="e.g. Spoke directly with driver Marcus via cell; verified carrier detention at shipper."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeOverrideModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#059669;" onclick="submitOverrideCall()">Save Override</button>
+    </div>
+  </div>
+</div>
+
 <script>
+  function getAuthToken() {
+    return localStorage.getItem('token') || localStorage.getItem('auth_token') || sessionStorage.getItem('token') || '';
+  }
+
   let brokersData = [];
   let loadsData = [];
 
@@ -2810,6 +3096,7 @@
     document.getElementById('tab-content-ltlpools').style.display = tabId === 'ltlpools' ? 'block' : 'none';
     document.getElementById('tab-content-audit').style.display = tabId === 'audit' ? 'block' : 'none';
     document.getElementById('tab-content-contracts').style.display = tabId === 'contracts' ? 'block' : 'none';
+    document.getElementById('tab-content-voice').style.display = tabId === 'voice' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -2837,6 +3124,8 @@
       loadFreightAuditDesk();
     } else if (tabId === 'contracts') {
       loadShipperContractsDesk();
+    } else if (tabId === 'voice') {
+      loadDispatchVoiceDesk();
     }
   }
 
@@ -5939,6 +6228,309 @@
       }
     } catch (e) {
       alert('Network error launching RFP.');
+    }
+  }
+
+  // --- PHASE 21: AUTONOMOUS AI VOICE DISPATCH & CHECK-CALL DESK ---
+  let voiceCallsData = [];
+  let currentTranscriptCallId = null;
+
+  async function loadDispatchVoiceDesk() {
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/dispatch-voice/roster', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.kpis) {
+          document.getElementById('voice-kpi-total').textContent = data.kpis.total_check_calls;
+          document.getElementById('voice-kpi-resolution').textContent = data.kpis.autonomous_resolution_pct + '%';
+          document.getElementById('voice-kpi-delays').textContent = data.kpis.schedule_delay_exceptions;
+          document.getElementById('voice-kpi-accuracy').textContent = data.kpis.gps_telematics_accuracy + '%';
+        }
+        voiceCallsData = data.calls || [];
+        renderVoiceCallsTable(voiceCallsData);
+      } else {
+        console.error('Failed to load dispatch voice roster:', data.error);
+      }
+    } catch (err) {
+      console.error('Network error loading dispatch voice roster:', err);
+    }
+  }
+
+  function renderVoiceCallsTable(calls) {
+    const tbody = document.getElementById('voice-calls-tbody');
+    if (!tbody) return;
+    if (!calls || calls.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">No voice check-call sessions logged. Click "+ Trigger AI Check-Call" to test.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = calls.map(c => {
+      const timeStr = c.created_at ? new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+      const dateStr = c.created_at ? new Date(c.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '';
+      
+      const isMismatch = c.gps_status === 'MISMATCH_FLAGGED' || (c.distance_delta_miles && parseFloat(c.distance_delta_miles) > 35);
+      const isDelayed = c.reported_delay_minutes && parseInt(c.reported_delay_minutes) > 0;
+      const isException = c.exception_flagged;
+
+      const antiSpoofBadge = isMismatch 
+        ? `<span class="badge" style="background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);">⚠️ SPOOF DELTA (${c.distance_delta_miles || 0} mi)</span>`
+        : `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">✅ VERIFIED (${c.distance_delta_miles || 0} mi)</span>`;
+
+      const sentimentBadge = c.call_sentiment === 'STRESSED'
+        ? `<span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);">⚡ STRESSED</span>`
+        : `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">😊 CALM</span>`;
+
+      const etaDisplay = isDelayed
+        ? `<div><strong>${c.parsed_eta || 'N/A'}</strong> <span style="color:#f87171;font-size:10px;font-weight:700;">(+${c.reported_delay_minutes}m delay)</span></div>`
+        : `<div><strong>${c.parsed_eta || 'On Schedule'}</strong></div>`;
+
+      const statusBadge = isException
+        ? `<span class="badge" style="background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);">🚨 ESCALATED</span>`
+        : `<span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);">${c.call_status}</span>`;
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;font-family:var(--font-mono);font-size:11px;color:var(--text-primary);">${c.call_sid}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${dateStr} ${timeStr}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${c.driver_name}</div>
+            <div style="font-size:11px;color:var(--text-secondary);">${c.carrier_name || 'Carrier'} · ${c.driver_phone || ''}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;font-family:var(--font-mono);font-size:11px;color:#60a5fa;">${c.load_reference || 'SW-SPOT'}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${c.origin_summary || 'Origin'} &rarr; ${c.destination_summary || 'Dest'}</div>
+          </td>
+          <td>
+            <div style="font-weight:600;color:var(--text-primary);">${c.spoken_location || 'Location Not Spoken'}</div>
+            <div style="font-size:11px;color:var(--text-secondary);">${c.weather_traffic_condition || 'Standard Conditions'}</div>
+          </td>
+          <td>${etaDisplay}</td>
+          <td>${antiSpoofBadge}</td>
+          <td>${sentimentBadge}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-sm" style="font-size:10.5px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="openTranscriptModal(${c.id})">
+                🎧 Transcript
+              </button>
+              <button class="btn btn-ghost btn-sm" style="font-size:10.5px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="openOverrideModal(${c.id}, '${c.call_status}', ${c.exception_flagged})">
+                ✍️
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterVoiceCalls() {
+    const q = (document.getElementById('voice-search-input')?.value || '').toLowerCase().trim();
+    const sentiment = document.getElementById('voice-filter-sentiment')?.value || 'ALL';
+    const exception = document.getElementById('voice-filter-exception')?.value || 'ALL';
+
+    const filtered = voiceCallsData.filter(c => {
+      const matchQ = !q ||
+        (c.call_sid && c.call_sid.toLowerCase().includes(q)) ||
+        (c.driver_name && c.driver_name.toLowerCase().includes(q)) ||
+        (c.driver_phone && c.driver_phone.toLowerCase().includes(q)) ||
+        (c.carrier_name && c.carrier_name.toLowerCase().includes(q)) ||
+        (c.load_reference && c.load_reference.toLowerCase().includes(q)) ||
+        (c.spoken_location && c.spoken_location.toLowerCase().includes(q));
+
+      const matchSentiment = sentiment === 'ALL' || c.call_sentiment === sentiment;
+
+      let matchException = true;
+      if (exception === 'NORMAL') {
+        matchException = !c.exception_flagged && c.gps_status === 'VERIFIED_MATCH';
+      } else if (exception === 'EXCEPTION') {
+        matchException = c.exception_flagged || c.gps_status === 'MISMATCH_FLAGGED' || (c.reported_delay_minutes && c.reported_delay_minutes > 0);
+      }
+
+      return matchQ && matchSentiment && matchException;
+    });
+
+    renderVoiceCallsTable(filtered);
+  }
+
+  function openTriggerCallModal() {
+    document.getElementById('modal-trigger-call').style.display = 'flex';
+  }
+
+  function closeTriggerCallModal() {
+    document.getElementById('modal-trigger-call').style.display = 'none';
+  }
+
+  function setVoicePreset(idx) {
+    const speechEl = document.getElementById('voice-trigger-speech');
+    const latEl = document.getElementById('voice-trigger-lat');
+    const lonEl = document.getElementById('voice-trigger-lon');
+    const nameEl = document.getElementById('voice-trigger-driver-name');
+
+    if (idx === 1) {
+      nameEl.value = 'Marcus Vance';
+      speechEl.value = 'Hey this is Marcus, I am on I-65 North passing Louisville near mile marker 130, cruising smooth. ETA Chicago is 4:30 PM.';
+      latEl.value = '38.2527';
+      lonEl.value = '-85.7585';
+    } else if (idx === 2) {
+      nameEl.value = 'Jamal Reynolds';
+      speechEl.value = 'Hey dispatch, Jamal here. Heavy accident on I-80 mile marker 74, stop and go traffic crawling. Going to be about 45 min late, new ETA is 6:15 PM.';
+      latEl.value = '41.5200';
+      lonEl.value = '-87.5000';
+    } else if (idx === 3) {
+      nameEl.value = 'Carlos Mendez';
+      speechEl.value = 'Yeah hi dispatch, Carlos here on I-35 in Dallas Texas mile marker 420. ETA is 5 PM.';
+      latEl.value = '33.7490';
+      lonEl.value = '-84.3880';
+    }
+  }
+
+  async function submitTriggerCall() {
+    const payload = {
+      driver_name: document.getElementById('voice-trigger-driver-name').value,
+      driver_phone: document.getElementById('voice-trigger-driver-phone').value,
+      carrier_name: document.getElementById('voice-trigger-carrier-name').value,
+      load_reference: document.getElementById('voice-trigger-load-ref').value,
+      origin_summary: document.getElementById('voice-trigger-origin').value,
+      destination_summary: document.getElementById('voice-trigger-dest').value,
+      simulated_driver_speech: document.getElementById('voice-trigger-speech').value,
+      tractor_lat: parseFloat(document.getElementById('voice-trigger-lat').value) || 38.2527,
+      tractor_lon: parseFloat(document.getElementById('voice-trigger-lon').value) || -85.7585
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/dispatch-voice/trigger', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeTriggerCallModal();
+        await loadDispatchVoiceDesk();
+        if (data.call && data.call.id) {
+          openTranscriptModal(data.call.id);
+        }
+      } else {
+        alert(data.error || 'Failed to trigger AI check-call.');
+      }
+    } catch (e) {
+      alert('Network error triggering AI check-call.');
+    }
+  }
+
+  async function openTranscriptModal(callId) {
+    currentTranscriptCallId = callId;
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/dispatch-voice/calls/${callId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Could not load call details.');
+        return;
+      }
+
+      const c = data.call;
+      const transcripts = data.transcripts || [];
+
+      document.getElementById('transcript-call-sid').textContent = `Session: ${c.call_sid} · Hash: ${c.audio_hash}`;
+      document.getElementById('transcript-driver').textContent = `${c.driver_name} (${c.driver_phone})`;
+      document.getElementById('transcript-carrier-load').textContent = `${c.carrier_name} · ${c.load_reference}`;
+      document.getElementById('transcript-duration').textContent = `${c.duration_seconds || 45}s · ${c.call_sentiment}`;
+      document.getElementById('transcript-status').textContent = `${c.call_status} ${c.exception_flagged ? '⚠️ ESCALATED' : '✅'}`;
+
+      // Render conversational dialog bubbles
+      const container = document.getElementById('transcript-dialog-container');
+      container.innerHTML = transcripts.map(t => {
+        const isBot = t.speaker_role === 'AI_AGENT';
+        return `
+          <div style="display:flex;flex-direction:column;align-items:${isBot ? 'flex-start' : 'flex-end'};gap:2px;">
+            <span style="font-size:10px;font-weight:700;color:${isBot ? '#60a5fa' : '#34d399'};">
+              ${isBot ? '🤖 LoadNexus AI Dispatch Voice Bot' : '🚚 Driver (' + c.driver_name + ')'}
+            </span>
+            <div style="background:${isBot ? 'rgba(59,130,246,0.12)' : 'rgba(16,185,129,0.12)'};border:1px solid ${isBot ? 'rgba(59,130,246,0.25)' : 'rgba(16,185,129,0.25)'};color:var(--text-primary);padding:10px 14px;border-radius:12px;font-size:12px;line-height:1.5;max-width:85%;">
+              ${t.text_utterance}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render NLP extracted entities
+      document.getElementById('nlp-spoken-loc').textContent = c.spoken_location || 'None';
+      document.getElementById('nlp-corridor-mm').textContent = `${c.parsed_corridor || 'Interstate'} (MM ${c.parsed_mile_marker || 'N/A'})`;
+      document.getElementById('nlp-eta').textContent = c.parsed_eta || 'On Schedule';
+      document.getElementById('nlp-delay').textContent = `${c.reported_delay_minutes || 0} mins · ${c.delay_reason || 'None'}`;
+      document.getElementById('nlp-gps-delta').textContent = `${c.distance_delta_miles || 0} miles from live tractor GPS`;
+      document.getElementById('nlp-gps-status').textContent = c.gps_status || 'VERIFIED_MATCH';
+      document.getElementById('nlp-ai-summary').textContent = c.ai_summary || 'Autonomous check-call completed.';
+
+      document.getElementById('modal-view-transcript').style.display = 'flex';
+    } catch (e) {
+      console.error('Error viewing transcript:', e);
+      alert('Network error retrieving transcript.');
+    }
+  }
+
+  function closeTranscriptModal() {
+    document.getElementById('modal-view-transcript').style.display = 'none';
+  }
+
+  function openOverrideFromTranscript() {
+    closeTranscriptModal();
+    if (currentTranscriptCallId) {
+      openOverrideModal(currentTranscriptCallId);
+    }
+  }
+
+  function openOverrideModal(callId, currentStatus = 'COMPLETED', currentException = false) {
+    document.getElementById('override-call-id').value = callId;
+    document.getElementById('override-call-status').value = currentStatus || 'COMPLETED';
+    document.getElementById('override-exception-flag').value = currentException ? 'true' : 'false';
+    document.getElementById('override-notes').value = '';
+    document.getElementById('modal-override-call').style.display = 'flex';
+  }
+
+  function closeOverrideModal() {
+    document.getElementById('modal-override-call').style.display = 'none';
+  }
+
+  async function submitOverrideCall() {
+    const callId = document.getElementById('override-call-id').value;
+    const payload = {
+      call_status: document.getElementById('override-call-status').value,
+      exception_flagged: document.getElementById('override-exception-flag').value === 'true',
+      dispatcher_notes: document.getElementById('override-notes').value
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/dispatch-voice/calls/${callId}/manual-override`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeOverrideModal();
+        loadDispatchVoiceDesk();
+      } else {
+        alert(data.error || 'Failed to save override.');
+      }
+    } catch (e) {
+      alert('Network error saving override.');
     }
   }
 </script>
