@@ -727,6 +727,47 @@ class MobileApiClient {
   getDetentionPacketPdfUrl(invoiceId) {
     return `${this.getBaseUrl()}/api/detention-collector/invoices/${invoiceId}/packet-pdf`;
   }
+
+  // --- Phase 23: Automated EDI 204, 214, 990 & 210 Freight Transaction Gateway ---
+  async getEdiGatewayRoster() {
+    return this.request('/api/edi-gateway/roster', { method: 'GET' });
+  }
+
+  async submitInboundEdi204(tenderData) {
+    return this.request('/api/edi-gateway/tender/inbound-204', {
+      method: 'POST',
+      body: tenderData
+    });
+  }
+
+  async respondEdi990(responseData) {
+    return this.request('/api/edi-gateway/tender/respond-990', {
+      method: 'POST',
+      body: responseData
+    });
+  }
+
+  async sendEdi214Milestone(milestoneData) {
+    return this.request('/api/edi-gateway/milestone/send-214', {
+      method: 'POST',
+      body: milestoneData
+    });
+  }
+
+  async sendEdi210Invoice(invoiceData) {
+    return this.request('/api/edi-gateway/invoice/send-210', {
+      method: 'POST',
+      body: invoiceData
+    });
+  }
+
+  async getEdiTransactionDetails(transactionId) {
+    return this.request(`/api/edi-gateway/transactions/${transactionId}`, { method: 'GET' });
+  }
+
+  getEdiDownloadUrl(transactionId) {
+    return `${this.getBaseUrl()}/api/edi-gateway/transactions/${transactionId}/download`;
+  }
 }
 
 export const api = new MobileApiClient();

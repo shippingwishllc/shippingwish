@@ -304,6 +304,9 @@
         <button class="nav-tab-btn" id="tab-btn-collector" onclick="switchTab('collector')">
           <span>⏱️</span> Detention Invoicing &amp; Collector
         </button>
+        <button class="nav-tab-btn" id="tab-btn-edi" onclick="switchTab('edi')">
+          <span>🔄</span> EDI Freight Gateway
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1640,6 +1643,121 @@
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
             <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Automated Detention Collection &amp; Geofence Audit Protocol</strong>
             Under standard commercial freight agreements, carriers are entitled to detention compensation after 2 hours (120 minutes) of free dock time. Our engine monitors live tractor mobile GPS breadcrumbs inside facility boundaries (500m perimeter). When dwell exceeds 120 minutes, billable detention accrues in 15-minute blocks at $75.00/hr ($18.75/block). Upon departure, a formal supplemental invoice is issued with a court-ready vector PDF evidence packet containing the cryptographic telematics breadcrumb log.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 20: AUTOMATED EDI FREIGHT TRANSACTION GATEWAY -->
+      <div id="tab-content-edi" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);flex-wrap:wrap;gap:12px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>🔄</span> Automated EDI 204, 214, 990 &amp; 210 Freight Transaction Gateway
+              <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);">ANSI ASC X12 Native Engine</span>
+            </h3>
+            <span style="font-size:12px;color:var(--text-muted);">
+              Enterprise EDI interchange · Native 204 Tender, 990 Accept/Decline, 214 Milestone Tracking &amp; 210 Invoicing · Zero SaaS Broker Fees
+            </span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="openSimulate204Modal()">
+              <span>📥</span> + Simulate EDI 204 Tender
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="openEmit214Modal()">
+              <span>🛰️</span> + Emit EDI 214 Milestone
+            </button>
+            <button class="btn btn-ghost btn-sm" style="border:1px solid var(--border-subtle);" onclick="openGenerate210Modal()">
+              <span>🧾</span> + Transmit EDI 210 Invoice
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="loadEdiGatewayDesk()">
+              <span>🔄</span> Refresh Desk
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:var(--space-4);margin-bottom:var(--space-4);">
+          <div class="stat-card" style="border-left:4px solid #3b82f6;">
+            <div class="stat-label">TOTAL EDI TRANSACTIONS</div>
+            <div class="stat-value" id="edi-kpi-total-txns" style="color:#60a5fa;">0</div>
+            <div class="stat-sub">ANSI ASC X12 Transmitted/Parsed</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="stat-label">TENDER ACCEPTANCE RATE (%)</div>
+            <div class="stat-value" id="edi-kpi-acceptance-rate" style="color:#34d399;">100.0%</div>
+            <div class="stat-sub">EDI 990 Accepted Tenders</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #f59e0b;">
+            <div class="stat-label">REAL-TIME 214 MILESTONE PINGS</div>
+            <div class="stat-value" id="edi-kpi-milestones-sent" style="color:#fbbf24;">0</div>
+            <div class="stat-sub">AF, X1, X3, D1, SD Statuses</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #8b5cf6;">
+            <div class="stat-label">ELECTRONIC 210 BILLING ($)</div>
+            <div class="stat-value" id="edi-kpi-billing-volume" style="color:#a78bfa;">$0.00</div>
+            <div class="stat-sub">Automated Enterprise ERP Invoices</div>
+          </div>
+        </div>
+
+        <!-- Trading Partner Directory Chips -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;margin-bottom:var(--space-4);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.05em;">Connected Enterprise Trading Partners &amp; Qualified SCAC Channels</span>
+            <span style="font-size:11px;color:var(--text-muted);">Standard ANSI ASC X12 004010 Format</span>
+          </div>
+          <div id="edi-partners-container" style="display:flex;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:12px;color:var(--text-muted);">Loading trading partners...</span>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="edi-search-input" class="form-input" placeholder="Search by Control #, Shipment ID, Bol #, Partner..." style="width:280px;" oninput="filterEdiTransactions()">
+            <select id="edi-filter-type" class="form-select" style="width:160px;" onchange="filterEdiTransactions()">
+              <option value="ALL">All Transaction Types</option>
+              <option value="204">204 Load Tender</option>
+              <option value="990">990 Tender Response</option>
+              <option value="214">214 Status Milestone</option>
+              <option value="210">210 Freight Invoice</option>
+              <option value="997">997 Acknowledgment</option>
+            </select>
+            <select id="edi-filter-dir" class="form-select" style="width:140px;" onchange="filterEdiTransactions()">
+              <option value="ALL">All Directions</option>
+              <option value="INBOUND">Inbound (Shipper →)</option>
+              <option value="OUTBOUND">Outbound (→ Shipper)</option>
+            </select>
+          </div>
+          <span id="edi-records-count" style="font-size:12px;color:var(--text-muted);">Showing 0 transactions</span>
+        </div>
+
+        <!-- EDI Transactions Table -->
+        <div class="table-container" style="margin-bottom:var(--space-4);background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+          <table class="tms-table-v2">
+            <thead>
+              <tr>
+                <th>Control # / Date</th>
+                <th>Type</th>
+                <th>Direction</th>
+                <th>Trading Partner</th>
+                <th>Shipment / BOL Ref</th>
+                <th>Status / Amount</th>
+                <th>Segments</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="edi-txns-tbody">
+              <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Loading EDI transactions log...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Native X12 Architecture Info Banner -->
+        <div style="background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-md);padding:14px;display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:20px;">🛡️</span>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Native ANSI ASC X12 EDI Architecture (Zero SaaS Transaction Fees)</strong>
+            Enterprise shippers like Walmart, Amazon Freight, Sysco, and Target mandate direct EDI integration for high-volume contract freight. LoadNexus™ operates an in-house ANSI ASC X12 parser and generator that converts incoming <strong>EDI 204</strong> tenders directly into dispatchable freight records, instantly transmits electronic <strong>EDI 990</strong> tender acceptances, generates live <strong>EDI 214</strong> milestone tracking pings directly to shipper transportation management systems (TMS), and settles freight electronically via <strong>EDI 210</strong> freight billing without 3rd-party transaction surcharges.
           </div>
         </div>
       </div>
@@ -3333,6 +3451,259 @@
   </div>
 </div>
 
+<!-- MODAL: SIMULATE INBOUND EDI 204 LOAD TENDER -->
+<div id="modal-simulate-edi-204" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:680px;max-height:90vh;overflow-y:auto;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>📥</span> Simulate Inbound EDI 204 Motor Carrier Load Tender
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeSimulate204Modal()">✕</button>
+    </div>
+
+    <!-- Quick Presets -->
+    <div style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px;margin-bottom:6px;">Quick Presets from Enterprise Shippers:</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setEdi204Preset(1)">Preset 1: Walmart Bentonville AR → Dallas TX ($3,450)</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setEdi204Preset(2)">Preset 2: Amazon SAT1 Schertz TX → PHX6 Phoenix AZ ($4,200)</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setEdi204Preset(3)">Preset 3: Sysco Atlanta GA → Orlando FL ($2,600)</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Trading Partner (Shipper)</label>
+        <select id="edi-204-partner" class="form-select">
+          <option value="WALMART_CORP">Walmart Supply Chain (ISA: WALMART)</option>
+          <option value="AMAZON_FREIGHT">Amazon Freight Intermodal (ISA: AMZNFRT)</option>
+          <option value="SYSCO_DIST">Sysco Food Services (ISA: SYSCO01)</option>
+          <option value="TARGET_RETAIL">Target Logistics Supply (ISA: TARGETRET)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Shipment ID / BOL Number</label>
+        <input type="text" id="edi-204-shipment-id" class="form-input" value="WMT-2026-90412">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Origin Location (City, ST)</label>
+        <input type="text" id="edi-204-origin" class="form-input" value="Bentonville, AR">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Destination Location (City, ST)</label>
+        <input type="text" id="edi-204-destination" class="form-input" value="Dallas, TX">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Weight (lbs)</label>
+        <input type="number" id="edi-204-weight" class="form-input" value="42500">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Total Contract Rate ($)</label>
+        <input type="number" id="edi-204-amount" class="form-input" value="3450.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Equipment Type</label>
+        <select id="edi-204-equip" class="form-select">
+          <option value="Dry Van 53ft">Dry Van 53ft</option>
+          <option value="Refrigerated Reefer 53ft">Reefer 53ft</option>
+          <option value="Flatbed 48ft">Flatbed 48ft</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Commodity Description</label>
+      <input type="text" id="edi-204-commodity" class="form-input" value="Retail Consumer Goods &amp; General Dry Freight">
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label class="form-label" style="font-size:11px;display:flex;justify-content:space-between;">
+        <span>Optional: Custom Raw ANSI ASC X12 String (Leave blank to auto-generate X12 standard)</span>
+        <a href="javascript:void(0)" onclick="toggleRaw204Textarea()" style="color:var(--color-primary);font-size:11px;">Toggle Raw Box</a>
+      </label>
+      <textarea id="edi-204-raw" class="form-input" rows="4" style="display:none;font-family:var(--font-mono);font-size:11px;" placeholder="ISA*00*...~GS*SM*...~ST*204*0001~B2**WALMART*WMT-2026-90412**PP~..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeSimulate204Modal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="submitSimulate204()">⚡ Ingest &amp; Translate EDI 204</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: INSPECT RAW EDI ANSI ASC X12 SEGMENTS -->
+<div id="modal-inspect-edi" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:760px;max-height:90vh;overflow-y:auto;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>🔍</span> ANSI ASC X12 Segment Inspector &amp; Syntax Auditor
+        </h3>
+        <span style="font-size:12px;color:var(--text-muted);" id="inspect-edi-sub">-</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeInspectEdiModal()">✕</button>
+    </div>
+
+    <!-- Metadata pill summary -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:14px;background:rgba(0,0,0,0.2);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
+      <div><span style="font-size:10px;color:var(--text-muted);display:block;">TRANSACTION TYPE</span><strong id="inspect-type" style="font-size:13px;color:var(--text-primary);">-</strong></div>
+      <div><span style="font-size:10px;color:var(--text-muted);display:block;">DIRECTION</span><strong id="inspect-dir" style="font-size:13px;color:var(--text-primary);">-</strong></div>
+      <div><span style="font-size:10px;color:var(--text-muted);display:block;">CONTROL #</span><strong id="inspect-control" style="font-size:13px;color:var(--color-primary);font-family:var(--font-mono);">-</strong></div>
+      <div><span style="font-size:10px;color:var(--text-muted);display:block;">TRADING PARTNER</span><strong id="inspect-partner" style="font-size:13px;color:var(--text-primary);">-</strong></div>
+    </div>
+
+    <!-- Raw X12 Monospace Box -->
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Raw Segment Delimiter Format (~ Segment Terminator, * Element Separator)</span>
+        <button class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px;" onclick="copyRawEdiToClipboard()">📋 Copy Raw</button>
+      </div>
+      <pre id="inspect-raw-edi" style="background:#0b1120;border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-md);padding:14px;font-family:var(--font-mono);font-size:12px;color:#38bdf8;white-space:pre-wrap;word-break:break-all;max-height:280px;overflow-y:auto;"></pre>
+    </div>
+
+    <!-- Parsed Data JSON view -->
+    <div style="margin-bottom:16px;">
+      <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:6px;">Normalized Business Object Payload</span>
+      <pre id="inspect-parsed-json" style="background:rgba(0,0,0,0.15);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);white-space:pre-wrap;max-height:160px;overflow-y:auto;"></pre>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div id="inspect-edi-download-container">
+        <!-- Download button injected here -->
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeInspectEdiModal()">Close Inspector</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EMIT EDI 214 SHIPMENT STATUS MILESTONE -->
+<div id="modal-emit-214" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:560px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>🛰️</span> Transmit EDI 214 Shipment Status Message
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeEmit214Modal()">✕</button>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Trading Partner</label>
+      <select id="emit-214-partner" class="form-select">
+        <option value="WALMART_CORP">Walmart Supply Chain</option>
+        <option value="AMAZON_FREIGHT">Amazon Freight Intermodal</option>
+        <option value="SYSCO_DIST">Sysco Food Services</option>
+        <option value="TARGET_RETAIL">Target Logistics Supply</option>
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Shipment ID / BOL #</label>
+        <input type="text" id="emit-214-shipment-id" class="form-input" value="WMT-2026-90412">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Standard Milestone Status</label>
+        <select id="emit-214-status-code" class="form-select">
+          <option value="AF">AF - Departed Pickup Facility (En Route)</option>
+          <option value="X1">X1 - Arrived at Delivery Facility Dock</option>
+          <option value="X3">X3 - Arrived at In-Transit Relay / Checkpoint</option>
+          <option value="D1">D1 - Unloading Completed by Driver</option>
+          <option value="SD">SD - Shipment Delivered Clean &amp; Accepted</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Current City</label>
+        <input type="text" id="emit-214-city" class="form-input" value="Little Rock">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Current State</label>
+        <input type="text" id="emit-214-state" class="form-input" value="AR">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:18px;">
+      <label class="form-label" style="font-size:11px;">Milestone Telematics Remark / Note</label>
+      <input type="text" id="emit-214-note" class="form-input" value="Tractor en route on I-30 West; on schedule for scheduled delivery dock appointment">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeEmit214Modal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="submitEmit214()">🚀 Transmit EDI 214 Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: GENERATE & TRANSMIT EDI 210 FREIGHT INVOICE -->
+<div id="modal-generate-210" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:580px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>🧾</span> Transmit EDI 210 Freight Details &amp; Invoice
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeGenerate210Modal()">✕</button>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Trading Partner (Bill-To)</label>
+      <select id="gen-210-partner" class="form-select">
+        <option value="WALMART_CORP">Walmart Supply Chain Accounts Payable</option>
+        <option value="AMAZON_FREIGHT">Amazon Freight Freight-Pay Desk</option>
+        <option value="SYSCO_DIST">Sysco Food Services AP</option>
+        <option value="TARGET_RETAIL">Target Logistics AP</option>
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Shipment ID / BOL #</label>
+        <input type="text" id="gen-210-shipment-id" class="form-input" value="WMT-2026-90412">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Invoice Number</label>
+        <input type="text" id="gen-210-inv-number" class="form-input" value="INV-2026-EDI-019">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Linehaul Rate ($)</label>
+        <input type="number" id="gen-210-linehaul" class="form-input" value="3000.00" oninput="recalcEdi210Total()">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Fuel Surcharge ($)</label>
+        <input type="number" id="gen-210-fuel" class="form-input" value="450.00" oninput="recalcEdi210Total()">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Accessorial / Lumper ($)</label>
+        <input type="number" id="gen-210-acc" class="form-input" value="0.00" oninput="recalcEdi210Total()">
+      </div>
+    </div>
+
+    <!-- Total banner -->
+    <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:var(--radius-md);padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);">TOTAL ELECTRONIC INVOICE (X12 TDS01)</div>
+        <div style="font-size:12px;color:var(--text-secondary);">Direct Remit to Shipping Wish LLC (SCAC: SWSH)</div>
+      </div>
+      <div style="font-weight:900;font-size:20px;color:#a78bfa;" id="gen-210-total-display">$3,450.00 USD</div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeGenerate210Modal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#8b5cf6;" onclick="submitGenerate210()">⚡ Emit EDI 210 Invoice</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function getAuthToken() {
     return localStorage.getItem('token') || localStorage.getItem('auth_token') || sessionStorage.getItem('token') || '';
@@ -3368,6 +3739,7 @@
     document.getElementById('tab-content-contracts').style.display = tabId === 'contracts' ? 'block' : 'none';
     document.getElementById('tab-content-voice').style.display = tabId === 'voice' ? 'block' : 'none';
     document.getElementById('tab-content-collector').style.display = tabId === 'collector' ? 'block' : 'none';
+    document.getElementById('tab-content-edi').style.display = tabId === 'edi' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -3399,6 +3771,8 @@
       loadDispatchVoiceDesk();
     } else if (tabId === 'collector') {
       loadDetentionCollectorDesk();
+    } else if (tabId === 'edi') {
+      loadEdiGatewayDesk();
     }
   }
 
@@ -7112,6 +7486,469 @@
 
   function closeBreadcrumbsModal() {
     document.getElementById('modal-view-breadcrumbs').style.display = 'none';
+  }
+
+  // ==========================================
+  // PHASE 23: EDI 204, 214, 990 & 210 GATEWAY
+  // ==========================================
+  let currentEdiTxns = [];
+  let currentEdiPartners = [];
+  let currentInspectTxn = null;
+
+  async function loadEdiGatewayDesk() {
+    const tbody = document.getElementById('edi-txns-tbody');
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Fetching EDI transactions and trading partner channels...</td></tr>`;
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/edi-gateway/roster', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.success) {
+        // 1. Update KPIs
+        const kpis = data.kpis || {};
+        document.getElementById('edi-kpi-total-txns').textContent = kpis.total_transactions || 0;
+        document.getElementById('edi-kpi-acceptance-rate').textContent = (kpis.tender_acceptance_rate_pct || 100) + '%';
+        document.getElementById('edi-kpi-milestones-sent').textContent = kpis.milestone_214_sent || 0;
+        document.getElementById('edi-kpi-billing-volume').textContent = '$' + Number(kpis.invoiced_210_volume || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        // 2. Render Trading Partners Chips
+        currentEdiPartners = data.trading_partners || [];
+        const partnersContainer = document.getElementById('edi-partners-container');
+        if (currentEdiPartners.length === 0) {
+          partnersContainer.innerHTML = `<span style="font-size:12px;color:var(--text-muted);">No trading partners configured.</span>`;
+        } else {
+          partnersContainer.innerHTML = currentEdiPartners.map(p => `
+            <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:6px 12px;">
+              <span style="font-size:14px;">🏢</span>
+              <div>
+                <strong style="font-size:12px;color:var(--text-primary);display:block;">${p.name}</strong>
+                <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">ISA: ${p.isa_id} · SCAC: ${p.scac_code}</span>
+              </div>
+              <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;font-size:10px;margin-left:4px;">ACTIVE</span>
+            </div>
+          `).join('');
+        }
+
+        // 3. Render Transactions Table
+        currentEdiTxns = data.transactions || [];
+        renderEdiTransactionsTable(currentEdiTxns);
+      } else {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#f87171;">Failed to load EDI gateway roster: ${data.error || 'Unknown error'}</td></tr>`;
+      }
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#f87171;">Network error loading EDI gateway desk.</td></tr>`;
+    }
+  }
+
+  function renderEdiTransactionsTable(txns) {
+    const tbody = document.getElementById('edi-txns-tbody');
+    document.getElementById('edi-records-count').textContent = `Showing ${txns.length} transaction${txns.length === 1 ? '' : 's'}`;
+
+    if (txns.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted);">No EDI transactions found matching the selected filters.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = txns.map(t => {
+      const pTime = new Date(t.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      // Type Badge
+      let typeColor = '#60a5fa';
+      let typeBg = 'rgba(59,130,246,0.15)';
+      let typeLabel = `EDI ${t.transaction_type}`;
+      if (t.transaction_type === '204') {
+        typeColor = '#fbbf24'; typeBg = 'rgba(245,158,11,0.15)'; typeLabel = '204 Load Tender';
+      } else if (t.transaction_type === '990') {
+        typeColor = '#34d399'; typeBg = 'rgba(16,185,129,0.15)'; typeLabel = '990 Response';
+      } else if (t.transaction_type === '214') {
+        typeColor = '#38bdf8'; typeBg = 'rgba(56,189,248,0.15)'; typeLabel = '214 Milestone';
+      } else if (t.transaction_type === '210') {
+        typeColor = '#a78bfa'; typeBg = 'rgba(139,92,246,0.15)'; typeLabel = '210 Invoice';
+      } else if (t.transaction_type === '997') {
+        typeColor = '#9ca3af'; typeBg = 'rgba(156,163,175,0.15)'; typeLabel = '997 Ack';
+      }
+
+      // Direction Badge
+      const isOutbound = (t.direction || '').toUpperCase() === 'OUTBOUND';
+      const dirBadge = isOutbound
+        ? `<span class="badge" style="background:rgba(139,92,246,0.15);color:#c084fc;border:1px solid rgba(139,92,246,0.3);">OUTBOUND ↗</span>`
+        : `<span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);">INBOUND ↙</span>`;
+
+      // Status Badge
+      let statusBadge = `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;">${t.status}</span>`;
+      if (t.status === 'PENDING') {
+        statusBadge = `<span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;">PENDING TENDER</span>`;
+      } else if (t.status === 'DECLINED') {
+        statusBadge = `<span class="badge" style="background:rgba(239,68,68,0.15);color:#f87171;">DECLINED</span>`;
+      } else if (t.status === 'ACCEPTED') {
+        statusBadge = `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;">ACCEPTED (990)</span>`;
+      }
+
+      const totalVal = t.total_amount ? `$${Number(t.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
+
+      // 990 Actions if pending tender
+      let pending990Btns = '';
+      if (t.transaction_type === '204' && t.status === 'PENDING') {
+        pending990Btns = `
+          <button class="btn btn-primary btn-sm" style="font-size:10px;padding:2px 6px;background:#059669;" title="Accept Tender (EDI 990)" onclick="respondToTender('${t.id}', 'ACCEPT')">Accept 990</button>
+          <button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 6px;" title="Decline Tender (EDI 990)" onclick="respondToTender('${t.id}', 'DECLINE')">Decline 990</button>
+        `;
+      }
+
+      return `
+        <tr>
+          <td>
+            <strong style="font-family:var(--font-mono);font-size:12px;color:var(--text-primary);display:block;">${t.control_number}</strong>
+            <span style="font-size:10px;color:var(--text-muted);">${pTime}</span>
+          </td>
+          <td>
+            <span class="badge" style="background:${typeBg};color:${typeColor};border:1px solid ${typeColor}40;">${typeLabel}</span>
+          </td>
+          <td>${dirBadge}</td>
+          <td>
+            <strong style="font-size:12px;color:var(--text-primary);display:block;">${t.partner_name || t.trading_partner_id}</strong>
+            <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">${t.isa_sender_id || ''} → ${t.isa_receiver_id || ''}</span>
+          </td>
+          <td>
+            <span style="font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text-primary);display:block;">${t.shipment_id || '-'}</span>
+            <span style="font-size:11px;color:var(--text-muted);">${t.bol_number ? 'BOL: ' + t.bol_number : ''}</span>
+          </td>
+          <td>
+            <div style="margin-bottom:2px;">${statusBadge}</div>
+            <strong style="font-size:11px;color:var(--text-primary);font-family:var(--font-mono);">${totalVal}</strong>
+          </td>
+          <td>
+            <span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-secondary);font-family:var(--font-mono);">${t.segment_count || 0} segments</span>
+          </td>
+          <td>
+            <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+              <button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;" onclick="openInspectEdiModal('${t.id}')" title="Inspect Raw ANSI X12 Segments">🔍 Inspect</button>
+              <a href="/api/edi-gateway/transactions/${t.id}/download" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px;border:1px solid var(--border-subtle);" title="Download ANSI X12 (.edi) file">📥 .EDI</a>
+              ${pending990Btns}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterEdiTransactions() {
+    const q = (document.getElementById('edi-search-input').value || '').toLowerCase().trim();
+    const typeFilter = document.getElementById('edi-filter-type').value;
+    const dirFilter = document.getElementById('edi-filter-dir').value;
+
+    const filtered = currentEdiTxns.filter(t => {
+      if (typeFilter !== 'ALL' && t.transaction_type !== typeFilter) return false;
+      if (dirFilter !== 'ALL' && (t.direction || '').toUpperCase() !== dirFilter) return false;
+
+      if (!q) return true;
+      const haystack = [
+        t.control_number,
+        t.shipment_id,
+        t.bol_number,
+        t.partner_name,
+        t.trading_partner_id,
+        t.status
+      ].join(' ').toLowerCase();
+
+      return haystack.includes(q);
+    });
+
+    renderEdiTransactionsTable(filtered);
+  }
+
+  // Presets
+  function setEdi204Preset(idx) {
+    if (idx === 1) {
+      document.getElementById('edi-204-partner').value = 'WALMART_CORP';
+      document.getElementById('edi-204-shipment-id').value = 'WMT-2026-90412';
+      document.getElementById('edi-204-origin').value = 'Bentonville, AR';
+      document.getElementById('edi-204-destination').value = 'Dallas, TX';
+      document.getElementById('edi-204-weight').value = '42500';
+      document.getElementById('edi-204-amount').value = '3450.00';
+      document.getElementById('edi-204-equip').value = 'Dry Van 53ft';
+      document.getElementById('edi-204-commodity').value = 'Retail Consumer Goods & General Dry Freight';
+    } else if (idx === 2) {
+      document.getElementById('edi-204-partner').value = 'AMAZON_FREIGHT';
+      document.getElementById('edi-204-shipment-id').value = 'AZ-SAT1-88410';
+      document.getElementById('edi-204-origin').value = 'Schertz, TX';
+      document.getElementById('edi-204-destination').value = 'Phoenix, AZ';
+      document.getElementById('edi-204-weight').value = '38000';
+      document.getElementById('edi-204-amount').value = '4200.00';
+      document.getElementById('edi-204-equip').value = 'Refrigerated Reefer 53ft';
+      document.getElementById('edi-204-commodity').value = 'Fresh Produce & Perishable Groceries';
+    } else if (idx === 3) {
+      document.getElementById('edi-204-partner').value = 'SYSCO_DIST';
+      document.getElementById('edi-204-shipment-id').value = 'SYSCO-ATL-5509';
+      document.getElementById('edi-204-origin').value = 'Atlanta, GA';
+      document.getElementById('edi-204-destination').value = 'Orlando, FL';
+      document.getElementById('edi-204-weight').value = '41200';
+      document.getElementById('edi-204-amount').value = '2600.00';
+      document.getElementById('edi-204-equip').value = 'Refrigerated Reefer 53ft';
+      document.getElementById('edi-204-commodity').value = 'Frozen Food Distribution & Meat';
+    }
+  }
+
+  function openSimulate204Modal() {
+    document.getElementById('modal-simulate-edi-204').style.display = 'flex';
+  }
+
+  function closeSimulate204Modal() {
+    document.getElementById('modal-simulate-edi-204').style.display = 'none';
+  }
+
+  function toggleRaw204Textarea() {
+    const rawBox = document.getElementById('edi-204-raw');
+    rawBox.style.display = (rawBox.style.display === 'none' ? 'block' : 'none');
+  }
+
+  async function submitSimulate204() {
+    const partnerId = document.getElementById('edi-204-partner').value;
+    const shipmentId = document.getElementById('edi-204-shipment-id').value.trim();
+    const origin = document.getElementById('edi-204-origin').value.trim();
+    const destination = document.getElementById('edi-204-destination').value.trim();
+    const weight = parseFloat(document.getElementById('edi-204-weight').value) || 40000;
+    const totalAmount = parseFloat(document.getElementById('edi-204-amount').value) || 2500;
+    const equipmentType = document.getElementById('edi-204-equip').value;
+    const commodity = document.getElementById('edi-204-commodity').value.trim();
+    const rawEdi = document.getElementById('edi-204-raw').value.trim();
+
+    const payload = {
+      trading_partner_id: partnerId,
+      raw_edi: rawEdi || undefined,
+      tender_data: !rawEdi ? {
+        shipment_id: shipmentId,
+        bol_number: shipmentId.replace('WMT-', 'BOL-').replace('AZ-', 'BOL-').replace('SYSCO-', 'BOL-'),
+        origin_city: origin.split(',')[0].trim(),
+        origin_state: (origin.split(',')[1] || 'AR').trim(),
+        dest_city: destination.split(',')[0].trim(),
+        dest_state: (destination.split(',')[1] || 'TX').trim(),
+        weight_lbs: weight,
+        total_amount: totalAmount,
+        equipment_type: equipmentType,
+        commodity: commodity
+      } : undefined
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/edi-gateway/tender/inbound-204', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeSimulate204Modal();
+        await loadEdiGatewayDesk();
+        openInspectEdiModal(data.transaction.id);
+      } else {
+        alert(data.error || 'Failed to simulate inbound EDI 204 tender.');
+      }
+    } catch (e) {
+      alert('Network error submitting EDI 204 tender.');
+    }
+  }
+
+  async function respondToTender(transactionId, action) {
+    const actionDesc = action === 'ACCEPT' ? 'ACCEPT' : 'DECLINE';
+    if (!confirm(`Are you sure you want to electronically transmit an EDI 990 ${actionDesc} to the shipper?`)) {
+      return;
+    }
+
+    const reason = action === 'DECLINE' ? prompt('Please enter optional decline rationale:', 'Capacity constraints / equipment repositioning') : '';
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/edi-gateway/tender/respond-990', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          tender_transaction_id: transactionId,
+          action: action,
+          decline_reason: reason || undefined
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        await loadEdiGatewayDesk();
+        openInspectEdiModal(data.edi_990_transaction.id);
+      } else {
+        alert(data.error || 'Failed to transmit EDI 990 response.');
+      }
+    } catch (e) {
+      alert('Network error sending EDI 990 response.');
+    }
+  }
+
+  // Inspect Modal
+  async function openInspectEdiModal(transactionId) {
+    document.getElementById('inspect-edi-sub').textContent = `Transaction ID: ${transactionId}`;
+    document.getElementById('inspect-raw-edi').textContent = 'Loading raw ANSI ASC X12 segments...';
+    document.getElementById('inspect-parsed-json').textContent = '{}';
+    document.getElementById('modal-inspect-edi').style.display = 'flex';
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/edi-gateway/transactions/${transactionId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.success && data.transaction) {
+        currentInspectTxn = data.transaction;
+        const t = data.transaction;
+        document.getElementById('inspect-type').textContent = `EDI ${t.transaction_type}`;
+        document.getElementById('inspect-dir').textContent = t.direction;
+        document.getElementById('inspect-control').textContent = t.control_number;
+        document.getElementById('inspect-partner').textContent = t.partner_name || t.trading_partner_id;
+
+        // Raw Segments formatted with newlines if separated by ~
+        const segmentsFormatted = (t.raw_edi_content || '').split('~').filter(s => s.trim()).map(s => s.trim() + '~').join('\n');
+        document.getElementById('inspect-raw-edi').textContent = segmentsFormatted || t.raw_edi_content;
+
+        document.getElementById('inspect-parsed-json').textContent = JSON.stringify(t.parsed_data || {}, null, 2);
+
+        document.getElementById('inspect-edi-download-container').innerHTML = `
+          <a href="/api/edi-gateway/transactions/${t.id}/download" target="_blank" class="btn btn-primary btn-sm">
+            📥 Download .EDI File (${t.control_number}.edi)
+          </a>
+        `;
+      } else {
+        document.getElementById('inspect-raw-edi').textContent = 'Error loading transaction details.';
+      }
+    } catch (e) {
+      document.getElementById('inspect-raw-edi').textContent = 'Network error fetching transaction.';
+    }
+  }
+
+  function closeInspectEdiModal() {
+    document.getElementById('modal-inspect-edi').style.display = 'none';
+  }
+
+  function copyRawEdiToClipboard() {
+    const raw = document.getElementById('inspect-raw-edi').textContent;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(raw).then(() => {
+        alert('ANSI ASC X12 segments copied to clipboard!');
+      });
+    } else {
+      alert('Clipboard access not supported in this browser.');
+    }
+  }
+
+  // Emit 214 Modal
+  function openEmit214Modal() {
+    document.getElementById('modal-emit-214').style.display = 'flex';
+  }
+
+  function closeEmit214Modal() {
+    document.getElementById('modal-emit-214').style.display = 'none';
+  }
+
+  async function submitEmit214() {
+    const partnerId = document.getElementById('emit-214-partner').value;
+    const shipmentId = document.getElementById('emit-214-shipment-id').value.trim();
+    const statusCode = document.getElementById('emit-214-status-code').value;
+    const city = document.getElementById('emit-214-city').value.trim();
+    const state = document.getElementById('emit-214-state').value.trim();
+    const note = document.getElementById('emit-214-note').value.trim();
+
+    const payload = {
+      trading_partner_id: partnerId,
+      shipment_id: shipmentId,
+      status_code: statusCode,
+      status_city: city,
+      status_state: state,
+      status_note: note
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/edi-gateway/milestone/send-214', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeEmit214Modal();
+        await loadEdiGatewayDesk();
+        openInspectEdiModal(data.transaction.id);
+      } else {
+        alert(data.error || 'Failed to transmit EDI 214 milestone.');
+      }
+    } catch (e) {
+      alert('Network error submitting EDI 214 milestone.');
+    }
+  }
+
+  // Generate 210 Modal
+  function openGenerate210Modal() {
+    document.getElementById('modal-generate-210').style.display = 'flex';
+    recalcEdi210Total();
+  }
+
+  function closeGenerate210Modal() {
+    document.getElementById('modal-generate-210').style.display = 'none';
+  }
+
+  function recalcEdi210Total() {
+    const linehaul = parseFloat(document.getElementById('gen-210-linehaul').value) || 0;
+    const fuel = parseFloat(document.getElementById('gen-210-fuel').value) || 0;
+    const acc = parseFloat(document.getElementById('gen-210-acc').value) || 0;
+    const total = linehaul + fuel + acc;
+    document.getElementById('gen-210-total-display').textContent = '$' + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' USD';
+  }
+
+  async function submitGenerate210() {
+    const partnerId = document.getElementById('gen-210-partner').value;
+    const shipmentId = document.getElementById('gen-210-shipment-id').value.trim();
+    const invNumber = document.getElementById('gen-210-inv-number').value.trim();
+    const linehaul = parseFloat(document.getElementById('gen-210-linehaul').value) || 0;
+    const fuel = parseFloat(document.getElementById('gen-210-fuel').value) || 0;
+    const acc = parseFloat(document.getElementById('gen-210-acc').value) || 0;
+
+    const payload = {
+      trading_partner_id: partnerId,
+      shipment_id: shipmentId,
+      invoice_number: invNumber,
+      linehaul_amount: linehaul,
+      fuel_surcharge: fuel,
+      accessorial_amount: acc
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/edi-gateway/invoice/send-210', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeGenerate210Modal();
+        await loadEdiGatewayDesk();
+        openInspectEdiModal(data.transaction.id);
+      } else {
+        alert(data.error || 'Failed to emit EDI 210 freight invoice.');
+      }
+    } catch (e) {
+      alert('Network error submitting EDI 210 invoice.');
+    }
   }
 </script>
 
