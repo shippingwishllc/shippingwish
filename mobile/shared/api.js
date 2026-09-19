@@ -465,6 +465,39 @@ class MobileApiClient {
   getDvirPdfUrl(dvirId) {
     return `${this.getBaseUrl()}/api/dvir/${dvirId}/pdf`;
   }
+
+  // --- Phase 15: FMCSA Part 391 Driver Qualification (DQ) Vault ---
+  async getDqFleetCompliance(filters = {}) {
+    const query = new URLSearchParams(filters).toString();
+    const endpoint = query ? `/api/dq/fleet?${query}` : '/api/dq/fleet';
+    return this.request(endpoint, { method: 'GET' });
+  }
+
+  async getDriverDqDetails(id) {
+    return this.request(`/api/dq/${id}`, { method: 'GET' });
+  }
+
+  async upsertDriverDqFile(dqData) {
+    return this.request('/api/dq/upsert', {
+      method: 'POST',
+      body: dqData
+    });
+  }
+
+  async renewDriverDqCredentials(id, renewalData) {
+    return this.request(`/api/dq/${id}/renew-credentials`, {
+      method: 'POST',
+      body: renewalData
+    });
+  }
+
+  async checkDriverDispatchEligibility(driverId) {
+    return this.request(`/api/dq/check-dispatch/${driverId}`, { method: 'GET' });
+  }
+
+  getDriverDqPdfUrl(id) {
+    return `${this.getBaseUrl()}/api/dq/${id}/pdf`;
+  }
 }
 
 export const api = new MobileApiClient();

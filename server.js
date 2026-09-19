@@ -128,6 +128,7 @@ app.use('/api/coi', require('./routes/coi-generator'));             // Instant O
 app.use('/api/eld', require('./routes/eld-compliance'));            // FMCSA 49 CFR Part 395 ELD Electronic Logbook & HOS Clocks
 app.use('/api/ifta-tax', require('./routes/ifta-tax'));            // Automated IFTA Fuel Tax Engine, State Mileage Breakdown & Filing PDFs
 app.use('/api/dvir', require('./routes/dvir-safety'));                // FMCSA 49 CFR Part 396 Driver Vehicle Inspection Report (DVIR) & Defect Sign-off
+app.use('/api/dq', require('./routes/driver-qualification'));        // FMCSA 49 CFR Part 391 Driver Qualification (DQ) Compliance Vault
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {
