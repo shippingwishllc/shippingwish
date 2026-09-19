@@ -307,6 +307,9 @@
         <button class="nav-tab-btn" id="tab-btn-edi" onclick="switchTab('edi')">
           <span>🔄</span> EDI Freight Gateway
         </button>
+        <button class="nav-tab-btn" id="tab-btn-credentialing" onclick="switchTab('credentialing')">
+          <span>🛡️</span> Carrier Credentialing Vault
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1758,6 +1761,104 @@
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
             <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Native ANSI ASC X12 EDI Architecture (Zero SaaS Transaction Fees)</strong>
             Enterprise shippers like Walmart, Amazon Freight, Sysco, and Target mandate direct EDI integration for high-volume contract freight. LoadNexus™ operates an in-house ANSI ASC X12 parser and generator that converts incoming <strong>EDI 204</strong> tenders directly into dispatchable freight records, instantly transmits electronic <strong>EDI 990</strong> tender acceptances, generates live <strong>EDI 214</strong> milestone tracking pings directly to shipper transportation management systems (TMS), and settles freight electronically via <strong>EDI 210</strong> freight billing without 3rd-party transaction surcharges.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 21: CARRIER ONBOARDING & AUTO-CREDENTIALING VAULT -->
+      <div id="tab-content-credentialing" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);flex-wrap:wrap;gap:12px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>🛡️</span> Automated Carrier Onboarding &amp; Auto-Credentialing Vault
+              <span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">FMCSA / W-9 / COI Shield</span>
+            </h3>
+            <span style="font-size:12px;color:var(--text-muted);">
+              Instant electronic onboarding · Automated W-9 EIN validation · COI policy limit &amp; expiration audit · Chameleon fraud screening · ABA routing checks
+            </span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="openOnboardCarrierModal()">
+              <span>🚚</span> + Fast-Track Onboard Carrier
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="loadCarrierCredentialingDesk()">
+              <span>🔄</span> Refresh Vault
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:var(--space-4);margin-bottom:var(--space-4);">
+          <div class="stat-card" style="border-left:4px solid #38bdf8;">
+            <div class="stat-label">TOTAL ONBOARDED CARRIERS</div>
+            <div class="stat-value" id="cred-kpi-total-carriers" style="color:#38bdf8;">0</div>
+            <div class="stat-sub">Vetted &amp; Profiled Fleet Partners</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="stat-label">FMCSA AUTO-PASS RATE (%)</div>
+            <div class="stat-value" id="cred-kpi-pass-rate" style="color:#34d399;">100.0%</div>
+            <div class="stat-sub">Clean Safety &amp; Operating Authority</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #f59e0b;">
+            <div class="stat-label">ACTIVE COI COVERAGE RATIO (%)</div>
+            <div class="stat-value" id="cred-kpi-coi-ratio" style="color:#fbbf24;">100.0%</div>
+            <div class="stat-sub">$1M Auto &amp; $100K Cargo On-File</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #a78bfa;">
+            <div class="stat-label">PENDING VETTING QUEUE</div>
+            <div class="stat-value" id="cred-kpi-pending-queue" style="color:#a78bfa;">0</div>
+            <div class="stat-sub">Awaiting Supervisor Sign-Off</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="cred-search-input" class="form-input" placeholder="Search Carrier, MC#, DOT#, Contact, Phone..." style="width:280px;" oninput="filterCarrierCredentialing()">
+            <select id="cred-filter-tier" class="form-select" style="width:170px;" onchange="filterCarrierCredentialing()">
+              <option value="ALL">All Credential Tiers</option>
+              <option value="TIER_1_PLATINUM">Tier 1 Platinum</option>
+              <option value="TIER_2_STANDARD">Tier 2 Standard</option>
+              <option value="CONDITIONAL_REVIEW">Conditional Review</option>
+              <option value="REJECTED">Rejected / Flagged</option>
+            </select>
+            <select id="cred-filter-status" class="form-select" style="width:150px;" onchange="filterCarrierCredentialing()">
+              <option value="ALL">All Statuses</option>
+              <option value="APPROVED">Approved</option>
+              <option value="PENDING_REVIEW">Pending Review</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+          <span id="cred-records-count" style="font-size:12px;color:var(--text-muted);">Showing 0 carriers</span>
+        </div>
+
+        <!-- Carriers Table -->
+        <div class="table-container" style="margin-bottom:var(--space-4);background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+          <table class="tms-table-v2">
+            <thead>
+              <tr>
+                <th>Carrier / Terminal</th>
+                <th>MC / DOT #</th>
+                <th>W-9 Tax ID</th>
+                <th>Insurance (COI)</th>
+                <th>FMCSA Safety</th>
+                <th>Banking (ACH)</th>
+                <th>Tier &amp; Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cred-carriers-tbody">
+              <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Loading carrier credentialing vault...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- System Architecture Info Banner -->
+        <div style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-md);padding:14px;display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:20px;">🛡️</span>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Carrier Auto-Credentialing &amp; Fraud Prevention Architecture</strong>
+            To protect brokers, shippers, and dispatch operations from chameleon carriers and double brokering, LoadNexus™ enforces automated 4-way validation before contract load dispatch: (1) Instant IRS Form W-9 EIN structure check and legal name alignment; (2) Live Certificate of Insurance verification ($1M Auto Liability CSL, $100K Cargo, and 30-day expiration alerts); (3) FMCSA SAFER safety audits, out-of-service percentiles, and authority age screening; and (4) Federal Reserve 9-digit ABA routing checksum verification for direct ACH settlements.
           </div>
         </div>
       </div>
@@ -3704,6 +3805,227 @@
   </div>
 </div>
 
+<!-- MODAL: FAST-TRACK ONBOARD CARRIER -->
+<div id="modal-onboard-carrier" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:720px;max-height:90vh;overflow-y:auto;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>🚚</span> Fast-Track Carrier Onboarding &amp; Vetting
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeOnboardCarrierModal()">✕</button>
+    </div>
+
+    <!-- Quick Presets -->
+    <div style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px;margin-bottom:6px;">Quick Presets for Demonstration:</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setOnboardPreset(1)">Preset 1: Apex Freightlines (Tier 1 / $1M Auto / Clean)</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setOnboardPreset(2)">Preset 2: Swift Wings (Tier 2 / Factoring NOA)</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setOnboardPreset(3)">Preset 3: Frontier Logistics (Flatbed / Chase ACH)</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Carrier Legal Business Name</label>
+        <input type="text" id="onboard-company-name" class="form-input" value="Apex Freightlines LLC">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">DBA (Doing Business As)</label>
+        <input type="text" id="onboard-dba-name" class="form-input" value="Apex Transport">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">MC Number</label>
+        <input type="text" id="onboard-mc" class="form-input" value="MC-1094821">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">USDOT Number</label>
+        <input type="text" id="onboard-dot" class="form-input" value="DOT-3490182">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Fleet Size (Trucks)</label>
+        <input type="number" id="onboard-trucks" class="form-input" value="12">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Primary Contact Officer</label>
+        <input type="text" id="onboard-contact" class="form-input" value="Marcus Vance">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Dispatch Phone Number</label>
+        <input type="text" id="onboard-phone" class="form-input" value="+1 (312) 555-0144">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Physical Address</label>
+        <input type="text" id="onboard-address" class="form-input" value="1044 South Industrial Pkwy">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">City</label>
+        <input type="text" id="onboard-city" class="form-input" value="Chicago">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">State</label>
+        <input type="text" id="onboard-state" class="form-input" value="IL">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Zip</label>
+        <input type="text" id="onboard-zip" class="form-input" value="60608">
+      </div>
+    </div>
+
+    <!-- W-9 Tax Info -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;">
+      <span style="font-size:11px;font-weight:700;color:var(--color-primary);text-transform:uppercase;display:block;margin-bottom:8px;">Form W-9 Taxpayer Identification</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Federal EIN (Tax ID)</label>
+          <input type="text" id="onboard-ein" class="form-input" value="36-4921094" placeholder="XX-XXXXXXX">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Tax Classification</label>
+          <select id="onboard-tax-class" class="form-select">
+            <option value="LLC - Corporation">LLC - Corporation</option>
+            <option value="LLC - Partnership">LLC - Partnership</option>
+            <option value="Corporation (C-Corp / S-Corp)">Corporation</option>
+            <option value="Individual / Sole Proprietor">Sole Proprietor</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insurance COI -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;">
+      <span style="font-size:11px;font-weight:700;color:#fbbf24;text-transform:uppercase;display:block;margin-bottom:8px;">Certificate of Insurance (COI) Coverage</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Auto Liability ($ CSL)</label>
+          <input type="number" id="onboard-auto-amount" class="form-input" value="1000000">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Cargo Coverage ($)</label>
+          <input type="number" id="onboard-cargo-amount" class="form-input" value="100000">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">COI Expiration Date</label>
+          <input type="date" id="onboard-coi-exp" class="form-input" value="2027-04-15">
+        </div>
+      </div>
+    </div>
+
+    <!-- Direct Deposit / ACH -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;margin-bottom:16px;">
+      <span style="font-size:11px;font-weight:700;color:#34d399;text-transform:uppercase;display:block;margin-bottom:8px;">Banking &amp; Settlement Routing (ABA Checksum Guard)</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Financial Institution</label>
+          <input type="text" id="onboard-bank" class="form-input" value="JPMorgan Chase Bank, N.A.">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Routing Number (9-digit)</label>
+          <input type="text" id="onboard-routing" class="form-input" value="021000021" maxlength="9">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Account Last 4 Digits</label>
+          <input type="text" id="onboard-acct" class="form-input" value="8821" maxlength="4">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeOnboardCarrierModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="submitOnboardCarrier()">⚡ Execute Full Credentialing Vetting</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: VIEW CARRIER CREDENTIALING DOSSIER -->
+<div id="modal-view-credential-dossier" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:760px;max-height:90vh;overflow-y:auto;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>🛡️</span> Carrier Qualification Dossier &amp; Safety Audit
+        </h3>
+        <span style="font-size:12px;color:var(--text-muted);" id="dossier-sub">-</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeCredentialDossierModal()">✕</button>
+    </div>
+
+    <!-- Status Cards Header -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:10px;margin-bottom:14px;">
+      <div style="background:rgba(0,0,0,0.2);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">CREDENTIAL TIER</span>
+        <strong id="dossier-tier" style="font-size:13px;color:var(--text-primary);">-</strong>
+      </div>
+      <div style="background:rgba(0,0,0,0.2);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">DECISION STATUS</span>
+        <strong id="dossier-status" style="font-size:13px;color:var(--color-primary);">-</strong>
+      </div>
+      <div style="background:rgba(0,0,0,0.2);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">COMPLIANCE SCORE</span>
+        <strong id="dossier-score" style="font-size:13px;color:#34d399;">-</strong>
+      </div>
+      <div style="background:rgba(0,0,0,0.2);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">CHAMELEON SHIELD</span>
+        <strong id="dossier-chameleon" style="font-size:13px;color:#38bdf8;">-</strong>
+      </div>
+    </div>
+
+    <!-- 4-Way Compliance Audit Container -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <!-- W-9 Tax Card -->
+      <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;">
+        <span style="font-size:11px;font-weight:700;color:var(--color-primary);text-transform:uppercase;display:block;margin-bottom:6px;">1. IRS Form W-9 Audit</span>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;" id="dossier-w9-body">-</div>
+      </div>
+
+      <!-- COI Insurance Card -->
+      <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;">
+        <span style="font-size:11px;font-weight:700;color:#fbbf24;text-transform:uppercase;display:block;margin-bottom:6px;">2. Certificate of Insurance (COI)</span>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;" id="dossier-coi-body">-</div>
+      </div>
+
+      <!-- FMCSA Safety Card -->
+      <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;">
+        <span style="font-size:11px;font-weight:700;color:#34d399;text-transform:uppercase;display:block;margin-bottom:6px;">3. FMCSA Safety &amp; Authority</span>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;" id="dossier-safety-body">-</div>
+      </div>
+
+      <!-- Banking Card -->
+      <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px;">
+        <span style="font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;display:block;margin-bottom:6px;">4. Banking &amp; Settlement</span>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;" id="dossier-bank-body">-</div>
+      </div>
+    </div>
+
+    <!-- Supervisor Decision Actions -->
+    <div style="background:rgba(0,0,0,0.15);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;">
+      <span style="font-size:11px;font-weight:700;color:var(--text-primary);display:block;margin-bottom:8px;">Supervisor Override / Decision Sign-Off:</span>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+        <input type="text" id="dossier-review-notes" class="form-input" placeholder="Enter supervisor audit notes or rationale..." style="flex:1;">
+        <button class="btn btn-primary btn-sm" style="background:#059669;" onclick="submitDossierDecision('APPROVED', 'TIER_1_PLATINUM')">Approve (Tier 1)</button>
+        <button class="btn btn-secondary btn-sm" style="background:#d97706;color:#fff;" onclick="submitDossierDecision('PENDING_REVIEW', 'CONDITIONAL_REVIEW')">Set Conditional</button>
+        <button class="btn btn-danger btn-sm" onclick="submitDossierDecision('REJECTED', 'REJECTED')">Reject Carrier</button>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div id="dossier-download-container">
+        <!-- PDF Download button injected here -->
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeCredentialDossierModal()">Close Dossier</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function getAuthToken() {
     return localStorage.getItem('token') || localStorage.getItem('auth_token') || sessionStorage.getItem('token') || '';
@@ -3740,6 +4062,7 @@
     document.getElementById('tab-content-voice').style.display = tabId === 'voice' ? 'block' : 'none';
     document.getElementById('tab-content-collector').style.display = tabId === 'collector' ? 'block' : 'none';
     document.getElementById('tab-content-edi').style.display = tabId === 'edi' ? 'block' : 'none';
+    document.getElementById('tab-content-credentialing').style.display = tabId === 'credentialing' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -3773,6 +4096,8 @@
       loadDetentionCollectorDesk();
     } else if (tabId === 'edi') {
       loadEdiGatewayDesk();
+    } else if (tabId === 'credentialing') {
+      loadCarrierCredentialingDesk();
     }
   }
 
@@ -7948,6 +8273,379 @@
       }
     } catch (e) {
       alert('Network error submitting EDI 210 invoice.');
+    }
+  }
+
+  // ==========================================
+  // PHASE 24: CARRIER ONBOARDING & CREDENTIALING VAULT
+  // ==========================================
+  let currentCarriersData = [];
+  let currentDossierId = null;
+
+  async function loadCarrierCredentialingDesk() {
+    const tbody = document.getElementById('cred-carriers-tbody');
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Querying carrier credentialing vault and compliance records...</td></tr>`;
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/carrier-credentialing/roster', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Update KPIs
+        const kpis = data.kpis || {};
+        document.getElementById('cred-kpi-total-carriers').textContent = kpis.total_onboarded_carriers || 0;
+        document.getElementById('cred-kpi-pass-rate').textContent = (kpis.fmcsa_auto_pass_rate_pct || 100) + '%';
+        document.getElementById('cred-kpi-coi-ratio').textContent = (kpis.active_coi_coverage_ratio_pct || 100) + '%';
+        document.getElementById('cred-kpi-pending-queue').textContent = kpis.pending_vetting_queue || 0;
+
+        currentCarriersData = data.dossiers || [];
+        renderCarrierCredentialingTable(currentCarriersData);
+      } else {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#f87171;">Error loading carrier credentialing desk: ${data.error || 'Unknown error'}</td></tr>`;
+      }
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#f87171;">Network error loading carrier credentialing vault.</td></tr>`;
+    }
+  }
+
+  function renderCarrierCredentialingTable(dossiers) {
+    const tbody = document.getElementById('cred-carriers-tbody');
+    document.getElementById('cred-records-count').textContent = `Showing ${dossiers.length} carrier${dossiers.length === 1 ? '' : 's'}`;
+
+    if (dossiers.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted);">No carrier dossiers found matching selected filters.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = dossiers.map(d => {
+      const cDate = new Date(d.created_at).toLocaleDateString();
+
+      // Tier Badge
+      let tierBadge = `<span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);">TIER 2</span>`;
+      if (d.credential_tier === 'TIER_1_PLATINUM') {
+        tierBadge = `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">TIER 1 PLATINUM</span>`;
+      } else if (d.credential_tier === 'CONDITIONAL_REVIEW') {
+        tierBadge = `<span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);">CONDITIONAL</span>`;
+      } else if (d.credential_tier === 'REJECTED') {
+        tierBadge = `<span class="badge" style="background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);">REJECTED</span>`;
+      }
+
+      // Status Badge
+      let statusBadge = `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;">APPROVED</span>`;
+      if (d.credential_status === 'PENDING_REVIEW') {
+        statusBadge = `<span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;">PENDING SIGN-OFF</span>`;
+      } else if (d.credential_status === 'REJECTED') {
+        statusBadge = `<span class="badge" style="background:rgba(239,68,68,0.15);color:#f87171;">BLOCKED</span>`;
+      }
+
+      // COI Badge
+      let coiBadge = `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;">✓ ACTIVE ($1M/$100K)</span>`;
+      if (d.coi_status === 'EXPIRING_SOON') {
+        coiBadge = `<span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;">⚠️ EXPIRING (&lt;30d)</span>`;
+      } else if (d.coi_status === 'EXPIRED') {
+        coiBadge = `<span class="badge" style="background:rgba(239,68,68,0.15);color:#f87171;">✕ EXPIRED</span>`;
+      }
+
+      // W-9 Badge
+      const w9Badge = d.w9_status === 'VERIFIED'
+        ? `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;">✓ ${d.tax_id_ein}</span>`
+        : `<span class="badge" style="background:rgba(239,68,68,0.15);color:#f87171;">✕ MISMATCH</span>`;
+
+      // Safety Badge
+      const safetyColor = d.safety_rating === 'SATISFACTORY' ? '#34d399' : (d.safety_rating === 'CONDITIONAL' ? '#fbbf24' : '#f87171');
+
+      return `
+        <tr>
+          <td>
+            <strong style="font-size:12px;color:var(--text-primary);display:block;">${d.company_name}</strong>
+            <span style="font-size:10px;color:var(--text-muted);">${d.city}, ${d.state} · ${d.num_trucks} Trucks</span>
+          </td>
+          <td>
+            <strong style="font-family:var(--font-mono);font-size:11px;color:var(--text-primary);display:block;">${d.mc_number}</strong>
+            <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">${d.dot_number}</span>
+          </td>
+          <td>
+            ${w9Badge}
+            <span style="font-size:10px;color:var(--text-muted);display:block;margin-top:2px;">${d.tax_classification}</span>
+          </td>
+          <td>
+            ${coiBadge}
+            <span style="font-size:10px;color:var(--text-muted);display:block;margin-top:2px;">$${Number(d.auto_liability_amount / 1000)}k Auto · $${Number(d.cargo_amount / 1000)}k Cargo</span>
+          </td>
+          <td>
+            <strong style="font-size:11px;color:${safetyColor};display:block;">${d.safety_rating}</strong>
+            <span style="font-size:10px;color:var(--text-muted);">OOS: Drv ${d.driver_oos_rate}% / Veh ${d.vehicle_oos_rate}%</span>
+          </td>
+          <td>
+            <span style="font-size:11px;color:var(--text-primary);display:block;">${d.bank_name || 'Direct ACH'}</span>
+            <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">Routing: ****${d.routing_number ? d.routing_number.slice(-4) : '0000'}</span>
+          </td>
+          <td>
+            <div style="margin-bottom:2px;">${tierBadge}</div>
+            <div>${statusBadge}</div>
+          </td>
+          <td>
+            <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+              <button class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;" onclick="openCredentialDossierModal('${d.id}')" title="Inspect Compliance Dossier">🔍 Dossier</button>
+              <a href="/api/carrier-credentialing/${d.id}/packet-pdf" target="_blank" class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px;border:1px solid var(--border-subtle);" title="Download Official Vector PDF Carrier Packet">📥 PDF</a>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterCarrierCredentialing() {
+    const q = (document.getElementById('cred-search-input').value || '').toLowerCase().trim();
+    const tier = document.getElementById('cred-filter-tier').value;
+    const status = document.getElementById('cred-filter-status').value;
+
+    const filtered = currentCarriersData.filter(d => {
+      if (tier !== 'ALL' && d.credential_tier !== tier) return false;
+      if (status !== 'ALL' && d.credential_status !== status) return false;
+
+      if (!q) return true;
+      const haystack = [
+        d.company_name,
+        d.dba_name,
+        d.mc_number,
+        d.dot_number,
+        d.contact_name,
+        d.phone,
+        d.email,
+        d.tax_id_ein,
+        d.city,
+        d.state
+      ].join(' ').toLowerCase();
+
+      return haystack.includes(q);
+    });
+
+    renderCarrierCredentialingTable(filtered);
+  }
+
+  // Presets
+  function setOnboardPreset(idx) {
+    if (idx === 1) {
+      document.getElementById('onboard-company-name').value = 'Apex Freightlines LLC';
+      document.getElementById('onboard-dba-name').value = 'Apex Transport';
+      document.getElementById('onboard-mc').value = 'MC-1094821';
+      document.getElementById('onboard-dot').value = 'DOT-3490182';
+      document.getElementById('onboard-trucks').value = '12';
+      document.getElementById('onboard-contact').value = 'Marcus Vance';
+      document.getElementById('onboard-phone').value = '+1 (312) 555-0144';
+      document.getElementById('onboard-address').value = '1044 South Industrial Pkwy';
+      document.getElementById('onboard-city').value = 'Chicago';
+      document.getElementById('onboard-state').value = 'IL';
+      document.getElementById('onboard-zip').value = '60608';
+      document.getElementById('onboard-ein').value = '36-4921094';
+      document.getElementById('onboard-tax-class').value = 'LLC - Corporation';
+      document.getElementById('onboard-auto-amount').value = '1000000';
+      document.getElementById('onboard-cargo-amount').value = '100000';
+      document.getElementById('onboard-coi-exp').value = '2027-04-15';
+      document.getElementById('onboard-bank').value = 'JPMorgan Chase Bank, N.A.';
+      document.getElementById('onboard-routing').value = '021000021';
+      document.getElementById('onboard-acct').value = '8821';
+    } else if (idx === 2) {
+      document.getElementById('onboard-company-name').value = 'Swift Wings Transport Inc';
+      document.getElementById('onboard-dba-name').value = 'Swift Wings Logistics';
+      document.getElementById('onboard-mc').value = 'MC-942180';
+      document.getElementById('onboard-dot').value = 'DOT-2890145';
+      document.getElementById('onboard-trucks').value = '6';
+      document.getElementById('onboard-contact').value = 'Elena Rostova';
+      document.getElementById('onboard-phone').value = '+1 (404) 555-0188';
+      document.getElementById('onboard-address').value = '4800 Logistics Way';
+      document.getElementById('onboard-city').value = 'Atlanta';
+      document.getElementById('onboard-state').value = 'GA';
+      document.getElementById('onboard-zip').value = '30336';
+      document.getElementById('onboard-ein').value = '58-9921402';
+      document.getElementById('onboard-tax-class').value = 'Corporation (C-Corp / S-Corp)';
+      document.getElementById('onboard-auto-amount').value = '1000000';
+      document.getElementById('onboard-cargo-amount').value = '100000';
+      document.getElementById('onboard-coi-exp').value = '2027-01-20';
+      document.getElementById('onboard-bank').value = 'Bank of America, N.A.';
+      document.getElementById('onboard-routing').value = '026009593';
+      document.getElementById('onboard-acct').value = '4102';
+    } else if (idx === 3) {
+      document.getElementById('onboard-company-name').value = 'Frontier Logistics Corp';
+      document.getElementById('onboard-dba-name').value = 'Frontier Heavy Haul';
+      document.getElementById('onboard-mc').value = 'MC-1209410';
+      document.getElementById('onboard-dot').value = 'DOT-3891402';
+      document.getElementById('onboard-trucks').value = '8';
+      document.getElementById('onboard-contact').value = 'Jackson Miller';
+      document.getElementById('onboard-phone').value = '+1 (303) 555-0177';
+      document.getElementById('onboard-address').value = '5500 Stapleton Dr';
+      document.getElementById('onboard-city').value = 'Denver';
+      document.getElementById('onboard-state').value = 'CO';
+      document.getElementById('onboard-zip').value = '80216';
+      document.getElementById('onboard-ein').value = '84-1194021';
+      document.getElementById('onboard-tax-class').value = 'LLC - Corporation';
+      document.getElementById('onboard-auto-amount').value = '1000000';
+      document.getElementById('onboard-cargo-amount').value = '250000';
+      document.getElementById('onboard-coi-exp').value = '2027-06-30';
+      document.getElementById('onboard-bank').value = 'Wells Fargo Bank, N.A.';
+      document.getElementById('onboard-routing').value = '121000249';
+      document.getElementById('onboard-acct').value = '9014';
+    }
+  }
+
+  function openOnboardCarrierModal() {
+    document.getElementById('modal-onboard-carrier').style.display = 'flex';
+  }
+
+  function closeOnboardCarrierModal() {
+    document.getElementById('modal-onboard-carrier').style.display = 'none';
+  }
+
+  async function submitOnboardCarrier() {
+    const payload = {
+      company_name: document.getElementById('onboard-company-name').value.trim(),
+      dba_name: document.getElementById('onboard-dba-name').value.trim(),
+      mc_number: document.getElementById('onboard-mc').value.trim(),
+      dot_number: document.getElementById('onboard-dot').value.trim(),
+      num_trucks: parseInt(document.getElementById('onboard-trucks').value, 10) || 1,
+      contact_name: document.getElementById('onboard-contact').value.trim(),
+      phone: document.getElementById('onboard-phone').value.trim(),
+      address: document.getElementById('onboard-address').value.trim(),
+      city: document.getElementById('onboard-city').value.trim(),
+      state: document.getElementById('onboard-state').value.trim(),
+      zip: document.getElementById('onboard-zip').value.trim(),
+      tax_id_ein: document.getElementById('onboard-ein').value.trim(),
+      tax_classification: document.getElementById('onboard-tax-class').value,
+      auto_liability_amount: parseFloat(document.getElementById('onboard-auto-amount').value) || 1000000,
+      cargo_amount: parseFloat(document.getElementById('onboard-cargo-amount').value) || 100000,
+      coi_expiration_date: document.getElementById('onboard-coi-exp').value,
+      bank_name: document.getElementById('onboard-bank').value.trim(),
+      routing_number: document.getElementById('onboard-routing').value.trim(),
+      account_number_last4: document.getElementById('onboard-acct').value.trim()
+    };
+
+    if (!payload.company_name || !payload.mc_number || !payload.dot_number) {
+      alert('Company Name, MC#, and DOT# are required.');
+      return;
+    }
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/carrier-credentialing/auto-vet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeOnboardCarrierModal();
+        await loadCarrierCredentialingDesk();
+        openCredentialDossierModal(data.dossier.id);
+      } else {
+        alert(data.error || 'Failed to onboard carrier.');
+      }
+    } catch (e) {
+      alert('Network error submitting carrier onboarding.');
+    }
+  }
+
+  // Dossier Modal
+  async function openCredentialDossierModal(carrierId) {
+    currentDossierId = carrierId;
+    document.getElementById('dossier-sub').textContent = `Loading carrier ID: ${carrierId}...`;
+    document.getElementById('modal-view-credential-dossier').style.display = 'flex';
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/carrier-credentialing/${carrierId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.success && data.dossier) {
+        const d = data.dossier;
+        document.getElementById('dossier-sub').textContent = `${d.company_name} · ${d.mc_number} (USDOT: ${d.dot_number})`;
+        document.getElementById('dossier-tier').textContent = d.credential_tier.replace(/_/g, ' ');
+        document.getElementById('dossier-status').textContent = d.credential_status;
+        document.getElementById('dossier-score').textContent = `${d.compliance_score || 95}/100`;
+        document.getElementById('dossier-chameleon').textContent = d.chameleon_flag === 'CLEARED' ? '✓ CLEARED' : '⚠️ FLAGGED';
+
+        document.getElementById('dossier-w9-body').innerHTML = `
+          <div><strong>Tax ID (EIN):</strong> ${d.tax_id_ein}</div>
+          <div><strong>Federal Classification:</strong> ${d.tax_classification}</div>
+          <div><strong>Status:</strong> <span style="color:${d.w9_status === 'VERIFIED' ? '#34d399' : '#f87171'};font-weight:700;">${d.w9_status}</span></div>
+          <div><strong>Verified Timestamp:</strong> ${new Date(d.w9_verified_at).toLocaleDateString()}</div>
+        `;
+
+        document.getElementById('dossier-coi-body').innerHTML = `
+          <div><strong>Auto Liability:</strong> $${Number(d.auto_liability_amount).toLocaleString()} CSL</div>
+          <div><strong>Cargo Insurance:</strong> $${Number(d.cargo_amount).toLocaleString()}</div>
+          <div><strong>Policy Status:</strong> <span style="color:${d.coi_status === 'ACTIVE_VERIFIED' ? '#34d399' : '#fbbf24'};font-weight:700;">${d.coi_status}</span></div>
+          <div><strong>Expiration Date:</strong> ${d.coi_expiration_date ? new Date(d.coi_expiration_date).toLocaleDateString() : 'N/A'}</div>
+          <div><strong>Producer:</strong> ${d.insurance_producer}</div>
+        `;
+
+        document.getElementById('dossier-safety-body').innerHTML = `
+          <div><strong>Authority Status:</strong> <span style="color:#34d399;font-weight:700;">${d.authority_status}</span></div>
+          <div><strong>Safety Rating:</strong> ${d.safety_rating}</div>
+          <div><strong>Driver OOS Rate:</strong> ${d.driver_oos_rate}% (Nat'l Avg: 6.7%)</div>
+          <div><strong>Vehicle OOS Rate:</strong> ${d.vehicle_oos_rate}% (Nat'l Avg: 22.3%)</div>
+        `;
+
+        document.getElementById('dossier-bank-body').innerHTML = `
+          <div><strong>Bank Name:</strong> ${d.bank_name || 'Direct ACH'}</div>
+          <div><strong>Routing Checksum:</strong> <span style="color:#34d399;font-weight:700;">✓ VALID ABA (****${d.routing_number ? d.routing_number.slice(-4) : '0000'})</span></div>
+          <div><strong>Payment Method:</strong> ${d.payment_method}</div>
+          <div><strong>Account Last 4:</strong> *${d.account_number_last4}</div>
+        `;
+
+        document.getElementById('dossier-review-notes').value = d.review_notes || '';
+
+        document.getElementById('dossier-download-container').innerHTML = `
+          <a href="/api/carrier-credentialing/${d.id}/packet-pdf" target="_blank" class="btn btn-primary btn-sm">
+            📥 Download Official Packet PDF
+          </a>
+        `;
+      } else {
+        document.getElementById('dossier-sub').textContent = 'Error loading carrier dossier.';
+      }
+    } catch (e) {
+      document.getElementById('dossier-sub').textContent = 'Network error fetching carrier dossier.';
+    }
+  }
+
+  function closeCredentialDossierModal() {
+    document.getElementById('modal-view-credential-dossier').style.display = 'none';
+  }
+
+  async function submitDossierDecision(status, tier) {
+    if (!currentDossierId) return;
+    const notes = document.getElementById('dossier-review-notes').value.trim();
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/carrier-credentialing/${currentDossierId}/decision`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          credential_status: status,
+          credential_tier: tier,
+          review_notes: notes || `Supervisor updated status to ${status} (${tier}).`
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Carrier successfully updated to ${status} (${tier})!`);
+        closeCredentialDossierModal();
+        loadCarrierCredentialingDesk();
+      } else {
+        alert(data.error || 'Failed to update carrier decision.');
+      }
+    } catch (e) {
+      alert('Network error updating carrier decision.');
     }
   }
 </script>

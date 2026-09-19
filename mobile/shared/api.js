@@ -768,6 +768,47 @@ class MobileApiClient {
   getEdiDownloadUrl(transactionId) {
     return `${this.getBaseUrl()}/api/edi-gateway/transactions/${transactionId}/download`;
   }
+
+  // --- Phase 24: Automated Carrier Onboarding & W-9/COI/FMCSA Auto-Credentialing ---
+  async getCarrierCredentialingRoster() {
+    return this.request('/api/carrier-credentialing/roster', { method: 'GET' });
+  }
+
+  async runCarrierAutoVetting(carrierData) {
+    return this.request('/api/carrier-credentialing/auto-vet', {
+      method: 'POST',
+      body: carrierData
+    });
+  }
+
+  async validateCarrierW9(w9Data) {
+    return this.request('/api/carrier-credentialing/validate-w9', {
+      method: 'POST',
+      body: w9Data
+    });
+  }
+
+  async verifyCarrierCoi(coiData) {
+    return this.request('/api/carrier-credentialing/verify-coi', {
+      method: 'POST',
+      body: coiData
+    });
+  }
+
+  async submitCarrierCredentialDecision(carrierId, decisionData) {
+    return this.request(`/api/carrier-credentialing/${carrierId}/decision`, {
+      method: 'POST',
+      body: decisionData
+    });
+  }
+
+  async getCarrierCredentialDossier(carrierId) {
+    return this.request(`/api/carrier-credentialing/${carrierId}`, { method: 'GET' });
+  }
+
+  getCarrierCredentialPacketPdfUrl(carrierId) {
+    return `${this.getBaseUrl()}/api/carrier-credentialing/${carrierId}/packet-pdf`;
+  }
 }
 
 export const api = new MobileApiClient();

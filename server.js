@@ -137,6 +137,7 @@ app.use('/api/shipper-contracts', require('./routes/shipper-contracts')); // Shi
 app.use('/api/dispatch-voice', require('./routes/dispatch-voice'));     // Autonomous AI Dispatch Voice Agent & Automated Driver Check-Call Bot
 app.use('/api/detention-collector', require('./routes/detention-collector')); // Automated Detention Fee Collector & Shipper Invoicing Engine
 app.use('/api/edi-gateway', require('./routes/edi-gateway'));              // Automated EDI (Electronic Data Interchange) 204, 214, 990 & 210 Freight Transaction Gateway
+app.use('/api/carrier-credentialing', require('./routes/carrier-credentialing')); // Automated Carrier Onboarding & W-9/COI/FMCSA Auto-Credentialing Engine
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {
