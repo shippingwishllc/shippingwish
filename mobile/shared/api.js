@@ -809,6 +809,44 @@ class MobileApiClient {
   getCarrierCredentialPacketPdfUrl(carrierId) {
     return `${this.getBaseUrl()}/api/carrier-credentialing/${carrierId}/packet-pdf`;
   }
+
+  // --- Phase 25: Broker BMC-84 Surety Bond Watchdog & 30-Day Claim Generator ---
+  async getBondWatchdogRoster() {
+    return this.request('/api/bond-watchdog/roster', { method: 'GET' });
+  }
+
+  async lookupBrokerBond(mcOrDot) {
+    return this.request(`/api/bond-watchdog/lookup/${encodeURIComponent(mcOrDot)}`, { method: 'GET' });
+  }
+
+  async checkBrokerBondRisk(mcNumber, loadRate) {
+    return this.request('/api/bond-watchdog/check-risk', {
+      method: 'POST',
+      body: { mc_number: mcNumber, load_rate: loadRate }
+    });
+  }
+
+  async fileSuretyBondClaim(claimData) {
+    return this.request('/api/bond-watchdog/claims/file', {
+      method: 'POST',
+      body: claimData
+    });
+  }
+
+  async updateSuretyClaimStatus(claimId, statusData) {
+    return this.request(`/api/bond-watchdog/claims/${claimId}/status`, {
+      method: 'POST',
+      body: statusData
+    });
+  }
+
+  async getSuretyClaimDetails(claimId) {
+    return this.request(`/api/bond-watchdog/claims/${claimId}`, { method: 'GET' });
+  }
+
+  getSuretyClaimPacketPdfUrl(claimId) {
+    return `${this.getBaseUrl()}/api/bond-watchdog/claims/${claimId}/packet-pdf`;
+  }
 }
 
 export const api = new MobileApiClient();

@@ -310,6 +310,9 @@
         <button class="nav-tab-btn" id="tab-btn-credentialing" onclick="switchTab('credentialing')">
           <span>🛡️</span> Carrier Credentialing Vault
         </button>
+        <button class="nav-tab-btn" id="tab-btn-bond-watchdog" onclick="switchTab('bond-watchdog')">
+          <span>🏛️</span> Broker BMC-84 Bond Watchdog
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1859,6 +1862,140 @@
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
             <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Carrier Auto-Credentialing &amp; Fraud Prevention Architecture</strong>
             To protect brokers, shippers, and dispatch operations from chameleon carriers and double brokering, LoadNexus™ enforces automated 4-way validation before contract load dispatch: (1) Instant IRS Form W-9 EIN structure check and legal name alignment; (2) Live Certificate of Insurance verification ($1M Auto Liability CSL, $100K Cargo, and 30-day expiration alerts); (3) FMCSA SAFER safety audits, out-of-service percentiles, and authority age screening; and (4) Federal Reserve 9-digit ABA routing checksum verification for direct ACH settlements.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 22: BROKER BMC-84 SURETY BOND WATCHDOG & DEFAULT CLAIMS -->
+      <div id="tab-content-bond-watchdog" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);flex-wrap:wrap;gap:12px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>🏛️</span> Broker BMC-84 Surety Bond Watchdog &amp; Default Claim Generator
+              <span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);">49 U.S.C. § 13906 / $75K Shield</span>
+            </h3>
+            <span style="font-size:12px;color:var(--text-muted);">
+              Real-time FMCSA surety bond tracking · 30-day cancellation countdown alerts · Dynamic $75,000 bond capacity math · Automated statutory default claims
+            </span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openBondLookupModal()">
+              <span>🔍</span> Check Broker Clearance
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="openFileBondClaimModal()">
+              <span>⚖️</span> + File Surety Default Claim
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="loadBondWatchdogDesk()">
+              <span>🔄</span> Refresh Watchdog
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:var(--space-4);margin-bottom:var(--space-4);">
+          <div class="stat-card" style="border-left:4px solid #38bdf8;">
+            <div class="stat-label">MONITORED BROKER BONDS</div>
+            <div class="stat-value" id="bond-kpi-total-bonds" style="color:#38bdf8;">0</div>
+            <div class="stat-sub">Active $75K BMC-84 &amp; BMC-85 Instruments</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #ef4444;">
+            <div class="stat-label">30-DAY CANCELLATION ALERTS</div>
+            <div class="stat-value" id="bond-kpi-cancellation-alerts" style="color:#f87171;">0</div>
+            <div class="stat-sub">Sureties with Pending Revocation</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #f59e0b;">
+            <div class="stat-label">ACTIVE CLAIMS IN RECOVERY ($)</div>
+            <div class="stat-value" id="bond-kpi-claims-amount" style="color:#fbbf24;">$0.00</div>
+            <div class="stat-sub">Filed Unpaid Carrier Principal</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="stat-label">SURETY RECOVERY RATE (%)</div>
+            <div class="stat-value" id="bond-kpi-recovery-rate" style="color:#34d399;">100.0%</div>
+            <div class="stat-sub">Disbursed Settlements to Carriers</div>
+          </div>
+        </div>
+
+        <!-- Section 1: Monitored Broker BMC-84 Bonds Radar -->
+        <div style="margin-bottom:var(--space-4);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="bond-search-input" class="form-input" placeholder="Search Broker Name, MC#, DOT#, Surety..." style="width:260px;" oninput="filterBondWatchdog()">
+              <select id="bond-filter-tier" class="form-select" style="width:180px;" onchange="filterBondWatchdog()">
+                <option value="ALL">All Risk Classifications</option>
+                <option value="LOW_RISK">Low Risk (Cleared)</option>
+                <option value="ELEVATED_WATCH">Elevated Watch (Claims Pending)</option>
+                <option value="CRITICAL_CANCELLATION">Critical (30-Day Notice)</option>
+                <option value="INSOLVENT_REVOKED">Insolvent / Revoked</option>
+              </select>
+              <select id="bond-filter-status" class="form-select" style="width:160px;" onchange="filterBondWatchdog()">
+                <option value="ALL">All Bond Statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="PENDING_CANCELLATION">Pending Cancellation</option>
+                <option value="REVOKED_CANCELED">Revoked / Canceled</option>
+              </select>
+            </div>
+            <span id="bond-records-count" style="font-size:12px;color:var(--text-muted);">Showing 0 broker bonds</span>
+          </div>
+
+          <div class="table-container" style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Broker / Entity</th>
+                  <th>MC / DOT #</th>
+                  <th>Surety Underwriter &amp; Policy #</th>
+                  <th>30-Day Cancellation Status</th>
+                  <th>$75K Capacity &amp; Claims</th>
+                  <th>Risk Tier &amp; Clearance</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bond-bonds-tbody">
+                <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">Loading BMC-84 surety bond directory...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 2: Active Claims Recovery Queue -->
+        <div style="margin-bottom:var(--space-4);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);">
+            <div>
+              <h4 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+                <span>⚖️</span> Active 49 U.S.C. § 13906 Surety Default Claims &amp; Demand Packets
+              </h4>
+              <span style="font-size:11px;color:var(--text-muted);">Itemized claims filed directly against broker sureties with full RateCon &amp; POD evidence</span>
+            </div>
+            <span id="bond-claims-count" style="font-size:12px;color:var(--text-muted);">0 claims on file</span>
+          </div>
+
+          <div class="table-container" style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Claim Ref &amp; Date</th>
+                  <th>Debtor Broker (MC)</th>
+                  <th>Claimant Carrier (MC / TIN)</th>
+                  <th>Load &amp; Corridor</th>
+                  <th>Aging &amp; Overdue</th>
+                  <th>Principal Claim ($)</th>
+                  <th>Surety Disposition</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bond-claims-tbody">
+                <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Loading active surety default claims...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Statutory Notice Banner -->
+        <div style="background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-md);padding:14px;display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:20px;">🏛️</span>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">Federal Broker Financial Security Statute (49 U.S.C. § 13906 &amp; MAP-21)</strong>
+            Under federal transportation law, every licensed property freight broker must maintain a financial security instrument of at least $75,000 (Form BMC-84 Surety Bond or BMC-85 Trust Fund). When a surety issues a cancellation notice, a statutory 30-day countdown begins before operating authority revocation. If a broker fails to remit payment for transportation services rendered within 30 days of invoicing, motor carriers possess direct legal standing to demand indemnification against the surety company. LoadNexus™ auto-compiles the mandatory statutory evidentiary packet (executed RateCon, signed consignee POD, itemized carrier invoice, and demand affidavit) to guarantee priority recovery before bond capacity is depleted.
           </div>
         </div>
       </div>
@@ -4026,6 +4163,236 @@
   </div>
 </div>
 
+<!-- MODAL: BROKER BOND LOOKUP & PRE-BOOKING CLEARANCE -->
+<div id="modal-bond-lookup" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:560px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>🔍</span> Broker BMC-84 Bond Clearance Check
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeBondLookupModal()">✕</button>
+    </div>
+
+    <p style="font-size:12px;color:var(--text-secondary);margin-top:0;margin-bottom:16px;">
+      Perform real-time FMCSA BMC-84 surety bond vetting before booking or dispatching a load. Verifies 30-day cancellation countdown and remaining capacity.
+    </p>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Broker Identifier (MC#, DOT#, or Company Name) *</label>
+        <input type="text" id="lookup-mc-input" class="form-input" placeholder="e.g. MC-149021 or CH Robinson" value="MC-149021">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Load Rate ($ USD)</label>
+        <input type="number" id="lookup-rate-input" class="form-input" placeholder="e.g. 3500.00" value="3500.00">
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;margin-bottom:16px;" onclick="executeBondLookup()">
+      <span>⚡</span> Check Clearance &amp; Bond Capacity
+    </button>
+
+    <!-- Results Panel -->
+    <div id="lookup-result-panel" style="display:none;background:var(--surface-muted);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;">
+      <div id="lookup-result-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <strong id="lookup-result-broker" style="font-size:13px;color:var(--text-primary);">Broker Name</strong>
+        <span id="lookup-result-badge" class="badge">CLEARED</span>
+      </div>
+      <div id="lookup-result-details" style="font-size:11.5px;color:var(--text-secondary);line-height:1.7;">
+        <!-- Details populated by JS -->
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeBondLookupModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: FILE 49 U.S.C. § 13906 SURETY BOND CLAIM -->
+<div id="modal-file-bond-claim" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:680px;padding:var(--space-6);box-shadow:var(--shadow-xl);margin:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>⚖️</span> File Formal BMC-84 Surety Bond Default Claim
+        </h3>
+        <span style="font-size:11px;color:var(--text-muted);">Statutory demand against debtor broker's $75,000 surety bond under 49 U.S.C. § 13906</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeFileBondClaimModal()">✕</button>
+    </div>
+
+    <form id="file-bond-claim-form" onsubmit="submitFileBondClaim(event)">
+      <!-- 1. Debtor Broker Selection -->
+      <div style="background:var(--surface-muted);padding:12px;border-radius:var(--radius-md);margin-bottom:14px;border:1px solid var(--border-subtle);">
+        <strong style="font-size:12px;color:var(--text-primary);display:block;margin-bottom:8px;">1. Debtor Broker of Record</strong>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Select Delinquent Broker *</label>
+          <select id="claim-broker-id" class="form-select" required style="width:100%;">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <!-- 2. Transportation & Freight Details -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Load Confirmation # *</label>
+          <input type="text" id="claim-load-number" class="form-input" placeholder="e.g. LN-94012" value="LN-94012" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Origin Terminal *</label>
+          <input type="text" id="claim-origin" class="form-input" placeholder="e.g. Chicago, IL" value="Chicago, IL" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Destination Terminal *</label>
+          <input type="text" id="claim-dest" class="form-input" placeholder="e.g. Dallas, TX" value="Dallas, TX" required>
+        </div>
+      </div>
+
+      <!-- 3. Carrier Invoice & Default Amount -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Carrier Invoice # *</label>
+          <input type="text" id="claim-inv-num" class="form-input" placeholder="e.g. INV-94012-A" value="INV-94012-A" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Principal Rate ($ USD) *</label>
+          <input type="number" step="0.01" id="claim-rate-amount" class="form-input" placeholder="3200.00" value="3200.00" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Days Past Due (Aging) *</label>
+          <input type="number" id="claim-days-overdue" class="form-input" placeholder="35" value="38" required>
+        </div>
+      </div>
+
+      <!-- 4. Claimant Motor Carrier Entity -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Claimant Carrier Name</label>
+          <input type="text" id="claim-carrier-name" class="form-input" value="Shipping Wish Hauling LLC" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Carrier MC / DOT #</label>
+          <input type="text" id="claim-carrier-mc" class="form-input" value="MC-109482 · DOT-349018" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Carrier Tax ID (EIN)</label>
+          <input type="text" id="claim-carrier-tin" class="form-input" value="36-4921094" required>
+        </div>
+      </div>
+
+      <!-- 5. Evidentiary Document Verification -->
+      <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);padding:12px;border-radius:var(--radius-md);margin-bottom:14px;">
+        <strong style="font-size:11.5px;color:var(--text-primary);display:block;margin-bottom:6px;">Evidentiary Checklist (Statutory Proof of Service)</strong>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" id="claim-chk-ratecon" checked> Signed Broker Rate Confirmation
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" id="claim-chk-pod" checked> Signed Consignee POD (Clean Receipt)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" id="claim-chk-invoice" checked> Original Carrier Freight Invoice
+          </label>
+        </div>
+      </div>
+
+      <!-- 6. Demand Statement -->
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label" style="font-size:11px;">Claimant Statement / Demand Notes</label>
+        <textarea id="claim-demand-notes" class="form-input" rows="2" style="font-size:11px;resize:none;">Transportation services completed in full accordance with rate agreement. Debtor broker failed to remit settlement within 30 days of invoicing.</textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeFileBondClaimModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-bond-claim">
+          <span>🏛️</span> Submit Formal Claim &amp; Generate Demand Packet
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: VIEW SURETY CLAIM DOSSIER & PDF DISPATCH -->
+<div id="modal-view-claim-dossier" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:720px;padding:var(--space-6);box-shadow:var(--shadow-xl);margin:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 id="dossier-claim-code-header" style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>⚖️</span> BMC-84 Surety Default Claim Dossier
+        </h3>
+        <span id="dossier-claim-sub-header" style="font-size:11px;color:var(--text-muted);">49 U.S.C. § 13906 Statutory Evidentiary Record</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeClaimDossierModal()">✕</button>
+    </div>
+
+    <!-- Cryptographic Demand Seal -->
+    <div style="background:#0f172a;border-radius:var(--radius-md);padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;display:block;">Cryptographic Demand Integrity Hash</span>
+        <code id="dossier-claim-hash" style="color:#38bdf8;font-size:11px;font-family:monospace;">HASH-VERIFYING...</code>
+      </div>
+      <span id="dossier-claim-status-pill" class="badge" style="background:#f59e0b;color:#000;">SUBMITTED</span>
+    </div>
+
+    <!-- 4-Way Compliance Audit Grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div style="background:var(--surface-muted);padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:11.5px;">
+        <strong style="color:var(--text-primary);display:block;margin-bottom:6px;">Debtor Broker Information</strong>
+        <div id="dossier-claim-broker-info" style="color:var(--text-secondary);line-height:1.6;"></div>
+      </div>
+      <div style="background:var(--surface-muted);padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:11.5px;">
+        <strong style="color:var(--text-primary);display:block;margin-bottom:6px;">Surety Underwriter Particulars</strong>
+        <div id="dossier-claim-surety-info" style="color:var(--text-secondary);line-height:1.6;"></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div style="background:var(--surface-muted);padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:11.5px;">
+        <strong style="color:var(--text-primary);display:block;margin-bottom:6px;">Freight Service &amp; Default Amount</strong>
+        <div id="dossier-claim-freight-info" style="color:var(--text-secondary);line-height:1.6;"></div>
+      </div>
+      <div style="background:var(--surface-muted);padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:11.5px;">
+        <strong style="color:var(--text-primary);display:block;margin-bottom:6px;">Statutory Evidentiary Validation</strong>
+        <div id="dossier-claim-evidence-info" style="color:var(--text-secondary);line-height:1.6;"></div>
+      </div>
+    </div>
+
+    <!-- Supervisor Disposition & Settlement Update -->
+    <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:var(--radius-md);padding:12px;margin-bottom:16px;">
+      <strong style="font-size:11.5px;color:var(--text-primary);display:block;margin-bottom:8px;">Surety Adjudication &amp; Settlement Override</strong>
+      <div style="display:grid;grid-template-columns:1.5fr 1fr auto;gap:10px;align-items:flex-end;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">Adjudication Disposition</label>
+          <select id="dossier-status-select" class="form-select" style="font-size:11px;">
+            <option value="SUBMITTED_TO_SURETY">Submitted to Surety</option>
+            <option value="UNDER_INVESTIGATION">Under Surety Investigation</option>
+            <option value="PAYMENT_APPROVED">Payment Approved by Surety</option>
+            <option value="SETTLED_PAID">Settled / Paid in Full</option>
+            <option value="REJECTED">Claim Rejected by Underwriter</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">Settlement Amount ($ USD)</label>
+          <input type="number" step="0.01" id="dossier-settlement-amt" class="form-input" placeholder="0.00" style="font-size:11px;">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="submitClaimStatusUpdate()" style="height:35px;">
+          Update Status
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer Controls -->
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div id="claim-pdf-container">
+        <!-- PDF download button injected here -->
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeClaimDossierModal()">Close Dossier</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function getAuthToken() {
     return localStorage.getItem('token') || localStorage.getItem('auth_token') || sessionStorage.getItem('token') || '';
@@ -4063,6 +4430,7 @@
     document.getElementById('tab-content-collector').style.display = tabId === 'collector' ? 'block' : 'none';
     document.getElementById('tab-content-edi').style.display = tabId === 'edi' ? 'block' : 'none';
     document.getElementById('tab-content-credentialing').style.display = tabId === 'credentialing' ? 'block' : 'none';
+    document.getElementById('tab-content-bond-watchdog').style.display = tabId === 'bond-watchdog' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -4098,6 +4466,8 @@
       loadEdiGatewayDesk();
     } else if (tabId === 'credentialing') {
       loadCarrierCredentialingDesk();
+    } else if (tabId === 'bond-watchdog') {
+      loadBondWatchdogDesk();
     }
   }
 
@@ -8646,6 +9016,455 @@
       }
     } catch (e) {
       alert('Network error updating carrier decision.');
+    }
+  }
+
+  // =========================================================================
+  // PHASE 25: BROKER BMC-84 SURETY BOND WATCHDOG & DEFAULT CLAIMS JAVASCRIPT
+  // =========================================================================
+  let bondWatchdogBonds = [];
+  let bondWatchdogClaims = [];
+  let currentClaimDossierId = null;
+
+  async function loadBondWatchdogDesk() {
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/bond-watchdog/roster', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error('Failed to load bond watchdog roster:', data.error);
+        return;
+      }
+
+      // 1. Populate KPI Cards
+      const kpis = data.kpis || {};
+      document.getElementById('bond-kpi-total-bonds').textContent = kpis.monitored_broker_bonds || 0;
+      document.getElementById('bond-kpi-cancellation-alerts').textContent = kpis.bonds_under_cancellation_notice || 0;
+      document.getElementById('bond-kpi-claims-amount').textContent = `$${(kpis.active_surety_claims_amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('bond-kpi-recovery-rate').textContent = `${kpis.surety_claim_recovery_rate_pct || 100.0}%`;
+
+      bondWatchdogBonds = data.bonds || [];
+      bondWatchdogClaims = data.claims || [];
+
+      // 2. Render Tables
+      renderBondWatchdogTable(bondWatchdogBonds);
+      renderBondClaimsTable(bondWatchdogClaims);
+
+      // 3. Populate Broker dropdown in File Claim modal
+      const brokerSelect = document.getElementById('claim-broker-id');
+      if (brokerSelect) {
+        brokerSelect.innerHTML = bondWatchdogBonds.map(b => 
+          `<option value="${b.id}">${b.company_name} (${b.mc_number}) - ${b.surety_name} (Bond #${b.bond_policy_number})</option>`
+        ).join('');
+      }
+    } catch (err) {
+      console.error('Error fetching bond watchdog roster:', err);
+    }
+  }
+
+  function renderBondWatchdogTable(bonds) {
+    const tbody = document.getElementById('bond-bonds-tbody');
+    const countSpan = document.getElementById('bond-records-count');
+    if (countSpan) countSpan.textContent = `Showing ${bonds.length} broker bonds`;
+
+    if (!bonds || bonds.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">No broker bond records found matching filters.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = bonds.map(b => {
+      // 30-Day Cancellation Badge
+      let countdownHtml = '';
+      if (b.bond_status === 'REVOKED_CANCELED') {
+        countdownHtml = '<span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);">REVOKED / INACTIVE</span>';
+      } else if (b.bond_status === 'PENDING_CANCELLATION' || (b.cancellation_days_left !== null && b.cancellation_days_left <= 30)) {
+        const days = Math.max(0, b.cancellation_days_left || 0);
+        countdownHtml = `<span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.4);animation:pulse 2s infinite;">⚠️ ${days} DAYS TO REVOCATION</span>`;
+      } else {
+        countdownHtml = '<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">ACTIVE COMPLIANT</span>';
+      }
+
+      // Headroom Capacity Math
+      const capPct = Math.min(100, Math.max(0, Math.round((b.remaining_capacity / (b.bond_amount || 75000)) * 100)));
+      const capColor = capPct > 70 ? '#10b981' : (capPct > 30 ? '#f59e0b' : '#ef4444');
+
+      // Risk Tier Badge
+      let riskBadge = '';
+      if (b.risk_evaluation.tier === 'LOW_RISK') {
+        riskBadge = '<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;">LOW RISK (98/100)</span>';
+      } else if (b.risk_evaluation.tier === 'ELEVATED_WATCH') {
+        riskBadge = '<span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;">ELEVATED WATCH (65/100)</span>';
+      } else if (b.risk_evaluation.tier === 'CRITICAL_CANCELLATION') {
+        riskBadge = '<span class="badge" style="background:rgba(239,68,68,0.15);color:#f87171;">CRITICAL 30D (35/100)</span>';
+      } else {
+        riskBadge = '<span class="badge" style="background:rgba(185,28,28,0.3);color:#fca5a5;">INSOLVENT / REVOKED</span>';
+      }
+
+      return `
+        <tr>
+          <td>
+            <strong style="color:var(--text-primary);font-size:12.5px;display:block;">${b.company_name}</strong>
+            <span style="font-size:11px;color:var(--text-muted);">${b.city}, ${b.state} · ${b.phone}</span>
+          </td>
+          <td>
+            <span style="font-family:monospace;font-size:12px;font-weight:700;color:var(--brand-primary);">${b.mc_number}</span>
+            <span style="display:block;font-size:10.5px;color:var(--text-muted);">${b.dot_number}</span>
+          </td>
+          <td>
+            <div style="font-size:11.5px;font-weight:600;color:var(--text-primary);">${b.surety_name}</div>
+            <span style="font-family:monospace;font-size:11px;color:var(--text-muted);">${b.bond_policy_number} (${b.bond_type})</span>
+          </td>
+          <td>
+            ${countdownHtml}
+            ${b.cancellation_effective_date ? `<span style="display:block;font-size:10px;color:var(--text-muted);margin-top:2px;">Eff: ${new Date(b.cancellation_effective_date).toISOString().split('T')[0]}</span>` : ''}
+          </td>
+          <td style="min-width:140px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+              <span style="color:${capColor};font-weight:700;">$${b.remaining_capacity.toLocaleString()} left</span>
+              <span style="color:var(--text-muted);">$${b.total_claims_filed.toLocaleString()} claims</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;overflow:hidden;">
+              <div style="background:${capColor};width:${capPct}%;height:100%;"></div>
+            </div>
+          </td>
+          <td>
+            ${riskBadge}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;" onclick="openBondLookupFor('${b.mc_number}')">
+                <span>🔍</span> Clearance
+              </button>
+              <button class="btn btn-primary btn-sm" style="padding:3px 8px;font-size:11px;" onclick="openFileBondClaimModal(${b.id})">
+                <span>⚖️</span> File Claim
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderBondClaimsTable(claims) {
+    const tbody = document.getElementById('bond-claims-tbody');
+    const countSpan = document.getElementById('bond-claims-count');
+    if (countSpan) countSpan.textContent = `${claims.length} claims on file`;
+
+    if (!claims || claims.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">No surety bond default claims filed yet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = claims.map(c => {
+      let statusBadge = '';
+      if (c.claim_status === 'SETTLED_PAID') {
+        statusBadge = '<span class="badge" style="background:rgba(16,185,129,0.2);color:#34d399;">SETTLED / PAID</span>';
+      } else if (c.claim_status === 'PAYMENT_APPROVED') {
+        statusBadge = '<span class="badge" style="background:rgba(56,189,248,0.2);color:#38bdf8;">APPROVED BY SURETY</span>';
+      } else if (c.claim_status === 'UNDER_INVESTIGATION') {
+        statusBadge = '<span class="badge" style="background:rgba(245,158,11,0.2);color:#fbbf24;">UNDER INVESTIGATION</span>';
+      } else if (c.claim_status === 'REJECTED') {
+        statusBadge = '<span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;">REJECTED</span>';
+      } else {
+        statusBadge = '<span class="badge" style="background:rgba(168,85,247,0.2);color:#c084fc;">SUBMITTED TO SURETY</span>';
+      }
+
+      return `
+        <tr>
+          <td>
+            <strong style="color:var(--brand-primary);font-size:12px;font-family:monospace;">${c.claim_code}</strong>
+            <span style="display:block;font-size:10px;color:var(--text-muted);">${new Date(c.filing_date).toISOString().split('T')[0]}</span>
+          </td>
+          <td>
+            <strong style="color:var(--text-primary);font-size:12px;display:block;">${c.broker_name || 'Debtor Broker'}</strong>
+            <span style="font-size:11px;color:var(--text-muted);font-family:monospace;">${c.broker_mc || ''}</span>
+          </td>
+          <td>
+            <div style="font-size:11.5px;color:var(--text-primary);">${c.carrier_name}</div>
+            <span style="font-size:10.5px;color:var(--text-muted);">${c.carrier_mc} (TIN: ${c.carrier_tin})</span>
+          </td>
+          <td>
+            <div style="font-size:11.5px;font-weight:600;color:var(--text-primary);">${c.load_number}</div>
+            <span style="font-size:10.5px;color:var(--text-muted);">${c.origin} → ${c.destination}</span>
+          </td>
+          <td>
+            <span style="color:#ef4444;font-weight:700;font-size:11.5px;">${c.days_past_due} Days Past Due</span>
+            <span style="display:block;font-size:10px;color:var(--text-muted);">Inv: ${c.invoice_number}</span>
+          </td>
+          <td>
+            <strong style="color:#10b981;font-size:13px;">$${parseFloat(c.rate_amount).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</strong>
+            ${parseFloat(c.settlement_amount) > 0 ? `<span style="display:block;font-size:10px;color:#38bdf8;">Paid: $${parseFloat(c.settlement_amount).toLocaleString()}</span>` : ''}
+          </td>
+          <td>
+            ${statusBadge}
+          </td>
+          <td>
+            <div style="display:flex;gap:5px;">
+              <button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;" onclick="openClaimDossierModal(${c.id})">
+                <span>📋</span> Dossier
+              </button>
+              <a href="/api/bond-watchdog/claims/${c.id}/packet-pdf" target="_blank" class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:11px;text-decoration:none;">
+                <span>📄</span> PDF
+              </a>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterBondWatchdog() {
+    const q = (document.getElementById('bond-search-input').value || '').trim().toLowerCase();
+    const tier = document.getElementById('bond-filter-tier').value;
+    const status = document.getElementById('bond-filter-status').value;
+
+    const filtered = bondWatchdogBonds.filter(b => {
+      const matchQ = !q ||
+        (b.company_name && b.company_name.toLowerCase().includes(q)) ||
+        (b.mc_number && b.mc_number.toLowerCase().includes(q)) ||
+        (b.dot_number && b.dot_number.toLowerCase().includes(q)) ||
+        (b.surety_name && b.surety_name.toLowerCase().includes(q)) ||
+        (b.bond_policy_number && b.bond_policy_number.toLowerCase().includes(q));
+
+      const matchTier = tier === 'ALL' || (b.risk_evaluation && b.risk_evaluation.tier === tier);
+      const matchStatus = status === 'ALL' || b.bond_status === status;
+
+      return matchQ && matchTier && matchStatus;
+    });
+
+    renderBondWatchdogTable(filtered);
+  }
+
+  function openBondLookupModal() {
+    document.getElementById('modal-bond-lookup').style.display = 'flex';
+    document.getElementById('lookup-result-panel').style.display = 'none';
+  }
+
+  function closeBondLookupModal() {
+    document.getElementById('modal-bond-lookup').style.display = 'none';
+  }
+
+  function openBondLookupFor(mcNumber) {
+    document.getElementById('lookup-mc-input').value = mcNumber;
+    openBondLookupModal();
+    executeBondLookup();
+  }
+
+  async function executeBondLookup() {
+    const mc = document.getElementById('lookup-mc-input').value.trim();
+    const rate = parseFloat(document.getElementById('lookup-rate-input').value) || 2500;
+    if (!mc) {
+      alert('Please enter a Broker MC#, DOT#, or Company Name.');
+      return;
+    }
+
+    const token = getAuthToken();
+    const panel = document.getElementById('lookup-result-panel');
+    panel.style.display = 'block';
+    panel.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);">Evaluating FMCSA BMC-84 bond clearance...</div>';
+
+    try {
+      const res = await fetch('/api/bond-watchdog/check-risk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ mc_number: mc, load_rate: rate })
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        panel.innerHTML = `
+          <div style="color:#ef4444;font-size:12px;">
+            <strong>Lookup Failed:</strong> ${data.error || 'Broker not found in monitored bond registry.'}
+          </div>
+        `;
+        return;
+      }
+
+      const badgeColor = data.cleared ? '#10b981' : '#ef4444';
+      const badgeText = data.cleared ? 'CLEARED FOR BOOKING' : 'DO NOT BOOK - HIGH RISK';
+
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div>
+            <strong style="font-size:13px;color:var(--text-primary);display:block;">${data.broker_name}</strong>
+            <span style="font-size:11px;color:var(--text-muted);font-family:monospace;">${data.mc_number}</span>
+          </div>
+          <span class="badge" style="background:${data.cleared ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'};color:${badgeColor};border:1px solid ${badgeColor};">
+            ${badgeText}
+          </span>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.7;background:rgba(0,0,0,0.15);padding:10px;border-radius:6px;">
+          <div>• <strong>Available Bond Capacity:</strong> $${data.remaining_bond_capacity.toLocaleString()} (Requested Rate: $${data.requested_rate.toLocaleString()})</div>
+          <div>• <strong>Risk Classification:</strong> ${data.risk_tier} ${data.cancellation_days_left !== null ? `(${data.cancellation_days_left} Days to Cancellation)` : ''}</div>
+          <div style="margin-top:6px;color:${data.cleared ? '#34d399' : '#f87171'};font-weight:600;">• <strong>Audit Recommendation:</strong> ${data.recommendation}</div>
+        </div>
+      `;
+    } catch (err) {
+      panel.innerHTML = '<div style="color:#ef4444;font-size:12px;">Network error during bond clearance lookup.</div>';
+    }
+  }
+
+  function openFileBondClaimModal(preselectedBrokerId) {
+    document.getElementById('modal-file-bond-claim').style.display = 'flex';
+    if (preselectedBrokerId) {
+      document.getElementById('claim-broker-id').value = preselectedBrokerId;
+    }
+  }
+
+  function closeFileBondClaimModal() {
+    document.getElementById('modal-file-bond-claim').style.display = 'none';
+  }
+
+  async function submitFileBondClaim(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-bond-claim');
+    btn.disabled = true;
+    btn.innerHTML = 'Submitting Claim to Surety...';
+
+    const payload = {
+      broker_id: parseInt(document.getElementById('claim-broker-id').value, 10),
+      load_number: document.getElementById('claim-load-number').value.trim(),
+      origin: document.getElementById('claim-origin').value.trim(),
+      destination: document.getElementById('claim-dest').value.trim(),
+      invoice_number: document.getElementById('claim-inv-num').value.trim(),
+      rate_amount: parseFloat(document.getElementById('claim-rate-amount').value) || 0,
+      days_past_due: parseInt(document.getElementById('claim-days-overdue').value, 10) || 30,
+      carrier_name: document.getElementById('claim-carrier-name').value.trim(),
+      carrier_mc: document.getElementById('claim-carrier-mc').value.trim(),
+      carrier_tin: document.getElementById('claim-carrier-tin').value.trim(),
+      ratecon_verified: document.getElementById('claim-chk-ratecon').checked,
+      pod_verified: document.getElementById('claim-chk-pod').checked,
+      invoice_verified: document.getElementById('claim-chk-invoice').checked,
+      demand_notes: document.getElementById('claim-demand-notes').value.trim()
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/bond-watchdog/claims/file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert(`Formal BMC-84 Surety Claim filed successfully!\n\nClaim Ref: ${data.claim.claim_code}\nDemand Hash: ${data.demand_hash}\nSurety: ${data.claim.surety_name}`);
+        closeFileBondClaimModal();
+        await loadBondWatchdogDesk();
+        openClaimDossierModal(data.claim.id);
+      } else {
+        alert(data.error || 'Failed to file surety bond claim.');
+      }
+    } catch (err) {
+      alert('Network error while filing surety bond claim.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>🏛️</span> Submit Formal Claim & Generate Demand Packet';
+    }
+  }
+
+  async function openClaimDossierModal(claimId) {
+    currentClaimDossierId = claimId;
+    const modal = document.getElementById('modal-view-claim-dossier');
+    modal.style.display = 'flex';
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/bond-watchdog/claims/${claimId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Failed to load claim record.');
+        return;
+      }
+
+      const c = data.claim;
+      document.getElementById('dossier-claim-code-header').innerHTML = `<span>⚖️</span> BMC-84 Claim Dossier: ${c.claim_code}`;
+      document.getElementById('dossier-claim-sub-header').textContent = `Filed: ${new Date(c.filing_date).toLocaleString()} · 49 U.S.C. § 13906 Record`;
+      document.getElementById('dossier-claim-hash').textContent = c.demand_hash;
+      document.getElementById('dossier-claim-status-pill').textContent = c.claim_status;
+
+      document.getElementById('dossier-claim-broker-info').innerHTML = `
+        <strong>${c.broker_name}</strong><br>
+        Authority: ${c.broker_mc} · ${c.broker_dot}<br>
+        Status: Formally Defaulted Under 49 U.S.C. § 13906
+      `;
+
+      document.getElementById('dossier-claim-surety-info').innerHTML = `
+        <strong>${c.surety_name}</strong><br>
+        Bond Policy: ${c.bond_policy_number}<br>
+        Email: ${c.surety_claims_email} · Phone: ${c.surety_claims_phone}
+      `;
+
+      document.getElementById('dossier-claim-freight-info').innerHTML = `
+        Load Confirmation: <strong>${c.load_number}</strong><br>
+        Route: ${c.origin} → ${c.destination}<br>
+        Invoice: ${c.invoice_number} (${c.days_past_due} Days Past Due)<br>
+        Principal Claim: <strong style="color:#10b981;">$${parseFloat(c.rate_amount).toFixed(2)} USD</strong>
+      `;
+
+      document.getElementById('dossier-claim-evidence-info').innerHTML = `
+        RateCon Signed: <span style="color:${c.ratecon_verified ? '#10b981' : '#ef4444'};font-weight:700;">${c.ratecon_verified ? 'VERIFIED' : 'PENDING'}</span><br>
+        Consignee POD: <span style="color:${c.pod_verified ? '#10b981' : '#ef4444'};font-weight:700;">${c.pod_verified ? 'CLEAN RECEIPT' : 'MISSING'}</span><br>
+        Carrier Invoice: <span style="color:${c.invoice_verified ? '#10b981' : '#ef4444'};font-weight:700;">${c.invoice_verified ? 'TRANSMITTED' : 'PENDING'}</span>
+      `;
+
+      document.getElementById('dossier-status-select').value = c.claim_status;
+      document.getElementById('dossier-settlement-amt').value = parseFloat(c.settlement_amount) || 0;
+
+      // PDF Download link
+      document.getElementById('claim-pdf-container').innerHTML = `
+        <a href="/api/bond-watchdog/claims/${c.id}/packet-pdf" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;">
+          <span>📄</span> Download Vector PDF Demand Packet
+        </a>
+      `;
+    } catch (err) {
+      alert('Network error retrieving claim dossier.');
+    }
+  }
+
+  function closeClaimDossierModal() {
+    document.getElementById('modal-view-claim-dossier').style.display = 'none';
+  }
+
+  async function submitClaimStatusUpdate() {
+    if (!currentClaimDossierId) return;
+    const status = document.getElementById('dossier-status-select').value;
+    const settlement = parseFloat(document.getElementById('dossier-settlement-amt').value) || 0;
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/bond-watchdog/claims/${currentClaimDossierId}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          claim_status: status,
+          settlement_amount: settlement,
+          notes: `Supervisor updated claim disposition to ${status}.`
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Claim status updated to ${status}!`);
+        closeClaimDossierModal();
+        loadBondWatchdogDesk();
+      } else {
+        alert(data.error || 'Failed to update claim status.');
+      }
+    } catch (err) {
+      alert('Network error updating claim status.');
     }
   }
 </script>
