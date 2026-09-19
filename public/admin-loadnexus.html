@@ -313,6 +313,9 @@
         <button class="nav-tab-btn" id="tab-btn-bond-watchdog" onclick="switchTab('bond-watchdog')">
           <span>🏛️</span> Broker BMC-84 Bond Watchdog
         </button>
+        <button class="nav-tab-btn" id="tab-btn-rate-matrix" onclick="switchTab('rate-matrix')">
+          <span>📊</span> Shipper Rate Matrix &amp; RFP
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1996,6 +1999,146 @@
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
             <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">Federal Broker Financial Security Statute (49 U.S.C. § 13906 &amp; MAP-21)</strong>
             Under federal transportation law, every licensed property freight broker must maintain a financial security instrument of at least $75,000 (Form BMC-84 Surety Bond or BMC-85 Trust Fund). When a surety issues a cancellation notice, a statutory 30-day countdown begins before operating authority revocation. If a broker fails to remit payment for transportation services rendered within 30 days of invoicing, motor carriers possess direct legal standing to demand indemnification against the surety company. LoadNexus™ auto-compiles the mandatory statutory evidentiary packet (executed RateCon, signed consignee POD, itemized carrier invoice, and demand affidavit) to guarantee priority recovery before bond capacity is depleted.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 23: ENTERPRISE SHIPPER RATE MATRIX & CONTRACT RFP ENGINE -->
+      <div id="tab-content-rate-matrix" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);flex-wrap:wrap;gap:12px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>📊</span> Enterprise Shipper Rate Matrix &amp; Instant Contract RFP Bidding Engine
+              <span class="badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">5-Band Mileage Matrix / DOE Pegged</span>
+            </h3>
+            <span style="font-size:12px;color:var(--text-muted);">
+              Algorithmic contract pricing · Equipment surcharge multipliers · EIA/DOE weekly diesel index · Instant multi-lane formal RFP proposals &amp; SLA agreements
+            </span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openQuoteLaneModal()">
+              <span>🧮</span> Instant Lane Quoting Calculator
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="openGenerateProposalModal()">
+              <span>📑</span> + Build Shipper RFP Proposal
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="loadRateMatrixDesk()">
+              <span>🔄</span> Refresh Matrix
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:var(--space-4);margin-bottom:var(--space-4);">
+          <div class="stat-card" style="border-left:4px solid #38bdf8;">
+            <div class="stat-label">ACTIVE CONTRACT LANES</div>
+            <div class="stat-value" id="matrix-kpi-total-lanes" style="color:#38bdf8;">0</div>
+            <div class="stat-sub">Benchmarked Dedicated Freight Corridors</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="stat-label">COMMITTED WEEKLY CAPACITY (LOADS)</div>
+            <div class="stat-value" id="matrix-kpi-weekly-volume" style="color:#34d399;">0</div>
+            <div class="stat-sub">Weekly Committed Power Units</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #f59e0b;">
+            <div class="stat-label">ANNUAL CONTRACT RUN-RATE ($)</div>
+            <div class="stat-value" id="matrix-kpi-annual-runrate" style="color:#fbbf24;">$0.00</div>
+            <div class="stat-sub">Dedicated Shipper Revenue Pipeline</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #a78bfa;">
+            <div class="stat-label">AVG CONTRACT RATE PER MILE ($/MI)</div>
+            <div class="stat-value" id="matrix-kpi-avg-rpm" style="color:#a78bfa;">$0.00</div>
+            <div class="stat-sub">All-In Blended Network Contract Yield</div>
+          </div>
+        </div>
+
+        <!-- Section 1: Monitored Contract Rate Matrix Corridors -->
+        <div style="margin-bottom:var(--space-4);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="matrix-search-input" class="form-input" placeholder="Search Origin, Destination, Corridor, Equipment..." style="width:280px;" oninput="filterRateMatrix()">
+              <select id="matrix-filter-band" class="form-select" style="width:180px;" onchange="filterRateMatrix()">
+                <option value="ALL">All Mileage Bands</option>
+                <option value="SHORT_HAUL_MIN">Short-Haul (0 - 100 mi)</option>
+                <option value="REGIONAL">Regional (101 - 250 mi)</option>
+                <option value="INTERMEDIATE">Intermediate (251 - 500 mi)</option>
+                <option value="LONG_HAUL">Long-Haul (501 - 1,000 mi)</option>
+                <option value="TRANSCON">Transcon (1,001+ mi)</option>
+              </select>
+              <select id="matrix-filter-equip" class="form-select" style="width:160px;" onchange="filterRateMatrix()">
+                <option value="ALL">All Equipment</option>
+                <option value="53ft Dry Van">53ft Dry Van</option>
+                <option value="53ft Reefer">53ft Reefer</option>
+                <option value="48ft Flatbed">48ft Flatbed</option>
+                <option value="Step Deck">Step Deck</option>
+                <option value="Conestoga">Conestoga</option>
+              </select>
+            </div>
+            <span id="matrix-records-count" style="font-size:12px;color:var(--text-muted);">Showing 0 contract corridors</span>
+          </div>
+
+          <div class="table-container" style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Origin → Destination</th>
+                  <th>Corridor Name</th>
+                  <th>Mileage &amp; Band</th>
+                  <th>Equipment</th>
+                  <th>Base Linehaul</th>
+                  <th>DOE Fuel FSC</th>
+                  <th>All-In RPM</th>
+                  <th>Rate / Load</th>
+                  <th>Annual Contract Value</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="matrix-lanes-tbody">
+                <tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">Loading enterprise rate matrix corridors...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 2: Enterprise Shipper RFP Proposals Queue -->
+        <div style="margin-bottom:var(--space-4);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);">
+            <div>
+              <h4 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+                <span>📑</span> Formally Issued Shipper Contract Proposals &amp; Annual RFP Awards
+              </h4>
+              <span style="font-size:11px;color:var(--text-muted);">Dedicated freight contract bid packages with DOE fuel pegging and SLA guarantees</span>
+            </div>
+            <span id="matrix-proposals-count" style="font-size:12px;color:var(--text-muted);">0 proposals on file</span>
+          </div>
+
+          <div class="table-container" style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Proposal Ref &amp; Date</th>
+                  <th>Shipper Client</th>
+                  <th>Commodity</th>
+                  <th>Committed Volume</th>
+                  <th>Avg Rate / Mile</th>
+                  <th>Annual Contract Pipeline ($)</th>
+                  <th>Proposal Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="matrix-proposals-tbody">
+                <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Loading active contract proposals...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- System Architecture Info Banner -->
+        <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:var(--radius-md);padding:14px;display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:20px;">📊</span>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Algorithmic Contract Rating &amp; RFP Proposal Architecture</strong>
+            To win and protect Fortune 500 dedicated shipper volume, LoadNexus™ implements a 4-tier contract pricing formula: (1) Standardized federal mileage bands preventing short-haul under-recovery with minimum flat charges ($550–$750 minimum); (2) Dynamic equipment multipliers compensating for temperature control (+22%), heavy haul (+28%), or specialized curtainside (+32%); (3) EIA/DOE weekly diesel fuel pegging with $0.05 increments per $0.01/mile surcharge adjustment; and (4) Volume commitment incentives (4% discount at $\ge 10$ loads/week, 7% at $\ge 20$ loads/week) bound by automated 98.5% On-Time Delivery SLAs.
           </div>
         </div>
       </div>
@@ -4393,6 +4536,296 @@
   </div>
 </div>
 
+<!-- MODAL: INSTANT LANE CONTRACT QUOTING CALCULATOR -->
+<div id="modal-quote-lane" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:580px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>🧮</span> Instant Dedicated Lane Contract Quoting Calculator
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeQuoteLaneModal()">✕</button>
+    </div>
+
+    <p style="font-size:12px;color:var(--text-secondary);margin-top:0;margin-bottom:14px;">
+      Calculate contractual linehaul RPM, equipment multipliers, DOE weekly fuel pegging, and volume discounts.
+    </p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Origin (City, State) *</label>
+        <input type="text" id="quote-origin-input" class="form-input" placeholder="e.g. Chicago, IL" value="Chicago, IL">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Destination (City, State) *</label>
+        <input type="text" id="quote-dest-input" class="form-input" placeholder="e.g. Atlanta, GA" value="Atlanta, GA">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Route Mileage (Miles) *</label>
+        <input type="number" id="quote-miles-input" class="form-input" placeholder="e.g. 715" value="715">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Equipment Type *</label>
+        <select id="quote-equip-input" class="form-select" style="font-size:11px;">
+          <option value="53ft Dry Van">53ft Dry Van (1.00x)</option>
+          <option value="53ft Reefer">53ft Reefer (1.22x)</option>
+          <option value="48ft Flatbed">48ft Flatbed (1.15x)</option>
+          <option value="Step Deck">Step Deck (1.28x)</option>
+          <option value="Conestoga">Conestoga (1.32x)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Weekly Volume (Loads)</label>
+        <input type="number" id="quote-vol-input" class="form-input" placeholder="5" value="5">
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;margin-bottom:14px;" onclick="calculateLaneQuote()">
+      <span>⚡</span> Calculate Contract Rate Breakdown
+    </button>
+
+    <!-- Calculation Results Box -->
+    <div id="quote-result-panel" style="display:none;background:var(--surface-muted);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <strong id="quote-res-lane-header" style="font-size:13px;color:var(--text-primary);">Chicago, IL → Atlanta, GA</strong>
+        <span id="quote-res-band-pill" class="badge" style="background:#0284c7;color:#fff;">LONG_HAUL</span>
+      </div>
+      <div id="quote-res-details" style="font-size:11.5px;color:var(--text-secondary);line-height:1.7;">
+        <!-- Populated via JS -->
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeQuoteLaneModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: BUILD FORMAL MULTI-LANE SHIPPER RFP PROPOSAL -->
+<div id="modal-generate-rfp-proposal" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:680px;padding:var(--space-6);box-shadow:var(--shadow-xl);margin:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>📑</span> Build Formal Shipper Contract Proposal &amp; SLA
+        </h3>
+        <span style="font-size:11px;color:var(--text-muted);">Multi-lane dedicated freight proposal with DOE fuel pegging and SLA commitments</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeGenerateProposalModal()">✕</button>
+    </div>
+
+    <form id="generate-proposal-form" onsubmit="submitGenerateProposal(event)">
+      <!-- Presets for Fast Demonstration -->
+      <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--text-muted);">1-Click Shipper Presets:</span>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10.5px;padding:2px 8px;" onclick="setProposalPreset('TARGET')">Target Corp</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10.5px;padding:2px 8px;" onclick="setProposalPreset('WALMART')">Walmart Logistics</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10.5px;padding:2px 8px;" onclick="setProposalPreset('TYSON')">Tyson Foods Reefer</button>
+      </div>
+
+      <!-- Shipper Entity Details -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Shipper Company Name *</label>
+          <input type="text" id="prop-shipper-name" class="form-input" placeholder="e.g. Target Corporation Logistics" value="Target Corporation Logistics" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Procurement Contact / Title *</label>
+          <input type="text" id="prop-shipper-contact" class="form-input" placeholder="e.g. David Chen - VP Transportation" value="David Chen - VP Transportation" required>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Contact Email *</label>
+          <input type="email" id="prop-shipper-email" class="form-input" placeholder="rfp@target.com" value="freightrfp@target.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Contact Phone *</label>
+          <input type="text" id="prop-shipper-phone" class="form-input" placeholder="+1 (612) 555-0144" value="+1 (612) 555-0144" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:11px;">Primary Commodity</label>
+          <input type="text" id="prop-commodity" class="form-input" placeholder="Retail Goods" value="Retail Consumer Goods & Electronics">
+        </div>
+      </div>
+
+      <!-- Fuel & SLA Settings -->
+      <div style="background:var(--surface-muted);padding:10px 14px;border-radius:var(--radius-md);margin-bottom:12px;border:1px solid var(--border-subtle);display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">DOE Base Peg ($/gal)</label>
+          <input type="number" step="0.05" id="prop-fuel-peg" class="form-input" value="1.20" style="font-size:11px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">Current Diesel ($/gal)</label>
+          <input type="number" step="0.01" id="prop-diesel-price" class="form-input" value="3.85" style="font-size:11px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:10.5px;">Target OTD SLA (%)</label>
+          <input type="number" step="0.1" id="prop-otd-target" class="form-input" value="98.5" style="font-size:11px;">
+        </div>
+      </div>
+
+      <!-- Quoted Corridors (Lane 1 & Lane 2) -->
+      <strong style="font-size:11.5px;color:var(--text-primary);display:block;margin-bottom:6px;">Quoted Dedicated Corridors:</strong>
+      
+      <!-- Lane 1 -->
+      <div style="background:rgba(0,0,0,0.15);padding:10px;border-radius:var(--radius-md);margin-bottom:8px;border:1px solid var(--border-subtle);display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:8px;align-items:center;">
+        <div>
+          <label style="font-size:10px;color:var(--text-muted);display:block;">Lane 1 Corridor</label>
+          <input type="text" id="prop-l1-route" class="form-input" value="Chicago, IL → Atlanta, GA" style="font-size:11px;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--text-muted);display:block;">Miles</label>
+          <input type="number" id="prop-l1-miles" class="form-input" value="715" style="font-size:11px;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--text-muted);display:block;">Equipment</label>
+          <select id="prop-l1-equip" class="form-select" style="font-size:11px;">
+            <option value="53ft Dry Van">53ft Dry Van</option>
+            <option value="53ft Reefer">53ft Reefer</option>
+            <option value="48ft Flatbed">48ft Flatbed</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--text-muted);display:block;">Loads / Wk</label>
+          <input type="number" id="prop-l1-vol" class="form-input" value="5" style="font-size:11px;">
+        </div>
+      </div>
+
+      <!-- Lane 2 -->
+      <div style="background:rgba(0,0,0,0.15);padding:10px;border-radius:var(--radius-md);margin-bottom:12px;border:1px solid var(--border-subtle);display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:8px;align-items:center;">
+        <div>
+          <label style="font-size:10px;color:var(--text-muted);display:block;">Lane 2 Corridor</label>
+          <input type="text" id="prop-l2-route" class="form-input" value="Allentown, PA → Richmond, VA" style="font-size:11px;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--text-muted);display:block;">Miles</label>
+          <input type="number" id="prop-l2-miles" class="form-input" value="285" style="font-size:11px;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--text-muted);display:block;">Equipment</label>
+          <select id="prop-l2-equip" class="form-select" style="font-size:11px;">
+            <option value="53ft Dry Van">53ft Dry Van</option>
+            <option value="53ft Reefer">53ft Reefer</option>
+            <option value="48ft Flatbed">48ft Flatbed</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--text-muted);display:block;">Loads / Wk</label>
+          <input type="number" id="prop-l2-vol" class="form-input" value="8" style="font-size:11px;">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label" style="font-size:11px;">Special Contract Notes / Terms</label>
+        <textarea id="prop-notes" class="form-input" rows="2" style="font-size:11px;resize:none;">Dedicated contract pricing valid for 365 calendar days. Includes 2 hours free time at origin & destination.</textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeGenerateProposalModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-proposal">
+          <span>📑</span> Generate Enterprise Proposal &amp; Vector PDF
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: VIEW PROPOSAL DOSSIER & PDF DISPATCH -->
+<div id="modal-view-rfp-proposal" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:740px;padding:var(--space-6);box-shadow:var(--shadow-xl);margin:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 id="dossier-proposal-code-header" style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>📊</span> Enterprise Shipper Contract Proposal
+        </h3>
+        <span id="dossier-proposal-sub-header" style="font-size:11px;color:var(--text-muted);">Dedicated Capacity RFP Agreement Record</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeProposalDossierModal()">✕</button>
+    </div>
+
+    <!-- Cryptographic Hash Bar -->
+    <div style="background:#0f172a;border-radius:var(--radius-md);padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <span style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;display:block;">Cryptographic Proposal Integrity Hash</span>
+        <code id="dossier-proposal-hash" style="color:#38bdf8;font-size:11px;font-family:monospace;">HASH-VERIFYING...</code>
+      </div>
+      <span id="dossier-proposal-status-pill" class="badge" style="background:#38bdf8;color:#000;">SUBMITTED</span>
+    </div>
+
+    <!-- Contract Summary 4-Way KPI Grid -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:14px;">
+      <div style="background:var(--surface-muted);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">TOTAL WEEKLY CAPACITY</span>
+        <strong id="dossier-prop-weekly-vol" style="font-size:14px;color:var(--text-primary);">0 Loads</strong>
+      </div>
+      <div style="background:var(--surface-muted);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">BLENDED RATE / MILE</span>
+        <strong id="dossier-prop-avg-rpm" style="font-size:14px;color:#38bdf8;">$0.00 / mi</strong>
+      </div>
+      <div style="background:var(--surface-muted);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">ANNUAL CONTRACT VALUE</span>
+        <strong id="dossier-prop-annual-val" style="font-size:14px;color:#34d399;">$0.00</strong>
+      </div>
+      <div style="background:var(--surface-muted);padding:10px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);text-align:center;">
+        <span style="font-size:10px;color:var(--text-muted);display:block;">ON-TIME DELIVERY SLA</span>
+        <strong id="dossier-prop-otd-sla" style="font-size:14px;color:#fbbf24;">98.5%</strong>
+      </div>
+    </div>
+
+    <!-- Quoted Corridors Breakdown Table -->
+    <div style="margin-bottom:14px;">
+      <strong style="font-size:11.5px;color:var(--text-primary);display:block;margin-bottom:6px;">Itemized Dedicated Freight Corridors:</strong>
+      <div class="table-container" style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-md);">
+        <table class="tms-table-v2" style="font-size:11px;">
+          <thead>
+            <tr>
+              <th>Corridor</th>
+              <th>Equip</th>
+              <th>Miles</th>
+              <th>Loads/Wk</th>
+              <th>All-In $/Mi</th>
+              <th>Rate / Load</th>
+              <th>Annual Spend</th>
+            </tr>
+          </thead>
+          <tbody id="dossier-proposal-lanes-tbody">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Disposition & Status Override -->
+    <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:var(--radius-md);padding:12px;margin-bottom:16px;">
+      <strong style="font-size:11.5px;color:var(--text-primary);display:block;margin-bottom:8px;">Proposal Status &amp; Contract Award Override</strong>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <select id="dossier-prop-status-select" class="form-select" style="font-size:11px;width:240px;">
+          <option value="SUBMITTED_TO_SHIPPER">Submitted to Shipper</option>
+          <option value="UNDER_NEGOTIATION">Under Active Negotiation</option>
+          <option value="ACCEPTED_AWARDED">Accepted / Contract Awarded</option>
+          <option value="EXPIRED">Expired</option>
+          <option value="REJECTED">Declined / Lost</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="submitProposalStatusUpdate()">
+          Update Disposition
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer Controls -->
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div id="proposal-pdf-container">
+        <!-- PDF download button injected here -->
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeProposalDossierModal()">Close Dossier</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function getAuthToken() {
     return localStorage.getItem('token') || localStorage.getItem('auth_token') || sessionStorage.getItem('token') || '';
@@ -4431,6 +4864,7 @@
     document.getElementById('tab-content-edi').style.display = tabId === 'edi' ? 'block' : 'none';
     document.getElementById('tab-content-credentialing').style.display = tabId === 'credentialing' ? 'block' : 'none';
     document.getElementById('tab-content-bond-watchdog').style.display = tabId === 'bond-watchdog' ? 'block' : 'none';
+    document.getElementById('tab-content-rate-matrix').style.display = tabId === 'rate-matrix' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -4468,6 +4902,8 @@
       loadCarrierCredentialingDesk();
     } else if (tabId === 'bond-watchdog') {
       loadBondWatchdogDesk();
+    } else if (tabId === 'rate-matrix') {
+      loadRateMatrixDesk();
     }
   }
 
@@ -9465,6 +9901,479 @@
       }
     } catch (err) {
       alert('Network error updating claim status.');
+    }
+  }
+
+  // =========================================================================
+  // PHASE 26: ENTERPRISE SHIPPER RATE MATRIX & CONTRACT RFP ENGINE JAVASCRIPT
+  // =========================================================================
+  let rateMatrixLanes = [];
+  let rateMatrixProposals = [];
+  let currentProposalId = null;
+
+  async function loadRateMatrixDesk() {
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/rate-matrix/roster', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error('Failed to load rate matrix roster:', data.error);
+        return;
+      }
+
+      // 1. Populate KPI Cards
+      const kpis = data.kpis || {};
+      document.getElementById('matrix-kpi-total-lanes').textContent = kpis.active_contract_lanes || 0;
+      document.getElementById('matrix-kpi-weekly-volume').textContent = `${kpis.total_weekly_committed_volume || 0} Loads`;
+      document.getElementById('matrix-kpi-annual-runrate').textContent = `$${(kpis.annual_contract_runrate || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('matrix-kpi-avg-rpm').textContent = `$${(kpis.avg_contract_rate_per_mile || 3.10).toFixed(2)} / mi`;
+
+      rateMatrixLanes = data.lanes || [];
+      rateMatrixProposals = data.proposals || [];
+
+      // 2. Render Tables
+      renderRateMatrixTable(rateMatrixLanes);
+      renderRateProposalsTable(rateMatrixProposals);
+    } catch (err) {
+      console.error('Error fetching rate matrix roster:', err);
+    }
+  }
+
+  function renderRateMatrixTable(lanes) {
+    const tbody = document.getElementById('matrix-lanes-tbody');
+    const countSpan = document.getElementById('matrix-records-count');
+    if (countSpan) countSpan.textContent = `Showing ${lanes.length} contract corridors`;
+
+    if (!lanes || lanes.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">No contract matrix lanes found matching filters.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = lanes.map(l => {
+      // Mileage Band pill
+      let bandColor = '#0284c7';
+      if (l.mileage_band === 'SHORT_HAUL_MIN') bandColor = '#e11d48';
+      else if (l.mileage_band === 'REGIONAL') bandColor = '#d97706';
+      else if (l.mileage_band === 'INTERMEDIATE') bandColor = '#2563eb';
+      else if (l.mileage_band === 'LONG_HAUL') bandColor = '#7c3aed';
+      else if (l.mileage_band === 'TRANSCON') bandColor = '#059669';
+
+      return `
+        <tr>
+          <td>
+            <strong style="color:var(--text-primary);font-size:12.5px;display:block;">${l.origin_city}, ${l.origin_state} → ${l.destination_city}, ${l.destination_state}</strong>
+            <span style="font-size:10.5px;color:var(--text-muted);">${l.lane_code}</span>
+          </td>
+          <td>
+            <span style="font-size:11.5px;color:var(--text-secondary);">${l.corridor_name || 'Dedicated Interstate Corridor'}</span>
+          </td>
+          <td>
+            <span style="font-weight:700;font-size:12px;color:var(--text-primary);">${l.mileage} mi</span>
+            <span class="badge" style="background:${bandColor}22;color:${bandColor};border:1px solid ${bandColor}55;display:block;font-size:9.5px;margin-top:2px;">${l.mileage_band}</span>
+          </td>
+          <td>
+            <span style="font-size:11.5px;font-weight:600;color:var(--text-primary);">${l.equipment_type}</span>
+          </td>
+          <td>
+            <span style="font-family:monospace;font-size:12px;font-weight:700;color:#38bdf8;">$${parseFloat(l.base_linehaul_rpm).toFixed(2)}</span>
+          </td>
+          <td>
+            <span style="font-family:monospace;font-size:11.5px;color:var(--text-muted);">+$${parseFloat(l.fuel_surcharge_cpm).toFixed(3)}</span>
+          </td>
+          <td>
+            <strong style="font-family:monospace;font-size:12.5px;color:#10b981;">$${parseFloat(l.all_in_rpm).toFixed(2)}</strong>
+          </td>
+          <td>
+            <strong style="font-size:12.5px;color:var(--text-primary);">$${parseFloat(l.total_rate_per_load).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</strong>
+          </td>
+          <td>
+            <span style="font-size:12px;font-weight:700;color:#38bdf8;">$${parseFloat(l.annual_contract_value).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+            <span style="display:block;font-size:10px;color:var(--text-muted);">${l.weekly_committed_volume} loads / wk</span>
+          </td>
+          <td>
+            <button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;" onclick="openQuoteForLane('${l.origin_city}, ${l.origin_state}', '${l.destination_city}, ${l.destination_state}', ${l.mileage}, '${l.equipment_type}')">
+              <span>🧮</span> Quote
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderRateProposalsTable(proposals) {
+    const tbody = document.getElementById('matrix-proposals-tbody');
+    const countSpan = document.getElementById('matrix-proposals-count');
+    if (countSpan) countSpan.textContent = `${proposals.length} proposals on file`;
+
+    if (!proposals || proposals.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">No shipper contract RFP proposals generated yet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = proposals.map(p => {
+      let statusBadge = '';
+      if (p.proposal_status === 'ACCEPTED_AWARDED') {
+        statusBadge = '<span class="badge" style="background:rgba(16,185,129,0.2);color:#34d399;">ACCEPTED / AWARDED</span>';
+      } else if (p.proposal_status === 'UNDER_NEGOTIATION') {
+        statusBadge = '<span class="badge" style="background:rgba(245,158,11,0.2);color:#fbbf24;">UNDER NEGOTIATION</span>';
+      } else if (p.proposal_status === 'EXPIRED') {
+        statusBadge = '<span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;">EXPIRED</span>';
+      } else if (p.proposal_status === 'REJECTED') {
+        statusBadge = '<span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;">DECLINED</span>';
+      } else {
+        statusBadge = '<span class="badge" style="background:rgba(56,189,248,0.2);color:#38bdf8;">SUBMITTED TO SHIPPER</span>';
+      }
+
+      const lanesCount = Array.isArray(p.quoted_lanes) ? p.quoted_lanes.length : 1;
+
+      return `
+        <tr>
+          <td>
+            <strong style="color:var(--brand-primary);font-size:12px;font-family:monospace;">${p.proposal_code}</strong>
+            <span style="display:block;font-size:10px;color:var(--text-muted);">${new Date(p.effective_date).toISOString().split('T')[0]}</span>
+          </td>
+          <td>
+            <strong style="color:var(--text-primary);font-size:12px;display:block;">${p.shipper_name}</strong>
+            <span style="font-size:11px;color:var(--text-muted);">${p.shipper_contact}</span>
+          </td>
+          <td>
+            <span style="font-size:11.5px;color:var(--text-secondary);">${p.commodity || 'General Freight'}</span>
+          </td>
+          <td>
+            <strong style="color:var(--text-primary);font-size:12px;">${p.total_weekly_loads} Loads / Wk</strong>
+            <span style="display:block;font-size:10.5px;color:var(--text-muted);">${lanesCount} Dedicated Lanes</span>
+          </td>
+          <td>
+            <strong style="font-size:12.5px;color:#38bdf8;font-family:monospace;">$${parseFloat(p.avg_rate_per_mile).toFixed(2)} / mi</strong>
+          </td>
+          <td>
+            <strong style="color:#10b981;font-size:13px;">$${parseFloat(p.annual_contract_value).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</strong>
+            <span style="display:block;font-size:10px;color:var(--text-muted);">Run-Rate / Year</span>
+          </td>
+          <td>
+            ${statusBadge}
+          </td>
+          <td>
+            <div style="display:flex;gap:5px;">
+              <button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;" onclick="openProposalDossierModal(${p.id})">
+                <span>📋</span> Review
+              </button>
+              <a href="/api/rate-matrix/proposals/${p.id}/proposal-pdf" target="_blank" class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:11px;text-decoration:none;">
+                <span>📄</span> PDF
+              </a>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterRateMatrix() {
+    const q = (document.getElementById('matrix-search-input').value || '').trim().toLowerCase();
+    const band = document.getElementById('matrix-filter-band').value;
+    const equip = document.getElementById('matrix-filter-equip').value;
+
+    const filtered = rateMatrixLanes.filter(l => {
+      const matchQ = !q ||
+        (l.origin_city && l.origin_city.toLowerCase().includes(q)) ||
+        (l.destination_city && l.destination_city.toLowerCase().includes(q)) ||
+        (l.corridor_name && l.corridor_name.toLowerCase().includes(q)) ||
+        (l.lane_code && l.lane_code.toLowerCase().includes(q));
+
+      const matchBand = band === 'ALL' || l.mileage_band === band;
+      const matchEquip = equip === 'ALL' || l.equipment_type === equip;
+
+      return matchQ && matchBand && matchEquip;
+    });
+
+    renderRateMatrixTable(filtered);
+  }
+
+  function openQuoteLaneModal() {
+    document.getElementById('modal-quote-lane').style.display = 'flex';
+    document.getElementById('quote-result-panel').style.display = 'none';
+  }
+
+  function closeQuoteLaneModal() {
+    document.getElementById('modal-quote-lane').style.display = 'none';
+  }
+
+  function openQuoteForLane(orig, dest, miles, equip) {
+    document.getElementById('quote-origin-input').value = orig;
+    document.getElementById('quote-dest-input').value = dest;
+    document.getElementById('quote-miles-input').value = miles;
+    document.getElementById('quote-equip-input').value = equip;
+    openQuoteLaneModal();
+    calculateLaneQuote();
+  }
+
+  async function calculateLaneQuote() {
+    const orig = document.getElementById('quote-origin-input').value.trim();
+    const dest = document.getElementById('quote-dest-input').value.trim();
+    const miles = parseInt(document.getElementById('quote-miles-input').value, 10) || 500;
+    const equip = document.getElementById('quote-equip-input').value;
+    const vol = parseInt(document.getElementById('quote-vol-input').value, 10) || 5;
+
+    const token = getAuthToken();
+    const panel = document.getElementById('quote-result-panel');
+    panel.style.display = 'block';
+    panel.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);">Calculating algorithmic contract rates...</div>';
+
+    try {
+      const res = await fetch('/api/rate-matrix/quote-lane', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          origin_city: orig,
+          destination_city: dest,
+          mileage: miles,
+          equipment_type: equip,
+          weekly_volume: vol,
+          diesel_price: 3.85
+        })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        panel.innerHTML = `<div style="color:#ef4444;font-size:12px;">Calculation error: ${data.error || 'Failed to quote lane.'}</div>`;
+        return;
+      }
+
+      const q = data.lane;
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="font-size:13px;color:var(--text-primary);">${q.origin} → ${q.destination}</strong>
+          <span class="badge" style="background:#0284c7;color:#fff;">${q.mileage_band}</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.7;background:rgba(0,0,0,0.15);padding:10px;border-radius:6px;">
+          <div>• <strong>Mileage:</strong> ${q.miles} Miles · <strong>Equipment:</strong> ${q.equipment_type} (${q.equipment_multiplier}x)</div>
+          <div>• <strong>Base Linehaul RPM:</strong> $${q.base_linehaul_rpm.toFixed(2)} / mi ${q.volume_discount_pct > 0 ? `(${q.volume_discount_pct}% Volume Discount Applied)` : ''}</div>
+          <div>• <strong>DOE Fuel Surcharge:</strong> +$${q.fuel_surcharge_cpm.toFixed(3)} / mi (Pegged @ $3.85 diesel)</div>
+          <div>• <strong>All-In Rate Per Mile:</strong> <strong style="color:#34d399;font-size:12.5px;">$${q.all_in_rate_per_mile.toFixed(2)} / mi</strong></div>
+          <div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;">
+            • <strong>Rate Per Load:</strong> <strong style="color:#38bdf8;">$${q.total_rate_per_load.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</strong>
+            · <strong>Weekly Total (${q.weekly_volume} loads):</strong> $${q.weekly_spend.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+          </div>
+          <div>• <strong>Annual Contract Run-Rate:</strong> <strong style="color:#10b981;font-size:13px;">$${q.annual_contract_value.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} USD / YR</strong></div>
+        </div>
+      `;
+    } catch (err) {
+      panel.innerHTML = '<div style="color:#ef4444;font-size:12px;">Network error calculating contract rates.</div>';
+    }
+  }
+
+  function openGenerateProposalModal() {
+    document.getElementById('modal-generate-rfp-proposal').style.display = 'flex';
+  }
+
+  function closeGenerateProposalModal() {
+    document.getElementById('modal-generate-rfp-proposal').style.display = 'none';
+  }
+
+  function setProposalPreset(type) {
+    if (type === 'TARGET') {
+      document.getElementById('prop-shipper-name').value = 'Target Corporation Logistics';
+      document.getElementById('prop-shipper-contact').value = 'David Chen - VP Transportation Procurement';
+      document.getElementById('prop-shipper-email').value = 'freightrfp@target.com';
+      document.getElementById('prop-shipper-phone').value = '+1 (612) 555-0144';
+      document.getElementById('prop-commodity').value = 'Retail Consumer Goods & Electronics';
+      document.getElementById('prop-l1-route').value = 'Chicago, IL → Atlanta, GA';
+      document.getElementById('prop-l1-miles').value = 715;
+      document.getElementById('prop-l1-equip').value = '53ft Dry Van';
+      document.getElementById('prop-l1-vol').value = 5;
+      document.getElementById('prop-l2-route').value = 'Allentown, PA → Richmond, VA';
+      document.getElementById('prop-l2-miles').value = 285;
+      document.getElementById('prop-l2-equip').value = '53ft Dry Van';
+      document.getElementById('prop-l2-vol').value = 8;
+    } else if (type === 'WALMART') {
+      document.getElementById('prop-shipper-name').value = 'Walmart Transportation LLC';
+      document.getElementById('prop-shipper-contact').value = 'Rachel Sterling - Senior Director Fleet Inbound';
+      document.getElementById('prop-shipper-email').value = 'inboundprocurement@walmart.com';
+      document.getElementById('prop-shipper-phone').value = '+1 (479) 555-0199';
+      document.getElementById('prop-commodity').value = 'Ambient General Dry Grocery & General Merchandise';
+      document.getElementById('prop-l1-route').value = 'Bentonville, AR → Dallas, TX';
+      document.getElementById('prop-l1-miles').value = 350;
+      document.getElementById('prop-l1-equip').value = '53ft Dry Van';
+      document.getElementById('prop-l1-vol').value = 12;
+      document.getElementById('prop-l2-route').value = 'Chicago, IL → Minneapolis, MN';
+      document.getElementById('prop-l2-miles').value = 410;
+      document.getElementById('prop-l2-equip').value = '53ft Dry Van';
+      document.getElementById('prop-l2-vol').value = 10;
+    } else if (type === 'TYSON') {
+      document.getElementById('prop-shipper-name').value = 'Tyson Fresh Meats Logistics';
+      document.getElementById('prop-shipper-contact').value = 'Michael Vance - Temperature Controlled Procurement';
+      document.getElementById('prop-shipper-email').value = 'coldchain@tysonfoods.com';
+      document.getElementById('prop-shipper-phone').value = '+1 (479) 555-0188';
+      document.getElementById('prop-commodity').value = 'Refrigerated Fresh Poultry & Protein (-10°F to 28°F)';
+      document.getElementById('prop-l1-route').value = 'Dallas, TX → Los Angeles, CA';
+      document.getElementById('prop-l1-miles').value = 1435;
+      document.getElementById('prop-l1-equip').value = '53ft Reefer';
+      document.getElementById('prop-l1-vol').value = 6;
+      document.getElementById('prop-l2-route').value = 'Springdale, AR → Chicago, IL';
+      document.getElementById('prop-l2-miles').value = 600;
+      document.getElementById('prop-l2-equip').value = '53ft Reefer';
+      document.getElementById('prop-l2-vol').value = 8;
+    }
+  }
+
+  async function submitGenerateProposal(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-proposal');
+    btn.disabled = true;
+    btn.innerHTML = 'Generating Proposal & Vector PDF...';
+
+    const l1Parts = document.getElementById('prop-l1-route').value.split('→').map(s => s.trim());
+    const l2Parts = document.getElementById('prop-l2-route').value.split('→').map(s => s.trim());
+
+    const lanesPayload = [
+      {
+        lane_code: 'LANE-PROP-01',
+        origin: l1Parts[0] || 'Chicago, IL',
+        destination: l1Parts[1] || 'Atlanta, GA',
+        miles: parseInt(document.getElementById('prop-l1-miles').value, 10) || 500,
+        equipment_type: document.getElementById('prop-l1-equip').value,
+        weekly_volume: parseInt(document.getElementById('prop-l1-vol').value, 10) || 5
+      },
+      {
+        lane_code: 'LANE-PROP-02',
+        origin: l2Parts[0] || 'Allentown, PA',
+        destination: l2Parts[1] || 'Richmond, VA',
+        miles: parseInt(document.getElementById('prop-l2-miles').value, 10) || 300,
+        equipment_type: document.getElementById('prop-l2-equip').value,
+        weekly_volume: parseInt(document.getElementById('prop-l2-vol').value, 10) || 8
+      }
+    ];
+
+    const payload = {
+      shipper_name: document.getElementById('prop-shipper-name').value.trim(),
+      shipper_contact: document.getElementById('prop-shipper-contact').value.trim(),
+      shipper_email: document.getElementById('prop-shipper-email').value.trim(),
+      shipper_phone: document.getElementById('prop-shipper-phone').value.trim(),
+      commodity: document.getElementById('prop-commodity').value.trim(),
+      lanes: lanesPayload,
+      fuel_peg_base: parseFloat(document.getElementById('prop-fuel-peg').value) || 1.20,
+      current_fuel_price: parseFloat(document.getElementById('prop-diesel-price').value) || 3.85,
+      ontime_delivery_commitment_pct: parseFloat(document.getElementById('prop-otd-target').value) || 98.5,
+      special_notes: document.getElementById('prop-notes').value.trim()
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/rate-matrix/proposals/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Enterprise Shipper Contract Proposal generated!\n\nProposal Ref: ${data.proposal.proposal_code}\nAnnual Contract Value: $${parseFloat(data.proposal.annual_contract_value).toLocaleString()}\nProposal Hash: ${data.proposal.proposal_hash}`);
+        closeGenerateProposalModal();
+        await loadRateMatrixDesk();
+        openProposalDossierModal(data.proposal.id);
+      } else {
+        alert(data.error || 'Failed to generate proposal.');
+      }
+    } catch (err) {
+      alert('Network error generating contract proposal.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>📑</span> Generate Enterprise Proposal & Vector PDF';
+    }
+  }
+
+  async function openProposalDossierModal(proposalId) {
+    currentProposalId = proposalId;
+    const modal = document.getElementById('modal-view-rfp-proposal');
+    modal.style.display = 'flex';
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/rate-matrix/proposals/${proposalId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Failed to load proposal details.');
+        return;
+      }
+
+      const p = data.proposal;
+      document.getElementById('dossier-proposal-code-header').innerHTML = `<span>📊</span> Contract Proposal: ${p.proposal_code}`;
+      document.getElementById('dossier-proposal-sub-header').textContent = `${p.shipper_name} (${p.shipper_contact}) · Effective: ${new Date(p.effective_date).toISOString().split('T')[0]}`;
+      document.getElementById('dossier-proposal-hash').textContent = p.proposal_hash;
+      document.getElementById('dossier-proposal-status-pill').textContent = p.proposal_status;
+
+      document.getElementById('dossier-prop-weekly-vol').textContent = `${p.total_weekly_loads} Loads / Wk`;
+      document.getElementById('dossier-prop-avg-rpm').textContent = `$${parseFloat(p.avg_rate_per_mile).toFixed(2)} / mi`;
+      document.getElementById('dossier-prop-annual-val').textContent = `$${parseFloat(p.annual_contract_value).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      document.getElementById('dossier-prop-otd-sla').textContent = `${p.ontime_delivery_commitment_pct}% OTD`;
+
+      // Lanes Table
+      const lanesTbody = document.getElementById('dossier-proposal-lanes-tbody');
+      const lanesList = Array.isArray(p.quoted_lanes) ? p.quoted_lanes : [];
+      lanesTbody.innerHTML = lanesList.map(l => `
+        <tr>
+          <td><strong>${l.origin} → ${l.destination}</strong></td>
+          <td>${l.equipment_type || '53ft Dry Van'}</td>
+          <td>${l.miles} mi</td>
+          <td>${l.weekly_volume} / wk</td>
+          <td style="color:#38bdf8;font-weight:700;">$${parseFloat(l.all_in_rate_per_mile).toFixed(2)}</td>
+          <td>$${parseFloat(l.rate_per_load).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td style="color:#10b981;font-weight:700;">$${parseFloat(l.annual_lane_value).toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('dossier-prop-status-select').value = p.proposal_status;
+
+      // PDF Download Button
+      document.getElementById('proposal-pdf-container').innerHTML = `
+        <a href="/api/rate-matrix/proposals/${p.id}/proposal-pdf" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;">
+          <span>📄</span> Download Vector PDF Proposal &amp; SLA
+        </a>
+      `;
+    } catch (err) {
+      alert('Network error retrieving proposal details.');
+    }
+  }
+
+  function closeProposalDossierModal() {
+    document.getElementById('modal-view-rfp-proposal').style.display = 'none';
+  }
+
+  async function submitProposalStatusUpdate() {
+    if (!currentProposalId) return;
+    const status = document.getElementById('dossier-prop-status-select').value;
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/rate-matrix/proposals/${currentProposalId}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          proposal_status: status,
+          notes: `Updated status to ${status}.`
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Proposal status updated to ${status}!`);
+        closeProposalDossierModal();
+        loadRateMatrixDesk();
+      } else {
+        alert(data.error || 'Failed to update proposal status.');
+      }
+    } catch (err) {
+      alert('Network error updating proposal status.');
     }
   }
 </script>

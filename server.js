@@ -139,6 +139,7 @@ app.use('/api/detention-collector', require('./routes/detention-collector')); //
 app.use('/api/edi-gateway', require('./routes/edi-gateway'));              // Automated EDI (Electronic Data Interchange) 204, 214, 990 & 210 Freight Transaction Gateway
 app.use('/api/carrier-credentialing', require('./routes/carrier-credentialing')); // Automated Carrier Onboarding & W-9/COI/FMCSA Auto-Credentialing Engine
 app.use('/api/bond-watchdog', require('./routes/bond-watchdog'));       // Broker BMC-84 Surety Bond Watchdog & 30-Day Default Claim Generator
+app.use('/api/rate-matrix', require('./routes/rate-matrix'));           // Enterprise Shipper Rate Matrix & Instant Contract RFP Bidding Engine
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

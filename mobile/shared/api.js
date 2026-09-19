@@ -847,6 +847,40 @@ class MobileApiClient {
   getSuretyClaimPacketPdfUrl(claimId) {
     return `${this.getBaseUrl()}/api/bond-watchdog/claims/${claimId}/packet-pdf`;
   }
+
+  // --- Phase 26: Enterprise Shipper Rate Matrix & Instant Contract RFP Engine ---
+  async getRateMatrixRoster() {
+    return this.request('/api/rate-matrix/roster', { method: 'GET' });
+  }
+
+  async calculateLaneContractRate(laneData) {
+    return this.request('/api/rate-matrix/quote-lane', {
+      method: 'POST',
+      body: laneData
+    });
+  }
+
+  async generateContractRfpProposal(proposalData) {
+    return this.request('/api/rate-matrix/proposals/generate', {
+      method: 'POST',
+      body: proposalData
+    });
+  }
+
+  async updateRfpProposalStatus(proposalId, statusData) {
+    return this.request(`/api/rate-matrix/proposals/${proposalId}/status`, {
+      method: 'POST',
+      body: statusData
+    });
+  }
+
+  async getRfpProposalDetails(proposalId) {
+    return this.request(`/api/rate-matrix/proposals/${proposalId}`, { method: 'GET' });
+  }
+
+  getRfpProposalPdfUrl(proposalId) {
+    return `${this.getBaseUrl()}/api/rate-matrix/proposals/${proposalId}/proposal-pdf`;
+  }
 }
 
 export const api = new MobileApiClient();
