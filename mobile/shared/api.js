@@ -410,6 +410,33 @@ class MobileApiClient {
   getDailyLogPdfUrl(driverId) {
     return `${this.getBaseUrl()}/api/eld/logs/daily/${driverId}/pdf`;
   }
+
+  // --- Automated IFTA Fuel Tax Engine ---
+  async logIftaTripMiles(tripData) {
+    return this.request('/api/ifta-tax/trips/log', {
+      method: 'POST',
+      body: tripData
+    });
+  }
+
+  async recordIftaFuelPurchase(fuelData) {
+    return this.request('/api/ifta-tax/fuel/record', {
+      method: 'POST',
+      body: fuelData
+    });
+  }
+
+  async getIftaQuarterlySummary(quarter = '2026-Q1', carrierId = null) {
+    let url = `/api/ifta-tax/quarterly-summary?quarter=${encodeURIComponent(quarter)}`;
+    if (carrierId) url += `&carrier_id=${carrierId}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  getIftaQuarterlyPdfUrl(quarter = '2026-Q1', carrierId = null) {
+    let url = `${this.getBaseUrl()}/api/ifta-tax/report/${encodeURIComponent(quarter)}/pdf`;
+    if (carrierId) url += `?carrier_id=${carrierId}`;
+    return url;
+  }
 }
 
 export const api = new MobileApiClient();

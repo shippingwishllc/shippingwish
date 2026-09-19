@@ -274,6 +274,9 @@
         <button class="nav-tab-btn" id="tab-btn-eld" onclick="switchTab('eld')">
           <span>📋</span> ELD &amp; HOS Logs
         </button>
+        <button class="nav-tab-btn" id="tab-btn-ifta" onclick="switchTab('ifta')">
+          <span>⛽</span> IFTA Fuel Tax
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -853,6 +856,77 @@
         </div>
       </div>
 
+      <!-- TAB 10: IFTA FUEL TAX DESK -->
+      <div id="tab-content-ifta" style="display:none;">
+        <!-- Quarter Switcher & Action Buttons -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="font-weight:800;font-size:14px;color:var(--text-primary);">
+              <span>⛽</span> International Fuel Tax Agreement (IFTA) Desk
+            </div>
+            <div style="display:flex;background:#070F1E;border:1px solid var(--border-subtle);border-radius:8px;padding:3px;gap:2px;">
+              <button class="ifta-qtr-btn" data-qtr="2026-Q1" onclick="setIftaQuarter('2026-Q1')" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;">2026-Q1</button>
+              <button class="ifta-qtr-btn" data-qtr="2026-Q2" onclick="setIftaQuarter('2026-Q2')" style="background:transparent;color:var(--text-secondary);border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;">2026-Q2</button>
+              <button class="ifta-qtr-btn" data-qtr="2026-Q3" onclick="setIftaQuarter('2026-Q3')" style="background:transparent;color:var(--text-secondary);border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;">2026-Q3</button>
+              <button class="ifta-qtr-btn" data-qtr="2026-Q4" onclick="setIftaQuarter('2026-Q4')" style="background:transparent;color:var(--text-secondary);border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;">2026-Q4</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openAddFuelModal()">+ Log Diesel Purchase</button>
+            <button class="btn btn-secondary btn-sm" onclick="openAddIftaMilesModal()">+ Log State Miles</button>
+            <button class="btn btn-primary btn-sm" style="background:#2563EB;" onclick="downloadIftaPdf()">📄 Download IFTA Return (PDF)</button>
+          </div>
+        </div>
+
+        <!-- 4 IFTA KPI Metric Cards -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:var(--space-4);">
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">TOTAL FLEET MILES</div>
+            <div style="font-size:20px;font-weight:800;color:#60A5FA;margin:4px 0;" id="ifta-kpi-miles">0 mi</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Across all US jurisdictions</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">DIESEL GALLONS PURCHASED</div>
+            <div style="font-size:20px;font-weight:800;color:#34D399;margin:4px 0;" id="ifta-kpi-gallons">0 gal</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Tax-paid pump receipts</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">FLEET AVERAGE MPG</div>
+            <div style="font-size:20px;font-weight:800;color:#FBBF24;margin:4px 0;" id="ifta-kpi-mpg">6.50 MPG</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Total miles / Total gallons</div>
+          </div>
+          <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:700;">NET TAX LIABILITY / CREDIT</div>
+            <div style="font-size:20px;font-weight:800;color:#F87171;margin:4px 0;" id="ifta-kpi-net-tax">$0.00</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Audited net tax payable</div>
+          </div>
+        </div>
+
+        <!-- Jurisdictional Audit Schedule Table -->
+        <div class="table-container">
+          <table class="ln-table">
+            <thead>
+              <tr>
+                <th>State &amp; Jurisdiction</th>
+                <th>Total Miles</th>
+                <th>% Miles</th>
+                <th>Pump Gallons</th>
+                <th>Taxable Gallons</th>
+                <th>Net Taxable Gallons</th>
+                <th>State Tax Rate</th>
+                <th>Net Tax Due / (Credit)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ifta-tbody">
+              <tr>
+                <td colspan="9" style="text-align:center;padding:24px;">Loading quarterly jurisdictional tax audit...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -994,6 +1068,88 @@
   </div>
 </div>
 
+<!-- MODAL: LOG DIESEL FUEL PURCHASE -->
+<div id="modal-add-fuel" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:440px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>⛽</span> Log Diesel Fuel Purchase
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddFuelModal()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">State (2-Letter Code)</label>
+        <input type="text" id="fuel-state" class="form-input" placeholder="e.g. TX, OK, IL" maxlength="2" style="text-transform:uppercase;">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Gallons Purchased</label>
+        <input type="number" id="fuel-gallons" class="form-input" placeholder="e.g. 125.5" step="0.1">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Price per Gallon ($)</label>
+        <input type="number" id="fuel-price" class="form-input" placeholder="e.g. 3.499" step="0.001">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Invoice / Receipt #</label>
+        <input type="text" id="fuel-invoice" class="form-input" placeholder="e.g. INV-98214">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label" style="font-size:11px;">Truck Stop / Fuel Vendor</label>
+      <input type="text" id="fuel-vendor" class="form-input" placeholder="e.g. Love's Travel Stop, Pilot Flying J, TA">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddFuelModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#10B981;" onclick="submitAddFuel()">Save Fuel Purchase</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LOG STATE MILES -->
+<div id="modal-add-ifta-miles" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:440px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>🗺️</span> Log State Corridor Miles
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddIftaMilesModal()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">State (2-Letter Code)</label>
+        <input type="text" id="miles-state" class="form-input" placeholder="e.g. TX, MO, PA" maxlength="2" style="text-transform:uppercase;">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Total Miles Driven</label>
+        <input type="number" id="miles-total" class="form-input" placeholder="e.g. 485.0" step="0.1">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Toll Miles (e.g. Turnpike)</label>
+      <input type="number" id="miles-toll" class="form-input" placeholder="e.g. 45.0" step="0.1">
+    </div>
+
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label" style="font-size:11px;">Trip / Corridor Notes</label>
+      <input type="text" id="miles-notes" class="form-input" placeholder="e.g. Dallas to Texarkana I-30 West">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeAddIftaMilesModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#2563EB;" onclick="submitAddIftaMiles()">Save Trip Miles</button>
+    </div>
+  </div>
+</div>
+
 <script>
   let brokersData = [];
   let loadsData = [];
@@ -1014,6 +1170,7 @@
     document.getElementById('tab-content-pricing').style.display = tabId === 'pricing' ? 'block' : 'none';
     document.getElementById('tab-content-detention').style.display = tabId === 'detention' ? 'block' : 'none';
     document.getElementById('tab-content-eld').style.display = tabId === 'eld' ? 'block' : 'none';
+    document.getElementById('tab-content-ifta').style.display = tabId === 'ifta' ? 'block' : 'none';
     document.getElementById('tab-content-apps').style.display = tabId === 'apps' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
@@ -1026,6 +1183,8 @@
       loadDetentionDesk();
     } else if (tabId === 'eld') {
       loadEldFleetDesk();
+    } else if (tabId === 'ifta') {
+      loadIftaDesk();
     }
   }
 
@@ -1850,6 +2009,175 @@
         </tr>
       `;
     }).join('');
+  }
+
+  // --- PHASE 13: AUTOMATED IFTA FUEL TAX ENGINE ---
+  let currentIftaQuarter = '2026-Q1';
+
+  function setIftaQuarter(q) {
+    currentIftaQuarter = q;
+    document.querySelectorAll('.ifta-qtr-btn').forEach(b => {
+      const active = b.getAttribute('data-qtr') === q;
+      b.style.background = active ? '#2563EB' : 'transparent';
+      b.style.color = active ? '#FFFFFF' : 'var(--text-secondary)';
+      b.style.fontWeight = active ? '800' : '600';
+    });
+    loadIftaDesk();
+  }
+
+  async function loadIftaDesk() {
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/ifta-tax/quarterly-summary?quarter=${encodeURIComponent(currentIftaQuarter)}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.ok) {
+        renderIftaDesk(data);
+      }
+    } catch (err) {
+      console.error('Failed to load IFTA desk:', err);
+    }
+  }
+
+  function renderIftaDesk(data) {
+    const fs = data.fleet_summary || {};
+    const milesEl = document.getElementById('ifta-kpi-miles');
+    const galEl = document.getElementById('ifta-kpi-gallons');
+    const mpgEl = document.getElementById('ifta-kpi-mpg');
+    const netEl = document.getElementById('ifta-kpi-net-tax');
+
+    if (milesEl) milesEl.textContent = (fs.total_miles || 0).toLocaleString() + ' mi';
+    if (galEl) galEl.textContent = (fs.total_gallons || 0).toLocaleString() + ' gal';
+    if (mpgEl) mpgEl.textContent = (fs.fleet_avg_mpg || 6.5).toFixed(2) + ' MPG';
+    
+    if (netEl) {
+      netEl.textContent = fs.net_tax_formatted || '$0.00';
+      netEl.style.color = (fs.net_tax_liability || 0) >= 0 ? '#F87171' : '#34D399';
+    }
+
+    const tbody = document.getElementById('ifta-tbody');
+    if (!tbody) return;
+
+    if (!data.jurisdictions || data.jurisdictions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">No trip miles or fuel purchases logged for this quarter yet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.jurisdictions.map(j => {
+      const isDue = j.net_tax_due > 0;
+      const isCredit = j.net_tax_due < 0;
+      const badge = isDue 
+        ? '<span class="badge badge-danger" style="font-size:10px;">TAX DUE</span>' 
+        : (isCredit ? '<span class="badge badge-success" style="font-size:10px;">TAX CREDIT</span>' : '<span class="badge" style="font-size:10px;">BALANCED</span>');
+      const valColor = isDue ? '#F87171' : (isCredit ? '#34D399' : '#94A3B8');
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:800;color:#38BDF8;">${escapeAttr(j.state_code)}</div>
+            <div style="font-size:11px;color:var(--text-secondary);">${escapeAttr(j.state_name)}</div>
+          </td>
+          <td style="font-weight:700;">${j.total_miles.toLocaleString()} mi</td>
+          <td style="color:var(--text-secondary);">${j.percent_of_miles}%</td>
+          <td>${j.gallons_purchased.toFixed(1)} gal</td>
+          <td>${j.taxable_gallons.toFixed(1)} gal</td>
+          <td style="color:${valColor};font-weight:700;">${j.net_taxable_gallons.toFixed(1)} gal</td>
+          <td style="color:var(--text-muted);">${j.tax_rate_formatted}</td>
+          <td style="color:${valColor};font-weight:800;font-size:13px;">${j.net_tax_formatted}</td>
+          <td>${badge}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function downloadIftaPdf() {
+    const url = `/api/ifta-tax/report/${encodeURIComponent(currentIftaQuarter)}/pdf`;
+    window.open(url, '_blank');
+  }
+
+  function openAddFuelModal() {
+    document.getElementById('modal-add-fuel').style.display = 'flex';
+  }
+  function closeAddFuelModal() {
+    document.getElementById('modal-add-fuel').style.display = 'none';
+  }
+  async function submitAddFuel() {
+    const state = document.getElementById('fuel-state').value;
+    const gallons = document.getElementById('fuel-gallons').value;
+    const price = document.getElementById('fuel-price').value;
+    const vendor = document.getElementById('fuel-vendor').value;
+    const inv = document.getElementById('fuel-invoice').value;
+    if (!state || !gallons) return alert('Please enter State and Gallons.');
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/ifta-tax/fuel/record', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          quarter: currentIftaQuarter,
+          state_code: state,
+          gallons: parseFloat(gallons),
+          price_per_gallon: price ? parseFloat(price) : null,
+          vendor_name: vendor,
+          invoice_ref: inv
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        closeAddFuelModal();
+        loadIftaDesk();
+      } else {
+        alert(data.error || 'Failed to record fuel purchase');
+      }
+    } catch (e) {
+      alert('Network error recording fuel purchase');
+    }
+  }
+
+  function openAddIftaMilesModal() {
+    document.getElementById('modal-add-ifta-miles').style.display = 'flex';
+  }
+  function closeAddIftaMilesModal() {
+    document.getElementById('modal-add-ifta-miles').style.display = 'none';
+  }
+  async function submitAddIftaMiles() {
+    const state = document.getElementById('miles-state').value;
+    const miles = document.getElementById('miles-total').value;
+    const toll = document.getElementById('miles-toll').value;
+    const notes = document.getElementById('miles-notes').value;
+    if (!state || !miles) return alert('Please enter State and Total Miles.');
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/ifta-tax/trips/log', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          quarter: currentIftaQuarter,
+          state_code: state,
+          total_miles: parseFloat(miles),
+          toll_miles: toll ? parseFloat(toll) : 0,
+          notes
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        closeAddIftaMilesModal();
+        loadIftaDesk();
+      } else {
+        alert(data.error || 'Failed to record state miles');
+      }
+    } catch (e) {
+      alert('Network error recording trip miles');
+    }
   }
 
   function getMockAuditLoads() {

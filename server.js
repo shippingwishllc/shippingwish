@@ -126,6 +126,7 @@ app.use('/api/bids', require('./routes/load-bids'));                // Instant B
 app.use('/api/detention', require('./routes/detention-billing'));   // Automated GPS Detention Clock & Accessorial Invoicing
 app.use('/api/coi', require('./routes/coi-generator'));             // Instant On-Demand ACORD 25 Certificate of Insurance Desk
 app.use('/api/eld', require('./routes/eld-compliance'));            // FMCSA 49 CFR Part 395 ELD Electronic Logbook & HOS Clocks
+app.use('/api/ifta-tax', require('./routes/ifta-tax'));            // Automated IFTA Fuel Tax Engine, State Mileage Breakdown & Filing PDFs
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {
