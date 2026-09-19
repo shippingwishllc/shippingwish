@@ -693,6 +693,40 @@ class MobileApiClient {
       body: overrideData
     });
   }
+
+  // --- Phase 22: Automated Detention Fee Collector & Shipper Invoicing ---
+  async getDetentionCollectorRoster() {
+    return this.request('/api/detention-collector/roster', { method: 'GET' });
+  }
+
+  async calculateDetentionDwell(dwellData) {
+    return this.request('/api/detention-collector/calculate-dwell', {
+      method: 'POST',
+      body: dwellData
+    });
+  }
+
+  async createDetentionInvoice(invoiceData) {
+    return this.request('/api/detention-collector/create-invoice', {
+      method: 'POST',
+      body: invoiceData
+    });
+  }
+
+  async getDetentionInvoiceDetails(invoiceId) {
+    return this.request(`/api/detention-collector/invoices/${invoiceId}`, { method: 'GET' });
+  }
+
+  async updateDetentionInvoiceStatus(invoiceId, statusData) {
+    return this.request(`/api/detention-collector/invoices/${invoiceId}/status`, {
+      method: 'POST',
+      body: statusData
+    });
+  }
+
+  getDetentionPacketPdfUrl(invoiceId) {
+    return `${this.getBaseUrl()}/api/detention-collector/invoices/${invoiceId}/packet-pdf`;
+  }
 }
 
 export const api = new MobileApiClient();

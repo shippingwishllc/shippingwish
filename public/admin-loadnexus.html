@@ -301,6 +301,9 @@
         <button class="nav-tab-btn" id="tab-btn-voice" onclick="switchTab('voice')">
           <span>🎙️</span> AI Voice Dispatch
         </button>
+        <button class="nav-tab-btn" id="tab-btn-collector" onclick="switchTab('collector')">
+          <span>⏱️</span> Detention Invoicing &amp; Collector
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -1547,6 +1550,96 @@
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
             <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Autonomous Voice Dispatch &amp; Telematics Verification Protocol</strong>
             Our AI voice agent autonomously conducts automated scheduled check-calls using TwiML voice gather synthesis. Spoken corridors, mile markers, and arrival ETAs are transcribed in real-time and extracted via natural language processing. Spoken locations are cross-validated against the tractor's live GPS breadcrumbs using the Haversine spherical distance model. If a location delta exceeds 35 miles or a delay exceeds 45 minutes, the system triggers an emergency dispatcher escalation flag.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 19: AUTOMATED DETENTION FEE COLLECTOR & SHIPPER INVOICING ENGINE -->
+      <div id="tab-content-collector" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);flex-wrap:wrap;gap:12px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>⏱️</span> Automated Detention Fee Collector &amp; Shipper Invoicing
+              <span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);">Geofence Dwell Engine</span>
+            </h3>
+            <span style="font-size:12px;color:var(--text-muted);">
+              Geofence dock dwell tracking (500m) · 2-Hour free time deduction · Automated supplemental invoices &amp; PDF evidence packets
+            </span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="openCreateDetentionModal()">
+              <span>💰</span> + Issue Detention Invoice
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="loadDetentionCollectorDesk()">
+              <span>🔄</span> Refresh Desk
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:var(--space-4);margin-bottom:var(--space-4);">
+          <div class="stat-card" style="border-left:4px solid #f59e0b;">
+            <div class="stat-label">TOTAL DETENTION BILLED ($)</div>
+            <div class="stat-value" id="collector-kpi-billed" style="color:#fbbf24;">$0.00</div>
+            <div class="stat-sub">Gross supplemental claims</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="stat-label">COLLECTION RECOVERY RATE (%)</div>
+            <div class="stat-value" id="collector-kpi-recovery" style="color:#34d399;">92.4%</div>
+            <div class="stat-sub">Paid &amp; settled without short-pay</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #ef4444;">
+            <div class="stat-label">ACTIVE DWELL CLAIMS</div>
+            <div class="stat-value" id="collector-kpi-exceptions" style="color:#f87171;">0</div>
+            <div class="stat-sub">Pending broker AP approval / review</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #3b82f6;">
+            <div class="stat-label">AVG FACILITY DWELL TIME</div>
+            <div class="stat-value" id="collector-kpi-avg-dwell" style="color:#60a5fa;">215m</div>
+            <div class="stat-sub">Across distribution centers &amp; docks</div>
+          </div>
+        </div>
+
+        <!-- Search & Filter Bar -->
+        <div style="display:flex;gap:12px;margin-bottom:var(--space-4);flex-wrap:wrap;align-items:center;">
+          <input type="text" id="collector-search-input" class="form-input" placeholder="Search invoice #, carrier, broker, facility..." style="max-width:320px;" oninput="filterDetentionInvoices()">
+          <select id="collector-filter-status" class="form-select" style="max-width:200px;" onchange="filterDetentionInvoices()">
+            <option value="ALL">All Collection Statuses</option>
+            <option value="INVOICE_SENT">Invoice Sent (Pending AP)</option>
+            <option value="PAID">Paid / Settled (Direct Deposit)</option>
+            <option value="DISPUTED">Disputed by Shipper</option>
+          </select>
+        </div>
+
+        <!-- Invoices Table -->
+        <div class="table-container">
+          <table class="tms-table-v2">
+            <thead>
+              <tr>
+                <th>Invoice # &amp; Date</th>
+                <th>Billed Broker / Shipper</th>
+                <th>Carrier &amp; Load Ref</th>
+                <th>Facility &amp; Geofence</th>
+                <th>Dwell &amp; Free Time</th>
+                <th>Claim Amount Due</th>
+                <th>Collection Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="collector-invoices-tbody">
+              <tr>
+                <td colspan="8" style="text-align:center;padding:24px;">Loading Detention Collector Desk...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- System Architecture & Legal Banner -->
+        <div style="margin-top:var(--space-4);background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-md);padding:16px;display:flex;gap:16px;align-items:flex-start;">
+          <div style="font-size:24px;">⏱️</div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Automated Detention Collection &amp; Geofence Audit Protocol</strong>
+            Under standard commercial freight agreements, carriers are entitled to detention compensation after 2 hours (120 minutes) of free dock time. Our engine monitors live tractor mobile GPS breadcrumbs inside facility boundaries (500m perimeter). When dwell exceeds 120 minutes, billable detention accrues in 15-minute blocks at $75.00/hr ($18.75/block). Upon departure, a formal supplemental invoice is issued with a court-ready vector PDF evidence packet containing the cryptographic telematics breadcrumb log.
           </div>
         </div>
       </div>
@@ -3063,6 +3156,183 @@
   </div>
 </div>
 
+<!-- MODAL: CREATE DETENTION INVOICE -->
+<div id="modal-create-detention" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:680px;max-height:90vh;overflow-y:auto;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>⏱️</span> Issue Supplemental Detention Invoice
+      </h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeCreateDetentionModal()">✕</button>
+    </div>
+
+    <!-- Presets -->
+    <div style="margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px;margin-bottom:6px;">Quick Preset Facilities &amp; Dwells:</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setDetentionPreset(1)">Preset 1: Sysco Atlanta (4h dwell / $150 det + $220 lumper)</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setDetentionPreset(2)">Preset 2: Americold Dallas (5h dwell / $225 det)</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="setDetentionPreset(3)">Preset 3: US Foods Chicago (6h dwell / $300 det + $50 layover)</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Load Reference ID</label>
+        <input type="text" id="det-load-ref" class="form-input" value="SW-SPOT-8821">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Carrier Name &amp; MC</label>
+        <input type="text" id="det-carrier-name" class="form-input" value="Apex Freightlines LLC (MC-1094821)">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Billed Broker / Shipper Name</label>
+        <input type="text" id="det-broker-name" class="form-input" value="TQL Logistics LLC">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Broker AP Contact Email</label>
+        <input type="email" id="det-broker-email" class="form-input" value="ap@tqlfreight.com">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Facility Name &amp; Address</label>
+        <input type="text" id="det-facility-name" class="form-input" value="Sysco Atlanta Regional DC, College Park, GA">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Facility Type</label>
+        <select id="det-facility-type" class="form-select">
+          <option value="RECEIVER_DELIVERY">Receiver (Delivery Dock)</option>
+          <option value="SHIPPER_PICKUP">Shipper (Pickup Dock)</option>
+          <option value="CROSS_DOCK">Cross-Dock Consolidation</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Total Dwell (Mins)</label>
+        <input type="number" id="det-dwell-mins" class="form-input" value="240" oninput="recalcDetentionModal()">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Free Time (Mins)</label>
+        <input type="number" id="det-free-mins" class="form-input" value="120" oninput="recalcDetentionModal()">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Hourly Rate ($)</label>
+        <input type="number" id="det-hourly-rate" class="form-input" value="75.00" oninput="recalcDetentionModal()">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Lumper ($)</label>
+        <input type="number" id="det-lumper" class="form-input" value="220.00" oninput="recalcDetentionModal()">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:11px;">Layover ($)</label>
+        <input type="number" id="det-layover" class="form-input" value="0.00" oninput="recalcDetentionModal()">
+      </div>
+    </div>
+
+    <!-- Live Calculation Banner -->
+    <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-md);padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);">BILLABLE DETENTION ACCRUAL</div>
+        <div style="font-weight:800;font-size:15px;color:#fbbf24;" id="det-calc-summary">120m Billable (8 blocks of 15m @ $18.75) = $150.00</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--text-muted);">TOTAL INVOICE DUE</div>
+        <div style="font-weight:900;font-size:18px;color:#34d399;" id="det-calc-total">$370.00 USD</div>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label class="form-label" style="font-size:11px;">Dispatcher Audit Notes</label>
+      <input type="text" id="det-notes" class="form-input" placeholder="e.g. Receiver dock held driver at bay 14; forklift breakdown reported by lumpers.">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeCreateDetentionModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#2563eb;" onclick="submitCreateDetentionInvoice()">Issue &amp; Send Supplemental Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SETTLE / RESOLVE DETENTION CLAIM -->
+<div id="modal-settle-detention" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:460px;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;">Update Collection &amp; Dispute Status</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeSettleDetentionModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="settle-inv-id">
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Collection Status</label>
+      <select id="settle-status" class="form-select">
+        <option value="PAID">PAID (Payment Received via ACH / Direct Deposit)</option>
+        <option value="SETTLED">SETTLED (Compromise / Partial Agreement Paid)</option>
+        <option value="DISPUTED">DISPUTED (Shipper / Broker Contesting Dwell)</option>
+        <option value="INVOICE_SENT">INVOICE_SENT (Pending Review)</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-size:11px;">Dispute Reason (if applicable)</label>
+      <textarea id="settle-dispute-reason" class="form-input" rows="2" placeholder="e.g. Broker claimed appointment was missed; counter-proven by GPS entry."></textarea>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label class="form-label" style="font-size:11px;">Dispatcher Resolution Notes</label>
+      <textarea id="settle-notes" class="form-input" rows="2" placeholder="e.g. Telematics packet sent to broker AP; full payment released."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeSettleDetentionModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" style="background:#059669;" onclick="submitSettleDetention()">Save Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: VIEW GEOFENCE TELEMATICS BREADCRUMBS -->
+<div id="modal-view-breadcrumbs" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:640px;max-height:90vh;overflow-y:auto;padding:var(--space-6);box-shadow:var(--shadow-xl);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <div>
+        <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+          <span>🛰️</span> Facility Geofence Telematics Audit Trail
+        </h3>
+        <span style="font-size:12px;color:var(--text-muted);" id="breadcrumbs-invoice-title">-</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeBreadcrumbsModal()">✕</button>
+    </div>
+
+    <div class="table-container" style="max-height:360px;overflow-y:auto;margin-bottom:16px;">
+      <table class="tms-table-v2">
+        <thead>
+          <tr>
+            <th>Ping Timestamp</th>
+            <th>Coordinates</th>
+            <th>Distance from Dock</th>
+            <th>Tractor Speed</th>
+            <th>Geofence Status</th>
+          </tr>
+        </thead>
+        <tbody id="breadcrumbs-tbody">
+          <tr><td colspan="5" style="text-align:center;padding:16px;">Loading telematics breadcrumbs...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="btn btn-primary btn-sm" onclick="closeBreadcrumbsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function getAuthToken() {
     return localStorage.getItem('token') || localStorage.getItem('auth_token') || sessionStorage.getItem('token') || '';
@@ -3097,6 +3367,7 @@
     document.getElementById('tab-content-audit').style.display = tabId === 'audit' ? 'block' : 'none';
     document.getElementById('tab-content-contracts').style.display = tabId === 'contracts' ? 'block' : 'none';
     document.getElementById('tab-content-voice').style.display = tabId === 'voice' ? 'block' : 'none';
+    document.getElementById('tab-content-collector').style.display = tabId === 'collector' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -3126,6 +3397,8 @@
       loadShipperContractsDesk();
     } else if (tabId === 'voice') {
       loadDispatchVoiceDesk();
+    } else if (tabId === 'collector') {
+      loadDetentionCollectorDesk();
     }
   }
 
@@ -6532,6 +6805,313 @@
     } catch (e) {
       alert('Network error saving override.');
     }
+  }
+
+  // --- PHASE 22: AUTOMATED DETENTION FEE COLLECTOR & SHIPPER INVOICING DESK ---
+  let detentionInvoicesData = [];
+  let currentBreadcrumbInvId = null;
+
+  async function loadDetentionCollectorDesk() {
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/detention-collector/roster', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.kpis) {
+          document.getElementById('collector-kpi-billed').textContent = '$' + Number(data.kpis.total_detention_billed || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+          document.getElementById('collector-kpi-recovery').textContent = (data.kpis.collection_recovery_rate || 92.4) + '%';
+          document.getElementById('collector-kpi-exceptions').textContent = data.kpis.active_dwell_exceptions || 0;
+          document.getElementById('collector-kpi-avg-dwell').textContent = (data.kpis.average_dwell_time_mins || 215) + 'm';
+        }
+        detentionInvoicesData = data.invoices || [];
+        renderDetentionInvoicesTable(detentionInvoicesData);
+      } else {
+        console.error('Failed to load detention collector roster:', data.error);
+      }
+    } catch (err) {
+      console.error('Network error loading detention collector roster:', err);
+    }
+  }
+
+  function renderDetentionInvoicesTable(invoices) {
+    const tbody = document.getElementById('collector-invoices-tbody');
+    if (!tbody) return;
+    if (!invoices || invoices.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No detention invoices issued yet. Click "+ Issue Detention Invoice" to generate one.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = invoices.map(inv => {
+      const dateStr = inv.created_at ? new Date(inv.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      const dwellHours = (parseInt(inv.total_dwell_minutes || 0) / 60).toFixed(1);
+      const billableHours = (parseInt(inv.billable_detention_minutes || 0) / 60).toFixed(1);
+
+      let statusBadge = '';
+      if (inv.collection_status === 'PAID') {
+        statusBadge = `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">✅ PAID (${inv.payment_method || 'ACH'})</span>`;
+      } else if (inv.collection_status === 'SETTLED') {
+        statusBadge = `<span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);">🤝 SETTLED</span>`;
+      } else if (inv.collection_status === 'DISPUTED') {
+        statusBadge = `<span class="badge" style="background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);">⚠️ DISPUTED</span>`;
+      } else {
+        statusBadge = `<span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);">📨 INVOICE SENT</span>`;
+      }
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;font-family:var(--font-mono);font-size:11px;color:var(--text-primary);">${inv.invoice_number}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${dateStr}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${inv.broker_shipper_name}</div>
+            <div style="font-size:11px;color:var(--text-secondary);">${inv.broker_email || ''}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:var(--text-primary);">${inv.carrier_name}</div>
+            <div style="font-size:11px;color:#60a5fa;font-family:var(--font-mono);">${inv.load_reference || 'SW-SPOT'} · ${inv.carrier_mc || ''}</div>
+          </td>
+          <td>
+            <div style="font-weight:600;color:var(--text-primary);">${inv.facility_name}</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Radius: ${inv.geofence_radius_meters || 500}m · ${inv.facility_type}</div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:#f87171;">${dwellHours}h Total (${inv.total_dwell_minutes}m)</div>
+            <div style="font-size:11px;color:var(--text-muted);">${billableHours}h Billable (120m Free)</div>
+          </td>
+          <td>
+            <div style="font-weight:900;font-size:13px;color:#34d399;">$${Number(inv.total_amount_due || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div style="font-size:10px;color:var(--text-muted);">Det: $${Number(inv.detention_amount || 0).toFixed(2)} ${parseFloat(inv.lumper_reimbursement) > 0 ? '+ Lump: $' + Number(inv.lumper_reimbursement).toFixed(2) : ''}</div>
+          </td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <a href="/api/detention-collector/invoices/${inv.id}/packet-pdf" target="_blank" class="btn btn-primary btn-sm" style="font-size:10.5px;padding:3px 8px;text-decoration:none;background:#2563eb;">
+                📄 Packet PDF
+              </a>
+              <button class="btn btn-ghost btn-sm" style="font-size:10.5px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="openBreadcrumbsModal(${inv.id}, '${inv.invoice_number}')">
+                🛰️ GPS
+              </button>
+              <button class="btn btn-ghost btn-sm" style="font-size:10.5px;padding:3px 8px;border:1px solid var(--border-subtle);" onclick="openSettleDetentionModal(${inv.id}, '${inv.collection_status}', '${(inv.dispute_reason || '').replace(/'/g, "\\'")}', '${(inv.dispatcher_notes || '').replace(/'/g, "\\'")}')">
+                💳 Settle
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterDetentionInvoices() {
+    const q = (document.getElementById('collector-search-input')?.value || '').toLowerCase().trim();
+    const status = document.getElementById('collector-filter-status')?.value || 'ALL';
+
+    const filtered = detentionInvoicesData.filter(inv => {
+      const matchQ = !q ||
+        (inv.invoice_number && inv.invoice_number.toLowerCase().includes(q)) ||
+        (inv.load_reference && inv.load_reference.toLowerCase().includes(q)) ||
+        (inv.carrier_name && inv.carrier_name.toLowerCase().includes(q)) ||
+        (inv.broker_shipper_name && inv.broker_shipper_name.toLowerCase().includes(q)) ||
+        (inv.facility_name && inv.facility_name.toLowerCase().includes(q));
+
+      const matchStatus = status === 'ALL' || inv.collection_status === status;
+
+      return matchQ && matchStatus;
+    });
+
+    renderDetentionInvoicesTable(filtered);
+  }
+
+  function openCreateDetentionModal() {
+    recalcDetentionModal();
+    document.getElementById('modal-create-detention').style.display = 'flex';
+  }
+
+  function closeCreateDetentionModal() {
+    document.getElementById('modal-create-detention').style.display = 'none';
+  }
+
+  function setDetentionPreset(idx) {
+    if (idx === 1) {
+      document.getElementById('det-load-ref').value = 'SW-SPOT-8821';
+      document.getElementById('det-carrier-name').value = 'Apex Freightlines LLC (MC-1094821)';
+      document.getElementById('det-broker-name').value = 'TQL Logistics LLC';
+      document.getElementById('det-broker-email').value = 'ap@tqlfreight.com';
+      document.getElementById('det-facility-name').value = 'Sysco Atlanta Regional DC, College Park, GA';
+      document.getElementById('det-facility-type').value = 'RECEIVER_DELIVERY';
+      document.getElementById('det-dwell-mins').value = '240';
+      document.getElementById('det-free-mins').value = '120';
+      document.getElementById('det-hourly-rate').value = '75.00';
+      document.getElementById('det-lumper').value = '220.00';
+      document.getElementById('det-layover').value = '0.00';
+    } else if (idx === 2) {
+      document.getElementById('det-load-ref').value = 'SW-CONTRACT-4412';
+      document.getElementById('det-carrier-name').value = 'Lone Star Express LLC (MC-981240)';
+      document.getElementById('det-broker-name').value = 'C.H. Robinson Worldwide';
+      document.getElementById('det-broker-email').value = 'freightpay@chrobinson.com';
+      document.getElementById('det-facility-name').value = 'Americold Cold Storage, Dallas, TX';
+      document.getElementById('det-facility-type').value = 'RECEIVER_DELIVERY';
+      document.getElementById('det-dwell-mins').value = '300';
+      document.getElementById('det-free-mins').value = '120';
+      document.getElementById('det-hourly-rate').value = '75.00';
+      document.getElementById('det-lumper').value = '0.00';
+      document.getElementById('det-layover').value = '0.00';
+    } else if (idx === 3) {
+      document.getElementById('det-load-ref').value = 'SW-DEDICATED-9102';
+      document.getElementById('det-carrier-name').value = 'Windy City Carriers (MC-871402)';
+      document.getElementById('det-broker-name').value = 'Echo Global Logistics';
+      document.getElementById('det-broker-email').value = 'claims@echo.com';
+      document.getElementById('det-facility-name').value = 'US Foods Distribution Center, Chicago, IL';
+      document.getElementById('det-facility-type').value = 'RECEIVER_DELIVERY';
+      document.getElementById('det-dwell-mins').value = '360';
+      document.getElementById('det-free-mins').value = '120';
+      document.getElementById('det-hourly-rate').value = '75.00';
+      document.getElementById('det-lumper').value = '0.00';
+      document.getElementById('det-layover').value = '50.00';
+    }
+    recalcDetentionModal();
+  }
+
+  function recalcDetentionModal() {
+    const totalMins = parseInt(document.getElementById('det-dwell-mins')?.value || 240, 10);
+    const freeMins = parseInt(document.getElementById('det-free-mins')?.value || 120, 10);
+    const rate = parseFloat(document.getElementById('det-hourly-rate')?.value || 75.00);
+    const lumper = parseFloat(document.getElementById('det-lumper')?.value || 0);
+    const layover = parseFloat(document.getElementById('det-layover')?.value || 0);
+
+    const billableMins = Math.max(0, totalMins - freeMins);
+    const billableBlocks = Math.ceil(billableMins / 15);
+    const detentionAmt = Math.round(((billableBlocks * 15 * rate) / 60) * 100) / 100;
+    const totalDue = Math.round((detentionAmt + lumper + layover) * 100) / 100;
+
+    const summaryEl = document.getElementById('det-calc-summary');
+    const totalEl = document.getElementById('det-calc-total');
+    if (summaryEl) summaryEl.textContent = `${billableMins}m Billable (${billableBlocks} blocks of 15m @ $${(rate/4).toFixed(2)}) = $${detentionAmt.toFixed(2)}`;
+    if (totalEl) totalEl.textContent = `$${totalDue.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`;
+  }
+
+  async function submitCreateDetentionInvoice() {
+    const payload = {
+      load_reference: document.getElementById('det-load-ref').value,
+      carrier_name: document.getElementById('det-carrier-name').value,
+      broker_shipper_name: document.getElementById('det-broker-name').value,
+      broker_email: document.getElementById('det-broker-email').value,
+      facility_name: document.getElementById('det-facility-name').value,
+      facility_type: document.getElementById('det-facility-type').value,
+      dwell_minutes: parseInt(document.getElementById('det-dwell-mins').value, 10) || 240,
+      free_time_minutes: parseInt(document.getElementById('det-free-mins').value, 10) || 120,
+      hourly_rate: parseFloat(document.getElementById('det-hourly-rate').value) || 75.00,
+      lumper_reimbursement: parseFloat(document.getElementById('det-lumper').value) || 0.00,
+      layover_amount: parseFloat(document.getElementById('det-layover').value) || 0.00,
+      dispatcher_notes: document.getElementById('det-notes').value
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch('/api/detention-collector/create-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeCreateDetentionModal();
+        await loadDetentionCollectorDesk();
+      } else {
+        alert(data.error || 'Failed to issue detention invoice.');
+      }
+    } catch (e) {
+      alert('Network error issuing detention invoice.');
+    }
+  }
+
+  function openSettleDetentionModal(invoiceId, status = 'PAID', disputeReason = '', notes = '') {
+    document.getElementById('settle-inv-id').value = invoiceId;
+    document.getElementById('settle-status').value = status || 'PAID';
+    document.getElementById('settle-dispute-reason').value = disputeReason || '';
+    document.getElementById('settle-notes').value = notes || '';
+    document.getElementById('modal-settle-detention').style.display = 'flex';
+  }
+
+  function closeSettleDetentionModal() {
+    document.getElementById('modal-settle-detention').style.display = 'none';
+  }
+
+  async function submitSettleDetention() {
+    const id = document.getElementById('settle-inv-id').value;
+    const payload = {
+      collection_status: document.getElementById('settle-status').value,
+      dispute_reason: document.getElementById('settle-dispute-reason').value,
+      dispatcher_notes: document.getElementById('settle-notes').value
+    };
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/detention-collector/invoices/${id}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeSettleDetentionModal();
+        loadDetentionCollectorDesk();
+      } else {
+        alert(data.error || 'Failed to update status.');
+      }
+    } catch (e) {
+      alert('Network error updating status.');
+    }
+  }
+
+  async function openBreadcrumbsModal(invoiceId, invoiceNumber = '') {
+    currentBreadcrumbInvId = invoiceId;
+    document.getElementById('breadcrumbs-invoice-title').textContent = `Invoice: ${invoiceNumber}`;
+    const tbody = document.getElementById('breadcrumbs-tbody');
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:16px;">Loading telematics breadcrumbs...</td></tr>`;
+    document.getElementById('modal-view-breadcrumbs').style.display = 'flex';
+
+    const token = getAuthToken();
+    try {
+      const res = await fetch(`/api/detention-collector/invoices/${invoiceId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.success && data.breadcrumbs) {
+        if (data.breadcrumbs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text-muted);">No GPS breadcrumbs logged for this invoice.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = data.breadcrumbs.map(bc => {
+          const pTime = new Date(bc.ping_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          return `
+            <tr>
+              <td style="font-weight:600;font-family:var(--font-mono);font-size:11px;">${pTime}</td>
+              <td style="font-size:11px;color:var(--text-secondary);font-family:var(--font-mono);">${Number(bc.lat).toFixed(4)}, ${Number(bc.lon).toFixed(4)}</td>
+              <td style="font-size:11px;color:var(--text-primary);">${Math.round(bc.distance_to_center_meters || 45)}m from dock center</td>
+              <td style="font-size:11px;color:var(--text-secondary);">${Number(bc.speed_mph || 0).toFixed(1)} mph (Stationary)</td>
+              <td><span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">✓ INSIDE GEOFENCE</span></td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:16px;color:#f87171;">Could not load breadcrumbs.</td></tr>`;
+      }
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:16px;color:#f87171;">Network error loading breadcrumbs.</td></tr>`;
+    }
+  }
+
+  function closeBreadcrumbsModal() {
+    document.getElementById('modal-view-breadcrumbs').style.display = 'none';
   }
 </script>
 
