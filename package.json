@@ -16,7 +16,10 @@
     "build:driver:apk": "npm --prefix mobile/driver-app run eas-build",
     "build:carrier:apk": "npm --prefix mobile/loadnexus-carrier run eas-build",
     "build:tms:apk": "npm --prefix mobile/shippingwish-tms run eas-build",
-    "build:broker:apk": "npm --prefix mobile/loadnexus-broker run eas-build"
+    "build:broker:apk": "npm --prefix mobile/loadnexus-broker run eas-build",
+    "build:loadsnexus": "npm --prefix apps/loadsnexus run build",
+    "build:shippingwish": "npm --prefix apps/shippingwish run build",
+    "build:all": "npm --prefix apps/loadsnexus run build && npm --prefix apps/shippingwish run build"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
