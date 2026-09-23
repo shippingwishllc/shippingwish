@@ -86,6 +86,7 @@
   const params = new URLSearchParams(location.search);
   const plan = params.get('plan') || 'solo_weekly';
   const copy = {
+    loadboard_ai_pass: { title: 'LoadsNexus™ Carrier AI Load Board — $19 / month', trucks: '1', sub: 'Instant self-dispatch access. Full 50-state live spot load search, direct broker contacts, and Days-To-Pay credit scores.' },
     solo_weekly: { title: 'Owner Operator — $149 / week after trial', trucks: '1' },
     fleet_weekly: { title: 'Small Fleet — $350 / week after trial', trucks: '2-5' },
     command_weekly: { title: 'Fleet Command — $500 / week after trial', trucks: '6+' },
@@ -94,6 +95,7 @@
   const meta = copy[plan] || copy.solo_weekly;
   document.getElementById('plan_key').value = copy[plan] ? plan : 'solo_weekly';
   document.getElementById('plan-title').textContent = meta.title;
+  if (meta.sub) document.getElementById('plan-sub').textContent = meta.sub;
   document.getElementById('trucks').value = meta.trucks;
   if (params.get('canceled') === '1') {
     document.getElementById('canceled-note').style.display = 'block';

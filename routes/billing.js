@@ -224,15 +224,19 @@ function lineItemForPlan(plan, amount) {
   if (priceId) {
     return { price: priceId, quantity: 1 };
   }
+  const interval = plan.interval || 'week';
+  const desc = plan.interval === 'month'
+    ? `${plan.description} First ${TRIAL_DAYS} days free. Then billed monthly.`
+    : `${plan.description} First ${TRIAL_DAYS} days free. Then billed weekly.`;
   return {
     price_data: {
       currency: 'usd',
       product_data: {
         name: plan.name,
-        description: `${plan.description} First ${TRIAL_DAYS} days free. Then billed weekly.`
+        description: desc
       },
       unit_amount: amount,
-      recurring: { interval: 'week' }
+      recurring: { interval }
     },
     quantity: 1
   };
@@ -392,7 +396,9 @@ async function createWeeklyCheckout({
     },
     custom_text: {
       submit: {
-        message: `Card is saved securely. $0 due today. Weekly billing starts after a ${TRIAL_DAYS}-day trial. Cancel before then and you are not charged.`
+        message: plan.interval === 'month'
+          ? `Card is saved securely. $0 due today. Monthly billing starts after a ${TRIAL_DAYS}-day trial ($${(amount / 100).toFixed(0)}/month). Cancel before then and you are not charged.`
+          : `Card is saved securely. $0 due today. Weekly billing starts after a ${TRIAL_DAYS}-day trial. Cancel before then and you are not charged.`
       }
     }
   });

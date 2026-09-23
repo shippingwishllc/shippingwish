@@ -535,35 +535,52 @@
         </p>
       </div>
 
-      <div class="ln-pricing-grid">
+      <div class="ln-pricing-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); max-width: 1080px;">
 
-        <div class="ln-price-card">
-          <div class="ln-price-name">Carrier — Basic</div>
-          <div class="ln-price-amount">Free<span>&nbsp;forever</span></div>
-          <div class="ln-price-note">With any Shipping Wish subscription · No seat fee</div>
+        <!-- 1. $19/mo Loadboard Plan -->
+        <div class="ln-price-card featured" style="border-color:#3b82f6;">
+          <div class="ln-price-name">Carrier — AI Load Board</div>
+          <div class="ln-price-amount">$19<span> / month</span></div>
+          <div class="ln-price-note">Self-Dispatch · Direct Broker Access · Cancel Anytime</div>
           <ul class="ln-price-list">
-            <li>Full load board access — search &amp; book</li>
-            <li>Post truck capacity to brokers</li>
-            <li>Broker credit score visibility</li>
-            <li>AI load matching (lane-based)</li>
-            <li>Document management (BOL, POD)</li>
-            <li>LoadsNexus Carrier mobile app</li>
+            <li>Unlimited 50-state live spot freight search</li>
+            <li>Direct broker phone numbers &amp; unmasked emails</li>
+            <li>Real Days-To-Pay (DTP) &amp; $75k bond verification</li>
+            <li>Post available truck capacity to brokers</li>
+            <li>Dynamic RPM &amp; deadhead corridor calculator</li>
+            <li>LoadsNexus Carrier Mobile App (iOS &amp; Android)</li>
           </ul>
-          <a href="/signup?from=loadsnexus&role=carrier" class="ln-btn ln-btn-carrier ln-btn-block">Start Free →</a>
+          <a href="/checkout?plan=loadboard_ai_pass" class="ln-btn ln-btn-carrier ln-btn-block" style="background:#2563EB;">Start Load Board ($19/mo) →</a>
         </div>
 
-        <div class="ln-price-card featured">
-          <div class="ln-price-name">Broker — Professional</div>
-          <div class="ln-price-amount" style="font-size:2.4rem;">Contact Us</div>
-          <div class="ln-price-note">Custom plan based on load volume</div>
+        <!-- 2. Included with ShippingWish Dispatch -->
+        <div class="ln-price-card">
+          <div class="ln-price-name">Carrier + 24/7 Dedicated Dispatch</div>
+          <div class="ln-price-amount" style="font-size:2.2rem;line-height:1.2;">Included Free</div>
+          <div class="ln-price-note">With Shipping Wish Subscription (From $149/wk)</div>
           <ul class="ln-price-list">
-            <li>Unlimited load posting</li>
-            <li>Verified carrier network access</li>
-            <li>Anti-double-brokering guard</li>
-            <li>Real-time carrier authority check</li>
-            <li>Full document management</li>
-            <li>Dedicated account manager</li>
-            <li>LoadsNexus Broker mobile app</li>
+            <li>Everything in AI Load Board ($19 value included)</li>
+            <li>Named 24/7 Fleet Operations Manager on your staff</li>
+            <li>We negotiate top RPM and book freight for you</li>
+            <li>You keep 100% of broker pay (zero percentage fees)</li>
+            <li>Broker packets, rate confirmations, BOL/POD vault</li>
+            <li>Full Shipping Wish TMS software included</li>
+          </ul>
+          <a href="https://www.shippingwish.com/pricing" target="_blank" rel="noopener" class="ln-btn ln-btn-secondary ln-btn-block">Get Full Dispatch Desk →</a>
+        </div>
+
+        <!-- 3. Broker Plan -->
+        <div class="ln-price-card">
+          <div class="ln-price-name">Broker — Freight &amp; Capacity</div>
+          <div class="ln-price-amount" style="font-size:2.2rem;line-height:1.2;">Custom</div>
+          <div class="ln-price-note">Enterprise plan based on monthly load volume</div>
+          <ul class="ln-price-list">
+            <li>Unlimited spot load posting across 50 states</li>
+            <li>Verified carrier network capacity matching</li>
+            <li>Anti-Double-Brokering security guard protection</li>
+            <li>Instant FMCSA carrier authority &amp; insurance verification</li>
+            <li>LoadsNexus Broker Mobile App (iOS &amp; Android)</li>
+            <li>Dedicated account executive &amp; API access</li>
           </ul>
           <a href="https://www.shippingwish.com/contact?subject=broker-partner" target="_blank" rel="noopener" class="ln-btn ln-btn-broker ln-btn-block">Get Broker Access →</a>
         </div>
