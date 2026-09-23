@@ -43,6 +43,15 @@
       ]
     },
     {
+      "source": "/loadsnexus/loadsnexus.css",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/pricing",
       "headers": [
         {
