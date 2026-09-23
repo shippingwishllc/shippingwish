@@ -922,6 +922,37 @@ class MobileApiClient {
   getDrayageEirPdfUrl(shipmentId) {
     return `${this.getBaseUrl()}/api/drayage-intermodal/shipments/${shipmentId}/eir-pdf`;
   }
+
+  // --- Phase 28: Cross-Border US-Mexico & US-Canada In-Bond Customs Dispatcher ---
+  async getCrossBorderRoster() {
+    return this.request('/api/cross-border/roster', { method: 'GET' });
+  }
+
+  async generateCrossBorderManifest(manifestData) {
+    return this.request('/api/cross-border/manifests/generate', {
+      method: 'POST',
+      body: manifestData
+    });
+  }
+
+  async updateCrossBorderManifestStatus(manifestId, statusData) {
+    return this.request(`/api/cross-border/manifests/${manifestId}/status`, {
+      method: 'POST',
+      body: statusData
+    });
+  }
+
+  async getCrossBorderManifestDetails(manifestId) {
+    return this.request(`/api/cross-border/manifests/${manifestId}`, { method: 'GET' });
+  }
+
+  getCrossBorderPacketPdfUrl(manifestId) {
+    return `${this.getBaseUrl()}/api/cross-border/manifests/${manifestId}/packet-pdf`;
+  }
+
+  async getBorderWaitTimes() {
+    return this.request('/api/cross-border/ports/wait-times', { method: 'GET' });
+  }
 }
 
 export const api = new MobileApiClient();

@@ -305,6 +305,22 @@
 
   // Check URL query flags
   const urlParams = new URLSearchParams(location.search);
+  const isFromLoadsNexus = urlParams.get('from') === 'loadsnexus' || location.hostname.includes('loadsnexus');
+  if (isFromLoadsNexus) {
+    document.title = 'Create Account — LoadsNexus™ Freight Exchange';
+    const logoMark = document.querySelector('.auth-form-logo .nav-logo-mark');
+    const logoText = document.querySelector('.auth-form-logo div:last-child');
+    if (logoMark) {
+      logoMark.textContent = 'LN';
+      logoMark.style.background = 'linear-gradient(135deg, #1d4ed8, #3b82f6)';
+    }
+    if (logoText) {
+      logoText.innerHTML = 'Loads<span style="color:#3b82f6;">Nexus</span>™';
+    }
+    const sub = document.querySelector('.auth-form-inner p');
+    if (sub) sub.textContent = 'Join LoadsNexus to find loads, post capacity, and access AI freight intelligence.';
+  }
+
   if (urlParams.get('canceled') === '1') {
     alertBox.textContent = 'Card verification was not completed. No charges were made. Complete the form below to start your 7-day free trial.';
     alertBox.className = 'form-alert error';

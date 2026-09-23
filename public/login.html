@@ -277,6 +277,16 @@
       <h2 id="login-title" class="auth-form-title">Welcome back</h2>
       <p class="auth-form-subtitle">Sign in to your carrier portal</p>
 
+      <!-- Carrier / Broker Role Toggle -->
+      <div class="login-role-tabs" style="display:flex;gap:6px;margin-bottom:var(--space-5);background:var(--color-gray-100,#f1f5f9);padding:4px;border-radius:12px;border:1px solid var(--border-default,#e2e8f0);">
+        <button type="button" class="role-tab active" id="tab-role-carrier" onclick="selectLoginRole('carrier')" style="flex:1;padding:9px 12px;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;background:#ffffff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.1);transition:all 0.2s ease;">
+          🚛 Carrier
+        </button>
+        <button type="button" class="role-tab" id="tab-role-broker" onclick="selectLoginRole('broker')" style="flex:1;padding:9px 12px;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;background:transparent;color:#64748b;transition:all 0.2s ease;">
+          📋 Broker / 3PL
+        </button>
+      </div>
+
       <div id="login-alert" class="form-alert" role="alert" aria-live="polite"></div>
 
       <form id="login-form" novalidate>
@@ -358,6 +368,62 @@
 
   const loginParams = new URLSearchParams(location.search);
   const isLoggedOut = loginParams.get('logged_out') === '1' || loginParams.get('signout') === '1';
+  const isFromLoadsNexus = loginParams.get('from') === 'loadsnexus' || location.hostname.includes('loadsnexus');
+  let selectedRole = loginParams.get('role') || 'carrier';
+
+  // Dynamic branding for LoadsNexus
+  if (isFromLoadsNexus) {
+    document.title = 'Sign In — LoadsNexus™ Freight Exchange';
+    const logoMark = document.querySelector('.auth-form-logo .nav-logo-mark');
+    const logoText = document.querySelector('.auth-form-logo div:last-child');
+    if (logoMark) {
+      logoMark.textContent = 'LN';
+      logoMark.style.background = 'linear-gradient(135deg, #1d4ed8, #3b82f6)';
+    }
+    if (logoText) {
+      logoText.innerHTML = 'Loads<span style="color:#3b82f6;">Nexus</span>™';
+    }
+  }
+
+  function updateRoleUI(role) {
+    selectedRole = role;
+    const carrierBtn = document.getElementById('tab-role-carrier');
+    const brokerBtn = document.getElementById('tab-role-broker');
+    const subtitle = document.querySelector('.auth-form-subtitle');
+    const signupBtn = document.getElementById('signup-from-login-btn');
+    
+    if (role === 'broker') {
+      carrierBtn.style.background = 'transparent';
+      carrierBtn.style.color = '#64748b';
+      carrierBtn.style.boxShadow = 'none';
+      brokerBtn.style.background = '#8b5cf6';
+      brokerBtn.style.color = '#ffffff';
+      brokerBtn.style.boxShadow = '0 2px 6px rgba(139,92,246,0.3)';
+      if (subtitle) subtitle.textContent = isFromLoadsNexus ? 'Sign in to LoadsNexus Broker Portal' : 'Sign in to Freight Broker & Shipper Portal';
+      if (signupBtn) {
+        signupBtn.textContent = 'Register as Broker / Shipper';
+        signupBtn.href = '/contact?subject=broker-partner';
+      }
+    } else {
+      brokerBtn.style.background = 'transparent';
+      brokerBtn.style.color = '#64748b';
+      brokerBtn.style.boxShadow = 'none';
+      carrierBtn.style.background = '#ffffff';
+      carrierBtn.style.color = '#0f172a';
+      carrierBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      if (subtitle) subtitle.textContent = isFromLoadsNexus ? 'Sign in to LoadsNexus Carrier Portal' : 'Sign in to your carrier portal';
+      if (signupBtn) {
+        signupBtn.textContent = 'Create Carrier Account';
+        signupBtn.href = '/signup' + (isFromLoadsNexus ? '?from=loadsnexus' : '');
+      }
+    }
+  }
+
+  window.selectLoginRole = function(role) {
+    updateRoleUI(role);
+  };
+
+  updateRoleUI(selectedRole);
 
   if (loginParams.get('canceled') === '1') {
     alertBox.textContent = 'Your subscription has been successfully canceled. Your card will not be charged, and your portal access has ended.';
@@ -404,7 +470,11 @@
       } else {
         const role = data.user?.role || 'carrier';
         submitBtn.textContent = 'Redirecting...';
-        window.location.href = ROLE_REDIRECT[role] || '/carrier-overview';
+        if (isFromLoadsNexus && (role === 'carrier' || role === 'carrier_admin')) {
+          window.location.href = '/load-booking';
+        } else {
+          window.location.href = ROLE_REDIRECT[role] || '/carrier-overview';
+        }
       }
     } catch (err) {
       alertBox.textContent = 'Network error. Please check your connection and try again.';
@@ -422,7 +492,11 @@
       .then(data => {
         if (data && data.user) {
           const role = data.user.role;
-          window.location.href = ROLE_REDIRECT[role] || '/carrier-overview';
+          if (isFromLoadsNexus && (role === 'carrier' || role === 'carrier_admin')) {
+            window.location.href = '/load-booking';
+          } else {
+            window.location.href = ROLE_REDIRECT[role] || '/carrier-overview';
+          }
         }
       })
       .catch(() => {});

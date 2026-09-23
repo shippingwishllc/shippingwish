@@ -57,10 +57,10 @@
             <div class="dropdown-label">Operations</div>
             <a href="/carrier-setup" role="menuitem" style="color:#facc15;font-weight:700;">⚡ Carrier Setup (Online)</a>
             <a href="/dispatch" role="menuitem">Fleet Operations Manager</a>
-            <a href="/load-booking" role="menuitem">LoadNexus™ Freight Board</a>
-            <a href="/mobile-apps" role="menuitem" style="color:#60a5fa;font-weight:700;">📱 4 Mobile Apps Suite</a>
-            <a href="/app-downloads" role="menuitem" style="color:#34d399;font-weight:700;">📥 App Downloads (APK)</a>
             <a href="/fleet-support" role="menuitem">Fleet Support</a>
+            <div class="dropdown-label">Load Board</div>
+            <a href="https://www.loadsnexus.com" target="_blank" rel="noopener" role="menuitem" style="color:#60a5fa;font-weight:700;">🔷 LoadsNexus™ AI Load Board ↗</a>
+            <a href="/mobile-apps" role="menuitem" style="color:#60a5fa;">📱 Mobile Apps (iOS &amp; Android)</a>
             <div class="dropdown-label">Financial</div>
             <a href="/factoring" role="menuitem">Factoring</a>
             <a href="/insurance" role="menuitem">Insurance</a>
@@ -90,9 +90,8 @@
     return `
       <a href="/" data-nav-close>Home</a>
       <a href="/carrier-setup" data-nav-close style="color:#facc15;font-weight:700;">⚡ Carrier Setup (Online)</a>
-      <a href="/load-booking" data-nav-close>LoadNexus™ Freight Board</a>
-      <a href="/mobile-apps" data-nav-close style="color:#60a5fa;font-weight:700;">📱 Mobile Apps (iOS &amp; Android)</a>
-      <a href="/app-downloads" data-nav-close style="color:#34d399;font-weight:700;">📥 Mobile Downloads</a>
+      <a href="https://www.loadsnexus.com" target="_blank" rel="noopener" data-nav-close style="color:#60a5fa;font-weight:700;">🔷 LoadsNexus™ AI Load Board ↗</a>
+      <a href="/mobile-apps" data-nav-close style="color:#60a5fa;">📱 Mobile Apps (iOS &amp; Android)</a>
       <a href="/services" data-nav-close>Services</a>
       <a href="/dispatch" data-nav-close>Fleet Operations</a>
       <a href="/pricing" data-nav-close>Pricing</a>
@@ -169,9 +168,8 @@
       <div class="footer-col">
         <h4>Tech &amp; Tools</h4>
         <ul>
-          <li><a href="/load-booking" style="color:#60a5fa;font-weight:700;">LoadNexus™ Load Board</a></li>
-          <li><a href="/mobile-apps" style="color:#34d399;font-weight:700;">📱 4 Mobile Apps Suite</a></li>
-          <li><a href="/app-downloads" style="color:#60a5fa;font-weight:700;">📥 Mobile Downloads (APK)</a></li>
+          <li><a href="https://www.loadsnexus.com" target="_blank" rel="noopener" style="color:#60a5fa;font-weight:700;">🔷 LoadsNexus™ AI Load Board ↗</a></li>
+          <li><a href="/mobile-apps" style="color:#34d399;font-weight:700;">📱 Mobile Apps (iOS &amp; Android)</a></li>
           <li><a href="/carrier-search">Free FMCSA Carrier Lookup</a></li>
           <li><a href="/services#pricing">RPM Revenue Calculator</a></li>
           <li><a href="/login">Carrier Owner Cockpit</a></li>

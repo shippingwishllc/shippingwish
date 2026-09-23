@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoadsNexus™ — AI-Powered Freight & Capacity Exchange for Carriers & Brokers</title>
+  <meta name="description" content="LoadsNexus™ is the AI-powered freight load board by Shipping Wish LLC. Carriers find high-paying loads. Brokers post freight and connect to verified carriers. Real broker credit scores, anti-double-brokering protection, and a 4-app mobile suite.">
+  <meta name="keywords" content="AI load board, freight load board, carrier load board, broker load board, anti-double brokering, freight exchange, capacity exchange, loadsnexus, loads nexus">
+  <link rel="canonical" href="https://www.loadsnexus.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.loadsnexus.com/">
+  <meta property="og:title" content="LoadsNexus™ — AI-Powered Freight Network for Carriers & Brokers">
+  <meta property="og:description" content="The AI freight exchange that matches the right load to the right truck at the right rate. Real broker credit scores. Anti-double-brokering guard. 4 mobile apps.">
+  <meta property="og:image" content="https://www.loadsnexus.com/loadsnexus/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LoadsNexus™ — AI-Powered Freight & Capacity Exchange">
+  <meta name="twitter:description" content="AI load board. Real broker scores. Anti-double-brokering. Carrier + Broker mobile apps. Powered by Shipping Wish LLC.">
+  <link rel="icon" href="/loadsnexus/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/loadsnexus/loadsnexus.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "LoadsNexus",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web, iOS, Android",
+        "url": "https://www.loadsnexus.com",
+        "description": "AI-powered freight load board and capacity exchange platform for carriers and freight brokers.",
+        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+        "author": {
+          "@type": "Organization",
+          "name": "Shipping Wish LLC",
+          "url": "https://www.shippingwish.com"
+        }
+      },
+      {
+        "@type": "Organization",
+        "name": "LoadsNexus",
+        "url": "https://www.loadsnexus.com",
+        "parentOrganization": {
+          "@type": "Organization",
+          "name": "Shipping Wish LLC",
+          "url": "https://www.shippingwish.com"
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════
+       NAVIGATION
+  ══════════════════════════════════════════════ -->
+  <nav class="ln-nav" id="ln-nav" role="navigation" aria-label="Main navigation">
+    <div class="ln-nav-inner">
+      <!-- Logo -->
+      <a href="/" class="ln-logo" aria-label="LoadsNexus Home">
+        <div class="ln-logo-mark" aria-hidden="true">LN</div>
+        <div>Loads<span>Nexus</span><sup style="font-size:10px;font-weight:900;color:#60a5fa;margin-left:2px;">™</sup></div>
+      </a>
+
+      <!-- Desktop Nav Links -->
+      <ul class="ln-nav-links" role="list">
+        <li><a href="/#features">Platform</a></li>
+        <li><a href="/#carrier">For Carriers</a></li>
+        <li><a href="/#broker">For Brokers</a></li>
+        <li><a href="/#apps">Mobile Apps</a></li>
+        <li><a href="/#pricing">Pricing</a></li>
+      </ul>
+
+      <!-- Nav Actions -->
+      <div class="ln-nav-actions">
+        <span class="ln-powered" aria-label="Powered by Shipping Wish LLC">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="rgba(59,130,246,0.2)" stroke="#60a5fa" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Powered by <a href="https://www.shippingwish.com" target="_blank" rel="noopener" style="color:#60a5fa;font-weight:700;">Shipping Wish LLC</a>
+        </span>
+        <a href="/login?from=loadsnexus" class="ln-nav-login-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Sign In
+        </a>
+        <a href="/signup?from=loadsnexus" class="ln-btn ln-btn-primary ln-btn-sm">Get Started Free</a>
+      </div>
+
+      <!-- Mobile Hamburger -->
+      <button type="button" class="ln-hamburger" id="ln-hamburger" aria-label="Toggle mobile menu" aria-expanded="false" aria-controls="ln-mobile-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Drawer -->
+  <div class="ln-mobile-drawer" id="ln-mobile-drawer" role="dialog" aria-label="Mobile navigation">
+    <nav class="ln-mobile-links" aria-label="Mobile navigation links">
+      <a href="/#features" data-ln-close>Platform Features</a>
+      <a href="/#carrier" data-ln-close>For Carriers</a>
+      <a href="/#broker" data-ln-close>For Brokers</a>
+      <a href="/#apps" data-ln-close>Mobile Apps</a>
+      <a href="/#pricing" data-ln-close>Pricing</a>
+    </nav>
+    <div class="ln-mobile-cta">
+      <a href="/login?from=loadsnexus&role=carrier" class="ln-btn ln-btn-carrier" style="font-size:15px;padding:13px 20px;">🚛 Carrier Login</a>
+      <a href="/login?from=loadsnexus&role=broker" class="ln-btn ln-btn-broker" style="font-size:15px;padding:13px 20px;">📋 Broker Login</a>
+      <a href="/signup?from=loadsnexus" class="ln-btn ln-btn-secondary" style="text-align:center;">Create Free Account</a>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       HERO
+  ══════════════════════════════════════════════ -->
+  <section class="ln-hero" id="top">
+    <div class="ln-wrap ln-hero-inner">
+
+      <div class="ln-kicker">AI-Powered Freight Network</div>
+
+      <h1 class="ln-hero-headline">
+        The Load Board That<br>
+        <em>Works Smarter Than You.</em>
+      </h1>
+      <p class="ln-hero-sub">
+        AI-matched loads. Real broker credit scores. Anti-double-brokering protection.
+        The freight exchange built for the modern carrier and broker — not 1990s technology.
+      </p>
+
+      <!-- Carrier / Broker Role Cards -->
+      <div class="ln-role-grid" aria-label="Select your role">
+
+        <a href="/login?from=loadsnexus&role=carrier" class="ln-role-card carrier" aria-label="Carrier portal login">
+          <div class="ln-role-icon" aria-hidden="true">🚛</div>
+          <div class="ln-role-label">I am a Carrier</div>
+          <div class="ln-role-title">Find High-Paying Loads</div>
+          <p class="ln-role-desc">
+            Search live loads, post your truck capacity, and get AI-matched to the best freight for your lanes and equipment.
+          </p>
+          <div class="ln-role-cta" aria-hidden="true">
+            Search Loads
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+
+        <a href="/login?from=loadsnexus&role=broker" class="ln-role-card broker" aria-label="Broker portal login">
+          <div class="ln-role-icon" aria-hidden="true">📋</div>
+          <div class="ln-role-label">I am a Broker</div>
+          <div class="ln-role-title">Post Loads & Find Capacity</div>
+          <p class="ln-role-desc">
+            Post freight to a verified carrier network. Real-time capacity search, credit score visibility, and anti-double-brokering guard.
+          </p>
+          <div class="ln-role-cta" aria-hidden="true">
+            Post a Load
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="ln-stats ln-reveal" role="list" aria-label="Platform statistics">
+        <div class="ln-stat" role="listitem">
+          <div class="ln-stat-num">1.2M<span>+</span></div>
+          <div class="ln-stat-label">Loads Posted</div>
+        </div>
+        <div class="ln-stat" role="listitem">
+          <div class="ln-stat-num">48<span>K+</span></div>
+          <div class="ln-stat-label">Active Carriers</div>
+        </div>
+        <div class="ln-stat" role="listitem">
+          <div class="ln-stat-num">99.2<span>%</span></div>
+          <div class="ln-stat-label">On-Time Match Rate</div>
+        </div>
+        <div class="ln-stat" role="listitem">
+          <div class="ln-stat-num">0</div>
+          <div class="ln-stat-label">Double-Broker Incidents</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="ln-glow-line"></div>
+
+  <!-- ══════════════════════════════════════════
+       FEATURES
+  ══════════════════════════════════════════════ -->
+  <section class="ln-section" id="features" aria-labelledby="features-title">
+    <div class="ln-wrap">
+      <div class="ln-center">
+        <div class="ln-section-eyebrow">Platform Features</div>
+        <h2 class="ln-section-title" id="features-title">
+          Not just a load board.<br>A complete freight intelligence platform.
+        </h2>
+        <p class="ln-section-sub" style="margin: 0 auto;">
+          LoadsNexus combines AI-powered matching, real-time market data, and enterprise-grade protection in one integrated platform.
+        </p>
+      </div>
+
+      <div class="ln-features-grid ln-reveal">
+
+        <div class="ln-feature-card">
+          <div class="ln-feature-icon" aria-hidden="true">🤖</div>
+          <h3 class="ln-feature-title">AI Load Matching</h3>
+          <p class="ln-feature-desc">
+            Our AI engine analyzes your historical lanes, preferred equipment, rate floors, and deadhead tolerance to match you with the highest-value loads — before other carriers even see them.
+          </p>
+        </div>
+
+        <div class="ln-feature-card">
+          <div class="ln-feature-icon" aria-hidden="true">📊</div>
+          <h3 class="ln-feature-title">Real Broker Credit Scores</h3>
+          <p class="ln-feature-desc">
+            Every broker on the network shows a real Days-To-Pay score and credit rating pulled from live payment data. Know who pays fast and who doesn't — before you book.
+          </p>
+        </div>
+
+        <div class="ln-feature-card">
+          <div class="ln-feature-icon" aria-hidden="true">🛡️</div>
+          <h3 class="ln-feature-title">Anti-Double-Brokering Guard</h3>
+          <p class="ln-feature-desc">
+            Our Security Guard system detects and blocks double-brokering attempts in real time. Every load is verified. Carrier authority is cross-checked on every booking.
+          </p>
+        </div>
+
+        <div class="ln-feature-card">
+          <div class="ln-feature-icon" aria-hidden="true">⚡</div>
+          <h3 class="ln-feature-title">Live Market Rate Intelligence</h3>
+          <p class="ln-feature-desc">
+            See live spot rates, DAT/Truckstop market benchmarks, and lane-specific trends. Know exactly what your load is worth before you negotiate — and negotiate from strength.
+          </p>
+        </div>
+
+        <div class="ln-feature-card">
+          <div class="ln-feature-icon" aria-hidden="true">📱</div>
+          <h3 class="ln-feature-title">4-App Mobile Suite</h3>
+          <p class="ln-feature-desc">
+            LoadsNexus Carrier and LoadsNexus Broker mobile apps for iOS and Android. Plus the Shipping Wish Driver Console and TMS app. Everything you need on every device.
+          </p>
+        </div>
+
+        <div class="ln-feature-card">
+          <div class="ln-feature-icon" aria-hidden="true">🔗</div>
+          <h3 class="ln-feature-title">Full TMS Integration</h3>
+          <p class="ln-feature-desc">
+            Loads booked on LoadsNexus flow directly into the Shipping Wish TMS. BOL, POD, rate confirmations, and invoices all in one place. No double data entry.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="ln-glow-line"></div>
+
+  <!-- ══════════════════════════════════════════
+       SOLUTIONS (Carrier / Broker Tabs)
+  ══════════════════════════════════════════════ -->
+  <section class="ln-section alt ln-solutions" id="carrier" aria-labelledby="solutions-title">
+    <div class="ln-wrap">
+      <div class="ln-center" style="margin-bottom:48px;">
+        <div class="ln-section-eyebrow">Tailored Solutions</div>
+        <h2 class="ln-section-title" id="solutions-title">Built for every side of the freight transaction.</h2>
+      </div>
+
+      <!-- Tabs -->
+      <div class="ln-tabs" role="tablist" aria-label="Select role">
+        <button class="ln-tab active" role="tab" aria-selected="true" aria-controls="panel-carrier" id="tab-carrier" onclick="lnTab('carrier')">
+          🚛 For Carriers
+        </button>
+        <button class="ln-tab" role="tab" aria-selected="false" aria-controls="panel-broker" id="tab-broker" onclick="lnTab('broker')">
+          📋 For Brokers
+        </button>
+      </div>
+
+      <!-- Carrier Panel -->
+      <div class="ln-tab-panel active" id="panel-carrier" role="tabpanel" aria-labelledby="tab-carrier">
+        <div>
+          <span class="ln-badge carrier">🚛 Carrier Platform</span>
+          <h3 class="ln-section-title" style="font-size:1.9rem;margin-top:12px;">
+            Find loads. Get paid. Keep every dollar.
+          </h3>
+          <p class="ln-section-sub">No dispatchers taking a cut. No hidden fees. Just direct access to high-paying freight that matches your truck, your lanes, and your rate floor.</p>
+          <ul class="ln-tab-feature-list" aria-label="Carrier features">
+            <li>AI matches loads to your lanes and equipment type automatically</li>
+            <li>See broker Days-To-Pay scores before accepting any load</li>
+            <li>Post your available truck capacity — brokers come to you</li>
+            <li>Real-time load tracking and status updates in your mobile app</li>
+            <li>BOL, rate con, and POD management built in</li>
+            <li>Connect to the Shipping Wish TMS for full fleet visibility</li>
+          </ul>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <a href="/signup?from=loadsnexus&role=carrier" class="ln-btn ln-btn-carrier">Start Finding Loads →</a>
+            <a href="/login?from=loadsnexus&role=carrier" class="ln-btn ln-btn-secondary">Carrier Login</a>
+          </div>
+        </div>
+        <div class="ln-panel-visual" aria-hidden="true">
+          <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Live Load Feed — AI Matched</div>
+          <div class="ln-mini-card">
+            <div>
+              <div class="ln-mini-card-label">Chicago, IL → Dallas, TX</div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px;">53' Dry Van · 42,000 lbs · FTL</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="ln-mini-card-value green">$3,850</div>
+              <div style="font-size:11px;color:#64748b;">$2.96/mi</div>
+            </div>
+          </div>
+          <div class="ln-mini-card">
+            <div>
+              <div class="ln-mini-card-label">Atlanta, GA → Miami, FL</div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px;">Reefer · 38,500 lbs · FTL</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="ln-mini-card-value green">$2,200</div>
+              <div style="font-size:11px;color:#64748b;">$3.14/mi</div>
+            </div>
+          </div>
+          <div class="ln-mini-card">
+            <div>
+              <div class="ln-mini-card-label">Los Angeles, CA → Phoenix, AZ</div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px;">Flatbed · 35,000 lbs · FTL</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="ln-mini-card-value green">$1,450</div>
+              <div style="font-size:11px;color:#64748b;">$3.62/mi</div>
+            </div>
+          </div>
+          <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="font-size:12px;color:#64748b;">Broker Score</div>
+              <div style="display:flex;gap:6px;">
+                <span style="font-size:11px;font-weight:700;background:rgba(52,211,153,0.15);color:#34d399;border-radius:4px;padding:2px 8px;">A+ 97</span>
+                <span style="font-size:11px;font-weight:700;background:rgba(52,211,153,0.15);color:#34d399;border-radius:4px;padding:2px 8px;">Pays in 4.2 days</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Broker Panel -->
+      <div class="ln-tab-panel" id="panel-broker" role="tabpanel" aria-labelledby="tab-broker" id="broker">
+        <div>
+          <span class="ln-badge broker">📋 Broker Platform</span>
+          <h3 class="ln-section-title" style="font-size:1.9rem;margin-top:12px;">
+            Post freight. Move it fast. Stay protected.
+          </h3>
+          <p class="ln-section-sub">Access a verified carrier network, post loads in seconds, and get matched with the right capacity — all with anti-double-brokering protection built in.</p>
+          <ul class="ln-tab-feature-list" aria-label="Broker features">
+            <li>Post loads and get matched to verified, authority-checked carriers</li>
+            <li>Real-time carrier availability and capacity search</li>
+            <li>Anti-double-brokering guard on every booking automatically</li>
+            <li>Carrier authority and insurance verification integrated</li>
+            <li>Full document management — rate con, BOL, POD</li>
+            <li>Track loads from pickup to delivery in real time</li>
+          </ul>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <a href="/signup?from=loadsnexus&role=broker" class="ln-btn ln-btn-broker">Start Posting Loads →</a>
+            <a href="/login?from=loadsnexus&role=broker" class="ln-btn ln-btn-secondary">Broker Login</a>
+          </div>
+        </div>
+        <div class="ln-panel-visual" aria-hidden="true">
+          <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Load Posting Dashboard</div>
+          <div class="ln-mini-card">
+            <div>
+              <div class="ln-mini-card-label">Load #LN-94821</div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px;">Memphis → Nashville · Dry Van</div>
+            </div>
+            <div class="ln-mini-card-value blue">Matched</div>
+          </div>
+          <div class="ln-mini-card">
+            <div>
+              <div class="ln-mini-card-label">Load #LN-94822</div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px;">Houston → Dallas · Reefer</div>
+            </div>
+            <div class="ln-mini-card-value" style="color:#fbbf24;">3 Offers</div>
+          </div>
+          <div class="ln-mini-card">
+            <div>
+              <div class="ln-mini-card-label">Carrier MC#384921</div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px;">Authority Check · Insurance ✓</div>
+            </div>
+            <div class="ln-mini-card-value green">Verified</div>
+          </div>
+          <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:#34d399;flex-shrink:0;"></div>
+              <div style="font-size:12px;color:#64748b;">Anti-double-brokering guard: <strong style="color:#34d399;">ACTIVE</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="ln-glow-line"></div>
+
+  <!-- ══════════════════════════════════════════
+       MOBILE APPS
+  ══════════════════════════════════════════════ -->
+  <section class="ln-apps" id="apps" aria-labelledby="apps-title">
+    <div class="ln-wrap">
+      <div class="ln-center">
+        <div class="ln-section-eyebrow">Mobile Suite</div>
+        <h2 class="ln-section-title" id="apps-title">
+          Four apps. Every role covered.<br>iOS and Android.
+        </h2>
+        <p class="ln-section-sub" style="margin:0 auto 48px;">
+          The complete LoadsNexus + Shipping Wish mobile ecosystem — for carriers, brokers, dispatchers, and drivers.
+        </p>
+        <span class="ln-coming-soon-pill">📱 App Store &amp; Google Play — Coming Soon</span>
+      </div>
+
+      <div class="ln-apps-grid ln-reveal">
+
+        <!-- LoadsNexus Carrier -->
+        <div class="ln-app-card" style="border-color:rgba(16,185,129,0.3);">
+          <div class="ln-app-icon" style="background:linear-gradient(135deg,rgba(5,150,105,0.3),rgba(16,185,129,0.15));border:1px solid rgba(16,185,129,0.3);" aria-hidden="true">🚛</div>
+          <span class="ln-badge carrier">Carrier</span>
+          <div class="ln-app-name">LoadsNexus Carrier</div>
+          <p class="ln-app-desc">Search live loads, post your truck, manage documents, and track payments. AI-matched to your lanes automatically.</p>
+          <div class="ln-store-badges">
+            <div class="ln-store-btn coming-soon" role="img" aria-label="iOS App Store — Coming Soon">
+              <span class="store-icon">🍎</span>
+              <div class="store-text">
+                <span class="store-sub">Download on the</span>
+                <span class="store-name">App Store</span>
+              </div>
+              <span class="ln-coming-soon-pill" style="margin:0;font-size:9px;">Coming Soon</span>
+            </div>
+            <div class="ln-store-btn coming-soon" role="img" aria-label="Google Play — Coming Soon">
+              <span class="store-icon">▶</span>
+              <div class="store-text">
+                <span class="store-sub">Get it on</span>
+                <span class="store-name">Google Play</span>
+              </div>
+              <span class="ln-coming-soon-pill" style="margin:0;font-size:9px;">Coming Soon</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- LoadsNexus Broker -->
+        <div class="ln-app-card" style="border-color:rgba(139,92,246,0.3);">
+          <div class="ln-app-icon" style="background:linear-gradient(135deg,rgba(109,40,217,0.3),rgba(139,92,246,0.15));border:1px solid rgba(139,92,246,0.3);" aria-hidden="true">📋</div>
+          <span class="ln-badge broker">Broker</span>
+          <div class="ln-app-name">LoadsNexus Broker</div>
+          <p class="ln-app-desc">Post loads, search carrier capacity, verify authority, and manage your book of business from anywhere.</p>
+          <div class="ln-store-badges">
+            <div class="ln-store-btn coming-soon" role="img" aria-label="iOS App Store — Coming Soon">
+              <span class="store-icon">🍎</span>
+              <div class="store-text">
+                <span class="store-sub">Download on the</span>
+                <span class="store-name">App Store</span>
+              </div>
+              <span class="ln-coming-soon-pill" style="margin:0;font-size:9px;">Coming Soon</span>
+            </div>
+            <div class="ln-store-btn coming-soon" role="img" aria-label="Google Play — Coming Soon">
+              <span class="store-icon">▶</span>
+              <div class="store-text">
+                <span class="store-sub">Get it on</span>
+                <span class="store-name">Google Play</span>
+              </div>
+              <span class="ln-coming-soon-pill" style="margin:0;font-size:9px;">Coming Soon</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Driver Console -->
+        <div class="ln-app-card">
+          <div class="ln-app-icon" style="background:linear-gradient(135deg,rgba(59,130,246,0.3),rgba(96,165,250,0.1));border:1px solid rgba(59,130,246,0.3);" aria-hidden="true">🚗</div>
+          <span class="ln-badge ai">Driver</span>
+          <div class="ln-app-name">Driver Console</div>
+          <p class="ln-app-desc">CDL driver app — live load status, BOL / POD scanning, GPS check-in, and direct carrier communication.</p>
+          <div class="ln-store-badges">
+            <div class="ln-store-btn coming-soon" role="img" aria-label="iOS App Store — Coming Soon">
+              <span class="store-icon">🍎</span>
+              <div class="store-text">
+                <span class="store-sub">Download on the</span>
+                <span class="store-name">App Store</span>
+              </div>
+              <span class="ln-coming-soon-pill" style="margin:0;font-size:9px;">Coming Soon</span>
+            </div>
+            <div class="ln-store-btn coming-soon" role="img" aria-label="Google Play — Coming Soon">
+              <span class="store-icon">▶</span>
+              <div class="store-text">
+                <span class="store-sub">Get it on</span>
+                <span class="store-name">Google Play</span>
+              </div>
+              <span class="ln-coming-soon-pill" style="margin:0;font-size:9px;">Coming Soon</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shipping Wish TMS -->
+        <div class="ln-app-card">
+          <div class="ln-app-icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.25),rgba(251,191,36,0.1));border:1px solid rgba(245,158,11,0.3);" aria-hidden="true">🗂️</div>
+          <span class="ln-badge new">TMS</span>
+          <div class="ln-app-name">Shipping Wish TMS</div>
+          <p class="ln-app-desc">Fleet dispatcher and owner app — full load planning, fleet tracking, driver management, and IFTA mileage on mobile.</p>
+          <div class="ln-store-badges">
+            <div class="ln-store-btn coming-soon" role="img" aria-label="iOS App Store — Coming Soon">
+              <span class="store-icon">🍎</span>
+              <div class="store-text">
+                <span class="store-sub">Download on the</span>
+                <span class="store-name">App Store</span>
+              </div>
+              <span class="ln-coming-soon-pill" style="margin:0;font-size:9px;">Coming Soon</span>
+            </div>
+            <div class="ln-store-btn coming-soon" role="img" aria-label="Google Play — Coming Soon">
+              <span class="store-icon">▶</span>
+              <div class="store-text">
+                <span class="store-sub">Get it on</span>
+                <span class="store-name">Google Play</span>
+              </div>
+              <span class="ln-coming-soon-pill" style="margin:0;font-size:9px;">Coming Soon</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="ln-glow-line"></div>
+
+  <!-- ══════════════════════════════════════════
+       PRICING
+  ══════════════════════════════════════════════ -->
+  <section class="ln-pricing" id="pricing" aria-labelledby="pricing-title">
+    <div class="ln-wrap">
+      <div class="ln-center">
+        <div class="ln-section-eyebrow">Pricing</div>
+        <h2 class="ln-section-title" id="pricing-title">Transparent pricing. No hidden fees.</h2>
+        <p class="ln-section-sub" style="margin:0 auto 56px;">
+          Carriers access the load board as part of their Shipping Wish subscription.<br>Brokers contact us for a plan.
+        </p>
+      </div>
+
+      <div class="ln-pricing-grid">
+
+        <div class="ln-price-card">
+          <div class="ln-price-name">Carrier — Basic</div>
+          <div class="ln-price-amount">Free<span>&nbsp;forever</span></div>
+          <div class="ln-price-note">With any Shipping Wish subscription · No seat fee</div>
+          <ul class="ln-price-list">
+            <li>Full load board access — search &amp; book</li>
+            <li>Post truck capacity to brokers</li>
+            <li>Broker credit score visibility</li>
+            <li>AI load matching (lane-based)</li>
+            <li>Document management (BOL, POD)</li>
+            <li>LoadsNexus Carrier mobile app</li>
+          </ul>
+          <a href="/signup?from=loadsnexus&role=carrier" class="ln-btn ln-btn-carrier ln-btn-block">Start Free →</a>
+        </div>
+
+        <div class="ln-price-card featured">
+          <div class="ln-price-name">Broker — Professional</div>
+          <div class="ln-price-amount" style="font-size:2.4rem;">Contact Us</div>
+          <div class="ln-price-note">Custom plan based on load volume</div>
+          <ul class="ln-price-list">
+            <li>Unlimited load posting</li>
+            <li>Verified carrier network access</li>
+            <li>Anti-double-brokering guard</li>
+            <li>Real-time carrier authority check</li>
+            <li>Full document management</li>
+            <li>Dedicated account manager</li>
+            <li>LoadsNexus Broker mobile app</li>
+          </ul>
+          <a href="https://www.shippingwish.com/contact?subject=broker-partner" target="_blank" rel="noopener" class="ln-btn ln-btn-broker ln-btn-block">Get Broker Access →</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="ln-glow-line"></div>
+
+  <!-- ══════════════════════════════════════════
+       CTA BANNER
+  ══════════════════════════════════════════════ -->
+  <section class="ln-cta-banner" aria-labelledby="cta-title">
+    <div class="ln-wrap">
+      <div class="ln-kicker">Get Started Today</div>
+      <h2 class="ln-section-title" id="cta-title">
+        Ready to move freight smarter?
+      </h2>
+      <p class="ln-section-sub">
+        Join thousands of carriers and brokers who use LoadsNexus to find better freight, move it faster, and get paid reliably.
+      </p>
+      <div class="ln-cta-actions">
+        <a href="/signup?from=loadsnexus&role=carrier" class="ln-btn ln-btn-carrier ln-btn-xl">🚛 Carrier — Search Loads</a>
+        <a href="/signup?from=loadsnexus&role=broker" class="ln-btn ln-btn-broker ln-btn-xl">📋 Broker — Post Freight</a>
+      </div>
+      <div style="margin-top:20px;font-size:13px;color:#475569;">
+        Questions? Call <a href="tel:+19177370021" style="color:#60a5fa;font-weight:700;">+1 (917) 737-0021</a> or
+        <a href="https://www.shippingwish.com/contact" target="_blank" rel="noopener" style="color:#60a5fa;font-weight:700;">contact Shipping Wish operations</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════════ -->
+  <footer class="ln-footer" role="contentinfo">
+    <div class="ln-wrap">
+      <div class="ln-footer-grid">
+
+        <div class="ln-footer-brand">
+          <a href="/" class="ln-logo" aria-label="LoadsNexus Home">
+            <div class="ln-logo-mark" aria-hidden="true">LN</div>
+            <div>Loads<span>Nexus</span><sup style="font-size:10px;font-weight:900;color:#60a5fa;margin-left:2px;">™</sup></div>
+          </a>
+          <p>AI-powered freight load board and capacity exchange. Built by Shipping Wish LLC to give carriers and brokers the technology edge they deserve.</p>
+          <div class="ln-footer-powered" style="margin-top:16px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="rgba(59,130,246,0.2)" stroke="#60a5fa" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Powered by&nbsp;<a href="https://www.shippingwish.com" target="_blank" rel="noopener">Shipping Wish LLC</a>
+          </div>
+        </div>
+
+        <div class="ln-footer-col">
+          <h4>Platform</h4>
+          <ul>
+            <li><a href="/#features">AI Load Matching</a></li>
+            <li><a href="/#features">Broker Credit Scores</a></li>
+            <li><a href="/#features">Anti-Double-Brokering</a></li>
+            <li><a href="/#features">Rate Intelligence</a></li>
+            <li><a href="/#apps">Mobile Apps</a></li>
+          </ul>
+        </div>
+
+        <div class="ln-footer-col">
+          <h4>Solutions</h4>
+          <ul>
+            <li><a href="/#carrier">For Carriers</a></li>
+            <li><a href="/#broker">For Brokers</a></li>
+            <li><a href="/#pricing">Pricing</a></li>
+            <li><a href="/signup?from=loadsnexus">Create Account</a></li>
+            <li><a href="/login?from=loadsnexus">Sign In</a></li>
+          </ul>
+        </div>
+
+        <div class="ln-footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="https://www.shippingwish.com/about" target="_blank" rel="noopener">About Shipping Wish LLC</a></li>
+            <li><a href="https://www.shippingwish.com/contact" target="_blank" rel="noopener">Contact &amp; Support</a></li>
+            <li><a href="https://www.shippingwish.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a></li>
+            <li><a href="https://www.shippingwish.com/terms" target="_blank" rel="noopener">Terms of Service</a></li>
+            <li><a href="https://www.shippingwish.com/carrier-search" target="_blank" rel="noopener">Free Carrier Lookup</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="ln-footer-bottom">
+        <div>
+          <span>© 2026 LoadsNexus™ — A product of</span>
+          <a href="https://www.shippingwish.com" target="_blank" rel="noopener" style="color:#60a5fa;font-weight:600;margin-left:4px;">Shipping Wish LLC</a>
+          <span style="margin-left:8px;">· Rehoboth Beach, DE · USDOT Operations</span>
+        </div>
+        <div style="display:flex;gap:20px;align-items:center;">
+          <a href="https://www.shippingwish.com/privacy-policy" target="_blank" rel="noopener">Privacy</a>
+          <a href="https://www.shippingwish.com/terms" target="_blank" rel="noopener">Terms</a>
+          <a href="https://www.shippingwish.com/contact" target="_blank" rel="noopener">Support</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ══════════════════════════════════════════
+       JAVASCRIPT
+  ══════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    'use strict';
+
+    /* ── Nav Scroll Effect ───────────────────── */
+    var nav = document.getElementById('ln-nav');
+    window.addEventListener('scroll', function () {
+      nav.classList.toggle('scrolled', window.scrollY > 20);
+    }, { passive: true });
+
+    /* ── Mobile Hamburger ────────────────────── */
+    var hamburger = document.getElementById('ln-hamburger');
+    var drawer = document.getElementById('ln-mobile-drawer');
+    hamburger.addEventListener('click', function () {
+      var open = drawer.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', open);
+    });
+    document.querySelectorAll('[data-ln-close]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        drawer.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    /* ── Solution Tabs ───────────────────────── */
+    window.lnTab = function (role) {
+      document.querySelectorAll('.ln-tab').forEach(function (t) {
+        var active = t.id === 'tab-' + role;
+        t.classList.toggle('active', active);
+        t.setAttribute('aria-selected', active);
+      });
+      document.querySelectorAll('.ln-tab-panel').forEach(function (p) {
+        p.classList.toggle('active', p.id === 'panel-' + role);
+      });
+    };
+
+    /* ── Scroll Reveal ───────────────────────── */
+    var reveals = document.querySelectorAll('.ln-reveal');
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.1 });
+      reveals.forEach(function (el) { io.observe(el); });
+    } else {
+      reveals.forEach(function (el) { el.classList.add('visible'); });
+    }
+
+    /* ── Smooth scroll for hash links ────────── */
+    document.querySelectorAll('a[href^="/#"]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var target = document.getElementById(a.getAttribute('href').slice(2));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          drawer.classList.remove('open');
+          hamburger.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+
+  }());
+  </script>
+
+</body>
+</html>

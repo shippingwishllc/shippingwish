@@ -9,6 +9,16 @@
   },
   "rewrites": [
     {
+      "source": "/",
+      "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
+      "destination": "/loadsnexus/index.html"
+    },
+    {
+      "source": "/index",
+      "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
+      "destination": "/loadsnexus/index.html"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api"
     }

@@ -319,6 +319,9 @@
         <button class="nav-tab-btn" id="tab-btn-drayage" onclick="switchTab('drayage')">
           <span>🚢</span> Drayage &amp; Intermodal Hub
         </button>
+        <button class="nav-tab-btn" id="tab-btn-cross-border" onclick="switchTab('cross-border')">
+          <span>🌐</span> Cross-Border Customs &amp; In-Bond
+        </button>
         <button class="nav-tab-btn" id="tab-btn-apps" onclick="switchTab('apps')">
           <span>📱</span> Mobile Suite Hub
         </button>
@@ -2277,6 +2280,132 @@
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
             <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Autonomous Drayage &amp; Intermodal Architecture (UIIA / OSRA-22 Compliant)</strong>
             Port and rail container movements represent the most demurrage-sensitive link in North American logistics. LoadNexus™ eliminates costly port storage and detention penalties ($150–$350/day per container) by synchronizing marine terminal appointments (eModal / PierPass), monitoring real-time Last Free Day (LFD) countdowns, validating ISO 17712 tamper-evident high-security seals, and generating court-admissible Equipment Interchange Receipts (EIR) with cryptographic SHA-256 proofs under the Federal Maritime Commission Ocean Shipping Reform Act (OSRA-22).
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 28: Cross-Border US-Mexico & US-Canada In-Bond Customs Dispatcher -->
+      <div id="tab-content-cross-border" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);flex-wrap:wrap;gap:12px;">
+          <div>
+            <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+              <span>🌐</span> Cross-Border US-Mexico &amp; US-Canada In-Bond Customs Dispatcher
+              <span class="badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);">ACE / ACI Compliant</span>
+            </h3>
+            <span style="font-size:12px;color:var(--text-muted);">
+              CBP Form 7512 In-Bond Movement &amp; Entry · ACE e-Manifest (US/Mexico) · ACI e-Manifest (Canada) · FAST Lane Eligibility · C-TPAT &amp; PIP Compliance
+            </span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="openCreateCrossBorderModal()">
+              <span>📋</span> + Generate ACE/ACI Manifest
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="loadCrossBorderDesk()">
+              <span>🔄</span> Refresh Roster
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Stat Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:var(--space-4);margin-bottom:var(--space-4);">
+          <div class="stat-card" style="border-left:4px solid #fbbf24;">
+            <div class="stat-label">ACTIVE IN-BOND TRIPS</div>
+            <div class="stat-value" id="kpi-cb-active-trips" style="color:#fbbf24;">0</div>
+            <div class="stat-sub">ACE IT / ACI PARS / T&amp;E Movements Active</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="stat-label">CBP PASS RATE</div>
+            <div class="stat-value" id="kpi-cb-pass-rate" style="color:#34d399;">0%</div>
+            <div class="stat-sub">First-Submission CBP Clearance Rate</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #38bdf8;">
+            <div class="stat-label">IN-BOND MANIFESTS</div>
+            <div class="stat-value" id="kpi-cb-in-bond-count" style="color:#38bdf8;">0</div>
+            <div class="stat-sub">Total IT-61, IT-62, PAPS, PARS Filed</div>
+          </div>
+          <div class="stat-card" style="border-left:4px solid #a78bfa;">
+            <div class="stat-label">AVG BORDER WAIT</div>
+            <div class="stat-value" id="kpi-cb-avg-wait" style="color:#a78bfa;">— min</div>
+            <div class="stat-sub">Standard Lane Avg (All Ports)</div>
+          </div>
+        </div>
+
+        <!-- Border Port Wait Times Banner -->
+        <div id="cb-wait-times-banner" style="background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.2);border-radius:var(--radius-md);padding:14px;margin-bottom:var(--space-4);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span style="font-size:18px;">⏱️</span>
+            <strong style="font-size:13px;color:var(--text-primary);">Live Border Port Wait Times (CBP Estimated)</strong>
+            <span style="font-size:11px;color:var(--text-muted);margin-left:auto;">Laredo · Detroit · Otay Mesa · Port Huron · El Paso</span>
+          </div>
+          <div class="table-container" style="background:transparent;border:none;">
+            <table class="tms-table-v2" style="font-size:12px;">
+              <thead>
+                <tr>
+                  <th>Port of Entry</th>
+                  <th>Country</th>
+                  <th>Standard Lane</th>
+                  <th>FAST Lane</th>
+                  <th>FAST Eligible</th>
+                  <th>C-TPAT</th>
+                  <th>Open Hours</th>
+                </tr>
+              </thead>
+              <tbody id="cb-wait-times-tbody">
+                <tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text-muted);">Loading wait times...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Filters & Manifests Table -->
+        <div style="margin-bottom:var(--space-4);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="cb-search-input" class="form-input" placeholder="Search Trip #, Carrier, Commodity, Port..." style="width:280px;" oninput="filterCrossBorderManifests()">
+              <select id="cb-filter-corridor" class="form-select" style="width:160px;" onchange="filterCrossBorderManifests()">
+                <option value="ALL">All Corridors</option>
+                <option value="US_MEXICO">US ↔ Mexico</option>
+                <option value="US_CANADA">US ↔ Canada</option>
+              </select>
+              <select id="cb-filter-entry-type" class="form-select" style="width:170px;" onchange="filterCrossBorderManifests()">
+                <option value="ALL">All Entry Types</option>
+                <option value="IT">In-Transit (IT-61)</option>
+                <option value="TE">T&amp;E (IT-62)</option>
+                <option value="PAPS">PAPS (Canada)</option>
+                <option value="PARS">PARS (Canada Return)</option>
+              </select>
+            </div>
+            <span id="cb-records-count" style="font-size:12px;color:var(--text-muted);">Showing 0 manifests</span>
+          </div>
+
+          <div class="table-container" style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th>Trip # &amp; Type</th>
+                  <th>Carrier &amp; SCAC</th>
+                  <th>Port of Entry</th>
+                  <th>Commodity</th>
+                  <th>Cargo Value</th>
+                  <th>In-Bond #</th>
+                  <th>FAST / C-TPAT</th>
+                  <th>CBP Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cb-manifests-tbody">
+                <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">Loading cross-border manifests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Architecture Banner -->
+        <div style="background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.2);border-radius:var(--radius-md);padding:14px;display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:20px;">🌐</span>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:4px;font-size:13px;">LoadNexus™ Cross-Border In-Bond Customs Architecture (ACE / ACI / CBP 7512)</strong>
+            LoadNexus™ natively generates CBP Form 7512 In-Bond Movement documents, ACE e-Manifests for US-Mexico crossings at Laredo, El Paso, and Otay Mesa, and ACI e-Manifests for US-Canada crossings at Detroit Ambassador Bridge, Port Huron, and Buffalo. FAST Lane eligibility is auto-scored based on C-TPAT carrier status, PIP (Partners in Protection) enrollment, driver FAST card validity, and equipment certification — eliminating \$3,000–\$8,000/day border detention fees for high-value automotive, electronics, and perishable cargo.
           </div>
         </div>
       </div>
@@ -5276,6 +5405,159 @@
   </div>
 </div>
 
+<!-- PHASE 28 MODAL: Generate ACE/ACI Cross-Border Manifest -->
+<div id="modal-create-cross-border" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:680px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;">🌐 Generate ACE/ACI In-Bond Manifest</h3>
+      <button onclick="closeCreateCrossBorderModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;">✕</button>
+    </div>
+    <!-- Presets -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:var(--space-4);">
+      <span style="font-size:12px;color:var(--text-muted);align-self:center;">Quick Preset:</span>
+      <button class="btn btn-ghost btn-sm" onclick="setCrossBorderPreset('laredo_it')">🚗 Laredo Automotive In-Bond IT-61</button>
+      <button class="btn btn-ghost btn-sm" onclick="setCrossBorderPreset('detroit_paps')">🍁 Detroit PAPS (Canada→US)</button>
+      <button class="btn btn-ghost btn-sm" onclick="setCrossBorderPreset('otay_te')">💻 Otay Mesa T&amp;E Electronics</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
+      <div>
+        <label class="form-label">Carrier Name</label>
+        <input type="text" id="cb-create-carrier" class="form-input" placeholder="e.g. Trans-Border Freight Inc.">
+      </div>
+      <div>
+        <label class="form-label">SCAC Code</label>
+        <input type="text" id="cb-create-scac" class="form-input" placeholder="e.g. TBFI">
+      </div>
+      <div>
+        <label class="form-label">Port of Entry</label>
+        <select id="cb-create-port" class="form-select">
+          <option value="LAREDO_TX">Laredo, TX (World Trade Bridge)</option>
+          <option value="EL_PASO_TX">El Paso, TX (Bridge of the Americas)</option>
+          <option value="OTAY_MESA_CA">Otay Mesa, CA (Otay Mesa POE)</option>
+          <option value="DETROIT_MI">Detroit, MI (Ambassador Bridge)</option>
+          <option value="PORT_HURON_MI">Port Huron, MI (Blue Water Bridge)</option>
+          <option value="BUFFALO_NY">Buffalo, NY (Peace Bridge)</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Manifest Type</label>
+        <select id="cb-create-manifest-type" class="form-select">
+          <option value="ACE_E_MANIFEST">ACE e-Manifest (US/Mexico)</option>
+          <option value="ACI_E_MANIFEST">ACI e-Manifest (Canada)</option>
+          <option value="CBP_7512_IN_BOND">CBP Form 7512 In-Bond</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Entry Type</label>
+        <select id="cb-create-entry-type" class="form-select">
+          <option value="IT">In-Transit IT-61 (Bonded)</option>
+          <option value="TE">Transportation &amp; Exportation IT-62</option>
+          <option value="PAPS">PAPS (Canada→US Pre-Arrival)</option>
+          <option value="PARS">PARS (Canada Return)</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Commodity</label>
+        <input type="text" id="cb-create-commodity" class="form-input" placeholder="e.g. Automotive Parts - Stamped Steel">
+      </div>
+      <div>
+        <label class="form-label">Cargo Value (USD)</label>
+        <input type="number" id="cb-create-value" class="form-input" placeholder="e.g. 285000" min="0" step="100">
+      </div>
+      <div>
+        <label class="form-label">Weight (lbs)</label>
+        <input type="number" id="cb-create-weight" class="form-input" placeholder="e.g. 42000" min="0">
+      </div>
+      <div>
+        <label class="form-label">Shipper Name</label>
+        <input type="text" id="cb-create-shipper" class="form-input" placeholder="e.g. Ford Motor Company">
+      </div>
+      <div>
+        <label class="form-label">Consignee Name</label>
+        <input type="text" id="cb-create-consignee" class="form-input" placeholder="e.g. Ford Kentucky Truck Plant">
+      </div>
+      <div>
+        <label class="form-label">Origin Country</label>
+        <select id="cb-create-origin-country" class="form-select">
+          <option value="MX">Mexico</option>
+          <option value="CA">Canada</option>
+          <option value="US">United States</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Destination Country</label>
+        <select id="cb-create-dest-country" class="form-select">
+          <option value="US">United States</option>
+          <option value="MX">Mexico</option>
+          <option value="CA">Canada</option>
+        </select>
+      </div>
+      <div style="grid-column:1 / -1;display:flex;gap:var(--space-4);">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="cb-create-fast" style="width:16px;height:16px;"> FAST Lane Eligible (C-TPAT / PIP Enrolled)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="cb-create-ctpat" style="width:16px;height:16px;"> C-TPAT Certified Carrier
+        </label>
+      </div>
+      <div>
+        <label class="form-label">Driver Name</label>
+        <input type="text" id="cb-create-driver" class="form-input" placeholder="e.g. Carlos Mendez">
+      </div>
+      <div>
+        <label class="form-label">Driver FAST Card #</label>
+        <input type="text" id="cb-create-fast-card" class="form-input" placeholder="e.g. FAST-MX-8841-B">
+      </div>
+      <div>
+        <label class="form-label">Tractor Plate #</label>
+        <input type="text" id="cb-create-tractor" class="form-input" placeholder="e.g. TX-489221">
+      </div>
+      <div>
+        <label class="form-label">Trailer Plate #</label>
+        <input type="text" id="cb-create-trailer" class="form-input" placeholder="e.g. TX-TRAIL-7742">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:var(--space-4);">
+      <button class="btn btn-ghost" onclick="closeCreateCrossBorderModal()">Cancel</button>
+      <button class="btn btn-primary" id="cb-create-submit-btn" onclick="submitCreateCrossBorder()">
+        📋 Generate ACE/ACI Manifest
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 28 MODAL: View Cross-Border Dossier -->
+<div id="modal-view-cross-border-dossier" class="modal-backdrop" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);width:90%;max-width:700px;padding:var(--space-6);box-shadow:var(--shadow-xl);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+      <h3 style="font-size:var(--text-md);font-weight:800;color:var(--text-primary);margin:0;">🌐 Cross-Border Manifest Dossier</h3>
+      <button onclick="closeCrossBorderDossierModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;">✕</button>
+    </div>
+    <div id="cb-dossier-content" style="font-size:13px;color:var(--text-secondary);line-height:1.7;">Loading dossier...</div>
+    <div style="margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--border-subtle);">
+      <h4 style="font-size:13px;font-weight:700;color:var(--text-primary);margin:0 0 12px;">Update CBP Status</h4>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select id="cb-dossier-status-select" class="form-select" style="flex:1;min-width:200px;">
+          <option value="PENDING_SUBMISSION">Pending Submission</option>
+          <option value="ACE_SUBMITTED">ACE/ACI Submitted</option>
+          <option value="CBP_REVIEWING">CBP Under Review</option>
+          <option value="HOLD_EXAM">Hold — Secondary Exam</option>
+          <option value="CBP_CLEARED_LEAVE_PORT">CBP Cleared — Leave Port</option>
+          <option value="ARRIVED_IN_BOND">Arrived In-Bond Destination</option>
+          <option value="IN_BOND_CANCELLED">In-Bond Cancelled</option>
+          <option value="COMPLETED">Completed / Exported</option>
+        </select>
+        <input type="text" id="cb-dossier-cbp-ref" class="form-input" placeholder="CBP Reference # (optional)" style="width:200px;">
+        <button class="btn btn-primary btn-sm" id="cb-dossier-update-btn" onclick="submitCrossBorderStatusUpdate()">Update Status</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:var(--space-4);">
+      <a id="cb-dossier-pdf-link" href="#" target="_blank" class="btn btn-secondary btn-sm">📄 Download CBP 7512 PDF</a>
+      <button class="btn btn-ghost btn-sm" onclick="closeCrossBorderDossierModal()">Close Dossier</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function getAuthToken() {
     return localStorage.getItem('token') || localStorage.getItem('auth_token') || sessionStorage.getItem('token') || '';
@@ -5316,6 +5598,7 @@
     document.getElementById('tab-content-bond-watchdog').style.display = tabId === 'bond-watchdog' ? 'block' : 'none';
     document.getElementById('tab-content-rate-matrix').style.display = tabId === 'rate-matrix' ? 'block' : 'none';
     document.getElementById('tab-content-drayage').style.display = tabId === 'drayage' ? 'block' : 'none';
+    document.getElementById('tab-content-cross-border').style.display = tabId === 'cross-border' ? 'block' : 'none';
 
     if (tabId === 'telematics') {
       loadFleetTelematics();
@@ -5357,6 +5640,8 @@
       loadRateMatrixDesk();
     } else if (tabId === 'drayage') {
       loadDrayageDesk();
+    } else if (tabId === 'cross-border') {
+      loadCrossBorderDesk();
     }
   }
 
@@ -11306,6 +11591,345 @@
       alert('Network error filing dispute.');
     }
   }
+
+  // ============================================================
+  // PHASE 28 — Cross-Border US-Mexico & US-Canada In-Bond Customs Dispatcher
+  // ============================================================
+
+  let cbAllManifests = [];
+  let cbCurrentDossierId = null;
+
+  async function loadCrossBorderDesk() {
+    try {
+      const token = getAuthToken();
+      const res = await fetch('/api/cross-border/roster', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      if (!data.ok) { console.warn('Cross-border roster error:', data.error); return; }
+
+      // KPIs
+      const k = data.kpis || {};
+      const el = id => document.getElementById(id);
+      if (el('kpi-cb-active-trips')) el('kpi-cb-active-trips').textContent = k.active_in_bond_trips || 0;
+      if (el('kpi-cb-pass-rate')) el('kpi-cb-pass-rate').textContent = (k.cbp_pass_rate || 0) + '%';
+      if (el('kpi-cb-in-bond-count')) el('kpi-cb-in-bond-count').textContent = k.total_manifests || 0;
+      if (el('kpi-cb-avg-wait')) el('kpi-cb-avg-wait').textContent = (k.avg_border_wait_minutes || '—') + ' min';
+
+      // Manifests table
+      cbAllManifests = data.manifests || [];
+      renderCrossBorderTable(cbAllManifests);
+
+      // Wait times banner
+      const ports = data.ports || [];
+      const wtbody = document.getElementById('cb-wait-times-tbody');
+      if (wtbody && ports.length) {
+        wtbody.innerHTML = ports.map(p => `
+          <tr>
+            <td><strong>${p.port_name}</strong></td>
+            <td>${p.country === 'MX' ? '🇲🇽 Mexico' : '🇨🇦 Canada'}</td>
+            <td><span style="color:${p.standard_lane_wait_minutes > 60 ? '#f87171' : '#34d399'};font-weight:700;">${p.standard_lane_wait_minutes} min</span></td>
+            <td><span style="color:#fbbf24;font-weight:700;">${p.fast_lane_wait_minutes} min</span></td>
+            <td>${p.fast_lane_available ? '<span style="color:#34d399;">✔ FAST</span>' : '<span style="color:var(--text-muted);">—</span>'}</td>
+            <td>${p.ctpat_designated ? '<span style="color:#38bdf8;">C-TPAT</span>' : '<span style="color:var(--text-muted);">—</span>'}</td>
+            <td style="font-size:11px;">${p.operational_hours || '24/7'}</td>
+          </tr>
+        `).join('');
+      }
+    } catch (err) {
+      console.error('Cross-border desk load error:', err);
+    }
+  }
+
+  function renderCrossBorderTable(manifests) {
+    const tbody = document.getElementById('cb-manifests-tbody');
+    if (!tbody) return;
+    const count = document.getElementById('cb-records-count');
+    if (count) count.textContent = `Showing ${manifests.length} manifest${manifests.length !== 1 ? 's' : ''}`;
+    if (!manifests.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">No cross-border manifests found.</td></tr>';
+      return;
+    }
+    const statusColors = {
+      'PENDING_SUBMISSION': '#94a3b8',
+      'ACE_SUBMITTED': '#38bdf8',
+      'CBP_REVIEWING': '#fbbf24',
+      'HOLD_EXAM': '#f87171',
+      'CBP_CLEARED_LEAVE_PORT': '#34d399',
+      'ARRIVED_IN_BOND': '#a78bfa',
+      'IN_BOND_CANCELLED': '#ef4444',
+      'COMPLETED': '#10b981'
+    };
+    tbody.innerHTML = manifests.map(m => {
+      const sc = statusColors[m.cbp_status] || '#94a3b8';
+      const fast = m.fast_lane_eligible ? '<span style="color:#fbbf24;font-weight:700;">⚡ FAST</span>' : '<span style="color:var(--text-muted);">—</span>';
+      const ctpat = m.ctpat_certified ? ' <span style="color:#38bdf8;font-size:10px;">C-TPAT</span>' : '';
+      const val = m.cargo_value_usd ? '$' + Number(m.cargo_value_usd).toLocaleString() : '—';
+      return `<tr>
+        <td><strong style="color:var(--text-primary);">${m.trip_number}</strong><br><span style="font-size:10px;color:var(--text-muted);">${m.entry_type} · ${m.manifest_type.replace(/_/g,' ')}</span></td>
+        <td>${m.carrier_name || '—'}<br><span style="font-size:10px;color:var(--text-muted);">${m.scac_code || ''}</span></td>
+        <td>${m.port_of_entry || '—'}</td>
+        <td style="font-size:12px;">${m.commodity || '—'}</td>
+        <td style="font-size:12px;">${val}</td>
+        <td style="font-size:11px;font-family:monospace;">${m.in_bond_number || '—'}</td>
+        <td>${fast}${ctpat}</td>
+        <td><span class="badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44;font-size:10px;">${m.cbp_status.replace(/_/g,' ')}</span></td>
+        <td><button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 8px;" onclick="openCrossBorderDossierModal('${m.id}')">📋 Dossier</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterCrossBorderManifests() {
+    const q = (document.getElementById('cb-search-input')?.value || '').toLowerCase();
+    const corridor = document.getElementById('cb-filter-corridor')?.value || 'ALL';
+    const entryType = document.getElementById('cb-filter-entry-type')?.value || 'ALL';
+    let filtered = cbAllManifests;
+    if (q) {
+      filtered = filtered.filter(m =>
+        (m.trip_number || '').toLowerCase().includes(q) ||
+        (m.carrier_name || '').toLowerCase().includes(q) ||
+        (m.commodity || '').toLowerCase().includes(q) ||
+        (m.port_of_entry || '').toLowerCase().includes(q) ||
+        (m.in_bond_number || '').toLowerCase().includes(q)
+      );
+    }
+    if (corridor !== 'ALL') {
+      filtered = filtered.filter(m => (m.corridor || '') === corridor);
+    }
+    if (entryType !== 'ALL') {
+      filtered = filtered.filter(m => (m.entry_type || '') === entryType);
+    }
+    renderCrossBorderTable(filtered);
+  }
+
+  function openCreateCrossBorderModal() {
+    document.getElementById('modal-create-cross-border').style.display = 'flex';
+    // Reset form
+    ['cb-create-carrier','cb-create-scac','cb-create-commodity','cb-create-shipper','cb-create-consignee','cb-create-driver','cb-create-fast-card','cb-create-tractor','cb-create-trailer'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const valEl = document.getElementById('cb-create-value');
+    const wEl = document.getElementById('cb-create-weight');
+    if (valEl) valEl.value = '';
+    if (wEl) wEl.value = '';
+    const fastCk = document.getElementById('cb-create-fast');
+    const ctpatCk = document.getElementById('cb-create-ctpat');
+    if (fastCk) fastCk.checked = false;
+    if (ctpatCk) ctpatCk.checked = false;
+  }
+
+  function closeCreateCrossBorderModal() {
+    document.getElementById('modal-create-cross-border').style.display = 'none';
+  }
+
+  function setCrossBorderPreset(preset) {
+    const set = (id, val) => { const e = document.getElementById(id); if (e) e.value = val; };
+    const check = (id, v) => { const e = document.getElementById(id); if (e) e.checked = v; };
+    if (preset === 'laredo_it') {
+      set('cb-create-carrier', 'Trans-Laredo Automotive Logistics LLC');
+      set('cb-create-scac', 'TLAL');
+      set('cb-create-port', 'LAREDO_TX');
+      set('cb-create-manifest-type', 'ACE_E_MANIFEST');
+      set('cb-create-entry-type', 'IT');
+      set('cb-create-commodity', 'Automotive Parts — Stamped Steel Stampings & Body Panels');
+      set('cb-create-value', '285000');
+      set('cb-create-weight', '42000');
+      set('cb-create-shipper', 'Ford Motor Company S. de R.L. — Hermosillo Plant');
+      set('cb-create-consignee', 'Ford Kentucky Truck Plant — Louisville KY');
+      set('cb-create-origin-country', 'MX');
+      set('cb-create-dest-country', 'US');
+      set('cb-create-driver', 'Carlos A. Mendez-Ruiz');
+      set('cb-create-fast-card', 'FAST-MX-8841-B');
+      set('cb-create-tractor', 'TX-489221');
+      set('cb-create-trailer', 'TX-TRAIL-7742');
+      check('cb-create-fast', true);
+      check('cb-create-ctpat', true);
+    } else if (preset === 'detroit_paps') {
+      set('cb-create-carrier', 'Great Lakes Cross-Border Freight Inc.');
+      set('cb-create-scac', 'GLCB');
+      set('cb-create-port', 'DETROIT_MI');
+      set('cb-create-manifest-type', 'ACI_E_MANIFEST');
+      set('cb-create-entry-type', 'PAPS');
+      set('cb-create-commodity', 'Automotive Transmission Assemblies — OEM Grade');
+      set('cb-create-value', '520000');
+      set('cb-create-weight', '38000');
+      set('cb-create-shipper', 'Linamar Corporation — Guelph ON Plant');
+      set('cb-create-consignee', 'General Motors Romulus Engine Plant');
+      set('cb-create-origin-country', 'CA');
+      set('cb-create-dest-country', 'US');
+      set('cb-create-driver', 'William R. Kowalski');
+      set('cb-create-fast-card', 'FAST-CA-3312-A');
+      set('cb-create-tractor', 'ON-TRUCK-9944');
+      set('cb-create-trailer', 'MI-TRAIL-2281');
+      check('cb-create-fast', true);
+      check('cb-create-ctpat', true);
+    } else if (preset === 'otay_te') {
+      set('cb-create-carrier', 'Pacific Rim Cross-Border Logistics');
+      set('cb-create-scac', 'PRCB');
+      set('cb-create-port', 'OTAY_MESA_CA');
+      set('cb-create-manifest-type', 'ACE_E_MANIFEST');
+      set('cb-create-entry-type', 'TE');
+      set('cb-create-commodity', 'Consumer Electronics — Flat Panel Displays & Components');
+      set('cb-create-value', '1850000');
+      set('cb-create-weight', '18500');
+      set('cb-create-shipper', 'Foxconn Industrial Park — Tijuana BC Mexico');
+      set('cb-create-consignee', 'Apple Distribution International — San Jose CA');
+      set('cb-create-origin-country', 'MX');
+      set('cb-create-dest-country', 'US');
+      set('cb-create-driver', 'Luis F. Gutierrez-Vega');
+      set('cb-create-fast-card', 'FAST-MX-5529-C');
+      set('cb-create-tractor', 'BC-MX-7711');
+      set('cb-create-trailer', 'CA-TRAIL-4488');
+      check('cb-create-fast', true);
+      check('cb-create-ctpat', true);
+    }
+  }
+
+  async function submitCreateCrossBorder() {
+    const btn = document.getElementById('cb-create-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+    try {
+      const token = getAuthToken();
+      const payload = {
+        carrier_name: document.getElementById('cb-create-carrier')?.value,
+        scac_code: document.getElementById('cb-create-scac')?.value,
+        port_of_entry: document.getElementById('cb-create-port')?.value,
+        manifest_type: document.getElementById('cb-create-manifest-type')?.value,
+        entry_type: document.getElementById('cb-create-entry-type')?.value,
+        commodity: document.getElementById('cb-create-commodity')?.value,
+        cargo_value_usd: parseFloat(document.getElementById('cb-create-value')?.value) || 0,
+        weight_lbs: parseFloat(document.getElementById('cb-create-weight')?.value) || 0,
+        shipper_name: document.getElementById('cb-create-shipper')?.value,
+        consignee_name: document.getElementById('cb-create-consignee')?.value,
+        origin_country: document.getElementById('cb-create-origin-country')?.value,
+        destination_country: document.getElementById('cb-create-dest-country')?.value,
+        fast_lane_eligible: document.getElementById('cb-create-fast')?.checked || false,
+        ctpat_certified: document.getElementById('cb-create-ctpat')?.checked || false,
+        driver_name: document.getElementById('cb-create-driver')?.value,
+        driver_fast_card_number: document.getElementById('cb-create-fast-card')?.value,
+        tractor_plate: document.getElementById('cb-create-tractor')?.value,
+        trailer_plate: document.getElementById('cb-create-trailer')?.value
+      };
+      const res = await fetch('/api/cross-border/manifests/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.ok) {
+        closeCreateCrossBorderModal();
+        loadCrossBorderDesk();
+        alert(`✅ ACE/ACI Manifest Generated!\nTrip #: ${data.manifest?.trip_number}\nIn-Bond #: ${data.manifest?.in_bond_number}\nCBP Status: ${data.manifest?.cbp_status}`);
+      } else {
+        alert('Error generating manifest: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Network error generating manifest.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '📋 Generate ACE/ACI Manifest'; }
+    }
+  }
+
+  async function openCrossBorderDossierModal(manifestId) {
+    cbCurrentDossierId = manifestId;
+    document.getElementById('modal-view-cross-border-dossier').style.display = 'flex';
+    const contentEl = document.getElementById('cb-dossier-content');
+    if (contentEl) contentEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Loading dossier...</div>';
+    try {
+      const token = getAuthToken();
+      const res = await fetch(`/api/cross-border/manifests/${manifestId}`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      if (!data.ok || !data.manifest) { if (contentEl) contentEl.innerHTML = '<p style="color:#f87171;">Failed to load dossier.</p>'; return; }
+      const m = data.manifest;
+      const fastCard = data.fast_card || {};
+      const sc = { 'PENDING_SUBMISSION':'#94a3b8','ACE_SUBMITTED':'#38bdf8','CBP_REVIEWING':'#fbbf24','HOLD_EXAM':'#f87171','CBP_CLEARED_LEAVE_PORT':'#34d399','ARRIVED_IN_BOND':'#a78bfa','IN_BOND_CANCELLED':'#ef4444','COMPLETED':'#10b981' };
+      const color = sc[m.cbp_status] || '#94a3b8';
+      const row = (label, val) => val ? `<tr><td style="color:var(--text-muted);padding:5px 10px 5px 0;font-size:12px;white-space:nowrap;">${label}</td><td style="font-size:12px;color:var(--text-primary);padding:5px 0;">${val}</td></tr>` : '';
+      if (contentEl) contentEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <span style="font-size:24px;">🌐</span>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--text-primary);">${m.trip_number}</div>
+            <span class="badge" style="background:${color}22;color:${color};border:1px solid ${color}44;">${m.cbp_status.replace(/_/g,' ')}</span>
+            ${m.fast_lane_eligible ? '<span class="badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);margin-left:6px;">⚡ FAST Lane</span>' : ''}
+            ${m.ctpat_certified ? '<span class="badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);margin-left:6px;">C-TPAT</span>' : ''}
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;">
+          ${row('Manifest Type', m.manifest_type?.replace(/_/g,' '))}
+          ${row('Entry Type', m.entry_type)}
+          ${row('Manifest Hash', `<code style="font-size:10px;">${m.manifest_hash}</code>`)}
+          ${row('In-Bond Number', m.in_bond_number)}
+          ${row('Port of Entry', m.port_of_entry)}
+          ${row('Corridor', m.corridor?.replace(/_/g,' '))}
+          ${row('Carrier', `${m.carrier_name} (${m.scac_code})`)}
+          ${row('Driver', m.driver_name)}
+          ${row('FAST Card #', m.driver_fast_card_number)}
+          ${row('Tractor', m.tractor_plate)} 
+          ${row('Trailer', m.trailer_plate)}
+          ${row('Shipper', m.shipper_name)}
+          ${row('Consignee', m.consignee_name)}
+          ${row('Commodity', m.commodity)}
+          ${row('Cargo Value', m.cargo_value_usd ? '$' + Number(m.cargo_value_usd).toLocaleString() : null)}
+          ${row('Weight', m.weight_lbs ? Number(m.weight_lbs).toLocaleString() + ' lbs' : null)}
+          ${row('CBP Release Time', m.cbp_release_timestamp ? new Date(m.cbp_release_timestamp).toLocaleString() : null)}
+          ${row('CBP Reference #', m.cbp_reference_number)}
+          ${row('USDA Phyto Required', m.usda_phytosanitary_required ? '✔ Yes' : null)}
+        </table>
+        ${fastCard && fastCard.score !== undefined ? `
+          <div style="margin-top:12px;padding:10px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.2);border-radius:8px;">
+            <strong style="font-size:12px;color:#fbbf24;">⚡ FAST Lane Eligibility Score: ${fastCard.score}/100</strong>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${fastCard.reasons?.join(' · ') || ''}</div>
+          </div>` : ''}
+      `;
+      // Set status select
+      const sel = document.getElementById('cb-dossier-status-select');
+      if (sel) sel.value = m.cbp_status;
+      // Set PDF link
+      const pdfLink = document.getElementById('cb-dossier-pdf-link');
+      if (pdfLink) pdfLink.href = `/api/cross-border/manifests/${m.id}/packet-pdf`;
+    } catch (err) {
+      const contentEl2 = document.getElementById('cb-dossier-content');
+      if (contentEl2) contentEl2.innerHTML = '<p style="color:#f87171;">Error loading dossier.</p>';
+    }
+  }
+
+  function closeCrossBorderDossierModal() {
+    document.getElementById('modal-view-cross-border-dossier').style.display = 'none';
+    cbCurrentDossierId = null;
+  }
+
+  async function submitCrossBorderStatusUpdate() {
+    if (!cbCurrentDossierId) return;
+    const btn = document.getElementById('cb-dossier-update-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+    try {
+      const token = getAuthToken();
+      const newStatus = document.getElementById('cb-dossier-status-select')?.value;
+      const cbpRef = document.getElementById('cb-dossier-cbp-ref')?.value || '';
+      const res = await fetch(`/api/cross-border/manifests/${cbCurrentDossierId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ cbp_status: newStatus, cbp_reference_number: cbpRef })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert(`✅ Status updated to: ${newStatus.replace(/_/g,' ')}`);
+        openCrossBorderDossierModal(cbCurrentDossierId);
+        loadCrossBorderDesk();
+      } else {
+        alert('Error updating status: ' + (data.error || 'Unknown'));
+      }
+    } catch (err) {
+      alert('Network error updating status.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Update Status'; }
+    }
+  }
+
 </script>
 
 </body>
