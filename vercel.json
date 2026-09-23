@@ -44,6 +44,11 @@
       "destination": "/loadsnexus/index.html"
     },
     {
+      "source": "/assets/(.*)",
+      "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
+      "destination": "/loadsnexus/assets/$1"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api"
     }
