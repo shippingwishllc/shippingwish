@@ -76,8 +76,14 @@ app.use((req, res, next) => {
 // Host-based routing for LoadsNexus domain (loadsnexus.com)
 app.use((req, res, next) => {
   const host = (req.headers.host || '').toLowerCase();
-  if (host.includes('loadsnexus') && (req.path === '/' || req.path === '/index')) {
-    return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', 'index.html'));
+  if (host.includes('loadsnexus')) {
+    if (req.path.startsWith('/api') || req.path.startsWith('/loadsnexus') || req.path.startsWith('/uploads')) {
+      return next();
+    }
+    const lnRoutes = ['/', '/index', '/board', '/loads', '/post-load', '/login', '/checkout', '/pricing'];
+    if (lnRoutes.includes(req.path)) {
+      return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', 'index.html'));
+    }
   }
   next();
 });

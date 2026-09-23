@@ -19,6 +19,31 @@
       "destination": "/loadsnexus/index.html"
     },
     {
+      "source": "/board",
+      "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
+      "destination": "/loadsnexus/index.html"
+    },
+    {
+      "source": "/loads",
+      "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
+      "destination": "/loadsnexus/index.html"
+    },
+    {
+      "source": "/post-load",
+      "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
+      "destination": "/loadsnexus/index.html"
+    },
+    {
+      "source": "/login",
+      "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
+      "destination": "/loadsnexus/index.html"
+    },
+    {
+      "source": "/checkout",
+      "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
+      "destination": "/loadsnexus/index.html"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api"
     }

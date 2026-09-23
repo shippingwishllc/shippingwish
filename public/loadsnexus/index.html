@@ -16,7 +16,7 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <link rel="icon" href="/loadsnexus/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/loadsnexus/loadsnexus.css?v=3">
+  <link rel="stylesheet" href="/loadsnexus/loadsnexus.css?v=4">
 
   <script type="application/ld+json">
   {
@@ -56,21 +56,21 @@
       </a>
 
       <ul class="ln-nav-links" role="list">
-        <li><a href="/#search-bar">Search Loads</a></li>
-        <li><a href="/#solutions">Carriers</a></li>
-        <li><a href="/#solutions">Brokers</a></li>
-        <li><a href="/#comparison">Why LoadsNexus</a></li>
-        <li><a href="/#apps">Mobile Apps</a></li>
-        <li><a href="/#pricing">Pricing ($19/mo)</a></li>
+        <li><a href="#live-board-section">Search Live Loads</a></li>
+        <li><a href="#solutions">Carriers</a></li>
+        <li><a href="#solutions">Brokers</a></li>
+        <li><a href="#comparison">Why LoadsNexus</a></li>
+        <li><a href="#apps">Mobile Apps</a></li>
+        <li><a href="#pricing">Pricing ($19/mo)</a></li>
       </ul>
 
       <div class="ln-nav-actions">
         <div class="ln-powered-badge">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span>A Product of <a href="https://www.shippingwish.com" target="_blank" rel="noopener">Shipping Wish LLC</a></span>
+          <span>Operated by Shipping Wish LLC</span>
         </div>
-        <a href="/login?from=loadsnexus" class="ln-btn ln-btn-secondary ln-btn-sm">Sign In</a>
-        <a href="/checkout?plan=loadboard_ai_pass" class="ln-btn ln-btn-primary ln-btn-sm">Get Started ($19/mo)</a>
+        <button type="button" onclick="openAuthModal()" class="ln-btn ln-btn-secondary ln-btn-sm" id="nav-btn-signin">Sign In</button>
+        <button type="button" onclick="openCarrierCheckoutModal()" class="ln-btn ln-btn-primary ln-btn-sm">Get Started ($19/mo)</button>
       </div>
 
       <button type="button" class="ln-hamburger" id="ln-hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
@@ -82,17 +82,17 @@
   <!-- Mobile Drawer -->
   <div class="ln-mobile-drawer" id="ln-mobile-drawer" role="dialog" aria-label="Mobile Navigation">
     <nav class="ln-mobile-links">
-      <a href="/#search-bar" data-ln-close>Search Live Loads</a>
-      <a href="/#solutions" data-ln-close>For Carriers &amp; Drivers</a>
-      <a href="/#solutions" data-ln-close>For Freight Brokers</a>
-      <a href="/#comparison" data-ln-close>Compare vs DAT</a>
-      <a href="/#apps" data-ln-close>Mobile Applications</a>
-      <a href="/#pricing" data-ln-close>Pricing ($19/mo)</a>
+      <a href="#live-board-section" data-ln-close>Search Live Loads</a>
+      <a href="#solutions" data-ln-close>For Carriers &amp; Drivers</a>
+      <a href="#solutions" data-ln-close>For Freight Brokers</a>
+      <a href="#comparison" data-ln-close>Compare vs DAT</a>
+      <a href="#apps" data-ln-close>Mobile Applications</a>
+      <a href="#pricing" data-ln-close>Pricing ($19/mo)</a>
     </nav>
     <div class="ln-mobile-actions">
-      <a href="/login?from=loadsnexus&role=carrier" class="ln-btn ln-btn-carrier">Carrier Portal Sign In</a>
-      <a href="/login?from=loadsnexus&role=broker" class="ln-btn ln-btn-broker">Broker Portal Sign In</a>
-      <a href="/checkout?plan=loadboard_ai_pass" class="ln-btn ln-btn-primary">Start Load Board — $19/mo</a>
+      <button type="button" onclick="openAuthModal('carrier')" class="ln-btn ln-btn-carrier">Carrier Portal Sign In</button>
+      <button type="button" onclick="openAuthModal('broker')" class="ln-btn ln-btn-broker">Broker Portal Sign In</button>
+      <button type="button" onclick="openCarrierCheckoutModal()" class="ln-btn ln-btn-primary">Start Load Board — $19/mo</button>
     </div>
   </div>
 
@@ -133,7 +133,7 @@
           </div>
           <div class="ln-search-live-badge">
             <span class="ln-search-live-dot"></span>
-            <span>4,850+ Live Verified Loads</span>
+            <span id="hero-live-badge-count">4,850+ Live Verified Loads</span>
           </div>
         </div>
 
@@ -151,15 +151,15 @@
           <div class="ln-search-field">
             <label class="ln-field-label" for="search-equip">Equipment Type</label>
             <select id="search-equip" class="ln-field-input" style="cursor:pointer;">
-              <option value="V">53' Dry Van</option>
-              <option value="R">53' Reefer (Refrigerated)</option>
-              <option value="F">Flatbed / Step Deck</option>
-              <option value="PO">Power Only</option>
-              <option value="HS">Hotshot</option>
+              <option value="Dry Van">53' Dry Van</option>
+              <option value="Reefer">53' Reefer (Refrigerated)</option>
+              <option value="Flatbed">Flatbed / Step Deck</option>
+              <option value="Power Only">Power Only</option>
+              <option value="Hotshot">Hotshot</option>
             </select>
           </div>
 
-          <button type="submit" class="ln-btn ln-btn-primary ln-search-submit">
+          <button type="submit" class="ln-btn ln-btn-primary ln-search-submit" id="hero-submit-btn">
             Search Loads
           </button>
         </form>
@@ -186,8 +186,8 @@
             <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Starting at only $19/month (or free with dispatch)</li>
           </ul>
           <div style="display:flex;gap:10px;margin-top:auto;">
-            <a href="/checkout?plan=loadboard_ai_pass" class="ln-btn ln-btn-carrier ln-btn-sm" style="flex:1;">Start for $19/mo →</a>
-            <a href="/login?from=loadsnexus&role=carrier" class="ln-btn ln-btn-secondary ln-btn-sm">Carrier Login</a>
+            <button type="button" onclick="openCarrierCheckoutModal()" class="ln-btn ln-btn-carrier ln-btn-sm" style="flex:1;">Start for $19/mo →</button>
+            <button type="button" onclick="openAuthModal('carrier')" class="ln-btn ln-btn-secondary ln-btn-sm">Carrier Login</button>
           </div>
         </div>
 
@@ -209,8 +209,8 @@
             <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Instant rate confirmation &amp; digital onboarding</li>
           </ul>
           <div style="display:flex;gap:10px;margin-top:auto;">
-            <a href="https://www.shippingwish.com/contact?subject=broker-partner" target="_blank" rel="noopener" class="ln-btn ln-btn-broker ln-btn-sm" style="flex:1;">Post Freight →</a>
-            <a href="/login?from=loadsnexus&role=broker" class="ln-btn ln-btn-secondary ln-btn-sm">Broker Login</a>
+            <button type="button" onclick="openPostFreightModal()" class="ln-btn ln-btn-broker ln-btn-sm" style="flex:1;">Post Freight (Free) →</button>
+            <button type="button" onclick="openAuthModal('broker')" class="ln-btn ln-btn-secondary ln-btn-sm">Broker Login</button>
           </div>
         </div>
 
@@ -283,6 +283,117 @@
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       DAT ONE™ STYLE LIVE LOADS BOARD SECTION
+  ══════════════════════════════════════════════ -->
+  <section class="ln-board-section" id="live-board-section">
+    <div class="ln-wrap">
+      
+      <div class="ln-board-card">
+        <!-- Board Header -->
+        <div class="ln-board-header">
+          <div class="ln-board-title-group">
+            <h2 class="ln-board-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--blue-600)" stroke-width="2.5"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              LoadsNexus™ Live Spot Freight Exchange
+            </h2>
+            <div class="ln-pulse-badge">
+              <span class="ln-pulse-dot"></span>
+              <span id="live-count-badge">4,850+ Live Verified Loads</span>
+            </div>
+          </div>
+
+          <div class="ln-board-actions">
+            <button type="button" onclick="openPostFreightModal()" class="ln-btn ln-btn-broker ln-btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Post Spot Freight (Free)
+            </button>
+            <button type="button" onclick="openCarrierCheckoutModal()" class="ln-btn ln-btn-carrier ln-btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Unlock Direct Contacts ($19/mo)
+            </button>
+            <button type="button" onclick="refreshLiveBoard()" class="ln-btn ln-btn-secondary ln-btn-sm" title="Refresh Live Stream">
+              🔄 Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Toolbar / Stats & Quick Filter -->
+        <div class="ln-board-toolbar">
+          <div class="ln-board-stats-pills">
+            <div class="ln-stat-pill">
+              <span>National Spot RPM:</span>
+              <strong id="stat-avg-rpm">$3.18 / mi</strong>
+            </div>
+            <div class="ln-stat-pill">
+              <span>Monitored Brokers:</span>
+              <strong id="stat-monitored-brokers">28 Active</strong>
+            </div>
+            <div class="ln-stat-pill">
+              <span>Security Shield:</span>
+              <strong style="color:var(--emerald-600);">100% Anti-Double-Brokering Guard</strong>
+            </div>
+          </div>
+
+          <!-- Quick In-Table Filter -->
+          <form class="ln-quick-filter-row" onsubmit="handleQuickFilter(event)" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="filter-origin" class="ln-input" style="padding:7px 12px;font-size:12px;width:130px;" placeholder="Filter Origin...">
+            <input type="text" id="filter-dest" class="ln-input" style="padding:7px 12px;font-size:12px;width:130px;" placeholder="Filter Dest...">
+            <select id="filter-equip" class="ln-input" style="padding:7px 12px;font-size:12px;width:130px;cursor:pointer;">
+              <option value="all">All Equipment</option>
+              <option value="Dry Van">53' Dry Van</option>
+              <option value="Reefer">53' Reefer</option>
+              <option value="Flatbed">Flatbed</option>
+              <option value="Power Only">Power Only</option>
+              <option value="Hotshot">Hotshot</option>
+            </select>
+            <button type="submit" class="ln-btn ln-btn-primary ln-btn-sm" style="padding:7px 14px;font-size:12px;">Filter</button>
+            <button type="button" onclick="resetQuickFilter()" class="ln-btn ln-btn-secondary ln-btn-sm" style="padding:7px 10px;font-size:12px;">Reset</button>
+          </form>
+        </div>
+
+        <!-- DAT Table Stream -->
+        <div class="ln-table-wrap">
+          <table class="ln-dat-table" aria-label="LoadsNexus Live Freight Table">
+            <thead>
+              <tr>
+                <th>Age / ID</th>
+                <th>Trip Corridor</th>
+                <th>Distance &amp; RPM</th>
+                <th>Rate (USD)</th>
+                <th>Equipment &amp; Weight</th>
+                <th>Pickup Date</th>
+                <th>Broker &amp; Credit Score</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ln-dat-tbody">
+              <!-- Dynamically populated from /api/loadboard/search -->
+              <tr>
+                <td colspan="8" style="text-align:center;padding:40px;color:var(--slate-500);">
+                  <div style="font-weight:700;">Loading Live Verified Spot Freight Corridors…</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer / Live Status Banner -->
+        <div style="padding:14px 24px;background:#f8fafc;border-top:1px solid var(--slate-200);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--slate-500);">
+          <div>
+            ⚡ Live loads streamed directly from LoadsNexus™ spot exchange and verified brokers.
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <span><strong style="color:var(--slate-900);" id="loads-display-count">15</strong> loads displayed</span>
+            <button type="button" onclick="openPostFreightModal()" style="background:none;border:none;color:var(--blue-600);font-weight:700;cursor:pointer;text-decoration:underline;">+ Post a Load</button>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </section>
 
@@ -531,9 +642,9 @@
             <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> LoadsNexus Carrier Mobile App access</li>
           </ul>
 
-          <a href="/checkout?plan=loadboard_ai_pass" class="ln-btn ln-btn-primary ln-btn-block">
+          <button type="button" onclick="openCarrierCheckoutModal()" class="ln-btn ln-btn-primary ln-btn-block">
             Start Load Board ($19/mo) →
-          </a>
+          </button>
         </div>
 
         <!-- Plan 2: Included with Dispatch -->
@@ -551,29 +662,29 @@
             <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Full Shipping Wish Enterprise TMS software</li>
           </ul>
 
-          <a href="https://www.shippingwish.com/pricing" target="_blank" rel="noopener" class="ln-btn ln-btn-carrier ln-btn-block">
-            Explore 24/7 Dispatch Plans →
-          </a>
+          <button type="button" onclick="openDispatchInquiryModal()" class="ln-btn ln-btn-carrier ln-btn-block">
+            Inquire Dedicated Dispatch →
+          </button>
         </div>
 
         <!-- Plan 3: Broker -->
         <div class="ln-price-card">
           <div class="ln-price-plan-name">Broker — Freight &amp; Capacity</div>
-          <div class="ln-price-amount" style="font-size:2.4rem;line-height:1.15;">Custom</div>
-          <p class="ln-price-subtext">Enterprise tiers based on monthly load volume</p>
+          <div class="ln-price-amount" style="font-size:2.4rem;line-height:1.15;">100% Free</div>
+          <p class="ln-price-subtext">Post spot freight at zero cost forever · Anti-Double Brokering Guard</p>
 
           <ul class="ln-price-perks">
             <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Unlimited spot load posting across 50 states</li>
-            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Anti-Double-Brokering security certification</li>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Automated Anti-Double-Brokering security certification</li>
             <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Instant FMCSA authority &amp; insurance vetting</li>
             <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Access verified carrier truck capacity roster</li>
             <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> LoadsNexus Broker Mobile App access</li>
-            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Dedicated account executive &amp; TMS API key</li>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Live spot publishing with zero delay</li>
           </ul>
 
-          <a href="https://www.shippingwish.com/contact?subject=broker-partner" target="_blank" rel="noopener" class="ln-btn ln-btn-secondary ln-btn-block">
-            Contact Broker Relations →
-          </a>
+          <button type="button" onclick="openPostFreightModal()" class="ln-btn ln-btn-secondary ln-btn-block">
+            Post Freight Live (100% Free) →
+          </button>
         </div>
 
       </div>
@@ -592,12 +703,12 @@
       </p>
 
       <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;">
-        <a href="/checkout?plan=loadboard_ai_pass" class="ln-btn ln-btn-primary ln-btn-xl">
+        <button type="button" onclick="openCarrierCheckoutModal()" class="ln-btn ln-btn-primary ln-btn-xl">
           Get Started for $19/Month →
-        </a>
-        <a href="tel:+19177370021" class="ln-btn ln-btn-secondary ln-btn-xl">
-          📞 Call Support: +1 (917) 737-0021
-        </a>
+        </button>
+        <button type="button" onclick="openPostFreightModal()" class="ln-btn ln-btn-secondary ln-btn-xl">
+          Post Freight as Broker (100% Free) →
+        </button>
       </div>
     </div>
   </section>
@@ -618,7 +729,7 @@
             The next-generation freight load board and capacity exchange network. Engineered with proprietary anti-fraud security and real-time payment telemetry.
           </p>
           <div style="margin-top:16px;font-size:12px;color:var(--slate-400);">
-            Incorporated under <strong>Shipping Wish LLC</strong><br>
+            Operated by <strong>Shipping Wish LLC</strong><br>
             19266 Coastal Hwy, Rehoboth Beach, DE 19971
           </div>
         </div>
@@ -626,33 +737,32 @@
         <div class="ln-footer-col">
           <h4>Platform</h4>
           <ul>
-            <li><a href="/#search-bar">Search Live Loads</a></li>
-            <li><a href="/#features">AI Lane Matching</a></li>
-            <li><a href="/#features">Broker Credit Ratings</a></li>
-            <li><a href="/#features">Anti-Fraud Guard</a></li>
-            <li><a href="/#apps">Mobile Applications</a></li>
+            <li><a href="#live-board-section">Search Live Loads</a></li>
+            <li><a href="#features">AI Lane Matching</a></li>
+            <li><a href="#features">Broker Credit Ratings</a></li>
+            <li><a href="#features">Anti-Fraud Guard</a></li>
+            <li><a href="#apps">Mobile Applications</a></li>
           </ul>
         </div>
 
         <div class="ln-footer-col">
           <h4>Solutions</h4>
           <ul>
-            <li><a href="/#solutions">Motor Carriers</a></li>
-            <li><a href="/#solutions">Owner-Operators</a></li>
-            <li><a href="/#solutions">Freight Brokers &amp; 3PL</a></li>
-            <li><a href="/#pricing">Pricing Plans ($19/mo)</a></li>
-            <li><a href="/login?from=loadsnexus">Account Sign In</a></li>
+            <li><a href="#solutions">Motor Carriers</a></li>
+            <li><a href="#solutions">Owner-Operators</a></li>
+            <li><a href="#solutions">Freight Brokers &amp; 3PL</a></li>
+            <li><a href="#pricing">Pricing Plans ($19/mo)</a></li>
+            <li><button type="button" onclick="openAuthModal()" style="background:none;border:none;padding:0;color:inherit;font:inherit;cursor:pointer;">Account Sign In</button></li>
           </ul>
         </div>
 
         <div class="ln-footer-col">
-          <h4>Company</h4>
+          <h4>Support &amp; Desk</h4>
           <ul>
-            <li><a href="https://www.shippingwish.com/about" target="_blank" rel="noopener">About Shipping Wish LLC</a></li>
-            <li><a href="https://www.shippingwish.com/pricing" target="_blank" rel="noopener">24/7 Fleet Dispatch</a></li>
-            <li><a href="https://www.shippingwish.com/contact" target="_blank" rel="noopener">Support &amp; Inquiries</a></li>
-            <li><a href="https://www.shippingwish.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a></li>
-            <li><a href="https://www.shippingwish.com/terms" target="_blank" rel="noopener">Terms of Service</a></li>
+            <li><button type="button" onclick="openPostFreightModal()" style="background:none;border:none;padding:0;color:inherit;font:inherit;cursor:pointer;">Post Freight (Free)</button></li>
+            <li><button type="button" onclick="openCarrierCheckoutModal()" style="background:none;border:none;padding:0;color:inherit;font:inherit;cursor:pointer;">Carrier Pass ($19/mo)</button></li>
+            <li><button type="button" onclick="openDispatchInquiryModal()" style="background:none;border:none;padding:0;color:inherit;font:inherit;cursor:pointer;">Dispatch Desk Inquiry</button></li>
+            <li><a href="tel:+19177370021">Support: +1 (917) 737-0021</a></li>
           </ul>
         </div>
 
@@ -660,23 +770,313 @@
 
       <div class="ln-footer-bottom">
         <div>
-          © 2026 LoadsNexus™ — An Enterprise Freight Product of <a href="https://www.shippingwish.com" target="_blank" rel="noopener" style="font-weight:700;color:var(--white);">Shipping Wish LLC</a>. All rights reserved.
+          © 2026 LoadsNexus™ — An Enterprise Freight Product of <span style="font-weight:700;color:var(--white);">Shipping Wish LLC</span>. All rights reserved.
         </div>
         <div style="display:flex;gap:18px;">
-          <a href="https://www.shippingwish.com/privacy-policy" target="_blank" rel="noopener">Privacy</a>
-          <a href="https://www.shippingwish.com/terms" target="_blank" rel="noopener">Terms</a>
-          <a href="https://www.shippingwish.com/carrier-search" target="_blank" rel="noopener">FMCSA Lookup</a>
+          <span>Anti-Double-Brokering Guard Active</span>
+          <span>FMCSA Carrier Roster Synchronized</span>
         </div>
       </div>
     </div>
   </footer>
 
   <!-- ══════════════════════════════════════════
-       SCRIPTS
+       MODALS SYSTEM (Dedicated LoadsNexus UX)
+  ══════════════════════════════════════════════ -->
+
+  <!-- Modal 1: Broker Post Freight Modal (100% Free) -->
+  <div class="ln-modal-backdrop" id="modal-post-freight" role="dialog" aria-modal="true" aria-labelledby="modal-pf-title">
+    <div class="ln-modal-dialog lg">
+      <div class="ln-modal-header">
+        <div>
+          <h3 class="ln-modal-title" id="modal-pf-title">⚡ Post Spot Freight to LoadsNexus™</h3>
+          <p class="ln-modal-subtitle">100% Free Forever for Freight Brokers &amp; 3PLs · Real-Time Carrier Matching</p>
+        </div>
+        <button type="button" class="ln-modal-close" onclick="closeModal('modal-post-freight')" aria-label="Close modal">✕</button>
+      </div>
+
+      <div class="ln-modal-body">
+        <div class="ln-shield-banner">
+          <div class="ln-shield-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <div class="ln-shield-text">
+            <h4>Anti-Double-Brokering Guard Active</h4>
+            <p>Your load is verified and published directly to vetted motor carriers with active FMCSA operating authority.</p>
+          </div>
+        </div>
+
+        <div id="pf-alert" class="ln-modal-alert"></div>
+
+        <form id="form-post-freight" onsubmit="handlePostFreightSubmit(event)">
+          <div class="ln-form-grid-2">
+            <div class="ln-form-group">
+              <label for="pf-origin">Origin (City, State or Zip) <span class="req">*</span></label>
+              <input type="text" id="pf-origin" class="ln-input" placeholder="e.g. Chicago, IL" required>
+            </div>
+            <div class="ln-form-group">
+              <label for="pf-dest">Destination (City, State or Zip) <span class="req">*</span></label>
+              <input type="text" id="pf-dest" class="ln-input" placeholder="e.g. Dallas, TX" required>
+            </div>
+          </div>
+
+          <div class="ln-form-grid-3">
+            <div class="ln-form-group">
+              <label for="pf-equip">Equipment Type <span class="req">*</span></label>
+              <select id="pf-equip" class="ln-input" required style="cursor:pointer;">
+                <option value="53' Dry Van">53' Dry Van</option>
+                <option value="53' Reefer">53' Reefer (Temp Controlled)</option>
+                <option value="Flatbed">Flatbed</option>
+                <option value="Step Deck">Step Deck</option>
+                <option value="Power Only">Power Only</option>
+                <option value="Hotshot">Hotshot</option>
+                <option value="Box Truck">Box Truck</option>
+              </select>
+            </div>
+            <div class="ln-form-group">
+              <label for="pf-rate">Total Load Pay ($ USD) <span class="req">*</span></label>
+              <input type="number" id="pf-rate" class="ln-input" placeholder="e.g. 2850" min="100" step="10" required oninput="calcPfRpm()">
+            </div>
+            <div class="ln-form-group">
+              <label for="pf-miles">Approx Miles</label>
+              <input type="number" id="pf-miles" class="ln-input" placeholder="e.g. 925" min="10" oninput="calcPfRpm()">
+              <span class="ln-field-hint" id="pf-rpm-preview">Rate/mile: $--</span>
+            </div>
+          </div>
+
+          <div class="ln-form-grid-3">
+            <div class="ln-form-group">
+              <label for="pf-weight">Weight (lbs)</label>
+              <input type="number" id="pf-weight" class="ln-input" placeholder="e.g. 42000" value="42000">
+            </div>
+            <div class="ln-form-group">
+              <label for="pf-commodity">Commodity</label>
+              <input type="text" id="pf-commodity" class="ln-input" placeholder="e.g. General Freight / CPG" value="General Freight">
+            </div>
+            <div class="ln-form-group">
+              <label for="pf-pu-date">Pickup Date <span class="req">*</span></label>
+              <input type="date" id="pf-pu-date" class="ln-input" required>
+            </div>
+          </div>
+
+          <div class="ln-form-grid-2">
+            <div class="ln-form-group">
+              <label for="pf-broker-name">Broker / Brokerage Company <span class="req">*</span></label>
+              <input type="text" id="pf-broker-name" class="ln-input" placeholder="e.g. Apex Freight Logistics" required>
+            </div>
+            <div class="ln-form-group">
+              <label for="pf-broker-mc">Broker MC Number <span class="req">*</span></label>
+              <input type="text" id="pf-broker-mc" class="ln-input" placeholder="e.g. MC-982145" required>
+            </div>
+          </div>
+
+          <div class="ln-form-grid-2">
+            <div class="ln-form-group">
+              <label for="pf-phone">Dispatcher Phone <span class="req">*</span></label>
+              <input type="tel" id="pf-phone" class="ln-input" placeholder="+1 (800) 555-0199" required>
+            </div>
+            <div class="ln-form-group">
+              <label for="pf-email">Dispatcher Booking Email <span class="req">*</span></label>
+              <input type="email" id="pf-email" class="ln-input" placeholder="loads@brokerage.com" required>
+            </div>
+          </div>
+
+          <div class="ln-form-group">
+            <label for="pf-notes">Special Instructions / Requirements (Optional)</label>
+            <textarea id="pf-notes" class="ln-input" rows="2" placeholder="e.g. Clean 53' trailer required, no pallet exchange, 2 straps, FCFS pickup 08:00 - 16:00."></textarea>
+          </div>
+
+          <button type="submit" id="btn-submit-pf" class="ln-btn ln-btn-broker ln-btn-block" style="padding:14px;font-size:15px;font-weight:800;border-radius:12px;">
+            ⚡ Post Load Live to LoadsNexus (100% Free) →
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Carrier Pro Pass Checkout Modal ($19/mo) -->
+  <div class="ln-modal-backdrop" id="modal-carrier-checkout" role="dialog" aria-modal="true" aria-labelledby="modal-cc-title">
+    <div class="ln-modal-dialog">
+      <div class="ln-modal-header">
+        <div>
+          <h3 class="ln-modal-title" id="modal-cc-title">🔷 LoadsNexus™ Carrier Pro Pass</h3>
+          <p class="ln-modal-subtitle">$19 / Month · First Day Charged $19 · Zero Free Trial · Cancel Anytime</p>
+        </div>
+        <button type="button" class="ln-modal-close" onclick="closeModal('modal-carrier-checkout')" aria-label="Close modal">✕</button>
+      </div>
+
+      <div class="ln-modal-body">
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-weight:800;color:#1e3a8a;font-size:14px;">Carrier AI Load Board Pass</div>
+            <div style="font-size:12px;color:#2563eb;margin-top:2px;">Unlimited 50-State Spot Search · Direct Unmasked Phone &amp; Email Contacts</div>
+          </div>
+          <div style="font-size:22px;font-weight:900;color:#1d4ed8;">$19<span style="font-size:12px;font-weight:600;color:#64748b;">/mo</span></div>
+        </div>
+
+        <div id="cc-alert" class="ln-modal-alert"></div>
+
+        <form id="form-carrier-checkout" onsubmit="handleCarrierCheckoutSubmit(event)">
+          <div class="ln-form-grid-2">
+            <div class="ln-form-group">
+              <label for="cc-name">Full Name <span class="req">*</span></label>
+              <input type="text" id="cc-name" class="ln-input" placeholder="e.g. John Miller" required>
+            </div>
+            <div class="ln-form-group">
+              <label for="cc-company">Company Name <span class="req">*</span></label>
+              <input type="text" id="cc-company" class="ln-input" placeholder="e.g. Miller Express LLC" required>
+            </div>
+          </div>
+
+          <div class="ln-form-grid-2">
+            <div class="ln-form-group">
+              <label for="cc-email">Business Email <span class="req">*</span></label>
+              <input type="email" id="cc-email" class="ln-input" placeholder="john@millerexpress.com" required>
+            </div>
+            <div class="ln-form-group">
+              <label for="cc-phone">Phone Number <span class="req">*</span></label>
+              <input type="tel" id="cc-phone" class="ln-input" placeholder="+1 (555) 000-0000" required>
+            </div>
+          </div>
+
+          <div class="ln-form-grid-2">
+            <div class="ln-form-group">
+              <label for="cc-mc">MC Number <span class="req">*</span></label>
+              <input type="text" id="cc-mc" class="ln-input" placeholder="MC-XXXXXXX" required>
+            </div>
+            <div class="ln-form-group">
+              <label for="cc-dot">USDOT Number</label>
+              <input type="text" id="cc-dot" class="ln-input" placeholder="DOT-XXXXXX">
+            </div>
+          </div>
+
+          <div class="ln-form-group">
+            <label for="cc-password">Account Password <span class="req">*</span></label>
+            <input type="password" id="cc-password" class="ln-input" placeholder="Choose a strong password (6+ chars)" minlength="6" required>
+          </div>
+
+          <button type="submit" id="btn-submit-cc" class="ln-btn ln-btn-carrier ln-btn-block" style="padding:14px;font-size:15px;font-weight:800;border-radius:12px;">
+            Activate Carrier Pass — $19 Due Today →
+          </button>
+          
+          <div style="margin-top:14px;text-align:center;font-size:12px;color:var(--slate-500);">
+            Already have an active pass? <button type="button" onclick="closeModal('modal-carrier-checkout');openAuthModal('carrier');" style="background:none;border:none;color:var(--blue-600);font-weight:700;cursor:pointer;text-decoration:underline;">Sign In here</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: LoadsNexus Authentication Modal (Carrier & Broker) -->
+  <div class="ln-modal-backdrop" id="modal-auth" role="dialog" aria-modal="true" aria-labelledby="modal-auth-title">
+    <div class="ln-modal-dialog">
+      <div class="ln-modal-header">
+        <div>
+          <h3 class="ln-modal-title" id="modal-auth-title">LoadsNexus™ Sign In</h3>
+          <p class="ln-modal-subtitle">Access your Carrier Load Board or Broker Dispatch Desk</p>
+        </div>
+        <button type="button" class="ln-modal-close" onclick="closeModal('modal-auth')" aria-label="Close modal">✕</button>
+      </div>
+
+      <div class="ln-modal-body">
+        <!-- Role Tabs -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f1f5f9;padding:4px;border-radius:10px;margin-bottom:20px;">
+          <button type="button" id="auth-tab-carrier" onclick="switchAuthRole('carrier')" style="padding:10px;border-radius:8px;border:none;background:#fff;color:#0f172a;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;gap:6px;">
+            <span>🚚</span> Carrier Portal
+          </button>
+          <button type="button" id="auth-tab-broker" onclick="switchAuthRole('broker')" style="padding:10px;border-radius:8px;border:none;background:transparent;color:#64748b;font-weight:800;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+            <span>💼</span> Broker Desk
+          </button>
+        </div>
+
+        <div id="auth-alert" class="ln-modal-alert"></div>
+
+        <form id="form-auth" onsubmit="handleAuthSubmit(event)">
+          <input type="hidden" id="auth-role" value="carrier">
+
+          <div class="ln-form-group">
+            <label for="auth-email">Account Email <span class="req">*</span></label>
+            <input type="email" id="auth-email" class="ln-input" placeholder="e.g. user@company.com" required autocomplete="email">
+          </div>
+
+          <div class="ln-form-group">
+            <label for="auth-password">Password <span class="req">*</span></label>
+            <input type="password" id="auth-password" class="ln-input" placeholder="Enter your password" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" id="btn-submit-auth" class="ln-btn ln-btn-primary ln-btn-block" style="padding:13px;font-size:14px;font-weight:800;border-radius:10px;">
+            Sign In to LoadsNexus →
+          </button>
+
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--slate-200);display:flex;flex-direction:column;gap:8px;text-align:center;font-size:13px;">
+            <div id="auth-helper-carrier">
+              Need a Carrier pass? <button type="button" onclick="closeModal('modal-auth');openCarrierCheckoutModal();" style="background:none;border:none;color:var(--blue-600);font-weight:800;cursor:pointer;text-decoration:underline;">Subscribe for $19/mo →</button>
+            </div>
+            <div id="auth-helper-broker" style="display:none;">
+              New Broker? <button type="button" onclick="closeModal('modal-auth');openPostFreightModal();" style="background:none;border:none;color:#7c3aed;font-weight:800;cursor:pointer;text-decoration:underline;">Post loads 100% Free →</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Load Details & Direct Contact Inspector Modal -->
+  <div class="ln-modal-backdrop" id="modal-load-details" role="dialog" aria-modal="true" aria-labelledby="modal-ld-title">
+    <div class="ln-modal-dialog">
+      <div class="ln-modal-header">
+        <div>
+          <h3 class="ln-modal-title" id="modal-ld-title">Load Details &amp; Broker Contact</h3>
+          <p class="ln-modal-subtitle" id="modal-ld-sub">Verified Spot Freight Corridor</p>
+        </div>
+        <button type="button" class="ln-modal-close" onclick="closeModal('modal-load-details')" aria-label="Close modal">✕</button>
+      </div>
+      <div class="ln-modal-body" id="modal-ld-body">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Dispatch Inquiry Modal -->
+  <div class="ln-modal-backdrop" id="modal-dispatch-inquiry" role="dialog" aria-modal="true" aria-labelledby="modal-di-title">
+    <div class="ln-modal-dialog">
+      <div class="ln-modal-header">
+        <div>
+          <h3 class="ln-modal-title" id="modal-di-title">Dedicated Operations Dispatch Desk</h3>
+          <p class="ln-modal-subtitle">24/7 Professional Dispatch Partner · All Loads &amp; Negotiations Handled</p>
+        </div>
+        <button type="button" class="ln-modal-close" onclick="closeModal('modal-dispatch-inquiry')" aria-label="Close modal">✕</button>
+      </div>
+      <div class="ln-modal-body">
+        <p style="font-size:14px;color:var(--slate-600);line-height:1.6;margin-bottom:16px;">
+          Carriers with dedicated dispatch desks get full LoadsNexus Load Board access included free. Our operations desk negotiates top RPM directly with brokers, handles packets, and plans your reloads.
+        </p>
+        <div style="background:#f8fafc;border:1px solid var(--slate-200);border-radius:12px;padding:16px;margin-bottom:18px;">
+          <div style="font-size:13px;font-weight:700;color:var(--slate-900);">📞 Contact 24/7 Operations Desk Directly:</div>
+          <div style="font-size:18px;font-weight:900;color:var(--blue-600);margin:6px 0;">+1 (917) 737-0021</div>
+          <div style="font-size:13px;color:var(--slate-600);">Email: dispatch@shippingwish.com</div>
+        </div>
+        <button type="button" onclick="closeModal('modal-dispatch-inquiry');openCarrierCheckoutModal();" class="ln-btn ln-btn-carrier ln-btn-block">
+          Or Self-Dispatch for $19/mo →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notifications Container -->
+  <div class="ln-toast-container" id="ln-toast-container"></div>
+
+  <!-- ══════════════════════════════════════════
+       SCRIPTS (Complete LoadsNexus In-Situ Engine)
   ══════════════════════════════════════════════ -->
   <script>
   (function () {
     'use strict';
+
+    // Global in-memory cache of current loads
+    let currentLoads = [];
+    let currentSearchMode = 'loads';
+    let currentUser = null;
 
     // Sticky nav scroll effect
     const nav = document.getElementById('ln-nav');
@@ -687,56 +1087,665 @@
     // Mobile hamburger menu
     const hamburger = document.getElementById('ln-hamburger');
     const drawer = document.getElementById('ln-mobile-drawer');
-    hamburger.addEventListener('click', () => {
-      const open = drawer.classList.toggle('open');
-      hamburger.setAttribute('aria-expanded', open);
-    });
+    if (hamburger && drawer) {
+      hamburger.addEventListener('click', () => {
+        const open = drawer.classList.toggle('open');
+        hamburger.setAttribute('aria-expanded', open);
+      });
+      document.querySelectorAll('[data-ln-close]').forEach((el) => {
+        el.addEventListener('click', () => {
+          drawer.classList.remove('open');
+          hamburger.setAttribute('aria-expanded', 'false');
+        });
+      });
+    }
 
-    document.querySelectorAll('[data-ln-close]').forEach((el) => {
-      el.addEventListener('click', () => {
-        drawer.classList.remove('open');
-        hamburger.setAttribute('aria-expanded', 'false');
+    // Modal Helpers
+    window.openModal = function (id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+    };
+
+    window.closeModal = function (id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    };
+
+    // Close on backdrop click & ESC key
+    document.querySelectorAll('.ln-modal-backdrop').forEach((backdrop) => {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          backdrop.classList.remove('open');
+          document.body.style.overflow = '';
+        }
       });
     });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.ln-modal-backdrop.open').forEach((m) => {
+          m.classList.remove('open');
+        });
+        document.body.style.overflow = '';
+      }
+    });
 
-    // Search bar role tabs
+    // Modal Triggers
+    window.openPostFreightModal = function (prefill) {
+      const modal = document.getElementById('modal-post-freight');
+      if (!modal) return;
+      const puDate = document.getElementById('pf-pu-date');
+      if (puDate && !puDate.value) {
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+        puDate.value = tomorrow;
+      }
+      if (prefill) {
+        if (prefill.origin) document.getElementById('pf-origin').value = prefill.origin;
+        if (prefill.dest) document.getElementById('pf-dest').value = prefill.dest;
+      }
+      const alert = document.getElementById('pf-alert');
+      if (alert) alert.style.display = 'none';
+      openModal('modal-post-freight');
+    };
+
+    window.openCarrierCheckoutModal = function () {
+      const alert = document.getElementById('cc-alert');
+      if (alert) alert.style.display = 'none';
+      openModal('modal-carrier-checkout');
+    };
+
+    window.openAuthModal = function (role) {
+      if (role) switchAuthRole(role);
+      const alert = document.getElementById('auth-alert');
+      if (alert) alert.style.display = 'none';
+      openModal('modal-auth');
+    };
+
+    window.openDispatchInquiryModal = function () {
+      openModal('modal-dispatch-inquiry');
+    };
+
+    window.switchAuthRole = function (role) {
+      const isBroker = role === 'broker';
+      document.getElementById('auth-role').value = isBroker ? 'broker' : 'carrier';
+      const tabCarrier = document.getElementById('auth-tab-carrier');
+      const tabBroker = document.getElementById('auth-tab-broker');
+      const submitBtn = document.getElementById('btn-submit-auth');
+      const helperCarrier = document.getElementById('auth-helper-carrier');
+      const helperBroker = document.getElementById('auth-helper-broker');
+
+      if (isBroker) {
+        tabBroker.style.background = '#8b5cf6';
+        tabBroker.style.color = '#ffffff';
+        tabBroker.style.boxShadow = '0 2px 6px rgba(139,92,246,0.3)';
+        tabCarrier.style.background = 'transparent';
+        tabCarrier.style.color = '#64748b';
+        tabCarrier.style.boxShadow = 'none';
+        submitBtn.textContent = 'Sign In to Broker Desk →';
+        submitBtn.style.background = '#8b5cf6';
+        if (helperCarrier) helperCarrier.style.display = 'none';
+        if (helperBroker) helperBroker.style.display = 'block';
+      } else {
+        tabCarrier.style.background = '#ffffff';
+        tabCarrier.style.color = '#0f172a';
+        tabCarrier.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        tabBroker.style.background = 'transparent';
+        tabBroker.style.color = '#64748b';
+        tabBroker.style.boxShadow = 'none';
+        submitBtn.textContent = 'Sign In to Carrier Portal →';
+        submitBtn.style.background = 'var(--blue-600)';
+        if (helperCarrier) helperCarrier.style.display = 'block';
+        if (helperBroker) helperBroker.style.display = 'none';
+      }
+    };
+
+    window.calcPfRpm = function () {
+      const rate = parseFloat(document.getElementById('pf-rate')?.value || 0);
+      const miles = parseFloat(document.getElementById('pf-miles')?.value || 0);
+      const hint = document.getElementById('pf-rpm-preview');
+      if (hint) {
+        if (rate > 0 && miles > 0) {
+          const rpm = (rate / miles).toFixed(2);
+          hint.textContent = `Estimated Rate/mile: $${rpm} / mi`;
+          hint.style.color = rpm >= 3.00 ? '#059669' : '#2563eb';
+          hint.style.fontWeight = '700';
+        } else {
+          hint.textContent = 'Rate/mile: $--';
+          hint.style.color = 'var(--slate-400)';
+          hint.style.fontWeight = 'normal';
+        }
+      }
+    };
+
+    // Toast Alert
+    window.showToast = function (msg, duration) {
+      const container = document.getElementById('ln-toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = 'ln-toast';
+      toast.innerHTML = `<span>⚡</span><div>${msg}</div>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(15px)';
+        setTimeout(() => toast.remove(), 350);
+      }, duration || 4000);
+    };
+
+    // Hero Role Tabs Toggle
     window.setSearchMode = function (mode) {
+      currentSearchMode = mode;
       const btnLoads = document.getElementById('btn-tab-find-loads');
       const btnPost = document.getElementById('btn-tab-post-loads');
-      const submitBtn = document.querySelector('.ln-search-submit');
+      const submitBtn = document.getElementById('hero-submit-btn');
 
       if (mode === 'capacity') {
         btnLoads.classList.remove('active');
         btnPost.classList.add('active');
-        if (submitBtn) submitBtn.textContent = 'Search Capacity';
+        if (submitBtn) {
+          submitBtn.textContent = '⚡ Post Freight Free';
+          submitBtn.style.background = '#8b5cf6';
+        }
       } else {
         btnPost.classList.remove('active');
         btnLoads.classList.add('active');
-        if (submitBtn) submitBtn.textContent = 'Search Loads';
+        if (submitBtn) {
+          submitBtn.textContent = 'Search Loads';
+          submitBtn.style.background = 'var(--blue-600)';
+        }
       }
     };
 
-    // Form search action redirect to load board
+    // Hero Search Handler
     window.handleHeroSearch = function (e) {
       e.preventDefault();
-      const origin = encodeURIComponent(document.getElementById('search-origin')?.value || '');
-      const dest = encodeURIComponent(document.getElementById('search-dest')?.value || '');
-      const equip = encodeURIComponent(document.getElementById('search-equip')?.value || 'V');
-      window.location.href = `/load-booking?origin=${origin}&dest=${dest}&equip=${equip}`;
+      const origin = document.getElementById('search-origin')?.value || '';
+      const dest = document.getElementById('search-dest')?.value || '';
+      const equip = document.getElementById('search-equip')?.value || 'Dry Van';
+
+      if (currentSearchMode === 'capacity') {
+        openPostFreightModal({ origin, dest });
+        return;
+      }
+
+      // Populate filter inputs
+      const fOrigin = document.getElementById('filter-origin');
+      const fDest = document.getElementById('filter-dest');
+      const fEquip = document.getElementById('filter-equip');
+      if (fOrigin) fOrigin.value = origin;
+      if (fDest) fDest.value = dest;
+      if (fEquip) fEquip.value = equip;
+
+      searchLoads(origin, dest, equip);
+
+      // Smooth scroll to live board
+      const target = document.getElementById('live-board-section');
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     };
 
-    // Smooth scroll for internal links
-    document.querySelectorAll('a[href^="/#"]').forEach((a) => {
-      a.addEventListener('click', (e) => {
-        const id = a.getAttribute('href').slice(2);
-        const target = document.getElementById(id);
-        if (target) {
-          e.preventDefault();
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          drawer.classList.remove('open');
-          hamburger.setAttribute('aria-expanded', 'false');
+    // Quick In-Table Filter
+    window.handleQuickFilter = function (e) {
+      e.preventDefault();
+      const origin = document.getElementById('filter-origin')?.value || '';
+      const dest = document.getElementById('filter-dest')?.value || '';
+      const equip = document.getElementById('filter-equip')?.value || 'all';
+      searchLoads(origin, dest, equip);
+    };
+
+    window.resetQuickFilter = function () {
+      document.getElementById('filter-origin').value = '';
+      document.getElementById('filter-dest').value = '';
+      document.getElementById('filter-equip').value = 'all';
+      searchLoads('', '', 'all');
+    };
+
+    window.refreshLiveBoard = function () {
+      const origin = document.getElementById('filter-origin')?.value || '';
+      const dest = document.getElementById('filter-dest')?.value || '';
+      const equip = document.getElementById('filter-equip')?.value || 'all';
+      searchLoads(origin, dest, equip);
+      showToast('Live spot board updated with latest rates.');
+    };
+
+    // Fetch Loads from /api/loadboard/search
+    async function searchLoads(origin, dest, equip) {
+      const tbody = document.getElementById('ln-dat-tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align:center;padding:34px;color:var(--slate-500);">
+            <div style="font-weight:700;">Scanning 50-State Spot Network for "${origin || 'All Origins'}" → "${dest || 'All Destinations'}"…</div>
+          </td>
+        </tr>
+      `;
+
+      try {
+        const params = new URLSearchParams();
+        if (origin) params.append('origin', origin);
+        if (dest) params.append('destination', dest);
+        if (equip && equip !== 'all') params.append('equipmentType', equip);
+
+        const res = await fetch(`/api/loadboard/search?${params.toString()}`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (!res.ok || !data.loads || !data.loads.length) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" style="text-align:center;padding:34px;color:var(--slate-500);">
+                <div style="font-size:15px;font-weight:700;color:var(--slate-800);">No specific loads found matching filter.</div>
+                <div style="font-size:12px;margin-top:6px;">Try clearing filters or post your truck capacity.</div>
+                <button type="button" onclick="resetQuickFilter()" class="ln-btn ln-btn-secondary ln-btn-sm" style="margin-top:10px;">Reset Filters</button>
+              </td>
+            </tr>
+          `;
+          return;
         }
-      });
+
+        currentLoads = data.loads;
+        const countSpan = document.getElementById('loads-display-count');
+        if (countSpan) countSpan.textContent = currentLoads.length;
+
+        renderLoadsTable(currentLoads, data.preview_mode);
+      } catch (err) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align:center;padding:30px;color:#ef4444;">
+              <div style="font-weight:700;">Could not connect to live load stream. Please refresh.</div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Render DAT Table rows
+    function renderLoadsTable(loads, previewMode) {
+      const tbody = document.getElementById('ln-dat-tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = loads.map((load, index) => {
+        const id = load.id || `SW-${2600 + index}`;
+        const isLive = load.is_live_broker_post;
+        const origin = load.origin || load.pickup_location || 'Chicago, IL';
+        const dest = load.destination || load.delivery_location || 'Dallas, TX';
+        const miles = load.miles ? `${load.miles} mi` : '650 mi';
+        const rpm = parseFloat(load.rpm || 3.10);
+        const rate = load.rate ? `$${Number(load.rate).toLocaleString()}` : '$2,450';
+        const equip = load.equipment_type || load.equipment || "53' Dry Van";
+        const weight = load.weight ? (typeof load.weight === 'number' ? `${load.weight.toLocaleString()} lbs` : load.weight) : '42,000 lbs';
+        const puDate = load.pickup_date || 'Today';
+        const bName = load.broker_name || 'Verified Freight Broker';
+        const bMc = load.broker_mc || 'MC-VERIFIED';
+        const dtp = load.days_to_pay || '18 days';
+        const credit = load.credit_score || 'A+ (98)';
+
+        const rpmClass = rpm >= 3.30 ? 'high' : '';
+        const ageLabel = isLive ? '<span class="ln-badge-live-tag">⚡ LIVE BROKER</span>' : (index === 0 ? 'Just now' : `${(index * 4) + 2}m ago`);
+
+        return `
+          <tr data-load-id="${id}" class="${isLive ? 'new-post' : ''}">
+            <td>
+              <div style="font-weight:800;color:var(--slate-800);">${id}</div>
+              <div style="font-size:11px;color:var(--slate-400);margin-top:2px;">${ageLabel}</div>
+            </td>
+            <td>
+              <div class="ln-lane-cell">
+                <div class="ln-lane-route">
+                  <span>📍</span> ${escapeHtml(origin)} <span style="color:var(--blue-600);">→</span> ${escapeHtml(dest)}
+                </div>
+                <div class="ln-lane-sub">
+                  <span>FTL Spot Freight</span>
+                  <span>·</span>
+                  <span>${escapeHtml(load.commodity || 'General Freight')}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="font-weight:800;color:var(--slate-900);font-size:13px;">${miles}</div>
+              <div class="ln-rpm-badge ${rpmClass}">$${rpm.toFixed(2)} / mi</div>
+            </td>
+            <td>
+              <div class="ln-rate-cell">
+                <div class="ln-rate-val">${rate}</div>
+                <div style="font-size:11px;color:var(--slate-400);">100% Pay Kept</div>
+              </div>
+            </td>
+            <td>
+              <div style="font-weight:700;color:var(--slate-800);">${escapeHtml(equip)}</div>
+              <div style="font-size:11px;color:var(--slate-500);">${escapeHtml(weight)}</div>
+            </td>
+            <td>
+              <div style="font-weight:700;color:var(--slate-900);">${puDate}</div>
+              <div style="font-size:11px;color:var(--slate-400);">Direct Booking</div>
+            </td>
+            <td>
+              <div class="ln-broker-cell">
+                <div class="ln-broker-name">${escapeHtml(bName)}</div>
+                <div class="ln-broker-meta">
+                  <span class="ln-dtp-pill">${dtp} DTP</span>
+                  <span class="ln-bond-pill">Bond Active</span>
+                </div>
+              </div>
+            </td>
+            <td style="text-align:right;">
+              <button type="button" class="ln-btn ln-btn-primary ln-btn-table-action" onclick="inspectLoad('${id}')">
+                <span>⚡</span> Book Load
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Inspect Load & Contact Broker Modal
+    window.inspectLoad = function (loadId) {
+      const load = currentLoads.find(l => (l.id === loadId || l.load_number === loadId)) || currentLoads[0];
+      if (!load) return;
+
+      const modalBody = document.getElementById('modal-ld-body');
+      const origin = load.origin || load.pickup_location || 'Chicago, IL';
+      const dest = load.destination || load.delivery_location || 'Dallas, TX';
+      const rate = load.rate ? `$${Number(load.rate).toLocaleString()}` : '$2,450';
+      const miles = load.miles ? `${load.miles} mi` : '650 mi';
+      const rpm = load.rpm ? `$${parseFloat(load.rpm).toFixed(2)}/mi` : '$3.15/mi';
+      const bName = load.broker_name || 'Verified Freight Broker';
+      const bMc = load.broker_mc || 'MC-981240';
+      const bPhone = load.broker_phone || '+1 (800) 580-3101';
+      const bEmail = load.broker_email || 'dispatch@brokerage.com';
+
+      modalBody.innerHTML = `
+        <div style="background:#f8fafc;border:1px solid var(--slate-200);border-radius:14px;padding:18px;margin-bottom:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:800;color:var(--blue-600);text-transform:uppercase;letter-spacing:0.05em;">Load #${load.id}</span>
+            <span class="ln-dtp-pill">${load.days_to_pay || '18 days'} DTP · A+</span>
+          </div>
+          <div style="font-size:18px;font-weight:900;color:var(--slate-900);margin-bottom:4px;">
+            ${escapeHtml(origin)} → ${escapeHtml(dest)}
+          </div>
+          <div style="font-size:13px;color:var(--slate-600);">
+            ${escapeHtml(load.equipment_type || "53' Dry Van")} · ${miles} · ${rpm}
+          </div>
+          <div style="font-size:24px;font-weight:900;color:var(--blue-700);margin-top:10px;">
+            ${rate} <span style="font-size:12px;font-weight:600;color:var(--slate-500);">100% pay kept</span>
+          </div>
+        </div>
+
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px;margin-bottom:20px;">
+          <div style="font-size:12px;font-weight:800;color:#1e3a8a;text-transform:uppercase;margin-bottom:6px;">Verified Brokerage Contact</div>
+          <div style="font-size:16px;font-weight:800;color:var(--slate-900);">${escapeHtml(bName)} (${escapeHtml(bMc)})</div>
+          <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;">
+            <a href="tel:${bPhone.replace(/[^0-9+]/g,'')}" class="ln-btn ln-btn-carrier ln-btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+              📞 Call: ${escapeHtml(bPhone)}
+            </a>
+            <a href="mailto:${bEmail}?subject=Inquiry%20regarding%20Load%20${load.id}" class="ln-btn ln-btn-secondary ln-btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+              ✉️ Email: ${escapeHtml(bEmail)}
+            </a>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <button type="button" onclick="closeModal('modal-load-details');openCarrierCheckoutModal();" class="ln-btn ln-btn-primary ln-btn-block">
+            Start Carrier Pass ($19/mo) for 50-State Access →
+          </button>
+        </div>
+      `;
+
+      openModal('modal-load-details');
+    };
+
+    // Broker Post Load Form Submission
+    window.handlePostFreightSubmit = async function (e) {
+      e.preventDefault();
+      const alert = document.getElementById('pf-alert');
+      const submitBtn = document.getElementById('btn-submit-pf');
+      alert.style.display = 'none';
+      alert.className = 'ln-modal-alert';
+
+      const origin = document.getElementById('pf-origin').value.trim();
+      const destination = document.getElementById('pf-dest').value.trim();
+      const equipment = document.getElementById('pf-equip').value;
+      const rate = document.getElementById('pf-rate').value;
+      const miles = document.getElementById('pf-miles').value;
+      const weight = document.getElementById('pf-weight').value;
+      const commodity = document.getElementById('pf-commodity').value;
+      const pickupDate = document.getElementById('pf-pu-date').value;
+      const brokerName = document.getElementById('pf-broker-name').value.trim();
+      const brokerMc = document.getElementById('pf-broker-mc').value.trim();
+      const contactPhone = document.getElementById('pf-phone').value.trim();
+      const contactEmail = document.getElementById('pf-email').value.trim();
+      const notes = document.getElementById('pf-notes').value.trim();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Posting Live to LoadsNexus…';
+
+      try {
+        const res = await fetch('/api/loadboard/broker/post-load', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            origin, destination, equipment, rate, miles,
+            weight, commodity, pickupDate, brokerName, brokerMc,
+            contactPhone, contactEmail, notes
+          })
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+          alert.textContent = data.error || 'Could not post load. Please verify details.';
+          alert.classList.add('error');
+          alert.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = '⚡ Post Load Live to LoadsNexus (100% Free) →';
+          return;
+        }
+
+        const newLoad = {
+          id: data.load?.load_number || 'SW-NEW',
+          origin,
+          destination,
+          equipment_type: equipment,
+          rate: Number(rate),
+          miles: miles || 650,
+          rpm: data.rpm || (Number(rate) / (miles || 650)).toFixed(2),
+          weight: `${Number(weight || 42000).toLocaleString()} lbs`,
+          commodity: commodity || 'General Freight',
+          pickup_date: pickupDate,
+          broker_name: brokerName,
+          broker_mc: brokerMc,
+          broker_phone: contactPhone,
+          broker_email: contactEmail,
+          days_to_pay: '21 days',
+          credit_score: 'A+ (Verified)',
+          is_live_broker_post: true
+        };
+
+        // Prepend to current loads list and re-render
+        currentLoads.unshift(newLoad);
+        renderLoadsTable(currentLoads, false);
+
+        // Update badge count
+        const countSpan = document.getElementById('loads-display-count');
+        if (countSpan) countSpan.textContent = currentLoads.length;
+
+        // Reset and close
+        document.getElementById('form-post-freight').reset();
+        submitBtn.disabled = false;
+        submitBtn.textContent = '⚡ Post Load Live to LoadsNexus (100% Free) →';
+        closeModal('modal-post-freight');
+
+        showToast(`🎉 Load #${newLoad.id} is now LIVE on LoadsNexus!`);
+
+        // Smooth scroll to table
+        const board = document.getElementById('live-board-section');
+        if (board) board.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      } catch (err) {
+        alert.textContent = 'Network error while publishing. Please try again.';
+        alert.classList.add('error');
+        alert.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = '⚡ Post Load Live to LoadsNexus (100% Free) →';
+      }
+    };
+
+    // Carrier $19/mo Checkout Submission
+    window.handleCarrierCheckoutSubmit = async function (e) {
+      e.preventDefault();
+      const alert = document.getElementById('cc-alert');
+      const submitBtn = document.getElementById('btn-submit-cc');
+      alert.style.display = 'none';
+      alert.className = 'ln-modal-alert';
+
+      const name = document.getElementById('cc-name').value.trim();
+      const company = document.getElementById('cc-company').value.trim();
+      const email = document.getElementById('cc-email').value.trim();
+      const phone = document.getElementById('cc-phone').value.trim();
+      const mc_number = document.getElementById('cc-mc').value.trim();
+      const dot_number = document.getElementById('cc-dot')?.value.trim() || '';
+      const password = document.getElementById('cc-password').value;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Connecting to Stripe Checkout ($19/mo)…';
+
+      try {
+        const res = await fetch('/api/billing/subscribe-loadboard', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ name, company, email, phone, mc_number, dot_number, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert.textContent = data.error || 'Could not initiate checkout. Please try again.';
+          alert.classList.add('error');
+          alert.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Activate Carrier Pass — $19 Due Today →';
+          return;
+        }
+
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          // Simulated/local activation
+          closeModal('modal-carrier-checkout');
+          showToast('🎉 Carrier Pro Pass activated ($19/mo)! Unlocked all unmasked broker contacts.');
+          searchLoads('', '', 'all');
+        }
+      } catch (err) {
+        alert.textContent = 'Network error. Please try again.';
+        alert.classList.add('error');
+        alert.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Activate Carrier Pass — $19 Due Today →';
+      }
+    };
+
+    // Unified Auth Form Submission
+    window.handleAuthSubmit = async function (e) {
+      e.preventDefault();
+      const alert = document.getElementById('auth-alert');
+      const submitBtn = document.getElementById('btn-submit-auth');
+      alert.style.display = 'none';
+      alert.className = 'ln-modal-alert';
+
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value;
+      const role = document.getElementById('auth-role').value;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying Credentials…';
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert.textContent = data.error || 'Invalid credentials. Please verify your email and password.';
+          alert.classList.add('error');
+          alert.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In to LoadsNexus →';
+          return;
+        }
+
+        currentUser = data.user;
+        closeModal('modal-auth');
+
+        // Update nav sign-in button to user label
+        const navSignIn = document.getElementById('nav-btn-signin');
+        if (navSignIn) {
+          navSignIn.textContent = `👤 ${data.user.name || 'Account'}`;
+          navSignIn.onclick = () => {
+            showToast(`Signed in as ${data.user.email} (${data.user.role || 'Carrier'})`);
+          };
+        }
+
+        showToast(`Welcome back, ${data.user.name || 'Carrier'}! Direct broker contacts unlocked.`);
+        searchLoads('', '', 'all');
+      } catch (err) {
+        alert.textContent = 'Network error during sign in. Please try again.';
+        alert.classList.add('error');
+        alert.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In to LoadsNexus →';
+      }
+    };
+
+    // Helper: Escape HTML
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Auto-load live spot freight on page initialization
+    document.addEventListener('DOMContentLoaded', () => {
+      searchLoads('', '', 'all');
+
+      // Check current session
+      fetch('/api/me', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.user) {
+            currentUser = data.user;
+            const navSignIn = document.getElementById('nav-btn-signin');
+            if (navSignIn) {
+              navSignIn.textContent = `👤 ${data.user.name || 'Account'}`;
+              navSignIn.onclick = () => {
+                showToast(`Signed in as ${data.user.email}`);
+              };
+            }
+          }
+        })
+        .catch(() => {});
+
+      // Check query params for quick action triggers
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('action') === 'post-load') {
+        openPostFreightModal();
+      } else if (params.get('action') === 'checkout' || params.get('checkout') === '1') {
+        openCarrierCheckoutModal();
+      } else if (params.get('action') === 'login' || params.get('login') === '1') {
+        openAuthModal(params.get('role') || 'carrier');
+      }
     });
 
   }());

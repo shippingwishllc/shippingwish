@@ -1,4 +1,5 @@
 (function () {
+  if (location.hostname.includes('loadsnexus')) return;
   function slug() {
     const raw = (location.pathname.split('/').filter(Boolean).pop() || '').toLowerCase();
     if (!raw || raw === 'index' || raw === 'index.html') return '';
