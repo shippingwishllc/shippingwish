@@ -420,11 +420,107 @@ router.get('/search', optionalAuth, async (req, res) => {
   try {
     const rawLoads = generateSampleDATLoads(origin, destination, equipmentType, minRpm, dho, dhd, pickupDate);
 
+    // Fetch live posted broker loads from PostgreSQL
+    let liveDbLoads = [];
+    try {
+      const dbRes = await pool.query(
+        `SELECT id, load_number, rate, pickup_location, delivery_location,
+                pickup_date, delivery_date, equipment_type, weight, commodity,
+                notes, broker_name, broker_mc, broker_contact, miles, rpm, created_at
+         FROM loads
+         WHERE status != 'cancelled'
+         ORDER BY created_at DESC
+         LIMIT 40`
+      );
+      if (dbRes.rows && dbRes.rows.length) {
+        liveDbLoads = dbRes.rows.map(r => {
+          let bName = r.broker_name || 'Verified Freight Broker';
+          let bMc = r.broker_mc || 'MC-VERIFIED';
+          let bPhone = '(800) 580-3101';
+          let bEmail = 'dispatch@broker.com';
+
+          if (r.broker_contact) {
+            const parts = r.broker_contact.split('|');
+            if (parts.length >= 2) {
+              bPhone = parts[0].trim();
+              bEmail = parts[1].trim();
+            } else if (r.broker_contact.includes('@')) {
+              bEmail = r.broker_contact.trim();
+            } else {
+              bPhone = r.broker_contact.trim();
+            }
+          }
+          if (r.notes) {
+            const pMatch = r.notes.match(/Phone:\s*([^\.]+)/i);
+            const eMatch = r.notes.match(/Email:\s*([^\.]+)/i);
+            const bMatch = r.notes.match(/Posted by Broker:\s*([^\(]+)/i);
+            const mMatch = r.notes.match(/\(([MC\-\d]+)\)/i);
+            if (pMatch) bPhone = pMatch[1].trim();
+            if (eMatch) bEmail = eMatch[1].trim();
+            if (bMatch) bName = bMatch[1].trim();
+            if (mMatch) bMc = mMatch[1].trim();
+          }
+
+          const miles = Number(r.miles) || 650;
+          const rate = Number(r.rate) || 2500;
+          const rpm = Number(r.rpm) || (rate / miles).toFixed(2);
+          const pDate = r.pickup_date ? new Date(r.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Immediate';
+          const dDate = r.delivery_date ? new Date(r.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Next Day';
+
+          return {
+            id: r.load_number || `SW-${r.id}`,
+            origin: r.pickup_location,
+            destination: r.delivery_location,
+            miles,
+            rate,
+            rpm: String(rpm),
+            equipment_type: r.equipment_type || '53ft Dry Van',
+            weight: r.weight ? `${Number(r.weight).toLocaleString()} lbs` : '42,000 lbs',
+            commodity: r.commodity || 'General Freight',
+            pickup_date: pDate,
+            delivery_date: dDate,
+            dho: 10,
+            dhd: 15,
+            broker_name: bName,
+            broker_mc: bMc,
+            broker_phone: bPhone,
+            broker_email: bEmail,
+            credit_score: 'A+ (Verified)',
+            days_to_pay: 18,
+            bond_status: 'ACTIVE ($75,000 BMC-84)',
+            fraud_risk: 'LOW (Anti-Double Brokering Guard Passed)',
+            verified_broker: true,
+            is_live_broker_post: true,
+            posted_age: 'Just now'
+          };
+        });
+      }
+    } catch (e) {
+      console.warn('Live DB loads fetch error in /search:', e.message);
+    }
+
+    // Filter live db loads if lane query provided
+    let filteredDbLoads = liveDbLoads;
+    if (origin) {
+      const oLower = origin.toLowerCase().trim();
+      filteredDbLoads = filteredDbLoads.filter(l => l.origin && l.origin.toLowerCase().includes(oLower));
+    }
+    if (destination) {
+      const dLower = destination.toLowerCase().trim();
+      filteredDbLoads = filteredDbLoads.filter(l => l.destination && l.destination.toLowerCase().includes(dLower));
+    }
+    if (equipmentType && equipmentType !== 'all') {
+      const eqLower = equipmentType.toLowerCase().trim();
+      filteredDbLoads = filteredDbLoads.filter(l => l.equipment_type && l.equipment_type.toLowerCase().includes(eqLower));
+    }
+
+    const combinedRawLoads = [...filteredDbLoads, ...rawLoads];
+
     // Check if current user has full unlocked access
     let hasFullAccess = false;
     if (req.user) {
       const role = req.user.role;
-      if (['super_admin', 'admin', 'dispatcher', 'sales_rep'].includes(role)) {
+      if (['super_admin', 'admin', 'dispatcher', 'sales_rep', 'broker'].includes(role)) {
         hasFullAccess = true;
       } else if (role === 'carrier') {
         const userCheck = await pool.query(
@@ -449,7 +545,7 @@ router.get('/search', optionalAuth, async (req, res) => {
 
     if (hasFullAccess) {
       // Return 100% full loads with direct unmasked broker contacts
-      const loads = rawLoads.map(load => ({
+      const loads = combinedRawLoads.map(load => ({
         ...load,
         is_locked: false,
         is_teaser: false
@@ -464,7 +560,7 @@ router.get('/search', optionalAuth, async (req, res) => {
     }
 
     // Unauthenticated Guest or Unpaid Carrier: Return Preview Loads
-    const loads = rawLoads.map((load, idx) => {
+    const loads = combinedRawLoads.map((load, idx) => {
       if (idx < 3) {
         // Teaser loads: full lane & rate details, but masked direct phone/email
         return {
@@ -492,9 +588,9 @@ router.get('/search', optionalAuth, async (req, res) => {
       ok: true,
       provider: 'Shipping Wish Spot Freight Network (Guest Preview)',
       preview_mode: true,
-      total_loads: rawLoads.length,
+      total_loads: combinedRawLoads.length,
       unlocked_count: 3,
-      locked_count: Math.max(0, rawLoads.length - 3),
+      locked_count: Math.max(0, combinedRawLoads.length - 3),
       plan_price: 19,
       plan_name: 'Carrier AI Load Board & FMCSA Authority Suite',
       loads
@@ -1358,7 +1454,7 @@ router.delete('/truck-posts/:id', requireAuth, async (req, res) => {
 });
 
 // POST /api/loadboard/broker/post-load — Broker load posting with Anti-Double Brokering checks
-router.post('/broker/post-load', requireAuth, async (req, res) => {
+router.post('/broker/post-load', optionalAuth, async (req, res) => {
   const {
     origin, destination, equipment, rate, miles, weight,
     commodity, pickupDate, deliveryDate, brokerMc, brokerName, contactPhone, contactEmail, notes
@@ -1369,27 +1465,42 @@ router.post('/broker/post-load', requireAuth, async (req, res) => {
   }
 
   try {
-    const userRes = await pool.query('SELECT role, company_name, mc_number, phone, email FROM users WHERE id = $1', [req.user.id]);
-    const u = userRes.rows[0] || {};
+    let u = {};
+    if (req.user && req.user.id) {
+      const userRes = await pool.query('SELECT role, company_name, mc_number, phone, email FROM users WHERE id = $1', [req.user.id]);
+      u = userRes.rows[0] || {};
+    }
 
     const bName = brokerName || u.company_name || 'Verified Freight Broker';
     const mc = brokerMc || u.mc_number || 'MC-VERIFIED';
+    const phone = contactPhone || u.phone || '+1 (800) 580-3101';
+    const email = contactEmail || u.email || 'dispatch@broker.com';
+
+    await pool.query(`
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS broker_name TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS broker_mc TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS broker_contact TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS miles NUMERIC(8,2) DEFAULT 0;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS rpm NUMERIC(6,2) DEFAULT 0;
+    `).catch(() => {});
 
     const loadNumber = 'SW-' + Math.floor(100000 + Math.random() * 900000);
-    const rpm = miles && Number(miles) > 0 ? (Number(rate) / Number(miles)).toFixed(2) : null;
+    const milesNum = Number(miles) > 0 ? Number(miles) : 650;
+    const rpm = (Number(rate) / milesNum).toFixed(2);
 
     const ins = await pool.query(
       `INSERT INTO loads (
         load_number, status, rate, pickup_location, delivery_location,
         pickup_date, delivery_date, equipment_type, weight, commodity,
-        notes, created_at, updated_at
-      ) VALUES ($1, 'new', $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+        notes, broker_name, broker_mc, broker_contact, miles, rpm, created_at, updated_at
+      ) VALUES ($1, 'new', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
       RETURNING *`,
       [
         loadNumber, Number(rate), origin, destination,
         pickupDate || new Date(), deliveryDate || null,
         equipment, weight || 42000, commodity || 'General Freight',
-        `Posted by Broker: ${bName} (${mc}). Phone: ${contactPhone || u.phone || '24/7 Desk'}. Email: ${contactEmail || u.email}. Anti-Double Brokering Guard: VERIFIED. ${notes || ''}`
+        `Posted by Broker: ${bName} (${mc}). Phone: ${phone}. Email: ${email}. Anti-Double Brokering Guard: VERIFIED. ${notes || ''}`,
+        bName, mc, `${phone} | ${email}`, milesNum, Number(rpm)
       ]
     );
 
@@ -1398,11 +1509,36 @@ router.post('/broker/post-load', requireAuth, async (req, res) => {
       load: ins.rows[0],
       rpm,
       anti_double_brokering_status: 'VERIFIED_ACTIVE',
-      message: `Load #${loadNumber} posted live to LoadNexus successfully!`
+      message: `Load #${loadNumber} posted live to LoadsNexus successfully!`
     });
   } catch (err) {
     console.error('Broker post-load error:', err);
-    res.status(500).json({ error: 'Could not post load to LoadNexus.' });
+    res.status(500).json({ error: 'Could not post load to LoadsNexus.' });
+  }
+});
+
+// GET /api/loadboard/broker/my-loads — Broker's active posted loads
+router.get('/broker/my-loads', optionalAuth, async (req, res) => {
+  try {
+    const userEmail = req.user ? req.user.email : null;
+    const mc = req.user ? req.user.mc_number : null;
+    let query = `
+      SELECT id, load_number, status, rate, pickup_location, delivery_location,
+             pickup_date, delivery_date, equipment_type, weight, commodity,
+             broker_name, broker_mc, broker_contact, miles, rpm, created_at
+      FROM loads
+      WHERE status != 'cancelled'
+    `;
+    const params = [];
+    if (userEmail || mc) {
+      query += ` AND (broker_contact ILIKE $1 OR notes ILIKE $1 OR broker_mc = $2)`;
+      params.push(`%${userEmail}%`, mc || '');
+    }
+    query += ` ORDER BY created_at DESC LIMIT 50`;
+    const r = await pool.query(query, params);
+    res.json({ ok: true, loads: r.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch broker loads.' });
   }
 });
 

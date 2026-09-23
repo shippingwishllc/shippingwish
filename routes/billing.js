@@ -383,22 +383,32 @@ async function createWeeklyCheckout({
       mc_number: mcNumber || '',
       usdot: usdot || ''
     },
-    subscription_data: {
-      trial_period_days: TRIAL_DAYS,
-      trial_settings: {
-        end_behavior: { missing_payment_method: 'cancel' }
-      },
-      metadata: {
-        lead_id: leadId ? String(leadId) : '',
-        plan_key: plan.key,
-        company: company || ''
-      }
-    },
+    subscription_data: plan.key === 'loadboard_ai_pass'
+      ? {
+          metadata: {
+            lead_id: leadId ? String(leadId) : '',
+            plan_key: plan.key,
+            company: company || ''
+          }
+        }
+      : {
+          trial_period_days: TRIAL_DAYS,
+          trial_settings: {
+            end_behavior: { missing_payment_method: 'cancel' }
+          },
+          metadata: {
+            lead_id: leadId ? String(leadId) : '',
+            plan_key: plan.key,
+            company: company || ''
+          }
+        },
     custom_text: {
       submit: {
-        message: plan.interval === 'month'
-          ? `Card is saved securely. $0 due today. Monthly billing starts after a ${TRIAL_DAYS}-day trial ($${(amount / 100).toFixed(0)}/month). Cancel before then and you are not charged.`
-          : `Card is saved securely. $0 due today. Weekly billing starts after a ${TRIAL_DAYS}-day trial. Cancel before then and you are not charged.`
+        message: plan.key === 'loadboard_ai_pass'
+          ? `First charge of $${(amount / 100).toFixed(0)} is due today. Renews monthly at $${(amount / 100).toFixed(0)}/month. Cancel anytime.`
+          : (plan.interval === 'month'
+              ? `Card is saved securely. $0 due today. Monthly billing starts after a ${TRIAL_DAYS}-day trial ($${(amount / 100).toFixed(0)}/month). Cancel before then and you are not charged.`
+              : `Card is saved securely. $0 due today. Weekly billing starts after a ${TRIAL_DAYS}-day trial. Cancel before then and you are not charged.`)
       }
     }
   });
@@ -489,7 +499,7 @@ router.post('/checkout', async (req, res) => {
       ok: true,
       url: checkout.url,
       simulated: checkout.simulated || false,
-      trial_days: TRIAL_DAYS,
+      trial_days: plan.key === 'loadboard_ai_pass' ? 0 : TRIAL_DAYS,
       message: checkout.simulated
         ? 'Stripe is not connected yet. Add STRIPE_SECRET_KEY on the server to accept live cards.'
         : 'Redirecting to secure Stripe Checkout.'
@@ -863,7 +873,70 @@ async function handleTrialSignupCheckoutRequest(req, res) {
       return res.status(400).json({ error: 'Phone number is required.' });
     }
     const mc = String(mc_number || mcNumber || '').trim();
-    const dot = String(dot_number || dotNumber || '').trim();
+    const isBrokerSignup = req.body.role === 'broker' || plan_key === 'free_broker';
+    if (isBrokerSignup) {
+      await pool.query("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'broker'").catch(() => {});
+      const hash = await bcrypt.hash(cleanPassword, 10);
+      let brokerUser;
+      const ex = await pool.query('SELECT * FROM users WHERE lower(email) = $1', [cleanEmail]);
+      if (ex.rows.length) {
+        brokerUser = ex.rows[0];
+        await pool.query(
+          `UPDATE users SET
+             role = 'broker',
+             weekly_plan = 'free_broker',
+             password_hash = $1,
+             company_name = COALESCE(NULLIF($2,''), company_name),
+             phone = COALESCE(NULLIF($3,''), phone),
+             mc_number = COALESCE(NULLIF($4,''), mc_number),
+             dot_number = COALESCE(NULLIF($5,''), dot_number)
+           WHERE id = $6`,
+          [hash, company || cleanName, cleanPhone, mc || null, dot || null, brokerUser.id]
+        );
+      } else {
+        const ins = await pool.query(
+          `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, weekly_plan, email_verified_at)
+           VALUES ($1, $2, $3, 'broker', $4, $5, $6, $7, 'free_broker', now())
+           RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, weekly_plan`,
+          [cleanName, cleanEmail, hash, company || cleanName, cleanPhone, mc || null, dot || null]
+        );
+        brokerUser = ins.rows[0];
+      }
+
+      await upsertWebsiteLead({
+        email: cleanEmail,
+        name: cleanName,
+        company: String(company || cleanName).trim(),
+        phone: cleanPhone,
+        mcNumber: mc,
+        usdot: dot,
+        planKey: 'free_broker',
+        status: 'new',
+        extraNote: 'Freight Broker registered (100% Free Load Posting).'
+      });
+
+      const token = jwt.sign(
+        {
+          id: brokerUser.id,
+          name: brokerUser.name,
+          email: brokerUser.email,
+          role: 'broker',
+          company_name: brokerUser.company_name,
+          weekly_plan: 'free_broker'
+        },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      setAuthCookie(res, token);
+
+      return res.json({
+        ok: true,
+        free_broker: true,
+        redirect: '/load-booking?broker=1&post=1',
+        message: 'Broker account created successfully! You can now post loads 100% free.'
+      });
+    }
+
     const chosenPlanKey = PLANS[plan_key] ? plan_key : 'solo_weekly';
     const plan = PLANS[chosenPlanKey];
 

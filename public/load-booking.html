@@ -1088,6 +1088,9 @@
           </span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
+          <button type="button" class="btn btn-sm" onclick="openPostLoadModal()" style="font-weight:800;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);padding:6px 14px;border-radius:8px;cursor:pointer;">
+            ➕ Post Load (Free)
+          </button>
           <a href="/login?redirect=/load-booking" class="btn btn-secondary btn-sm" style="font-weight:700;background:rgba(255,255,255,0.08);color:#f8fafc;border:1px solid rgba(255,255,255,0.25);text-decoration:none;padding:6px 14px;border-radius:8px;">
             🔑 Sign In
           </a>
@@ -1110,6 +1113,9 @@
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="openPostLoadModal()" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);border:none;font-weight:800;color:#fff;padding:6px 14px;border-radius:8px;box-shadow:0 2px 6px rgba(16,185,129,0.3);cursor:pointer;">
+          ➕ Post a Load (Free)
+        </button>
         <a href="/admin-loadnexus" class="btn btn-primary btn-sm" style="background:#0B192C;border:1px solid #3B82F6;">
           🛡️ LoadNexus Command Center
         </a>
@@ -1827,6 +1833,118 @@
 </div>
 
 <!-- ======================================================== -->
+<!-- MODAL: POST A LOAD (100% FREE FOR BROKERS & SHIPPERS)     -->
+<!-- ======================================================== -->
+<div class="modal-backdrop" id="postLoadModal" role="dialog" aria-modal="true" aria-labelledby="modal-postload-title">
+  <div class="modal-card" style="max-width:640px;">
+    <div style="background:linear-gradient(135deg, #0b1120 0%, #1e293b 100%);color:#fff;padding:22px 24px;border-bottom:2px solid #10b981;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <span style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#10b981;background:rgba(16,185,129,0.15);padding:3px 10px;border-radius:20px;border:1px solid rgba(16,185,129,0.3);">
+            ⚡ 100% Free Broker Post
+          </span>
+          <h3 id="modal-postload-title" style="font-size:20px;font-weight:900;color:#fff;margin:8px 0 4px;">
+            Post Spot Freight to LoadsNexus™
+          </h3>
+          <p style="font-size:12.5px;color:#cbd5e1;margin:0;">
+            Loads appear immediately live to verified motor carriers nationwide. Anti-double brokering guard active.
+          </p>
+        </div>
+        <button type="button" style="background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;line-height:1;" onclick="closePostLoadModal()">&times;</button>
+      </div>
+    </div>
+
+    <form id="form-post-load" onsubmit="handleBrokerPostLoad(event)" style="padding:22px 24px;">
+      <div id="post-load-alert" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Origin (City, State) *</label>
+          <input type="text" id="pl-origin" placeholder="e.g. Dallas, TX" required style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Destination (City, State) *</label>
+          <input type="text" id="pl-destination" placeholder="e.g. Atlanta, GA" required style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Equipment Type *</label>
+          <select id="pl-equipment" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+            <option value="53ft Dry Van">53ft Dry Van (V)</option>
+            <option value="53ft Reefer">53ft Reefer (R)</option>
+            <option value="48ft Flatbed">48ft Flatbed (F)</option>
+            <option value="Step Deck">Step Deck (SD)</option>
+            <option value="Power Only">Power Only (PO)</option>
+            <option value="26ft Box Truck">26ft Box Truck (SB)</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Posted Rate ($) *</label>
+          <input type="number" id="pl-rate" placeholder="e.g. 2800" required min="100" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Miles (Trip Distance)</label>
+          <input type="number" id="pl-miles" placeholder="e.g. 780" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Pickup Date</label>
+          <input type="date" id="pl-pickup-date" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Weight (lbs)</label>
+          <input type="number" id="pl-weight" placeholder="e.g. 42000" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Commodity</label>
+          <input type="text" id="pl-commodity" placeholder="General Freight" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+        <div style="font-size:11.5px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Broker Contact Details (Direct Carrier Dial)</div>
+        <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--text-secondary);margin-bottom:3px;">Brokerage / Company Name *</label>
+            <input type="text" id="pl-broker-name" placeholder="Acme Logistics Brokerage" required style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--text-secondary);margin-bottom:3px;">Broker MC / DOT #</label>
+            <input type="text" id="pl-broker-mc" placeholder="MC-123456" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+          </div>
+        </div>
+        <div class="modal-grid-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--text-secondary);margin-bottom:3px;">Direct Phone *</label>
+            <input type="tel" id="pl-broker-phone" placeholder="+1 (800) 555-0199" required style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--text-secondary);margin-bottom:3px;">Direct Email *</label>
+            <input type="email" id="pl-broker-email" placeholder="dispatch@broker.com" required style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Load Notes / Special Handling</label>
+        <input type="text" id="pl-notes" placeholder="e.g. FCFS 0800-1400. Clean trailer. QuickPay available." style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closePostLoadModal()" style="padding:9px 18px;font-size:13px;font-weight:600;">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-post-load" style="padding:9px 24px;font-size:13px;font-weight:800;background:linear-gradient(135deg, #10b981 0%, #059669 100%);border:none;color:#fff;cursor:pointer;">
+          ⚡ Post Load Live to LoadsNexus (100% Free)
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================== -->
 <!-- 2. PUBLIC MARKETING & PORTAL LAUNCH VIEW                  -->
 <!-- (Displayed if user is not authenticated)                  -->
 <!-- ======================================================== -->
@@ -2199,6 +2317,126 @@
       m.classList.remove('open');
       m.classList.remove('active');
       m.style.setProperty('display', 'none', 'important');
+    }
+  };
+
+  window.openPostLoadModal = function() {
+    const modal = document.getElementById('postLoadModal');
+    if (modal) {
+      modal.classList.add('open');
+      modal.classList.add('active');
+      modal.style.setProperty('display', 'flex', 'important');
+      const today = new Date().toISOString().slice(0, 10);
+      const dateEl = document.getElementById('pl-pickup-date');
+      if (dateEl && !dateEl.value) dateEl.value = today;
+
+      // Pre-fill broker info if logged in
+      if (CURRENT_USER) {
+        const setVal = (id, val) => {
+          const el = document.getElementById(id);
+          if (el && val && !el.value) el.value = val;
+        };
+        setVal('pl-broker-name', CURRENT_USER.company_name || CURRENT_USER.name);
+        setVal('pl-broker-mc', CURRENT_USER.mc_number);
+        setVal('pl-broker-phone', CURRENT_USER.phone);
+        setVal('pl-broker-email', CURRENT_USER.email);
+      }
+    }
+  };
+
+  window.closePostLoadModal = function() {
+    const modal = document.getElementById('postLoadModal');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.classList.remove('active');
+      modal.style.setProperty('display', 'none', 'important');
+    }
+  };
+
+  window.showToastNotification = function(msg) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;padding:14px 22px;border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,0.35);z-index:99999;font-weight:700;font-size:13.5px;border-left:4px solid #10b981;display:flex;align-items:center;gap:10px;animation:fadeIn 0.2s ease;';
+    toast.innerHTML = `<span>⚡</span> <span>${escapeHtml(msg)}</span>`;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s';
+      setTimeout(() => toast.remove(), 300);
+    }, 5000);
+  };
+
+  window.handleBrokerPostLoad = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-post-load');
+    const alertEl = document.getElementById('post-load-alert');
+    btn.disabled = true;
+    btn.textContent = 'Posting Live to LoadsNexus…';
+    if (alertEl) alertEl.style.display = 'none';
+
+    const payload = {
+      origin: document.getElementById('pl-origin').value.trim(),
+      destination: document.getElementById('pl-destination').value.trim(),
+      equipment: document.getElementById('pl-equipment').value,
+      rate: Number(document.getElementById('pl-rate').value),
+      miles: Number(document.getElementById('pl-miles').value) || 650,
+      weight: Number(document.getElementById('pl-weight').value) || 42000,
+      commodity: document.getElementById('pl-commodity').value.trim() || 'General Freight',
+      pickupDate: document.getElementById('pl-pickup-date').value || new Date().toISOString().slice(0, 10),
+      brokerName: document.getElementById('pl-broker-name').value.trim(),
+      brokerMc: document.getElementById('pl-broker-mc').value.trim() || 'MC-VERIFIED',
+      contactPhone: document.getElementById('pl-broker-phone').value.trim(),
+      contactEmail: document.getElementById('pl-broker-email').value.trim(),
+      notes: document.getElementById('pl-notes').value.trim()
+    };
+
+    try {
+      const res = await fetch('/api/loadboard/broker/post-load', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (alertEl) {
+          alertEl.textContent = data.error || 'Could not post load.';
+          alertEl.style.background = '#fef2f2';
+          alertEl.style.color = '#991b1b';
+          alertEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = '⚡ Post Load Live to LoadsNexus (100% Free)';
+        return;
+      }
+
+      // Success!
+      closePostLoadModal();
+      document.getElementById('form-post-load').reset();
+
+      // Show floating notification
+      const loadNum = data.load ? data.load.load_number : 'SW-POSTED';
+      showToastNotification(`Load #${loadNum} is now LIVE on LoadsNexus!`);
+
+      // Increment KPI counter
+      const kpiEl = document.getElementById('kpi-board-loads');
+      if (kpiEl) {
+        const curVal = parseInt(kpiEl.textContent.replace(/[^0-9]/g, ''), 10) || 2480;
+        kpiEl.textContent = (curVal + 1).toLocaleString() + '+';
+      }
+
+      // Refresh search results
+      if (typeof runActiveTabSearch === 'function') {
+        await runActiveTabSearch();
+      }
+    } catch (err) {
+      if (alertEl) {
+        alertEl.textContent = 'Network error. Please try again.';
+        alertEl.style.background = '#fef2f2';
+        alertEl.style.color = '#991b1b';
+        alertEl.style.display = 'block';
+      }
+      btn.disabled = false;
+      btn.textContent = '⚡ Post Load Live to LoadsNexus (100% Free)';
     }
   };
 
@@ -3663,6 +3901,13 @@ ${p.contactName} | ${p.carrierCompany} (MC# ${p.carrierMc})`;
   window.submitOfferForm = submitOfferForm;
   window.loadOffers = loadOffers;
   window.respondOffer = respondOffer;
+
+  const urlParams = new URLSearchParams(location.search);
+  if (urlParams.get('post') === '1' || urlParams.get('broker') === '1') {
+    setTimeout(() => {
+      if (typeof openPostLoadModal === 'function') openPostLoadModal();
+    }, 400);
+  }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

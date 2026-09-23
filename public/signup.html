@@ -217,11 +217,23 @@
       </div>
 
       <h2 id="signup-title" style="font-size:var(--text-2xl);font-weight:900;letter-spacing:-0.015em;margin-bottom:var(--space-2);">Create your account</h2>
-      <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-8);">Join and get your dedicated operations manager.</p>
+      <p id="signup-sub" style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-6);">Join and get your dedicated operations manager.</p>
+
+      <!-- Role Selector Toggle -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f1f5f9;padding:4px;border-radius:10px;margin-bottom:var(--space-5);">
+        <button type="button" id="role-btn-carrier" onclick="selectRole('carrier')" style="padding:10px;border-radius:8px;border:none;background:#fff;color:#0f172a;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;gap:6px;">
+          <span>🚚</span> Carrier / Fleet
+        </button>
+        <button type="button" id="role-btn-broker" onclick="selectRole('broker')" style="padding:10px;border-radius:8px;border:none;background:transparent;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <span>💼</span> Broker (Free Loads)
+        </button>
+      </div>
 
       <div id="signup-alert" class="form-alert" role="alert" aria-live="polite"></div>
 
       <form id="signup-form" novalidate>
+        <input type="hidden" name="role" id="su-role" value="carrier">
+        <input type="hidden" name="plan_key" id="su-plan-key" value="solo_weekly">
         <div style="display:flex;flex-direction:column;gap:var(--space-4);">
 
           <div class="form-row">
@@ -247,11 +259,11 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="su-mc">MC Number</label>
+              <label class="form-label" for="su-mc" id="su-mc-label">MC Number</label>
               <input class="form-input" id="su-mc" name="mcNumber" type="text" placeholder="MC-XXXXXXX">
             </div>
             <div class="form-group">
-              <label class="form-label" for="su-dot">DOT Number</label>
+              <label class="form-label" for="su-dot" id="su-dot-label">DOT Number</label>
               <input class="form-input" id="su-dot" name="dotNumber" type="text" placeholder="XXXXXXX">
             </div>
           </div>
@@ -267,11 +279,11 @@
             <input class="form-input" id="su-confirm" type="password" required placeholder="Repeat your password" autocomplete="new-password">
           </div>
 
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--text-xs);color:#166534;line-height:1.5;">
-            <div style="font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:2px;font-size:var(--text-sm);">
+          <div id="trial-info-box" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--text-xs);color:#166534;line-height:1.5;">
+            <div id="trial-info-title" style="font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:2px;font-size:var(--text-sm);">
               <span>🔒</span> 7-Day Free Trial · $0.00 Due Today
             </div>
-            Card verification is required on the next step via Stripe. Full TMS, Dedicated Operations Manager, and AI Load Board are immediately unlocked. Cancel anytime with 1 click in your portal before day 7 and you pay nothing.
+            <span id="trial-info-desc">Card verification is required on the next step via Stripe. Full TMS, Dedicated Operations Manager, and AI Load Board are immediately unlocked. Cancel anytime with 1 click in your portal before day 7 and you pay nothing.</span>
           </div>
 
           <button type="submit" class="btn btn-primary btn-lg btn-block" id="signup-submit-btn" style="font-weight:700;">
@@ -303,6 +315,46 @@
   const alertBox = document.getElementById('signup-alert');
   const submitBtn = document.getElementById('signup-submit-btn');
 
+  function selectRole(role) {
+    const isBroker = role === 'broker';
+    document.getElementById('su-role').value = isBroker ? 'broker' : 'carrier';
+    document.getElementById('su-plan-key').value = isBroker ? 'free_broker' : 'solo_weekly';
+
+    const btnCarrier = document.getElementById('role-btn-carrier');
+    const btnBroker = document.getElementById('role-btn-broker');
+    if (isBroker) {
+      btnBroker.style.background = '#2563eb';
+      btnBroker.style.color = '#ffffff';
+      btnBroker.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)';
+      btnCarrier.style.background = 'transparent';
+      btnCarrier.style.color = '#64748b';
+      btnCarrier.style.boxShadow = 'none';
+
+      document.getElementById('signup-sub').textContent = 'Post loads 100% free on LoadsNexus. Anti-Double Brokering protection included.';
+      document.getElementById('trial-info-box').style.background = '#eff6ff';
+      document.getElementById('trial-info-box').style.borderColor = '#bfdbfe';
+      document.getElementById('trial-info-box').style.color = '#1e40af';
+      document.getElementById('trial-info-title').innerHTML = '<span>💼</span> 100% Free · Unlimited Load Posting · $0 Due';
+      document.getElementById('trial-info-desc').textContent = 'Brokers and direct shippers post freight 100% free forever. No credit card required. Loads appear instantly on the live spot load board for vetted carriers.';
+      submitBtn.textContent = 'Create Free Broker Account (100% Free) →';
+    } else {
+      btnCarrier.style.background = '#ffffff';
+      btnCarrier.style.color = '#0f172a';
+      btnCarrier.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      btnBroker.style.background = 'transparent';
+      btnBroker.style.color = '#64748b';
+      btnBroker.style.boxShadow = 'none';
+
+      document.getElementById('signup-sub').textContent = 'Join and get your dedicated operations manager.';
+      document.getElementById('trial-info-box').style.background = '#f0fdf4';
+      document.getElementById('trial-info-box').style.borderColor = '#bbf7d0';
+      document.getElementById('trial-info-box').style.color = '#166534';
+      document.getElementById('trial-info-title').innerHTML = '<span>🔒</span> 7-Day Free Trial · $0.00 Due Today';
+      document.getElementById('trial-info-desc').textContent = 'Card verification is required on the next step via Stripe. Full TMS, Dedicated Operations Manager, and AI Load Board are immediately unlocked. Cancel anytime with 1 click in your portal before day 7 and you pay nothing.';
+      submitBtn.textContent = 'Start 7-Day Free Trial ($0 Due Today) →';
+    }
+  }
+
   // Check URL query flags
   const urlParams = new URLSearchParams(location.search);
   const isFromLoadsNexus = urlParams.get('from') === 'loadsnexus' || location.hostname.includes('loadsnexus');
@@ -317,8 +369,10 @@
     if (logoText) {
       logoText.innerHTML = 'Loads<span style="color:#3b82f6;">Nexus</span>™';
     }
-    const sub = document.querySelector('.auth-form-inner p');
-    if (sub) sub.textContent = 'Join LoadsNexus to find loads, post capacity, and access AI freight intelligence.';
+  }
+
+  if (urlParams.get('role') === 'broker') {
+    selectRole('broker');
   }
 
   if (urlParams.get('canceled') === '1') {
@@ -353,8 +407,11 @@
       return;
     }
 
+    const isBroker = document.getElementById('su-role').value === 'broker';
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Connecting to secure Stripe card verification ($0 due today)...';
+    submitBtn.textContent = isBroker
+      ? 'Creating free broker account…'
+      : 'Connecting to secure Stripe card verification ($0 due today)...';
 
     const formData = new FormData(form);
     const body = Object.fromEntries(formData);
@@ -368,11 +425,13 @@
       const data = await res.json();
 
       if (!res.ok) {
-        alertBox.textContent = data.error || 'Could not start trial checkout.';
+        alertBox.textContent = data.error || 'Could not start registration.';
         alertBox.className = 'form-alert error';
         alertBox.style.display = 'block';
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Start 7-Day Free Trial ($0 Due Today) →';
+        submitBtn.textContent = isBroker
+          ? 'Create Free Broker Account (100% Free) →'
+          : 'Start 7-Day Free Trial ($0 Due Today) →';
         return;
       }
 
@@ -381,14 +440,16 @@
       } else if (data.redirect) {
         window.location.href = data.redirect;
       } else {
-        window.location.href = '/carrier-overview?welcome=1';
+        window.location.href = isBroker ? '/load-booking?post=1' : '/carrier-overview?welcome=1';
       }
     } catch (err) {
       alertBox.textContent = 'Network error. Please check your connection and try again.';
       alertBox.className = 'form-alert error';
       alertBox.style.display = 'block';
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Start 7-Day Free Trial ($0 Due Today) →';
+      submitBtn.textContent = isBroker
+        ? 'Create Free Broker Account (100% Free) →'
+        : 'Start 7-Day Free Trial ($0 Due Today) →';
     }
   });
 
@@ -397,7 +458,11 @@
     .then(r => r.ok ? r.json() : null)
     .then(data => {
       if (data && data.user && (!data.access || data.access.allowed)) {
-        window.location.href = '/carrier-overview';
+        if (data.user.role === 'broker') {
+          window.location.href = '/load-booking?broker=1&post=1';
+        } else {
+          window.location.href = '/carrier-overview';
+        }
       }
     })
     .catch(() => {});

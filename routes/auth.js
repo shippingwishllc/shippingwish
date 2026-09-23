@@ -107,16 +107,20 @@ async function ensureSignupTables() {
       user_agent TEXT,
       attempts INTEGER NOT NULL DEFAULT 0,
       expires_at TIMESTAMPTZ NOT NULL,
+      role TEXT DEFAULT 'carrier',
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `).catch(() => {});
+  await pool.query("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'broker'").catch(() => {});
+  await pool.query("ALTER TABLE signup_pending ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'carrier'").catch(() => {});
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ').catch(() => {});
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ').catch(() => {});
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS weekly_plan TEXT').catch(() => {});
 }
 
 // Step 1 — send OTP to email (noreply@shippingwish.com)
 router.post('/signup/send-otp', rateLimit(5, 60000), async (req, res) => {
-  const { name, company, phone, email, password, mcNumber, dotNumber, address } = req.body;
+  const { name, company, phone, email, password, mcNumber, dotNumber, address, role } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email, and password are required.' });
   }
@@ -124,6 +128,7 @@ router.post('/signup/send-otp', rateLimit(5, 60000), async (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 8 characters.' });
   }
 
+  const userRole = role === 'broker' ? 'broker' : 'carrier';
   const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').split(',')[0].trim();
   const userAgent = req.headers['user-agent'] || '';
   const emailNorm = String(email).trim().toLowerCase();
@@ -141,8 +146,8 @@ router.post('/signup/send-otp', rateLimit(5, 60000), async (req, res) => {
     const expiresAt = new Date(Date.now() + OTP_TTL_MS);
 
     await pool.query(
-      `INSERT INTO signup_pending (email, otp_hash, password_hash, name, company_name, phone, mc_number, dot_number, address, signup_ip, user_agent, attempts, expires_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,0,$12)
+      `INSERT INTO signup_pending (email, otp_hash, password_hash, name, company_name, phone, mc_number, dot_number, address, signup_ip, user_agent, attempts, expires_at, role)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,0,$12,$13)
        ON CONFLICT (email) DO UPDATE SET
          otp_hash = EXCLUDED.otp_hash,
          password_hash = EXCLUDED.password_hash,
@@ -155,8 +160,9 @@ router.post('/signup/send-otp', rateLimit(5, 60000), async (req, res) => {
          signup_ip = EXCLUDED.signup_ip,
          user_agent = EXCLUDED.user_agent,
          attempts = 0,
-         expires_at = EXCLUDED.expires_at`,
-      [emailNorm, otpHash, passwordHash, name, company || null, phone || null, mcNumber || null, dotNumber || null, address || null, clientIp, userAgent, expiresAt]
+         expires_at = EXCLUDED.expires_at,
+         role = EXCLUDED.role`,
+      [emailNorm, otpHash, passwordHash, name, company || null, phone || null, mcNumber || null, dotNumber || null, address || null, clientIp, userAgent, expiresAt, userRole]
     );
 
     const tpl = buildTemplate('signup_otp', { name, otp, trialDays: TRIAL_DAYS });
@@ -216,14 +222,16 @@ router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
       return res.status(409).json({ error: 'Account already exists. Sign in instead.' });
     }
 
-    const trialEnds = new Date();
-    trialEnds.setDate(trialEnds.getDate() + TRIAL_DAYS);
+    const isBroker = pending.role === 'broker';
+    const role = isBroker ? 'broker' : 'carrier';
+    const trialEnds = isBroker ? null : new Date(Date.now() + TRIAL_DAYS * 86400000);
+    const weeklyPlan = isBroker ? 'free_broker' : null;
 
     const result = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, address, signup_ip, user_agent, trial_ends_at, email_verified_at)
-       VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, $8, $9, $10, $11, now())
-       RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, signup_ip, trial_ends_at`,
-      [pending.name, emailNorm, pending.password_hash, pending.company_name, pending.phone, pending.mc_number, pending.dot_number, pending.address, pending.signup_ip, pending.user_agent, trialEnds]
+      `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, address, signup_ip, user_agent, trial_ends_at, email_verified_at, weekly_plan)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now(), $13)
+       RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, signup_ip, trial_ends_at, weekly_plan`,
+      [pending.name, emailNorm, pending.password_hash, role, pending.company_name, pending.phone, pending.mc_number, pending.dot_number, pending.address, pending.signup_ip, pending.user_agent, trialEnds, weeklyPlan]
     );
     const user = result.rows[0];
     await pool.query('DELETE FROM signup_pending WHERE id = $1', [pending.id]);
@@ -238,16 +246,28 @@ router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
     });
 
     const ops = [...new Set([COMPANY.operationsEmail, process.env.ADMIN_EMAIL_1, process.env.ADMIN_EMAIL_2].filter(Boolean))];
-    const subject = `Portal signup (verified) — ${pending.company_name || pending.name}`;
-    const html = `<p>Carrier verified email and created portal login.</p>
-      <p><strong>${escapeHtml(pending.name)}</strong><br>${escapeHtml(pending.company_name || '')}<br>${escapeHtml(emailNorm)}</p>
-      <p>${TRIAL_DAYS}-day portal trial until ${trialEnds.toISOString().slice(0, 10)}. Stripe weekly plan still required after trial unless they subscribe early.</p>`;
+    const subject = isBroker
+      ? `Freight Broker signup (100% Free) — ${pending.company_name || pending.name}`
+      : `Portal signup (verified) — ${pending.company_name || pending.name}`;
+    const html = isBroker
+      ? `<p>Freight Broker created free account to post live loads on LoadsNexus.</p>
+         <p><strong>${escapeHtml(pending.name)}</strong><br>${escapeHtml(pending.company_name || '')}<br>${escapeHtml(emailNorm)}<br>MC: ${escapeHtml(pending.mc_number || 'N/A')}</p>`
+      : `<p>Carrier verified email and created portal login.</p>
+         <p><strong>${escapeHtml(pending.name)}</strong><br>${escapeHtml(pending.company_name || '')}<br>${escapeHtml(emailNorm)}</p>
+         <p>${TRIAL_DAYS}-day portal trial until ${trialEnds.toISOString().slice(0, 10)}. Stripe weekly plan still required after trial unless they subscribe early.</p>`;
     Promise.all(ops.map((to) => sendBrandedEmail({
       to, subject, html, text: subject, emailType: 'internal_lead', templateKey: 'internal_signup', transactional: true
     }))).catch((err) => console.error('Signup notify:', err.message));
 
-    const access = await getCarrierAccess(user.id, user.email);
-    res.json({ ok: true, token, user, access, trialDays: TRIAL_DAYS });
+    const access = isBroker ? { allowed: true, is_broker: true, full_access: true } : await getCarrierAccess(user.id, user.email);
+    res.json({
+      ok: true,
+      token,
+      user,
+      access,
+      trialDays: isBroker ? 0 : TRIAL_DAYS,
+      redirect: isBroker ? '/load-booking?broker=1&post=1' : '/onboarding'
+    });
   } catch (err) {
     console.error('verify-otp error:', err);
     res.status(500).json({ error: 'Could not verify code right now.' });

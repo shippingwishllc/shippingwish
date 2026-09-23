@@ -61,7 +61,7 @@
     <div class="safe-row" style="margin:18px 0;">
       <span class="safe-pill">🔒 256-bit encryption</span>
       <span class="safe-pill">PCI via Stripe</span>
-      <span class="safe-pill">$0 due today</span>
+      <span class="safe-pill" id="due-pill">$0 due today</span>
     </div>
     <div class="pay-badges" style="margin-bottom:18px;">
       <span class="pay-badge visa">VISA</span>
@@ -86,7 +86,11 @@
   const params = new URLSearchParams(location.search);
   const plan = params.get('plan') || 'solo_weekly';
   const copy = {
-    loadboard_ai_pass: { title: 'LoadsNexus™ Carrier AI Load Board — $19 / month', trucks: '1', sub: 'Instant self-dispatch access. Full 50-state live spot load search, direct broker contacts, and Days-To-Pay credit scores.' },
+    loadboard_ai_pass: {
+      title: 'LoadsNexus™ Carrier Load Board — $19 / month',
+      trucks: '1',
+      sub: 'First month billed at $19 today. Cancel anytime. Full 50-state live spot load search, direct unmasked broker contacts, and Days-To-Pay credit scores.'
+    },
     solo_weekly: { title: 'Owner Operator — $149 / week after trial', trucks: '1' },
     fleet_weekly: { title: 'Small Fleet — $350 / week after trial', trucks: '2-5' },
     command_weekly: { title: 'Fleet Command — $500 / week after trial', trucks: '6+' },
@@ -97,12 +101,24 @@
   document.getElementById('plan-title').textContent = meta.title;
   if (meta.sub) document.getElementById('plan-sub').textContent = meta.sub;
   document.getElementById('trucks').value = meta.trucks;
+
+  const defaultBtnText = plan === 'loadboard_ai_pass'
+    ? 'Continue to Stripe — $19 / month'
+    : 'Continue to Stripe — $0 today';
+
+  if (plan === 'loadboard_ai_pass') {
+    const duePill = document.getElementById('due-pill');
+    if (duePill) duePill.textContent = '$19 due today';
+  }
+  document.getElementById('submit-btn').textContent = defaultBtnText;
+
   if (params.get('canceled') === '1') {
     document.getElementById('canceled-note').style.display = 'block';
   }
   if (params.get('from') === 'signup') {
-    document.getElementById('plan-sub').textContent =
-      'Account created. Complete Stripe checkout to start your free week ($0 due today). Broker load pay stays separate.';
+    document.getElementById('plan-sub').textContent = plan === 'loadboard_ai_pass'
+      ? 'Account created. Complete Stripe checkout to activate your $19/mo Carrier Load Board pass. Cancel anytime.'
+      : 'Account created. Complete Stripe checkout to start your free week ($0 due today). Broker load pay stays separate.';
   }
 
   fetch('/api/me', { credentials: 'include' })
@@ -155,20 +171,20 @@
       if (!res.ok || !data.url) {
         showAlert(data.error || 'Could not start checkout.');
         btn.disabled = false;
-        btn.textContent = 'Continue to Stripe — $0 today';
+        btn.textContent = defaultBtnText;
         return;
       }
       if (data.simulated) {
         showAlert('Stripe is not connected on this server yet. Add STRIPE_SECRET_KEY in Vercel, then try again. No card was charged.');
         btn.disabled = false;
-        btn.textContent = 'Continue to Stripe — $0 today';
+        btn.textContent = defaultBtnText;
         return;
       }
       window.location.href = data.url;
     } catch (err) {
       showAlert('Network error. Please try again or call +1 (917) 737-0021.');
       btn.disabled = false;
-      btn.textContent = 'Continue to Stripe — $0 today';
+      btn.textContent = defaultBtnText;
     }
   });
 })();
