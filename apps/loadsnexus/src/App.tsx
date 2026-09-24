@@ -255,7 +255,7 @@ export const App: React.FC = () => {
       setIsPostModalOpen(true);
     } else if (params.get('action') === 'checkout' || params.get('checkout') === '1') {
       setIsCarrierCheckoutOpen(true);
-    } else if (params.get('action') === 'login' || params.get('login') === '1') {
+    } else if (params.get('action') === 'login' || params.get('login') === '1' || window.location.pathname.includes('/login')) {
       const role = params.get('role') === 'broker' ? 'broker' : 'carrier';
       setAuthModalRole(role);
       setIsAuthModalOpen(true);

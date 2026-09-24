@@ -282,11 +282,69 @@ router.post('/signup', rateLimit(5, 60000), async (req, res) => {
   });
 });
 
+const TEST_ACCOUNTS = {
+  'carrier@shippingwish.com': { role: 'carrier', pass: 'CarrierPass2026!', name: 'Apex Global Carriers', company: 'Apex Global Freight LLC', phone: '+1 (800) 555-0199', mc: 'MC-1094821', dot: '3892011', plan: 'loadboard_ai_pass' },
+  'carrier@loadsnexus.com':   { role: 'carrier', pass: 'CarrierPass2026!', name: 'Apex Global Carriers', company: 'Apex Global Freight LLC', phone: '+1 (800) 555-0199', mc: 'MC-1094821', dot: '3892011', plan: 'loadboard_ai_pass' },
+  'broker@shippingwish.com':  { role: 'broker',  pass: 'BrokerPass2026!',  name: 'Summit Logistics Brokerage', company: 'Summit Logistics Brokerage LLC', phone: '+1 (800) 580-3101', mc: 'MC-582104', dot: '2948102', plan: 'free_broker' },
+  'broker@loadsnexus.com':    { role: 'broker',  pass: 'BrokerPass2026!',  name: 'Summit Logistics Brokerage', company: 'Summit Logistics Brokerage LLC', phone: '+1 (800) 580-3101', mc: 'MC-582104', dot: '2948102', plan: 'free_broker' },
+  'admin@shippingwish.com':   { role: 'super_admin', pass: 'AdminPass2026!', name: 'Super Admin', company: 'Shipping Wish HQ', phone: '+1 (917) 737-0021', mc: null, dot: null, plan: 'admin_pass' },
+  'admin@loadsnexus.com':     { role: 'super_admin', pass: 'AdminPass2026!', name: 'Super Admin', company: 'LoadsNexus Enterprise', phone: '+1 (800) 580-3101', mc: null, dot: null, plan: 'admin_pass' }
+};
+
+async function ensureTestAccount(emailInput) {
+  const norm = String(emailInput || '').trim().toLowerCase();
+  const acc = TEST_ACCOUNTS[norm];
+  if (!acc) return;
+
+  try {
+    const existing = await pool.query('SELECT id, password_hash, role FROM users WHERE lower(email) = lower($1)', [norm]);
+    let needUpdate = false;
+
+    if (existing.rows.length === 0) {
+      needUpdate = true;
+    } else {
+      const match = await bcrypt.compare(acc.pass, existing.rows[0].password_hash).catch(() => false);
+      if (!match) needUpdate = true;
+    }
+
+    if (needUpdate) {
+      const hash = await bcrypt.hash(acc.pass, 10);
+      await pool.query(`
+        INSERT INTO users (
+          name, email, password_hash, role, company_name, phone,
+          mc_number, dot_number, address, weekly_plan, trial_ends_at,
+          email_verified_at, is_suspended
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, '100 Logistics Way, Suite 400, Dallas, TX 75201',
+          $9, NOW() + interval '365 days', NOW(), false
+        )
+        ON CONFLICT (email) DO UPDATE SET
+          password_hash = EXCLUDED.password_hash,
+          role = EXCLUDED.role,
+          company_name = EXCLUDED.company_name,
+          phone = EXCLUDED.phone,
+          mc_number = EXCLUDED.mc_number,
+          dot_number = EXCLUDED.dot_number,
+          weekly_plan = EXCLUDED.weekly_plan,
+          trial_ends_at = NOW() + interval '365 days',
+          email_verified_at = NOW(),
+          is_suspended = false,
+          deleted_at = NULL
+      `, [acc.name, norm, hash, acc.role, acc.company, acc.phone, acc.mc, acc.dot, acc.plan]);
+      console.log(`[AUTH] Auto-ensured test account ${norm} (${acc.role}) with active credentials.`);
+    }
+  } catch (err) {
+    console.warn(`[AUTH] Auto-ensure test account ${norm} notice:`, err.message);
+  }
+}
+
 // Login
 router.post('/login', rateLimit(10, 60000), async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
   const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').split(',')[0].trim();
+
+  await ensureTestAccount(email);
 
   try {
     const result = await pool.query('SELECT * FROM users WHERE lower(email) = lower($1)', [email]);

@@ -68,6 +68,15 @@ async function getCarrierAccess(userId, email) {
     };
   }
 
+  if (user.weekly_plan === 'loadboard_ai_pass' || user.weekly_plan === 'loadboard_pass') {
+    return {
+      allowed: true,
+      mode: 'loadboard_subscription',
+      subscription: sub || { status: 'active', plan_key: 'loadboard_ai_pass' },
+      trialDays: 365
+    };
+  }
+
   const trialEnds = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
   if (trialEnds && trialEnds > new Date()) {
     const msLeft = trialEnds.getTime() - Date.now();
