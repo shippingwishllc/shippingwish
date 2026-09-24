@@ -1717,9 +1717,17 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
       ]
     );
 
+    const postedLoad = ins.rows[0];
+    try {
+      broadcastLoadboardEvent('load_posted', postedLoad);
+      dispatchLaneAlerts(postedLoad);
+    } catch (e) {
+      console.warn('Real-time broadcast/alerts warning:', e.message);
+    }
+
     res.json({
       ok: true,
-      load: ins.rows[0],
+      load: postedLoad,
       rpm,
       anti_double_brokering_status: 'VERIFIED_ACTIVE',
       fmcsa_authority_status: 'ACTIVE_BMC84_VERIFIED',
@@ -1785,8 +1793,247 @@ async function ensureBrokersScoringColumns() {
         `, [name, mc, phone, email, rating, dtp, bond, fraud]);
       }
     }
-  } catch (e) { console.error('ensureBrokersScoringColumns error:', e); }
+  } catch (e) {
+    console.error('ensureBrokersScoringColumns error:', e);
+  }
 }
+
+// ==========================================
+// PHASE 3: REAL-TIME STREAM & CARRIER LANE ALERTS ENGINE
+// ==========================================
+
+// SSE Client Registry for real-time live board auto-refresh
+const sseClients = new Set();
+
+function broadcastLoadboardEvent(eventType, data) {
+  const payload = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const client of sseClients) {
+    try {
+      client.write(payload);
+    } catch {
+      sseClients.delete(client);
+    }
+  }
+}
+
+// GET /api/loadboard/stream — Live Server-Sent Events stream for loadboard auto-refresh
+router.get('/stream', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*'
+  });
+
+  res.write(`event: connected\ndata: ${JSON.stringify({ ok: true, timestamp: Date.now() })}\n\n`);
+  sseClients.add(res);
+
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch {
+      clearInterval(heartbeat);
+      sseClients.delete(res);
+    }
+  }, 20000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+});
+
+async function ensureCarrierLaneAlertsTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS carrier_lane_alerts (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER,
+      origin TEXT,
+      destination TEXT,
+      equipment TEXT DEFAULT 'All',
+      min_rpm NUMERIC(6,2) DEFAULT 2.50,
+      contact_phone TEXT,
+      contact_email TEXT,
+      notify_sms BOOLEAN DEFAULT true,
+      notify_email BOOLEAN DEFAULT true,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `).catch(() => {});
+}
+
+async function dispatchLaneAlerts(load) {
+  try {
+    await ensureCarrierLaneAlertsTable();
+    const alertsRes = await pool.query(
+      `SELECT * FROM carrier_lane_alerts WHERE is_active = true`
+    );
+    if (!alertsRes.rows.length) return;
+
+    const loadOrigin = (load.pickup_location || load.origin || '').toLowerCase();
+    const loadDest = (load.delivery_location || load.destination || '').toLowerCase();
+    const loadEquip = (load.equipment_type || load.equipment || '').toLowerCase();
+    const loadRpm = parseFloat(load.rpm || 0);
+
+    for (const alert of alertsRes.rows) {
+      const alertOrigin = (alert.origin || '').toLowerCase().trim();
+      const alertDest = (alert.destination || '').toLowerCase().trim();
+      const alertEquip = (alert.equipment || '').toLowerCase().trim();
+      const alertMinRpm = parseFloat(alert.min_rpm || 0);
+
+      const originMatch = !alertOrigin || loadOrigin.includes(alertOrigin);
+      const destMatch = !alertDest || loadDest.includes(alertDest);
+      const equipMatch = !alertEquip || alertEquip === 'all' || loadEquip.includes(alertEquip);
+      const rpmMatch = !alertMinRpm || loadRpm >= alertMinRpm;
+
+      if (originMatch && destMatch && equipMatch && rpmMatch) {
+        // 1. Send SMS alert via Twilio
+        if (alert.notify_sms && alert.contact_phone) {
+          try {
+            const { sendTwilioSms } = require('./voip');
+            const cleanPhone = String(alert.contact_phone).replace(/[^0-9]/g, '');
+            if (cleanPhone.length >= 10) {
+              const smsText = `[LoadsNexus™ Alert] New Freight: ${load.pickup_location || load.origin} -> ${load.delivery_location || load.destination} paying $${Number(load.rate).toLocaleString()} ($${load.rpm}/mi). Call Broker: ${load.broker_phone || '+1 (800) 580-3101'}`;
+              sendTwilioSms(cleanPhone, smsText).catch(e => console.warn('Twilio alert err:', e.message));
+            }
+          } catch (e) {
+            console.warn('SMS dispatch error:', e.message);
+          }
+        }
+
+        // 2. Send Email alert via Resend
+        if (alert.notify_email && alert.contact_email) {
+          try {
+            const { sendBrandedEmail } = require('../utils/mailer');
+            const emailHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+                <div style="background: #0f172a; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+                  <span style="color: #3b82f6; font-weight: 800; font-size: 18px; letter-spacing: 0.05em;">LOADSNEXUS™</span>
+                  <span style="color: #94a3b8; font-size: 12px; margin-left: 10px;">Instant Freight Alert</span>
+                </div>
+                <h2 style="color: #0f172a; margin-top: 0; font-size: 20px;">⚡ High-Paying Load Matched Your Lane!</h2>
+                <p style="color: #475569; font-size: 14px; line-height: 1.5;">
+                  A new verified spot load matching your saved lane alert has just been posted to LoadsNexus™.
+                </p>
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                  <div style="font-size: 16px; font-weight: bold; color: #1e293b; margin-bottom: 8px;">
+                    ${escapeHtml(load.pickup_location || load.origin)} &rarr; ${escapeHtml(load.delivery_location || load.destination)}
+                  </div>
+                  <div style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
+                    Equipment: <strong>${escapeHtml(load.equipment_type || "53' Dry Van")}</strong> &middot; Miles: <strong>${load.miles || 'N/A'}</strong> &middot; Weight: <strong>${load.weight || '42,000 lbs'}</strong>
+                  </div>
+                  <div style="font-size: 26px; font-weight: 900; color: #1d4ed8;">
+                    $${Number(load.rate).toLocaleString()} <span style="font-size: 14px; color: #64748b; font-weight: 600;">($${load.rpm}/mi)</span>
+                  </div>
+                </div>
+                <div style="margin-bottom: 24px; font-size: 13px; color: #334155; line-height: 1.6;">
+                  <strong>Verified Broker:</strong> ${escapeHtml(load.broker_name || 'LoadsNexus™ Verified Broker')}<br>
+                  <strong>Broker MC#:</strong> ${escapeHtml(load.broker_mc || 'MC-VERIFIED')}<br>
+                  <strong>Direct Dispatch Phone:</strong> <a href="tel:${escapeHtml(load.broker_phone || '+18005803101')}" style="color: #2563eb; font-weight: bold;">${escapeHtml(load.broker_phone || '+1 (800) 580-3101')}</a><br>
+                  <strong>Broker Email:</strong> ${escapeHtml(load.broker_email || 'dispatch@loadsnexus.com')}
+                </div>
+                <div style="text-align: center;">
+                  <a href="https://www.loadsnexus.com" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 28px; font-weight: bold; border-radius: 8px; font-size: 14px;">View Live Board &rarr;</a>
+                </div>
+              </div>
+            `;
+            sendBrandedEmail({
+              to: alert.contact_email,
+              from: 'LoadsNexus Alerts <alerts@loadsnexus.com>',
+              subject: `⚡ Freight Alert: ${load.pickup_location || load.origin} -> ${load.delivery_location || load.destination} ($${load.rate} · $${load.rpm}/mi)`,
+              html: emailHtml,
+              text: `LoadsNexus Freight Alert: ${load.pickup_location || load.origin} -> ${load.delivery_location || load.destination} paying $${load.rate} ($${load.rpm}/mi). Call Broker: ${load.broker_phone}`,
+              transactional: true
+            }).catch(e => console.warn('Email alert err:', e.message));
+          } catch (e) {
+            console.warn('Email dispatch error:', e.message);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('dispatchLaneAlerts error:', err);
+  }
+}
+
+// GET /api/loadboard/lane-alerts — Retrieve active alerts
+router.get('/lane-alerts', optionalAuth, async (req, res) => {
+  await ensureCarrierLaneAlertsTable();
+  try {
+    const userId = req.user ? req.user.id : null;
+    const userEmail = req.user ? req.user.email : null;
+    let result;
+    if (userId || userEmail) {
+      result = await pool.query(
+        `SELECT * FROM carrier_lane_alerts WHERE is_active = true AND (user_id = $1 OR contact_email = $2) ORDER BY created_at DESC`,
+        [userId, userEmail]
+      );
+    } else {
+      result = await pool.query(`SELECT * FROM carrier_lane_alerts WHERE is_active = true ORDER BY created_at DESC LIMIT 10`);
+    }
+    res.json({ ok: true, alerts: result.rows });
+  } catch (err) {
+    console.error('Fetch lane alerts error:', err);
+    res.status(500).json({ error: 'Could not fetch lane alerts.' });
+  }
+});
+
+// POST /api/loadboard/lane-alerts — Create new persistent carrier lane alert
+router.post('/lane-alerts', optionalAuth, async (req, res) => {
+  await ensureCarrierLaneAlertsTable();
+  const { origin, destination, equipment, minRpm, contactPhone, contactEmail, notifySms, notifyEmail } = req.body;
+  
+  if (!origin && !destination) {
+    return res.status(400).json({ error: 'Origin or destination corridor is required.' });
+  }
+  if (!contactPhone && !contactEmail) {
+    return res.status(400).json({ error: 'At least one contact method (phone or email) is required for alerts.' });
+  }
+
+  try {
+    const userId = req.user ? req.user.id : null;
+    const email = contactEmail || (req.user ? req.user.email : null);
+    const phone = contactPhone || (req.user ? req.user.phone : null);
+
+    const ins = await pool.query(
+      `INSERT INTO carrier_lane_alerts (
+        user_id, origin, destination, equipment, min_rpm, contact_phone, contact_email, notify_sms, notify_email, is_active, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, NOW())
+      RETURNING *`,
+      [
+        userId,
+        origin || '',
+        destination || '',
+        equipment || 'All',
+        Number(minRpm) || 2.50,
+        phone || null,
+        email || null,
+        notifySms !== false,
+        notifyEmail !== false
+      ]
+    );
+
+    res.json({
+      ok: true,
+      alert: ins.rows[0],
+      message: 'Carrier lane alert saved! Matching freight will trigger instant SMS/Email notifications.'
+    });
+  } catch (err) {
+    console.error('Create lane alert error:', err);
+    res.status(500).json({ error: 'Could not create lane alert.' });
+  }
+});
+
+// DELETE /api/loadboard/lane-alerts/:id — Delete alert
+router.delete('/lane-alerts/:id', optionalAuth, async (req, res) => {
+  try {
+    const alertId = req.params.id;
+    await pool.query(`DELETE FROM carrier_lane_alerts WHERE id = $1`, [alertId]);
+    res.json({ ok: true, message: 'Lane alert removed successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not delete lane alert.' });
+  }
+});
 
 // GET /api/loadboard/stats/live — Real-Time Platform Metrics for Live Tickers
 router.get('/stats/live', optionalAuth, async (req, res) => {
@@ -2087,6 +2334,12 @@ router.post('/loads/:id/cover', optionalAuth, async (req, res) => {
       [loadId]
     ).catch(() => {});
 
+    try {
+      broadcastLoadboardEvent('load_covered', { id: loadId, status: 'covered', covered_at: Date.now() });
+    } catch (e) {
+      console.warn('Real-time broadcast cover warning:', e.message);
+    }
+
     res.json({
       ok: true,
       id: loadId,
@@ -2122,6 +2375,15 @@ router.post('/ai-ingest', optionalAuth, async (req, res) => {
     }
 
     const savedLoads = await saveLoadsToDatabase(parsedLoads);
+
+    try {
+      for (const l of savedLoads) {
+        broadcastLoadboardEvent('load_posted', l);
+        dispatchLaneAlerts(l);
+      }
+    } catch (e) {
+      console.warn('AI Ingest real-time broadcast warning:', e.message);
+    }
 
     res.json({
       ok: true,

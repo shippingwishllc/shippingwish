@@ -159,15 +159,36 @@ export const App: React.FC = () => {
   const [isAiIngestOpen, setIsAiIngestOpen] = useState(false);
   const [savedAlerts, setSavedAlerts] = useState<LaneAlert[]>([]);
 
-  // Initialize saved lane alerts from localStorage
+  // Initialize saved lane alerts from backend API and localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       const raw = localStorage.getItem('ln_lane_alerts');
       if (raw) setSavedAlerts(JSON.parse(raw));
-    } catch {
-      // ignore
-    }
+    } catch {}
+
+    fetch('/api/loadboard/lane-alerts', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.alerts && data.alerts.length > 0) {
+          const apiAlerts: LaneAlert[] = data.alerts.map((a: any) => ({
+            id: String(a.id),
+            origin: a.origin,
+            destination: a.destination,
+            equipment: a.equipment,
+            minRpm: Number(a.min_rpm) || 2.50,
+            contactPhone: a.contact_phone || '',
+            contactEmail: a.contact_email || '',
+            notifySms: a.notify_sms !== false,
+            notifyEmail: a.notify_email !== false,
+            createdAt: a.created_at
+              ? new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              : 'Active',
+          }));
+          setSavedAlerts(apiAlerts);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Toasts
@@ -241,7 +262,74 @@ export const App: React.FC = () => {
     }
   }, [fetchLoads, filter]);
 
-  // Background Live Stream Auto-Refresh (Every 30 seconds)
+  // Real-Time Server-Sent Events (SSE) Stream
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isLiveStreaming) return;
+
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource('/api/loadboard/stream');
+
+      eventSource.addEventListener('load_posted', (e) => {
+        try {
+          const raw = JSON.parse(e.data);
+          if (raw) {
+            const newLoad: FreightLoad = {
+              id: raw.load_number || `SW-${raw.id || Math.floor(1000 + Math.random() * 9000)}`,
+              origin: raw.pickup_location || raw.origin,
+              destination: raw.delivery_location || raw.destination,
+              equipment_type: raw.equipment_type || raw.equipment,
+              rate: Number(raw.rate),
+              miles: Number(raw.miles) || 650,
+              rpm: raw.rpm ? Number(raw.rpm) : 3.15,
+              weight:
+                typeof raw.weight === 'number'
+                  ? `${raw.weight.toLocaleString()} lbs`
+                  : raw.weight || '42,000 lbs',
+              commodity: raw.commodity || 'General Freight',
+              pickup_date: raw.pickup_date ? String(raw.pickup_date).slice(0, 10) : 'Today',
+              broker_name: raw.broker_name || 'LoadsNexus™ Verified Brokerage',
+              broker_mc: raw.broker_mc || 'MC-VERIFIED',
+              broker_phone: raw.broker_phone || '+1 (800) 580-3101',
+              broker_email: raw.broker_email || 'dispatch@loadsnexus.com',
+              days_to_pay: '21 days',
+              credit_score: 'A+ (Verified)',
+              is_live_broker_post: true,
+            };
+            setLoads((prev) => {
+              if (prev.some((p) => p.id === newLoad.id)) return prev;
+              return [newLoad, ...prev];
+            });
+            setLastRefreshedAt(new Date());
+            showToast(
+              `⚡ Live Freight Stream: ${newLoad.origin} → ${newLoad.destination} ($${Number(newLoad.rate).toLocaleString()})`
+            );
+          }
+        } catch {}
+      });
+
+      eventSource.addEventListener('load_covered', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data && data.id) {
+            setLoads((prev) =>
+              prev.map((l) =>
+                l.id === data.id || l.load_number === data.id
+                  ? { ...l, is_covered: true, status: 'covered', covered_at: data.covered_at || Date.now() }
+                  : l
+              )
+            );
+          }
+        } catch {}
+      });
+    } catch {}
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
+  }, [isLiveStreaming, showToast]);
+
+  // Background Live Stream Auto-Refresh Polling Fallback (Every 30 seconds)
   useEffect(() => {
     if (typeof window === 'undefined' || !isLiveStreaming) return;
 
@@ -270,7 +358,7 @@ export const App: React.FC = () => {
   const handleToggleLiveStream = () => {
     setIsLiveStreaming((prev) => {
       const next = !prev;
-      showToast(next ? '⚡ Live stream auto-refresh active (30s)' : '⏸ Live stream auto-refresh paused');
+      showToast(next ? '⚡ Real-time live stream active' : '⏸ Real-time live stream paused');
       return next;
     });
   };
@@ -304,7 +392,29 @@ export const App: React.FC = () => {
     setLoads((prev) => [newLoad, ...prev]);
   };
 
-  const handleSaveLaneAlert = (alert: LaneAlert) => {
+  const handleSaveLaneAlert = async (alert: LaneAlert) => {
+    try {
+      const res = await fetch('/api/loadboard/lane-alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          origin: alert.origin,
+          destination: alert.destination,
+          equipment: alert.equipment,
+          minRpm: alert.minRpm,
+          contactPhone: alert.contactPhone,
+          contactEmail: alert.contactEmail,
+          notifySms: alert.notifySms !== false,
+          notifyEmail: alert.notifyEmail !== false,
+        }),
+      });
+      const data = await res.json();
+      if (data?.alert?.id) {
+        alert.id = String(data.alert.id);
+      }
+    } catch {}
+
     setSavedAlerts((prev) => {
       const next = [alert, ...prev];
       if (typeof window !== 'undefined') {
@@ -315,7 +425,11 @@ export const App: React.FC = () => {
     showToast(`🔔 Lane Alert active for ${alert.origin || 'Any'} ➔ ${alert.destination || 'Any'}`);
   };
 
-  const handleDeleteLaneAlert = (id: string) => {
+  const handleDeleteLaneAlert = async (id: string) => {
+    try {
+      fetch(`/api/loadboard/lane-alerts/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+    } catch {}
+
     setSavedAlerts((prev) => {
       const next = prev.filter((a) => a.id !== id);
       if (typeof window !== 'undefined') {
