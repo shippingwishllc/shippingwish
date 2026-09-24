@@ -299,6 +299,10 @@ async function ensureTestAccount(emailInput) {
   if (!acc) return;
 
   try {
+    // 0. Ensure enum user_role has broker and carrier_admin
+    await pool.query("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'broker'").catch(() => {});
+    await pool.query("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'carrier_admin'").catch(() => {});
+
     // 1. Ensure columns exist on users table
     await pool.query(`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS weekly_plan TEXT;
@@ -317,7 +321,7 @@ async function ensureTestAccount(emailInput) {
     const existing = await pool.query('SELECT id, password_hash, role FROM users WHERE lower(email) = lower($1)', [norm]);
     const hash = await bcrypt.hash(acc.pass, 10);
 
-    if (existing.rows.length === 0) {
+    const runInsert = async (roleToUse) => {
       await pool.query(`
         INSERT INTO users (
           name, email, password_hash, role, company_name, phone,
@@ -327,19 +331,43 @@ async function ensureTestAccount(emailInput) {
           $1, $2, $3, $4, $5, $6, $7, $8, '100 Logistics Way, Suite 400, Dallas, TX 75201',
           $9, NOW() + interval '365 days', NOW(), false
         )
-      `, [acc.name, norm, hash, acc.role, acc.company, acc.phone, acc.mc, acc.dot, acc.plan]);
+      `, [acc.name, norm, hash, roleToUse, acc.company, acc.phone, acc.mc, acc.dot, acc.plan]);
+    };
+
+    const runUpdate = async (roleToUse, id) => {
+      await pool.query(`
+        UPDATE users
+        SET password_hash = $1, role = $2, company_name = $3, phone = $4,
+            mc_number = $5, dot_number = $6, weekly_plan = $7,
+            trial_ends_at = NOW() + interval '365 days', email_verified_at = NOW(),
+            is_suspended = false, deleted_at = NULL
+        WHERE id = $8
+      `, [hash, roleToUse, acc.company, acc.phone, acc.mc, acc.dot, acc.plan, id]);
+    };
+
+    if (existing.rows.length === 0) {
+      try {
+        await runInsert(acc.role);
+      } catch (insErr) {
+        if (insErr.message.includes('user_role') && acc.role === 'broker') {
+          await runInsert('dispatcher');
+        } else {
+          throw insErr;
+        }
+      }
       console.log(`[AUTH] Auto-created test account ${norm} (${acc.role}).`);
     } else {
       const match = await bcrypt.compare(acc.pass, existing.rows[0].password_hash).catch(() => false);
       if (!match || existing.rows[0].role !== acc.role) {
-        await pool.query(`
-          UPDATE users
-          SET password_hash = $1, role = $2, company_name = $3, phone = $4,
-              mc_number = $5, dot_number = $6, weekly_plan = $7,
-              trial_ends_at = NOW() + interval '365 days', email_verified_at = NOW(),
-              is_suspended = false, deleted_at = NULL
-          WHERE id = $8
-        `, [hash, acc.role, acc.company, acc.phone, acc.mc, acc.dot, acc.plan, existing.rows[0].id]);
+        try {
+          await runUpdate(acc.role, existing.rows[0].id);
+        } catch (updErr) {
+          if (updErr.message.includes('user_role') && acc.role === 'broker') {
+            await runUpdate('dispatcher', existing.rows[0].id);
+          } else {
+            throw updErr;
+          }
+        }
         console.log(`[AUTH] Auto-updated password & role for test account ${norm}.`);
       }
     }
