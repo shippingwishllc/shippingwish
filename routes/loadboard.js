@@ -2412,6 +2412,62 @@ router.get('/ai-stats', async (req, res) => {
   }
 });
 
+// POST /api/loadboard/ai-carrier-copilot — AI Broker Negotiation & Profitability Assistant for Carriers
+router.post('/ai-carrier-copilot', optionalAuth, async (req, res) => {
+  try {
+    const { load_id, load: loadParam, carrier } = req.body;
+    let loadData = loadParam;
+
+    if (!loadData && load_id) {
+      const q = await pool.query(
+        `SELECT * FROM loads WHERE id::text = $1 OR load_number = $1 LIMIT 1`,
+        [String(load_id)]
+      ).catch(() => ({ rows: [] }));
+      if (q.rows.length) {
+        const row = q.rows[0];
+        loadData = {
+          origin: row.pickup_location,
+          destination: row.delivery_location,
+          miles: row.miles || 600,
+          rate: row.rate || 2000,
+          rpm: row.rpm || (Number(row.rate) / Number(row.miles || 1)).toFixed(2),
+          equipment_type: row.equipment_type || "53' Dry Van",
+          weight: row.weight ? `${row.weight} lbs` : '40,000 lbs',
+          broker_name: row.broker_name || 'Freight Broker'
+        };
+      }
+    }
+
+    if (!loadData) {
+      loadData = {
+        origin: req.body.origin || 'Chicago, IL',
+        destination: req.body.destination || 'Dallas, TX',
+        miles: req.body.miles || 925,
+        rate: req.body.rate || 2850,
+        rpm: req.body.rpm || '3.08',
+        equipment_type: req.body.equipment || "53' Dry Van",
+        weight: req.body.weight || '42,000 lbs',
+        broker_name: req.body.broker || 'Apex Logistics Freight LLC'
+      };
+    }
+
+    const { generateCarrierNegotiationCopilot } = require('../utils/ai-deal-maker');
+    const copilotResult = await generateCarrierNegotiationCopilot({
+      loadDetails: loadData,
+      carrierDetails: carrier || (req.user ? { name: req.user.company_name, mc: req.user.mc_number } : {})
+    });
+
+    res.json({
+      ok: true,
+      load: loadData,
+      copilot: copilotResult
+    });
+  } catch (err) {
+    console.error('AI Carrier Copilot error:', err);
+    res.status(500).json({ error: 'Could not generate negotiation analysis.' });
+  }
+});
+
 module.exports = router;
 
 

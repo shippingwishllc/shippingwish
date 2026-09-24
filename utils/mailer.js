@@ -3,10 +3,34 @@ const pool = require('../db');
 const { COMPANY, unsubscribeUrl } = require('./email-templates');
 
 let resendClient = null;
-function getResend() {
-  if (!process.env.RESEND_API_KEY) return null;
-  if (!resendClient) resendClient = new Resend(process.env.RESEND_API_KEY);
+let resendLoadsNexusClient = null;
+
+function getResend(fromAddress) {
+  const fromStr = String(fromAddress || '').toLowerCase();
+  const isLoadsNexus = fromStr.includes('loadsnexus.com');
+
+  if (isLoadsNexus && process.env.RESEND_LOADSNEXUS_API_KEY) {
+    if (!resendLoadsNexusClient) resendLoadsNexusClient = new Resend(process.env.RESEND_LOADSNEXUS_API_KEY);
+    return resendLoadsNexusClient;
+  }
+
+  const key = process.env.RESEND_API_KEY || process.env.RESEND_LOADSNEXUS_API_KEY;
+  if (!key) return null;
+  if (!resendClient) resendClient = new Resend(key);
   return resendClient;
+}
+
+const LOADSNEXUS_SENDERS = {
+  alerts: 'LoadsNexus Alerts <alerts@loadsnexus.com>',
+  billing: 'LoadsNexus Billing <billing@loadsnexus.com>',
+  support: 'LoadsNexus Support <support@loadsnexus.com>',
+  deals: 'LoadsNexus Deals <deals@loadsnexus.com>',
+  auth: 'LoadsNexus Security <auth@loadsnexus.com>',
+  dispatch: 'LoadsNexus Dispatch <dispatch@loadsnexus.com>'
+};
+
+function getLoadsNexusSender(mailbox = 'support') {
+  return LOADSNEXUS_SENDERS[mailbox] || LOADSNEXUS_SENDERS.support;
 }
 
 function mailFrom() {
@@ -58,10 +82,10 @@ async function sendBrandedEmail({
     return { skipped: true, reason: 'unsubscribed', id: null };
   }
 
-  const resend = getResend();
   const from = fromOverride || (isTx
     ? (process.env.MAIL_FROM_TRANSACTIONAL || process.env.MAIL_FROM_NOREPLY || mailFrom())
     : mailFrom());
+  const resend = getResend(from);
   const replyTo = replyToOverride || replyToAddress(leadId);
   const headers = isTx
     ? undefined
@@ -281,5 +305,7 @@ module.exports = {
   fetchReceivedAttachments,
   formatReplyFromAddress,
   receivingApiKey,
-  normalizeEmail
+  normalizeEmail,
+  getLoadsNexusSender,
+  LOADSNEXUS_SENDERS
 };

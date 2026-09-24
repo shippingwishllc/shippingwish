@@ -920,5 +920,62 @@ router.get('/script', requireAuth, (req, res) => {
   });
 });
 
+// ==========================================
+// AI SAFE DRIP QUEUE & ANTI-SPAM THROTTLE
+// ==========================================
+
+const {
+  getDripQueueStats,
+  enqueueLeads,
+  processDripQueueTick,
+  setDripEngineActive
+} = require('../utils/ai-safe-drip-engine');
+
+// GET /api/crm/ai-drip/stats — View drip queue health, hourly rates & recent deliveries
+router.get('/ai-drip/stats', requireAuth, async (req, res) => {
+  try {
+    const stats = await getDripQueueStats();
+    res.json({ ok: true, ...stats });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch drip queue stats: ' + err.message });
+  }
+});
+
+// POST /api/crm/ai-drip/enqueue — Safely enqueue FMCSA leads into staggered anti-spam queue
+router.post('/ai-drip/enqueue', requireAuth, async (req, res) => {
+  const { leads, brand = 'shippingwish', channel = 'sms', target_role = 'carrier' } = req.body;
+  if (!leads || !Array.isArray(leads) || !leads.length) {
+    return res.status(400).json({ error: 'Array of leads is required to enqueue.' });
+  }
+
+  try {
+    const result = await enqueueLeads(leads, {
+      brand,
+      channel,
+      targetRole: target_role
+    });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not enqueue leads: ' + err.message });
+  }
+});
+
+// POST /api/crm/ai-drip/tick — Trigger single safe tick
+router.post('/ai-drip/tick', requireAuth, async (req, res) => {
+  try {
+    const result = await processDripQueueTick();
+    res.json({ ok: true, result });
+  } catch (err) {
+    res.status(500).json({ error: 'Drip tick error: ' + err.message });
+  }
+});
+
+// POST /api/crm/ai-drip/toggle — Pause or resume automated queue processing
+router.post('/ai-drip/toggle', requireAuth, async (req, res) => {
+  const { active } = req.body;
+  setDripEngineActive(Boolean(active));
+  res.json({ ok: true, is_active: Boolean(active), message: `AI Safe Drip Engine is now ${active ? 'ACTIVE' : 'PAUSED'}.` });
+});
+
 module.exports = router;
 

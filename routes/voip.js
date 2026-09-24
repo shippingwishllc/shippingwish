@@ -448,8 +448,19 @@ router.all('/twilio-inbound', async (req, res) => {
       }
 
       if (!offerApproved) {
-        disposition = 'inbound_reply';
-        reply = helpReply();
+        disposition = 'ai_deal_reply';
+        try {
+          const { generateSmsReply } = require('../utils/ai-deal-maker');
+          const lead = await findLeadByPhone(from);
+          reply = await generateSmsReply({
+            fromPhone: from,
+            incomingText: body,
+            leadInfo: lead || {}
+          });
+        } catch (aiErr) {
+          console.warn('[VOIP] AI Deal Maker SMS reply error:', aiErr.message);
+          reply = helpReply();
+        }
       }
 
       const lead = await findLeadByPhone(from);
