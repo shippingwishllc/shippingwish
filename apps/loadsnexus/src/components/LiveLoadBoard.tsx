@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { FreightLoad, SearchFilter } from '../types';
+import type { LaneAlert } from './LaneAlertsModal';
 
 interface LiveLoadBoardProps {
   loads: FreightLoad[];
@@ -13,6 +14,9 @@ interface LiveLoadBoardProps {
   isLiveStreaming?: boolean;
   onToggleLiveStream?: () => void;
   lastRefreshedAt?: Date | null;
+  onOpenLaneAlerts?: () => void;
+  onOpenBrokerCredit?: () => void;
+  savedAlerts?: LaneAlert[];
 }
 
 export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
@@ -27,10 +31,68 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
   isLiveStreaming = true,
   onToggleLiveStream,
   lastRefreshedAt,
+  onOpenLaneAlerts,
+  onOpenBrokerCredit,
+  savedAlerts = [],
 }) => {
   const [localOrigin, setLocalOrigin] = useState(filter.origin || '');
   const [localDest, setLocalDest] = useState(filter.destination || '');
   const [localEquip, setLocalEquip] = useState(filter.equipment || 'all');
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const prevLoadCountRef = useRef(loads.length);
+
+  // Play pleasant synthetic 2-tone audio chime on new loads
+  const playChime = () => {
+    if (!isSoundEnabled || typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12); // A5
+
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc1.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + 0.15);
+      osc2.start(ctx.currentTime + 0.12);
+      osc2.stop(ctx.currentTime + 0.4);
+    } catch {
+      // AudioContext unavailable or blocked by autoplay policy
+    }
+  };
+
+  useEffect(() => {
+    if (loads.length > prevLoadCountRef.current) {
+      playChime();
+    }
+    prevLoadCountRef.current = loads.length;
+  }, [loads.length]);
+
+  const isMatchAlert = (load: FreightLoad) => {
+    if (!savedAlerts || savedAlerts.length === 0) return false;
+    const o = (load.origin || load.pickup_location || '').toLowerCase();
+    const d = (load.destination || load.delivery_location || '').toLowerCase();
+    const rpm = Number(load.rpm || 0);
+
+    return savedAlerts.some((al) => {
+      const matchO = !al.origin || o.includes(al.origin.toLowerCase());
+      const matchD = !al.destination || d.includes(al.destination.toLowerCase());
+      const matchRpm = !al.minRpm || rpm >= al.minRpm;
+      return matchO && matchD && matchRpm;
+    });
+  };
 
   const handleFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +182,43 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                   <span>{isLiveStreaming ? 'Auto-Refresh: ON (30s)' : 'Auto-Refresh: PAUSED'}</span>
                 </button>
               )}
+
+              {onOpenLaneAlerts && (
+                <button
+                  type="button"
+                  onClick={onOpenLaneAlerts}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 shadow-2xs transition-all"
+                  title="Configure Instant Carrier Lane Alerts"
+                >
+                  <span>🔔</span>
+                  <span>Lane Alerts ({savedAlerts.length})</span>
+                </button>
+              )}
+
+              {onOpenBrokerCredit && (
+                <button
+                  type="button"
+                  onClick={onOpenBrokerCredit}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 shadow-2xs transition-all"
+                  title="Search Live Broker Credit Scores & BMC-84 Bonds"
+                >
+                  <span>🛡️</span>
+                  <span>Broker Credit</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !isSoundEnabled;
+                  setIsSoundEnabled(next);
+                  if (next) playChime();
+                }}
+                className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all"
+                title={isSoundEnabled ? 'Audio alerts active (click to mute)' : 'Audio alerts muted (click to unmute)'}
+              >
+                <span>{isSoundEnabled ? '🔊 Sound: ON' : '🔇 Muted'}</span>
+              </button>
 
               <button
                 type="button"
@@ -248,11 +347,17 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                     const dtp = load.days_to_pay || '18 days';
                     const isLive = load.is_live_broker_post;
 
+                    const isAlertMatched = isMatchAlert(load);
+
                     return (
                       <tr
                         key={id}
                         className={`hover:bg-blue-50/40 transition-colors ${
-                          isLive ? 'bg-purple-50/30' : ''
+                          isAlertMatched
+                            ? 'bg-amber-50/50 border-l-4 border-l-amber-500'
+                            : isLive
+                            ? 'bg-purple-50/30'
+                            : ''
                         }`}
                       >
                         {/* ID / Age */}
@@ -273,6 +378,13 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
 
                         {/* Corridor */}
                         <td className="py-3 px-4">
+                          {isAlertMatched && (
+                            <div className="mb-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                                ⭐ Matches Alert
+                              </span>
+                            </div>
+                          )}
                           <div className="font-bold text-slate-900 flex items-center gap-1.5">
                             <span>📍</span>
                             <span>{origin}</span>

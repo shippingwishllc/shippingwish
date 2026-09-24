@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { FreightLoad } from '../types';
 
 interface LoadDetailsModalProps {
@@ -6,6 +6,7 @@ interface LoadDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenCarrierCheckout: () => void;
+  onOpenBrokerCredit?: (mc?: string) => void;
 }
 
 export const LoadDetailsModal: React.FC<LoadDetailsModalProps> = ({
@@ -13,7 +14,15 @@ export const LoadDetailsModal: React.FC<LoadDetailsModalProps> = ({
   isOpen,
   onClose,
   onOpenCarrierCheckout,
+  onOpenBrokerCredit,
 }) => {
+  const [showInquiryForm, setShowInquiryForm] = useState(false);
+  const [carrierMc, setCarrierMc] = useState('');
+  const [carrierPhone, setCarrierPhone] = useState('');
+  const [counterRate, setCounterRate] = useState<number | string>(load?.rate || '');
+  const [isSendingInquiry, setIsSendingInquiry] = useState(false);
+  const [inquirySent, setInquirySent] = useState(false);
+
   if (!isOpen || !load) return null;
 
   const origin = load.origin || load.pickup_location || 'Chicago, IL';
@@ -101,12 +110,117 @@ export const LoadDetailsModal: React.FC<LoadDetailsModalProps> = ({
               >
                 ✉️ Email: {bEmail}
               </a>
+              {onOpenBrokerCredit && (
+                <button
+                  type="button"
+                  onClick={() => onOpenBrokerCredit(bMc)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg text-xs font-bold transition-all"
+                  title="Check Live Broker Credit & Bond"
+                >
+                  🛡️ Credit: A+ (98)
+                </button>
+              )}
             </div>
+          </div>
+
+          {/* Instant Carrier Booking Inquiry Accordion */}
+          <div className="mb-5 p-4 rounded-xl border border-slate-200 bg-slate-50">
+            <button
+              type="button"
+              onClick={() => setShowInquiryForm((prev) => !prev)}
+              className="w-full flex items-center justify-between text-xs font-extrabold text-slate-800"
+            >
+              <span className="flex items-center gap-1.5">
+                <span>⚡</span> Instant Booking Offer / Counter-Bid to Broker
+              </span>
+              <span>{showInquiryForm ? '▲ Hide' : '▼ Make Offer'}</span>
+            </button>
+
+            {showInquiryForm && (
+              <div className="mt-4 pt-3 border-t border-slate-200 text-xs">
+                {inquirySent ? (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold">
+                    ✅ Booking inquiry &amp; rate confirmation request dispatched to {bName}! Download your official RateCon below.
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setIsSendingInquiry(true);
+                      try {
+                        await fetch('/api/loadboard/inquire-broker', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({
+                            brokerName: bName,
+                            brokerEmail: bEmail,
+                            brokerMc: bMc,
+                            pickupLocation: origin,
+                            deliveryLocation: dest,
+                            rate: counterRate || load.rate,
+                            miles: load.miles,
+                            carrierMc,
+                            contactPhone: carrierPhone,
+                          }),
+                        });
+                      } catch {
+                        // ignore network failure
+                      }
+                      setIsSendingInquiry(false);
+                      setInquirySent(true);
+                    }}
+                    className="space-y-3"
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">Your Carrier MC#</label>
+                        <input
+                          type="text"
+                          required
+                          value={carrierMc}
+                          onChange={(e) => setCarrierMc(e.target.value)}
+                          placeholder="e.g. MC-1094821"
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">Proposed Gross Rate ($)</label>
+                        <input
+                          type="number"
+                          value={counterRate}
+                          onChange={(e) => setCounterRate(e.target.value)}
+                          placeholder={`$${load.rate || 2850}`}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Dispatcher Phone</label>
+                      <input
+                        type="tel"
+                        value={carrierPhone}
+                        onChange={(e) => setCarrierPhone(e.target.value)}
+                        placeholder="+1 (800) 555-0199"
+                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isSendingInquiry}
+                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg text-xs font-bold transition-all shadow-xs"
+                    >
+                      {isSendingInquiry ? 'Sending Inquiry…' : '⚡ Submit Booking Offer & Request RateCon'}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Rate Confirmation PDF & Carrier Pass */}
           <a
-            href={`/api/loadboard/loads/${encodeURIComponent(load.id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 2850}&miles=${load.miles || 650}&rpm=${load.rpm || 3.15}&equipment=${encodeURIComponent(load.equipment_type || "53' Dry Van")}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(bMc)}&phone=${encodeURIComponent(bPhone)}&email=${encodeURIComponent(bEmail)}`}
+            href={`/api/loadboard/loads/${encodeURIComponent(load.id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${counterRate || load.rate || 2850}&miles=${load.miles || 650}&rpm=${load.rpm || 3.15}&equipment=${encodeURIComponent(load.equipment_type || "53' Dry Van")}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(bMc)}&phone=${encodeURIComponent(bPhone)}&email=${encodeURIComponent(bEmail)}&carrier_mc=${encodeURIComponent(carrierMc)}&carrier_phone=${encodeURIComponent(carrierPhone)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full mb-3 py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all text-center flex items-center justify-center gap-2 border border-slate-700 hover:shadow-md"

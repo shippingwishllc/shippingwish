@@ -16,6 +16,8 @@ import { CarrierCheckoutModal } from './components/CarrierCheckoutModal';
 import { AuthModal } from './components/AuthModal';
 import { LoadDetailsModal } from './components/LoadDetailsModal';
 import { DispatchInquiryModal } from './components/DispatchInquiryModal';
+import { LaneAlertsModal, type LaneAlert } from './components/LaneAlertsModal';
+import { BrokerCreditModal } from './components/BrokerCreditModal';
 import { ToastContainer, type ToastItem } from './components/ToastContainer';
 
 const INITIAL_FALLBACK_LOADS: FreightLoad[] = [
@@ -150,6 +152,21 @@ export const App: React.FC = () => {
   const [isLoadDetailsOpen, setIsLoadDetailsOpen] = useState(false);
   const [selectedLoad, setSelectedLoad] = useState<FreightLoad | null>(null);
   const [isDispatchInquiryOpen, setIsDispatchInquiryOpen] = useState(false);
+  const [isLaneAlertsOpen, setIsLaneAlertsOpen] = useState(false);
+  const [isBrokerCreditOpen, setIsBrokerCreditOpen] = useState(false);
+  const [brokerCreditMc, setBrokerCreditMc] = useState<string>('');
+  const [savedAlerts, setSavedAlerts] = useState<LaneAlert[]>([]);
+
+  // Initialize saved lane alerts from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem('ln_lane_alerts');
+      if (raw) setSavedAlerts(JSON.parse(raw));
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Toasts
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -285,6 +302,33 @@ export const App: React.FC = () => {
     setLoads((prev) => [newLoad, ...prev]);
   };
 
+  const handleSaveLaneAlert = (alert: LaneAlert) => {
+    setSavedAlerts((prev) => {
+      const next = [alert, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('ln_lane_alerts', JSON.stringify(next));
+      }
+      return next;
+    });
+    showToast(`🔔 Lane Alert active for ${alert.origin || 'Any'} ➔ ${alert.destination || 'Any'}`);
+  };
+
+  const handleDeleteLaneAlert = (id: string) => {
+    setSavedAlerts((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('ln_lane_alerts', JSON.stringify(next));
+      }
+      return next;
+    });
+    showToast('Lane alert removed.');
+  };
+
+  const handleOpenBrokerCredit = (mc?: string) => {
+    setBrokerCreditMc(mc || '');
+    setIsBrokerCreditOpen(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-800">
       {/* Navigation */}
@@ -327,6 +371,9 @@ export const App: React.FC = () => {
           isLiveStreaming={isLiveStreaming}
           onToggleLiveStream={handleToggleLiveStream}
           lastRefreshedAt={lastRefreshedAt}
+          onOpenLaneAlerts={() => setIsLaneAlertsOpen(true)}
+          onOpenBrokerCredit={() => handleOpenBrokerCredit()}
+          savedAlerts={savedAlerts}
         />
 
         {/* Features Grid */}
@@ -395,12 +442,27 @@ export const App: React.FC = () => {
         isOpen={isLoadDetailsOpen}
         onClose={() => setIsLoadDetailsOpen(false)}
         onOpenCarrierCheckout={handleOpenCarrierCheckout}
+        onOpenBrokerCredit={handleOpenBrokerCredit}
       />
 
       <DispatchInquiryModal
         isOpen={isDispatchInquiryOpen}
         onClose={() => setIsDispatchInquiryOpen(false)}
         onOpenCarrierCheckout={handleOpenCarrierCheckout}
+      />
+
+      <LaneAlertsModal
+        isOpen={isLaneAlertsOpen}
+        onClose={() => setIsLaneAlertsOpen(false)}
+        onSaveAlert={handleSaveLaneAlert}
+        savedAlerts={savedAlerts}
+        onDeleteAlert={handleDeleteLaneAlert}
+      />
+
+      <BrokerCreditModal
+        isOpen={isBrokerCreditOpen}
+        onClose={() => setIsBrokerCreditOpen(false)}
+        initialQuery={brokerCreditMc}
       />
 
       {/* Toast Alerts */}
