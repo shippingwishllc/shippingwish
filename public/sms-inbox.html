@@ -78,10 +78,11 @@
         <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">SMS Replies Inbox</h1>
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Two-way texts from <strong>+1 (609) 469-6004</strong> — sent &amp; received in one thread.</p>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="/crm-sales" class="btn btn-secondary btn-sm">← CRM</a>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-primary btn-sm" type="button" onclick="openNewSmsModal()" style="font-weight:800;">💬 New SMS</button>
         <button class="btn btn-secondary btn-sm" type="button" onclick="window.swLoadSmsThreads(true)">Unread only</button>
-        <button class="btn btn-primary btn-sm" type="button" onclick="window.swLoadSmsThreads(false)">All threads</button>
+        <button class="btn btn-secondary btn-sm" type="button" onclick="window.swLoadSmsThreads(false)">All threads</button>
+        <a href="/crm-sales" class="btn btn-secondary btn-sm">← CRM</a>
       </div>
     </header>
     <main class="app-content inbox-page-content">
@@ -345,9 +346,100 @@
     }, 10000);
   }
 
+  window.openNewSmsModal = function () {
+    document.getElementById('modal-new-sms').style.display = 'flex';
+  };
+
+  window.closeNewSmsModal = function () {
+    document.getElementById('modal-new-sms').style.display = 'none';
+  };
+
+  window.applySmsTemplate = function (val) {
+    const txt = document.getElementById('new-sms-body');
+    if (!txt) return;
+    if (val === 'trial') {
+      txt.value = 'Hi! This is Shipping Wish dispatch operations. Test our dedicated personal dispatcher for 1 week at $0 (Zero Risk Free Trial). Reply YES to activate or visit https://www.shippingwish.com';
+    } else if (val === 'loadsnexus') {
+      txt.value = 'Hi, here is your direct link to unlock 4,850+ live spot freight loads & broker credit scores for $19/mo: https://www.loadsnexus.com';
+    } else if (val === 'checkin') {
+      txt.value = 'Hello! Shipping Wish dispatch desk checking in. Are you empty today and looking for high-paying loads? Call or text us back.';
+    }
+  };
+
+  window.submitNewSms = async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-new-sms');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    const to = document.getElementById('new-sms-to').value.trim();
+    const body = document.getElementById('new-sms-body').value.trim();
+
+    try {
+      const res = await fetch('/api/sms/inbox/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ to_number: to, body })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send text');
+      alert('✅ SMS dispatched successfully via +1 (609) 469-6004!');
+      closeNewSmsModal();
+      await fetchThreads();
+      openThread(to);
+    } catch (err) {
+      alert(`⚠️ ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🚀 Send SMS';
+    }
+  };
+
   document.addEventListener('DOMContentLoaded', bootSmsInbox);
 })();
 </script>
+
+<!-- MODAL: NEW SMS -->
+<div id="modal-new-sms" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:16px;" onclick="closeNewSmsModal()">
+  <div style="background:#ffffff;border-radius:16px;max-width:500px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;" onclick="event.stopPropagation()">
+    <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
+      <div>
+        <h3 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">💬 New Outbound Text</h3>
+        <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Sends via Twilio line <strong>+1 (609) 469-6004</strong></p>
+      </div>
+      <button type="button" onclick="closeNewSmsModal()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#94a3b8;">✕</button>
+    </div>
+
+    <form onsubmit="submitNewSms(event)" style="padding:20px;">
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Recipient Phone Number *</label>
+        <input type="tel" id="new-sms-to" required placeholder="e.g. +1 (800) 555-0199 or 2145550199" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;" />
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Template Presets</label>
+        <select onchange="applySmsTemplate(this.value)" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
+          <option value="custom">Custom Text (Blank)</option>
+          <option value="trial">Shipping Wish — 7-Day Free Trial Pitch</option>
+          <option value="loadsnexus">LoadsNexus — $19/mo Pass Link</option>
+          <option value="checkin">Dispatcher Check-In (Empty Today?)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Message Text *</label>
+        <textarea id="new-sms-body" required rows="4" placeholder="Type SMS message..." style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13.5px;line-height:1.5;outline:none;resize:vertical;"></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #e2e8f0;padding-top:14px;">
+        <button type="button" class="btn btn-secondary" onclick="closeNewSmsModal()">Cancel</button>
+        <button type="submit" id="btn-submit-new-sms" class="btn btn-primary" style="font-weight:800;">🚀 Send SMS</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="/js/app-shell.js?v=20"></script>
 </body>
 </html>

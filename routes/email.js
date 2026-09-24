@@ -340,6 +340,7 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
     await ensureGrowthSchema().catch(() => {});
 
     const unreadOnly = req.query.unread === '1';
+    const direction = (req.query.direction || '').toLowerCase().trim();
     const page = Math.max(1, parseInt(req.query.page || '1', 10));
     const perPage = Math.min(20, Math.max(1, parseInt(req.query.perPage || '8', 10)));
     const offset = (page - 1) * perPage;
@@ -410,8 +411,15 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
       }
     }
 
-    // Combine and sort by date descending
-    const allMessages = [...inboundRows, ...outboundRows].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    // Filter by direction: inbound, outbound, or combined
+    let allMessages = [];
+    if (direction === 'inbound') {
+      allMessages = inboundRows;
+    } else if (direction === 'outbound') {
+      allMessages = outboundRows;
+    } else {
+      allMessages = [...inboundRows, ...outboundRows].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    }
 
     const total = allMessages.length;
     const totalPages = Math.max(1, Math.ceil(total / perPage));

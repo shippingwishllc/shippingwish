@@ -100,13 +100,16 @@
   <div class="app-main">
     <header class="app-header">
       <div>
-        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Carrier Replies Inbox</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Read and reply from the same inbox address (operations@, wajeeh@, etc.).</p>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">📧 Freight Email Center</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Inbound carrier replies, outbound outreach, and dispatch dispatches.</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-primary btn-sm" type="button" onclick="openComposeModal()" style="font-weight:800;">✏️ Compose Email</button>
+        <button class="btn btn-primary btn-sm" type="button" id="btn-folder-inbound" onclick="loadInbox(false, 1, 'inbound')" style="font-weight:700;">📥 Inbox</button>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-outbound" onclick="loadInbox(false, 1, 'outbound')">📤 Sent</button>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-all" onclick="loadInbox(false, 1, 'all')">📋 All Mail</button>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-unread" onclick="loadInbox(true, 1, 'inbound')">📬 Unread</button>
         <a href="/trash" class="btn btn-secondary btn-sm" id="inbox-trash-link" style="display:none;">🗑️ Trash</a>
-        <button class="btn btn-secondary btn-sm" type="button" onclick="loadInbox(true)">Unread only</button>
-        <button class="btn btn-primary btn-sm" type="button" onclick="loadInbox(false)">All replies</button>
       </div>
     </header>
     <main class="app-content inbox-page-content">
@@ -247,19 +250,38 @@
     loadInbox(unreadOnlyFilter, next);
   }
 
-  async function loadInbox(unreadOnly, page) {
+  let currentDirection = 'inbound';
+
+  async function loadInbox(unreadOnly, page, direction) {
     if (typeof unreadOnly === 'boolean') {
       if (page === undefined) currentPage = 1;
       unreadOnlyFilter = unreadOnly;
     }
     if (page !== undefined) currentPage = page;
     if (currentPage < 1) currentPage = 1;
+    if (direction !== undefined) currentDirection = direction;
+
+    // Update active folder tabs
+    ['inbound', 'outbound', 'all', 'unread'].forEach(d => {
+      const btn = document.getElementById('btn-folder-' + d);
+      if (btn) {
+        const isAct = (d === 'unread' && unreadOnlyFilter) || (d === currentDirection && !unreadOnlyFilter);
+        if (isAct) {
+          btn.classList.remove('btn-secondary');
+          btn.classList.add('btn-primary');
+        } else {
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-secondary');
+        }
+      }
+    });
 
     const qs = new URLSearchParams({
       perPage: String(INBOX_PAGE_SIZE),
       page: String(currentPage)
     });
     if (unreadOnlyFilter) qs.set('unread', '1');
+    if (currentDirection) qs.set('direction', currentDirection);
 
     try {
       const res = await fetch('/api/email/inbox?' + qs.toString(), { credentials: 'include' });
@@ -528,6 +550,67 @@
     }
   }
 
+  window.openComposeModal = function () {
+    document.getElementById('modal-compose-email').style.display = 'flex';
+  };
+
+  window.closeComposeModal = function () {
+    document.getElementById('modal-compose-email').style.display = 'none';
+  };
+
+  window.applyEmailTemplate = function (val) {
+    const subj = document.getElementById('compose-subject');
+    const body = document.getElementById('compose-body');
+    if (!subj || !body) return;
+
+    if (val === 'trial') {
+      subj.value = '7-Day Zero-Risk Dispatch Free Trial ($0 Today) — Shipping Wish LLC';
+      body.value = `Hello Fleet Owner,\n\nWe wanted to introduce our dedicated 24/7 truck dispatch operations at Shipping Wish LLC.\n\nKey Highlights:\n- We assign a dedicated personal dispatcher to your equipment.\n- You keep 100% of your freight payments — ZERO percentage taken!\n- Flat $149/week per truck with full back-office, rate negotiations, and detention collection.\n- 7-DAY ZERO RISK FREE TRIAL: Test our desk for 1 full week at $0 cost.\n\nGet started immediately or reply YES to connect with your assigned dispatcher.\n\nBest regards,\nShipping Wish Operations Team\nToll-Free: +1 (800) 580-3101\nhttps://www.shippingwish.com`;
+    } else if (val === 'packet') {
+      subj.value = 'Carrier Onboarding Packet & Broker Setup — Shipping Wish LLC';
+      body.value = `Dear Carrier Partner,\n\nPlease find attached our official Carrier Setup Packet and Dispatch Agreement.\n\nKindly complete and return with:\n1. Copy of FMCSA Operating Authority Certificate (MC/DOT)\n2. Certificate of Insurance (COI) listing minimum $1M Auto Liability and $100k Cargo\n3. Signed W-9 Form\n4. Voided Check or Factoring Notice of Assignment (NOA)\n\nReply directly to this email with your documents or call our operations desk at +1 (800) 580-3101.\n\nShipping Wish LLC Carrier Setup`;
+    } else if (val === 'ratecon') {
+      subj.value = 'Rate Confirmation & Dispatch Order Verification';
+      body.value = `Hello Dispatch,\n\nPlease review and confirm the attached Rate Confirmation for your scheduled load pickup.\n\nAll driver tracking links and pickup location details are verified. Reply to confirm driver contact and ETA.\n\nThank you,\nShipping Wish Logistics`;
+    } else if (val === 'loadsnexus') {
+      subj.value = 'LoadsNexus™ — Direct Broker Spot Freight ($19/mo Pass)';
+      body.value = `Hello Motor Carrier,\n\nDirect access to 4,850+ live verified spot freight loads across all 50 US states.\n\n- Direct unmasked broker phone numbers & dispatch emails.\n- Real Days-To-Pay (DTP) broker credit scores before you book.\n- Zero double-brokering.\n- Starting at only $19/month.\n\nActivate your pass here: https://www.loadsnexus.com\n\nLoadsNexus™ Freight Operations`;
+    }
+  };
+
+  window.submitComposeEmail = async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-send-compose');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    const payload = {
+      from: document.getElementById('compose-from').value,
+      to: document.getElementById('compose-to').value,
+      subject: document.getElementById('compose-subject').value,
+      message: document.getElementById('compose-body').value
+    };
+
+    try {
+      const res = await fetch('/api/email/send-with-attachments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send email');
+      alert(`✅ ${data.message || 'Email sent successfully!'}`);
+      closeComposeModal();
+      loadInbox(false, 1, 'outbound');
+    } catch (err) {
+      alert(`⚠️ ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🚀 Send Email Now';
+    }
+  };
+
   window.loadInbox = loadInbox;
   window.openMessage = openMessage;
   window.goInboxPage = goInboxPage;
@@ -539,7 +622,7 @@
 
   async function init() {
     await checkAuth();
-    await loadInbox(false);
+    await loadInbox(false, 1, 'inbound');
   }
 
   if (document.readyState === 'loading') {
@@ -549,6 +632,63 @@
   }
 })();
 </script>
+
+<!-- MODAL: COMPOSE EMAIL -->
+<div id="modal-compose-email" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:16px;" onclick="closeComposeModal()">
+  <div style="background:#ffffff;border-radius:16px;max-width:620px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;" onclick="event.stopPropagation()">
+    <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
+      <div>
+        <h3 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">✏️ New Email Message</h3>
+        <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Send branded dispatch, billing, or load agreement email</p>
+      </div>
+      <button type="button" onclick="closeComposeModal()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#94a3b8;">✕</button>
+    </div>
+
+    <form id="form-compose-email" onsubmit="submitComposeEmail(event)" style="padding:20px;">
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">From Sender Address *</label>
+        <select id="compose-from" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
+          <option value="Shipping Wish Operations <operations@shippingwish.com>">Shipping Wish Operations &lt;operations@shippingwish.com&gt;</option>
+          <option value="Shipping Wish Billing <billing@shippingwish.com>">Shipping Wish Billing &lt;billing@shippingwish.com&gt;</option>
+          <option value="LoadsNexus Dispatch <dispatch@loadsnexus.com>">LoadsNexus Dispatch &lt;dispatch@loadsnexus.com&gt;</option>
+          <option value="LoadsNexus Billing <billing@loadsnexus.com>">LoadsNexus Billing &lt;billing@loadsnexus.com&gt;</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">To Recipient Email *</label>
+        <input type="email" id="compose-to" required placeholder="e.g. dispatch@carrierfleet.com" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;" />
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Template Preset</label>
+        <select id="compose-tpl" onchange="applyEmailTemplate(this.value)" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
+          <option value="custom">Custom Message (Blank)</option>
+          <option value="trial">Shipping Wish — 7-Day Dedicated Dispatch Free Trial ($0)</option>
+          <option value="packet">Carrier Onboarding Packet &amp; Setup</option>
+          <option value="ratecon">Rate Confirmation Follow-Up &amp; Dispatch</option>
+          <option value="loadsnexus">LoadsNexus™ — $19/mo Unlimited Load Board Pass</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Subject *</label>
+        <input type="text" id="compose-subject" required placeholder="Enter email subject..." style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;" />
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Message Body *</label>
+        <textarea id="compose-body" required rows="7" placeholder="Type your email message..." style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13.5px;line-height:1.5;outline:none;resize:vertical;"></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #e2e8f0;padding-top:14px;">
+        <button type="button" class="btn btn-secondary" onclick="closeComposeModal()">Cancel</button>
+        <button type="submit" id="btn-send-compose" class="btn btn-primary" style="font-weight:800;">🚀 Send Email Now</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="/js/app-shell.js?v=22"></script>
 </body>
 </html>
