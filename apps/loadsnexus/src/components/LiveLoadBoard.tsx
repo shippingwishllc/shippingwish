@@ -10,6 +10,9 @@ interface LiveLoadBoardProps {
   onInspectLoad: (load: FreightLoad) => void;
   onOpenBrokerPost: () => void;
   onOpenCarrierCheckout: () => void;
+  isLiveStreaming?: boolean;
+  onToggleLiveStream?: () => void;
+  lastRefreshedAt?: Date | null;
 }
 
 export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
@@ -21,6 +24,9 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
   onInspectLoad,
   onOpenBrokerPost,
   onOpenCarrierCheckout,
+  isLiveStreaming = true,
+  onToggleLiveStream,
+  lastRefreshedAt,
 }) => {
   const [localOrigin, setLocalOrigin] = useState(filter.origin || '');
   const [localDest, setLocalDest] = useState(filter.destination || '');
@@ -68,7 +74,9 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                   4,850+ Live Verified Loads
                 </span>
-                <span className="text-xs text-slate-500 hidden sm:inline">· Updated live in real-time</span>
+                <span className="text-xs text-slate-500 hidden sm:inline">
+                  · {lastRefreshedAt ? `Auto-synced ${lastRefreshedAt.toLocaleTimeString()}` : 'Updated live in real-time'}
+                </span>
               </div>
             </div>
 
@@ -97,11 +105,27 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 Unlock Direct Contacts ($19/mo)
               </button>
 
+              {onToggleLiveStream && (
+                <button
+                  type="button"
+                  onClick={onToggleLiveStream}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border shadow-xs ${
+                    isLiveStreaming
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                      : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                  }`}
+                  title={isLiveStreaming ? 'Live Auto-Refresh active (every 30s)' : 'Click to enable 30s auto-refresh'}
+                >
+                  <span className={`w-2 h-2 rounded-full ${isLiveStreaming ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                  <span>{isLiveStreaming ? 'Auto-Refresh: ON (30s)' : 'Auto-Refresh: PAUSED'}</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={onRefresh}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all"
-                title="Refresh Live Stream"
+                title="Refresh Live Stream Now"
               >
                 🔄 Refresh
               </button>
@@ -311,13 +335,25 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
 
                         {/* Action */}
                         <td className="py-3 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => onInspectLoad(load)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all hover:shadow"
-                          >
-                            <span>⚡</span> Book Load
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <a
+                              href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 2850}&miles=${load.miles || 650}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Download Official Rate Confirmation PDF"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 transition-all hover:shadow-xs"
+                            >
+                              <span>📄</span>
+                              <span className="hidden sm:inline">RateCon</span>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => onInspectLoad(load)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all hover:shadow"
+                            >
+                              <span>⚡</span> Book Load
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

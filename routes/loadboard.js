@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../db');
 const { requireAuth, requireRole, optionalAuth } = require('../middleware/auth');
 const { lookupZip, getZipForCityState, parseOriginWithZip, parseDestinationsWithZip } = require('../utils/us-zipcodes');
+const { generateRateConfirmationPDF } = require('../utils/ratecon-generator');
 
 const router = express.Router();
 
@@ -1753,6 +1754,117 @@ router.get('/superadmin/audit-feed', requireAuth, requireRole('super_admin', 'ad
   }
 });
 
+// GET /api/loadboard/loads/:id/ratecon-pdf — Instant Vector Rate Confirmation PDF
+router.get('/loads/:id/ratecon-pdf', optionalAuth, async (req, res) => {
+  try {
+    const rawId = req.params.id;
+    const cleanId = String(rawId || '').trim();
+
+    // Check PostgreSQL loads table first
+    let dbLoad = null;
+    try {
+      const isNum = /^\d+$/.test(cleanId);
+      const query = isNum
+        ? `SELECT * FROM loads WHERE id = $1 OR load_number = $2 LIMIT 1`
+        : `SELECT * FROM loads WHERE load_number = $1 OR id::text = $1 LIMIT 1`;
+      const params = isNum ? [parseInt(cleanId, 10), cleanId] : [cleanId];
+      const r = await pool.query(query, params);
+      if (r.rows && r.rows.length) {
+        dbLoad = r.rows[0];
+      }
+    } catch (e) {
+      console.warn('DB load lookup notice in ratecon-pdf:', e.message);
+    }
+
+    const q = req.query || {};
+
+    // Determine load attributes
+    const loadNumber = dbLoad?.load_number || cleanId || 'SW-2601';
+    const origin = q.origin || dbLoad?.pickup_location || 'Chicago, IL';
+    const destination = q.destination || dbLoad?.delivery_location || 'Dallas, TX';
+    const equipment = q.equipment || dbLoad?.equipment_type || "53' Dry Van";
+    const rate = Number(q.rate || dbLoad?.rate || 2850);
+    const miles = Number(q.miles || dbLoad?.miles || 925);
+    const rpm = q.rpm || dbLoad?.rpm || (rate / (miles || 1)).toFixed(2);
+    const weight = q.weight || (dbLoad?.weight ? `${Number(dbLoad.weight).toLocaleString()} lbs` : '42,000 lbs');
+    const commodity = q.commodity || dbLoad?.commodity || 'General Freight';
+    const pickupDate = q.pickup_date || (dbLoad?.pickup_date ? new Date(dbLoad.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Scheduled Today');
+    const deliveryDate = q.delivery_date || (dbLoad?.delivery_date ? new Date(dbLoad.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Scheduled Direct Transit');
+
+    // Broker info
+    const brokerName = q.broker || dbLoad?.broker_name || 'LoadsNexus™ Verified Brokerage';
+    const brokerMc = q.mc || dbLoad?.broker_mc || 'MC-981240';
+    let brokerPhone = q.phone || '+1 (800) 580-3101';
+    let brokerEmail = q.email || 'dispatch@loadsnexus.com';
+    if (dbLoad?.broker_contact) {
+      const parts = dbLoad.broker_contact.split('|');
+      if (parts.length >= 2) {
+        brokerPhone = parts[0].trim();
+        brokerEmail = parts[1].trim();
+      }
+    }
+
+    // Carrier info (from logged-in user or query params or placeholder)
+    let carrierName = q.carrier_name;
+    let carrierMc = q.carrier_mc;
+    let carrierDot = q.carrier_dot;
+    let carrierPhone = q.carrier_phone;
+    let carrierEmail = q.carrier_email;
+
+    if (req.user) {
+      carrierName = carrierName || req.user.company_name || req.user.name;
+      carrierMc = carrierMc || req.user.mc_number;
+      carrierDot = carrierDot || req.user.dot_number;
+      carrierPhone = carrierPhone || req.user.phone;
+      carrierEmail = carrierEmail || req.user.email;
+    }
+
+    carrierName = carrierName || 'Authorized Motor Carrier Partner';
+    carrierMc = carrierMc || 'MC-ON-FILE';
+    carrierPhone = carrierPhone || '+1 (800) 555-0199';
+    carrierEmail = carrierEmail || 'dispatch@carrier.com';
+
+    const cleanFilename = `RateConfirmation_${loadNumber.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${cleanFilename}"`);
+
+    generateRateConfirmationPDF({
+      loadNumber,
+      origin,
+      destination,
+      pickupDate,
+      deliveryDate,
+      equipment,
+      weight,
+      commodity,
+      miles,
+      rate,
+      rpm,
+      brokerName,
+      brokerMc,
+      brokerPhone,
+      brokerEmail,
+      carrierName,
+      carrierMc,
+      carrierDot,
+      carrierPhone,
+      carrierEmail,
+      notes: dbLoad?.notes || q.notes
+    }, res);
+  } catch (err) {
+    console.error('Generate RateCon PDF error:', err);
+    res.status(500).json({ error: 'Could not generate Rate Confirmation PDF.' });
+  }
+});
+
+// GET /api/loadboard/ratecon-pdf — Alias endpoint with query params
+router.get('/ratecon-pdf', optionalAuth, (req, res) => {
+  const loadId = req.query.id || req.query.load_id || 'SW-2601';
+  req.params = { id: loadId };
+  router.handle({ ...req, url: `/loads/${loadId}/ratecon-pdf` }, res);
+});
+
 module.exports = router;
+
 
 

@@ -34,6 +34,7 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [postedLoad, setPostedLoad] = useState<FreightLoad | null>(null);
 
   if (!isOpen) return null;
 
@@ -41,6 +42,12 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
     rate && miles && Number(miles) > 0
       ? (Number(rate) / Number(miles)).toFixed(2)
       : null;
+
+  const handleModalClose = () => {
+    setPostedLoad(null);
+    setErrorMessage('');
+    onClose();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,19 +95,19 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
         weight: `${Number(weight || 42000).toLocaleString()} lbs`,
         commodity: commodity || 'General Freight',
         pickup_date: pickupDate,
-        broker_name: brokerName,
-        broker_mc: brokerMc,
-        broker_phone: phone,
-        broker_email: email,
+        broker_name: brokerName || 'LoadsNexus™ Verified Brokerage',
+        broker_mc: brokerMc || 'MC-VERIFIED',
+        broker_phone: phone || '+1 (800) 580-3101',
+        broker_email: email || 'dispatch@loadsnexus.com',
         days_to_pay: '21 days',
         credit_score: 'A+ (Verified)',
         is_live_broker_post: true,
       };
 
       onSuccess(newLoad);
+      setPostedLoad(newLoad);
       onShowToast(`🎉 Load #${newLoad.id} is now LIVE on LoadsNexus!`);
       setIsSubmitting(false);
-      onClose();
 
       // Scroll to live board
       const board = document.getElementById('live-board-section');
@@ -114,7 +121,7 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto"
-      onClick={onClose}
+      onClick={handleModalClose}
     >
       <div
         className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-2xl w-full my-8 overflow-hidden"
@@ -124,15 +131,17 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 className="text-xl font-display font-bold text-slate-900 flex items-center gap-2">
-              <span>⚡</span> Post Spot Freight to LoadsNexus™
+              <span>⚡</span> {postedLoad ? 'Spot Freight Posted Live!' : 'Post Spot Freight to LoadsNexus™'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              100% Free Forever for Freight Brokers &amp; 3PLs · Real-Time Carrier Matching
+              {postedLoad
+                ? 'Your load is broadcasted across the 50-state carrier network with rate confirmation available'
+                : '100% Free Forever for Freight Brokers & 3PLs · Real-Time Carrier Matching'}
             </p>
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleModalClose}
             className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
           >
             ✕
@@ -140,30 +149,85 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="p-6 max-h-[80vh] overflow-y-auto">
-          {/* Security Banner */}
-          <div className="flex items-center gap-3 p-3.5 mb-6 rounded-xl bg-purple-50 border border-purple-200/80 text-purple-900 text-xs">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                <polyline points="9 12 11 14 15 10" />
-              </svg>
+        {postedLoad ? (
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+              ✓
             </div>
-            <div>
-              <div className="font-extrabold">Anti-Double-Brokering Guard Active</div>
-              <p className="text-[11px] text-purple-700 mt-0.5">
-                Your load is published directly to vetted motor carriers with active FMCSA operating authority.
-              </p>
+            <h4 className="text-xl font-display font-bold text-slate-900 mb-1">
+              Load #{postedLoad.id} is Live on LoadsNexus!
+            </h4>
+            <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto">
+              Your freight posting has been dispatched to vetted motor carriers with 100% Anti-Double-Brokering security guard verification.
+            </p>
+
+            {/* Load Summary Card */}
+            <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-5 mb-6 text-left max-w-md mx-auto">
+              <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                <span>Pickup: <strong>{postedLoad.pickup_date}</strong></span>
+                <span className="font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  {postedLoad.days_to_pay}
+                </span>
+              </div>
+              <div className="text-base font-bold text-slate-900 mb-1">
+                {postedLoad.origin} → {postedLoad.destination}
+              </div>
+              <div className="text-xs text-slate-600 mb-3">
+                {postedLoad.equipment_type} · {postedLoad.miles} mi · {postedLoad.commodity}
+              </div>
+              <div className="text-2xl font-black text-blue-700">
+                ${Number(postedLoad.rate).toLocaleString()}{' '}
+                <span className="text-xs font-semibold text-slate-500">
+                  (${postedLoad.rpm}/mi)
+                </span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+              <a
+                href={`/api/loadboard/loads/${encodeURIComponent(postedLoad.id)}/ratecon-pdf?origin=${encodeURIComponent(postedLoad.origin || '')}&destination=${encodeURIComponent(postedLoad.destination || '')}&rate=${postedLoad.rate || 2850}&miles=${postedLoad.miles || 650}&rpm=${postedLoad.rpm || 3.15}&equipment=${encodeURIComponent(postedLoad.equipment_type || '')}&broker=${encodeURIComponent(postedLoad.broker_name || '')}&mc=${encodeURIComponent(postedLoad.broker_mc || '')}&phone=${encodeURIComponent(postedLoad.broker_phone || '')}&email=${encodeURIComponent(postedLoad.broker_email || '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition-all hover:shadow-lg"
+              >
+                <span>📄</span> Download Rate Confirmation (PDF)
+              </a>
+
+              <button
+                type="button"
+                onClick={handleModalClose}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all"
+              >
+                View on Live Board →
+              </button>
             </div>
           </div>
-
-          {errorMessage && (
-            <div className="p-3 mb-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
-              {errorMessage}
+        ) : (
+          <div className="p-6 max-h-[80vh] overflow-y-auto">
+            {/* Security Banner */}
+            <div className="flex items-center gap-3 p-3.5 mb-6 rounded-xl bg-purple-50 border border-purple-200/80 text-purple-900 text-xs">
+              <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <polyline points="9 12 11 14 15 10" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-extrabold">Anti-Double-Brokering Guard Active</div>
+                <p className="text-[11px] text-purple-700 mt-0.5">
+                  Your load is published directly to vetted motor carriers with active FMCSA operating authority.
+                </p>
+              </div>
             </div>
-          )}
 
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold text-slate-700">
+            {errorMessage && (
+              <div className="p-3 mb-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+                {errorMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold text-slate-700">
             {/* Origin & Destination */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -373,6 +437,7 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
             </button>
           </form>
         </div>
+        )}
       </div>
     </div>
   );

@@ -104,6 +104,22 @@ export const LoadDetailsModal: React.FC<LoadDetailsModalProps> = ({
             </div>
           </div>
 
+          {/* Rate Confirmation PDF & Carrier Pass */}
+          <a
+            href={`/api/loadboard/loads/${encodeURIComponent(load.id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 2850}&miles=${load.miles || 650}&rpm=${load.rpm || 3.15}&equipment=${encodeURIComponent(load.equipment_type || "53' Dry Van")}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(bMc)}&phone=${encodeURIComponent(bPhone)}&email=${encodeURIComponent(bEmail)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full mb-3 py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all text-center flex items-center justify-center gap-2 border border-slate-700 hover:shadow-md"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+            </svg>
+            <span>📄 Download Official Rate Confirmation (PDF)</span>
+          </a>
+
           <button
             type="button"
             onClick={() => {

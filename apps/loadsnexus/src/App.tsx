@@ -133,6 +133,8 @@ export const App: React.FC = () => {
   const [user, setUser] = useState<UserSession | null>(null);
   const [loads, setLoads] = useState<FreightLoad[]>(INITIAL_FALLBACK_LOADS);
   const [isLoadingLoads, setIsLoadingLoads] = useState(false);
+  const [isLiveStreaming, setIsLiveStreaming] = useState(true);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
   const [filter, setFilter] = useState<SearchFilter>({
     origin: '',
     destination: '',
@@ -220,6 +222,40 @@ export const App: React.FC = () => {
     }
   }, [fetchLoads, filter]);
 
+  // Background Live Stream Auto-Refresh (Every 30 seconds)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isLiveStreaming) return;
+
+    const interval = setInterval(() => {
+      const params = new URLSearchParams();
+      if (filter.origin) params.append('origin', filter.origin);
+      if (filter.destination) params.append('destination', filter.destination);
+      if (filter.equipment && filter.equipment !== 'all') {
+        params.append('equipmentType', filter.equipment);
+      }
+
+      fetch(`/api/loadboard/search?${params.toString()}`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.loads && data.loads.length > 0) {
+            setLoads(data.loads);
+            setLastRefreshedAt(new Date());
+          }
+        })
+        .catch(() => {});
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isLiveStreaming, filter]);
+
+  const handleToggleLiveStream = () => {
+    setIsLiveStreaming((prev) => {
+      const next = !prev;
+      showToast(next ? '⚡ Live stream auto-refresh active (30s)' : '⏸ Live stream auto-refresh paused');
+      return next;
+    });
+  };
+
   // Modal Handlers
   const handleOpenAuth = (role: 'carrier' | 'broker' = 'carrier') => {
     setAuthModalRole(role);
@@ -288,6 +324,9 @@ export const App: React.FC = () => {
           onInspectLoad={handleInspectLoad}
           onOpenBrokerPost={() => handleOpenBrokerPost()}
           onOpenCarrierCheckout={handleOpenCarrierCheckout}
+          isLiveStreaming={isLiveStreaming}
+          onToggleLiveStream={handleToggleLiveStream}
+          lastRefreshedAt={lastRefreshedAt}
         />
 
         {/* Features Grid */}
