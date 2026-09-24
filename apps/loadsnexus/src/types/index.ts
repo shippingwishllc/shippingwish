@@ -34,6 +34,7 @@ export interface UserSession {
   role: 'carrier' | 'broker' | 'super_admin' | 'admin' | string;
   company_name?: string;
   weekly_plan?: string;
+  is_suspended?: boolean;
   mc_number?: string;
   phone?: string;
 }

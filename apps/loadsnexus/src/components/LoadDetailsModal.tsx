@@ -30,11 +30,15 @@ export const LoadDetailsModal: React.FC<LoadDetailsModalProps> = ({
   if (!isOpen || !load) return null;
 
   const isSubscriber = Boolean(
-    user && (
-      user.role === 'carrier' ||
-      user.role === 'broker' ||
+    user &&
+    !user.is_suspended &&
+    user.weekly_plan !== 'canceled' &&
+    user.weekly_plan !== 'past_due' &&
+    (
       user.role === 'admin' ||
       user.role === 'super_admin' ||
+      user.role === 'broker' ||
+      (user.role === 'carrier' && user.weekly_plan !== 'pending_card') ||
       user.weekly_plan === 'loadboard_ai_pass'
     )
   );

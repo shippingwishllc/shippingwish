@@ -31,6 +31,15 @@ async function getCarrierAccess(userId, email) {
     };
   }
 
+  if (user.weekly_plan === 'past_due') {
+    return {
+      allowed: false,
+      reason: 'past_due',
+      message: 'Your recent subscription payment failed or is past due. Please pay your outstanding invoice or update your payment card to restore access.',
+      checkoutUrl: '/checkout?plan=solo_weekly'
+    };
+  }
+
   if (user.weekly_plan === 'pending_card') {
     return {
       allowed: false,
@@ -59,6 +68,24 @@ async function getCarrierAccess(userId, email) {
     };
   }
 
+  if (sub && ['past_due', 'unpaid'].includes(String(sub.status || '').toLowerCase())) {
+    return {
+      allowed: false,
+      reason: 'past_due',
+      message: 'Your latest subscription payment failed. Please pay your outstanding invoice or update your credit card to restore access.',
+      checkoutUrl: '/checkout?plan=solo_weekly'
+    };
+  }
+
+  if (sub && String(sub.status || '').toLowerCase() === 'frozen_dispute') {
+    return {
+      allowed: false,
+      reason: 'disputed_frozen',
+      message: 'Account access has been frozen due to a payment dispute. Contact billing support at +1 (800) 580-3101.',
+      checkoutUrl: '/contact'
+    };
+  }
+
   if (sub && ACTIVE_SUB_STATUSES.includes(String(sub.status || '').toLowerCase())) {
     return {
       allowed: true,
@@ -68,7 +95,7 @@ async function getCarrierAccess(userId, email) {
     };
   }
 
-  if (user.weekly_plan === 'loadboard_ai_pass' || user.weekly_plan === 'loadboard_pass') {
+  if ((user.weekly_plan === 'loadboard_ai_pass' || user.weekly_plan === 'loadboard_pass') && (!sub || ACTIVE_SUB_STATUSES.includes(String(sub.status || '').toLowerCase()))) {
     return {
       allowed: true,
       mode: 'loadboard_subscription',

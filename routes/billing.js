@@ -1482,15 +1482,37 @@ async function handleStripeEvent(event) {
     });
   }
 
+  // ---------- 1. PAYMENT SUCCEEDED (AUTO-REACTIVATE SERVICES) ----------
   if (type === 'invoice.paid' || type === 'invoice.payment_succeeded') {
     const customerId = obj.customer;
     const subId = obj.subscription;
+
     if (subId) {
       await pool.query(
         `UPDATE billing_subscriptions SET status = 'active', updated_at = now() WHERE stripe_subscription_id = $1`,
         [String(subId)]
       );
+      // Automatically restore active status for user if they were previously past_due
+      await pool.query(
+        `UPDATE users SET weekly_plan = 'active', is_suspended = false
+         WHERE id = (SELECT user_id FROM billing_subscriptions WHERE stripe_subscription_id = $1 LIMIT 1)
+           AND (weekly_plan = 'past_due' OR weekly_plan = 'canceled')`,
+        [String(subId)]
+      ).catch(() => {});
     }
+
+    if (customerId) {
+      await pool.query(
+        `UPDATE billing_subscriptions SET status = 'active', updated_at = now() WHERE stripe_customer_id = $1`,
+        [String(customerId)]
+      );
+      await pool.query(
+        `UPDATE users SET weekly_plan = 'active', is_suspended = false
+         WHERE stripe_customer_id = $1 AND (weekly_plan = 'past_due' OR weekly_plan = 'canceled')`,
+        [String(customerId)]
+      ).catch(() => {});
+    }
+
     if (obj.id) {
       const invRes = await pool.query('SELECT id, load_id FROM invoices WHERE stripe_invoice_id = $1', [obj.id]);
       if (invRes.rows.length) {
@@ -1502,24 +1524,187 @@ async function handleStripeEvent(event) {
         }
       }
     }
-    if (customerId) {
-      await pool.query(
-        `UPDATE billing_subscriptions SET status = 'active', updated_at = now() WHERE stripe_customer_id = $1`,
-        [String(customerId)]
-      );
-    }
   }
 
+  // ---------- 2. PAYMENT FAILED / CARD DECLINED (AUTO-DEACTIVATE TO PAST_DUE) ----------
+  if (type === 'invoice.payment_failed') {
+    const customerId = obj.customer;
+    const subId = obj.subscription;
+    const amountDue = obj.amount_due ? `$${(obj.amount_due / 100).toFixed(2)}` : '$19.00';
+    const customerEmail = obj.customer_email || (obj.customer_details && obj.customer_details.email);
+
+    if (subId) {
+      await pool.query(
+        `UPDATE billing_subscriptions SET status = 'past_due', updated_at = now() WHERE stripe_subscription_id = $1`,
+        [String(subId)]
+      );
+    }
+
+    if (customerId) {
+      await pool.query(
+        `UPDATE billing_subscriptions SET status = 'past_due', updated_at = now() WHERE stripe_customer_id = $1`,
+        [String(customerId)]
+      );
+      await pool.query(
+        `UPDATE users SET weekly_plan = 'past_due' WHERE stripe_customer_id = $1`,
+        [String(customerId)]
+      ).catch(() => {});
+    }
+
+    // Send payment failure notice to customer with direct recovery link
+    if (customerEmail) {
+      try {
+        const hostedInvoiceUrl = obj.hosted_invoice_url || 'https://www.loadsnexus.com/?action=checkout';
+        await sendBrandedEmail({
+          to: customerEmail,
+          subject: `⚠️ Payment Failed: Action Required to Avoid Service Suspension (${amountDue})`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #f87171;border-radius:12px;background:#ffffff;">
+              <h2 style="color:#b91c1c;margin-top:0;">Subscription Payment Declined</h2>
+              <p>Hi,</p>
+              <p>Your scheduled recurring subscription payment of <strong>${amountDue}</strong> could not be processed. Your bank or card issuer declined the transaction.</p>
+              <p>To avoid deactivation of your Load Board and Dispatch services, please update your payment method or pay your outstanding invoice immediately:</p>
+              <div style="margin:25px 0;">
+                <a href="${hostedInvoiceUrl}" style="background:#dc2626;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">Pay Invoice &amp; Restore Access &rarr;</a>
+              </div>
+              <p style="font-size:12px;color:#64748b;">If you need assistance, contact our billing desk at billing@loadsnexus.com or call +1 (800) 580-3101.</p>
+            </div>
+          `,
+          text: `Your subscription payment of ${amountDue} failed. Please pay your invoice or update your card at ${hostedInvoiceUrl} to avoid service disruption.`
+        });
+      } catch (err) {
+        console.error('[Billing Webhook] Payment failed customer email notice error:', err.message);
+      }
+    }
+
+    // Notify Operations / Billing Staff
+    await notifyStaff({
+      subject: `🚨 Payment Failed: ${customerEmail || customerId} (${amountDue})`,
+      html: `<p>A subscription payment failed in Stripe. Account status set to <strong>past_due</strong>.</p>
+             <p>Customer: ${escapeHtml(customerEmail || customerId)}<br>
+             Amount: ${amountDue}<br>
+             Invoice: ${obj.id}<br>
+             Subscription: ${subId || '-'}</p>`,
+      text: `Payment failed for ${customerEmail || customerId} (${amountDue}). Status: past_due.`
+    }).catch(() => {});
+  }
+
+  // ---------- 3. SUBSCRIPTION UPDATED OR CANCELED ----------
   if (type === 'customer.subscription.updated' || type === 'customer.subscription.deleted') {
     const subId = obj.id;
-    const status = obj.status === 'canceled' || type === 'customer.subscription.deleted' ? 'canceled' : obj.status;
+    const customerId = obj.customer;
+    const isCanceled = obj.status === 'canceled' || type === 'customer.subscription.deleted';
+    const status = isCanceled ? 'canceled' : obj.status;
     const periodEnd = obj.current_period_end ? new Date(obj.current_period_end * 1000) : null;
+
     await pool.query(
       `UPDATE billing_subscriptions
        SET status = $2, current_period_end = $3, updated_at = now()
        WHERE stripe_subscription_id = $1`,
       [String(subId), status, periodEnd]
     );
+
+    // Update user status
+    if (isCanceled) {
+      await pool.query(
+        `UPDATE users SET weekly_plan = 'canceled'
+         WHERE stripe_customer_id = $1 OR id = (SELECT user_id FROM billing_subscriptions WHERE stripe_subscription_id = $2 LIMIT 1)`,
+        [String(customerId), String(subId)]
+      ).catch(() => {});
+    } else if (status === 'past_due' || status === 'unpaid') {
+      await pool.query(
+        `UPDATE users SET weekly_plan = 'past_due'
+         WHERE stripe_customer_id = $1 OR id = (SELECT user_id FROM billing_subscriptions WHERE stripe_subscription_id = $2 LIMIT 1)`,
+        [String(customerId), String(subId)]
+      ).catch(() => {});
+    } else if (status === 'active') {
+      await pool.query(
+        `UPDATE users SET weekly_plan = 'active', is_suspended = false
+         WHERE stripe_customer_id = $1 OR id = (SELECT user_id FROM billing_subscriptions WHERE stripe_subscription_id = $2 LIMIT 1)`,
+        [String(customerId), String(subId)]
+      ).catch(() => {});
+    }
+  }
+
+  // ---------- 4. FRAUDULENT CHARGE / CHARGEBACK DISPUTE FREEZE ----------
+  if (type === 'charge.dispute.created') {
+    const disputeId = obj.id;
+    const amount = obj.amount ? `$${(obj.amount / 100).toFixed(2)} ${String(obj.currency || 'usd').toUpperCase()}` : 'Unknown';
+    const reason = obj.reason || 'unrecognized';
+    const chargeId = obj.charge;
+    const evidenceDue = obj.evidence_details?.due_by ? new Date(obj.evidence_details.due_by * 1000).toLocaleDateString() : 'Immediate';
+
+    console.warn(`[SECURITY ALERT] Stripe chargeback dispute created: ${disputeId}, Amount: ${amount}, Reason: ${reason}`);
+
+    // Lock and freeze the associated user account immediately
+    try {
+      const chargeRes = await pool.query(
+        `SELECT u.id, u.email, u.company_name, u.phone
+         FROM billing_subscriptions b
+         JOIN users u ON u.id = b.user_id
+         WHERE b.stripe_checkout_session_id = $1 OR b.stripe_customer_id = (
+           SELECT customer FROM billing_subscriptions WHERE stripe_subscription_id = b.stripe_subscription_id LIMIT 1
+         )
+         LIMIT 1`,
+        [chargeId]
+      ).catch(() => ({ rows: [] }));
+
+      if (chargeRes.rows.length) {
+        const user = chargeRes.rows[0];
+        await pool.query(
+          `UPDATE users SET is_suspended = true, updated_at = now() WHERE id = $1`,
+          [user.id]
+        );
+        await pool.query(
+          `UPDATE billing_subscriptions SET status = 'frozen_dispute', updated_at = now() WHERE user_id = $1`,
+          [user.id]
+        );
+      }
+    } catch (freezeErr) {
+      console.error('[SECURITY ALERT] Could not freeze user for dispute:', freezeErr.message);
+    }
+
+    // Send urgent high-priority alert to company leadership
+    await notifyStaff({
+      subject: `🚨 URGENT: Chargeback Dispute Filed — ${amount} (Reason: ${reason})`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:2px solid #b91c1c;border-radius:12px;">
+          <h2 style="color:#b91c1c;margin-top:0;">🚨 Chargeback / Fraud Dispute Received</h2>
+          <p>A customer or cardholder has filed a chargeback dispute through their bank.</p>
+          <table cellpadding="6" style="width:100%;border-collapse:collapse;font-size:13px;">
+            <tr><td><strong>Dispute ID:</strong></td><td>${escapeHtml(disputeId)}</td></tr>
+            <tr><td><strong>Disputed Amount:</strong></td><td><strong style="color:#b91c1c;">${amount}</strong></td></tr>
+            <tr><td><strong>Bank Reason:</strong></td><td>${escapeHtml(reason)}</td></tr>
+            <tr><td><strong>Evidence Due Date:</strong></td><td>${evidenceDue}</td></tr>
+            <tr><td><strong>Charge ID:</strong></td><td>${escapeHtml(chargeId || '-')}</td></tr>
+          </table>
+          <p><strong>Action Taken:</strong> The user account and portal services have been frozen automatically to prevent further fraudulent use or double-brokering.</p>
+          <div style="margin:20px 0;">
+            <a href="https://dashboard.stripe.com/disputes/${disputeId}" style="background:#0f172a;color:#ffffff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;">View Dispute in Stripe Dashboard &rarr;</a>
+          </div>
+        </div>
+      `,
+      text: `URGENT: Stripe dispute filed for ${amount} (Reason: ${reason}). Evidence due: ${evidenceDue}. View: https://dashboard.stripe.com/disputes/${disputeId}`
+    }).catch(() => {});
+  }
+
+  // ---------- 5. STRIPE RADAR EARLY FRAUD WARNING (STOLEN CARD ALERT) ----------
+  if (type === 'radar.early_fraud_warning.created') {
+    const chargeId = obj.charge;
+    const fraudType = obj.fraud_type || 'card_reported_lost_or_stolen';
+    const actionable = obj.actionable ? 'Yes (Refund proactively to avoid dispute fee)' : 'No';
+
+    console.warn(`[SECURITY RADAR] Early Fraud Warning on charge ${chargeId}: ${fraudType}`);
+
+    await notifyStaff({
+      subject: `⚠️ STRIPE RADAR: Stolen Card Early Warning (${fraudType})`,
+      html: `<p>Stripe Radar received an early fraud warning from Visa/Mastercard. A card was reported stolen.</p>
+             <p>Charge: ${escapeHtml(chargeId)}<br>
+             Fraud Type: ${escapeHtml(fraudType)}<br>
+             Actionable: ${actionable}</p>
+             <p><strong>Recommendation:</strong> Refund this charge immediately in Stripe to prevent a $15 dispute fee!</p>`,
+      text: `Stripe Radar warning on charge ${chargeId}: ${fraudType}. Refund proactively in Stripe.`
+    }).catch(() => {});
   }
 }
 
