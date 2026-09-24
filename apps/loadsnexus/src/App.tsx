@@ -21,6 +21,7 @@ import { DispatchInquiryModal } from './components/DispatchInquiryModal';
 import { LaneAlertsModal, type LaneAlert } from './components/LaneAlertsModal';
 import { BrokerCreditModal } from './components/BrokerCreditModal';
 import { AiIngestModal } from './components/AiIngestModal';
+import { AiSupportChat } from './components/AiSupportChat';
 import { ToastContainer, type ToastItem } from './components/ToastContainer';
 
 const INITIAL_FALLBACK_LOADS: FreightLoad[] = [
@@ -614,6 +615,13 @@ export const App: React.FC = () => {
         isOpen={legalModalState.isOpen}
         type={legalModalState.type}
         onClose={() => setLegalModalState((prev) => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* 24/7 AI Freight Support Chatbot */}
+      <AiSupportChat
+        brand="loadsnexus"
+        onOpenCarrierCheckout={handleOpenCarrierCheckout}
+        onOpenBrokerPost={() => handleOpenBrokerPost()}
       />
 
       {/* Toast Alerts */}

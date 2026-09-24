@@ -161,6 +161,7 @@ app.use('/api/rate-matrix', require('./routes/rate-matrix'));           // Enter
 app.use('/api/drayage-intermodal', require('./routes/drayage-intermodal')); // Autonomous Drayage Port & Rail Intermodal Dispatcher
 app.use('/api/cross-border', require('./routes/cross-border'));             // Cross-Border US-Mexico & US-Canada In-Bond Customs Dispatcher
 app.use('/api/ai-calling', require('./routes/ai-calling'));                 // Autonomous AI Voice Calling & Deal Closer Desk (Vapi, GPT-4o & MightyCall)
+app.use('/api/chat', require('./routes/ai-chat'));                             // 24/7 Interactive AI Support Chatbot (Shipping Wish & LoadsNexus)
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

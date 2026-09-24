@@ -12,6 +12,7 @@ import { Faq } from './components/Faq';
 import { LoadsNexusBanner } from './components/LoadsNexusBanner';
 import { CtaBanner } from './components/CtaBanner';
 import { Footer } from './components/Footer';
+import { AiSupportChat } from './components/AiSupportChat';
 
 export const App: React.FC = () => {
   return (
@@ -56,6 +57,9 @@ export const App: React.FC = () => {
 
       {/* Corporate Footer */}
       <Footer />
+
+      {/* 24/7 AI Operations & Dispatch Chatbot */}
+      <AiSupportChat />
     </div>
   );
 };
