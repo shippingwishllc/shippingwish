@@ -492,6 +492,8 @@ export const App: React.FC = () => {
           onOpenBrokerCredit={() => handleOpenBrokerCredit()}
           onOpenAiIngest={() => setIsAiIngestOpen(true)}
           savedAlerts={savedAlerts}
+          user={user}
+          onOpenAuth={handleOpenAuth}
         />
 
         {/* Features Grid */}
@@ -563,6 +565,8 @@ export const App: React.FC = () => {
         onClose={() => setIsLoadDetailsOpen(false)}
         onOpenCarrierCheckout={handleOpenCarrierCheckout}
         onOpenBrokerCredit={handleOpenBrokerCredit}
+        user={user}
+        onOpenAuth={handleOpenAuth}
       />
 
       <DispatchInquiryModal

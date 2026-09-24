@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { FreightLoad, SearchFilter } from '../types';
+import type { FreightLoad, SearchFilter, UserSession } from '../types';
 import type { LaneAlert } from './LaneAlertsModal';
 
 interface LiveLoadBoardProps {
@@ -18,6 +18,8 @@ interface LiveLoadBoardProps {
   onOpenBrokerCredit?: () => void;
   onOpenAiIngest?: () => void;
   savedAlerts?: LaneAlert[];
+  user?: UserSession | null;
+  onOpenAuth?: (role?: 'carrier' | 'broker') => void;
 }
 
 export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
@@ -36,6 +38,8 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
   onOpenBrokerCredit,
   onOpenAiIngest,
   savedAlerts = [],
+  user,
+  onOpenAuth,
 }) => {
   const [localOrigin, setLocalOrigin] = useState(filter.origin || '');
   const [localDest, setLocalDest] = useState(filter.destination || '');
@@ -44,6 +48,16 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
   const [coveredMap, setCoveredMap] = useState<Record<string, number>>({});
   const [, setTicker] = useState(0);
   const prevLoadCountRef = useRef(loads.length);
+
+  const isSubscriber = Boolean(
+    user && (
+      user.role === 'carrier' ||
+      user.role === 'broker' ||
+      user.role === 'admin' ||
+      user.role === 'super_admin' ||
+      user.weekly_plan === 'loadboard_ai_pass'
+    )
+  );
 
   // Sync server covered loads
   useEffect(() => {
@@ -151,7 +165,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
   };
 
   // Filter out covered loads older than 8 seconds (8,000ms)
-  const visibleLoads = loads.filter((load: FreightLoad, idx: number) => {
+  const activeLoads = loads.filter((load: FreightLoad, idx: number) => {
     const id = load.id || load.load_number || `SW-${2600 + idx}`;
     const coveredTime = coveredMap[id];
     if (coveredTime && Date.now() - coveredTime > 8000) {
@@ -159,6 +173,10 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
     }
     return true;
   });
+
+  // On homepage: guests see 3 clear loads + 3 blurred teaser loads (total 6 rows)
+  // Subscribed users see all active loads!
+  const visibleLoads = isSubscriber ? activeLoads : activeLoads.slice(0, 6);
 
   return (
     <section className="py-12 bg-slate-100/60" id="live-board-section">
@@ -172,7 +190,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <rect x="1" y="3" width="15" height="13" rx="2" />
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 8" />
+                    <polygon points="16 8 20 8 23 11 23 16 16 8" />
                     <circle cx="5.5" cy="18.5" r="2.5" />
                     <circle cx="18.5" cy="18.5" r="2.5" />
                   </svg>
@@ -217,17 +235,19 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={onOpenCarrierCheckout}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                Unlock Direct Contacts ($19/mo)
-              </button>
+              {!isSubscriber && (
+                <button
+                  type="button"
+                  onClick={onOpenCarrierCheckout}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  Unlock Direct Contacts ($19/mo)
+                </button>
+              )}
 
               {onToggleLiveStream && (
                 <button
@@ -304,10 +324,17 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 <span>Monitored Brokers:</span>
                 <strong className="text-slate-900 font-extrabold">28 Active</strong>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800">
-                <span>Security Shield:</span>
-                <strong className="font-extrabold">100% Anti-Double-Brokering Guard</strong>
-              </div>
+              {isSubscriber ? (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-extrabold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>Carrier AI Pass: Active (Unlimited Loads Unlocked)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 font-bold">
+                  <span>🔒</span>
+                  <span>Live Teaser Mode (3 Free Preview Loads)</span>
+                </div>
+              )}
             </div>
 
             {/* In-Table Filter */}
@@ -356,8 +383,8 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
             </form>
           </div>
 
-          {/* DAT One Table */}
-          <div className="overflow-x-auto">
+          {/* DAT One Table Container */}
+          <div className="relative overflow-x-auto min-h-[340px]">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-500 uppercase tracking-wider font-extrabold text-[11px]">
@@ -415,6 +442,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                     const isCovered = Boolean(coveredMap[id]);
                     const age = isCovered ? (Date.now() - coveredMap[id]) : 0;
                     const secondsLeft = isCovered ? Math.max(1, Math.ceil((8000 - age) / 1000)) : 0;
+                    const isRowBlurred = !isSubscriber && index >= 3;
 
                     return (
                       <tr
@@ -422,6 +450,8 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                         className={`transition-all duration-500 ${
                           isCovered
                             ? 'bg-red-50/50 opacity-60 line-through select-none'
+                            : isRowBlurred
+                            ? 'filter blur-[4.5px] opacity-25 select-none pointer-events-none'
                             : isAlertMatched
                             ? 'bg-amber-50/50 border-l-4 border-l-amber-500 hover:bg-blue-50/40'
                             : isLive
@@ -562,6 +592,46 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 )}
               </tbody>
             </table>
+
+            {/* Frosted Glassmorphism Paywall Overlay for Unauthenticated Guests */}
+            {!isSubscriber && visibleLoads.length > 3 && (
+              <div className="absolute inset-x-0 bottom-0 top-[195px] flex items-center justify-center p-4 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent backdrop-blur-[3px] z-10">
+                <div className="bg-white border border-slate-200 shadow-2xl rounded-2xl p-6 sm:p-8 max-w-lg w-full text-center my-auto">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto mb-3 text-xl shadow-sm">
+                    🔒
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-display font-extrabold text-slate-900 tracking-tight">
+                    Unlock 4,850+ Live Loads &amp; Direct Contacts
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                    Direct broker dispatch phone numbers, MC verification, Days-To-Pay credit scores, and instant 1-click RateCon booking are locked. Join 50,000+ carriers on LoadsNexus™.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={onOpenCarrierCheckout}
+                      className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/30 transition-all hover:shadow active:scale-[0.98]"
+                    >
+                      Start Load Board — $19/mo →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onOpenAuth && onOpenAuth('carrier')}
+                      className="w-full py-3 px-4 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 transition-all"
+                    >
+                      Carrier Sign In
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-4 mt-4 text-[11px] text-slate-500 font-medium">
+                    <span>✓ Instant Pass Access</span>
+                    <span>✓ Zero Contracts</span>
+                    <span>✓ 100% Pay Kept</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Table Footer */}
@@ -570,13 +640,28 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
               ⚡ Live loads streamed directly from LoadsNexus™ spot exchange and verified brokers.
             </div>
             <div className="flex items-center gap-4">
-              <span>
-                <strong className="text-slate-900 font-extrabold">{loads.length}</strong> loads displayed
-              </span>
+              {isSubscriber ? (
+                <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                  Showing {visibleLoads.length} Live Loads (All Unlocked)
+                </span>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-slate-600">
+                    Showing 3 live preview loads of 4,850+ active spot loads
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onOpenCarrierCheckout}
+                    className="text-blue-600 font-bold hover:underline"
+                  >
+                    Unlock All 4,850+ Loads ($19/mo) →
+                  </button>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={onOpenBrokerPost}
-                className="text-blue-600 font-bold hover:underline"
+                className="text-purple-600 font-bold hover:underline"
               >
                 + Post a Load (Free)
               </button>
