@@ -34,6 +34,8 @@ export interface UserSession {
   role: 'carrier' | 'broker' | 'super_admin' | 'admin' | string;
   company_name?: string;
   weekly_plan?: string;
+  mc_number?: string;
+  phone?: string;
 }
 
 export interface SearchFilter {

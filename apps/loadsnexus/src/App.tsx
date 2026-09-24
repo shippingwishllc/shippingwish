@@ -417,6 +417,8 @@ export const App: React.FC = () => {
         onSuccess={handleLoadPosted}
         onShowToast={showToast}
         prefill={postModalPrefill}
+        user={user}
+        onOpenAuth={handleOpenAuth}
       />
 
       <CarrierCheckoutModal
