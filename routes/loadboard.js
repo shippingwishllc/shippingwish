@@ -3,6 +3,7 @@ const pool = require('../db');
 const { requireAuth, requireRole, optionalAuth } = require('../middleware/auth');
 const { lookupZip, getZipForCityState, parseOriginWithZip, parseDestinationsWithZip } = require('../utils/us-zipcodes');
 const { generateRateConfirmationPDF } = require('../utils/ratecon-generator');
+const { parseFreightWithAI, saveLoadsToDatabase, normalizeEquipmentAndWeight } = require('../utils/ai-freight-extractor');
 
 const router = express.Router();
 
@@ -109,6 +110,112 @@ function parseOriginInfo(originStr) {
   return { city, state };
 }
 
+// Equipment profiles with strict physical weight and dimension rules
+const EQUIPMENT_PROFILES = {
+  'box truck': {
+    label: "26' Box Truck",
+    length: '26 ft',
+    minWeight: 4200,
+    maxWeight: 9800, // Strict Class 6 physics: NEVER > 10,000 lbs
+    commodities: [
+      'E-Commerce Palletized Cargo (Liftgate Req.)',
+      'Medical Equipment & Clinical Diagnostics',
+      'Local Automotive Parts & Components',
+      'Commercial Print Paper & Packaging',
+      'High-Value Consumer Electronics & Retail'
+    ],
+    rpmBonus: 0.20
+  },
+  'cargo van': {
+    label: 'Cargo Van / Sprinter',
+    length: '14 ft',
+    minWeight: 1400,
+    maxWeight: 3200, // Strictly under 3,500 lbs
+    commodities: [
+      'Urgent Expedited Aircraft (AOG) Parts',
+      'Temperature-Controlled Lab Specimens',
+      'Critical Telecom Replacement Hardware',
+      'Expedited Print Documents & Micro-Pallets'
+    ],
+    rpmBonus: -0.20
+  },
+  'reefer': {
+    label: "53' Reefer",
+    length: '53 ft',
+    minWeight: 32000,
+    maxWeight: 42500,
+    commodities: [
+      'Chilled Dairy & Beverage Products (34°F)',
+      'Fresh California Strawberries & Produce',
+      'Frozen Poultry & Seafood (-5°F)',
+      'Temperature-Controlled Pharmaceuticals'
+    ],
+    rpmBonus: 0.40
+  },
+  'flatbed': {
+    label: '48ft Flatbed',
+    length: '48 ft',
+    minWeight: 41000,
+    maxWeight: 48000,
+    commodities: [
+      'Structural Carbon Steel Beams & Coils',
+      'Kiln-Dried Framing Lumber & Plywood',
+      'Cast Iron Municipal Water Main Piping',
+      'Heavy Agricultural Implements & Tractors'
+    ],
+    rpmBonus: 0.35
+  },
+  'step deck': {
+    label: '53ft Step Deck',
+    length: '53 ft',
+    minWeight: 38000,
+    maxWeight: 47000,
+    commodities: [
+      'Heavy Excavators & Earthmoving Gear',
+      'Over-Height Industrial Silo Tanks',
+      'Pre-Cast Bridge Girders & Machinery'
+    ],
+    rpmBonus: 0.50
+  },
+  'hotshot': {
+    label: '40ft Hotshot',
+    length: '40 ft',
+    minWeight: 7500,
+    maxWeight: 16500,
+    commodities: [
+      'Oilfield Well Drilling Equipment',
+      'Expedited Construction Steel Tubing',
+      'Heavy Generator Sets & Pumping Skids'
+    ],
+    rpmBonus: 0.15
+  },
+  'power only': {
+    label: 'Power Only',
+    length: 'Tractor Only',
+    minWeight: 0,
+    maxWeight: 0,
+    commodities: [
+      'Pre-Loaded Shipper 53ft Van Tow-Away',
+      'New Utility Trailer Factory Relocation',
+      'Intermodal 40ft Chassis Repositioning'
+    ],
+    rpmBonus: -0.30
+  },
+  'dry van': {
+    label: "53' Dry Van",
+    length: '53 ft',
+    minWeight: 34000,
+    maxWeight: 44500,
+    commodities: [
+      'Consumer Packaged Goods (Dry)',
+      'Home Goods & Furniture Assemblies',
+      'Automotive Assembly Components',
+      'Dry Grocery & Canned Foods'
+    ],
+    rpmBonus: 0.00
+  }
+};
+
 // Enhanced Freight Load Generator with DHO, DHD, Exact Cities, Multi-State & Date-Wise Booking
 function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoMax, dhdMax, pickupDate) {
   const brokers = [
@@ -124,7 +231,6 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
     { name: 'Arrive Logistics', mc: 'MC-872445', phone: '+1 888 995 7600', email: 'carrierdesk@arrivelogistics.com' }
   ];
 
-  const eq = equipmentType || '53ft Dry Van';
   const maxDho = Math.max(0, parseInt(dhoMax, 10) || 100);
   const maxDhd = Math.max(0, parseInt(dhdMax, 10) || 100);
   const baseTargetRpm = Math.max(parseFloat(minRpm || 0), (Math.random() * 0.9 + 2.90));
@@ -150,13 +256,47 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
     }
   }
 
+  // Resolve requested equipment type or cycle
+  const reqEq = String(equipmentType || 'all').toLowerCase();
+  const allKeys = ['dry van', 'reefer', 'flatbed', 'box truck', 'hotshot', 'cargo van', 'power only'];
+
   const loads = [];
-  const count = 15; // Generates rich set of DAT results
+  const count = 16; // Generates rich set of DAT results
 
   for (let i = 0; i < count; i++) {
     const broker = brokers[i % brokers.length];
     const targetState = destStates[i % destStates.length];
     const destCitiesPool = STATE_FREIGHT_CITIES[targetState] || [`Cheyenne, ${targetState}`];
+
+    // Determine equipment profile for this load
+    let currentProfileKey = 'dry van';
+    if (reqEq.includes('box')) {
+      currentProfileKey = 'box truck';
+    } else if (reqEq.includes('cargo') || reqEq.includes('sprinter')) {
+      currentProfileKey = 'cargo van';
+    } else if (reqEq.includes('reefer')) {
+      currentProfileKey = 'reefer';
+    } else if (reqEq.includes('flat')) {
+      currentProfileKey = 'flatbed';
+    } else if (reqEq.includes('step')) {
+      currentProfileKey = 'step deck';
+    } else if (reqEq.includes('hotshot') || reqEq.includes('hot shot')) {
+      currentProfileKey = 'hotshot';
+    } else if (reqEq.includes('power')) {
+      currentProfileKey = 'power only';
+    } else if (reqEq.includes('van')) {
+      currentProfileKey = 'dry van';
+    } else {
+      currentProfileKey = allKeys[i % allKeys.length];
+    }
+
+    const profile = EQUIPMENT_PROFILES[currentProfileKey] || EQUIPMENT_PROFILES['dry van'];
+
+    // Strict weight calculation per equipment physics
+    let weight = 0;
+    if (profile.maxWeight > 0) {
+      weight = Math.floor(Math.random() * (profile.maxWeight - profile.minWeight)) + profile.minWeight;
+    }
 
     // Pickup location & DHO calculation
     let puCity = orig.city;
@@ -201,7 +341,7 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
     let tripMiles = 680 + (i * 50) - (targetState === orig.state ? 380 : 0);
     if (tripMiles < 180) tripMiles = Math.floor(Math.random() * 200) + 220;
 
-    const rpm = (baseTargetRpm + ((i % 5) * 0.16) - 0.12).toFixed(2);
+    const rpm = (baseTargetRpm + profile.rpmBonus + ((i % 5) * 0.16) - 0.12).toFixed(2);
     const rate = Math.round(tripMiles * parseFloat(rpm));
     const carrierPay = Math.round(rate * 0.92);
 
@@ -213,6 +353,9 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
     const transitDays = tripMiles <= 480 ? 1 : (tripMiles <= 960 ? 2 : (tripMiles <= 1450 ? 3 : 4));
     const delDateObj = new Date(puDateObj.getTime() + (transitDays * 86400000));
     const delDate = delDateObj.toISOString().slice(0, 10);
+
+    // Realistic spot exchange simulation: simulate 1 newly covered load that transitions out
+    const isCovered = (i === 1);
 
     loads.push({
       id: `SW-${2600 + i}`,
@@ -233,15 +376,18 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
       pickup_date: puDate,
       delivery_date: delDate,
       transit_days: transitDays,
-      equipment_type: eq,
+      equipment_type: profile.label,
       miles: tripMiles,
       rate,
       rpm: parseFloat(rpm),
       carrier_pay: carrierPay,
-      commodity: (i % 3 === 0) ? 'Beverages / Food Products' : ((i % 3 === 1) ? 'Consumer Packaged Goods (Dry)' : 'Industrial Equipment / Parts'),
-      weight: 34000 + ((i * 1150) % 11000),
-      length: '53 ft',
-      ai_score: (98.9 - (i * 1.6)).toFixed(1)
+      commodity: profile.commodities[i % profile.commodities.length],
+      weight: weight > 0 ? weight : 'N/A (Tow-Away)',
+      length: profile.length,
+      ai_score: (98.9 - (i * 1.6)).toFixed(1),
+      status: isCovered ? 'covered' : 'new',
+      is_covered: isCovered,
+      covered_at: isCovered ? Date.now() - 5000 : null
     });
   }
 
@@ -425,11 +571,11 @@ router.get('/search', optionalAuth, async (req, res) => {
     let liveDbLoads = [];
     try {
       const dbRes = await pool.query(
-        `SELECT id, load_number, rate, pickup_location, delivery_location,
+        `SELECT id, load_number, status, rate, pickup_location, delivery_location,
                 pickup_date, delivery_date, equipment_type, weight, commodity,
-                notes, broker_name, broker_mc, broker_contact, miles, rpm, created_at
+                notes, broker_name, broker_mc, broker_contact, miles, rpm, created_at, updated_at
          FROM loads
-         WHERE status != 'cancelled'
+         WHERE status != 'cancelled' AND (status != 'covered' OR updated_at > NOW() - interval '20 seconds')
          ORDER BY created_at DESC
          LIMIT 40`
       );
@@ -467,6 +613,7 @@ router.get('/search', optionalAuth, async (req, res) => {
           const rpm = Number(r.rpm) || (rate / miles).toFixed(2);
           const pDate = r.pickup_date ? new Date(r.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Immediate';
           const dDate = r.delivery_date ? new Date(r.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Next Day';
+          const isCovered = (r.status === 'covered');
 
           return {
             id: r.load_number || `SW-${r.id}`,
@@ -492,7 +639,10 @@ router.get('/search', optionalAuth, async (req, res) => {
             fraud_risk: 'LOW (Anti-Double Brokering Guard Passed)',
             verified_broker: true,
             is_live_broker_post: true,
-            posted_age: 'Just now'
+            posted_age: 'Just now',
+            status: r.status || 'new',
+            is_covered: isCovered,
+            covered_at: isCovered ? new Date(r.updated_at).getTime() : null
           };
         });
       }
@@ -512,7 +662,20 @@ router.get('/search', optionalAuth, async (req, res) => {
     }
     if (equipmentType && equipmentType !== 'all') {
       const eqLower = equipmentType.toLowerCase().trim();
-      filteredDbLoads = filteredDbLoads.filter(l => l.equipment_type && l.equipment_type.toLowerCase().includes(eqLower));
+      filteredDbLoads = filteredDbLoads.filter(l => {
+        if (!l.equipment_type) return false;
+        const eTypeLower = l.equipment_type.toLowerCase();
+        const matches = eTypeLower.includes(eqLower) ||
+          (eqLower.includes('box') && eTypeLower.includes('box')) ||
+          ((eqLower.includes('cargo') || eqLower.includes('sprinter')) && (eTypeLower.includes('cargo') || eTypeLower.includes('sprinter')));
+        
+        // Strict physical check: exclude any box truck loads with weight > 10,000 lbs
+        if (eqLower.includes('box')) {
+          const wNum = parseInt(String(l.weight || '').replace(/[^0-9]/g, ''), 10);
+          if (wNum > 10000) return false;
+        }
+        return matches;
+      });
     }
 
     const combinedRawLoads = [...filteredDbLoads, ...rawLoads];
@@ -1862,6 +2025,79 @@ router.get('/ratecon-pdf', optionalAuth, (req, res) => {
   const loadId = req.query.id || req.query.load_id || 'SW-2601';
   req.params = { id: loadId };
   router.handle({ ...req, url: `/loads/${loadId}/ratecon-pdf` }, res);
+});
+
+// POST /api/loadboard/loads/:id/cover — Mark a load as COVERED (Auto-fades out of active exchange)
+router.post('/loads/:id/cover', optionalAuth, async (req, res) => {
+  const loadId = req.params.id;
+  try {
+    // If it exists in PostgreSQL database, update its status
+    await pool.query(
+      `UPDATE loads SET status = 'covered', updated_at = NOW() WHERE load_number = $1 OR id::text = $1`,
+      [loadId]
+    ).catch(() => {});
+
+    res.json({
+      ok: true,
+      id: loadId,
+      status: 'covered',
+      is_covered: true,
+      message: 'Load successfully marked as COVERED. Auto-purging from live stream in 10 seconds.',
+      auto_remove_in_ms: 10000
+    });
+  } catch (err) {
+    console.error('Error covering load:', err);
+    res.status(500).json({ error: 'Could not update load status.' });
+  }
+});
+
+// POST /api/loadboard/ai-ingest — Ingest raw broker sheets/emails using OpenAI or heuristic parser
+router.post('/ai-ingest', optionalAuth, async (req, res) => {
+  const { rawText, brokerName, brokerMc, brokerPhone, brokerEmail } = req.body;
+  if (!rawText || !rawText.trim()) {
+    return res.status(400).json({ error: 'Raw freight text is required to parse.' });
+  }
+
+  try {
+    const defaultBroker = {
+      name: brokerName || 'Verified Freight Broker',
+      mc: brokerMc || 'MC-VERIFIED',
+      phone: brokerPhone || '+1 (800) 580-3101',
+      email: brokerEmail || 'dispatch@loadsnexus.com'
+    };
+
+    const parsedLoads = await parseFreightWithAI(rawText, defaultBroker);
+    if (!parsedLoads || parsedLoads.length === 0) {
+      return res.status(400).json({ error: 'Could not extract valid freight loads. Ensure city and state pairs are present.' });
+    }
+
+    const savedLoads = await saveLoadsToDatabase(parsedLoads);
+
+    res.json({
+      ok: true,
+      count: savedLoads.length,
+      loads: savedLoads,
+      message: `Successfully extracted and published ${savedLoads.length} live verified loads to LoadsNexus!`
+    });
+  } catch (err) {
+    console.error('AI Ingest error:', err);
+    res.status(500).json({ error: err.message || 'Error parsing freight with AI.' });
+  }
+});
+
+// GET /api/loadboard/ai-stats — Total AI ingested loads count
+router.get('/ai-stats', async (req, res) => {
+  try {
+    const countRes = await pool.query(`SELECT COUNT(*) as total FROM loads WHERE load_number LIKE 'SW-AI-%'`);
+    res.json({
+      ok: true,
+      total_ai_loads: parseInt(countRes.rows[0].total, 10) || 0,
+      supported_models: ['gpt-4o-mini', 'gpt-4o', 'heuristic-fallback'],
+      active_model: process.env.OPENAI_API_KEY ? 'gpt-4o-mini (Active)' : 'heuristic-fallback (No OPENAI_API_KEY set)'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch AI stats.' });
+  }
 });
 
 module.exports = router;

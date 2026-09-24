@@ -113,6 +113,8 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({ onSearch, onOpenPost
             <option value="53' Dry Van">53' Dry Van</option>
             <option value="53' Reefer">53' Reefer (Temp Controlled)</option>
             <option value="Flatbed">Flatbed / Step Deck</option>
+            <option value="Box Truck">26' Box Truck (Straight)</option>
+            <option value="Cargo Van">Sprinter / Cargo Van</option>
             <option value="Power Only">Power Only</option>
             <option value="Hotshot">Hotshot</option>
           </select>

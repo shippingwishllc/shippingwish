@@ -16,6 +16,7 @@ interface LiveLoadBoardProps {
   lastRefreshedAt?: Date | null;
   onOpenLaneAlerts?: () => void;
   onOpenBrokerCredit?: () => void;
+  onOpenAiIngest?: () => void;
   savedAlerts?: LaneAlert[];
 }
 
@@ -33,13 +34,52 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
   lastRefreshedAt,
   onOpenLaneAlerts,
   onOpenBrokerCredit,
+  onOpenAiIngest,
   savedAlerts = [],
 }) => {
   const [localOrigin, setLocalOrigin] = useState(filter.origin || '');
   const [localDest, setLocalDest] = useState(filter.destination || '');
   const [localEquip, setLocalEquip] = useState(filter.equipment || 'all');
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const [coveredMap, setCoveredMap] = useState<Record<string, number>>({});
+  const [, setTicker] = useState(0);
   const prevLoadCountRef = useRef(loads.length);
+
+  // Sync server covered loads
+  useEffect(() => {
+    setCoveredMap((prev) => {
+      const updated = { ...prev };
+      let changed = false;
+      loads.forEach((l, idx) => {
+        const id = l.id || l.load_number || `SW-${2600 + idx}`;
+        if ((l.is_covered || l.status === 'covered') && !updated[id]) {
+          updated[id] = l.covered_at || Date.now();
+          changed = true;
+        }
+      });
+      return changed ? updated : prev;
+    });
+  }, [loads]);
+
+  // 1-second interval to update covered countdowns and auto-purge after 8s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTicker((t) => t + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleMarkCovered = (loadId: string) => {
+    setCoveredMap((prev) => ({
+      ...prev,
+      [loadId]: Date.now(),
+    }));
+    playChime();
+    fetch(`/api/loadboard/loads/${encodeURIComponent(loadId)}/cover`, {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(() => {});
+  };
 
   // Play pleasant synthetic 2-tone audio chime on new loads
   const playChime = () => {
@@ -110,6 +150,16 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
     onFilterChange({ origin: '', destination: '', equipment: 'all' });
   };
 
+  // Filter out covered loads older than 8 seconds (8,000ms)
+  const visibleLoads = loads.filter((load: FreightLoad, idx: number) => {
+    const id = load.id || load.load_number || `SW-${2600 + idx}`;
+    const coveredTime = coveredMap[id];
+    if (coveredTime && Date.now() - coveredTime > 8000) {
+      return false; // Auto-purged from live exchange!
+    }
+    return true;
+  });
+
   return (
     <section className="py-12 bg-slate-100/60" id="live-board-section">
       <div className="max-w-[1220px] mx-auto px-6">
@@ -154,6 +204,18 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 </svg>
                 Post Spot Freight (Free)
               </button>
+
+              {onOpenAiIngest && (
+                <button
+                  type="button"
+                  onClick={onOpenAiIngest}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 shadow-2xs transition-all"
+                  title="Extract & Post Loads from Broker Sheets/Emails with AI"
+                >
+                  <span>🤖</span>
+                  <span>AI Ingest</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -273,6 +335,8 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 <option value="Dry Van">53' Dry Van</option>
                 <option value="Reefer">53' Reefer</option>
                 <option value="Flatbed">Flatbed</option>
+                <option value="Box Truck">26' Box Truck</option>
+                <option value="Cargo Van">Cargo Van / Sprinter</option>
                 <option value="Power Only">Power Only</option>
                 <option value="Hotshot">Hotshot</option>
               </select>
@@ -317,11 +381,11 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                       </div>
                     </td>
                   </tr>
-                ) : loads.length === 0 ? (
+                ) : visibleLoads.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-500 font-medium">
-                      <div className="font-bold text-slate-800 text-sm mb-1">No loads matching filter criteria.</div>
-                      <p className="text-xs mb-3">Try clearing your search filters or post your truck capacity.</p>
+                      <div className="font-bold text-slate-800 text-sm mb-1">No active loads matching filter criteria.</div>
+                      <p className="text-xs mb-3">All matching loads may have been covered or try clearing your filters.</p>
                       <button
                         type="button"
                         onClick={handleResetFilter}
@@ -332,7 +396,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  loads.map((load, index) => {
+                  visibleLoads.map((load, index) => {
                     const id = load.id || load.load_number || `SW-${2600 + index}`;
                     const origin = load.origin || load.pickup_location || 'Chicago, IL';
                     const dest = load.destination || load.delivery_location || 'Dallas, TX';
@@ -348,23 +412,32 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                     const isLive = load.is_live_broker_post;
 
                     const isAlertMatched = isMatchAlert(load);
+                    const isCovered = Boolean(coveredMap[id]);
+                    const age = isCovered ? (Date.now() - coveredMap[id]) : 0;
+                    const secondsLeft = isCovered ? Math.max(1, Math.ceil((8000 - age) / 1000)) : 0;
 
                     return (
                       <tr
                         key={id}
-                        className={`hover:bg-blue-50/40 transition-colors ${
-                          isAlertMatched
-                            ? 'bg-amber-50/50 border-l-4 border-l-amber-500'
+                        className={`transition-all duration-500 ${
+                          isCovered
+                            ? 'bg-red-50/50 opacity-60 line-through select-none'
+                            : isAlertMatched
+                            ? 'bg-amber-50/50 border-l-4 border-l-amber-500 hover:bg-blue-50/40'
                             : isLive
-                            ? 'bg-purple-50/30'
-                            : ''
+                            ? 'bg-purple-50/30 hover:bg-blue-50/40'
+                            : 'hover:bg-blue-50/40'
                         }`}
                       >
                         {/* ID / Age */}
                         <td className="py-3 px-4">
-                          <div className="font-extrabold text-slate-900">{id}</div>
+                          <div className={`font-extrabold ${isCovered ? 'text-red-700 line-through' : 'text-slate-900'}`}>{id}</div>
                           <div className="text-[10px] text-slate-400 mt-0.5">
-                            {isLive ? (
+                            {isCovered ? (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-red-600 text-white tracking-wide animate-pulse">
+                                🚫 COVERED ({secondsLeft}s)
+                              </span>
+                            ) : isLive ? (
                               <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">
                                 ⚡ LIVE BROKER
                               </span>
@@ -378,14 +451,14 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
 
                         {/* Corridor */}
                         <td className="py-3 px-4">
-                          {isAlertMatched && (
+                          {isAlertMatched && !isCovered && (
                             <div className="mb-1">
                               <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
                                 ⭐ Matches Alert
                               </span>
                             </div>
                           )}
-                          <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                          <div className={`font-bold flex items-center gap-1.5 ${isCovered ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
                             <span>📍</span>
                             <span>{origin}</span>
                             <span className="text-blue-600 font-bold">→</span>
@@ -448,23 +521,39 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                         {/* Action */}
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <a
-                              href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 2850}&miles=${load.miles || 650}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title="Download Official Rate Confirmation PDF"
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 transition-all hover:shadow-xs"
-                            >
-                              <span>📄</span>
-                              <span className="hidden sm:inline">RateCon</span>
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => onInspectLoad(load)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all hover:shadow"
-                            >
-                              <span>⚡</span> Book Load
-                            </button>
+                            {isCovered ? (
+                              <span className="text-[11px] font-extrabold text-red-600 italic px-2.5 py-1 bg-red-100/70 border border-red-200 rounded-lg">
+                                Booked &amp; Covered
+                              </span>
+                            ) : (
+                              <>
+                                <a
+                                  href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 2850}&miles=${load.miles || 650}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Download Official Rate Confirmation PDF"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 transition-all hover:shadow-xs"
+                                >
+                                  <span>📄</span>
+                                  <span className="hidden sm:inline">RateCon</span>
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkCovered(id)}
+                                  title="Mark Load as Covered (Instant Booking)"
+                                  className="inline-flex items-center gap-1 px-2 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-600 rounded-lg text-xs font-bold border border-slate-200 transition-all"
+                                >
+                                  Cover
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onInspectLoad(load)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all hover:shadow"
+                                >
+                                  <span>⚡</span> Book Load
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>

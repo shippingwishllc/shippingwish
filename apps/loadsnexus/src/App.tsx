@@ -18,6 +18,7 @@ import { LoadDetailsModal } from './components/LoadDetailsModal';
 import { DispatchInquiryModal } from './components/DispatchInquiryModal';
 import { LaneAlertsModal, type LaneAlert } from './components/LaneAlertsModal';
 import { BrokerCreditModal } from './components/BrokerCreditModal';
+import { AiIngestModal } from './components/AiIngestModal';
 import { ToastContainer, type ToastItem } from './components/ToastContainer';
 
 const INITIAL_FALLBACK_LOADS: FreightLoad[] = [
@@ -155,6 +156,7 @@ export const App: React.FC = () => {
   const [isLaneAlertsOpen, setIsLaneAlertsOpen] = useState(false);
   const [isBrokerCreditOpen, setIsBrokerCreditOpen] = useState(false);
   const [brokerCreditMc, setBrokerCreditMc] = useState<string>('');
+  const [isAiIngestOpen, setIsAiIngestOpen] = useState(false);
   const [savedAlerts, setSavedAlerts] = useState<LaneAlert[]>([]);
 
   // Initialize saved lane alerts from localStorage
@@ -373,6 +375,7 @@ export const App: React.FC = () => {
           lastRefreshedAt={lastRefreshedAt}
           onOpenLaneAlerts={() => setIsLaneAlertsOpen(true)}
           onOpenBrokerCredit={() => handleOpenBrokerCredit()}
+          onOpenAiIngest={() => setIsAiIngestOpen(true)}
           savedAlerts={savedAlerts}
         />
 
@@ -463,6 +466,13 @@ export const App: React.FC = () => {
         isOpen={isBrokerCreditOpen}
         onClose={() => setIsBrokerCreditOpen(false)}
         initialQuery={brokerCreditMc}
+      />
+
+      <AiIngestModal
+        isOpen={isAiIngestOpen}
+        onClose={() => setIsAiIngestOpen(false)}
+        onSuccess={() => fetchLoads(filter)}
+        onShowToast={showToast}
       />
 
       {/* Toast Alerts */}

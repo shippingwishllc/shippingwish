@@ -22,6 +22,9 @@ export interface FreightLoad {
   credit_score?: string;
   bond_status?: string;
   is_live_broker_post?: boolean;
+  status?: 'active' | 'covered' | 'new' | string;
+  is_covered?: boolean;
+  covered_at?: number | null;
 }
 
 export interface UserSession {
