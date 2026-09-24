@@ -452,6 +452,7 @@ export const App: React.FC = () => {
         user={user}
         onOpenAuth={handleOpenAuth}
         onOpenCarrierCheckout={handleOpenCarrierCheckout}
+        onOpenBrokerPost={() => handleOpenBrokerPost()}
       />
 
       <main className="flex-grow">
