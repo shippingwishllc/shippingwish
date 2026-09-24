@@ -9,8 +9,10 @@ import { Features } from './components/Features';
 import { ComparisonTable } from './components/ComparisonTable';
 import { MobileApps } from './components/MobileApps';
 import { Pricing } from './components/Pricing';
+import { Faq } from './components/Faq';
 import { CtaBanner } from './components/CtaBanner';
 import { Footer } from './components/Footer';
+import { LegalModal } from './components/LegalModal';
 import { BrokerPostModal } from './components/BrokerPostModal';
 import { CarrierCheckoutModal } from './components/CarrierCheckoutModal';
 import { AuthModal } from './components/AuthModal';
@@ -157,6 +159,10 @@ export const App: React.FC = () => {
   const [isBrokerCreditOpen, setIsBrokerCreditOpen] = useState(false);
   const [brokerCreditMc, setBrokerCreditMc] = useState<string>('');
   const [isAiIngestOpen, setIsAiIngestOpen] = useState(false);
+  const [legalModalState, setLegalModalState] = useState<{ isOpen: boolean; type: 'privacy' | 'terms' }>({
+    isOpen: false,
+    type: 'privacy',
+  });
   const [savedAlerts, setSavedAlerts] = useState<LaneAlert[]>([]);
 
   // Initialize saved lane alerts from backend API and localStorage
@@ -512,6 +518,12 @@ export const App: React.FC = () => {
           onOpenBrokerPost={() => handleOpenBrokerPost()}
         />
 
+        {/* Frequently Asked Questions */}
+        <Faq
+          onOpenCarrierCheckout={handleOpenCarrierCheckout}
+          onOpenBrokerPost={() => handleOpenBrokerPost()}
+        />
+
         {/* Final Conversion Banner */}
         <CtaBanner
           onOpenCarrierCheckout={handleOpenCarrierCheckout}
@@ -525,6 +537,8 @@ export const App: React.FC = () => {
         onOpenCarrierCheckout={handleOpenCarrierCheckout}
         onOpenBrokerPost={() => handleOpenBrokerPost()}
         onOpenDispatchInquiry={() => setIsDispatchInquiryOpen(true)}
+        onOpenPrivacy={() => setLegalModalState({ isOpen: true, type: 'privacy' })}
+        onOpenTerms={() => setLegalModalState({ isOpen: true, type: 'terms' })}
       />
 
       {/* Modals System */}
@@ -594,6 +608,12 @@ export const App: React.FC = () => {
         onClose={() => setIsAiIngestOpen(false)}
         onSuccess={() => fetchLoads(filter)}
         onShowToast={showToast}
+      />
+
+      <LegalModal
+        isOpen={legalModalState.isOpen}
+        type={legalModalState.type}
+        onClose={() => setLegalModalState((prev) => ({ ...prev, isOpen: false }))}
       />
 
       {/* Toast Alerts */}

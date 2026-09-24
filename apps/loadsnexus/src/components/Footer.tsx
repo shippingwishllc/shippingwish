@@ -5,6 +5,8 @@ interface FooterProps {
   onOpenCarrierCheckout: () => void;
   onOpenBrokerPost: () => void;
   onOpenDispatchInquiry: () => void;
+  onOpenPrivacy?: () => void;
+  onOpenTerms?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -12,6 +14,8 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenCarrierCheckout,
   onOpenBrokerPost,
   onOpenDispatchInquiry,
+  onOpenPrivacy,
+  onOpenTerms,
 }) => {
   return (
     <footer className="bg-slate-950 text-slate-400 py-16 border-t border-slate-900 text-xs" role="contentinfo">
@@ -44,6 +48,11 @@ export const Footer: React.FC<FooterProps> = ({
               <li>
                 <a href="#live-board-section" className="hover:text-white transition-colors">
                   Search Live Loads
+                </a>
+              </li>
+              <li>
+                <a href="#faq" className="hover:text-white transition-colors">
+                  Frequently Asked Questions (FAQ)
                 </a>
               </li>
               <li>
@@ -105,9 +114,9 @@ export const Footer: React.FC<FooterProps> = ({
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Support & Legal */}
           <div>
-            <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4">Support &amp; Desk</h4>
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4">Support &amp; Legal</h4>
             <ul className="space-y-2.5">
               <li>
                 <button
@@ -136,9 +145,31 @@ export const Footer: React.FC<FooterProps> = ({
                   Dispatch Desk Inquiry
                 </button>
               </li>
+              {onOpenPrivacy && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={onOpenPrivacy}
+                    className="hover:text-white transition-colors text-left"
+                  >
+                    Privacy Policy
+                  </button>
+                </li>
+              )}
+              {onOpenTerms && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={onOpenTerms}
+                    className="hover:text-white transition-colors text-left"
+                  >
+                    Terms of Service
+                  </button>
+                </li>
+              )}
               <li>
-                <a href="tel:+19177370021" className="text-blue-400 hover:text-blue-300 font-bold">
-                  Support: +1 (917) 737-0021
+                <a href="tel:+18005803101" className="text-blue-400 hover:text-blue-300 font-bold">
+                  Support: +1 (800) 580-3101
                 </a>
               </li>
             </ul>
@@ -151,14 +182,34 @@ export const Footer: React.FC<FooterProps> = ({
             © 2026 LoadsNexus™ — An Enterprise Freight Product of{' '}
             <span className="font-bold text-slate-300">Shipping Wish LLC</span>. All rights reserved.
           </div>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {onOpenPrivacy && (
+              <button
+                type="button"
+                onClick={onOpenPrivacy}
+                className="hover:text-slate-300 transition-colors"
+              >
+                Privacy Policy
+              </button>
+            )}
+            <span>·</span>
+            {onOpenTerms && (
+              <button
+                type="button"
+                onClick={onOpenTerms}
+                className="hover:text-slate-300 transition-colors"
+              >
+                Terms of Service
+              </button>
+            )}
+            <span>·</span>
+            <a href="#faq" className="hover:text-slate-300 transition-colors">
+              FAQs
+            </a>
+            <span>·</span>
+            <span className="flex items-center gap-1.5 text-emerald-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               Anti-Double-Brokering Guard Active
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              FMCSA Carrier Roster Synchronized
             </span>
           </div>
         </div>
