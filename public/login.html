@@ -354,7 +354,8 @@
     dispatcher: { label: 'Dispatcher', badge: 'badge-blue' },
     sales_rep: { label: 'Sales Rep', badge: 'badge-green' },
     carrier: { label: 'Carrier', badge: 'badge-gray' },
-    driver: { label: 'Driver', badge: 'badge-navy' }
+    driver: { label: 'Driver', badge: 'badge-navy' },
+    broker: { label: 'Freight Broker', badge: 'badge-purple' }
   };
 
   const ROLE_REDIRECT = {
@@ -363,7 +364,8 @@
     dispatcher: '/dispatcher-dashboard',
     sales_rep: '/sales-dashboard',
     carrier: '/carrier-overview',
-    driver: '/driver-app'
+    driver: '/driver-app',
+    broker: '/load-booking'
   };
 
   const loginParams = new URLSearchParams(location.search);
