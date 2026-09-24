@@ -60,9 +60,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-600 text-white font-black flex items-center justify-center text-sm shadow-md shadow-blue-500/25 group-hover:scale-105 transition-transform shrink-0">
               LN
             </div>
-            <div className="text-lg sm:text-xl font-display font-extrabold text-slate-900 tracking-tight shrink-0 flex items-center">
-              Loads<span className="text-blue-600">Nexus</span>
-              <sup className="text-[10px] font-black text-blue-600 ml-0.5">™</sup>
+            <div className="shrink-0 flex flex-col justify-center">
+              <div className="text-lg sm:text-xl font-display font-extrabold text-slate-900 tracking-tight leading-tight flex items-center">
+                Loads<span className="text-blue-600">Nexus</span>
+                <sup className="text-[10px] font-black text-blue-600 ml-0.5">™</sup>
+              </div>
+              <span className="text-[10px] font-semibold text-slate-400 tracking-wide leading-none hidden sm:block">
+                by Shipping Wish LLC
+              </span>
             </div>
           </a>
 
@@ -123,27 +128,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Actions for Laptops & Desktops (>= 1024px) */}
           <div className="hidden lg:flex items-center gap-3 shrink-0">
-            {/* Full badge on xl screens, compact chip on lg screens */}
-            <div className="hidden xl:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200/90 text-xs font-medium text-slate-600 shrink-0">
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                className="text-blue-600 shrink-0"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-              <span className="whitespace-nowrap">Operated by Shipping Wish LLC</span>
-            </div>
-
-            <div className="hidden lg:inline-flex xl:hidden items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-semibold text-slate-600 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-              <span className="whitespace-nowrap">Shipping Wish Verified</span>
-            </div>
-
             {/* Authenticated user pill or Sign In button */}
             {user ? (
               <div className="relative shrink-0">
