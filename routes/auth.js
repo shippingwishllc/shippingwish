@@ -291,24 +291,33 @@ const TEST_ACCOUNTS = {
   'admin@loadsnexus.com':     { role: 'super_admin', pass: 'AdminPass2026!', name: 'Super Admin', company: 'LoadsNexus Enterprise', phone: '+1 (800) 580-3101', mc: null, dot: null, plan: 'admin_pass' }
 };
 
+let lastEnsureError = null;
+
 async function ensureTestAccount(emailInput) {
   const norm = String(emailInput || '').trim().toLowerCase();
   const acc = TEST_ACCOUNTS[norm];
   if (!acc) return;
 
   try {
+    // 1. Ensure columns exist on users table
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS weekly_plan TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS mc_number TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS dot_number TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS company_name TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
+    `).catch(() => {});
+
+    // 2. Check if user already exists
     const existing = await pool.query('SELECT id, password_hash, role FROM users WHERE lower(email) = lower($1)', [norm]);
-    let needUpdate = false;
+    const hash = await bcrypt.hash(acc.pass, 10);
 
     if (existing.rows.length === 0) {
-      needUpdate = true;
-    } else {
-      const match = await bcrypt.compare(acc.pass, existing.rows[0].password_hash).catch(() => false);
-      if (!match) needUpdate = true;
-    }
-
-    if (needUpdate) {
-      const hash = await bcrypt.hash(acc.pass, 10);
       await pool.query(`
         INSERT INTO users (
           name, email, password_hash, role, company_name, phone,
@@ -318,28 +327,30 @@ async function ensureTestAccount(emailInput) {
           $1, $2, $3, $4, $5, $6, $7, $8, '100 Logistics Way, Suite 400, Dallas, TX 75201',
           $9, NOW() + interval '365 days', NOW(), false
         )
-        ON CONFLICT (email) DO UPDATE SET
-          password_hash = EXCLUDED.password_hash,
-          role = EXCLUDED.role,
-          company_name = EXCLUDED.company_name,
-          phone = EXCLUDED.phone,
-          mc_number = EXCLUDED.mc_number,
-          dot_number = EXCLUDED.dot_number,
-          weekly_plan = EXCLUDED.weekly_plan,
-          trial_ends_at = NOW() + interval '365 days',
-          email_verified_at = NOW(),
-          is_suspended = false,
-          deleted_at = NULL
       `, [acc.name, norm, hash, acc.role, acc.company, acc.phone, acc.mc, acc.dot, acc.plan]);
-      console.log(`[AUTH] Auto-ensured test account ${norm} (${acc.role}) with active credentials.`);
+      console.log(`[AUTH] Auto-created test account ${norm} (${acc.role}).`);
+    } else {
+      const match = await bcrypt.compare(acc.pass, existing.rows[0].password_hash).catch(() => false);
+      if (!match || existing.rows[0].role !== acc.role) {
+        await pool.query(`
+          UPDATE users
+          SET password_hash = $1, role = $2, company_name = $3, phone = $4,
+              mc_number = $5, dot_number = $6, weekly_plan = $7,
+              trial_ends_at = NOW() + interval '365 days', email_verified_at = NOW(),
+              is_suspended = false, deleted_at = NULL
+          WHERE id = $8
+        `, [hash, acc.role, acc.company, acc.phone, acc.mc, acc.dot, acc.plan, existing.rows[0].id]);
+        console.log(`[AUTH] Auto-updated password & role for test account ${norm}.`);
+      }
     }
   } catch (err) {
-    console.warn(`[AUTH] Auto-ensure test account ${norm} notice:`, err.message);
+    lastEnsureError = err.message;
+    console.error(`[AUTH] Auto-ensure test account ${norm} error:`, err);
   }
 }
 
 // Login
-router.post('/login', rateLimit(10, 60000), async (req, res) => {
+router.post('/login', rateLimit(20, 60000), async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
   const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').split(',')[0].trim();
@@ -349,7 +360,7 @@ router.post('/login', rateLimit(10, 60000), async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users WHERE lower(email) = lower($1)', [email]);
     const user = result.rows[0];
-    if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
+    if (!user) return res.status(401).json({ error: 'Invalid email or password.', code: 'USER_NOT_FOUND', ensureError: lastEnsureError });
     
     if (user.is_suspended) {
       return res.status(403).json({ error: 'Your account has been suspended. Please contact Shipping Wish support.' });
@@ -359,7 +370,7 @@ router.post('/login', rateLimit(10, 60000), async (req, res) => {
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) return res.status(401).json({ error: 'Invalid email or password.' });
+    if (!valid) return res.status(401).json({ error: 'Invalid email or password.', code: 'PASSWORD_MISMATCH' });
     
     // Check carrier subscription & cancellation state
     if (isCarrierRole(user.role)) {
