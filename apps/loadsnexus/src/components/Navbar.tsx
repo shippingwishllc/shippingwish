@@ -6,6 +6,7 @@ interface NavbarProps {
   onOpenAuth: (role?: 'carrier' | 'broker') => void;
   onOpenCarrierCheckout: () => void;
   onOpenBrokerPost?: () => void;
+  onOpenCockpit?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -13,6 +14,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onOpenCarrierCheckout,
   onOpenBrokerPost,
+  onOpenCockpit,
 }) => {
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -130,38 +132,54 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="hidden lg:flex items-center gap-3 shrink-0">
             {/* Authenticated user pill or Sign In button */}
             {user ? (
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 hover:bg-blue-100/70 text-slate-800 text-xs font-bold transition-colors whitespace-nowrap"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-                  <span className="truncate max-w-[120px]">{user.name || user.email}</span>
-                  <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-blue-200/70 text-blue-800">
-                    {user.role}
-                  </span>
-                  <span className="text-slate-400 text-[10px]">▼</span>
-                </button>
-
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-2 z-50">
-                    <div className="px-4 py-2 border-b border-slate-100 text-[11px] text-slate-500">
-                      Signed in as<br />
-                      <strong className="text-slate-800 truncate block">{user.email}</strong>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="w-full text-left px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
+              <div className="flex items-center gap-2.5 shrink-0">
+                {onOpenCockpit && (
+                  <button
+                    type="button"
+                    onClick={onOpenCockpit}
+                    className={`px-3.5 py-2 text-xs font-black text-white rounded-xl shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-1.5 ${
+                      user.role === 'broker'
+                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-600/30'
+                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/30'
+                    }`}
+                  >
+                    <span>🚀</span>
+                    <span>{user.role === 'broker' ? 'Broker Command Center' : 'Freight Cockpit'}</span>
+                  </button>
                 )}
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 hover:bg-blue-100/70 text-slate-800 text-xs font-bold transition-colors whitespace-nowrap"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span className="truncate max-w-[120px]">{user.name || user.email}</span>
+                    <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-blue-200/70 text-blue-800">
+                      {user.role}
+                    </span>
+                    <span className="text-slate-400 text-[10px]">▼</span>
+                  </button>
+
+                  {userMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-2 z-50">
+                      <div className="px-4 py-2 border-b border-slate-100 text-[11px] text-slate-500">
+                        Signed in as<br />
+                        <strong className="text-slate-800 truncate block">{user.email}</strong>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          handleLogout();
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <button
@@ -185,12 +203,24 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right Actions for Tablets & Mobile (< 1024px) */}
           <div className="flex lg:hidden items-center gap-2 shrink-0">
             {user ? (
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-xs font-bold text-slate-800">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                <span className="truncate max-w-[80px] sm:max-w-[120px] text-[11px]">
-                  {user.name?.split(' ')[0] || 'Account'}
-                </span>
-              </div>
+              <>
+                {onOpenCockpit && (
+                  <button
+                    type="button"
+                    onClick={onOpenCockpit}
+                    className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-black text-[11px] flex items-center gap-1 shadow-sm whitespace-nowrap"
+                  >
+                    <span>🚀</span>
+                    <span>Cockpit</span>
+                  </button>
+                )}
+                <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-xs font-bold text-slate-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span className="truncate max-w-[70px] sm:max-w-[110px] text-[11px]">
+                    {user.name?.split(' ')[0] || 'Account'}
+                  </span>
+                </div>
+              </>
             ) : (
               <button
                 type="button"
@@ -326,6 +356,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                       {user.role}
                     </span>
                   </div>
+                  {onOpenCockpit && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDrawerOpen(false);
+                        onOpenCockpit();
+                      }}
+                      className={`w-full py-2.5 text-xs font-black text-white rounded-lg text-center shadow-md transition-all flex items-center justify-center gap-1.5 ${
+                        user.role === 'broker' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                    >
+                      <span>🚀</span>
+                      <span>{user.role === 'broker' ? 'Broker Command Center' : 'Launch Freight Cockpit'}</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {

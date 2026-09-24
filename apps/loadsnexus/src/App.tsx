@@ -23,6 +23,7 @@ import { BrokerCreditModal } from './components/BrokerCreditModal';
 import { AiIngestModal } from './components/AiIngestModal';
 import { AiSupportChat } from './components/AiSupportChat';
 import { ToastContainer, type ToastItem } from './components/ToastContainer';
+import { FreightCockpit } from './components/FreightCockpit';
 
 const INITIAL_FALLBACK_LOADS: FreightLoad[] = [
   {
@@ -137,6 +138,7 @@ const INITIAL_FALLBACK_LOADS: FreightLoad[] = [
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<UserSession | null>(null);
+  const [viewMode, setViewMode] = useState<'cockpit' | 'website'>('cockpit');
   const [loads, setLoads] = useState<FreightLoad[]>(INITIAL_FALLBACK_LOADS);
   const [isLoadingLoads, setIsLoadingLoads] = useState(false);
   const [isLiveStreaming, setIsLiveStreaming] = useState(true);
@@ -252,7 +254,13 @@ export const App: React.FC = () => {
     fetch('/api/me', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data?.user) setUser(data.user);
+        if (data?.user) {
+          setUser(data.user);
+          const p = new URLSearchParams(window.location.search);
+          if (p.get('view') !== 'website') {
+            setViewMode('cockpit');
+          }
+        }
       })
       .catch(() => {});
 
@@ -453,36 +461,12 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-800">
-      {/* Navigation */}
-      <Navbar
-        user={user}
-        onOpenAuth={handleOpenAuth}
-        onOpenCarrierCheckout={handleOpenCarrierCheckout}
-        onOpenBrokerPost={() => handleOpenBrokerPost()}
-      />
-
-      <main className="flex-grow">
-        {/* Hero Section */}
-        <Hero
-          onOpenCarrierCheckout={handleOpenCarrierCheckout}
-          onOpenBrokerPost={() => handleOpenBrokerPost()}
-          onOpenAuth={handleOpenAuth}
-        />
-
-        {/* Hero Search Widget */}
-        <SearchWidget
-          onSearch={handleFilterChange}
-          onOpenPostFreight={(prefill) => handleOpenBrokerPost(prefill)}
-        />
-
-        {/* Corridor Rates Ticker */}
-        <CorridorTicker />
-
-        {/* DAT One Style Live Board */}
-        <LiveLoadBoard
+    <div className={`min-h-screen flex flex-col font-sans ${user && viewMode === 'cockpit' ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
+      {user && viewMode === 'cockpit' ? (
+        <FreightCockpit
+          user={user}
           loads={loads}
-          isLoading={isLoadingLoads}
+          isLoadingLoads={isLoadingLoads}
           filter={filter}
           onFilterChange={handleFilterChange}
           onRefresh={() => {
@@ -492,55 +476,109 @@ export const App: React.FC = () => {
           onInspectLoad={handleInspectLoad}
           onOpenBrokerPost={() => handleOpenBrokerPost()}
           onOpenCarrierCheckout={handleOpenCarrierCheckout}
+          onOpenAiIngest={() => setIsAiIngestOpen(true)}
+          onOpenLaneAlerts={() => setIsLaneAlertsOpen(true)}
+          onOpenBrokerCredit={() => handleOpenBrokerCredit()}
+          savedAlerts={savedAlerts}
           isLiveStreaming={isLiveStreaming}
           onToggleLiveStream={handleToggleLiveStream}
           lastRefreshedAt={lastRefreshedAt}
-          onOpenLaneAlerts={() => setIsLaneAlertsOpen(true)}
-          onOpenBrokerCredit={() => handleOpenBrokerCredit()}
-          onOpenAiIngest={() => setIsAiIngestOpen(true)}
-          savedAlerts={savedAlerts}
-          user={user}
+          showToast={showToast}
+          onSwitchView={(mode) => setViewMode(mode)}
           onOpenAuth={handleOpenAuth}
         />
+      ) : (
+        <>
+          {/* Navigation */}
+          <Navbar
+            user={user}
+            onOpenAuth={handleOpenAuth}
+            onOpenCarrierCheckout={handleOpenCarrierCheckout}
+            onOpenBrokerPost={() => handleOpenBrokerPost()}
+            onOpenCockpit={() => setViewMode('cockpit')}
+          />
 
-        {/* Features Grid */}
-        <Features />
+          <main className="flex-grow">
+            {/* Hero Section */}
+            <Hero
+              onOpenCarrierCheckout={handleOpenCarrierCheckout}
+              onOpenBrokerPost={() => handleOpenBrokerPost()}
+              onOpenAuth={handleOpenAuth}
+            />
 
-        {/* Market Comparison Table */}
-        <ComparisonTable />
+            {/* Hero Search Widget */}
+            <SearchWidget
+              onSearch={handleFilterChange}
+              onOpenPostFreight={(prefill) => handleOpenBrokerPost(prefill)}
+            />
 
-        {/* Native Mobile Apps */}
-        <MobileApps />
+            {/* Corridor Rates Ticker */}
+            <CorridorTicker />
 
-        {/* Pricing Section */}
-        <Pricing
-          onOpenCarrierCheckout={handleOpenCarrierCheckout}
-          onOpenDispatchInquiry={() => setIsDispatchInquiryOpen(true)}
-          onOpenBrokerPost={() => handleOpenBrokerPost()}
-        />
+            {/* DAT One Style Live Board */}
+            <LiveLoadBoard
+              loads={loads}
+              isLoading={isLoadingLoads}
+              filter={filter}
+              onFilterChange={handleFilterChange}
+              onRefresh={() => {
+                fetchLoads(filter);
+                showToast('Live spot board updated with latest rates.');
+              }}
+              onInspectLoad={handleInspectLoad}
+              onOpenBrokerPost={() => handleOpenBrokerPost()}
+              onOpenCarrierCheckout={handleOpenCarrierCheckout}
+              isLiveStreaming={isLiveStreaming}
+              onToggleLiveStream={handleToggleLiveStream}
+              lastRefreshedAt={lastRefreshedAt}
+              onOpenLaneAlerts={() => setIsLaneAlertsOpen(true)}
+              onOpenBrokerCredit={() => handleOpenBrokerCredit()}
+              onOpenAiIngest={() => setIsAiIngestOpen(true)}
+              savedAlerts={savedAlerts}
+              user={user}
+              onOpenAuth={handleOpenAuth}
+            />
 
-        {/* Frequently Asked Questions */}
-        <Faq
-          onOpenCarrierCheckout={handleOpenCarrierCheckout}
-          onOpenBrokerPost={() => handleOpenBrokerPost()}
-        />
+            {/* Features Grid */}
+            <Features />
 
-        {/* Final Conversion Banner */}
-        <CtaBanner
-          onOpenCarrierCheckout={handleOpenCarrierCheckout}
-          onOpenBrokerPost={() => handleOpenBrokerPost()}
-        />
-      </main>
+            {/* Market Comparison Table */}
+            <ComparisonTable />
 
-      {/* Corporate Footer */}
-      <Footer
-        onOpenAuth={handleOpenAuth}
-        onOpenCarrierCheckout={handleOpenCarrierCheckout}
-        onOpenBrokerPost={() => handleOpenBrokerPost()}
-        onOpenDispatchInquiry={() => setIsDispatchInquiryOpen(true)}
-        onOpenPrivacy={() => setLegalModalState({ isOpen: true, type: 'privacy' })}
-        onOpenTerms={() => setLegalModalState({ isOpen: true, type: 'terms' })}
-      />
+            {/* Native Mobile Apps */}
+            <MobileApps />
+
+            {/* Pricing Section */}
+            <Pricing
+              onOpenCarrierCheckout={handleOpenCarrierCheckout}
+              onOpenDispatchInquiry={() => setIsDispatchInquiryOpen(true)}
+              onOpenBrokerPost={() => handleOpenBrokerPost()}
+            />
+
+            {/* Frequently Asked Questions */}
+            <Faq
+              onOpenCarrierCheckout={handleOpenCarrierCheckout}
+              onOpenBrokerPost={() => handleOpenBrokerPost()}
+            />
+
+            {/* Final Conversion Banner */}
+            <CtaBanner
+              onOpenCarrierCheckout={handleOpenCarrierCheckout}
+              onOpenBrokerPost={() => handleOpenBrokerPost()}
+            />
+          </main>
+
+          {/* Corporate Footer */}
+          <Footer
+            onOpenAuth={handleOpenAuth}
+            onOpenCarrierCheckout={handleOpenCarrierCheckout}
+            onOpenBrokerPost={() => handleOpenBrokerPost()}
+            onOpenDispatchInquiry={() => setIsDispatchInquiryOpen(true)}
+            onOpenPrivacy={() => setLegalModalState({ isOpen: true, type: 'privacy' })}
+            onOpenTerms={() => setLegalModalState({ isOpen: true, type: 'terms' })}
+          />
+        </>
+      )}
 
       {/* Modals System */}
       <BrokerPostModal
@@ -567,6 +605,7 @@ export const App: React.FC = () => {
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={(u) => {
           setUser(u);
+          setViewMode('cockpit');
           fetchLoads(filter);
         }}
         onOpenCarrierCheckout={handleOpenCarrierCheckout}
