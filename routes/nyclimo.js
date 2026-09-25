@@ -194,7 +194,6 @@ router.post('/bookings/:id/checkout', async (req, res) => {
     const booking = rows[0];
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      payment_method_types: ['card'],
       customer_email: booking.passenger_email || undefined,
       line_items: [{ price_data: {
         currency: 'usd',
