@@ -129,8 +129,8 @@ router.post('/bookings', async (req, res) => {
     const phone = String(b.phone || '').trim().slice(0, 40);
     const pickupTime = String(b.pickupTime || '').trim();
     const pickupDate = String(b.pickupDate || '');
-    if (!firstName || !lastName || !/^\S+@\S+\.\S+$/.test(email) || !phone || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(pickupTime)) {
-      return res.status(400).json({ error: 'Valid passenger name, email, and phone are required.' });
+    if (!firstName || !lastName || !/^\S+@\S+\.\S+$/.test(email) || !phone || !/^([01]\d|2[0-3]):[0-5]\d$/.test(pickupTime)) {
+      return res.status(400).json({ error: 'Valid passenger name, email, phone, and 24-hour pickup time are required.' });
     }
     const pickupDateValue = new Date(pickupDate + 'T00:00:00Z');
     if (!/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) || Number.isNaN(pickupDateValue.getTime()) ||
