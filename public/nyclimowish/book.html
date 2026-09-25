@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Your Ride | NYC Limo Wish</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/limo.css">
+</head>
+<body class="limo-light">
+
+<header class="limo-book-header">
+  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
+    <a href="/" class="limo-logo" style="color:var(--limo-black);">NYC <span>LIMO</span> WISH</a>
+    <div class="limo-steps">
+      <div class="limo-step active" data-step="1"><span class="limo-step-num">1</span> Ride Details</div>
+      <div class="limo-step" data-step="2"><span class="limo-step-num">2</span> Vehicle</div>
+      <div class="limo-step" data-step="3"><span class="limo-step-num">3</span> Passenger</div>
+      <div class="limo-step" data-step="4"><span class="limo-step-num">4</span> Payment</div>
+    </div>
+    <a href="/login" class="limo-btn limo-btn-gold" style="padding:8px 18px;font-size:0.75rem;">Login</a>
+  </div>
+</header>
+
+<main id="book-app">
+  <!-- Step 1: Ride Details -->
+  <div class="book-step" id="step-1">
+    <div style="max-width:640px;margin:40px auto;padding:0 24px;">
+      <h1 style="text-align:center;font-size:1.8rem;font-weight:800;margin-bottom:8px;color:var(--limo-gold-dark);">Book Your NYC Limo Wish Now!</h1>
+      <div class="limo-widget" style="background:#fff;border-color:#eee;color:var(--limo-black);margin-top:32px;">
+        <div class="limo-tabs">
+          <button class="limo-tab active" data-tab="point_to_point">Point to Point</button>
+          <button class="limo-tab" data-tab="hourly">Hourly</button>
+        </div>
+        <div class="limo-field">
+          <label>Pickup Location</label>
+          <span class="limo-field-icon">📍</span>
+          <input class="limo-input" id="b-pickup" placeholder="Enter pickup address" style="background:#f9f9f9;color:#000;border-color:#ddd;">
+        </div>
+        <div class="limo-field" id="b-dropoff-wrap">
+          <label>Drop-off Location</label>
+          <span class="limo-field-icon">📍</span>
+          <input class="limo-input" id="b-dropoff" placeholder="Enter drop-off address" style="background:#f9f9f9;color:#000;border-color:#ddd;">
+        </div>
+        <div class="limo-field" id="b-duration-wrap" style="display:none;">
+          <label>Duration</label>
+          <span class="limo-field-icon">⏱</span>
+          <select class="limo-input" id="b-hours" style="background:#f9f9f9;color:#000;border-color:#ddd;">
+            <option value="2">2 hours</option>
+            <option value="3" selected>3 hours</option>
+            <option value="4">4 hours</option>
+            <option value="5">5 hours</option>
+            <option value="6">6 hours</option>
+            <option value="8">8 hours</option>
+          </select>
+        </div>
+        <div class="limo-field-row">
+          <div class="limo-field">
+            <label>Date</label>
+            <span class="limo-field-icon">📅</span>
+            <input class="limo-input" type="date" id="b-date" style="background:#f9f9f9;color:#000;border-color:#ddd;">
+          </div>
+          <div class="limo-field">
+            <label>Time</label>
+            <span class="limo-field-icon">🕐</span>
+            <input class="limo-input" type="time" id="b-time" style="background:#f9f9f9;color:#000;border-color:#ddd;">
+          </div>
+        </div>
+        <p class="limo-note" style="color:#666;">🕐 Chauffeur will wait 15 minutes as a complimentary service</p>
+        <button class="limo-btn limo-btn-dark limo-btn-block limo-btn-lg" id="btn-step1">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Vehicle Selection -->
+  <div class="book-step" id="step-2" style="display:none;">
+    <div class="limo-book-main">
+      <aside class="limo-sidebar">
+        <div class="limo-sidebar-map" id="sidebar-map">🗺 Route Map</div>
+        <div id="sidebar-stats" style="font-size:0.85rem;color:#666;margin-bottom:12px;"></div>
+        <div class="limo-route-line">
+          <div class="limo-route-pin">📍 <span id="sb-pickup">—</span></div>
+          <div class="limo-route-pin">📍 <span id="sb-dropoff">—</span></div>
+        </div>
+        <div style="font-size:0.85rem;margin-top:12px;">
+          <div id="sb-datetime">—</div>
+          <div id="sb-duration" style="color:#666;margin-top:4px;"></div>
+        </div>
+      </aside>
+      <div>
+        <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:20px;">Select Your Vehicle</h2>
+        <div class="limo-vehicle-list" id="vehicle-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Passenger Details -->
+  <div class="book-step" id="step-3" style="display:none;">
+    <div class="limo-book-main">
+      <aside class="limo-sidebar">
+        <h4 style="font-weight:700;margin-bottom:12px;">Booking Summary</h4>
+        <div id="summary-vehicle" style="font-size:0.9rem;margin-bottom:8px;"></div>
+        <div class="limo-price-breakdown" id="price-breakdown"></div>
+      </aside>
+      <div class="limo-passenger-form">
+        <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:20px;">Passenger Information</h2>
+        <div class="limo-field-row">
+          <div class="limo-field"><label>First Name</label><input class="limo-input" id="p-first" required></div>
+          <div class="limo-field"><label>Last Name</label><input class="limo-input" id="p-last" required></div>
+        </div>
+        <div class="limo-field"><label>Email Address</label><input class="limo-input" type="email" id="p-email" required></div>
+        <div class="limo-field"><label>Phone Number</label><input class="limo-input" type="tel" id="p-phone" required placeholder="+1 (555) 000-0000"></div>
+        <div class="limo-field"><label>Trip Notes</label><textarea class="limo-input" id="p-notes" rows="3" placeholder="Flight number, child seats, special requests..." style="padding-left:16px;resize:vertical;"></textarea></div>
+        <div class="limo-field" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+          <input type="checkbox" id="p-child-seats"> <label for="p-child-seats" style="margin:0;text-transform:none;font-size:0.9rem;">Child seats needed?</label>
+        </div>
+        <button class="limo-btn limo-btn-dark limo-btn-lg" id="btn-step3" style="margin-top:24px;float:right;">Continue to Payment →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Payment -->
+  <div class="book-step" id="step-4" style="display:none;">
+    <div style="max-width:640px;margin:60px auto;padding:0 24px;text-align:center;">
+      <div style="font-size:4rem;margin-bottom:16px;">💳</div>
+      <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:8px;">Secure Payment</h2>
+      <p style="color:#666;margin-bottom:24px;">You'll be redirected to Stripe for secure payment processing.</p>
+      <div class="limo-price-breakdown" id="final-price" style="text-align:left;margin-bottom:24px;"></div>
+      <button class="limo-btn limo-btn-gold limo-btn-block limo-btn-lg" id="btn-pay">Pay with Stripe →</button>
+      <p style="font-size:0.75rem;color:#999;margin-top:16px;">🔒 256-bit encryption · PCI compliant via Stripe · Gratuity included</p>
+    </div>
+  </div>
+</main>
+
+<div class="limo-trust-bar">
+  <div class="limo-trust-item"><h5>🎩 Licensed Chauffeurs</h5><p>Maximum comfort and safety</p></div>
+  <div class="limo-trust-item"><h5>✈️ Flight Tracking</h5><p>Driver monitors your flight</p></div>
+  <div class="limo-trust-item"><h5>📞 24/7 Support</h5><p>Dedicated customer service</p></div>
+  <div class="limo-trust-item"><h5>⭐ 4.9 Rating</h5><p>Trusted by thousands</p></div>
+</div>
+
+<script src="/js/limo-booking.js"></script>
+</body>
+</html>

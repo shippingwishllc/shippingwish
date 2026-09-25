@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="NYC Limo Wish">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e8c547"/>
+      <stop offset="50%" stop-color="#c9a227"/>
+      <stop offset="100%" stop-color="#a88620"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Black luxury background -->
+  <rect width="512" height="512" rx="108" fill="#0a0a0a"/>
+  <rect x="18" y="18" width="476" height="476" rx="92" fill="none" stroke="url(#gold)" stroke-width="10" opacity="0.55"/>
+
+  <!-- Brand dot (matches site logo) -->
+  <rect x="372" y="92" width="48" height="48" rx="10" fill="url(#gold)"/>
+
+  <!-- Luxury sedan silhouette -->
+  <g transform="translate(56, 168)">
+    <path fill="url(#gold)" d="M24 188h352v18H24z" opacity="0.35"/>
+    <path fill="url(#gold)" d="M48 176c0-8 18-42 52-52l28-14h98l36 14c38 12 58 44 58 52H48z"/>
+    <path fill="#0a0a0a" opacity="0.35" d="M118 98h76v38h-76z"/>
+    <path fill="url(#gold)" d="M132 110h48v18h-48z" opacity="0.85"/>
+    <circle cx="108" cy="188" r="34" fill="#0a0a0a" stroke="url(#gold)" stroke-width="12"/>
+    <circle cx="292" cy="188" r="34" fill="#0a0a0a" stroke="url(#gold)" stroke-width="12"/>
+    <circle cx="108" cy="188" r="12" fill="url(#gold)" opacity="0.7"/>
+    <circle cx="292" cy="188" r="12" fill="url(#gold)" opacity="0.7"/>
+  </g>
+
+  <!-- NLW monogram -->
+  <text x="256" y="430" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="118" fill="#ffffff" text-anchor="middle" letter-spacing="-4">
+    <tspan fill="#ffffff">N</tspan><tspan fill="url(#gold)">L</tspan><tspan fill="#ffffff">W</tspan>
+  </text>
+</svg>

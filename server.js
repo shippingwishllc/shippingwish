@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
@@ -106,9 +107,16 @@ app.use((req, res, next) => {
 
   // 2. NYC Limo Wish Domain (nyclimowish.com)
   if (host.includes('nyclimo')) {
-    if (p.startsWith('/api') || p.startsWith('/uploads')) {
+    // API routing
+    if (p.startsWith('/api')) {
+      const nyclimoRouter = require('./routes/nyclimo');
+      req.url = req.url.replace(/^\/api/, '') || '/';
+      return nyclimoRouter(req, res, next);
+    }
+    if (p.startsWith('/uploads')) {
       return next();
     }
+    // Main & known pages
     if (p === '/' || p === '/index' || p === '/index.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'index.html'));
     }
@@ -118,9 +126,29 @@ app.use((req, res, next) => {
     if (p === '/track' || p === '/track.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'track.html'));
     }
-    const filePath = path.join(__dirname, 'public', 'nyclimowish', p);
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-      return res.sendFile(filePath);
+    if (p === '/login' || p === '/login.html' || p === '/signup') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'login.html'));
+    }
+    if (p === '/erp' || p === '/erp.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'erp.html'));
+    }
+    if (p === '/driver' || p === '/driver/' || p === '/driver/index.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'driver', 'index.html'));
+    }
+    if (p === '/passenger' || p === '/passenger/' || p === '/passenger/index.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'passenger', 'index.html'));
+    }
+    if (p === '/book/success' || p === '/book/success.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'book', 'success.html'));
+    }
+    // Static assets & pre-rendered pages (.html)
+    const directPath = path.join(__dirname, 'public', 'nyclimowish', p);
+    if (fs.existsSync(directPath) && fs.statSync(directPath).isFile()) {
+      return res.sendFile(directPath);
+    }
+    const htmlPath = path.join(__dirname, 'public', 'nyclimowish', p + '.html');
+    if (fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
+      return res.sendFile(htmlPath);
     }
   }
 

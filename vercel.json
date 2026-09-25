@@ -62,6 +62,11 @@
       "destination": "/nyclimowish/index.html"
     },
     {
+      "source": "/index",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/index.html"
+    },
+    {
       "source": "/book",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
       "destination": "/nyclimowish/book.html"
@@ -77,6 +82,71 @@
       "destination": "/nyclimowish/login.html"
     },
     {
+      "source": "/signup",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/login.html"
+    },
+    {
+      "source": "/erp",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/erp.html"
+    },
+    {
+      "source": "/driver",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/driver/index.html"
+    },
+    {
+      "source": "/driver/(.*)",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/driver/$1"
+    },
+    {
+      "source": "/passenger",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/passenger/index.html"
+    },
+    {
+      "source": "/passenger/(.*)",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/passenger/$1"
+    },
+    {
+      "source": "/book/success",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/book/success.html"
+    },
+    {
+      "source": "/contact",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/contact.html"
+    },
+    {
+      "source": "/terms",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/terms.html"
+    },
+    {
+      "source": "/privacy-policy",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/privacy-policy.html"
+    },
+    {
+      "source": "/cancellation",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/cancellation.html"
+    },
+    {
+      "source": "/services/(.*)",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/services/$1.html"
+    },
+    {
+      "source": "/airports/(.*)",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/airports/$1.html"
+    },
+    {
       "source": "/images/(.*)",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
       "destination": "/nyclimowish/images/$1"
@@ -90,6 +160,11 @@
       "source": "/js/(.*)",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
       "destination": "/nyclimowish/js/$1"
+    },
+    {
+      "source": "/favicon.svg",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/favicon.svg"
     },
     {
       "source": "/",

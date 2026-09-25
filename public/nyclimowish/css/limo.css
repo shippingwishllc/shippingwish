@@ -1,0 +1,620 @@
+/* NYC Limo Wish — Luxury Black & Gold Theme */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --limo-black: #0a0a0a;
+  --limo-dark: #141414;
+  --limo-card: #1a1a1a;
+  --limo-gold: #c9a227;
+  --limo-gold-light: #e8c547;
+  --limo-gold-dark: #a88620;
+  --limo-white: #ffffff;
+  --limo-gray: #888;
+  --limo-gray-light: #ccc;
+  --limo-gray-dark: #444;
+  --limo-success: #22c55e;
+  --limo-danger: #ef4444;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --transition: 0.25s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body.limo {
+  font-family: var(--font-sans);
+  background: var(--limo-black);
+  color: var(--limo-white);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.limo-light {
+  background: #f5f5f5;
+  color: var(--limo-black);
+}
+
+a { color: var(--limo-gold); text-decoration: none; transition: color var(--transition); }
+a:hover { color: var(--limo-gold-light); }
+
+/* HEADER */
+.limo-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(201,162,39,0.15);
+  padding: 0 24px;
+  height: 72px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.limo-nav-inner { max-width: 1280px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: space-between; }
+.limo-logo { font-family: var(--font-sans); font-weight: 800; font-size: 1.25rem; letter-spacing: 0.08em; color: var(--limo-white); }
+.limo-logo span { color: var(--limo-gold); }
+.limo-logo-dot { display: inline-block; width: 6px; height: 6px; background: var(--limo-gold); border-radius: 2px; margin-left: 2px; vertical-align: super; }
+.limo-nav-links { display: flex; gap: 32px; align-items: center; }
+.limo-nav-links a { color: var(--limo-white); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+.limo-nav-links a:hover { color: var(--limo-gold); }
+.limo-nav-contact { display: flex; gap: 16px; align-items: center; }
+.limo-nav-phone { color: var(--limo-gold); font-size: 0.85rem; white-space: nowrap; }
+.limo-nav-login {
+  padding: 10px 20px !important;
+  font-size: 0.72rem !important;
+  color: var(--limo-black) !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.limo-nav-login:hover { color: var(--limo-black) !important; }
+
+/* SERVICES MEGA MENU */
+.limo-nav-drop { position: relative; }
+.limo-nav-drop-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--limo-white); font-size: 0.8rem; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  font-family: var(--font-sans); padding: 8px 0;
+  display: flex; align-items: center; gap: 4px;
+}
+.limo-nav-drop-btn:hover, .limo-nav-drop.open .limo-nav-drop-btn { color: var(--limo-gold); }
+.limo-nav-caret { font-size: 0.65rem; transition: transform var(--transition); }
+.limo-nav-drop.open .limo-nav-caret { transform: rotate(180deg); }
+.limo-mega {
+  position: absolute; top: 100%; left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, 92vw); z-index: 1100;
+  padding-top: 14px; /* invisible bridge so menu stays open while moving cursor down */
+}
+.limo-mega-panel {
+  display: grid; grid-template-columns: 1.2fr 1fr 180px; gap: 0;
+  background: linear-gradient(145deg, #1c1c1c 0%, #121212 100%);
+  border: 1px solid rgba(201,162,39,0.25);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.55);
+  overflow: hidden;
+}
+.limo-mega-col { padding: 22px 24px; border-right: 1px solid rgba(255,255,255,0.06); }
+.limo-mega-label {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--limo-gold); margin-bottom: 14px;
+}
+.limo-mega-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+.limo-mega-grid--2 { grid-template-columns: 1fr; }
+.limo-mega-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px;
+  color: var(--limo-white) !important; font-size: 0.82rem; font-weight: 500;
+  letter-spacing: 0; text-transform: none;
+  transition: background var(--transition), color var(--transition);
+}
+.limo-mega-link:hover { background: rgba(201,162,39,0.12); color: var(--limo-gold-light) !important; }
+.limo-mega-icon {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: rgba(201,162,39,0.15); color: var(--limo-gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; flex-shrink: 0;
+}
+.limo-mega-side {
+  padding: 22px 18px; background: rgba(201,162,39,0.06);
+}
+.limo-mega-side-link {
+  display: block; padding: 6px 0; color: var(--limo-gray-light) !important;
+  font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.limo-mega-side-link:hover { color: var(--limo-gold) !important; }
+.limo-mega-quote-box {
+  margin-top: 16px;
+  padding: 14px 12px;
+  background: linear-gradient(135deg, rgba(201,162,39,0.22) 0%, rgba(201,162,39,0.08) 100%);
+  border: 1px solid rgba(201,162,39,0.45);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.limo-mega-quote {
+  margin: 0;
+  font-family: var(--font-serif); font-style: italic; font-weight: 700;
+  font-size: 1.08rem; line-height: 1.4;
+  color: #f5dc6a;
+  text-align: center;
+  text-shadow: 0 1px 12px rgba(0,0,0,0.6);
+}
+.limo-mobile-acc-btn {
+  background: none; border: none; width: 100%; text-align: left;
+  color: var(--limo-white); font-size: 0.95rem; font-weight: 600;
+  padding: 14px 12px; border-radius: 8px; cursor: pointer;
+  letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--font-sans);
+}
+.limo-mobile-acc-btn:hover { background: rgba(201,162,39,0.12); color: var(--limo-gold); }
+.limo-mobile-acc { padding-left: 12px; margin-bottom: 8px; }
+.limo-mobile-acc a {
+  display: block; padding: 10px 12px; color: var(--limo-gray-light) !important;
+  font-size: 0.85rem; text-transform: none; letter-spacing: 0;
+}
+.limo-mobile-acc a:hover { color: var(--limo-gold) !important; }
+
+/* BUTTONS */
+.limo-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 0.85rem;
+  letter-spacing: 0.06em; text-transform: uppercase; border: none; cursor: pointer;
+  transition: all var(--transition); font-family: var(--font-sans);
+}
+.limo-btn-gold { background: var(--limo-gold); color: var(--limo-black); }
+.limo-btn-gold:hover { background: var(--limo-gold-light); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(201,162,39,0.4); }
+.limo-btn-dark { background: var(--limo-black); color: var(--limo-white); border: 2px solid var(--limo-black); }
+.limo-btn-dark:hover { background: #222; }
+.limo-btn-outline { background: transparent; color: var(--limo-white); border: 2px solid rgba(255,255,255,0.3); }
+.limo-btn-outline:hover { border-color: var(--limo-gold); color: var(--limo-gold); }
+.limo-btn-block { width: 100%; }
+.limo-btn-lg { padding: 16px 36px; font-size: 0.9rem; }
+
+/* HERO */
+.limo-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 100svh;
+  max-height: 100svh;
+  padding: 76px 24px 28px;
+  overflow: hidden;
+}
+.limo-hero-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background: url('/images/hero-chauffeur.jpg') center 28% / cover no-repeat;
+  filter: brightness(1.2) contrast(1.06) saturate(1.12);
+  transform: scale(1.03);
+}
+.limo-hero-bg::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(to top, rgba(8,8,8,0.82) 0%, rgba(8,8,8,0.25) 42%, rgba(8,8,8,0.35) 100%),
+    linear-gradient(to right, rgba(8,8,8,0.55) 0%, rgba(8,8,8,0.08) 48%, rgba(8,8,8,0.45) 100%);
+}
+.limo-hero-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 70% 40%, rgba(201,162,39,0.12) 0%, transparent 55%);
+  pointer-events: none;
+}
+.limo-hero-grid {
+  position: relative; z-index: 1;
+  max-width: 1280px; margin: 0 auto; width: 100%;
+  display: grid; grid-template-columns: 1fr minmax(360px, 430px);
+  gap: 32px; align-items: center;
+}
+.limo-hero-text { padding-bottom: 8px; }
+.limo-hero-text h1 {
+  font-size: clamp(1.65rem, 3.2vw, 2.65rem);
+  font-weight: 800; line-height: 1.12; margin-bottom: 10px;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.6);
+}
+.limo-hero-tagline {
+  font-family: var(--font-serif); font-style: italic;
+  font-size: clamp(1.35rem, 2.8vw, 2.15rem);
+  font-weight: 600; line-height: 1.25;
+  color: var(--limo-gold-light);
+  text-shadow: 0 2px 20px rgba(0,0,0,0.7), 0 0 40px rgba(201,162,39,0.25);
+  margin-bottom: 0;
+}
+
+/* HERO BOOKING WIDGET — readable + fits viewport */
+.limo-widget-hero {
+  padding: 22px 22px 20px;
+  border-radius: 18px;
+  background: rgba(24,24,24,0.94);
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 20px 56px rgba(0,0,0,0.5);
+  max-height: calc(100svh - 120px);
+  overflow-y: auto;
+}
+.limo-widget-hero .limo-tabs { margin-bottom: 16px; }
+.limo-widget-hero .limo-tab {
+  padding: 11px 8px; font-size: 0.76rem;
+  color: var(--limo-gray-light);
+}
+.limo-widget-hero .limo-tab.active { color: var(--limo-gold-light); }
+.limo-widget-hero .limo-field { margin-bottom: 12px; }
+.limo-widget-hero .limo-field label {
+  font-size: 0.72rem; margin-bottom: 5px;
+  color: var(--limo-gray-light); font-weight: 700;
+}
+.limo-widget-hero .limo-input {
+  padding: 12px 14px 12px 40px; font-size: 0.92rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.22);
+  color: var(--limo-white);
+}
+.limo-widget-hero .limo-input::placeholder { color: rgba(255,255,255,0.42); }
+.limo-widget-hero .limo-input:focus {
+  background: rgba(255,255,255,0.12);
+  border-color: var(--limo-gold);
+  box-shadow: 0 0 0 2px rgba(201,162,39,0.15);
+}
+.limo-widget-hero .limo-field-icon { left: 13px; bottom: 12px; font-size: 0.95rem; }
+.limo-widget-hero .limo-field-row { gap: 10px; }
+.limo-widget-hero .limo-note {
+  margin: 8px 0 14px; font-size: 0.76rem;
+  color: var(--limo-gray-light);
+}
+.limo-widget-hero .limo-btn {
+  padding: 14px 18px; font-size: 0.85rem; font-weight: 800;
+  border-radius: 10px; letter-spacing: 0.08em;
+}
+
+/* BOOKING WIDGET (general) */
+.limo-widget {
+  background: rgba(26,26,26,0.95); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-lg); padding: 24px; backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+}
+.limo-tabs { display: flex; gap: 0; margin-bottom: 20px; border-radius: 8px; overflow: hidden; }
+.limo-tab {
+  flex: 1; padding: 12px; text-align: center; font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 0.08em; cursor: pointer; background: transparent; color: var(--limo-gray-light);
+  border: none; border-bottom: 2px solid transparent; transition: all var(--transition);
+  font-family: var(--font-sans); text-transform: uppercase;
+}
+.limo-tab.active { color: var(--limo-gold); border-bottom-color: var(--limo-gold); background: rgba(201,162,39,0.08); }
+.limo-field { margin-bottom: 14px; position: relative; }
+.limo-field label { display: block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--limo-gray); margin-bottom: 6px; }
+.limo-input {
+  width: 100%; padding: 14px 16px 14px 40px; background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius);
+  color: var(--limo-white); font-size: 0.9rem; font-family: var(--font-sans);
+  transition: border-color var(--transition);
+}
+.limo-input:focus { outline: none; border-color: var(--limo-gold); }
+.limo-input::placeholder { color: var(--limo-gray-dark); }
+.limo-field-icon { position: absolute; left: 14px; bottom: 14px; color: var(--limo-gold); font-size: 1rem; pointer-events: none; }
+.limo-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.limo-field-add { position: absolute; right: 8px; bottom: 8px; padding: 6px 12px; font-size: 0.7rem; background: rgba(201,162,39,0.15); color: var(--limo-gold); border: 1px solid rgba(201,162,39,0.3); border-radius: 20px; cursor: pointer; }
+.limo-note { font-size: 0.75rem; color: var(--limo-gray); display: flex; align-items: center; gap: 6px; margin: 12px 0; }
+
+/* SECTIONS */
+.limo-section { padding: 80px 24px; }
+.limo-section-light { background: var(--limo-white); color: var(--limo-black); }
+.limo-section-dark { background: var(--limo-dark); }
+.limo-wrap { max-width: 1280px; margin: 0 auto; }
+.limo-section-title { font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 800; margin-bottom: 16px; text-align: center; }
+.limo-section-sub { text-align: center; color: var(--limo-gray); max-width: 640px; margin: 0 auto 48px; font-size: 1.05rem; }
+.limo-section-light .limo-section-sub { color: #666; }
+
+/* SERVICE CARDS */
+.limo-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.limo-card {
+  background: var(--limo-card); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-lg); overflow: hidden; transition: transform var(--transition), box-shadow var(--transition);
+}
+.limo-card-link { display: block; color: inherit; text-decoration: none; }
+.limo-card-link:hover { color: inherit; }
+.limo-section-light .limo-card { background: #fff; border-color: #eee; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+.limo-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+.limo-card-img { height: 200px; overflow: hidden; background: #111; }
+.limo-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+.limo-card-link:hover .limo-card-img img { transform: scale(1.05); }
+.limo-card-more { display: inline-block; margin-top: 12px; font-size: 0.8rem; font-weight: 700; color: var(--limo-gold-dark); letter-spacing: 0.04em; }
+.limo-section-light .limo-card-more { color: var(--limo-gold-dark); }
+.limo-card-link:hover .limo-card-more { color: var(--limo-gold); }
+.limo-card-body { padding: 24px; }
+.limo-card-body h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+.limo-card-body p { font-size: 0.9rem; color: var(--limo-gray); line-height: 1.5; }
+.limo-section-light .limo-card-body p { color: #666; }
+
+/* FLEET */
+.limo-fleet-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+.limo-fleet-item { text-align: center; padding: 0 8px 16px; }
+.limo-fleet-img {
+  width: 100%; height: 130px; object-fit: cover;
+  border-radius: 12px; margin-bottom: 14px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.limo-fleet-item:hover .limo-fleet-img { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(0,0,0,0.18); }
+.limo-section-light .limo-fleet-item p { color: #666; }
+.limo-fleet-item h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+.limo-fleet-item p { font-size: 0.8rem; color: var(--limo-gray); }
+
+/* CITIES */
+.limo-cities { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px; }
+.limo-city-btn { padding: 8px 20px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: var(--limo-white); font-size: 0.85rem; cursor: pointer; transition: all var(--transition); font-family: var(--font-sans); }
+.limo-section-light .limo-city-btn { border-color: #ddd; color: var(--limo-black); }
+.limo-city-btn.active, .limo-city-btn:hover { background: var(--limo-gold); color: var(--limo-black); border-color: var(--limo-gold); }
+
+/* ROUTES TABLE */
+.limo-routes { background: var(--limo-card); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
+.limo-section-light .limo-routes { background: #fff; border-color: #eee; }
+.limo-routes table { width: 100%; border-collapse: collapse; }
+.limo-routes th { padding: 14px 20px; text-align: left; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--limo-gold); border-bottom: 1px solid rgba(255,255,255,0.08); }
+.limo-section-light .limo-routes th { border-color: #eee; }
+.limo-routes td { padding: 14px 20px; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.limo-section-light .limo-routes td { border-color: #f0f0f0; }
+
+/* CORPORATE */
+.limo-corporate { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+.limo-corporate ul { list-style: none; margin: 24px 0; }
+.limo-corporate li { padding: 8px 0; padding-left: 24px; position: relative; font-size: 0.95rem; }
+.limo-corporate li::before { content: '✓'; position: absolute; left: 0; color: var(--limo-gold); font-weight: 700; }
+.limo-form { background: var(--limo-card); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg); padding: 32px; }
+.limo-section-light .limo-form { background: #fff; border-color: #eee; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+.limo-form h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
+.limo-form .limo-input { background: rgba(255,255,255,0.05); padding-left: 16px; }
+.limo-section-light .limo-form .limo-input { background: #f9f9f9; color: var(--limo-black); border-color: #ddd; }
+
+/* FOOTER */
+.limo-footer { background: var(--limo-black); border-top: 1px solid rgba(201,162,39,0.15); padding: 60px 24px 24px; }
+.limo-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; max-width: 1280px; margin: 0 auto 40px; }
+.limo-footer h4 { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--limo-gold); margin-bottom: 16px; }
+.limo-footer ul { list-style: none; }
+.limo-footer li { margin-bottom: 8px; }
+.limo-footer a { color: var(--limo-gray-light); font-size: 0.85rem; }
+.limo-footer a:hover { color: var(--limo-gold); }
+.limo-footer-bottom { max-width: 1280px; margin: 0 auto; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--limo-gray); }
+
+/* BOOKING FLOW */
+.limo-book-header { background: var(--limo-black); border-bottom: 1px solid rgba(201,162,39,0.15); padding: 16px 24px; position: sticky; top: 0; z-index: 100; }
+.limo-steps { display: flex; gap: 24px; align-items: center; justify-content: center; }
+.limo-step { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; color: var(--limo-gray); }
+.limo-step.active { color: var(--limo-gold); }
+.limo-step.done { color: var(--limo-success); }
+.limo-step-num { width: 28px; height: 28px; border-radius: 50%; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; }
+.limo-step.active .limo-step-num { background: var(--limo-gold); color: var(--limo-black); border-color: var(--limo-gold); }
+.limo-step.done .limo-step-num { background: var(--limo-success); color: #fff; border-color: var(--limo-success); }
+
+.limo-book-main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; display: grid; grid-template-columns: 340px 1fr; gap: 32px; }
+.limo-sidebar { background: #fff; border-radius: var(--radius-lg); padding: 24px; color: var(--limo-black); box-shadow: 0 4px 20px rgba(0,0,0,0.08); height: fit-content; position: sticky; top: 100px; }
+.limo-sidebar-map { height: 160px; background: #e8e8e8; border-radius: var(--radius); margin-bottom: 16px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.85rem; overflow: hidden; }
+.limo-route-line { border-left: 2px solid var(--limo-gold); padding-left: 16px; margin: 12px 0; }
+.limo-route-pin { font-size: 0.85rem; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px; }
+
+.limo-vehicle-list { display: flex; flex-direction: column; gap: 16px; }
+.limo-vehicle-card {
+  background: #fff; border: 2px solid #eee; border-radius: var(--radius-lg); padding: 20px;
+  display: grid; grid-template-columns: 120px 1fr auto; gap: 20px; align-items: center;
+  cursor: pointer; transition: all var(--transition); position: relative; color: var(--limo-black);
+}
+.limo-vehicle-card:hover { border-color: var(--limo-gold); box-shadow: 0 4px 20px rgba(201,162,39,0.15); }
+.limo-vehicle-card.selected { border-color: var(--limo-gold); background: #fdf8eb; }
+.limo-vehicle-img { width: 120px; height: 70px; background: linear-gradient(135deg, #eee, #ddd); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+.limo-vehicle-info h4 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+.limo-vehicle-info p { font-size: 0.8rem; color: #666; }
+.limo-vehicle-badges { display: flex; gap: 6px; margin-bottom: 6px; }
+.limo-badge { padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
+.limo-badge-value { background: #fff3e0; color: #e65100; }
+.limo-badge-rated { background: #e0f2f1; color: #00695c; }
+.limo-badge-popular { background: #fce4ec; color: #c62828; }
+.limo-vehicle-price { text-align: right; }
+.limo-price-original { font-size: 0.85rem; color: var(--limo-danger); text-decoration: line-through; }
+.limo-price-total { font-size: 1.5rem; font-weight: 800; }
+.limo-price-note { font-size: 0.7rem; color: var(--limo-success); display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+.limo-vehicle-radio { position: absolute; top: 16px; right: 16px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #ccc; }
+.limo-vehicle-card.selected .limo-vehicle-radio { background: var(--limo-success); border-color: var(--limo-success); }
+
+.limo-amenities { display: flex; gap: 8px; margin-top: 8px; }
+.limo-amenity { width: 28px; height: 28px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; }
+
+.limo-passenger-form { background: #fff; border-radius: var(--radius-lg); padding: 32px; color: var(--limo-black); box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+.limo-passenger-form .limo-input { background: #f9f9f9; color: var(--limo-black); border-color: #ddd; padding-left: 16px; }
+.limo-price-breakdown { background: #f9f9f9; border-radius: var(--radius); padding: 16px; margin-top: 16px; }
+.limo-price-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9rem; }
+.limo-price-row.total { font-weight: 800; font-size: 1.1rem; border-top: 2px solid #eee; padding-top: 12px; margin-top: 8px; }
+
+.limo-trust-bar { background: #fff; border-top: 1px solid #eee; padding: 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; text-align: center; color: var(--limo-black); }
+.limo-trust-item h5 { font-size: 0.85rem; font-weight: 700; margin-bottom: 4px; }
+.limo-trust-item p { font-size: 0.75rem; color: #666; }
+
+/* ERP */
+.limo-erp { background: #f0f2f5; min-height: 100vh; color: var(--limo-black); }
+.limo-erp-header { background: var(--limo-black); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+.limo-erp-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 24px; max-width: 1400px; margin: 0 auto; }
+.limo-stat-card { background: #fff; border-radius: var(--radius); padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.limo-stat-card h3 { font-size: 2rem; font-weight: 800; color: var(--limo-gold-dark); }
+.limo-stat-card p { font-size: 0.85rem; color: #666; }
+.limo-erp-main { max-width: 1400px; margin: 0 auto; padding: 0 24px 48px; display: grid; grid-template-columns: 1fr 380px; gap: 24px; }
+.limo-erp-table { background: #fff; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.limo-erp-table table { width: 100%; border-collapse: collapse; }
+.limo-erp-table th { padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; background: #f9f9f9; border-bottom: 1px solid #eee; }
+.limo-erp-table td { padding: 12px 16px; font-size: 0.85rem; border-bottom: 1px solid #f0f0f0; }
+.limo-status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.limo-status-pending { background: #fff3e0; color: #e65100; }
+.limo-status-confirmed { background: #e8f5e9; color: #2e7d32; }
+.limo-status-dispatched { background: #e3f2fd; color: #1565c0; }
+.limo-status-completed { background: #f3e5f5; color: #7b1fa2; }
+.limo-status-cancelled { background: #fce4ec; color: #c62828; }
+
+/* MOBILE MENU */
+.limo-mobile-toggle {
+  display: none; background: none; border: none;
+  color: var(--limo-gold); font-size: 1.6rem; cursor: pointer;
+  padding: 8px; line-height: 1;
+}
+.limo-mobile-overlay {
+  position: fixed; inset: 0; z-index: 1100;
+  background: rgba(0,0,0,0.55);
+  opacity: 0; visibility: hidden;
+  transition: opacity var(--transition), visibility var(--transition);
+}
+.limo-mobile-overlay.open { opacity: 1; visibility: visible; }
+.limo-mobile-drawer {
+  position: fixed; top: 0; right: 0; z-index: 1200;
+  width: min(320px, 88vw); height: 100svh;
+  background: var(--limo-dark);
+  border-left: 1px solid rgba(201,162,39,0.2);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.5);
+}
+.limo-mobile-drawer.open { transform: translateX(0); }
+.limo-mobile-drawer-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.limo-mobile-drawer-head button {
+  background: none; border: none; color: var(--limo-white);
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+}
+.limo-mobile-drawer-nav {
+  display: flex; flex-direction: column; padding: 16px 20px; gap: 4px;
+}
+.limo-mobile-drawer-nav a {
+  color: var(--limo-white); font-size: 0.95rem; font-weight: 600;
+  padding: 14px 12px; border-radius: 8px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.limo-mobile-drawer-nav a:hover { background: rgba(201,162,39,0.12); color: var(--limo-gold); }
+.limo-mobile-phone { margin-top: 12px; color: var(--limo-gold) !important; }
+body.limo-menu-open { overflow: hidden; }
+
+/* Short laptop screens — fit without scroll */
+@media (max-height: 820px) {
+  .limo-hero { padding-top: 72px; padding-bottom: 20px; }
+  .limo-hero-text h1 { font-size: clamp(1.5rem, 2.8vw, 2.2rem); }
+  .limo-hero-tagline { font-size: clamp(1.15rem, 2.2vw, 1.75rem); }
+  .limo-widget-hero { padding: 18px 18px 16px; }
+  .limo-widget-hero .limo-field { margin-bottom: 10px; }
+  .limo-widget-hero .limo-input { padding: 10px 12px 10px 38px; font-size: 0.88rem; }
+  .limo-widget-hero .limo-btn { padding: 12px 16px; font-size: 0.8rem; }
+}
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+  .limo-nav-links { gap: 20px; }
+  .limo-nav-contact .limo-btn { padding: 8px 14px !important; font-size: 0.68rem !important; }
+}
+@media (max-width: 1024px) {
+  .limo-hero-grid { grid-template-columns: 1fr minmax(280px, 360px); gap: 24px; }
+  .limo-grid-3 { grid-template-columns: 1fr; }
+  .limo-fleet-grid { grid-template-columns: repeat(3, 1fr); }
+  .limo-corporate { grid-template-columns: 1fr; }
+  .limo-footer-grid { grid-template-columns: 1fr 1fr; }
+  .limo-book-main { grid-template-columns: 1fr; }
+  .limo-erp-main { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .limo-hero {
+    min-height: auto; max-height: none;
+    padding: 80px 20px 40px;
+    align-items: flex-start;
+  }
+  .limo-hero-grid { grid-template-columns: 1fr; gap: 24px; }
+  .limo-hero-text { text-align: center; }
+  .limo-widget-hero { max-height: none; max-width: 480px; margin: 0 auto; width: 100%; }
+}
+@media (max-width: 768px) {
+  .limo-nav { height: 64px; padding: 0 16px; }
+  .limo-nav-links, .limo-nav-contact { display: none; }
+  .limo-mobile-toggle { display: block; }
+  .limo-hero { padding: 72px 16px 32px; }
+  .limo-hero-text h1 { font-size: 1.55rem; }
+  .limo-hero-tagline { font-size: 1.25rem; }
+  .limo-widget-hero { padding: 16px; border-radius: 14px; }
+  .limo-fleet-grid { grid-template-columns: repeat(2, 1fr); }
+  .limo-vehicle-card { grid-template-columns: 1fr; }
+  .limo-trust-bar { grid-template-columns: 1fr 1fr; }
+  .limo-erp-stats { grid-template-columns: 1fr 1fr; }
+  .limo-footer-grid { grid-template-columns: 1fr; }
+  .limo-section { padding: 56px 16px; }
+  .limo-corporate { gap: 32px; }
+  .limo-field-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .limo-logo { font-size: 1rem; }
+  .limo-fleet-grid { grid-template-columns: 1fr 1fr; }
+  .limo-trust-bar { grid-template-columns: 1fr; }
+  .limo-mega { display: none; }
+}
+
+/* SERVICE DETAIL PAGES */
+.limo-svc-hero {
+  position: relative; min-height: 340px; margin-top: 72px;
+  background-size: cover; background-position: center;
+  display: flex; align-items: flex-end;
+}
+.limo-svc-hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(8,8,8,0.92) 0%, rgba(8,8,8,0.35) 55%, rgba(8,8,8,0.2) 100%);
+}
+.limo-svc-hero-inner {
+  position: relative; z-index: 1; max-width: 1280px; margin: 0 auto;
+  width: 100%; padding: 48px 24px 40px;
+}
+.limo-svc-back { color: var(--limo-gold-light); font-size: 0.85rem; margin-bottom: 12px; display: inline-block; }
+.limo-svc-hero-inner h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; margin-bottom: 8px; }
+.limo-svc-hero-inner p { font-family: var(--font-serif); font-style: italic; font-size: 1.25rem; color: var(--limo-gold-light); }
+.limo-svc-main { padding: 64px 24px; background: var(--limo-black); }
+.limo-svc-grid { display: grid; grid-template-columns: 1fr 360px; gap: 48px; align-items: start; }
+.limo-svc-main h2 { font-size: 1.4rem; font-weight: 800; margin: 32px 0 16px; color: var(--limo-gold); }
+.limo-svc-main h2:first-child { margin-top: 0; }
+.limo-svc-intro { font-size: 1.05rem; line-height: 1.75; color: var(--limo-gray-light); }
+.limo-svc-features { list-style: none; margin: 0; }
+.limo-svc-features li {
+  padding: 10px 0 10px 28px; position: relative;
+  border-bottom: 1px solid rgba(255,255,255,0.06); color: var(--limo-gray-light);
+}
+.limo-svc-features li::before { content: '✓'; position: absolute; left: 0; color: var(--limo-gold); font-weight: 700; }
+.limo-svc-highlights { display: grid; gap: 16px; margin-top: 24px; }
+.limo-svc-highlight {
+  background: var(--limo-card); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius); padding: 20px;
+}
+.limo-svc-highlight h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; color: var(--limo-white); }
+.limo-svc-highlight p { font-size: 0.9rem; color: var(--limo-gray); line-height: 1.55; }
+.limo-svc-aside-img { width: 100%; border-radius: var(--radius-lg); margin-bottom: 20px; box-shadow: var(--shadow); }
+.limo-svc-aside-card {
+  background: var(--limo-card); border: 1px solid rgba(201,162,39,0.2);
+  border-radius: var(--radius-lg); padding: 24px; position: sticky; top: 96px;
+}
+.limo-svc-aside-card h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; }
+.limo-svc-aside-card p { font-size: 0.9rem; color: var(--limo-gray); margin-bottom: 16px; line-height: 1.5; }
+.limo-svc-call { display: block; text-align: center; margin-top: 14px; font-size: 0.9rem; color: var(--limo-gold); }
+@media (max-width: 900px) {
+  .limo-svc-grid { grid-template-columns: 1fr; }
+  .limo-svc-aside-card { position: static; }
+  .limo-svc-hero { min-height: 280px; }
+}
+
+/* STATIC / LEGAL PAGES */
+.limo-static-hero {
+  margin-top: 72px; padding: 56px 24px 40px;
+  background: linear-gradient(135deg, #141414 0%, #0a0a0a 100%);
+  border-bottom: 1px solid rgba(201,162,39,0.15);
+}
+.limo-static-hero h1 { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800; margin-bottom: 12px; }
+.limo-static-hero p { color: var(--limo-gray-light); font-size: 1.05rem; max-width: 720px; line-height: 1.6; }
+.limo-static-main { padding: 48px 24px 80px; }
+.limo-static-content { max-width: 800px; }
+.limo-static-block { margin-bottom: 36px; }
+.limo-static-block h2 { font-size: 1.2rem; font-weight: 800; color: var(--limo-gold); margin-bottom: 12px; }
+.limo-static-block p, .limo-static-block li { color: var(--limo-gray-light); line-height: 1.7; margin-bottom: 8px; }
+.limo-static-block a { color: var(--limo-gold-light); }
+
+.limo-svc-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0;
+}
+.limo-svc-stats div {
+  background: var(--limo-card); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius); padding: 16px;
+}
+.limo-svc-stats strong { display: block; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--limo-gold); margin-bottom: 6px; }
+.limo-svc-stats span { color: var(--limo-white); font-size: 0.95rem; font-weight: 600; }

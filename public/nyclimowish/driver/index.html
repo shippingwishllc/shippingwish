@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Driver App — NYC Limo Wish</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="manifest" href="/driver/manifest.json">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/limo.css">
+  <style>
+    body { background: var(--limo-black); padding-bottom: 40px; }
+    .drv-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(201,162,39,0.15); position: sticky; top: 0; background: rgba(10,10,10,0.95); backdrop-filter: blur(12px); z-index: 100; }
+    .drv-card { background: var(--limo-card); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg); padding: 20px; margin: 16px 20px; }
+    .drv-status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+    .drv-status-btn { padding: 12px; border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #fff; font-size: 0.75rem; font-weight: 700; cursor: pointer; font-family: var(--font-sans); text-transform: uppercase; }
+    .drv-status-btn:hover, .drv-status-btn.active { background: var(--limo-gold); color: var(--limo-black); border-color: var(--limo-gold); }
+    .drv-route { border-left: 2px solid var(--limo-gold); padding-left: 16px; margin: 12px 0; font-size: 0.85rem; }
+  </style>
+</head>
+<body class="limo">
+
+<header class="drv-header">
+  <div class="limo-logo" style="font-size:1rem;">NYC <span>LIMO</span> WISH</div>
+  <span style="font-size:0.75rem;color:var(--limo-gold);font-weight:700;">DRIVER</span>
+</header>
+
+<div id="login-prompt" style="text-align:center;padding:60px 20px;">
+  <p style="color:var(--limo-gray);margin-bottom:20px;">Sign in to view your assigned trips</p>
+  <a href="/login?redirect=/driver" class="limo-btn limo-btn-gold">Driver Login</a>
+</div>
+
+<div id="trips-container" style="display:none;">
+  <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center;">
+    <h2 style="font-size:1rem;font-weight:700;">My Trips</h2>
+    <button class="limo-btn limo-btn-outline" style="padding:6px 14px;font-size:0.7rem;" id="btn-refresh">↻ Refresh</button>
+  </div>
+  <div id="trips-list"></div>
+</div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/driver/sw.js').catch(() => {});
+}
+
+let currentTripId = null;
+
+async function init() {
+  const me = await fetch('/api/me', { credentials: 'include' }).then((r) => r.json()).catch(() => null);
+  if (!me?.user) return;
+  document.getElementById('login-prompt').style.display = 'none';
+  document.getElementById('trips-container').style.display = 'block';
+  loadTrips();
+}
+
+async function loadTrips() {
+  const res = await fetch('/api/driver/trips', { credentials: 'include' });
+  const data = await res.json();
+  const el = document.getElementById('trips-list');
+  if (!data.trips?.length) {
+    el.innerHTML = '<p style="color:var(--limo-gray);text-align:center;padding:40px;">No active trips assigned</p>';
+    return;
+  }
+  el.innerHTML = data.trips.map((t) => `
+    <div class="drv-card" data-id="${t.id}">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong>${t.booking_number}</strong>
+        <span style="color:var(--limo-gold);font-size:0.8rem;font-weight:700;text-transform:uppercase;">${t.status}</span>
+      </div>
+      <div class="drv-route">
+        <p>📍 ${t.pickup_address}</p>
+        ${t.dropoff_address ? `<p>📍 ${t.dropoff_address}</p>` : ''}
+      </div>
+      <p style="font-size:0.85rem;color:var(--limo-gray);">📅 ${t.pickup_date} ${t.pickup_time}</p>
+      <p style="font-size:0.85rem;">👤 ${t.passenger_first_name} ${t.passenger_last_name} · 📞 ${t.passenger_phone || ''}</p>
+      <p style="font-size:0.85rem;">🚗 ${t.vehicle_name || ''} · $${parseFloat(t.total_price).toFixed(2)}</p>
+      ${t.trip_notes ? `<p style="font-size:0.8rem;color:var(--limo-gray);margin-top:8px;">📝 ${t.trip_notes}</p>` : ''}
+      <div class="drv-status-grid">
+        <button class="drv-status-btn" onclick="setStatus(${t.id},'en_route')">En Route</button>
+        <button class="drv-status-btn" onclick="setStatus(${t.id},'at_pickup')">At Pickup</button>
+        <button class="drv-status-btn" onclick="setStatus(${t.id},'in_progress')">In Progress</button>
+        <button class="drv-status-btn" onclick="setStatus(${t.id},'completed')">Completed</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.setStatus = async (id, status) => {
+  let lat, lng;
+  try {
+    const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
+    lat = pos.coords.latitude;
+    lng = pos.coords.longitude;
+  } catch { /* GPS optional */ }
+
+  await fetch('/api/driver/trips/' + id + '/status', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status, lat, lng })
+  });
+  loadTrips();
+};
+
+document.getElementById('btn-refresh')?.addEventListener('click', loadTrips);
+init();
+setInterval(loadTrips, 60000);
+</script>
+</body>
+</html>

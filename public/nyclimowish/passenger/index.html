@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NYC Limo Wish — Passenger App</title>
+  <meta name="description" content="Book and track your NYC Limo Wish rides from your phone.">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="manifest" href="/passenger/manifest.json">
+  <link rel="apple-touch-icon" href="/favicon.svg">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/limo.css">
+  <style>
+    body { background: var(--limo-black); padding-bottom: 80px; }
+    .pwa-header { padding: 20px 20px 12px; display: flex; align-items: center; justify-content: space-between; }
+    .pwa-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 0 20px; }
+    .pwa-tab { flex: 1; padding: 12px; text-align: center; font-size: 0.8rem; font-weight: 600; color: var(--limo-gray); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; font-family: var(--font-sans); }
+    .pwa-tab.active { color: var(--limo-gold); border-bottom-color: var(--limo-gold); }
+    .pwa-content { padding: 20px; }
+    .pwa-ride-card { background: var(--limo-card); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; }
+    .pwa-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--limo-dark); border-top: 1px solid rgba(201,162,39,0.15); display: flex; padding: 8px 0; z-index: 100; }
+    .pwa-nav-item { flex: 1; text-align: center; padding: 8px; font-size: 0.7rem; color: var(--limo-gray); cursor: pointer; border: none; background: none; font-family: var(--font-sans); }
+    .pwa-nav-item.active { color: var(--limo-gold); }
+    .pwa-nav-item span { display: block; font-size: 1.3rem; margin-bottom: 2px; }
+  </style>
+</head>
+<body class="limo">
+
+<div class="pwa-header">
+  <div class="limo-logo">NYC <span>LIMO</span> WISH</div>
+  <a href="/login" style="font-size:0.8rem;color:var(--limo-gold);" id="auth-link">Login</a>
+</div>
+
+<div class="pwa-tabs">
+  <button class="pwa-tab active" data-panel="book">Book</button>
+  <button class="pwa-tab" data-panel="rides">My Rides</button>
+  <button class="pwa-tab" data-panel="track">Track</button>
+</div>
+
+<div class="pwa-content">
+  <div id="panel-book">
+    <div class="limo-widget" style="margin-bottom:20px;">
+      <div class="limo-tabs">
+        <button class="limo-tab active" data-type="point_to_point">Point-to-Point</button>
+        <button class="limo-tab" data-type="hourly">Hourly</button>
+      </div>
+      <div class="limo-field"><label>Pickup</label><input class="limo-input" id="p-pickup" placeholder="Pickup address" style="padding-left:16px;"></div>
+      <div class="limo-field" id="p-drop-wrap"><label>Drop-off</label><input class="limo-input" id="p-dropoff" placeholder="Drop-off" style="padding-left:16px;"></div>
+      <div class="limo-field-row">
+        <div class="limo-field"><label>Date</label><input class="limo-input" type="date" id="p-date" style="padding-left:16px;"></div>
+        <div class="limo-field"><label>Time</label><input class="limo-input" type="time" id="p-time" style="padding-left:16px;"></div>
+      </div>
+      <button class="limo-btn limo-btn-gold limo-btn-block" id="pwa-book-btn">Find My Ride →</button>
+    </div>
+  </div>
+
+  <div id="panel-rides" style="display:none;">
+    <div id="rides-list"><p style="color:var(--limo-gray);text-align:center;padding:40px 0;">Login to see your rides</p></div>
+  </div>
+
+  <div id="panel-track" style="display:none;">
+    <div class="limo-field"><label>Booking Number</label><input class="limo-input" id="track-num" placeholder="NLW-..." style="padding-left:16px;"></div>
+    <button class="limo-btn limo-btn-gold limo-btn-block" id="track-btn">Track Ride</button>
+    <div id="track-result" style="margin-top:20px;"></div>
+  </div>
+</div>
+
+<nav class="pwa-bottom-nav">
+  <button class="pwa-nav-item active" data-panel="book"><span>🚗</span>Book</button>
+  <button class="pwa-nav-item" data-panel="rides"><span>📋</span>Rides</button>
+  <button class="pwa-nav-item" data-panel="track"><span>📍</span>Track</button>
+  <a class="pwa-nav-item" href="tel:+19177370021" style="text-decoration:none;"><span>📞</span>Call</a>
+</nav>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/passenger/sw.js').catch(() => {});
+}
+
+document.querySelectorAll('.pwa-tab, .pwa-nav-item[data-panel]').forEach((el) => {
+  el.addEventListener('click', () => {
+    const panel = el.dataset.panel;
+    document.querySelectorAll('.pwa-tab, .pwa-nav-item').forEach((t) => t.classList.remove('active'));
+    document.querySelectorAll('[data-panel="' + panel + '"]').forEach((t) => t.classList.add('active'));
+    ['book','rides','track'].forEach((p) => {
+      document.getElementById('panel-' + p).style.display = p === panel ? 'block' : 'none';
+    });
+    if (panel === 'rides') loadRides();
+  });
+});
+
+document.getElementById('pwa-book-btn').addEventListener('click', () => {
+  const params = new URLSearchParams({
+    pickup: document.getElementById('p-pickup').value,
+    dropoff: document.getElementById('p-dropoff').value,
+    pickupDate: document.getElementById('p-date').value,
+    pickupTime: document.getElementById('p-time').value
+  });
+  window.location.href = '/book?' + params.toString();
+});
+
+document.getElementById('track-btn').addEventListener('click', async () => {
+  const num = document.getElementById('track-num').value.trim();
+  if (!num) return;
+  const res = await fetch('/api/track/' + encodeURIComponent(num));
+  const data = await res.json();
+  const el = document.getElementById('track-result');
+  if (!res.ok) { el.innerHTML = '<p style="color:#ef4444;">Booking not found</p>'; return; }
+  const b = data.booking;
+  el.innerHTML = `<div class="pwa-ride-card">
+    <p><strong>${b.booking_number}</strong> — <span style="color:var(--limo-gold);">${b.status}</span></p>
+    <p style="font-size:0.85rem;margin-top:8px;">📍 ${b.pickup_address}</p>
+    ${b.dropoff_address ? `<p style="font-size:0.85rem;">📍 ${b.dropoff_address}</p>` : ''}
+    <p style="font-size:0.85rem;">📅 ${b.pickup_date} ${b.pickup_time}</p>
+    <p style="font-size:0.85rem;">🚗 ${b.vehicle_name || '—'} · $${parseFloat(b.total_price).toFixed(2)}</p>
+  </div>`;
+});
+
+async function loadRides() {
+  const res = await fetch('/api/passenger/bookings', { credentials: 'include' });
+  if (res.status === 401) return;
+  const data = await res.json();
+  const el = document.getElementById('rides-list');
+  if (!data.bookings?.length) {
+    el.innerHTML = '<p style="color:var(--limo-gray);text-align:center;padding:40px 0;">No rides yet</p>';
+    return;
+  }
+  el.innerHTML = data.bookings.map((b) => `
+    <div class="pwa-ride-card">
+      <p><strong>${b.booking_number}</strong> — <span style="color:var(--limo-gold);">${b.status}</span></p>
+      <p style="font-size:0.85rem;margin-top:8px;">📍 ${b.pickup_address}</p>
+      <p style="font-size:0.85rem;">📅 ${b.pickup_date} ${b.pickup_time}</p>
+      <p style="font-size:0.85rem;">$${parseFloat(b.total_price).toFixed(2)}</p>
+    </div>
+  `).join('');
+}
+
+fetch('/api/me', { credentials: 'include' }).then((r) => r.json()).then((d) => {
+  if (d?.user) document.getElementById('auth-link').textContent = d.user.name.split(' ')[0];
+}).catch(() => {});
+
+const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+document.getElementById('p-date').value = tomorrow.toISOString().split('T')[0];
+document.getElementById('p-time').value = '12:00';
+</script>
+</body>
+</html>

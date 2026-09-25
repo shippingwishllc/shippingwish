@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limo ERP — Dispatch Dashboard | NYC Limo Wish</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/limo.css">
+</head>
+<body class="limo-erp">
+
+<header class="limo-erp-header">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <span class="limo-logo">NYC <span>LIMO</span> WISH</span>
+    <span style="font-size:0.8rem;color:var(--limo-gray);">ERP Dispatch</span>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <span id="user-name" style="font-size:0.85rem;color:#ccc;"></span>
+    <a href="/erp" style="color:var(--limo-gold);font-size:0.8rem;">ERP Dashboard</a>
+  </div>
+</header>
+
+<div class="limo-erp-stats" id="stats-row">
+  <div class="limo-stat-card"><h3 id="stat-today">—</h3><p>Today's Rides</p></div>
+  <div class="limo-stat-card"><h3 id="stat-active">—</h3><p>Active Bookings</p></div>
+  <div class="limo-stat-card"><h3 id="stat-completed">—</h3><p>Completed This Month</p></div>
+  <div class="limo-stat-card"><h3 id="stat-revenue">—</h3><p>Revenue This Month</p></div>
+</div>
+
+<div class="limo-erp-main">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-size:1.2rem;font-weight:800;">Bookings</h2>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="search-q" placeholder="Search..." style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;">
+        <select id="filter-status" style="padding:8px;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="dispatched">Dispatched</option>
+          <option value="en_route">En Route</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <button class="limo-btn limo-btn-gold" id="btn-new-booking" style="padding:8px 16px;font-size:0.75rem;">+ Phone Booking</button>
+      </div>
+    </div>
+    <div class="limo-erp-table">
+      <table>
+        <thead><tr>
+          <th>Booking #</th><th>Date/Time</th><th>Passenger</th><th>Route</th><th>Vehicle</th><th>Total</th><th>Status</th><th>Source</th><th></th>
+        </tr></thead>
+        <tbody id="bookings-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div class="limo-form" id="manual-form" style="display:none;background:#fff;border-color:#eee;">
+      <h3>New Phone Booking</h3>
+      <p style="font-size:0.85rem;color:#666;margin-bottom:16px;">Create a booking when customer calls</p>
+      <div class="limo-field"><label>First Name</label><input class="limo-input" id="m-first" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+      <div class="limo-field"><label>Last Name</label><input class="limo-input" id="m-last" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+      <div class="limo-field"><label>Phone</label><input class="limo-input" id="m-phone" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+      <div class="limo-field"><label>Email</label><input class="limo-input" id="m-email" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+      <div class="limo-field"><label>Pickup</label><input class="limo-input" id="m-pickup" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+      <div class="limo-field"><label>Drop-off</label><input class="limo-input" id="m-dropoff" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+      <div class="limo-field-row">
+        <div class="limo-field"><label>Date</label><input class="limo-input" type="date" id="m-date" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+        <div class="limo-field"><label>Time</label><input class="limo-input" type="time" id="m-time" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+      </div>
+      <div class="limo-field"><label>Vehicle</label>
+        <select class="limo-input" id="m-vehicle" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></select>
+      </div>
+      <div class="limo-field"><label>Total Price ($)</label><input class="limo-input" type="number" id="m-price" placeholder="Auto-calculated if empty" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+      <div class="limo-field"><label>Internal Notes</label><textarea class="limo-input" id="m-notes" rows="2" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;resize:vertical;"></textarea></div>
+      <button class="limo-btn limo-btn-gold limo-btn-block" id="btn-save-manual">Save Booking</button>
+      <button class="limo-btn limo-btn-outline limo-btn-block" id="btn-cancel-manual" style="margin-top:8px;color:#666;border-color:#ddd;">Cancel</button>
+    </div>
+
+    <div class="limo-form" id="detail-panel" style="background:#fff;border-color:#eee;">
+      <h3>Booking Details</h3>
+      <p style="font-size:0.85rem;color:#999;">Select a booking to view details</p>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/limo-erp.js"></script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { ensureSchema } = require('../utils/limo-ensure-schema');
@@ -9,7 +11,50 @@ const {
 } = require('../utils/limo-pricing');
 const { sendEmail } = require('../utils/mailer');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const APP_URL = (process.env.APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
+
+function signLimoToken(user) {
+  return jwt.sign({ id: user.id, name: user.name, email: user.email, role: user.role, is_limo_user: true }, JWT_SECRET, { expiresIn: '7d' });
+}
+
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required.' });
+  try {
+    await ensureSchema();
+    const { rows } = await pool.query('SELECT * FROM limo_users WHERE lower(email) = lower($1)', [email]);
+    if (!rows[0] || !(await bcrypt.compare(password, rows[0].password_hash))) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+    const user = { id: rows[0].id, name: rows[0].name, email: rows[0].email, role: rows[0].role };
+    res.cookie('nlw_token', signLimoToken(user), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 86400 * 1000 });
+    res.json({ ok: true, user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/signup', async (req, res) => {
+  const { name, email, password, phone } = req.body || {};
+  if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, password required.' });
+  try {
+    await ensureSchema();
+    const hash = await bcrypt.hash(password, 10);
+    const { rows } = await pool.query(
+      `INSERT INTO limo_users (name, email, password_hash, role, phone) VALUES ($1,$2,$3,'customer',$4) RETURNING id, name, email, role`,
+      [name, email, hash, phone || null]
+    );
+    res.cookie('nlw_token', signLimoToken(rows[0]), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 86400 * 1000 });
+    res.json({ ok: true, user: rows[0] });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'Email already registered.' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/me', requireAuth, (req, res) => res.json({ user: req.user }));
+router.post('/logout', (req, res) => { res.clearCookie('nlw_token'); res.json({ ok: true }); });
 
 function getStripe() {
   const key = process.env.NYCLIMO_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;

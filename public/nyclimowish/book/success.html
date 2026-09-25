@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Confirmed | NYC Limo Wish</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/limo.css">
+</head>
+<body class="limo-light" style="text-align:center;padding:80px 24px;">
+  <div style="font-size:4rem;margin-bottom:16px;">✅</div>
+  <h1 style="font-size:1.8rem;font-weight:800;margin-bottom:8px;">Booking Confirmed!</h1>
+  <p style="color:#666;margin-bottom:8px;">Your payment was successful. A confirmation email is on its way.</p>
+  <p id="booking-ref" style="font-weight:700;color:var(--limo-gold-dark);margin-bottom:32px;"></p>
+  <a href="/track" class="limo-btn limo-btn-gold" style="margin-right:12px;">Track Your Ride</a>
+  <a href="/" class="limo-btn limo-btn-outline" style="color:#666;border-color:#ddd;">Back to Home</a>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('booking')) document.getElementById('booking-ref').textContent = params.get('booking');
+  </script>
+</body>
+</html>

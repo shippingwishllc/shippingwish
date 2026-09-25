@@ -1,0 +1,10 @@
+{
+  "name": "NYC Limo Wish Driver",
+  "short_name": "LimoDriver",
+  "description": "Driver console for NYC Limo Wish chauffeurs",
+  "start_url": "/driver",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#c9a227",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

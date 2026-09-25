@@ -8,7 +8,7 @@ function extractToken(req) {
   if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
     return authHeader.slice(7).trim();
   }
-  return req.cookies ? req.cookies.sw_token : null;
+  return req.cookies ? (req.cookies.sw_token || req.cookies.nlw_token) : null;
 }
 
 async function requireAuth(req, res, next) {
