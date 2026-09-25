@@ -191,6 +191,14 @@ app.use((req, res, next) => {
     }
   }
 
+  // ShippingWish / Default Legal Pages
+  if (p === '/privacy-policy' || p === '/privacy' || p === '/privacy-policy.html' || p === '/privacy.html') {
+    return res.sendFile(path.join(__dirname, 'public', 'shippingwish', 'privacy-policy.html'));
+  }
+  if (p === '/terms' || p === '/terms-of-service' || p === '/terms.html' || p === '/terms-of-service.html') {
+    return res.sendFile(path.join(__dirname, 'public', 'shippingwish', 'terms.html'));
+  }
+
   next();
 });
 

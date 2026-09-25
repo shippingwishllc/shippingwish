@@ -213,6 +213,22 @@
       "destination": "/buywishonline/index.html"
     },
     {
+      "source": "/privacy-policy",
+      "destination": "/api"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/api"
+    },
+    {
+      "source": "/terms-of-service",
+      "destination": "/api"
+    },
+    {
+      "source": "/terms",
+      "destination": "/api"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api"
     }
