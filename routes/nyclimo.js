@@ -123,17 +123,42 @@ router.post('/bookings', async (req, res) => {
   try {
     await ensureSchema();
     const b = req.body || {};
+    const firstName = String(b.firstName || '').trim().slice(0, 80);
+    const lastName = String(b.lastName || '').trim().slice(0, 80);
+    const email = String(b.email || '').trim().toLowerCase().slice(0, 254);
+    const phone = String(b.phone || '').trim().slice(0, 40);
+    const pickupDate = String(b.pickupDate || '');
+    if (!firstName || !lastName || !/^\\S+@\\S+\\.\\S+$/.test(email) || !phone) {
+      return res.status(400).json({ error: 'Valid passenger name, email, and phone are required.' });
+    }
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(pickupDate) || Number.isNaN(Date.parse(pickupDate)) ||
+        new Date(pickupDate + 'T00:00:00Z') <= new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z')) {
+      return res.status(400).json({ error: 'Pickup date must be a valid future date.' });
+    }
     const vehicle = (await getVehicles()).find((v) => v.id === b.vehicleId);
-    if (!vehicle) return res.status(400).json({ error: 'Invalid vehicle.' });
-
+    if (!vehicle) return res.status(400).json({ error: 'Invalid vehicle class.' });
     const serviceType = b.serviceType === 'hourly' ? 'hourly' : 'point_to_point';
+    const passengers = Number.parseInt(b.passengers || 1, 10);
+    if (!Number.isInteger(passengers) || passengers < 1 || passengers > Number(vehicle.passengers || 1)) {
+      return res.status(400).json({ error: 'Passenger count exceeds this vehicle class capacity.' });
+    }
+
+    let referralBaseId = null;
+    if (b.referralCode) {
+      const referral = await pool.query(
+        `SELECT id FROM limo_partner_bases WHERE upper(referral_code) = upper($1) AND approval_status = 'approved'`,
+        [String(b.referralCode).trim()]
+      );
+      if (!referral.rows.length) return res.status(400).json({ error: 'Referral code is invalid or inactive.' });
+      referralBaseId = referral.rows[0].id;
+    }
+
     const pickupGeo = await geocodeAddress(String(b.pickup || '').trim());
     if (!pickupGeo) return res.status(400).json({ error: 'Pickup address could not be verified.' });
-
+    let dropoffGeo = null;
     let miles = 0;
     let durationMins = 0;
     let durationHours = null;
-    let dropoffGeo = null;
     const verifiedStops = [];
     if (serviceType === 'hourly') {
       durationHours = Number(b.durationHours || 3);
@@ -146,43 +171,53 @@ router.post('/bookings', async (req, res) => {
       if (!dropoffGeo) return res.status(400).json({ error: 'Drop-off address could not be verified.' });
       const inputStops = Array.isArray(b.stops) ? b.stops : [];
       if (inputStops.length > 5) return res.status(400).json({ error: 'A booking can include at most five additional stops.' });
-
-      const routePoints = [pickupGeo];
+      const points = [pickupGeo];
       for (const stop of inputStops) {
-        const stopAddress = typeof stop === 'string' ? stop : (stop.address || stop.location || '');
-        const stopGeo = await geocodeAddress(String(stopAddress).trim());
-        if (!stopGeo) return res.status(400).json({ error: 'A stop address could not be verified.' });
-        routePoints.push(stopGeo);
-        verifiedStops.push({ address: stopGeo.formatted, lat: stopGeo.lat, lng: stopGeo.lng });
+        const address = typeof stop === 'string' ? stop : (stop.address || stop.location || '');
+        const point = await geocodeAddress(String(address).trim());
+        if (!point) return res.status(400).json({ error: 'A stop address could not be verified.' });
+        points.push(point);
+        verifiedStops.push({ address: point.formatted, lat: point.lat, lng: point.lng });
       }
-      routePoints.push(dropoffGeo);
-      // Estimate every leg server-side. Browser-provided miles and coordinates never set the fare.
-      const routeMiles = routePoints.slice(1).reduce((sum, point, index) =>
-        sum + haversineMiles(routePoints[index].lat, routePoints[index].lng, point.lat, point.lng) * 1.25, 0);
-      miles = Math.round(routeMiles * 100) / 100;
+      points.push(dropoffGeo);
+      const estimate = points.slice(1).reduce((sum, point, index) =>
+        sum + haversineMiles(points[index].lat, points[index].lng, point.lat, point.lng) * 1.25, 0);
+      miles = Math.round(estimate * 100) / 100;
       durationMins = estimateDurationMins(miles);
     }
-
-    const pricing = serviceType === 'hourly' ? calcHourlyPrice(vehicle, durationHours) : calcPointToPointPrice(vehicle, miles);
+    const pricing = serviceType === 'hourly'
+      ? calcHourlyPrice(vehicle, durationHours)
+      : calcPointToPointPrice(vehicle, miles);
     const bookingNumber = generateBookingNumber();
 
     const { rows } = await pool.query(
-      `INSERT INTO limo_bookings (booking_number, service_type, status, pickup_address, pickup_lat, pickup_lng,
-        dropoff_address, dropoff_lat, dropoff_lng, stops, pickup_date, pickup_time, duration_hours,
-        distance_miles, duration_mins, vehicle_id, passengers, luggage, child_seats,
-        passenger_first_name, passenger_last_name, passenger_email, passenger_phone, trip_notes,
-        base_price, tolls, gratuity, total_price, source, flight_number, is_manual)
-       VALUES ($1,$2,'pending',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30) RETURNING *`,
+      `INSERT INTO limo_bookings (
+         booking_number, service_type, status, pickup_address, pickup_lat, pickup_lng,
+         dropoff_address, dropoff_lat, dropoff_lng, stops, pickup_date, pickup_time, duration_hours,
+         distance_miles, duration_mins, vehicle_id, passengers, luggage, child_seats,
+         passenger_first_name, passenger_last_name, passenger_email, passenger_phone, trip_notes,
+         base_price, tolls, gratuity, total_price, source, referral_base_id, flight_number, is_manual
+       ) VALUES (
+         $1,$2,'pending_operator',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,
+         $19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31
+       ) RETURNING id, booking_number, status, pickup_date, pickup_time, total_price, payment_status`,
       [bookingNumber, serviceType, pickupGeo.formatted, pickupGeo.lat, pickupGeo.lng,
-        dropoffGeo?.formatted || '', dropoffGeo?.lat || null, dropoffGeo?.lng || null, JSON.stringify(verifiedStops),
-        b.pickupDate, b.pickupTime, durationHours, miles, durationMins, b.vehicleId,
-        b.passengers || 1, b.luggage || 1, b.childSeats || 0, b.firstName || '', b.lastName || '',
-        b.email || '', b.phone || '', b.tripNotes || '', pricing.subtotal, pricing.tolls, pricing.gratuity,
-        pricing.total, b.source || 'web', b.flightNumber || null, false]
+       dropoffGeo?.formatted || '', dropoffGeo?.lat || null, dropoffGeo?.lng || null, JSON.stringify(verifiedStops),
+       pickupDate, String(b.pickupTime || '').slice(0, 20), durationHours, miles, durationMins, vehicle.id,
+       passengers, Number.parseInt(b.luggage || 1, 10), Number.parseInt(b.childSeats || 0, 10),
+       firstName, lastName, email, phone, String(b.tripNotes || '').slice(0, 1000),
+       pricing.subtotal, pricing.tolls, pricing.gratuity, pricing.total,
+       String(b.source || 'web').slice(0, 40), referralBaseId, String(b.flightNumber || '').slice(0, 30) || null, false]
     );
-    await pool.query('INSERT INTO limo_booking_status_history (booking_id, status, note) VALUES ($1,$2,$3)', [rows[0].id, 'pending', 'Online booking']);
-    res.json({ booking: rows[0] });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    await pool.query(
+      'INSERT INTO limo_booking_status_history (booking_id, status, note) VALUES ($1,$2,$3)',
+      [rows[0].id, 'pending_operator', 'Booking request received; a verified operator must accept before payment.']
+    );
+    res.status(201).json({ booking: rows[0] });
+  } catch (err) {
+    console.error('[LIMO BOOKING CREATE ERROR]:', err.message);
+    res.status(500).json({ error: 'Could not create this booking request.' });
+  }
 });
 
 router.post('/bookings/:id/checkout', async (req, res) => {
@@ -192,29 +227,45 @@ router.post('/bookings/:id/checkout', async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM limo_bookings WHERE id = $1', [req.params.id]);
     if (!rows[0]) return res.status(404).json({ error: 'Not found.' });
     const booking = rows[0];
+    if (booking.status !== 'operator_accepted') {
+      return res.status(409).json({ error: 'A licensed operator must accept this ride before payment is enabled.' });
+    }
+    if (booking.payment_status === 'paid') return res.status(409).json({ error: 'This ride is already paid.' });
+    if (booking.stripe_session_id) {
+      const prior = await stripe.checkout.sessions.retrieve(booking.stripe_session_id).catch(() => null);
+      if (prior?.status === 'open' && prior.url) return res.json({ url: prior.url });
+    }
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: booking.passenger_email || undefined,
       line_items: [{ price_data: {
         currency: 'usd',
-        product_data: { name: `NYC Limo Wish — ${booking.booking_number}`, description: `${booking.pickup_address}` },
-        unit_amount: Math.round(parseFloat(booking.total_price) * 100)
+        product_data: { name: `NYC Limo Wish — ${booking.booking_number}`, description: booking.pickup_address },
+        unit_amount: Math.round(Number(booking.total_price) * 100)
       }, quantity: 1 }],
       metadata: { type: 'limo_booking', booking_id: String(booking.id), booking_number: booking.booking_number },
-      success_url: `${APP_URL}/book/success?booking=${booking.booking_number}`,
+      success_url: `${APP_URL}/book/success?booking=${encodeURIComponent(booking.booking_number)}`,
       cancel_url: `${APP_URL}/book?canceled=1`
-    });
+    }, { idempotencyKey: `limo-booking-${booking.id}` });
     await pool.query('UPDATE limo_bookings SET stripe_session_id = $1, updated_at = now() WHERE id = $2', [session.id, booking.id]);
     res.json({ url: session.url });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    console.error('[LIMO CHECKOUT ERROR]:', err.message);
+    res.status(500).json({ error: 'Could not start payment for this booking.' });
+  }
 });
 
 router.get('/track/:number', async (req, res) => {
   try {
+    await ensureSchema();
     const { rows } = await pool.query(
       `SELECT b.booking_number, b.status, b.service_type, b.pickup_address, b.dropoff_address,
-              b.pickup_date, b.pickup_time, b.total_price, b.payment_status, v.name AS vehicle_name
-       FROM limo_bookings b LEFT JOIN limo_vehicles v ON v.id = b.vehicle_id WHERE b.booking_number = $1`,
+              b.pickup_date, b.pickup_time, b.total_price, b.payment_status, v.name AS vehicle_name,
+              p.display_name AS operator_name
+       FROM limo_bookings b
+       LEFT JOIN limo_vehicles v ON v.id = b.vehicle_id
+       LEFT JOIN limo_partner_bases p ON p.id = b.operator_base_id
+       WHERE b.booking_number = $1`,
       [req.params.number]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Not found.' });
@@ -223,7 +274,7 @@ router.get('/track/:number', async (req, res) => {
       [req.params.number]
     );
     res.json({ booking: rows[0], history });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Could not load this ride status.' }); }
 });
 
 router.post('/corporate-lead', async (req, res) => {
