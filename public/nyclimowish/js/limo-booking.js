@@ -2,7 +2,7 @@
   const state = {
     serviceType: 'point_to_point',
     pickup: '', dropoff: '', pickupDate: '', pickupTime: '',
-    hours: 3, miles: 0, durationMins: 0,
+    hours: 3, miles: 0, durationMins: 0, routeIsEstimate: true,
     quotes: [], selectedVehicle: null, bookingId: null, bookingNumber: null
   };
 
@@ -92,6 +92,7 @@
       state.quotes = data.quotes;
       state.miles = data.distance?.miles || 0;
       state.durationMins = data.distance?.durationMins || 0;
+      state.routeIsEstimate = data.distance?.isEstimate !== false;
 
       renderSidebar();
       renderVehicles();
@@ -114,7 +115,7 @@
       $('sidebar-stats').textContent = '';
     } else {
       $('sb-duration').textContent = '';
-      $('sidebar-stats').textContent = state.miles + ' mi · ' + Math.floor(state.durationMins / 60) + 'h ' + (state.durationMins % 60) + 'm';
+      $('sidebar-stats').textContent = state.miles + ' mi · ' + Math.floor(state.durationMins / 60) + 'h ' + (state.durationMins % 60) + 'm · ' + (state.routeIsEstimate ? 'estimated route' : 'road route');
     }
   }
 
