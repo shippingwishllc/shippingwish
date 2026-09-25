@@ -133,6 +133,8 @@ router.post('/bookings', async (req, res) => {
     let miles = 0;
     let durationMins = 0;
     let durationHours = null;
+    let dropoffGeo = null;
+    const verifiedStops = [];
     if (serviceType === 'hourly') {
       durationHours = Number(b.durationHours || 3);
       if (!Number.isFinite(durationHours) || durationHours < 1 || durationHours > 24) {
@@ -140,10 +142,24 @@ router.post('/bookings', async (req, res) => {
       }
       durationMins = Math.round(durationHours * 60);
     } else {
-      const dropoffGeo = await geocodeAddress(String(b.dropoff || '').trim());
+      dropoffGeo = await geocodeAddress(String(b.dropoff || '').trim());
       if (!dropoffGeo) return res.status(400).json({ error: 'Drop-off address could not be verified.' });
-      // Derive mileage server-side. Browser-provided distance and coordinates are never used for pricing.
-      miles = Math.round(haversineMiles(pickupGeo.lat, pickupGeo.lng, dropoffGeo.lat, dropoffGeo.lng) * 1.25 * 100) / 100;
+      const inputStops = Array.isArray(b.stops) ? b.stops : [];
+      if (inputStops.length > 5) return res.status(400).json({ error: 'A booking can include at most five additional stops.' });
+
+      const routePoints = [pickupGeo];
+      for (const stop of inputStops) {
+        const stopAddress = typeof stop === 'string' ? stop : (stop.address || stop.location || '');
+        const stopGeo = await geocodeAddress(String(stopAddress).trim());
+        if (!stopGeo) return res.status(400).json({ error: 'A stop address could not be verified.' });
+        routePoints.push(stopGeo);
+        verifiedStops.push({ address: stopGeo.formatted, lat: stopGeo.lat, lng: stopGeo.lng });
+      }
+      routePoints.push(dropoffGeo);
+      // Estimate every leg server-side. Browser-provided miles and coordinates never set the fare.
+      const routeMiles = routePoints.slice(1).reduce((sum, point, index) =>
+        sum + haversineMiles(routePoints[index].lat, routePoints[index].lng, point.lat, point.lng) * 1.25, 0);
+      miles = Math.round(routeMiles * 100) / 100;
       durationMins = estimateDurationMins(miles);
     }
 
@@ -158,7 +174,7 @@ router.post('/bookings', async (req, res) => {
         base_price, tolls, gratuity, total_price, source, flight_number, is_manual)
        VALUES ($1,$2,'pending',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30) RETURNING *`,
       [bookingNumber, serviceType, pickupGeo.formatted, pickupGeo.lat, pickupGeo.lng,
-        b.dropoff || '', b.dropoffLat || null, b.dropoffLng || null, JSON.stringify(b.stops || []),
+        dropoffGeo?.formatted || '', dropoffGeo?.lat || null, dropoffGeo?.lng || null, JSON.stringify(verifiedStops),
         b.pickupDate, b.pickupTime, durationHours, miles, durationMins, b.vehicleId,
         b.passengers || 1, b.luggage || 1, b.childSeats || 0, b.firstName || '', b.lastName || '',
         b.email || '', b.phone || '', b.tripNotes || '', pricing.subtotal, pricing.tolls, pricing.gratuity,
