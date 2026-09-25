@@ -439,7 +439,7 @@ router.post('/partner/bookings/:id/status', ...partnerGate, async (req, res) => 
     await ensureSchema();
     await client.query('BEGIN');
     const { rows } = await client.query(
-      `SELECT id, status, payment_status FROM limo_bookings
+      `SELECT id, status, payment_status, passenger_email, booking_number FROM limo_bookings
        WHERE id = $1 AND operator_base_id = $2 FOR UPDATE`,
       [req.params.id, req.user.partner_base_id]
     );
@@ -457,6 +457,13 @@ router.post('/partner/bookings/:id/status', ...partnerGate, async (req, res) => 
     let commission = null;
     if (status === 'completed') commission = await createCommissionLedger(client, booking.id);
     await client.query('COMMIT');
+    if (booking.passenger_email) {
+      await require('../utils/mailer').sendEmail({
+        to: booking.passenger_email,
+        subject: 'Ride update — ' + booking.booking_number,
+        html: '<p>Your ride status is now <strong>' + status.replaceAll('_', ' ') + '</strong>.</p><p>Reference: ' + booking.booking_number + '</p><p><a href="https://www.nyclimowish.com/track?ref=' + encodeURIComponent(booking.booking_number) + '">View current ride status</a></p>'
+      }).catch((err) => console.warn('[LIMO STATUS EMAIL]:', err.message));
+    }
     res.json({ ok: true, status, commission });
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
