@@ -790,65 +790,75 @@ async function handleLoadBoardCheckoutRequest(req, res) {
     // 4. Check Stripe Integration (LoadsNexus dedicated account)
     const stripe = getStripe('loadsnexus');
     if (stripe) {
-      // Create real Stripe Checkout Session for subscription
-      const session = await stripe.checkout.sessions.create({
-        mode: 'subscription',
-        customer_email: cleanEmail,
-        client_reference_id: String(user.id),
-        billing_address_collection: 'auto',
-        phone_number_collection: { enabled: true },
-        payment_method_collection: 'always',
-        allow_promotion_codes: true,
-        line_items: [{
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: selectedPlan.name,
-              description: selectedPlan.description
+      try {
+        // Create real Stripe Checkout Session for subscription
+        const session = await stripe.checkout.sessions.create({
+          mode: 'subscription',
+          customer_email: cleanEmail,
+          client_reference_id: String(user.id),
+          billing_address_collection: 'auto',
+          phone_number_collection: { enabled: true },
+          payment_method_collection: 'always',
+          allow_promotion_codes: true,
+          line_items: [{
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: selectedPlan.name,
+                description: selectedPlan.description
+              },
+              unit_amount: planCents,
+              recurring: { interval: 'month' }
             },
-            unit_amount: planCents,
-            recurring: { interval: 'month' }
-          },
-          quantity: 1
-        }],
-        success_url: `${APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}&plan=${selectedPlan.key}&email=${encodeURIComponent(cleanEmail)}`,
-        cancel_url: `${APP_URL}/load-booking?canceled=1`,
-        metadata: {
-          user_id: String(user.id),
-          lead_id: leadId ? String(leadId) : '',
-          email: cleanEmail,
-          plan_key: selectedPlan.key,
-          company: String(company || ''),
-          phone: cleanPhone,
-          mc_number: String(mc_number || ''),
-          dot_number: String(dot_number || '')
-        },
-        subscription_data: {
+            quantity: 1
+          }],
+          success_url: `${APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}&plan=${selectedPlan.key}&email=${encodeURIComponent(cleanEmail)}`,
+          cancel_url: `${APP_URL}/load-booking?canceled=1`,
           metadata: {
             user_id: String(user.id),
+            lead_id: leadId ? String(leadId) : '',
+            email: cleanEmail,
             plan_key: selectedPlan.key,
-            company: String(company || '')
+            company: String(company || ''),
+            phone: cleanPhone,
+            mc_number: String(mc_number || ''),
+            dot_number: String(dot_number || '')
+          },
+          subscription_data: {
+            metadata: {
+              user_id: String(user.id),
+              plan_key: selectedPlan.key,
+              company: String(company || '')
+            }
+          },
+          custom_text: {
+            submit: {
+              message: `Billed at $${(planCents / 100).toFixed(0)}/month for ${selectedPlan.name}. Cancel anytime.`
+            }
           }
-        },
-        custom_text: {
-          submit: {
-            message: `Billed at $${(planCents / 100).toFixed(0)}/month for ${selectedPlan.name}. Cancel anytime.`
-          }
+        });
+
+        await pool.query(
+          `INSERT INTO billing_subscriptions (user_id, lead_id, stripe_checkout_session_id, plan_key, amount_cents, interval, status)
+           VALUES ($1, $2, $3, $4, $5, 'month', 'incomplete')`,
+          [user.id, leadId, session.id, selectedPlan.key, planCents]
+        );
+
+        return res.json({
+          ok: true,
+          url: session.url,
+          session_id: session.id,
+          message: 'Redirecting to secure Stripe Checkout.'
+        });
+      } catch (stripeErr) {
+        console.error('[LoadsNexus Stripe Checkout Error]:', stripeErr.message);
+        if (stripeErr.message && stripeErr.message.includes('cannot currently make live charges')) {
+          return res.status(400).json({
+            error: 'Your Stripe account is currently in review ("Review in progress"). Please complete the identity/business verification in your Stripe dashboard (click "View account status") so Stripe activates live charges.'
+          });
         }
-      });
-
-      await pool.query(
-        `INSERT INTO billing_subscriptions (user_id, lead_id, stripe_checkout_session_id, plan_key, amount_cents, interval, status)
-         VALUES ($1, $2, $3, $4, $5, 'month', 'incomplete')`,
-        [user.id, leadId, session.id, selectedPlan.key, planCents]
-      );
-
-      return res.json({
-        ok: true,
-        url: session.url,
-        session_id: session.id,
-        message: 'Redirecting to secure Stripe Checkout.'
-      });
+        return res.status(500).json({ error: stripeErr.message || 'Could not initiate Stripe checkout.' });
+      }
     }
 
     // 5. Fallback if Stripe key is not set or in test mode
