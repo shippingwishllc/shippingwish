@@ -36,8 +36,11 @@ WHERE stripe_subscription_id IN ('sub_live_sw_01', 'sub_live_sw_02', 'sub_live_l
 UPDATE audit_log
 SET action = 'DEMO_SEED_ARCHIVED',
     payload = '{"reason":"known synthetic startup seed"}'::jsonb
-WHERE action IN ('SUPERADMIN_INITIALIZED', '2FA_OTP_VERIFIED', 'STRIPE_GATEWAY_SYNC')
-  AND ip_address = '127.0.0.1'
-  AND created_at < NOW() - INTERVAL '30 minutes';
+WHERE ip_address = '127.0.0.1'
+  AND (
+    (action = 'SUPERADMIN_INITIALIZED' AND payload->>'event' = 'Master 4-brand command center initialized')
+    OR (action = '2FA_OTP_VERIFIED' AND payload->>'email' = 'ahsan_me_9@yahoo.com' AND payload->>'method' = 'email_otp')
+    OR (action = 'STRIPE_GATEWAY_SYNC' AND payload->>'status' = 'connected' AND payload->>'brand' = 'ShippingWish')
+  );
 
 COMMIT;
