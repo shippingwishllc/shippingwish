@@ -127,12 +127,15 @@ router.post('/bookings', async (req, res) => {
     const lastName = String(b.lastName || '').trim().slice(0, 80);
     const email = String(b.email || '').trim().toLowerCase().slice(0, 254);
     const phone = String(b.phone || '').trim().slice(0, 40);
+    const pickupTime = String(b.pickupTime || '').trim();
     const pickupDate = String(b.pickupDate || '');
-    if (!firstName || !lastName || !/^\\S+@\\S+\\.\\S+$/.test(email) || !phone) {
+    if (!firstName || !lastName || !/^\S+@\S+\.\S+$/.test(email) || !phone || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(pickupTime)) {
       return res.status(400).json({ error: 'Valid passenger name, email, and phone are required.' });
     }
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(pickupDate) || Number.isNaN(Date.parse(pickupDate)) ||
-        new Date(pickupDate + 'T00:00:00Z') <= new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z')) {
+    const pickupDateValue = new Date(pickupDate + 'T00:00:00Z');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) || Number.isNaN(pickupDateValue.getTime()) ||
+        pickupDateValue.toISOString().slice(0, 10) !== pickupDate ||
+        pickupDateValue <= new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z')) {
       return res.status(400).json({ error: 'Pickup date must be a valid future date.' });
     }
     const vehicle = (await getVehicles()).find((v) => v.id === b.vehicleId);
@@ -203,7 +206,7 @@ router.post('/bookings', async (req, res) => {
        ) RETURNING id, booking_number, status, pickup_date, pickup_time, total_price, payment_status`,
       [bookingNumber, serviceType, pickupGeo.formatted, pickupGeo.lat, pickupGeo.lng,
        dropoffGeo?.formatted || '', dropoffGeo?.lat || null, dropoffGeo?.lng || null, JSON.stringify(verifiedStops),
-       pickupDate, String(b.pickupTime || '').slice(0, 20), durationHours, miles, durationMins, vehicle.id,
+       pickupDate, pickupTime, durationHours, miles, durationMins, vehicle.id,
        passengers, Number.parseInt(b.luggage || 1, 10), Number.parseInt(b.childSeats || 0, 10),
        firstName, lastName, email, phone, String(b.tripNotes || '').slice(0, 1000),
        pricing.subtotal, pricing.tolls, pricing.gratuity, pricing.total,
