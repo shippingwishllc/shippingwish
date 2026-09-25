@@ -129,18 +129,24 @@ async function ensureSchema() {
     } catch (err) { console.warn('[VEHICLES]', err.message); }
   }
 
-  try {
-    const bcrypt = require('bcryptjs');
-    const check = await pool.query("SELECT id FROM limo_users WHERE role = 'admin' LIMIT 1");
-    if (!check.rows.length) {
-      const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'LimoAdmin2026!', 10);
-      await pool.query(
-        `INSERT INTO limo_users (name, email, password_hash, role, phone)
-         VALUES ('Admin', 'admin@nyclimowish.com', $1, 'admin', '+1 (917) 737-0021')
-         ON CONFLICT (email) DO NOTHING`, [hash]
-      );
-    }
-  } catch (err) { console.warn('[SEED]', err.message); }
+  // Never create a publicly guessable administrator account during app startup.
+  // Provision the first admin through a controlled database operation.
+  if (!process.env.NYCLIMO_ADMIN_EMAIL || !process.env.NYCLIMO_ADMIN_PASSWORD) {
+    console.warn('[SEED] Skipping NYC Limo admin creation: NYCLIMO_ADMIN_EMAIL and NYCLIMO_ADMIN_PASSWORD are required.');
+  } else {
+    try {
+      const bcrypt = require('bcryptjs');
+      const check = await pool.query("SELECT id FROM limo_users WHERE role = 'admin' LIMIT 1");
+      if (!check.rows.length) {
+        const hash = await bcrypt.hash(process.env.NYCLIMO_ADMIN_PASSWORD, 12);
+        await pool.query(
+          `INSERT INTO limo_users (name, email, password_hash, role)
+           VALUES ('NYC Limo Admin', $1, $2, 'admin')
+           ON CONFLICT (email) DO NOTHING`, [process.env.NYCLIMO_ADMIN_EMAIL.toLowerCase(), hash]
+        );
+      }
+    } catch (err) { console.warn('[SEED]', err.message); }
+  }
 }
 
 module.exports = { ensureSchema };
