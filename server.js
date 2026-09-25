@@ -21,20 +21,31 @@ const PORT = process.env.PORT || 3000;
 // Security: Hide Express technology signature
 app.disable('x-powered-by');
 
-// Cross-Origin (CORS) & Mobile App Headers
+// Cross-Origin & Mobile App Headers. Only the four owned brand domains are allowed by default.
+// Add preview/mobile web origins explicitly through CORS_ALLOWED_ORIGINS.
+const allowedOrigins = new Set([
+  'https://shippingwish.com', 'https://www.shippingwish.com',
+  'https://loadsnexus.com', 'https://www.loadsnexus.com',
+  'https://nyclimowish.com', 'https://www.nyclimowish.com',
+  'https://buywishonline.com', 'https://www.buywishonline.com',
+  ...(process.env.CORS_ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean)
+]);
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.add('http://localhost:3000');
+  allowedOrigins.add('http://127.0.0.1:3000');
+}
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin) {
+  const allowed = Boolean(origin && allowedOrigins.has(origin));
+  if (allowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
   }
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
+  if (req.method === 'OPTIONS') return res.sendStatus(!origin || allowed ? 204 : 403);
+  if (origin && !allowed) return res.status(403).json({ error: 'Origin is not allowed.' });
   next();
 });
 
