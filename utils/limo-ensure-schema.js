@@ -157,6 +157,12 @@ CREATE TABLE IF NOT EXISTS limo_commission_ledger (
   operator_payout_amount NUMERIC(10,2) NOT NULL,
   status TEXT NOT NULL DEFAULT 'earned' CHECK (status IN ('earned', 'paid', 'void')),
   payout_reference TEXT,
+  operator_payout_status TEXT NOT NULL DEFAULT 'earned' CHECK (operator_payout_status IN ('earned', 'paid')),
+  operator_payout_reference TEXT,
+  operator_paid_at TIMESTAMPTZ,
+  referral_payout_status TEXT NOT NULL DEFAULT 'not_applicable' CHECK (referral_payout_status IN ('earned', 'paid', 'not_applicable')),
+  referral_payout_reference TEXT,
+  referral_paid_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   paid_at TIMESTAMPTZ
 );
@@ -166,6 +172,12 @@ ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS operator_base_id INTEGER REFE
 ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS referral_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
 ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS accepted_offer_id INTEGER REFERENCES limo_partner_offers(id) ON DELETE SET NULL;
 ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS partner_offer_round INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS operator_payout_status TEXT NOT NULL DEFAULT 'earned';
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS operator_payout_reference TEXT;
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS operator_paid_at TIMESTAMPTZ;
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS referral_payout_status TEXT NOT NULL DEFAULT 'not_applicable';
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS referral_payout_reference TEXT;
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS referral_paid_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_limo_partner_offers_queue ON limo_partner_offers(partner_base_id, status, expires_at);
 CREATE INDEX IF NOT EXISTS idx_limo_partner_bases_eligibility ON limo_partner_bases(approval_status, availability_status);
 `;
