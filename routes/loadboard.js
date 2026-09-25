@@ -565,7 +565,8 @@ router.get('/public-stats', async (req, res) => {
 router.get('/search', optionalAuth, async (req, res) => {
   const { origin, destination, equipmentType, minRpm, dho, dhd, pickupDate } = req.query;
   try {
-    const rawLoads = generateSampleDATLoads(origin, destination, equipmentType, minRpm, dho, dhd, pickupDate);
+    // Search only persisted Shipping Wish loads. Generated sample lanes are not bookings or live inventory.
+    const rawLoads = [];
 
     // Fetch live posted broker loads from PostgreSQL
     let liveDbLoads = [];
@@ -678,7 +679,7 @@ router.get('/search', optionalAuth, async (req, res) => {
       });
     }
 
-    const combinedRawLoads = [...filteredDbLoads, ...rawLoads];
+    const combinedRawLoads = filteredDbLoads;
 
     // Check if current user has full unlocked access
     let hasFullAccess = false;
@@ -716,7 +717,7 @@ router.get('/search', optionalAuth, async (req, res) => {
       }));
       return res.json({
         ok: true,
-        provider: process.env.DAT_API_KEY ? 'DAT Live API' : 'Shipping Wish Spot Freight Network',
+        provider: 'Shipping Wish posted loads',
         preview_mode: false,
         total_loads: loads.length,
         loads
@@ -769,13 +770,31 @@ router.get('/search', optionalAuth, async (req, res) => {
 router.post('/ai-match', requireAuth, async (req, res) => {
   const { carrierId, currentCity, desiredDestination, equipmentType, targetRpm, dho, dhd, pickupDate } = req.body;
   try {
-    const loads = generateSampleDATLoads(currentCity, desiredDestination, equipmentType, targetRpm, dho, dhd, pickupDate);
-    const topMatches = loads.slice(0, 5);
+    const { rows } = await pool.query(
+      `SELECT id, load_number, pickup_location, delivery_location, miles, rate, rpm,
+              equipment_type, weight, commodity, pickup_date, broker_name, broker_mc
+       FROM loads
+       WHERE status NOT IN ('cancelled', 'covered')
+         AND pickup_location ILIKE $1
+         AND delivery_location ILIKE $2
+         AND equipment_type ILIKE $3
+         AND COALESCE(rpm, rate / NULLIF(miles, 0)) >= $4
+       ORDER BY COALESCE(rpm, rate / NULLIF(miles, 0)) DESC
+       LIMIT 5`,
+      [`%${String(currentCity || '').trim()}%`, `%${String(desiredDestination || '').trim()}%`, `%${String(equipmentType || '').trim()}%`, Math.max(0, Number(targetRpm) || 0)]
+    );
+    const matches = rows.map((r) => ({
+      id: r.load_number || `SW-${r.id}`, origin: r.pickup_location, destination: r.delivery_location,
+      miles: r.miles, rate: r.rate, rpm: r.rpm, equipment_type: r.equipment_type,
+      weight: r.weight, commodity: r.commodity, pickup_date: r.pickup_date,
+      broker_name: r.broker_name || 'Broker details unavailable', broker_mc: r.broker_mc || null,
+      verified_broker: false, is_sample: false
+    }));
 
     res.json({
       ok: true,
-      ai_summary: `AI analyzed 60+ live spot freight postings for ${currentCity || 'Origin'} ➔ ${desiredDestination || 'Destination'} picking up ${pickupDate || 'Today'}. Found ${topMatches.length} high-profit matches exceeding $${targetRpm || '2.85'}/mi with verified broker credit.`,
-      matches: topMatches
+      ai_summary: `Matched ${matches.length} current Shipping Wish posted load(s) from stored listings. Verify broker authority and availability before booking.`,
+      matches
     });
   } catch (err) {
     res.status(500).json({ error: 'AI matching failed.' });
@@ -957,10 +976,47 @@ router.post('/ai-dispatch-driver-offers', requireAuth, requireRole('dispatcher',
     if (!carrierRes.rows.length) return res.status(404).json({ error: 'Carrier not found.' });
     const carrier = carrierRes.rows[0];
 
-    const loads = generateSampleDATLoads(currentCity || 'Dallas, TX', destination || 'Atlanta, GA', equipmentType || carrier.equipment_type || '53ft Dry Van', minRpm || 2.80);
-    const topLoad = loads[0];
-
-    const targetMinRpm = parseFloat(minRpm || 2.80);
+    const targetMinRpm = Math.max(0, Number(minRpm) || 0);
+    const { rows: loadRows } = await pool.query(
+      `SELECT id, load_number, broker_name, broker_mc, broker_contact,
+              pickup_location, delivery_location, pickup_date, delivery_date,
+              rate, miles, rpm, equipment_type
+       FROM loads
+       WHERE status NOT IN ('cancelled', 'covered')
+         AND pickup_location ILIKE $1
+         AND delivery_location ILIKE $2
+         AND equipment_type ILIKE $3
+         AND COALESCE(rpm, rate / NULLIF(miles, 0)) >= $4
+       ORDER BY COALESCE(rpm, rate / NULLIF(miles, 0)) DESC
+       LIMIT 1`,
+      [`%${String(currentCity || '').trim()}%`, `%${String(destination || '').trim()}%`, `%${String(equipmentType || carrier.equipment_type || '').trim()}%`, targetMinRpm]
+    );
+    if (!loadRows.length) return res.status(409).json({ error: 'No matching current load is available to dispatch.' });
+    const liveLoad = loadRows[0];
+    const brokerContact = String(liveLoad.broker_contact || '');
+    const contactParts = brokerContact.split('|').map((part) => part.trim());
+    const brokerPhone = contactParts.find((part) => /^[+()\\d .-]{7,}$/.test(part)) || '';
+    const brokerEmail = contactParts.find((part) => /@/.test(part)) || '';
+    const topLoad = {
+      id: liveLoad.load_number || `SW-${liveLoad.id}`,
+      broker_name: liveLoad.broker_name || '',
+      broker_mc: liveLoad.broker_mc || '',
+      broker_phone: brokerPhone,
+      broker_email: brokerEmail,
+      pickup_location: liveLoad.pickup_location,
+      pickup_state: (String(liveLoad.pickup_location).match(/,\\s*([A-Z]{2})\\b/) || [])[1] || '',
+      pickup_date: liveLoad.pickup_date,
+      delivery_location: liveLoad.delivery_location,
+      delivery_state: (String(liveLoad.delivery_location).match(/,\\s*([A-Z]{2})\\b/) || [])[1] || '',
+      delivery_date: liveLoad.delivery_date,
+      rate: Number(liveLoad.rate) || 0,
+      miles: Number(liveLoad.miles) || 0,
+      rpm: liveLoad.rpm || null,
+      equipment_type: liveLoad.equipment_type || carrier.equipment_type
+    };
+    if (!topLoad.broker_name || !topLoad.miles || !topLoad.rate) {
+      return res.status(409).json({ error: 'The matching listing is missing broker or pricing details required for dispatch.' });
+    }
     const result = await pool.query(
       `INSERT INTO load_offers (
         carrier_id, dispatcher_id, broker_name, broker_mc, broker_phone, broker_email,
@@ -973,7 +1029,7 @@ router.post('/ai-dispatch-driver-offers', requireAuth, requireRole('dispatcher',
         carrier.id, req.user.id, topLoad.broker_name, topLoad.broker_mc, topLoad.broker_phone, topLoad.broker_email,
         topLoad.pickup_location, topLoad.pickup_state, topLoad.pickup_date,
         topLoad.delivery_location, topLoad.delivery_state, topLoad.delivery_date,
-        topLoad.rate, topLoad.miles, topLoad.rpm, topLoad.equipment_type, targetMinRpm, `AI matched DAT Load #${topLoad.id}`
+        topLoad.rate, topLoad.miles, topLoad.rpm, topLoad.equipment_type, targetMinRpm, `Matched Shipping Wish posted load #${topLoad.id}`
       ]
     );
 
