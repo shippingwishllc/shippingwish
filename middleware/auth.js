@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const JWT_SECRET = process.env.JWT_SECRET || (IS_PRODUCTION ? null : 'dev-secret-change-me');
+if (!JWT_SECRET) throw new Error('JWT_SECRET must be configured in production.');
 
 function extractToken(req) {
   const authHeader = req.headers.authorization || req.headers.Authorization;

@@ -10,6 +10,7 @@ const { ensureGrowthSchema } = require('./utils/ensure-growth-schema');
 const { purgeExpiredTrash } = require('./utils/trash');
 const { webhookHandler } = require('./routes/billing');
 const { handleBuyWishWebhook } = require('./routes/buywish');
+const { handleStripeWebhook: handleNYCLimoStripeWebhook } = require('./routes/nyclimo');
 const { requireAuth } = require('./middleware/auth');
 const { requireCarrierSubscription } = require('./middleware/subscription');
 
@@ -21,20 +22,31 @@ const PORT = process.env.PORT || 3000;
 // Security: Hide Express technology signature
 app.disable('x-powered-by');
 
-// Cross-Origin (CORS) & Mobile App Headers
+// Cross-Origin & Mobile App Headers. Only the four owned brand domains are allowed by default.
+// Add preview/mobile web origins explicitly through CORS_ALLOWED_ORIGINS.
+const allowedOrigins = new Set([
+  'https://shippingwish.com', 'https://www.shippingwish.com',
+  'https://loadsnexus.com', 'https://www.loadsnexus.com',
+  'https://nyclimowish.com', 'https://www.nyclimowish.com',
+  'https://buywishonline.com', 'https://www.buywishonline.com',
+  ...(process.env.CORS_ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean)
+]);
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.add('http://localhost:3000');
+  allowedOrigins.add('http://127.0.0.1:3000');
+}
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin) {
+  const allowed = Boolean(origin && allowedOrigins.has(origin));
+  if (allowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
   }
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
+  if (req.method === 'OPTIONS') return res.sendStatus(!origin || allowed ? 204 : 403);
+  if (origin && !allowed) return res.status(403).json({ error: 'Origin is not allowed.' });
   next();
 });
 
@@ -64,6 +76,19 @@ app.post(
   express.raw({ type: 'application/json' }),
   handleBuyWishWebhook
 );
+
+app.post('/api/nyclimo/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const secret = process.env.NYCLIMO_STRIPE_WEBHOOK_SECRET;
+  const stripeKey = process.env.NYCLIMO_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+  const signature = req.headers['stripe-signature'];
+  if (!secret || !stripeKey) return res.status(503).json({ error: 'NYC Limo Stripe webhook is not configured.' });
+  if (!signature || !Buffer.isBuffer(req.body)) return res.status(400).json({ error: 'Invalid Stripe webhook request.' });
+  let event;
+  try { event = require('stripe')(stripeKey).webhooks.constructEvent(req.body, signature, secret); }
+  catch (err) { return res.status(400).json({ error: 'Invalid Stripe webhook signature.' }); }
+  try { await handleNYCLimoStripeWebhook(event); return res.json({ received: true }); }
+  catch (err) { console.error('[NYCLIMO STRIPE WEBHOOK]:', err.message); return res.status(500).json({ error: 'Webhook processing failed.' }); }
+});
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -313,7 +338,8 @@ app.use('/api/chat', require('./routes/ai-chat'));                             /
 app.use('/api', require('./routes/broker-team'));                           // Multi-Seat Broker Team Management & Sub-Users CRUD
 app.use('/api', require('./routes/broker-api'));                            // Broker API Key Management & Partner REST API v1 (/api/v1/loads)
 app.use('/api/superadmin', require('./routes/superadmin'));                 // Executive Command Center & Multi-Brand Master Control API
-app.use('/api/nyclimo', require('./routes/nyclimo'));                       // NYC Limo Wish Booking, Chauffeur & Luxury Rides API
+app.use('/api/nyclimo', require('./routes/nyclimo'));                       // NYC Limo Wish public, customer, driver, and ERP API
+app.use('/api/nyclimo', require('./routes/nyclimo-partners'));              // TLC-verified base offers, partner portal, status, and commission ledger
 app.use('/api/buywish', require('./routes/buywish'));                       // BuyWishOnline E-Commerce, Zendrop Sync & AI Hunter API
 
 // ---------- Public Contact / Service Request Form ----------

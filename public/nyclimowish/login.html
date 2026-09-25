@@ -23,7 +23,7 @@
     const params = new URLSearchParams(window.location.search);
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const res = await fetch('/api/login', {
+      const res = await fetch('/api/nyclimo/login', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value })
@@ -35,7 +35,7 @@
         el.style.display = 'block';
         return;
       }
-      window.location.href = params.get('redirect') || (data.user.role === 'admin' || data.user.role === 'dispatcher' ? '/erp' : '/passenger');
+      window.location.href = params.get('redirect') || (data.user.role === 'admin' || data.user.role === 'dispatcher' ? '/erp' : (data.user.role === 'partner_dispatcher' ? '/partner' : '/passenger'));
     });
   </script>
 </body>

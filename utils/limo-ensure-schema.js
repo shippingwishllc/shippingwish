@@ -99,6 +99,89 @@ CREATE TABLE IF NOT EXISTS limo_drivers (
 CREATE INDEX IF NOT EXISTS idx_limo_bookings_status ON limo_bookings(status);
 CREATE INDEX IF NOT EXISTS idx_limo_bookings_date ON limo_bookings(pickup_date);
 CREATE INDEX IF NOT EXISTS idx_limo_bookings_number ON limo_bookings(booking_number);
+
+-- NYC Limo Wish asset-light base-partner marketplace.
+-- Approval and license checks are performed manually by an authorized admin.
+CREATE TABLE IF NOT EXISTS limo_partner_bases (
+  id SERIAL PRIMARY KEY,
+  legal_name TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  base_type TEXT NOT NULL CHECK (base_type IN ('black_car', 'luxury_limo')),
+  tlc_base_license_number TEXT NOT NULL UNIQUE,
+  tlc_base_license_expires_at DATE,
+  insurance_expires_at DATE,
+  service_areas TEXT[] NOT NULL DEFAULT '{}',
+  vehicle_classes TEXT[] NOT NULL DEFAULT '{}',
+  max_passengers INTEGER NOT NULL DEFAULT 0 CHECK (max_passengers >= 0),
+  contact_email TEXT NOT NULL,
+  contact_phone TEXT,
+  platform_commission_rate NUMERIC(5,4),
+  referral_commission_rate NUMERIC(5,4) NOT NULL DEFAULT 0,
+  referral_code TEXT UNIQUE,
+  approval_status TEXT NOT NULL DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'suspended', 'rejected')),
+  verification_reference TEXT,
+  verified_at TIMESTAMPTZ,
+  verified_by INTEGER REFERENCES limo_users(id) ON DELETE SET NULL,
+  availability_status TEXT NOT NULL DEFAULT 'unavailable' CHECK (availability_status IN ('available', 'unavailable')),
+  availability_updated_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS limo_partner_offers (
+  id SERIAL PRIMARY KEY,
+  booking_id INTEGER NOT NULL REFERENCES limo_bookings(id) ON DELETE CASCADE,
+  partner_base_id INTEGER NOT NULL REFERENCES limo_partner_bases(id) ON DELETE CASCADE,
+  offer_round INTEGER NOT NULL DEFAULT 1,
+  status TEXT NOT NULL DEFAULT 'offered' CHECK (status IN ('offered', 'accepted', 'declined', 'expired', 'cancelled')),
+  platform_commission_rate NUMERIC(5,4) NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  responded_at TIMESTAMPTZ,
+  responded_by INTEGER REFERENCES limo_users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (booking_id, partner_base_id, offer_round)
+);
+
+CREATE TABLE IF NOT EXISTS limo_commission_ledger (
+  id SERIAL PRIMARY KEY,
+  booking_id INTEGER NOT NULL UNIQUE REFERENCES limo_bookings(id) ON DELETE CASCADE,
+  operator_base_id INTEGER NOT NULL REFERENCES limo_partner_bases(id),
+  gross_fare NUMERIC(10,2) NOT NULL,
+  tolls NUMERIC(10,2) NOT NULL DEFAULT 0,
+  gratuity NUMERIC(10,2) NOT NULL DEFAULT 0,
+  platform_commission_rate NUMERIC(5,4) NOT NULL,
+  platform_commission_amount NUMERIC(10,2) NOT NULL,
+  referral_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL,
+  referral_commission_rate NUMERIC(5,4) NOT NULL DEFAULT 0,
+  referral_commission_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+  operator_payout_amount NUMERIC(10,2) NOT NULL,
+  status TEXT NOT NULL DEFAULT 'earned' CHECK (status IN ('earned', 'paid', 'void')),
+  payout_reference TEXT,
+  operator_payout_status TEXT NOT NULL DEFAULT 'earned' CHECK (operator_payout_status IN ('earned', 'paid')),
+  operator_payout_reference TEXT,
+  operator_paid_at TIMESTAMPTZ,
+  referral_payout_status TEXT NOT NULL DEFAULT 'not_applicable' CHECK (referral_payout_status IN ('earned', 'paid', 'not_applicable')),
+  referral_payout_reference TEXT,
+  referral_paid_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  paid_at TIMESTAMPTZ
+);
+
+ALTER TABLE limo_users ADD COLUMN IF NOT EXISTS partner_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS operator_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS referral_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS accepted_offer_id INTEGER REFERENCES limo_partner_offers(id) ON DELETE SET NULL;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS partner_offer_round INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS operator_payout_status TEXT NOT NULL DEFAULT 'earned';
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS operator_payout_reference TEXT;
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS operator_paid_at TIMESTAMPTZ;
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS referral_payout_status TEXT NOT NULL DEFAULT 'not_applicable';
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS referral_payout_reference TEXT;
+ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS referral_paid_at TIMESTAMPTZ;
+UPDATE limo_commission_ledger SET operator_payout_status = 'paid', operator_payout_reference = payout_reference, operator_paid_at = paid_at WHERE status = 'paid' AND operator_payout_status = 'earned';
+UPDATE limo_commission_ledger SET referral_payout_status = 'earned' WHERE referral_base_id IS NOT NULL AND referral_payout_status = 'not_applicable' AND status <> 'void';
+CREATE INDEX IF NOT EXISTS idx_limo_partner_offers_queue ON limo_partner_offers(partner_base_id, status, expires_at);
+CREATE INDEX IF NOT EXISTS idx_limo_partner_bases_eligibility ON limo_partner_bases(approval_status, availability_status);
 `;
 
 const DEFAULT_VEHICLES = [
@@ -129,18 +212,24 @@ async function ensureSchema() {
     } catch (err) { console.warn('[VEHICLES]', err.message); }
   }
 
-  try {
-    const bcrypt = require('bcryptjs');
-    const check = await pool.query("SELECT id FROM limo_users WHERE role = 'admin' LIMIT 1");
-    if (!check.rows.length) {
-      const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'LimoAdmin2026!', 10);
-      await pool.query(
-        `INSERT INTO limo_users (name, email, password_hash, role, phone)
-         VALUES ('Admin', 'admin@nyclimowish.com', $1, 'admin', '+1 (917) 737-0021')
-         ON CONFLICT (email) DO NOTHING`, [hash]
-      );
-    }
-  } catch (err) { console.warn('[SEED]', err.message); }
+  // Never create a publicly guessable administrator account during app startup.
+  // Provision the first admin through a controlled database operation.
+  if (!process.env.NYCLIMO_ADMIN_EMAIL || !process.env.NYCLIMO_ADMIN_PASSWORD) {
+    console.warn('[SEED] Skipping NYC Limo admin creation: NYCLIMO_ADMIN_EMAIL and NYCLIMO_ADMIN_PASSWORD are required.');
+  } else {
+    try {
+      const bcrypt = require('bcryptjs');
+      const check = await pool.query("SELECT id FROM limo_users WHERE role = 'admin' LIMIT 1");
+      if (!check.rows.length) {
+        const hash = await bcrypt.hash(process.env.NYCLIMO_ADMIN_PASSWORD, 12);
+        await pool.query(
+          `INSERT INTO limo_users (name, email, password_hash, role)
+           VALUES ('NYC Limo Admin', $1, $2, 'admin')
+           ON CONFLICT (email) DO NOTHING`, [process.env.NYCLIMO_ADMIN_EMAIL.toLowerCase(), hash]
+        );
+      }
+    } catch (err) { console.warn('[SEED]', err.message); }
+  }
 }
 
 module.exports = { ensureSchema };
