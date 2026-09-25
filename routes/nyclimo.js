@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requireRole, JWT_SECRET } = require('../middleware/auth');
 const { ensureSchema } = require('../utils/limo-ensure-schema');
 const {
   haversineMiles, estimateDurationMins, quoteAllVehicles, generateBookingNumber,
@@ -11,7 +11,6 @@ const {
 } = require('../utils/limo-pricing');
 const { sendEmail } = require('../utils/mailer');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const APP_URL = (process.env.APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
 
 function signLimoToken(user) {
@@ -127,15 +126,28 @@ router.post('/bookings', async (req, res) => {
     const vehicle = (await getVehicles()).find((v) => v.id === b.vehicleId);
     if (!vehicle) return res.status(400).json({ error: 'Invalid vehicle.' });
 
-    const serviceType = b.serviceType || 'point_to_point';
-    let miles = parseFloat(b.distanceMiles) || 0;
-    let durationMins = parseInt(b.durationMins, 10) || 0;
-    if (!miles && b.pickupLat && b.dropoffLat) {
-      miles = Math.round(haversineMiles(b.pickupLat, b.pickupLng, b.dropoffLat, b.dropoffLng) * 1.25 * 100) / 100;
+    const serviceType = b.serviceType === 'hourly' ? 'hourly' : 'point_to_point';
+    const pickupGeo = await geocodeAddress(String(b.pickup || '').trim());
+    if (!pickupGeo) return res.status(400).json({ error: 'Pickup address could not be verified.' });
+
+    let miles = 0;
+    let durationMins = 0;
+    let durationHours = null;
+    if (serviceType === 'hourly') {
+      durationHours = Number(b.durationHours || 3);
+      if (!Number.isFinite(durationHours) || durationHours < 1 || durationHours > 24) {
+        return res.status(400).json({ error: 'Hourly bookings must be between 1 and 24 hours.' });
+      }
+      durationMins = Math.round(durationHours * 60);
+    } else {
+      const dropoffGeo = await geocodeAddress(String(b.dropoff || '').trim());
+      if (!dropoffGeo) return res.status(400).json({ error: 'Drop-off address could not be verified.' });
+      // Derive mileage server-side. Browser-provided distance and coordinates are never used for pricing.
+      miles = Math.round(haversineMiles(pickupGeo.lat, pickupGeo.lng, dropoffGeo.lat, dropoffGeo.lng) * 1.25 * 100) / 100;
       durationMins = estimateDurationMins(miles);
     }
 
-    const pricing = serviceType === 'hourly' ? calcHourlyPrice(vehicle, b.durationHours || 3) : calcPointToPointPrice(vehicle, miles);
+    const pricing = serviceType === 'hourly' ? calcHourlyPrice(vehicle, durationHours) : calcPointToPointPrice(vehicle, miles);
     const bookingNumber = generateBookingNumber();
 
     const { rows } = await pool.query(
@@ -145,9 +157,9 @@ router.post('/bookings', async (req, res) => {
         passenger_first_name, passenger_last_name, passenger_email, passenger_phone, trip_notes,
         base_price, tolls, gratuity, total_price, source, flight_number, is_manual)
        VALUES ($1,$2,'pending',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30) RETURNING *`,
-      [bookingNumber, serviceType, b.pickup || '', b.pickupLat || null, b.pickupLng || null,
+      [bookingNumber, serviceType, pickupGeo.formatted, pickupGeo.lat, pickupGeo.lng,
         b.dropoff || '', b.dropoffLat || null, b.dropoffLng || null, JSON.stringify(b.stops || []),
-        b.pickupDate, b.pickupTime, b.durationHours || null, miles, durationMins, b.vehicleId,
+        b.pickupDate, b.pickupTime, durationHours, miles, durationMins, b.vehicleId,
         b.passengers || 1, b.luggage || 1, b.childSeats || 0, b.firstName || '', b.lastName || '',
         b.email || '', b.phone || '', b.tripNotes || '', pricing.subtotal, pricing.tolls, pricing.gratuity,
         pricing.total, b.source || 'web', b.flightNumber || null, false]
