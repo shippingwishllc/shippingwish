@@ -336,10 +336,15 @@ router.post('/partner/offers/:id/respond', ...partnerGate, async (req, res) => {
     await ensureSchema();
     await client.query('BEGIN');
     const { rows } = await client.query(
-      `SELECT o.*, b.booking_number, b.status AS booking_status
-       FROM limo_partner_offers o JOIN limo_bookings b ON b.id = o.booking_id
+      `SELECT o.*, b.booking_number, b.status AS booking_status, b.pickup_address,
+              b.pickup_date, b.passengers, b.vehicle_id,
+              p.approval_status, p.availability_status, p.tlc_base_license_expires_at,
+              p.insurance_expires_at, p.max_passengers, p.service_areas, p.vehicle_classes
+       FROM limo_partner_offers o
+       JOIN limo_bookings b ON b.id = o.booking_id
+       JOIN limo_partner_bases p ON p.id = o.partner_base_id
        WHERE o.id = $1 AND o.partner_base_id = $2
-       FOR UPDATE OF o, b`,
+       FOR UPDATE OF o, b, p`,
       [req.params.id, req.user.partner_base_id]
     );
     const offer = rows[0];
@@ -364,6 +369,22 @@ router.post('/partner/offers/:id/respond', ...partnerGate, async (req, res) => {
     if (!['offering', 'pending_operator'].includes(offer.booking_status)) {
       await client.query('ROLLBACK');
       return res.status(409).json({ error: 'Another operator has already accepted this trip.' });
+    }
+    const pickupDate = String(offer.pickup_date || '').slice(0, 10);
+    const licenseExpiry = String(offer.tlc_base_license_expires_at || '').slice(0, 10);
+    const insuranceExpiry = String(offer.insurance_expires_at || '').slice(0, 10);
+    const servesPickupZone = Array.isArray(offer.service_areas) &&
+      offer.service_areas.some((zone) => pickupZones(offer).includes(String(zone).toUpperCase()));
+    const supportsVehicle = Array.isArray(offer.vehicle_classes) &&
+      offer.vehicle_classes.some((vehicleClass) => String(vehicleClass).toUpperCase() === String(offer.vehicle_id).toUpperCase());
+    if (offer.approval_status !== 'approved' || offer.availability_status !== 'available' ||
+        !/^\\d{4}-\\d{2}-\\d{2}$/.test(pickupDate) ||
+        !/^\\d{4}-\\d{2}-\\d{2}$/.test(licenseExpiry) || licenseExpiry < pickupDate ||
+        !/^\\d{4}-\\d{2}-\\d{2}$/.test(insuranceExpiry) || insuranceExpiry < pickupDate ||
+        Number(offer.max_passengers) < Number(offer.passengers || 1) ||
+        !servesPickupZone || !supportsVehicle) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'This base is no longer approved and eligible for the trip.' });
     }
     const update = await client.query(
       `UPDATE limo_bookings
