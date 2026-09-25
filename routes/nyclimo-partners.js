@@ -342,8 +342,9 @@ router.post('/partner/offers/:id/respond', ...partnerGate, async (req, res) => {
     const { rows } = await client.query(
       `SELECT o.*, b.booking_number, b.status AS booking_status, b.pickup_address,
               b.pickup_date, b.passengers, b.vehicle_id,
-              p.approval_status, p.availability_status, p.tlc_base_license_expires_at,
-              p.insurance_expires_at, p.max_passengers, p.service_areas, p.vehicle_classes
+              p.approval_status, p.availability_status, p.availability_updated_at,
+              p.tlc_base_license_expires_at, p.insurance_expires_at, p.max_passengers,
+              p.service_areas, p.vehicle_classes
        FROM limo_partner_offers o
        JOIN limo_bookings b ON b.id = o.booking_id
        JOIN limo_partner_bases p ON p.id = o.partner_base_id
@@ -377,11 +378,14 @@ router.post('/partner/offers/:id/respond', ...partnerGate, async (req, res) => {
     const pickupDate = String(offer.pickup_date || '').slice(0, 10);
     const licenseExpiry = String(offer.tlc_base_license_expires_at || '').slice(0, 10);
     const insuranceExpiry = String(offer.insurance_expires_at || '').slice(0, 10);
+    const availabilityUpdatedAt = new Date(offer.availability_updated_at).getTime();
+    const availabilityFresh = Number.isFinite(availabilityUpdatedAt) &&
+      Date.now() - availabilityUpdatedAt <= 10 * 60 * 1000;
     const servesPickupZone = Array.isArray(offer.service_areas) &&
       offer.service_areas.some((zone) => pickupZones(offer).includes(String(zone).toUpperCase()));
     const supportsVehicle = Array.isArray(offer.vehicle_classes) &&
       offer.vehicle_classes.some((vehicleClass) => String(vehicleClass).toUpperCase() === String(offer.vehicle_id).toUpperCase());
-    if (offer.approval_status !== 'approved' || offer.availability_status !== 'available' ||
+    if (offer.approval_status !== 'approved' || offer.availability_status !== 'available' || !availabilityFresh ||
         !/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) ||
         !/^\d{4}-\d{2}-\d{2}$/.test(licenseExpiry) || licenseExpiry < pickupDate ||
         !/^\d{4}-\d{2}-\d{2}$/.test(insuranceExpiry) || insuranceExpiry < pickupDate ||
