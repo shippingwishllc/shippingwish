@@ -60,32 +60,32 @@
     {
       "source": "/support",
       "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
-      "destination": "/loadsnexus/support.html"
+      "destination": "/api"
     },
     {
       "source": "/contact",
       "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
-      "destination": "/loadsnexus/support.html"
+      "destination": "/api"
     },
     {
       "source": "/privacy-policy",
       "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
-      "destination": "/loadsnexus/privacy-policy.html"
+      "destination": "/api"
     },
     {
       "source": "/privacy",
       "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
-      "destination": "/loadsnexus/privacy-policy.html"
+      "destination": "/api"
     },
     {
       "source": "/terms-of-service",
       "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
-      "destination": "/loadsnexus/terms-of-service.html"
+      "destination": "/api"
     },
     {
       "source": "/terms",
       "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
-      "destination": "/loadsnexus/terms-of-service.html"
+      "destination": "/api"
     },
     {
       "source": "/loadsnexus.css",
@@ -105,27 +105,27 @@
     {
       "source": "/book",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
-      "destination": "/nyclimowish/book.html"
+      "destination": "/api"
     },
     {
       "source": "/track",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
-      "destination": "/nyclimowish/track.html"
+      "destination": "/api"
     },
     {
       "source": "/login",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
-      "destination": "/nyclimowish/login.html"
+      "destination": "/api"
     },
     {
       "source": "/signup",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
-      "destination": "/nyclimowish/login.html"
+      "destination": "/api"
     },
     {
       "source": "/erp",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
-      "destination": "/nyclimowish/erp.html"
+      "destination": "/api"
     },
     {
       "source": "/driver",
@@ -150,27 +150,27 @@
     {
       "source": "/book/success",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
-      "destination": "/nyclimowish/book/success.html"
+      "destination": "/api"
     },
     {
       "source": "/contact",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
-      "destination": "/nyclimowish/contact.html"
+      "destination": "/api"
     },
     {
       "source": "/terms",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
-      "destination": "/nyclimowish/terms.html"
+      "destination": "/api"
     },
     {
       "source": "/privacy-policy",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
-      "destination": "/nyclimowish/privacy-policy.html"
+      "destination": "/api"
     },
     {
       "source": "/cancellation",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
-      "destination": "/nyclimowish/cancellation.html"
+      "destination": "/api"
     },
     {
       "source": "/services/(.*)",
