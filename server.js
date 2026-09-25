@@ -80,7 +80,7 @@ app.use((req, res, next) => {
 
 // Host-based routing for 4 Brands: LoadsNexus, NYC Limo Wish, BuyWishOnline, ShippingWish
 app.use((req, res, next) => {
-  const host = (req.headers.host || '').toLowerCase();
+  const host = (req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
   const p = req.path;
 
   // Global SuperAdmin routes accessible from any brand domain
@@ -92,77 +92,89 @@ app.use((req, res, next) => {
   }
 
   // 1. LoadsNexus Domain (loadsnexus.com)
-  if (host.includes('loadsnexus')) {
-    if (p.startsWith('/api') || p.startsWith('/loadsnexus') || p.startsWith('/uploads')) {
+  if (host.includes('loadsnexus') || p.startsWith('/loadsnexus')) {
+    const cleanP = p.replace(/^\/loadsnexus/, '') || '/';
+    if (cleanP.startsWith('/api') || p.startsWith('/api/loadboard') || p.startsWith('/uploads')) {
       return next();
     }
-    if (p.startsWith('/assets/')) {
-      return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', p));
+    if (cleanP.startsWith('/assets/')) {
+      return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', cleanP));
     }
     const lnRoutes = ['/', '/index', '/board', '/loads', '/post-load', '/login', '/checkout', '/pricing'];
-    if (lnRoutes.includes(p)) {
+    if (lnRoutes.includes(cleanP)) {
       return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', 'index.html'));
+    }
+    const directPath = path.join(__dirname, 'public', 'loadsnexus', cleanP);
+    if (fs.existsSync(directPath) && fs.statSync(directPath).isFile()) {
+      return res.sendFile(directPath);
     }
   }
 
   // 2. NYC Limo Wish Domain (nyclimowish.com)
-  if (host.includes('nyclimo')) {
+  if (host.includes('nyclimo') || p.startsWith('/nyclimowish')) {
+    const cleanP = p.replace(/^\/nyclimowish/, '') || '/';
+
     // API routing
-    if (p.startsWith('/api')) {
+    if (cleanP.startsWith('/api') || p.startsWith('/api/nyclimo')) {
       const nyclimoRouter = require('./routes/nyclimo');
-      req.url = req.url.replace(/^\/api/, '') || '/';
+      req.url = req.url.replace(/^\/(?:api\/nyclimo|nyclimowish\/api|api)/, '') || '/';
       return nyclimoRouter(req, res, next);
     }
     if (p.startsWith('/uploads')) {
       return next();
     }
     // Main & known pages
-    if (p === '/' || p === '/index' || p === '/index.html') {
+    if (cleanP === '/' || cleanP === '/index' || cleanP === '/index.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'index.html'));
     }
-    if (p === '/book' || p === '/book.html') {
+    if (cleanP === '/book' || cleanP === '/book.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'book.html'));
     }
-    if (p === '/track' || p === '/track.html') {
+    if (cleanP === '/track' || cleanP === '/track.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'track.html'));
     }
-    if (p === '/login' || p === '/login.html' || p === '/signup') {
+    if (cleanP === '/login' || cleanP === '/login.html' || cleanP === '/signup') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'login.html'));
     }
-    if (p === '/erp' || p === '/erp.html') {
+    if (cleanP === '/erp' || cleanP === '/erp.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'erp.html'));
     }
-    if (p === '/driver' || p === '/driver/' || p === '/driver/index.html') {
+    if (cleanP === '/driver' || cleanP === '/driver/' || cleanP === '/driver/index.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'driver', 'index.html'));
     }
-    if (p === '/passenger' || p === '/passenger/' || p === '/passenger/index.html') {
+    if (cleanP === '/passenger' || cleanP === '/passenger/' || cleanP === '/passenger/index.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'passenger', 'index.html'));
     }
-    if (p === '/book/success' || p === '/book/success.html') {
+    if (cleanP === '/book/success' || cleanP === '/book/success.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'book', 'success.html'));
     }
     // Static assets & pre-rendered pages (.html)
-    const directPath = path.join(__dirname, 'public', 'nyclimowish', p);
+    const directPath = path.join(__dirname, 'public', 'nyclimowish', cleanP);
     if (fs.existsSync(directPath) && fs.statSync(directPath).isFile()) {
       return res.sendFile(directPath);
     }
-    const htmlPath = path.join(__dirname, 'public', 'nyclimowish', p + '.html');
+    const htmlPath = path.join(__dirname, 'public', 'nyclimowish', cleanP + '.html');
     if (fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
       return res.sendFile(htmlPath);
     }
   }
 
   // 3. BuyWishOnline Domain (buywishonline.com)
-  if (host.includes('buywish')) {
-    if (p.startsWith('/api') || p.startsWith('/uploads')) {
+  if (host.includes('buywish') || p.startsWith('/buywishonline')) {
+    const cleanP = p.replace(/^\/buywishonline/, '') || '/';
+    if (cleanP.startsWith('/api') || p.startsWith('/api/buywish') || p.startsWith('/uploads')) {
       return next();
     }
-    if (p === '/' || p === '/index' || p === '/index.html') {
+    if (cleanP === '/' || cleanP === '/index' || cleanP === '/index.html') {
       return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'index.html'));
     }
-    const filePath = path.join(__dirname, 'public', 'buywishonline', p);
+    const filePath = path.join(__dirname, 'public', 'buywishonline', cleanP);
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       return res.sendFile(filePath);
+    }
+    const htmlPath = path.join(__dirname, 'public', 'buywishonline', cleanP + '.html');
+    if (fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
+      return res.sendFile(htmlPath);
     }
   }
 
