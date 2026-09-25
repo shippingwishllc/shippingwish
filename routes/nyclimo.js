@@ -85,6 +85,56 @@ async function geocodeAddress(address) {
   return null;
 }
 
+async function getRouteMetrics(points) {
+  const estimate = () => {
+    const straightMiles = points.slice(1).reduce((sum, point, index) =>
+      sum + haversineMiles(points[index].lat, points[index].lng, point.lat, point.lng), 0);
+    const miles = Math.round(straightMiles * 1.25 * 100) / 100;
+    return { miles, durationMins: estimateDurationMins(miles), isEstimate: true, source: 'straight_line_estimate' };
+  };
+
+  const key = process.env.GOOGLE_MAPS_API_KEY;
+  if (!key) return estimate();
+
+  try {
+    const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': key,
+        'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration'
+      },
+      body: JSON.stringify({
+        origin: { location: { latLng: { latitude: points[0].lat, longitude: points[0].lng } } },
+        destination: { location: { latLng: { latitude: points[points.length - 1].lat, longitude: points[points.length - 1].lng } } },
+        intermediates: points.slice(1, -1).map((point) => ({
+          location: { latLng: { latitude: point.lat, longitude: point.lng } }
+        })),
+        travelMode: 'DRIVE',
+        routingPreference: 'TRAFFIC_UNAWARE',
+        units: 'IMPERIAL'
+      }),
+      signal: AbortSignal.timeout(8000)
+    });
+    const data = await response.json();
+    const route = data.routes?.[0];
+    const seconds = Number.parseFloat(route?.duration || '');
+    if (!response.ok || !Number.isFinite(route?.distanceMeters) || route.distanceMeters <= 0 ||
+        !Number.isFinite(seconds) || seconds <= 0) {
+      throw new Error('Google Routes returned no usable driving route.');
+    }
+    return {
+      miles: Math.round((route.distanceMeters / 1609.344) * 100) / 100,
+      durationMins: Math.max(1, Math.round(seconds / 60)),
+      isEstimate: false,
+      source: 'google_routes'
+    };
+  } catch (err) {
+    console.warn('[LIMO ROUTING FALLBACK]:', err.message);
+    return estimate();
+  }
+}
+
 router.get('/vehicles', async (req, res) => {
   try { res.json({ vehicles: await getVehicles() }); }
   catch (err) { res.status(500).json({ error: err.message }); }
@@ -95,6 +145,7 @@ router.post('/quote', async (req, res) => {
     const { serviceType, pickup, dropoff, hours, pickupLat, pickupLng, dropoffLat, dropoffLng } = req.body || {};
     const vehicles = await getVehicles();
     let miles = 0, durationMins = 0, pickupGeo = null, dropoffGeo = null;
+    let route = { isEstimate: false, source: 'hourly_service' };
 
     if (pickupLat && pickupLng) pickupGeo = { lat: pickupLat, lng: pickupLng, formatted: pickup };
     else if (pickup) pickupGeo = await geocodeAddress(pickup);
@@ -105,14 +156,15 @@ router.post('/quote', async (req, res) => {
       if (dropoffLat && dropoffLng) dropoffGeo = { lat: dropoffLat, lng: dropoffLng, formatted: dropoff };
       else if (dropoff) dropoffGeo = await geocodeAddress(dropoff);
       if (pickupGeo && dropoffGeo) {
-        miles = Math.round(haversineMiles(pickupGeo.lat, pickupGeo.lng, dropoffGeo.lat, dropoffGeo.lng) * 1.25 * 100) / 100;
-        durationMins = estimateDurationMins(miles);
+        route = await getRouteMetrics([pickupGeo, dropoffGeo]);
+        miles = route.miles;
+        durationMins = route.durationMins;
       }
     }
 
     res.json({
       serviceType: serviceType || 'point_to_point',
-      distance: { miles, durationMins },
+      distance: { miles, durationMins, isEstimate: route.isEstimate, source: route.source },
       pickup: pickupGeo, dropoff: dropoffGeo,
       quotes: quoteAllVehicles(vehicles, { serviceType: serviceType || 'point_to_point', miles, hours: hours || 3 })
     });
@@ -183,10 +235,9 @@ router.post('/bookings', async (req, res) => {
         verifiedStops.push({ address: point.formatted, lat: point.lat, lng: point.lng });
       }
       points.push(dropoffGeo);
-      const estimate = points.slice(1).reduce((sum, point, index) =>
-        sum + haversineMiles(points[index].lat, points[index].lng, point.lat, point.lng) * 1.25, 0);
-      miles = Math.round(estimate * 100) / 100;
-      durationMins = estimateDurationMins(miles);
+      const route = await getRouteMetrics(points);
+      miles = route.miles;
+      durationMins = route.durationMins;
     }
     const pricing = serviceType === 'hourly'
       ? calcHourlyPrice(vehicle, durationHours)
