@@ -41,20 +41,36 @@ async function ensureSuperAdminTables() {
         customer_name TEXT NOT NULL,
         customer_email TEXT NOT NULL,
         customer_phone TEXT,
+        shipping_address TEXT,
         shipping_city TEXT,
         shipping_state TEXT,
         items JSONB NOT NULL DEFAULT '[]',
         total_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+        subtotal_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+        tax_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'USD',
         cost_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
         profit_margin NUMERIC(10,2) NOT NULL DEFAULT 0,
         supplier TEXT NOT NULL DEFAULT 'Zendrop',
         supplier_order_id TEXT,
+        zendrop_order_id TEXT,
         supplier_tracking_number TEXT,
-        fulfillment_status TEXT NOT NULL DEFAULT 'processing',
-        payment_status TEXT NOT NULL DEFAULT 'paid',
+        stripe_session_id TEXT,
+        stripe_payment_intent TEXT,
+        fulfillment_status TEXT NOT NULL DEFAULT 'awaiting_payment',
+        payment_status TEXT NOT NULL DEFAULT 'pending',
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
+      ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS shipping_address TEXT;
+      ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS subtotal_amount NUMERIC(10,2) NOT NULL DEFAULT 0;
+      ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS tax_amount NUMERIC(10,2) NOT NULL DEFAULT 0;
+      ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'USD';
+      ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS zendrop_order_id TEXT;
+      ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS stripe_session_id TEXT;
+      ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS stripe_payment_intent TEXT;
+      ALTER TABLE ecommerce_orders ALTER COLUMN payment_status SET DEFAULT 'pending';
+      ALTER TABLE ecommerce_orders ALTER COLUMN fulfillment_status SET DEFAULT 'awaiting_payment';
       CREATE INDEX IF NOT EXISTS idx_ecom_orders_status ON ecommerce_orders(fulfillment_status);
     `).catch(() => {});
 
