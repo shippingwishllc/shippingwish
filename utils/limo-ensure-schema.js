@@ -99,6 +99,73 @@ CREATE TABLE IF NOT EXISTS limo_drivers (
 CREATE INDEX IF NOT EXISTS idx_limo_bookings_status ON limo_bookings(status);
 CREATE INDEX IF NOT EXISTS idx_limo_bookings_date ON limo_bookings(pickup_date);
 CREATE INDEX IF NOT EXISTS idx_limo_bookings_number ON limo_bookings(booking_number);
+
+-- NYC Limo Wish asset-light base-partner marketplace.
+-- Approval and license checks are performed manually by an authorized admin.
+CREATE TABLE IF NOT EXISTS limo_partner_bases (
+  id SERIAL PRIMARY KEY,
+  legal_name TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  base_type TEXT NOT NULL CHECK (base_type IN ('black_car', 'luxury_limo')),
+  tlc_base_license_number TEXT NOT NULL UNIQUE,
+  tlc_base_license_expires_at DATE,
+  insurance_expires_at DATE,
+  service_areas TEXT[] NOT NULL DEFAULT '{}',
+  vehicle_classes TEXT[] NOT NULL DEFAULT '{}',
+  max_passengers INTEGER NOT NULL DEFAULT 0 CHECK (max_passengers >= 0),
+  contact_email TEXT NOT NULL,
+  contact_phone TEXT,
+  platform_commission_rate NUMERIC(5,4),
+  referral_commission_rate NUMERIC(5,4) NOT NULL DEFAULT 0,
+  referral_code TEXT UNIQUE,
+  approval_status TEXT NOT NULL DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'suspended', 'rejected')),
+  verification_reference TEXT,
+  verified_at TIMESTAMPTZ,
+  verified_by INTEGER REFERENCES limo_users(id) ON DELETE SET NULL,
+  availability_status TEXT NOT NULL DEFAULT 'unavailable' CHECK (availability_status IN ('available', 'unavailable')),
+  availability_updated_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS limo_partner_offers (
+  id SERIAL PRIMARY KEY,
+  booking_id INTEGER NOT NULL REFERENCES limo_bookings(id) ON DELETE CASCADE,
+  partner_base_id INTEGER NOT NULL REFERENCES limo_partner_bases(id) ON DELETE CASCADE,
+  offer_round INTEGER NOT NULL DEFAULT 1,
+  status TEXT NOT NULL DEFAULT 'offered' CHECK (status IN ('offered', 'accepted', 'declined', 'expired', 'cancelled')),
+  platform_commission_rate NUMERIC(5,4) NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  responded_at TIMESTAMPTZ,
+  responded_by INTEGER REFERENCES limo_users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (booking_id, partner_base_id, offer_round)
+);
+
+CREATE TABLE IF NOT EXISTS limo_commission_ledger (
+  id SERIAL PRIMARY KEY,
+  booking_id INTEGER NOT NULL UNIQUE REFERENCES limo_bookings(id) ON DELETE CASCADE,
+  operator_base_id INTEGER NOT NULL REFERENCES limo_partner_bases(id),
+  gross_fare NUMERIC(10,2) NOT NULL,
+  platform_commission_rate NUMERIC(5,4) NOT NULL,
+  platform_commission_amount NUMERIC(10,2) NOT NULL,
+  referral_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL,
+  referral_commission_rate NUMERIC(5,4) NOT NULL DEFAULT 0,
+  referral_commission_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+  operator_payout_amount NUMERIC(10,2) NOT NULL,
+  status TEXT NOT NULL DEFAULT 'earned' CHECK (status IN ('earned', 'paid', 'void')),
+  payout_reference TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  paid_at TIMESTAMPTZ
+);
+
+ALTER TABLE limo_users ADD COLUMN IF NOT EXISTS partner_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS operator_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS referral_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS accepted_offer_id INTEGER REFERENCES limo_partner_offers(id) ON DELETE SET NULL;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS partner_offer_round INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_limo_partner_offers_queue ON limo_partner_offers(partner_base_id, status, expires_at);
+CREATE INDEX IF NOT EXISTS idx_limo_partner_bases_eligibility ON limo_partner_bases(approval_status, availability_status);
 `;
 
 const DEFAULT_VEHICLES = [
