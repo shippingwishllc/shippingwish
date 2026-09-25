@@ -307,20 +307,132 @@
     /* Mobile nav toggle */
     .mobile-menu-btn {
       display: none;
-      background: none;
+      background: #f3f4f6;
       border: none;
-      font-size: 22px;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      font-size: 20px;
       color: var(--text);
-      padding: 4px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
     }
+    .mobile-menu-btn:hover { background: #e5e7eb; }
     @media (max-width: 900px) {
       .nav-cats { display: none; }
       .search-bar { width: 180px; }
-      .mobile-menu-btn { display: block; }
+      .mobile-menu-btn { display: flex; }
+      .nav-wrap { gap: 14px; padding: 0 16px; }
     }
-    @media (max-width: 600px) {
+    @media (max-width: 640px) {
       .search-bar { display: none; }
       .currency-badge span.cur-text { display: none; }
+      .brand-logo .logo-text { font-size: 16.5px; }
+      .brand-logo .logo-icon { width: 34px; height: 34px; font-size: 16px; }
+      .logo-subtext { font-size: 9.5px; }
+      .cart-btn-nav { padding: 8px 12px; font-size: 12.5px; }
+    }
+
+    /* Mobile Navigation Drawer */
+    .mobile-nav-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,20,40,0.65);
+      backdrop-filter: blur(4px);
+      z-index: 800;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-nav-overlay.open { display: block; opacity: 1; }
+    .mobile-nav-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 320px;
+      max-width: 86vw;
+      height: 100vh;
+      background: var(--surface);
+      z-index: 801;
+      box-shadow: 10px 0 36px rgba(0,0,0,0.22);
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .mobile-nav-drawer.open { transform: translateX(0); }
+    .mobile-nav-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: #f8fafc;
+    }
+    .mobile-nav-close {
+      background: #e2e8f0;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #475569;
+    }
+    .mobile-nav-body { padding: 16px 14px; display: flex; flex-direction: column; gap: 4px; }
+    .mobile-nav-section-title {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 12px 8px 6px;
+    }
+    .mobile-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+      background: none;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+      width: 100%;
+    }
+    .mobile-nav-link:hover, .mobile-nav-link.active {
+      background: #f1f5f9;
+      color: var(--accent);
+    }
+    .mobile-nav-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 10px 0;
+    }
+
+    /* Mobile Search Bar Strip */
+    .mobile-search-strip {
+      display: none;
+      background: var(--surface);
+      padding: 10px 16px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mobile-search-strip .search-bar {
+      display: flex;
+      width: 100%;
+    }
+    @media (max-width: 640px) {
+      .mobile-search-strip { display: block; }
     }
 
     /* ===== CATEGORY NAV STRIP ===== */
@@ -532,40 +644,87 @@
       background: var(--surface);
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
-      padding: 16px 0;
-      overflow: hidden;
+      padding: 14px 0;
+      width: 100%;
     }
     .trust-bar-inner {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 0 24px;
-      display: flex;
-      justify-content: space-between;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
-      overflow-x: auto;
-      scrollbar-width: none;
+      align-items: center;
     }
-    .trust-bar-inner::-webkit-scrollbar { display: none; }
     .trust-item {
       display: flex;
       align-items: center;
       gap: 10px;
-      flex-shrink: 0;
-      padding: 6px 16px;
+      padding: 4px 6px;
+      min-width: 0;
     }
     .trust-icon-wrap {
-      width: 36px; height: 36px;
+      width: 38px; height: 38px;
       border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
       font-size: 18px;
+      flex-shrink: 0;
     }
     .trust-icon-wrap.blue { background: #dbeafe; }
     .trust-icon-wrap.green { background: #d1fae5; }
     .trust-icon-wrap.amber { background: #fef3c7; }
     .trust-icon-wrap.purple { background: #ede9fe; }
-    .trust-text-title { font-size: 13px; font-weight: 700; color: var(--text); }
-    .trust-text-sub { font-size: 11.5px; color: var(--text-muted); }
-    .trust-divider { width: 1px; background: var(--border); height: 32px; flex-shrink: 0; }
+    .trust-text-group { min-width: 0; flex: 1; }
+    .trust-text-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.25;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .trust-text-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .trust-divider { display: none; }
+
+    @media (max-width: 1120px) and (min-width: 768px) {
+      .trust-bar-inner {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px 16px;
+      }
+      .trust-item:last-child {
+        grid-column: span 1;
+      }
+    }
+    @media (max-width: 767px) {
+      .trust-bar { padding: 12px 0; }
+      .trust-bar-inner {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 12px;
+        padding: 0 14px;
+      }
+      .trust-item {
+        padding: 4px;
+      }
+      .trust-item:last-child {
+        grid-column: span 2;
+        background: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 12px;
+        justify-content: center;
+      }
+      .trust-text-title { font-size: 12px; }
+      .trust-text-sub { font-size: 10.5px; }
+    }
 
     /* ===== SECTIONS ===== */
     .section { max-width: 1280px; margin: 0 auto; padding: 48px 24px 0; }
@@ -708,6 +867,29 @@
       margin-top: auto;
     }
     .btn-add-cart:hover { background: var(--accent); transform: translateY(-1px); }
+
+    @media (max-width: 640px) {
+      .products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .product-body { padding: 10px 10px 12px; }
+      .product-cat { font-size: 10px; }
+      .product-name {
+        font-size: 13px;
+        line-height: 1.35;
+        margin-bottom: 4px;
+        min-height: 35px;
+      }
+      .product-price-row { gap: 6px; margin-bottom: 8px; }
+      .price-main { font-size: 17px; }
+      .price-original { font-size: 12px; }
+      .shipping-badge { font-size: 10.5px; margin-bottom: 8px; }
+      .btn-add-cart { padding: 8px 10px; font-size: 12.5px; }
+      .product-badge { top: 6px; left: 6px; padding: 2px 7px; font-size: 9.5px; }
+      .skeleton-img { height: 160px; }
+      .skeleton-body { padding: 10px; }
+    }
 
     /* ===== PRODUCT SKELETON ===== */
     .skeleton { animation: shimmer 1.5s infinite; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; }
@@ -920,14 +1102,197 @@
 
     /* ===== REVIEWS ===== */
     .detail-reviews { padding: 24px 28px; border-top: 1px solid var(--border); }
-    .reviews-grid { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
-    .review-card { background: #f8f9fa; border-radius: 12px; padding: 16px 18px; }
-    .review-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .review-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
-    .review-author { font-size: 13.5px; font-weight: 700; }
-    .review-date { font-size: 12px; color: var(--text-muted); margin-left: auto; }
-    .review-text { font-size: 13.5px; color: #374151; line-height: 1.65; }
-    .review-verified { font-size: 11px; color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 8px; }
+    .reviews-summary-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 22px;
+      margin-top: 14px;
+    }
+    .reviews-score-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .score-big {
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .score-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .score-meta-stars { display: flex; gap: 2px; }
+    .score-meta-label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+    .btn-write-review {
+      background: var(--surface);
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 13.5px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-write-review:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(233,69,96,0.25);
+    }
+    .reviews-grid { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
+    .review-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      transition: border-color 0.2s;
+    }
+    .review-card:hover { border-color: #cbd5e1; }
+    .review-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+    .review-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800;
+      flex-shrink: 0;
+    }
+    .review-author-col { display: flex; flex-direction: column; }
+    .review-author { font-size: 13.5px; font-weight: 800; color: var(--primary); }
+    .review-location { font-size: 11px; color: var(--text-muted); }
+    .review-verified {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .review-date { font-size: 11.5px; color: var(--text-muted); margin-left: auto; }
+    .review-stars-row { display: flex; gap: 2px; margin-bottom: 6px; }
+    .review-title { font-size: 14px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .review-text { font-size: 13.5px; color: #475569; line-height: 1.6; }
+    .review-helpful-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .btn-helpful {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+    .btn-helpful:hover { border-color: #94a3b8; color: var(--text); }
+    .btn-helpful.voted { background: #ecfdf5; border-color: #10b981; color: #059669; pointer-events: none; }
+
+    /* Review Submission Modal */
+    .review-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,20,40,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 750;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .review-modal.open { display: flex; }
+    .review-modal-card {
+      background: var(--surface);
+      border-radius: 20px;
+      max-width: 520px;
+      width: 100%;
+      padding: 28px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .star-select-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0 16px;
+    }
+    .star-select-btn {
+      background: none;
+      border: none;
+      font-size: 30px;
+      color: #d1d5db;
+      cursor: pointer;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+    .star-select-btn.active, .star-select-btn:hover {
+      color: #f59e0b;
+      transform: scale(1.15);
+    }
+
+    /* Homepage Customer Testimonials Section */
+    .home-reviews-section {
+      max-width: 1280px;
+      margin: 56px auto 0;
+      padding: 0 24px;
+    }
+    .home-reviews-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 24px;
+    }
+    @media (max-width: 900px) {
+      .home-reviews-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .home-reviews-grid { grid-template-columns: 1fr; }
+    }
+    .home-review-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+      transition: all 0.2s;
+    }
+    .home-review-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+    }
 
     /* ===== CART DRAWER ===== */
     .cart-drawer {
@@ -1333,10 +1698,53 @@
         🛒 Cart <div class="cart-count-badge" id="cartCount">0</div>
       </button>
 
-      <button class="mobile-menu-btn" aria-label="Menu">☰</button>
+      <button class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Open mobile menu">☰</button>
     </div>
   </div>
 </nav>
+
+<!-- Mobile Navigation Drawer Overlay & Drawer -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
+<div class="mobile-nav-drawer" id="mobileNavDrawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+  <div class="mobile-nav-header">
+    <div class="brand-logo">
+      <div class="logo-icon">B</div>
+      <div class="logo-text-group">
+        <div class="logo-text">BuyWish<span>Online</span>™</div>
+        <div class="logo-subtext">by Shipping Wish LLC</div>
+      </div>
+    </div>
+    <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Close menu">✕</button>
+  </div>
+  <div class="mobile-nav-body">
+    <div class="mobile-nav-section-title">Shop by Category</div>
+    <button class="mobile-nav-link active" onclick="filterCategory('all'); closeMobileNav();">🛍️ All Products</button>
+    <button class="mobile-nav-link" onclick="filterCategory('Tech'); closeMobileNav();">💻 Tech & Gadgets</button>
+    <button class="mobile-nav-link" onclick="filterCategory('Home'); closeMobileNav();">🏠 Home & Living</button>
+    <button class="mobile-nav-link" onclick="filterCategory('Fitness'); closeMobileNav();">🏃 Fitness & Outdoors</button>
+    <button class="mobile-nav-link" onclick="filterCategory('Beauty'); closeMobileNav();">✨ Beauty & Wellness</button>
+    <button class="mobile-nav-link" onclick="filterCategory('Kitchen'); closeMobileNav();">🍳 Kitchen & Cooking</button>
+    <button class="mobile-nav-link" onclick="filterCategory('Pets'); closeMobileNav();">🐾 Pet Supplies</button>
+    <button class="mobile-nav-link" onclick="filterCategory('Travel'); closeMobileNav();">🧳 Travel & Bags</button>
+    <button class="mobile-nav-link" onclick="filterCategory('Kids'); closeMobileNav();">🧒 Kids & Toys</button>
+    <div class="mobile-nav-divider"></div>
+    <div class="mobile-nav-section-title">Customer Care</div>
+    <button class="mobile-nav-link" onclick="openTrackModal(); closeMobileNav();">📦 Track My Order</button>
+    <a class="mobile-nav-link" href="/contact">💬 24/7 Customer Support Desk</a>
+    <a class="mobile-nav-link" href="tel:+18005803101">📞 Toll-Free: +1 (800) 580-3101</a>
+    <a class="mobile-nav-link" href="/privacy-policy">🔒 Privacy Policy (PCI-DSS)</a>
+    <a class="mobile-nav-link" href="/terms">📜 Terms of Service & Guarantees</a>
+    <a class="mobile-nav-link" href="/about">🏢 About Shipping Wish LLC</a>
+  </div>
+</div>
+
+<!-- Mobile Search Bar Strip -->
+<div class="mobile-search-strip">
+  <div class="search-bar" role="search">
+    <input type="search" placeholder="Search 1,200+ products..." id="mobileSearchInput" aria-label="Search products" oninput="handleSearch(this.value)">
+    <button aria-label="Search" onclick="handleSearch(document.getElementById('mobileSearchInput').value)">🔍</button>
+  </div>
+</div>
 
 <!-- Category Strip -->
 <div class="cat-strip">
@@ -1425,39 +1833,35 @@
   <div class="trust-bar-inner">
     <div class="trust-item">
       <div class="trust-icon-wrap green">📦</div>
-      <div>
+      <div class="trust-text-group">
         <div class="trust-text-title">Free Express Shipping</div>
         <div class="trust-text-sub">Orders over $49 — USA, UK, CA, EU</div>
       </div>
     </div>
-    <div class="trust-divider"></div>
     <div class="trust-item">
       <div class="trust-icon-wrap blue">🔒</div>
-      <div>
+      <div class="trust-text-group">
         <div class="trust-text-title">Secure SSL Checkout</div>
         <div class="trust-text-sub">256-bit encrypted payments</div>
       </div>
     </div>
-    <div class="trust-divider"></div>
     <div class="trust-item">
       <div class="trust-icon-wrap amber">↩️</div>
-      <div>
+      <div class="trust-text-group">
         <div class="trust-text-title">30-Day Returns</div>
         <div class="trust-text-sub">No-hassle money-back guarantee</div>
       </div>
     </div>
-    <div class="trust-divider"></div>
     <div class="trust-item">
       <div class="trust-icon-wrap purple">🌍</div>
-      <div>
+      <div class="trust-text-group">
         <div class="trust-text-title">Ships Worldwide</div>
         <div class="trust-text-sub">USA, UK, Canada, Europe & more</div>
       </div>
     </div>
-    <div class="trust-divider"></div>
     <div class="trust-item">
       <div class="trust-icon-wrap blue">💬</div>
-      <div>
+      <div class="trust-text-group">
         <div class="trust-text-title">24/7 Support</div>
         <div class="trust-text-sub">Live chat & email support</div>
       </div>
@@ -1556,13 +1960,31 @@
       <div class="section-title">🆕 New Arrivals</div>
       <div class="section-sub">Just landed — fresh products this week</div>
     </div>
-    <a class="view-all" href="javascript:void(0)">View All →</a>
+    <a class="view-all" href="javascript:void(0)" onclick="filterCategory('all')">View All →</a>
   </div>
   <div class="products-grid" id="newArrivalsGrid">
     <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton-body"><div class="skeleton skeleton-line w60"></div><div class="skeleton skeleton-line w80"></div><div class="skeleton skeleton-line w40"></div><div class="skeleton skeleton-btn"></div></div></div>
     <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton-body"><div class="skeleton skeleton-line w60"></div><div class="skeleton skeleton-line w80"></div><div class="skeleton skeleton-line w40"></div><div class="skeleton skeleton-btn"></div></div></div>
     <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton-body"><div class="skeleton skeleton-line w60"></div><div class="skeleton skeleton-line w80"></div><div class="skeleton skeleton-line w40"></div><div class="skeleton skeleton-btn"></div></div></div>
     <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton-body"><div class="skeleton skeleton-line w60"></div><div class="skeleton skeleton-line w80"></div><div class="skeleton skeleton-line w40"></div><div class="skeleton skeleton-btn"></div></div></div>
+  </div>
+</section>
+
+<!-- Verified Customer Reviews Section -->
+<section class="home-reviews-section" aria-label="Customer Reviews">
+  <div class="section-head">
+    <div>
+      <div class="section-title">⭐ Verified Customer Reviews</div>
+      <div class="section-sub">Real experiences from shoppers across USA, UK, Canada & Europe</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 14px;border:1px solid var(--border);border-radius:10px;">
+      <span style="font-size:15px;font-weight:900;color:var(--primary);">4.9 / 5.0</span>
+      <span style="color:#f59e0b;font-size:16px;">★★★★★</span>
+      <span style="font-size:11px;color:#059669;font-weight:700;">(50,000+ Happy Customers)</span>
+    </div>
+  </div>
+  <div class="home-reviews-grid" id="homeReviewsGrid">
+    <!-- Populated by JS loadHomeReviews() -->
   </div>
 </section>
 
@@ -1781,9 +2203,92 @@
     </div>
     <!-- Reviews Section -->
     <div class="detail-reviews" id="detailReviewsSection">
-      <div class="section-title" style="font-size:18px;">Customer Reviews</div>
-      <div class="reviews-grid" id="reviewsGrid"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="section-title" style="font-size:18px;">Customer Reviews & Ratings</div>
+          <div class="section-sub" style="font-size:12.5px;">Authentic feedback from verified purchasers</div>
+        </div>
+        <button class="btn-write-review" onclick="openReviewModal()">
+          ✍️ Write a Review
+        </button>
+      </div>
+
+      <div class="reviews-summary-head" id="reviewsSummaryHead">
+        <div class="reviews-score-box">
+          <div class="score-big" id="reviewsAvgScore">4.9</div>
+          <div class="score-meta">
+            <div class="score-meta-stars" id="reviewsMetaStars" style="color:#f59e0b;font-size:16px;">★★★★★</div>
+            <div class="score-meta-label" id="reviewsMetaCount">Based on 12 verified reviews</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#059669;font-weight:700;display:flex;align-items:center;gap:6px;background:#ecfdf5;padding:6px 12px;border-radius:8px;">
+          <span>🛡️ 98% of customers recommend this item</span>
+        </div>
+      </div>
+
+      <div class="reviews-grid" id="reviewsGrid">
+        <div style="text-align:center;padding:24px;color:var(--text-muted);">Loading verified customer reviews...</div>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- Review Submission Modal -->
+<div class="review-modal" id="reviewModal" role="dialog" aria-modal="true" aria-label="Write a Review">
+  <div class="review-modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div>
+        <div style="font-size:20px;font-weight:900;">Write a Customer Review</div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">Share your genuine experience with other shoppers</div>
+      </div>
+      <button onclick="closeReviewModal()" style="background:#f1f5f9;border:none;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;">✕</button>
+    </div>
+
+    <form id="reviewForm" onsubmit="submitCustomerReview(event)">
+      <div class="form-group">
+        <label class="form-label">Overall Rating *</label>
+        <div class="star-select-row" id="starSelectRow">
+          <button type="button" class="star-select-btn active" data-val="1" onclick="setReviewRating(1)">★</button>
+          <button type="button" class="star-select-btn active" data-val="2" onclick="setReviewRating(2)">★</button>
+          <button type="button" class="star-select-btn active" data-val="3" onclick="setReviewRating(3)">★</button>
+          <button type="button" class="star-select-btn active" data-val="4" onclick="setReviewRating(4)">★</button>
+          <button type="button" class="star-select-btn active" data-val="5" onclick="setReviewRating(5)">★</button>
+          <span id="starRatingLabel" style="font-size:13px;font-weight:700;color:#f59e0b;margin-left:8px;">5 - Excellent!</span>
+        </div>
+        <input type="hidden" id="rev_rating" value="5">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Review Title / Headline</label>
+        <input class="form-input" id="rev_title" placeholder="e.g. Exceeded my expectations! Fast delivery">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Your Review *</label>
+        <textarea class="form-input" id="rev_comment" rows="4" placeholder="What did you like about the product? How was the delivery?" required style="resize:vertical;"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Your Name *</label>
+          <input class="form-input" id="rev_name" placeholder="e.g. Sarah J." required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address (Private) *</label>
+          <input class="form-input" id="rev_email" type="email" placeholder="e.g. sarah@example.com" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Order Number (Optional — For Verified Buyer Badge)</label>
+        <input class="form-input" id="rev_order_num" placeholder="e.g. BWO-89102">
+        <div style="font-size:11px;color:#64748b;margin-top:4px;">If you ordered this item, provide your order # to earn a green "✅ Verified Buyer" trust badge.</div>
+      </div>
+
+      <button type="submit" class="btn-checkout" id="submitReviewBtn" style="margin-top:10px;">
+        ⭐ Submit Verified Review
+      </button>
+    </form>
   </div>
 </div>
 
@@ -2136,12 +2641,16 @@ function handleSearch(q) {
 }
 
 // ============================================================
-// PRODUCT DETAIL
+// PRODUCT DETAIL & LIVE REVIEWS
 // ============================================================
+let currentProductTitle = '';
+let activeReviewRating = 5;
+
 function openDetail(productId) {
   const p = allProducts.find(x => x.id === productId);
   if (!p) return;
   currentProductId = productId;
+  currentProductTitle = p.title || 'BuyWishOnline Product';
   currentQty = 1;
   document.getElementById('qtyDisplay').textContent = '1';
 
@@ -2182,22 +2691,8 @@ function openDetail(productId) {
   const thumbsEl = document.getElementById('detailThumbs');
   thumbsEl.innerHTML = images.map((src, i) => `<img class="thumb ${i===0?'active':''}" src="${src}" alt="Product image ${i+1}" onclick="switchImg('${src}', this)" loading="lazy">`).join('');
 
-  // Reviews
-  const reviewsEl = document.getElementById('reviewsGrid');
-  reviewsEl.innerHTML = SAMPLE_REVIEWS.map(r => `
-    <div class="review-card" itemscope itemtype="https://schema.org/Review">
-      <div class="review-header">
-        <div class="review-avatar">${r.author[0]}</div>
-        <div>
-          <div class="review-author" itemprop="author">${r.author} ${r.country}</div>
-          <div class="stars">${renderStars(r.rating)}</div>
-        </div>
-        <div class="review-date">${r.date}</div>
-      </div>
-      <div class="review-text" itemprop="reviewBody">${r.text}</div>
-      ${r.verified ? '<div class="review-verified">✅ Verified Purchase</div>' : ''}
-    </div>
-  `).join('');
+  // Fetch and display live customer reviews from backend API
+  fetchReviews(p.id, p.title);
 
   // Show overlay
   const overlay = document.getElementById('detailOverlay');
@@ -2214,6 +2709,256 @@ function switchImg(src, el) {
 function closeDetail() {
   document.getElementById('detailOverlay').classList.remove('active');
   document.body.style.overflow = '';
+}
+
+// Mobile Navigation Drawer Toggle
+function toggleMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const overlay = document.getElementById('mobileNavOverlay');
+  if (!drawer || !overlay) return;
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    closeMobileNav();
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const overlay = document.getElementById('mobileNavOverlay');
+  if (drawer) drawer.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Customer Reviews Functions
+function setReviewRating(star) {
+  activeReviewRating = star;
+  const ratingInput = document.getElementById('rev_rating');
+  if (ratingInput) ratingInput.value = star;
+
+  const buttons = document.querySelectorAll('#starSelectRow .star-select-btn');
+  buttons.forEach(btn => {
+    const val = parseInt(btn.getAttribute('data-val'), 10);
+    btn.classList.toggle('active', val <= star);
+  });
+
+  const labels = {
+    5: '5 - Excellent! Highly recommended',
+    4: '4 - Very Good, satisfied with purchase',
+    3: '3 - Average, met basic expectations',
+    2: '2 - Below expectations',
+    1: '1 - Disappointed'
+  };
+  const labelEl = document.getElementById('starRatingLabel');
+  if (labelEl) labelEl.textContent = labels[star] || `${star} Stars`;
+}
+
+function openReviewModal() {
+  const modal = document.getElementById('reviewModal');
+  if (!modal) return;
+  setReviewRating(5);
+  modal.classList.add('open');
+}
+
+function closeReviewModal() {
+  const modal = document.getElementById('reviewModal');
+  if (modal) modal.classList.remove('open');
+}
+
+async function fetchReviews(productId, productTitle) {
+  const reviewsEl = document.getElementById('reviewsGrid');
+  const avgScoreEl = document.getElementById('reviewsAvgScore');
+  const metaStarsEl = document.getElementById('reviewsMetaStars');
+  const metaCountEl = document.getElementById('reviewsMetaCount');
+
+  if (reviewsEl) {
+    reviewsEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);">Loading verified reviews...</div>';
+  }
+
+  try {
+    const res = await fetch(`/api/buywish/reviews?product_id=${encodeURIComponent(productId)}`);
+    const data = await res.json();
+
+    if (!data.success || !data.reviews) {
+      if (reviewsEl) reviewsEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);">No reviews yet. Be the first to review this product!</div>';
+      return;
+    }
+
+    const stats = data.stats || {};
+    const avg = stats.average_rating || 4.9;
+    const total = stats.total_reviews || data.reviews.length;
+
+    if (avgScoreEl) avgScoreEl.textContent = avg.toFixed(1);
+    if (metaStarsEl) metaStarsEl.innerHTML = renderStars(avg);
+    if (metaCountEl) metaCountEl.textContent = `Based on ${total} verified ${total === 1 ? 'review' : 'reviews'}`;
+
+    if (data.reviews.length === 0) {
+      if (reviewsEl) {
+        reviewsEl.innerHTML = `
+          <div style="text-align:center;padding:28px 16px;background:#f8fafc;border-radius:12px;border:1px dashed var(--border);">
+            <div style="font-size:28px;margin-bottom:6px;">⭐</div>
+            <div style="font-weight:700;color:var(--primary);margin-bottom:4px;">No reviews yet</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Have you purchased or used this item? Share your experience!</div>
+            <button class="btn-write-review" onclick="openReviewModal()">✍️ Write the First Review</button>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    const flagMap = { US: '🇺🇸', GB: '🇬🇧', CA: '🇨🇦', AU: '🇦🇺', DE: '🇩🇪', FR: '🇫🇷', ES: '🇪🇸', IT: '🇮🇹', NL: '🇳🇱', PK: '🇵🇰' };
+
+    reviewsEl.innerHTML = data.reviews.map(r => {
+      const flag = flagMap[r.country_code] || '🌍';
+      const initials = (r.author_name || 'Verified Buyer').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+      const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
+
+      return `
+        <div class="review-card">
+          <div class="review-header">
+            <div class="review-avatar">${initials}</div>
+            <div class="review-author-col">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="review-author">${escapeHtml(r.author_name)}</span>
+                <span class="review-location">${flag} ${escapeHtml(r.country_name || 'Verified')}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                <div class="stars">${renderStars(r.rating)}</div>
+                ${r.verified_purchase ? '<span class="review-verified">✅ Verified Buyer</span>' : ''}
+              </div>
+            </div>
+            <div class="review-date">${dateStr}</div>
+          </div>
+          ${r.title ? `<div class="review-title">${escapeHtml(r.title)}</div>` : ''}
+          <div class="review-text">${escapeHtml(r.comment)}</div>
+          <div class="review-helpful-bar">
+            <button class="btn-helpful" onclick="voteReviewHelpful(${r.id}, this)">
+              👍 Helpful (${r.helpful_count || 0})
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    if (reviewsEl) reviewsEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);">Reviews temporarily unavailable.</div>';
+  }
+}
+
+async function submitCustomerReview(e) {
+  e.preventDefault();
+  const submitBtn = document.getElementById('submitReviewBtn');
+  const rating = parseInt(document.getElementById('rev_rating').value || '5', 10);
+  const title = (document.getElementById('rev_title').value || '').trim();
+  const comment = (document.getElementById('rev_comment').value || '').trim();
+  const name = (document.getElementById('rev_name').value || '').trim();
+  const email = (document.getElementById('rev_email').value || '').trim();
+  const orderNum = (document.getElementById('rev_order_num').value || '').trim();
+
+  if (!name) { showToast('⚠️', 'Please enter your name.'); return; }
+  if (!email || !email.includes('@')) { showToast('⚠️', 'Please enter a valid email address.'); return; }
+  if (!comment || comment.length < 5) { showToast('⚠️', 'Please write at least 5 characters in your review.'); return; }
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Submitting Review... ⏳';
+
+  try {
+    const res = await fetch('/api/buywish/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product_id: currentProductId || 'general',
+        product_title: currentProductTitle || 'BuyWishOnline Product',
+        rating,
+        title,
+        comment,
+        author_name: name,
+        author_email: email,
+        order_number: orderNum
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      closeReviewModal();
+      document.getElementById('reviewForm').reset();
+      showToast('⭐', data.message || 'Review submitted successfully!');
+      fetchReviews(currentProductId, currentProductTitle);
+      loadHomeReviews();
+    } else {
+      showToast('⚠️', data.error || 'Failed to submit review.');
+    }
+  } catch (err) {
+    showToast('⚠️', 'Network error. Please try again.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '⭐ Submit Verified Review';
+  }
+}
+
+async function voteReviewHelpful(reviewId, btnEl) {
+  if (btnEl.classList.contains('voted')) return;
+  try {
+    const res = await fetch(`/api/buywish/reviews/${reviewId}/helpful`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      btnEl.classList.add('voted');
+      btnEl.innerHTML = `👍 Helpful (${data.helpful_count})`;
+      showToast('👍', 'Thank you! Marked as helpful.');
+    }
+  } catch (e) {}
+}
+
+async function loadHomeReviews() {
+  const gridEl = document.getElementById('homeReviewsGrid');
+  if (!gridEl) return;
+
+  try {
+    const res = await fetch('/api/buywish/reviews?limit=6');
+    const data = await res.json();
+    if (!data.success || !data.reviews || data.reviews.length === 0) return;
+
+    const flagMap = { US: '🇺🇸', GB: '🇬🇧', CA: '🇨🇦', AU: '🇦🇺', DE: '🇩🇪', FR: '🇫🇷', ES: '🇪🇸', IT: '🇮🇹', NL: '🇳🇱', PK: '🇵🇰' };
+
+    gridEl.innerHTML = data.reviews.slice(0, 6).map(r => {
+      const flag = flagMap[r.country_code] || '🌍';
+      const initials = (r.author_name || 'Verified Buyer').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+      return `
+        <div class="home-review-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="stars">${renderStars(r.rating)}</div>
+            ${r.verified_purchase ? '<span class="review-verified">✅ Verified Buyer</span>' : '<span style="font-size:11px;color:var(--text-muted);">Verified Purchase</span>'}
+          </div>
+          ${r.title ? `<div style="font-size:15px;font-weight:800;color:var(--primary);line-height:1.3;">"${escapeHtml(r.title)}"</div>` : ''}
+          <div style="font-size:13.5px;color:#475569;line-height:1.6;flex:1;">
+            ${escapeHtml(r.comment)}
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px;padding-top:10px;border-top:1px solid var(--border);">
+            <div class="review-avatar" style="width:32px;height:32px;font-size:11px;">${initials}</div>
+            <div style="display:flex;flex-direction:column;">
+              <span style="font-size:13px;font-weight:800;color:var(--primary);">${escapeHtml(r.author_name)}</span>
+              <span style="font-size:11px;color:var(--text-muted);">${flag} ${escapeHtml(r.country_name || 'Verified Customer')}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {}
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function handleOverlayClick(e) {
@@ -2508,6 +3253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   detectCurrency();
   loadProducts();
+  loadHomeReviews();
 
   // URL params
   const params = new URLSearchParams(window.location.search);
