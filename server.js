@@ -162,6 +162,8 @@ app.use('/api/drayage-intermodal', require('./routes/drayage-intermodal')); // A
 app.use('/api/cross-border', require('./routes/cross-border'));             // Cross-Border US-Mexico & US-Canada In-Bond Customs Dispatcher
 app.use('/api/ai-calling', require('./routes/ai-calling'));                 // Autonomous AI Voice Calling & Deal Closer Desk (Vapi, GPT-4o & MightyCall)
 app.use('/api/chat', require('./routes/ai-chat'));                             // 24/7 Interactive AI Support Chatbot (Shipping Wish & LoadsNexus)
+app.use('/api', require('./routes/broker-team'));                           // Multi-Seat Broker Team Management & Sub-Users CRUD
+app.use('/api', require('./routes/broker-api'));                            // Broker API Key Management & Partner REST API v1 (/api/v1/loads)
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

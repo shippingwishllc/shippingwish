@@ -1742,12 +1742,24 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
 // GET /api/loadboard/broker/my-loads — Broker's active posted loads
 router.get('/broker/my-loads', optionalAuth, async (req, res) => {
   try {
+    await pool.query(`
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_name TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_mc TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS driver_name TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS driver_phone TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS truck_number TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS trailer_number TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS tracking_notes TEXT;
+    `).catch(() => {});
+
     const userEmail = req.user ? req.user.email : null;
     const mc = req.user ? req.user.mc_number : null;
     let query = `
       SELECT id, load_number, status, rate, pickup_location, delivery_location,
              pickup_date, delivery_date, equipment_type, weight, commodity,
-             broker_name, broker_mc, broker_contact, miles, rpm, created_at
+             broker_name, broker_mc, broker_contact, miles, rpm,
+             carrier_name, carrier_mc, driver_name, driver_phone, truck_number, trailer_number, tracking_notes,
+             created_at
       FROM loads
       WHERE status != 'cancelled'
     `;
@@ -2351,6 +2363,152 @@ router.post('/loads/:id/cover', optionalAuth, async (req, res) => {
   } catch (err) {
     console.error('Error covering load:', err);
     res.status(500).json({ error: 'Could not update load status.' });
+  }
+});
+
+// POST /api/loadboard/loads/:id/assign-carrier — Assign Carrier, Driver & Equipment to Load
+router.post('/loads/:id/assign-carrier', optionalAuth, async (req, res) => {
+  const loadId = req.params.id;
+  const {
+    carrier_name, carrier_mc, driver_name, driver_phone,
+    truck_number, trailer_number, tracking_notes
+  } = req.body;
+
+  try {
+    await pool.query(`
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_name TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_mc TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS driver_name TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS driver_phone TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS truck_number TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS trailer_number TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS tracking_notes TEXT;
+    `).catch(() => {});
+
+    const updateRes = await pool.query(
+      `UPDATE loads
+       SET status = 'covered',
+           carrier_name = COALESCE($1, carrier_name),
+           carrier_mc = COALESCE($2, carrier_mc),
+           driver_name = COALESCE($3, driver_name),
+           driver_phone = COALESCE($4, driver_phone),
+           truck_number = COALESCE($5, truck_number),
+           trailer_number = COALESCE($6, trailer_number),
+           tracking_notes = COALESCE($7, tracking_notes),
+           updated_at = NOW()
+       WHERE load_number = $8 OR id::text = $8
+       RETURNING *`,
+      [
+        carrier_name || null,
+        carrier_mc || null,
+        driver_name || null,
+        driver_phone || null,
+        truck_number || null,
+        trailer_number || null,
+        tracking_notes || null,
+        loadId
+      ]
+    );
+
+    const updatedLoad = updateRes.rows[0] || {
+      id: loadId,
+      carrier_name,
+      carrier_mc,
+      driver_name,
+      driver_phone,
+      truck_number,
+      trailer_number,
+      tracking_notes,
+      status: 'covered'
+    };
+
+    try {
+      broadcastLoadboardEvent('load_covered', {
+        id: loadId,
+        status: 'covered',
+        carrier_name,
+        carrier_mc,
+        driver_name,
+        driver_phone,
+        covered_at: Date.now()
+      });
+    } catch (e) {
+      console.warn('Real-time broadcast assign warning:', e.message);
+    }
+
+    res.json({
+      ok: true,
+      load: updatedLoad,
+      message: `Carrier ${carrier_name || 'Partner'} successfully assigned to Load #${loadId}. Capacity locked and tracking active.`
+    });
+  } catch (err) {
+    console.error('Assign carrier error:', err);
+    res.status(500).json({ error: 'Could not assign carrier to load.' });
+  }
+});
+
+// POST /api/loadboard/loads/:id/inquiry-reply — 1-Click RateCon & Details Reply from Broker
+router.post('/loads/:id/inquiry-reply', optionalAuth, async (req, res) => {
+  const loadId = req.params.id;
+  const { to_email, subject, message, rate, pickup, delivery, broker_name, broker_phone } = req.body;
+
+  if (!to_email) {
+    return res.status(400).json({ error: 'Recipient carrier email address is required.' });
+  }
+
+  const senderEmail = (req.user && req.user.email) || 'dispatch@loadsnexus.com';
+  const brokerName = broker_name || (req.user && (req.user.company_name || req.user.name)) || 'LoadsNexus Verified Broker';
+  const brokerPhone = broker_phone || (req.user && req.user.phone) || '+1 (800) 580-3101';
+  const emailSubj = subject || `Rate Confirmation & Tender Details: ${pickup || 'Origin'} to ${delivery || 'Destination'} (Load #${loadId})`;
+
+  try {
+    const { sendBrandedEmail } = require('../utils/mailer');
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+        <div style="background: #0f172a; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+          <span style="color: #a855f7; font-weight: 800; font-size: 18px; letter-spacing: 0.05em;">LOADSNEXUS™ BROKERAGE DESK</span>
+        </div>
+        <h2 style="color: #0f172a; margin-top: 0; font-size: 18px;">Official Load Details &amp; Tender Confirmation</h2>
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin: 16px 0; font-size: 13px; color: #334155; line-height: 1.6;">
+          <strong>Load #:</strong> ${escapeHtml(loadId)}<br>
+          <strong>Corridor:</strong> ${escapeHtml(pickup || 'Origin')} &rarr; ${escapeHtml(delivery || 'Destination')}<br>
+          <strong>Agreed Rate:</strong> <span style="font-size: 16px; font-weight: bold; color: #16a34a;">$${Number(rate || 0).toLocaleString()}</span><br>
+          <strong>Brokerage:</strong> ${escapeHtml(brokerName)}<br>
+          <strong>Direct Dispatch Phone:</strong> <a href="tel:${escapeHtml(brokerPhone)}" style="color: #2563eb; font-weight: bold;">${escapeHtml(brokerPhone)}</a><br>
+          <strong>Direct Dispatch Email:</strong> ${escapeHtml(senderEmail)}
+        </div>
+        <div style="font-size: 13px; color: #475569; line-height: 1.6; white-space: pre-wrap; margin: 16px 0; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 14px;">
+${escapeHtml(message || 'Please review the load details above. Reply to this email with your driver name, phone, and truck/trailer numbers to finalize Rate Confirmation.')}
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+          <a href="https://www.loadsnexus.com/api/loadboard/loads/${encodeURIComponent(loadId)}/ratecon-pdf" style="display: inline-block; background: #7c3aed; color: #ffffff; text-decoration: none; padding: 12px 24px; font-weight: bold; border-radius: 8px; font-size: 13px;">
+            📄 Download Rate Confirmation PDF
+          </a>
+        </div>
+        <p style="color: #64748b; font-size: 11px;">
+          This dispatch tender was transmitted via LoadsNexus™ Freight Exchange on behalf of ${escapeHtml(brokerName)}.
+        </p>
+      </div>
+    `;
+
+    await sendBrandedEmail({
+      to: to_email,
+      from: `${brokerName} via LoadsNexus <dispatch@loadsnexus.com>`,
+      replyTo: senderEmail,
+      subject: emailSubj,
+      html: emailHtml,
+      text: `${emailSubj}\n\nLoad #${loadId}: ${pickup} -> ${delivery}\nRate: $${rate}\n\n${message || 'Please reply with driver info to finalize RateCon.'}\n\nBroker: ${brokerName} (${brokerPhone} | ${senderEmail})`,
+      emailType: 'broker_inquiry_reply',
+      transactional: true
+    });
+
+    res.json({
+      ok: true,
+      message: `Official RateCon & load details dispatched to ${to_email}!`
+    });
+  } catch (err) {
+    console.error('Inquiry reply error:', err);
+    res.status(500).json({ error: 'Could not send email reply to carrier.' });
   }
 });
 

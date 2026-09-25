@@ -274,6 +274,137 @@ router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
   }
 });
 
+// Step 1 — send OTP to email (noreply@shippingwish.com)
+async function ensurePasswordResetTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS password_resets_pending (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      otp_hash TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `).catch(() => {});
+}
+
+// Step 1: Send OTP for Password Reset
+router.post(['/auth/forgot-password/send-otp', '/forgot-password/send-otp'], rateLimit(5, 60000), async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email address is required.' });
+  }
+  const emailNorm = String(email).trim().toLowerCase();
+
+  try {
+    await ensurePasswordResetTable();
+    const userRes = await pool.query('SELECT id, name FROM users WHERE lower(email) = lower($1) AND deleted_at IS NULL', [emailNorm]);
+    if (!userRes.rows.length) {
+      return res.status(404).json({ error: 'No account found with this email address.' });
+    }
+    const user = userRes.rows[0];
+
+    const otp = generateOtp();
+    const otpHash = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+
+    await pool.query(
+      `INSERT INTO password_resets_pending (email, otp_hash, attempts, expires_at)
+       VALUES ($1, $2, 0, $3)
+       ON CONFLICT (email) DO UPDATE SET
+         otp_hash = EXCLUDED.otp_hash,
+         attempts = 0,
+         expires_at = EXCLUDED.expires_at`,
+      [emailNorm, otpHash, expiresAt]
+    );
+
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+        <div style="background: #0f172a; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+          <span style="color: #3b82f6; font-weight: 800; font-size: 18px; letter-spacing: 0.05em;">LOADSNEXUS™</span>
+          <span style="color: #94a3b8; font-size: 12px; margin-left: 10px;">Password Reset</span>
+        </div>
+        <h2 style="color: #0f172a; margin-top: 0; font-size: 18px;">Password Reset Verification Code</h2>
+        <p style="color: #475569; font-size: 14px; line-height: 1.5;">
+          Hello <strong>${escapeHtml(user.name || user.email)}</strong>,<br>
+          We received a request to reset your LoadsNexus account password. Use the 6-digit verification code below to set a new password:
+        </p>
+        <div style="text-align: center; margin: 24px 0;">
+          <span style="display: inline-block; font-size: 32px; font-weight: 900; letter-spacing: 6px; color: #2563eb; background: #eff6ff; padding: 12px 28px; border-radius: 10px; border: 1px dashed #bfdbfe;">
+            ${otp}
+          </span>
+        </div>
+        <p style="color: #64748b; font-size: 12px; line-height: 1.5;">
+          This code is valid for 10 minutes. If you did not request this password reset, you can safely ignore this email.
+        </p>
+      </div>
+    `;
+
+    await sendBrandedEmail({
+      to: emailNorm,
+      from: NOREPLY_FROM,
+      subject: `Your LoadsNexus Password Reset Code: ${otp}`,
+      html: emailHtml,
+      text: `Your LoadsNexus Password Reset Code is: ${otp}. Valid for 10 minutes.`,
+      emailType: 'password_reset_otp',
+      templateKey: 'password_reset',
+      transactional: true
+    });
+
+    res.json({ ok: true, message: 'Verification code sent to your email.' });
+  } catch (err) {
+    console.error('Password reset send-otp error:', err);
+    res.status(500).json({ error: 'Could not send reset code. Please try again.' });
+  }
+});
+
+// Step 2: Verify OTP and Set New Password
+router.post(['/auth/forgot-password/verify-otp', '/forgot-password/verify-otp'], rateLimit(10, 60000), async (req, res) => {
+  const { email, otp, new_password } = req.body;
+  if (!email || !otp || !new_password) {
+    return res.status(400).json({ error: 'Email, code, and new password are required.' });
+  }
+  if (String(new_password).length < 8) {
+    return res.status(400).json({ error: 'New password must be at least 8 characters long.' });
+  }
+
+  const emailNorm = String(email).trim().toLowerCase();
+  const otpClean = String(otp).trim().replace(/\s/g, '');
+
+  try {
+    await ensurePasswordResetTable();
+    const pendingRes = await pool.query('SELECT * FROM password_resets_pending WHERE lower(email) = lower($1)', [emailNorm]);
+    if (!pendingRes.rows.length) {
+      return res.status(400).json({ error: 'No active password reset request found. Request a new code.' });
+    }
+    const pending = pendingRes.rows[0];
+
+    if (new Date(pending.expires_at) < new Date()) {
+      await pool.query('DELETE FROM password_resets_pending WHERE id = $1', [pending.id]);
+      return res.status(400).json({ error: 'Reset code expired. Request a new code.' });
+    }
+
+    if (pending.attempts >= OTP_MAX_ATTEMPTS) {
+      return res.status(429).json({ error: 'Too many incorrect attempts. Request a new code.' });
+    }
+
+    const otpOk = await bcrypt.compare(otpClean, pending.otp_hash);
+    if (!otpOk) {
+      await pool.query('UPDATE password_resets_pending SET attempts = attempts + 1 WHERE id = $1', [pending.id]);
+      return res.status(400).json({ error: 'Incorrect verification code. Please check your email.' });
+    }
+
+    const newHash = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE lower(email) = lower($2)', [newHash, emailNorm]);
+    await pool.query('DELETE FROM password_resets_pending WHERE id = $1', [pending.id]);
+
+    res.json({ ok: true, message: 'Password updated successfully! You can now sign in with your new password.' });
+  } catch (err) {
+    console.error('Password reset verify-otp error:', err);
+    res.status(500).json({ error: 'Could not reset password right now.' });
+  }
+});
+
 // Legacy direct signup — disabled (OTP required)
 router.post('/signup', rateLimit(5, 60000), async (req, res) => {
   return res.status(400).json({
@@ -447,6 +578,44 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
     if (isCarrierRole(user.role)) {
       payload.access = await getCarrierAccess(user.id, user.email);
     }
+
+    // Security Alert: Dispatch email notification for account sign-in
+    try {
+      const userAgent = req.headers['user-agent'] || 'Web Browser';
+      const loginTime = new Date().toUTCString();
+      sendBrandedEmail({
+        to: user.email,
+        from: NOREPLY_FROM,
+        subject: `Security Alert: New Sign-in to your LoadsNexus Account`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+            <div style="background: #0f172a; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+              <span style="color: #3b82f6; font-weight: 800; font-size: 18px; letter-spacing: 0.05em;">LOADSNEXUS™ / SHIPPING WISH</span>
+            </div>
+            <h2 style="color: #0f172a; margin-top: 0; font-size: 18px;">🔐 New Sign-in Detected</h2>
+            <p style="color: #475569; font-size: 14px; line-height: 1.5;">
+              Hello <strong>${escapeHtml(user.name || user.email)}</strong>,<br>
+              A new sign-in to your LoadsNexus account was detected:
+            </p>
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin: 16px 0; font-size: 13px; color: #334155; line-height: 1.6;">
+              <strong>Time:</strong> ${loginTime}<br>
+              <strong>IP Address:</strong> ${escapeHtml(clientIp)}<br>
+              <strong>Device / Browser:</strong> ${escapeHtml(userAgent)}
+            </div>
+            <p style="color: #64748b; font-size: 12px; line-height: 1.5;">
+              If this was you, no action is needed. If you did not authorize this login, please reset your password immediately.
+            </p>
+          </div>
+        `,
+        text: `Security Alert: New sign-in detected on your account at ${loginTime} from IP ${clientIp}.`,
+        emailType: 'login_alert',
+        templateKey: 'login_alert',
+        transactional: true
+      }).catch(err => console.warn('Login alert email notice:', err.message));
+    } catch (e) {
+      // Non-blocking
+    }
+
     res.json(payload);
   } catch (err) {
     console.error('Login error:', err);
