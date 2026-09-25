@@ -378,9 +378,9 @@ router.post('/partner/offers/:id/respond', ...partnerGate, async (req, res) => {
     const supportsVehicle = Array.isArray(offer.vehicle_classes) &&
       offer.vehicle_classes.some((vehicleClass) => String(vehicleClass).toUpperCase() === String(offer.vehicle_id).toUpperCase());
     if (offer.approval_status !== 'approved' || offer.availability_status !== 'available' ||
-        !/^\\d{4}-\\d{2}-\\d{2}$/.test(pickupDate) ||
-        !/^\\d{4}-\\d{2}-\\d{2}$/.test(licenseExpiry) || licenseExpiry < pickupDate ||
-        !/^\\d{4}-\\d{2}-\\d{2}$/.test(insuranceExpiry) || insuranceExpiry < pickupDate ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(licenseExpiry) || licenseExpiry < pickupDate ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(insuranceExpiry) || insuranceExpiry < pickupDate ||
         Number(offer.max_passengers) < Number(offer.passengers || 1) ||
         !servesPickupZone || !supportsVehicle) {
       await client.query('ROLLBACK');
