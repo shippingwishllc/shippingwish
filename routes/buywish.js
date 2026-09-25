@@ -342,11 +342,14 @@ router.get('/orders/track/:order_number', async (req, res) => {
     }
 
     const order = rows[0];
+    const zendropOrderId = order.zendrop_order_id;
+    // Supplier identifiers are internal; public tracking returns only customer-facing status and tracking data.
+    delete order.zendrop_order_id;
 
-    // Try to get live tracking from Zendrop if we have a zendrop order id
-    if (order.zendrop_order_id) {
+    // Try to get live tracking from Zendrop if we have a linked supplier order
+    if (zendropOrderId) {
       try {
-        const trackingData = await zendropCall('get_tracking_events', { order_id: order.zendrop_order_id });
+        const trackingData = await zendropCall('get_tracking_events', { order_id: zendropOrderId });
         if (trackingData && trackingData.events) {
           order.tracking_events = trackingData.events;
         }
@@ -559,7 +562,7 @@ router.get('/admin/orders', ...buyWishAdmin, async (req, res) => {
               total_amount, currency, payment_status, fulfillment_status,
               zendrop_order_id, supplier_tracking_number, created_at, updated_at
        FROM ecommerce_orders
-       WHERE payment_status = 'paid'
+       WHERE payment_status = 'paid' AND zendrop_order_id IS NULL
        ORDER BY created_at ASC
        LIMIT 100`
     );
@@ -572,26 +575,91 @@ router.get('/admin/orders', ...buyWishAdmin, async (req, res) => {
 
 router.patch('/admin/orders/:order_number/supplier', ...buyWishAdmin, async (req, res) => {
   const supplierOrderId = String(req.body?.zendrop_order_id || '').trim();
-  if (!supplierOrderId || supplierOrderId.length > 120) {
+  if (!supplierOrderId || supplierOrderId.length > 120 || /[\\r\\n]/.test(supplierOrderId)) {
     return res.status(400).json({ error: 'A valid Zendrop order ID is required.' });
   }
+
+  const client = await pool.connect();
+  let transactionOpen = false;
   try {
-    const { rows } = await pool.query(
+    await client.query('BEGIN');
+    transactionOpen = true;
+    // Serialize links for the same supplier order ID so it cannot attach to two store orders concurrently.
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1)::bigint)', [supplierOrderId]);
+
+    const target = await client.query(
+      `SELECT id, payment_status, zendrop_order_id, fulfillment_status
+       FROM ecommerce_orders
+       WHERE upper(order_number) = upper($1)
+       FOR UPDATE`,
+      [req.params.order_number]
+    );
+    const order = target.rows[0];
+    if (!order) {
+      await client.query('ROLLBACK');
+      transactionOpen = false;
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+    if (order.payment_status !== 'paid') {
+      await client.query('ROLLBACK');
+      transactionOpen = false;
+      return res.status(409).json({ error: 'Only paid customer orders can be linked to a supplier order.' });
+    }
+    if (order.zendrop_order_id != null) {
+      if (String(order.zendrop_order_id) === supplierOrderId) {
+        await client.query('COMMIT');
+        transactionOpen = false;
+        return res.json({
+          ok: true,
+          already_linked: true,
+          order: {
+            order_number: order.order_number,
+            fulfillment_status: order.fulfillment_status,
+            zendrop_order_id: String(order.zendrop_order_id)
+          }
+        });
+      }
+      await client.query('ROLLBACK');
+      transactionOpen = false;
+      return res.status(409).json({ error: 'This store order already has a different Zendrop order linked.' });
+    }
+
+    const duplicate = await client.query(
+      'SELECT 1 FROM ecommerce_orders WHERE zendrop_order_id = $1 AND id <> $2 LIMIT 1',
+      [supplierOrderId, order.id]
+    );
+    if (duplicate.rows.length) {
+      await client.query('ROLLBACK');
+      transactionOpen = false;
+      return res.status(409).json({ error: 'That Zendrop order ID is already linked to another store order.' });
+    }
+
+    const updated = await client.query(
       `UPDATE ecommerce_orders
        SET zendrop_order_id = $1, supplier = 'Zendrop',
            fulfillment_status = 'supplier_order_placed', updated_at = NOW()
-       WHERE upper(order_number) = upper($2) AND payment_status = 'paid'
+       WHERE id = $2 AND payment_status = 'paid' AND zendrop_order_id IS NULL
        RETURNING order_number, fulfillment_status, zendrop_order_id`,
-      [supplierOrderId, req.params.order_number]
+      [supplierOrderId, order.id]
     );
-    if (!rows.length) return res.status(404).json({ error: 'Paid order not found.' });
-    res.json({ ok: true, order: rows[0] });
+    if (!updated.rows.length) {
+      await client.query('ROLLBACK');
+      transactionOpen = false;
+      return res.status(409).json({ error: 'Supplier order link changed; refresh the queue and try again.' });
+    }
+
+    await client.query('COMMIT');
+    transactionOpen = false;
+    res.json({ ok: true, already_linked: false, order: updated.rows[0] });
   } catch (err) {
+    if (transactionOpen) await client.query('ROLLBACK').catch(() => {});
+    if (err.code === '23505') return res.status(409).json({ error: 'That Zendrop order ID is already linked to another store order.' });
     console.error('[BUYWISH SUPPLIER HANDOFF ERROR]:', err.message);
     res.status(500).json({ error: 'Could not save supplier order reference.' });
+  } finally {
+    client.release();
   }
 });
-
 // ============================================================
 // POST /api/buywish/import-product — Import Product to My Store
 // ============================================================
