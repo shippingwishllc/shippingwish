@@ -575,7 +575,7 @@ router.get('/admin/orders', ...buyWishAdmin, async (req, res) => {
 
 router.patch('/admin/orders/:order_number/supplier', ...buyWishAdmin, async (req, res) => {
   const supplierOrderId = String(req.body?.zendrop_order_id || '').trim();
-  if (!supplierOrderId || supplierOrderId.length > 120 || /[\\r\\n]/.test(supplierOrderId)) {
+  if (!supplierOrderId || supplierOrderId.length > 120 || /[\r\n]/.test(supplierOrderId)) {
     return res.status(400).json({ error: 'A valid Zendrop order ID is required.' });
   }
 
