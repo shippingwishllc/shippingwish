@@ -1122,18 +1122,122 @@
     .footer-links a:hover { color: #fff; }
     .footer-bottom {
       border-top: 1px solid rgba(255,255,255,0.07);
-      padding: 20px 24px;
+      padding: 24px 24px;
       max-width: 1280px;
       margin: 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 20px;
       flex-wrap: wrap;
     }
-    .footer-bottom p { font-size: 12.5px; }
-    .footer-pay-icons { display: flex; gap: 8px; }
-    .pay-chip { background: rgba(255,255,255,0.08); border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: #cbd5e1; }
+    .footer-bottom p { font-size: 12.5px; color: #94a3b8; }
+    .footer-pay-icons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .pay-card-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .pay-svg-icon { border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.25); display: block; transition: transform 0.15s; }
+    .pay-svg-icon:hover { transform: translateY(-2px); }
+
+    .stripe-trust-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #1e1e38;
+      border: 1px solid rgba(99,91,255,0.4);
+      color: #c7d2fe;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .stripe-trust-chip svg { flex-shrink: 0; }
+
+    /* ===== SECURITY & TRUST BANNER ===== */
+    .security-banner {
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 36px 0;
+      margin-top: 48px;
+    }
+    .security-banner-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 28px;
+    }
+    @media (max-width: 900px) { .security-banner-inner { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px) { .security-banner-inner { grid-template-columns: 1fr; } }
+    .sec-badge-card { display: flex; align-items: flex-start; gap: 14px; }
+    .sec-icon-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .sec-icon-circle.stripe { background: #ede9fe; color: #635bff; }
+    .sec-icon-circle.green { background: #d1fae5; color: #059669; }
+    .sec-icon-circle.gold { background: #fef3c7; color: #d97706; }
+    .sec-title { font-size: 13.5px; font-weight: 800; color: var(--primary); line-height: 1.3; margin-bottom: 3px; }
+    .sec-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+    /* Product Detail Trust Box */
+    .detail-safe-checkout {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 16px;
+    }
+    .safe-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #059669;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .safe-note {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    /* Checkout Modal Trust Box */
+    .checkout-security-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 16px;
+      text-align: center;
+    }
+    .checkout-security-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #059669;
+      margin-bottom: 6px;
+    }
+    .checkout-security-desc {
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.45;
+      margin-bottom: 8px;
+    }
+
     @media (max-width: 900px) { .footer-top { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 540px) { .footer-top { grid-template-columns: 1fr; } .footer-bottom { flex-direction: column; text-align: center; } }
 
@@ -1410,7 +1514,7 @@
       <div class="section-title">🔥 Trending Now</div>
       <div class="section-sub">Hand-picked bestsellers — updated daily</div>
     </div>
-    <a class="view-all" href="#" onclick="filterCategory('all')">View All →</a>
+    <a class="view-all" href="javascript:void(0)" onclick="filterCategory('all')">View All →</a>
   </div>
   <div class="products-grid" id="productsGrid">
     <!-- Skeleton loaders -->
@@ -1452,7 +1556,7 @@
       <div class="section-title">🆕 New Arrivals</div>
       <div class="section-sub">Just landed — fresh products this week</div>
     </div>
-    <a class="view-all" href="#">View All →</a>
+    <a class="view-all" href="javascript:void(0)">View All →</a>
   </div>
   <div class="products-grid" id="newArrivalsGrid">
     <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton-body"><div class="skeleton skeleton-line w60"></div><div class="skeleton skeleton-line w80"></div><div class="skeleton skeleton-line w40"></div><div class="skeleton skeleton-btn"></div></div></div>
@@ -1462,7 +1566,39 @@
   </div>
 </section>
 
-<div class="spacer"></div>
+<!-- Payment Security & Buyer Protection Banner -->
+<section class="security-banner" aria-label="Security and Trust">
+  <div class="security-banner-inner">
+    <div class="sec-badge-card">
+      <div class="sec-icon-circle">🔒</div>
+      <div>
+        <div class="sec-title">256-Bit SSL Encryption</div>
+        <div class="sec-desc">Bank-grade encrypted checkout safeguards your personal & billing info.</div>
+      </div>
+    </div>
+    <div class="sec-badge-card">
+      <div class="sec-icon-circle stripe">⚡</div>
+      <div>
+        <div class="sec-title">Powered by Stripe</div>
+        <div class="sec-desc">PCI-DSS Level 1 certified processor — the world's #1 secure payment network.</div>
+      </div>
+    </div>
+    <div class="sec-badge-card">
+      <div class="sec-icon-circle green">🛡️</div>
+      <div>
+        <div class="sec-title">Zero Card Storage</div>
+        <div class="sec-desc">We never view, store, or hold your card number or CVV. 100% fraud-proof.</div>
+      </div>
+    </div>
+    <div class="sec-badge-card">
+      <div class="sec-icon-circle gold">⭐</div>
+      <div>
+        <div class="sec-title">30-Day Money-Back</div>
+        <div class="sec-desc">Hassle-free refunds backed by Shipping Wish LLC registered Delaware HQ.</div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- Footer -->
 <footer class="footer" role="contentinfo">
@@ -1477,21 +1613,21 @@
         <div style="color: #94a3b8;">Email: support@buywishonline.com</div>
       </div>
       <div class="footer-social">
-        <a class="social-btn" href="#" aria-label="Facebook">📘</a>
-        <a class="social-btn" href="#" aria-label="Instagram">📸</a>
-        <a class="social-btn" href="#" aria-label="TikTok">🎵</a>
-        <a class="social-btn" href="#" aria-label="Pinterest">📌</a>
+        <a class="social-btn" href="javascript:void(0)" aria-label="Facebook">📘</a>
+        <a class="social-btn" href="javascript:void(0)" aria-label="Instagram">📸</a>
+        <a class="social-btn" href="javascript:void(0)" aria-label="TikTok">🎵</a>
+        <a class="social-btn" href="javascript:void(0)" aria-label="Pinterest">📌</a>
       </div>
     </div>
     <div>
       <div class="footer-col-title">Shop</div>
       <ul class="footer-links">
-        <li><a href="#" onclick="filterCategory('all')">All Products</a></li>
-        <li><a href="#" onclick="filterCategory('Tech')">Tech & Gadgets</a></li>
-        <li><a href="#" onclick="filterCategory('Home')">Home & Living</a></li>
-        <li><a href="#" onclick="filterCategory('Fitness')">Fitness & Outdoors</a></li>
-        <li><a href="#" onclick="filterCategory('Beauty')">Beauty & Wellness</a></li>
-        <li><a href="#" onclick="filterCategory('Kitchen')">Kitchen</a></li>
+        <li><a href="javascript:void(0)" onclick="filterCategory('all')">All Products</a></li>
+        <li><a href="javascript:void(0)" onclick="filterCategory('Tech')">Tech & Gadgets</a></li>
+        <li><a href="javascript:void(0)" onclick="filterCategory('Home')">Home & Living</a></li>
+        <li><a href="javascript:void(0)" onclick="filterCategory('Fitness')">Fitness & Outdoors</a></li>
+        <li><a href="javascript:void(0)" onclick="filterCategory('Beauty')">Beauty & Wellness</a></li>
+        <li><a href="javascript:void(0)" onclick="filterCategory('Kitchen')">Kitchen</a></li>
       </ul>
     </div>
     <div>
@@ -1499,7 +1635,7 @@
       <ul class="footer-links">
         <li><a href="/privacy-policy">Privacy Policy</a></li>
         <li><a href="/terms">Terms of Service</a></li>
-        <li><a href="#" onclick="openTrackModal()">Track My Order</a></li>
+        <li><a href="javascript:void(0)" onclick="openTrackModal()">Track My Order</a></li>
         <li><a href="/contact">Contact Support Desk</a></li>
         <li><a href="/returns">Returns & Refunds</a></li>
         <li><a href="/shipping">Shipping Policy</a></li>
@@ -1526,11 +1662,26 @@
       <span style="color: #10b981; font-weight: 700;">● 256-Bit SSL Encrypted</span>
     </div>
     <div class="footer-pay-icons">
-      <span class="pay-chip">VISA</span>
-      <span class="pay-chip">Mastercard</span>
-      <span class="pay-chip">Amex</span>
-      <span class="pay-chip">PayPal</span>
-      <span class="pay-chip">Apple Pay</span>
+      <div class="stripe-trust-chip">
+        <svg width="15" height="15" viewBox="0 0 40 40" fill="none"><path d="M19.9 0C8.9 0 0 8.9 0 19.9s8.9 19.9 19.9 19.9 19.9-8.9 19.9-19.9S30.9 0 19.9 0z" fill="#635BFF"/><path d="M19.3 15.6c0-1.1.9-1.5 2.3-1.5 2.1 0 4.7.7 6.8 1.9V9.7c-2.3-.9-4.7-1.3-7-1.3-5.8 0-9.7 3-9.7 8 0 7.8 10.8 6.5 10.8 9.9 0 1.3-1.1 1.7-2.7 1.7-2.3 0-5.4-1-7.8-2.3v6.4c2.7 1.2 5.4 1.7 8 1.7 6 0 10.2-3 10.2-8.2 0-8.5-10.9-7-10.9-10z" fill="#ffffff"/></svg>
+        <span>Verified by Stripe</span>
+      </div>
+      <div class="pay-card-badges">
+        <!-- Visa -->
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="Visa"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M19.8 21.5h-3.4l2.1-13h3.4l-2.1 13zm12.3-12.7c-.7-.3-1.8-.5-3.1-.5-3.4 0-5.8 1.8-5.8 4.4 0 1.9 1.7 3 3 3.6 1.3.6 1.8 1 1.8 1.6 0 .9-1.1 1.3-2.1 1.3-1.4 0-2.2-.2-3.4-.7l-.5-.2-.5 3.1c.8.4 2.4.7 4 .7 3.8 0 6.2-1.9 6.2-4.6 0-1.5-.9-2.7-3-3.7-1.2-.6-2-1-2-1.6 0-.6.7-1.1 2.1-1.1 1.2 0 2 .2 2.7.5l.3.2.6-3.1zm8.9 0h-2.6c-.8 0-1.4.2-1.8 1.1l-5.1 11.6h3.6l.7-2h4.4l.4 2h3.2l-2.8-12.7zm-4.4 8.2l1.8-4.9c0 0 .4-1 .6-1.5l.3 1.4 1 5h-3.7zm-22.3-8.2l-3.3 8.9-.4-1.8c-.6-2.1-2.5-4.4-4.6-5.5l3 11.4h3.6l5.4-13h-3.7z" fill="#1A1F71"/><path d="M9.8 8.8H4.2c-.3 0-.5.2-.6.4-.9 2.2-2.8 5.7-4.6 7l2.8 1.4c1.3-1 2.6-2.8 3.4-4.8l2.6-4.4c.1-.4.2-.6.4-.6h1.6z" fill="#F7B600"/></svg>
+        <!-- Mastercard -->
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="Mastercard"><rect width="50" height="32" rx="4" fill="#1e293b"/><circle cx="19" cy="16" r="9" fill="#EB001B"/><circle cx="31" cy="16" r="9" fill="#F79E1B"/><path d="M25 9.7a8.9 8.9 0 0 1 3.5 6.3 8.9 8.9 0 0 1-3.5 6.3 8.9 8.9 0 0 1-3.5-6.3 8.9 8.9 0 0 1 3.5-6.3z" fill="#FF5F00"/></svg>
+        <!-- Amex -->
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="American Express"><rect width="50" height="32" rx="4" fill="#006FCF"/><path d="M7 11h5l1.2 3 1.2-3h5l-3.4 8 3.4 8h-5l-1.2-3-1.2 3H7l3.4-8L7 11zm15 0h4v16h-4V11zm7 0h11v4h-7v2h6v4h-6v2h7v4H29V11z" fill="#ffffff"/></svg>
+        <!-- Discover -->
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="Discover"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M6 11h4c3 0 5 1.8 5 4.5s-2 4.5-5 4.5H6V11zm2.5 7h1.5c1.5 0 2.5-.8 2.5-2.5s-1-2.5-2.5-2.5H8.5V18zm8.5-7h3v9h-3v-9z" fill="#231F20"/><circle cx="34" cy="16" r="6" fill="#F47216"/></svg>
+        <!-- Apple Pay -->
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="Apple Pay"><rect width="50" height="32" rx="4" fill="#000000"/><path d="M16.5 12.3c-.6.8-1.5 1.3-2.4 1.2-.1-.9.3-1.8.8-2.4.6-.7 1.6-1.2 2.4-1.1.1 1-.2 1.8-.8 2.3zm.8 1.3c-1.3-.1-2.4.8-3 .8-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 1 1 2 2 3.2 2 .7 0 1.3-.4 2-.4.8 0 1.3.4 2.1.4 1.2 0 2-1 2.7-2 .8-1.2 1.1-2.4 1.1-2.5-.1 0-2.2-.8-2.2-3.3 0-2 1.7-3 1.8-3.1-1-1.4-2.5-1.5-3-1.6zm8.8-3.4v13.5h2.2v-4.6h3.4c2.8 0 4.8-1.9 4.8-4.4 0-2.6-2-4.5-4.8-4.5h-5.6zm2.2 2.1h3.1c1.7 0 2.8 1 2.8 2.4 0 1.3-1.1 2.4-2.8 2.4h-3.1v-4.8zm11 4.7c-1.7 0-3 1.2-3 2.8 0 1.6 1.3 2.8 3 2.8 1.6 0 2.8-1.2 2.8-2.8s-1.2-2.8-2.8-2.8z" fill="#ffffff"/></svg>
+        <!-- Google Pay -->
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="Google Pay"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M17.8 16.2c0-.4 0-.8-.1-1.2H12v2.3h3.3c-.1.8-.6 1.4-1.2 1.9v1.5h2c1.2-1.1 1.7-2.7 1.7-4.5z" fill="#4285F4"/><path d="M12 22c1.6 0 3-.5 4-1.5l-2-1.5c-.5.4-1.2.6-2 .6-1.5 0-2.8-1-3.3-2.4H6.6v1.6C7.6 20.8 9.6 22 12 22z" fill="#34A853"/><path d="M8.7 17.2c-.1-.4-.2-.8-.2-1.2s.1-.8.2-1.2V13.2H6.6C6.2 14.1 6 15 6 16s.2 1.9.6 2.8l2.1-1.6z" fill="#FBBC05"/><path d="M12 12.3c.9 0 1.7.3 2.3.9l1.7-1.7C15 10.5 13.6 10 12 10c-2.4 0-4.4 1.2-5.4 3.2l2.1 1.6c.5-1.5 1.8-2.5 3.3-2.5z" fill="#EA4335"/><path d="M23 10.5v11h-2.2v-11H23zm8.5 7.8c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.1 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5zm9.5 0c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.2 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5z" fill="#5F6368"/></svg>
+        <!-- PayPal -->
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="PayPal"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M19 8h6c3.5 0 5.5 1.8 5 4.5-.6 3.5-3.5 5.5-7 5.5h-2l-1.5 8H15L19 8z" fill="#003087"/><path d="M22 13h5.5c3 0 4.5 1.5 4 4-.6 3-3 4.5-6 4.5H23l-1.2 6.5h-3.8L22 13z" fill="#0079C1"/></svg>
+      </div>
     </div>
   </div>
 </footer>
@@ -1611,6 +1762,21 @@
           <div class="detail-trust-item">⭐ Verified Reviews</div>
           <div class="detail-trust-item">🌍 Ships Worldwide</div>
         </div>
+        <div class="detail-safe-checkout">
+          <div class="safe-tag">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#10b981"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            <span>Guaranteed Safe & Secure Checkout</span>
+          </div>
+          <div class="pay-card-badges">
+            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Visa"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M19.8 21.5h-3.4l2.1-13h3.4l-2.1 13zm12.3-12.7c-.7-.3-1.8-.5-3.1-.5-3.4 0-5.8 1.8-5.8 4.4 0 1.9 1.7 3 3 3.6 1.3.6 1.8 1 1.8 1.6 0 .9-1.1 1.3-2.1 1.3-1.4 0-2.2-.2-3.4-.7l-.5-.2-.5 3.1c.8.4 2.4.7 4 .7 3.8 0 6.2-1.9 6.2-4.6 0-1.5-.9-2.7-3-3.7-1.2-.6-2-1-2-1.6 0-.6.7-1.1 2.1-1.1 1.2 0 2 .2 2.7.5l.3.2.6-3.1zm8.9 0h-2.6c-.8 0-1.4.2-1.8 1.1l-5.1 11.6h3.6l.7-2h4.4l.4 2h3.2l-2.8-12.7zm-4.4 8.2l1.8-4.9c0 0 .4-1 .6-1.5l.3 1.4 1 5h-3.7zm-22.3-8.2l-3.3 8.9-.4-1.8c-.6-2.1-2.5-4.4-4.6-5.5l3 11.4h3.6l5.4-13h-3.7z" fill="#1A1F71"/><path d="M9.8 8.8H4.2c-.3 0-.5.2-.6.4-.9 2.2-2.8 5.7-4.6 7l2.8 1.4c1.3-1 2.6-2.8 3.4-4.8l2.6-4.4c.1-.4.2-.6.4-.6h1.6z" fill="#F7B600"/></svg>
+            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Mastercard"><rect width="50" height="32" rx="4" fill="#1e293b"/><circle cx="19" cy="16" r="9" fill="#EB001B"/><circle cx="31" cy="16" r="9" fill="#F79E1B"/><path d="M25 9.7a8.9 8.9 0 0 1 3.5 6.3 8.9 8.9 0 0 1-3.5 6.3 8.9 8.9 0 0 1-3.5-6.3 8.9 8.9 0 0 1 3.5-6.3z" fill="#FF5F00"/></svg>
+            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="American Express"><rect width="50" height="32" rx="4" fill="#006FCF"/><path d="M7 11h5l1.2 3 1.2-3h5l-3.4 8 3.4 8h-5l-1.2-3-1.2 3H7l3.4-8L7 11zm15 0h4v16h-4V11zm7 0h11v4h-7v2h6v4h-6v2h7v4H29V11z" fill="#ffffff"/></svg>
+            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Apple Pay"><rect width="50" height="32" rx="4" fill="#000000"/><path d="M16.5 12.3c-.6.8-1.5 1.3-2.4 1.2-.1-.9.3-1.8.8-2.4.6-.7 1.6-1.2 2.4-1.1.1 1-.2 1.8-.8 2.3zm.8 1.3c-1.3-.1-2.4.8-3 .8-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 1 1 2 2 3.2 2 .7 0 1.3-.4 2-.4.8 0 1.3.4 2.1.4 1.2 0 2-1 2.7-2 .8-1.2 1.1-2.4 1.1-2.5-.1 0-2.2-.8-2.2-3.3 0-2 1.7-3 1.8-3.1-1-1.4-2.5-1.5-3-1.6zm8.8-3.4v13.5h2.2v-4.6h3.4c2.8 0 4.8-1.9 4.8-4.4 0-2.6-2-4.5-4.8-4.5h-5.6zm2.2 2.1h3.1c1.7 0 2.8 1 2.8 2.4 0 1.3-1.1 2.4-2.8 2.4h-3.1v-4.8zm11 4.7c-1.7 0-3 1.2-3 2.8 0 1.6 1.3 2.8 3 2.8 1.6 0 2.8-1.2 2.8-2.8s-1.2-2.8-2.8-2.8z" fill="#ffffff"/></svg>
+            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Google Pay"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M17.8 16.2c0-.4 0-.8-.1-1.2H12v2.3h3.3c-.1.8-.6 1.4-1.2 1.9v1.5h2c1.2-1.1 1.7-2.7 1.7-4.5z" fill="#4285F4"/><path d="M12 22c1.6 0 3-.5 4-1.5l-2-1.5c-.5.4-1.2.6-2 .6-1.5 0-2.8-1-3.3-2.4H6.6v1.6C7.6 20.8 9.6 22 12 22z" fill="#34A853"/><path d="M8.7 17.2c-.1-.4-.2-.8-.2-1.2s.1-.8.2-1.2V13.2H6.6C6.2 14.1 6 15 6 16s.2 1.9.6 2.8l2.1-1.6z" fill="#FBBC05"/><path d="M12 12.3c.9 0 1.7.3 2.3.9l1.7-1.7C15 10.5 13.6 10 12 10c-2.4 0-4.4 1.2-5.4 3.2l2.1 1.6c.5-1.5 1.8-2.5 3.3-2.5z" fill="#EA4335"/><path d="M23 10.5v11h-2.2v-11H23zm8.5 7.8c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.1 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5zm9.5 0c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.2 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5z" fill="#5F6368"/></svg>
+            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="PayPal"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M19 8h6c3.5 0 5.5 1.8 5 4.5-.6 3.5-3.5 5.5-7 5.5h-2l-1.5 8H15L19 8z" fill="#003087"/><path d="M22 13h5.5c3 0 4.5 1.5 4 4-.6 3-3 4.5-6 4.5H23l-1.2 6.5h-3.8L22 13z" fill="#0079C1"/></svg>
+          </div>
+          <div class="safe-note">🔒 Encrypted 256-Bit SSL · Processed directly by <strong>Stripe</strong></div>
+        </div>
       </div>
     </div>
     <!-- Reviews Section -->
@@ -1636,12 +1802,22 @@
     <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="co_phone" type="tel" placeholder="+1 (555) 000-0000"></div>
     <div class="form-group"><label class="form-label">Shipping Address</label><input class="form-input" id="co_address" placeholder="123 Main St, City, State, ZIP"></div>
     <button class="btn-checkout" id="checkoutBtn" onclick="processCheckout()">🔒 Place Order — <span id="checkoutBtnTotal">$0.00</span></button>
-    <div class="pay-icons">
-      <span style="font-size:26px;">💳</span>
-      <span style="font-size:26px; opacity:0.6;">🍎</span>
-      <span style="font-size:26px; opacity:0.6;">🅿️</span>
+    <div class="checkout-security-box">
+      <div class="checkout-security-head">
+        <span>🔒 100% Encrypted & Safe Checkout</span>
+        <span style="color:#635BFF;font-weight:900;">Verified by Stripe</span>
+      </div>
+      <div class="checkout-security-desc">
+        Your payment is securely processed directly by Stripe, Inc. (PCI-DSS Level 1 Certified). Shipping Wish LLC never sees or stores your full card credentials.
+      </div>
+      <div class="pay-card-badges" style="justify-content:center;margin-top:6px;">
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Visa"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M19.8 21.5h-3.4l2.1-13h3.4l-2.1 13zm12.3-12.7c-.7-.3-1.8-.5-3.1-.5-3.4 0-5.8 1.8-5.8 4.4 0 1.9 1.7 3 3 3.6 1.3.6 1.8 1 1.8 1.6 0 .9-1.1 1.3-2.1 1.3-1.4 0-2.2-.2-3.4-.7l-.5-.2-.5 3.1c.8.4 2.4.7 4 .7 3.8 0 6.2-1.9 6.2-4.6 0-1.5-.9-2.7-3-3.7-1.2-.6-2-1-2-1.6 0-.6.7-1.1 2.1-1.1 1.2 0 2 .2 2.7.5l.3.2.6-3.1zm8.9 0h-2.6c-.8 0-1.4.2-1.8 1.1l-5.1 11.6h3.6l.7-2h4.4l.4 2h3.2l-2.8-12.7zm-4.4 8.2l1.8-4.9c0 0 .4-1 .6-1.5l.3 1.4 1 5h-3.7zm-22.3-8.2l-3.3 8.9-.4-1.8c-.6-2.1-2.5-4.4-4.6-5.5l3 11.4h3.6l5.4-13h-3.7z" fill="#1A1F71"/><path d="M9.8 8.8H4.2c-.3 0-.5.2-.6.4-.9 2.2-2.8 5.7-4.6 7l2.8 1.4c1.3-1 2.6-2.8 3.4-4.8l2.6-4.4c.1-.4.2-.6.4-.6h1.6z" fill="#F7B600"/></svg>
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Mastercard"><rect width="50" height="32" rx="4" fill="#1e293b"/><circle cx="19" cy="16" r="9" fill="#EB001B"/><circle cx="31" cy="16" r="9" fill="#F79E1B"/><path d="M25 9.7a8.9 8.9 0 0 1 3.5 6.3 8.9 8.9 0 0 1-3.5 6.3 8.9 8.9 0 0 1-3.5-6.3 8.9 8.9 0 0 1 3.5-6.3z" fill="#FF5F00"/></svg>
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="American Express"><rect width="50" height="32" rx="4" fill="#006FCF"/><path d="M7 11h5l1.2 3 1.2-3h5l-3.4 8 3.4 8h-5l-1.2-3-1.2 3H7l3.4-8L7 11zm15 0h4v16h-4V11zm7 0h11v4h-7v2h6v4h-6v2h7v4H29V11z" fill="#ffffff"/></svg>
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Apple Pay"><rect width="50" height="32" rx="4" fill="#000000"/><path d="M16.5 12.3c-.6.8-1.5 1.3-2.4 1.2-.1-.9.3-1.8.8-2.4.6-.7 1.6-1.2 2.4-1.1.1 1-.2 1.8-.8 2.3zm.8 1.3c-1.3-.1-2.4.8-3 .8-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 1 1 2 2 3.2 2 .7 0 1.3-.4 2-.4.8 0 1.3.4 2.1.4 1.2 0 2-1 2.7-2 .8-1.2 1.1-2.4 1.1-2.5-.1 0-2.2-.8-2.2-3.3 0-2 1.7-3 1.8-3.1-1-1.4-2.5-1.5-3-1.6zm8.8-3.4v13.5h2.2v-4.6h3.4c2.8 0 4.8-1.9 4.8-4.4 0-2.6-2-4.5-4.8-4.5h-5.6zm2.2 2.1h3.1c1.7 0 2.8 1 2.8 2.4 0 1.3-1.1 2.4-2.8 2.4h-3.1v-4.8zm11 4.7c-1.7 0-3 1.2-3 2.8 0 1.6 1.3 2.8 3 2.8 1.6 0 2.8-1.2 2.8-2.8s-1.2-2.8-2.8-2.8z" fill="#ffffff"/></svg>
+        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Google Pay"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M17.8 16.2c0-.4 0-.8-.1-1.2H12v2.3h3.3c-.1.8-.6 1.4-1.2 1.9v1.5h2c1.2-1.1 1.7-2.7 1.7-4.5z" fill="#4285F4"/><path d="M12 22c1.6 0 3-.5 4-1.5l-2-1.5c-.5.4-1.2.6-2 .6-1.5 0-2.8-1-3.3-2.4H6.6v1.6C7.6 20.8 9.6 22 12 22z" fill="#34A853"/><path d="M8.7 17.2c-.1-.4-.2-.8-.2-1.2s.1-.8.2-1.2V13.2H6.6C6.2 14.1 6 15 6 16s.2 1.9.6 2.8l2.1-1.6z" fill="#FBBC05"/><path d="M12 12.3c.9 0 1.7.3 2.3.9l1.7-1.7C15 10.5 13.6 10 12 10c-2.4 0-4.4 1.2-5.4 3.2l2.1 1.6c.5-1.5 1.8-2.5 3.3-2.5z" fill="#EA4335"/><path d="M23 10.5v11h-2.2v-11H23zm8.5 7.8c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.1 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5zm9.5 0c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.2 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5z" fill="#5F6368"/></svg>
+      </div>
     </div>
-    <div class="cart-secure-note" style="margin-top:12px;">🔒 Your data is protected by 256-bit SSL encryption</div>
   </div>
 </div>
 
@@ -2320,6 +2496,16 @@ async function loadProducts() {
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Remove unsightly /# or trailing # from browser address bar
+  if (window.location.hash === '#' || window.location.href.endsWith('#') || window.location.href.endsWith('/#')) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash === '#') {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  });
+
   detectCurrency();
   loadProducts();
 
