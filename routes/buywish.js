@@ -546,6 +546,52 @@ router.get('/verify-session', async (req, res) => {
 });
 
 // ============================================================
+// Admin-only supplier handoff queue. Zendrop's public docs do not specify
+// a custom-store order-creation action; operators place the order in Zendrop
+// and record its real order ID here. Never synthesize a supplier/tracking ID.
+// ============================================================
+router.get('/admin/orders', ...buyWishAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT order_number, customer_name, customer_email, customer_phone,
+              shipping_address, shipping_city, shipping_state, items,
+              total_amount, currency, payment_status, fulfillment_status,
+              zendrop_order_id, supplier_tracking_number, created_at, updated_at
+       FROM ecommerce_orders
+       WHERE payment_status = 'paid'
+       ORDER BY created_at ASC
+       LIMIT 100`
+    );
+    res.json({ ok: true, orders: rows });
+  } catch (err) {
+    console.error('[BUYWISH ADMIN ORDERS ERROR]:', err.message);
+    res.status(500).json({ error: 'Could not load supplier handoff queue.' });
+  }
+});
+
+router.patch('/admin/orders/:order_number/supplier', ...buyWishAdmin, async (req, res) => {
+  const supplierOrderId = String(req.body?.zendrop_order_id || '').trim();
+  if (!supplierOrderId || supplierOrderId.length > 120) {
+    return res.status(400).json({ error: 'A valid Zendrop order ID is required.' });
+  }
+  try {
+    const { rows } = await pool.query(
+      `UPDATE ecommerce_orders
+       SET zendrop_order_id = $1, supplier = 'Zendrop',
+           fulfillment_status = 'supplier_order_placed', updated_at = NOW()
+       WHERE upper(order_number) = upper($2) AND payment_status = 'paid'
+       RETURNING order_number, fulfillment_status, zendrop_order_id`,
+      [supplierOrderId, req.params.order_number]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Paid order not found.' });
+    res.json({ ok: true, order: rows[0] });
+  } catch (err) {
+    console.error('[BUYWISH SUPPLIER HANDOFF ERROR]:', err.message);
+    res.status(500).json({ error: 'Could not save supplier order reference.' });
+  }
+});
+
+// ============================================================
 // POST /api/buywish/import-product — Import Product to My Store
 // ============================================================
 router.post('/import-product', ...buyWishAdmin, async (req, res) => {
