@@ -184,6 +184,7 @@ app.get('/api/health', (req, res) => {
 
 // ---------- Enterprise TMS API Routes ----------
 app.use('/api', require('./routes/auth'));                // /api/signup, /api/login, /api/me, /api/users, /api/carriers
+app.use('/api/dashboard', carrierApiGate, require('./routes/dashboard')); // TMS dashboard analytics
 app.use('/api/loads', carrierApiGate, require('./routes/loads'));
 app.use('/api/brokers', carrierApiGate, require('./routes/brokers'));
 app.use('/api/fleet', carrierApiGate, require('./routes/fleet'));

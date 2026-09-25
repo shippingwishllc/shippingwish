@@ -78,6 +78,8 @@
   }
 
   const STAFF_LINKS = [
+    { section: 'Executive Command' },
+    { key: 'superadmin', href: '/superadmin', icon: '👑', label: 'Command Center (4-Brand)', superAdminOnly: true },
     { section: 'Operations' },
     { key: 'overview', navId: 'nav-tab-loads', href: '/admin-dashboard', icon: '📊', label: 'Overview & Loads' },
     { key: 'loadnexus', href: '/admin-loadnexus', icon: '🛡️', label: 'LoadNexus Command' },
@@ -249,6 +251,7 @@
       return CARRIER_LINKS;
     }
     const staff = STAFF_LINKS.filter((item) => {
+      if (item.superAdminOnly) return role === 'super_admin';
       if (!item.adminOnly) return true;
       return role === 'admin' || role === 'super_admin';
     });

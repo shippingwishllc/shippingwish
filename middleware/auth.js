@@ -46,9 +46,9 @@ async function requireAuth(req, res, next) {
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ error: 'Not signed in.' });
-    // super_admin automatically gets access to any admin-restricted endpoints
+    // super_admin automatically gets universal access to any restricted endpoints
     const userRole = req.user.role;
-    if (roles.includes(userRole) || (roles.includes('admin') && userRole === 'super_admin')) {
+    if (userRole === 'super_admin' || req.user.is_super_admin || roles.includes(userRole) || (roles.includes('admin') && userRole === 'super_admin')) {
       return next();
     }
     return res.status(403).json({ error: 'You do not have access to this.' });

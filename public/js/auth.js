@@ -18,7 +18,8 @@ async function checkAuth(allowedRoles = []) {
     const user = data.user;
 
     if (allowedRoles.length > 0) {
-      if (!allowedRoles.includes(user.role) && !(allowedRoles.includes('admin') && user.role === 'super_admin')) {
+      const isSuper = user.role === 'super_admin' || user.is_super_admin;
+      if (!isSuper && !allowedRoles.includes(user.role) && !(allowedRoles.includes('admin') && user.role === 'super_admin')) {
         // Redirect to appropriate dashboard based on role
         redirectUserToDashboard(user);
         return null;
