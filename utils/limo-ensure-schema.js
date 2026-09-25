@@ -147,6 +147,8 @@ CREATE TABLE IF NOT EXISTS limo_commission_ledger (
   booking_id INTEGER NOT NULL UNIQUE REFERENCES limo_bookings(id) ON DELETE CASCADE,
   operator_base_id INTEGER NOT NULL REFERENCES limo_partner_bases(id),
   gross_fare NUMERIC(10,2) NOT NULL,
+  tolls NUMERIC(10,2) NOT NULL DEFAULT 0,
+  gratuity NUMERIC(10,2) NOT NULL DEFAULT 0,
   platform_commission_rate NUMERIC(5,4) NOT NULL,
   platform_commission_amount NUMERIC(10,2) NOT NULL,
   referral_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL,
