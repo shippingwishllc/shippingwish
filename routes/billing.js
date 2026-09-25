@@ -1851,6 +1851,13 @@ async function webhookHandler(req, res) {
   const swSecret = process.env.STRIPE_WEBHOOK_SECRET || process.env.SHIPPINGWISH_STRIPE_WEBHOOK_SECRET;
 
   try {
+    if (!sig || !Buffer.isBuffer(req.body)) {
+      throw new Error('Missing Stripe signature or raw request body.');
+    }
+    if (!swSecret && !lnSecret) {
+      return res.status(503).send('Stripe webhook signing secrets are not configured.');
+    }
+
     let verified = false;
 
     if (sig) {
@@ -1891,8 +1898,8 @@ async function webhookHandler(req, res) {
       if (!verified && (swSecret || lnSecret)) {
         throw new Error('Webhook signature verification failed for all configured Stripe accounts.');
       }
-    } else if (Buffer.isBuffer(req.body)) {
-      event = JSON.parse(req.body.toString('utf8'));
+    } else {
+      throw new Error('Webhook signature verification failed.');
     }
 
     await handleStripeEvent(event);
