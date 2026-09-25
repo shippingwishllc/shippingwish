@@ -134,7 +134,7 @@ async function createCommissionLedger(client, bookingId) {
     `INSERT INTO limo_commission_ledger (
        booking_id, operator_base_id, gross_fare, platform_commission_rate, platform_commission_amount,
        tolls, gratuity, referral_base_id, referral_commission_rate, referral_commission_amount,
-       operator_payout_amount
+       operator_payout_amount, referral_payout_status
      )
      SELECT b.id, o.partner_base_id, b.base_price, o.platform_commission_rate,
             ROUND(b.base_price * o.platform_commission_rate, 2),
@@ -143,7 +143,8 @@ async function createCommissionLedger(client, bookingId) {
             ROUND(b.base_price * COALESCE(r.referral_commission_rate, 0), 2),
             ROUND(COALESCE(b.base_price, 0) + COALESCE(b.tolls, 0) + COALESCE(b.gratuity, 0)
               - (b.base_price * o.platform_commission_rate)
-              - (b.base_price * COALESCE(r.referral_commission_rate, 0)), 2)
+              - (b.base_price * COALESCE(r.referral_commission_rate, 0)), 2),
+            CASE WHEN b.referral_base_id IS NULL THEN 'not_applicable' ELSE 'earned' END
      FROM limo_bookings b
      JOIN limo_partner_offers o ON o.id = b.accepted_offer_id AND o.status = 'accepted'
      LEFT JOIN limo_partner_bases r ON r.id = b.referral_base_id
@@ -484,18 +485,35 @@ router.get('/erp/commissions', ...dispatchGate, async (req, res) => {
 
 router.patch('/erp/commissions/:id/payout', ...adminGate, async (req, res) => {
   const reference = String(req.body?.payout_reference || '').trim().slice(0, 200);
-  if (!reference) return res.status(400).json({ error: 'A payout reference is required to record settlement.' });
+  const recipient = String(req.body?.recipient || '');
+  if (!reference || !['operator', 'referral'].includes(recipient)) {
+    return res.status(400).json({ error: 'Choose the operator or referral partner and provide a payout reference.' });
+  }
   try {
     await ensureSchema();
-    const { rows } = await pool.query(
-      `UPDATE limo_commission_ledger SET status = 'paid', payout_reference = $1, paid_at = now()
-       WHERE id = $2 AND status = 'earned' RETURNING id, booking_id, operator_payout_amount, status, payout_reference, paid_at`,
-      [reference, req.params.id]
-    );
-    if (!rows.length) return res.status(409).json({ error: 'Commission entry not found or already settled.' });
+    const sql = recipient === 'operator'
+      ? `UPDATE limo_commission_ledger SET operator_payout_status = 'paid', operator_payout_reference = $1,
+           operator_paid_at = now(),
+           status = CASE WHEN referral_payout_status IN ('paid', 'not_applicable') THEN 'paid' ELSE 'earned' END,
+           paid_at = CASE WHEN referral_payout_status IN ('paid', 'not_applicable') THEN now() ELSE paid_at END
+         WHERE id = $2 AND status <> 'void' AND operator_payout_status = 'earned'
+         RETURNING id, booking_id, operator_payout_amount, referral_commission_amount, status,
+                   operator_payout_status, operator_payout_reference, operator_paid_at,
+                   referral_payout_status, referral_payout_reference, referral_paid_at`
+      : `UPDATE limo_commission_ledger SET referral_payout_status = 'paid', referral_payout_reference = $1,
+           referral_paid_at = now(),
+           status = CASE WHEN operator_payout_status = 'paid' THEN 'paid' ELSE 'earned' END,
+           paid_at = CASE WHEN operator_payout_status = 'paid' THEN now() ELSE paid_at END
+         WHERE id = $2 AND status <> 'void' AND referral_base_id IS NOT NULL
+           AND referral_payout_status = 'earned'
+         RETURNING id, booking_id, operator_payout_amount, referral_commission_amount, status,
+                   operator_payout_status, operator_payout_reference, operator_paid_at,
+                   referral_payout_status, referral_payout_reference, referral_paid_at`;
+    const { rows } = await pool.query(sql, [reference, req.params.id]);
+    if (!rows.length) return res.status(409).json({ error: 'Payout entry not found, not applicable, or already settled.' });
     res.json({ ok: true, commission: rows[0] });
   } catch (err) {
-    res.status(500).json({ error: 'Could not record commission payout.' });
+    res.status(500).json({ error: 'Could not record payout.' });
   }
 });
 
