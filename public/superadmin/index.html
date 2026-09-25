@@ -500,6 +500,62 @@
       cursor: pointer;
     }
 
+    .modal-content.wide {
+      max-width: 620px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: #ffffff;
+      padding: 9px 12px;
+      font-size: 13px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--gold-primary);
+    }
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 5px;
+    }
+    .btn-submit {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #060911;
+      border: none;
+      padding: 11px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      transform: translateY(-1px);
+    }
+
     /* Toast Notification */
     .toast-container {
       position: fixed;
@@ -723,6 +779,34 @@
           </p>
         </div>
       </div>
+
+      <!-- STRIPE ACCOUNTS DUAL BRAND GATEWAYS -->
+      <div class="content-card" style="margin-top:20px;">
+        <div class="card-header">
+          <h3 class="card-title">Stripe Payment Infrastructure &bull; Dual Brand Gateways <span class="tag">Active</span></h3>
+          <span style="font-size:12px; color:var(--text-muted);">Real-time account webhook health</span>
+        </div>
+        <div class="grid-2">
+          <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong style="color:#ffffff; font-size:14px;">ShippingWish.com TMS Gateway</strong>
+              <span id="stripeSwBadge" class="badge badge-paid">🟢 LIVE PRODUCTION</span>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
+              Weekly recurring billing plans ($149 / $350 / $500), load factoring payouts, and instant detention invoice processing via Stripe Billing &amp; Webhooks.
+            </p>
+          </div>
+          <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong style="color:#ffffff; font-size:14px;">LoadsNexus.com AI Load Board Gateway</strong>
+              <span id="stripeLnBadge" class="badge badge-unloading">🟡 CONNECTED &bull; ID VERIFICATION IN REVIEW</span>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
+              Dedicated LoadsNexus Stripe account with automated fallback to parent Stripe. Subscriptions for $19 Solo, $39 Team, and $69 Fleet Pass with 24-hr webhook sync.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- TAB 2: SHIPPING WISH TMS & FLEET -->
@@ -755,11 +839,12 @@
               Manage truck status in real-time. Select an updated status to instantly recalculate dispatch availability.
             </p>
           </div>
-          <div style="display:flex; gap:8px;">
+          <div style="display:flex; gap:8px; align-items:center;">
             <button class="btn-action" onclick="filterTrucks('all')">All</button>
             <button class="btn-action" onclick="filterTrucks('empty')">🟢 Empty</button>
             <button class="btn-action" onclick="filterTrucks('booked')">🔴 Booked</button>
             <button class="btn-action" onclick="filterTrucks('unloading_tomorrow')">🟡 Unloading Tomorrow</button>
+            <button class="btn-ai-gold" onclick="openAddCarrierModal()" style="padding:6px 12px; font-size:12px;">➕ Onboard Carrier &amp; Unit</button>
           </div>
         </div>
 
@@ -837,6 +922,7 @@
       <div class="content-card">
         <div class="card-header">
           <h3 class="card-title">Live Spot Freight Corridor Stream</h3>
+          <button class="btn-ai-gold" onclick="openAddLoadModal()" style="padding:6px 12px; font-size:12px;">➕ Post Spot Load</button>
         </div>
         <div class="table-responsive">
           <table>
@@ -884,6 +970,7 @@
       <div class="content-card">
         <div class="card-header">
           <h3 class="card-title">Live Ride Reservations &amp; Chauffeur Dispatch</h3>
+          <button class="btn-ai-gold" onclick="openAddLimoModal()" style="padding:6px 12px; font-size:12px;">➕ New Chauffeur Reservation</button>
         </div>
         <div class="table-responsive">
           <table>
@@ -1059,6 +1146,245 @@
 
   </main>
 
+  <!-- ONBOARD CARRIER & FLEET UNIT MODAL -->
+  <div id="addCarrierModal" class="modal-overlay">
+    <div class="modal-content wide">
+      <button class="modal-close" onclick="closeAddCarrierModal()">&times;</button>
+      <h3 style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:6px;">
+        🚛 Onboard Carrier &amp; Fleet Unit
+      </h3>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">
+        Add an onboarded carrier to your dispatch roster. Sets up TMS account and assigns first truck unit.
+      </p>
+
+      <form id="addCarrierForm">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Carrier Company Name *</label>
+            <input type="text" id="carrierCompanyName" class="form-input" placeholder="e.g. Apex Freight Systems LLC" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Owner / Contact Name</label>
+            <input type="text" id="carrierOwnerName" class="form-input" placeholder="e.g. David Miller">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Phone Number *</label>
+            <input type="text" id="carrierPhone" class="form-input" placeholder="(404) 555-7821" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="carrierEmail" class="form-input" placeholder="ops@apexfreight.com">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">MC Number</label>
+            <input type="text" id="carrierMc" class="form-input" placeholder="e.g. 1192834">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Weekly Dispatch Plan</label>
+            <select id="carrierPlan" class="form-input">
+              <option value="weekly_dedicated_500">Dedicated Operations Desk ($500/wk)</option>
+              <option value="weekly_standard_350">Standard Dedicated ($350/wk)</option>
+              <option value="weekly_self_149">Self-Dispatch Software ($149/wk)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background:rgba(30,41,59,0.5); border:1px dashed var(--border-subtle); border-radius:10px; padding:12px; margin-bottom:16px;">
+          <div style="font-size:12px; font-weight:700; color:var(--gold-light); margin-bottom:10px;">TRUCK UNIT SPECIFICATION</div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Unit Number</label>
+              <input type="text" id="truckUnitNum" class="form-input" placeholder="Unit #101" value="Unit #101">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Equipment Type</label>
+              <select id="truckEquipment" class="form-input">
+                <option value="53ft Dry Van">53ft Dry Van</option>
+                <option value="53ft Reefer">53ft Reefer</option>
+                <option value="53ft Flatbed">53ft Flatbed</option>
+                <option value="Step Deck">Step Deck</option>
+                <option value="Power Only">Power Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Driver Name</label>
+              <input type="text" id="truckDriverName" class="form-input" placeholder="Assigned Driver">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Driver Phone</label>
+              <input type="text" id="truckDriverPhone" class="form-input" placeholder="Driver Contact">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Initial Status</label>
+              <select id="truckInitStatus" class="form-input">
+                <option value="empty">🟢 Empty (Ready for Dispatch)</option>
+                <option value="booked">🔴 Booked / In Transit</option>
+                <option value="unloading_tomorrow">🟡 Unloading Tomorrow</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Current City / Location</label>
+              <input type="text" id="truckLocation" class="form-input" placeholder="Dallas, TX">
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" style="width:100%;">
+          <span>Onboard Carrier &amp; Assign Unit</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- POST SPOT LOAD MODAL -->
+  <div id="addLoadModal" class="modal-overlay">
+    <div class="modal-content wide">
+      <button class="modal-close" onclick="closeAddLoadModal()">&times;</button>
+      <h3 style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:6px;">
+        ⚡ Post Spot Freight Load to LoadsNexus
+      </h3>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">
+        Instantly publishes high-RPM spot load to the 50-state AI load board corridor.
+      </p>
+
+      <form id="addLoadForm">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Pickup Location (City, State) *</label>
+            <input type="text" id="loadPickup" class="form-input" placeholder="Chicago, IL" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Delivery Location (City, State) *</label>
+            <input type="text" id="loadDelivery" class="form-input" placeholder="Atlanta, GA" required>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Rate / Pay ($) *</label>
+            <input type="number" id="loadRate" class="form-input" placeholder="3200" step="50" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Trip Distance (Miles)</label>
+            <input type="number" id="loadMiles" class="form-input" placeholder="715">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Equipment Type</label>
+            <select id="loadEquipment" class="form-input">
+              <option value="53ft Dry Van">53ft Dry Van</option>
+              <option value="53ft Reefer">53ft Reefer</option>
+              <option value="53ft Flatbed">53ft Flatbed</option>
+              <option value="Power Only">Power Only</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Commodity</label>
+            <input type="text" id="loadCommodity" class="form-input" placeholder="General Freight" value="General Freight">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Broker / Shipper Name</label>
+            <input type="text" id="loadBrokerName" class="form-input" placeholder="Echo Global Logistics">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Broker Phone Number</label>
+            <input type="text" id="loadBrokerPhone" class="form-input" placeholder="(800) 354-7993">
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" style="width:100%;">
+          <span>Publish Spot Load Live</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- NEW CHAUFFEUR RESERVATION MODAL -->
+  <div id="addLimoModal" class="modal-overlay">
+    <div class="modal-content wide">
+      <button class="modal-close" onclick="closeAddLimoModal()">&times;</button>
+      <h3 style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:6px;">
+        🗽 New NYC Limo Wish Chauffeur Reservation
+      </h3>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">
+        Book and schedule executive airport transfer or luxury hourly chauffeur.
+      </p>
+
+      <form id="addLimoForm">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Passenger Name *</label>
+            <input type="text" id="limoPassengerName" class="form-input" placeholder="John Rockefeller" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Passenger Phone</label>
+            <input type="text" id="limoPhone" class="form-input" placeholder="(212) 555-0199">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Pickup Address *</label>
+            <input type="text" id="limoPickup" class="form-input" placeholder="JFK International Airport Terminal 4" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dropoff Address *</label>
+            <input type="text" id="limoDropoff" class="form-input" placeholder="The Plaza Hotel, 768 5th Ave, NY" required>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Pickup Date</label>
+            <input type="date" id="limoDate" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pickup Time</label>
+            <input type="time" id="limoTime" class="form-input" value="14:00">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Vehicle Class</label>
+            <select id="limoVehicle" class="form-input">
+              <option value="elitex_suv">EliteX SUV (Cadillac Escalade ESV)</option>
+              <option value="premium_sedan">Premium Sedan (Mercedes S-Class)</option>
+              <option value="business_sedan">Business Sedan (Cadillac XTS)</option>
+              <option value="business_sprinter">Business Sprinter (14 Passengers)</option>
+              <option value="stretch_limo">Stretch Limousine</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Total Fare ($)</label>
+            <input type="number" id="limoFare" class="form-input" placeholder="195" value="195">
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" style="width:100%;">
+          <span>Confirm &amp; Dispatch Reservation</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- TOTP SETUP MODAL -->
   <div id="totpModal" class="modal-overlay">
     <div class="modal-content">
@@ -1199,6 +1525,22 @@
       document.getElementById('overviewEmptyCount').textContent = exec.trucks_empty || 0;
       document.getElementById('overviewBookedCount').textContent = exec.trucks_booked || 0;
       document.getElementById('overviewUnloadingCount').textContent = exec.trucks_unloading_tomorrow || 0;
+
+      // Stripe Accounts Health Matrix
+      if (data.stripe_health) {
+        const swStripe = data.stripe_health.shipping_wish;
+        const lnStripe = data.stripe_health.loads_nexus;
+        const swBadge = document.getElementById('stripeSwBadge');
+        if (swBadge) {
+          swBadge.textContent = swStripe.mode === 'LIVE PRODUCTION' ? '🟢 LIVE PRODUCTION' : '🟡 TEST MODE';
+          swBadge.className = swStripe.mode === 'LIVE PRODUCTION' ? 'badge badge-paid' : 'badge badge-unloading';
+        }
+        const lnBadge = document.getElementById('stripeLnBadge');
+        if (lnBadge) {
+          lnBadge.textContent = lnStripe.mode === 'LIVE PRODUCTION' ? '🟢 LIVE PRODUCTION' : '🟡 IN REVIEW (PASSPORT VERIFIED)';
+          lnBadge.className = lnStripe.mode === 'LIVE PRODUCTION' ? 'badge badge-paid' : 'badge badge-unloading';
+        }
+      }
 
       // TMS Tab
       document.getElementById('tmsActiveCarriers').textContent = sw.active_subscribers || 0;
@@ -1348,7 +1690,7 @@
         return `
           <tr>
             <td><strong>#${l.load_number || l.id}</strong></td>
-            <td>${l.origin_city}, ${l.origin_state} &rarr; ${l.destination_city}, ${l.destination_state}</td>
+            <td>${l.origin || (l.origin_city ? l.origin_city + ', ' + l.origin_state : 'Regional Hub')} &rarr; ${l.destination || (l.destination_city ? l.destination_city + ', ' + l.destination_state : 'Dest Hub')}</td>
             <td>${l.equipment_type || 'Dry Van'}</td>
             <td>${Number(l.miles || 0).toLocaleString()} mi</td>
             <td><strong style="color:#34d399;">${fmtMoney(l.rate)}</strong></td>
@@ -1503,7 +1845,7 @@
             <td><strong>${m.truck.carrier}</strong><br><span style="font-size:11px; color:var(--gold-light);">${m.truck.phone || 'Ops Call'}</span></td>
             <td>${m.truck.location}</td>
             <td><strong>#${m.recommended_load.load_number || m.recommended_load.id}</strong> (${m.recommended_load.broker_name || 'Direct Broker'})</td>
-            <td>${m.recommended_load.origin_city}, ${m.recommended_load.origin_state} &rarr; ${m.recommended_load.destination_city}, ${m.recommended_load.destination_state}</td>
+            <td>${m.recommended_load.origin || m.recommended_load.origin_city || 'Origin'} &rarr; ${m.recommended_load.destination || m.recommended_load.destination_city || 'Destination'}</td>
             <td><strong style="color:#34d399;">${fmtMoney(m.recommended_load.rate)}</strong></td>
             <td>
               <button class="btn-action" onclick="showToast('Dispatch packet pre-generated for truck #${m.truck.unit}', 'success')">
@@ -1519,6 +1861,114 @@
       } finally {
         runAiMatchBtn.disabled = false;
         runAiMatchBtn.textContent = '⚡ Calculate AI Matches';
+      }
+    });
+
+    // Modal Control Functions
+    window.openAddCarrierModal = () => document.getElementById('addCarrierModal').style.display = 'flex';
+    window.closeAddCarrierModal = () => document.getElementById('addCarrierModal').style.display = 'none';
+    window.openAddLoadModal = () => document.getElementById('addLoadModal').style.display = 'flex';
+    window.closeAddLoadModal = () => document.getElementById('addLoadModal').style.display = 'none';
+    window.openAddLimoModal = () => document.getElementById('addLimoModal').style.display = 'flex';
+    window.closeAddLimoModal = () => document.getElementById('addLimoModal').style.display = 'none';
+
+    // Add Carrier Form Handler
+    document.getElementById('addCarrierForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        company_name: document.getElementById('carrierCompanyName').value.trim(),
+        owner_name: document.getElementById('carrierOwnerName').value.trim(),
+        phone: document.getElementById('carrierPhone').value.trim(),
+        email: document.getElementById('carrierEmail').value.trim(),
+        mc_number: document.getElementById('carrierMc').value.trim(),
+        weekly_plan: document.getElementById('carrierPlan').value,
+        unit_number: document.getElementById('truckUnitNum').value.trim(),
+        equipment_type: document.getElementById('truckEquipment').value,
+        driver_name: document.getElementById('truckDriverName').value.trim(),
+        driver_phone: document.getElementById('truckDriverPhone').value.trim(),
+        initial_status: document.getElementById('truckInitStatus').value,
+        location: document.getElementById('truckLocation').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/superadmin/carriers/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to onboard carrier');
+        showToast(data.message, 'success');
+        closeAddCarrierModal();
+        document.getElementById('addCarrierForm').reset();
+        loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Add Load Form Handler
+    document.getElementById('addLoadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        pickup_location: document.getElementById('loadPickup').value.trim(),
+        delivery_location: document.getElementById('loadDelivery').value.trim(),
+        rate: document.getElementById('loadRate').value,
+        miles: document.getElementById('loadMiles').value,
+        equipment_type: document.getElementById('loadEquipment').value,
+        commodity: document.getElementById('loadCommodity').value.trim(),
+        broker_name: document.getElementById('loadBrokerName').value.trim(),
+        broker_phone: document.getElementById('loadBrokerPhone').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/superadmin/loads/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to post load');
+        showToast(data.message, 'success');
+        closeAddLoadModal();
+        document.getElementById('addLoadForm').reset();
+        loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Add Limo Form Handler
+    document.getElementById('addLimoForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        passenger_name: document.getElementById('limoPassengerName').value.trim(),
+        phone: document.getElementById('limoPhone').value.trim(),
+        pickup_address: document.getElementById('limoPickup').value.trim(),
+        dropoff_address: document.getElementById('limoDropoff').value.trim(),
+        pickup_date: document.getElementById('limoDate').value,
+        pickup_time: document.getElementById('limoTime').value,
+        vehicle_id: document.getElementById('limoVehicle').value,
+        total_price: document.getElementById('limoFare').value
+      };
+
+      try {
+        const res = await fetch('/api/superadmin/limo/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to book reservation');
+        showToast(data.message, 'success');
+        closeAddLimoModal();
+        document.getElementById('addLimoForm').reset();
+        loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
       }
     });
 
