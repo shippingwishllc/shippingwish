@@ -100,6 +100,15 @@ app.use((req, res, next) => {
     if (cleanP.startsWith('/assets/')) {
       return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', cleanP));
     }
+    if (cleanP === '/support' || cleanP === '/contact' || cleanP === '/support.html' || cleanP === '/contact.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', 'support.html'));
+    }
+    if (cleanP === '/privacy' || cleanP === '/privacy-policy' || cleanP === '/privacy.html' || cleanP === '/privacy-policy.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', 'privacy-policy.html'));
+    }
+    if (cleanP === '/terms' || cleanP === '/terms-of-service' || cleanP === '/terms.html' || cleanP === '/terms-of-service.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', 'terms-of-service.html'));
+    }
     const lnRoutes = ['/', '/index', '/board', '/loads', '/post-load', '/login', '/checkout', '/pricing'];
     if (lnRoutes.includes(cleanP)) {
       return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', 'index.html'));
@@ -107,6 +116,10 @@ app.use((req, res, next) => {
     const directPath = path.join(__dirname, 'public', 'loadsnexus', cleanP);
     if (fs.existsSync(directPath) && fs.statSync(directPath).isFile()) {
       return res.sendFile(directPath);
+    }
+    const htmlPath = path.join(__dirname, 'public', 'loadsnexus', cleanP + '.html');
+    if (fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
+      return res.sendFile(htmlPath);
     }
   }
 
