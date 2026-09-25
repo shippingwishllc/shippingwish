@@ -96,7 +96,8 @@ function normalizeProduct(p) {
 
   // Get price
   const retailPrice = parseFloat(p.price || p.retail_price || 0) || 0;
-  const comparePrice = retailPrice > 0 ? (retailPrice * 1.8).toFixed(2) : null; // 80% margin display
+  const suppliedComparePrice = parseFloat(p.compare_at_price || p.compare_price || 0);
+  const comparePrice = Number.isFinite(suppliedComparePrice) && suppliedComparePrice > retailPrice ? suppliedComparePrice.toFixed(2) : null;
 
   // Extract features from description bullet points
   const features = [];
@@ -134,17 +135,17 @@ function normalizeProduct(p) {
     category,
     retail_price: retailPrice.toFixed(2),
     compare_price: comparePrice,
-    description: cleanDesc || 'Premium quality product with fast global shipping.',
-    features: features.length > 0 ? features : ['Premium quality materials', 'Fast global shipping', '30-day money-back guarantee', 'Secure packaging'],
+    description: cleanDesc,
+    features,
     images: images.slice(0, 4),
     image_url: images[0] || null,
     badge,
-    rating: (4.3 + Math.random() * 0.6).toFixed(1),
-    reviews: Math.floor(150 + Math.random() * 3000),
-    delivery: '5–12 business days',
-    ships_to: ['US', 'GB', 'CA', 'EU', 'AU'],
+    rating: Number.isFinite(Number(p.rating || p.review_rating)) ? Number(p.rating || p.review_rating) : null,
+    reviews: Number.isFinite(Number(p.review_count || p.reviews)) ? Number(p.review_count || p.reviews) : 0,
+    delivery: p.estimated_delivery || p.delivery_estimate || null,
+    ships_to: Array.isArray(p.ships_to) ? p.ships_to : [],
     product_url: p.product_url || null,
-    in_stock: true
+    in_stock: typeof p.in_stock === 'boolean' ? p.in_stock : (Number.isFinite(Number(p.inventory_quantity)) ? Number(p.inventory_quantity) > 0 : null)
   };
 }
 
