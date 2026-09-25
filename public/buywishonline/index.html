@@ -28,16 +28,31 @@
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "BuyWishOnline",
+    "legalName": "Shipping Wish LLC",
     "url": "https://www.buywishonline.com",
     "logo": "https://www.buywishonline.com/logo.png",
-    "description": "Premium global e-commerce store with fast shipping to USA, UK, Canada and Europe.",
+    "description": "Premium global e-commerce store operated by Shipping Wish LLC with fast express delivery across the USA, UK, Canada, and Europe.",
+    "parentOrganization": {
+      "@type": "Organization",
+      "name": "Shipping Wish LLC",
+      "url": "https://www.shippingwish.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "19266 Coastal Hwy",
+        "addressLocality": "Rehoboth Beach",
+        "addressRegion": "DE",
+        "postalCode": "19971",
+        "addressCountry": "US"
+      }
+    },
     "sameAs": [
-      "https://www.facebook.com/buywishonline",
-      "https://www.instagram.com/buywishonline"
+      "https://www.shippingwish.com",
+      "https://www.facebook.com/shippingwish0"
     ],
     "contactPoint": {
       "@type": "ContactPoint",
-      "contactType": "customer support",
+      "contactType": "customer service",
+      "telephone": "+1-800-580-3101",
       "email": "support@buywishonline.com",
       "availableLanguage": "English"
     }
@@ -167,8 +182,21 @@
       font-weight: 900;
       letter-spacing: -0.03em;
       color: var(--primary);
+      line-height: 1.15;
     }
     .brand-logo .logo-text span { color: var(--accent); }
+    .logo-text-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .logo-subtext {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.03em;
+      margin-top: 1px;
+      line-height: 1;
+    }
 
     .nav-cats {
       display: flex;
@@ -1171,7 +1199,10 @@
   <div class="nav-wrap">
     <a href="/" class="brand-logo" aria-label="BuyWishOnline Home">
       <div class="logo-icon">B</div>
-      <div class="logo-text">BuyWish<span>Online</span></div>
+      <div class="logo-text-group">
+        <div class="logo-text">BuyWish<span>Online</span>™</div>
+        <div class="logo-subtext">by Shipping Wish LLC</div>
+      </div>
     </a>
 
     <div class="nav-cats" role="menubar">
@@ -1437,8 +1468,14 @@
 <footer class="footer" role="contentinfo">
   <div class="footer-top">
     <div class="footer-brand">
-      <span class="logo-text">BuyWish<span>Online</span></span>
-      <p>Your global destination for premium curated products. Fast shipping to USA, UK, Canada and Europe. Every order backed by our 30-day satisfaction guarantee.</p>
+      <span class="logo-text">BuyWish<span>Online</span>™</span>
+      <p>Your premier global shopping destination for curated trending innovations, smart tech, home essentials, and lifestyle accessories. Engineered with enterprise security and rapid tracked worldwide fulfillment.</p>
+      <div style="margin-top: 14px; font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+        <div style="color: #ffffff; font-weight: 700; font-size: 13.5px;">Operated by Shipping Wish LLC</div>
+        <div style="color: #94a3b8;">19266 Coastal Hwy, Rehoboth Beach, DE 19971</div>
+        <div style="color: #38bdf8; font-weight: 700; margin-top: 4px;">Support: +1 (800) 580-3101</div>
+        <div style="color: #94a3b8;">Email: support@buywishonline.com</div>
+      </div>
       <div class="footer-social">
         <a class="social-btn" href="#" aria-label="Facebook">📘</a>
         <a class="social-btn" href="#" aria-label="Instagram">📸</a>
@@ -1458,27 +1495,36 @@
       </ul>
     </div>
     <div>
-      <div class="footer-col-title">Customer Care</div>
+      <div class="footer-col-title">Support & Legal</div>
       <ul class="footer-links">
+        <li><a href="/privacy-policy">Privacy Policy</a></li>
+        <li><a href="/terms">Terms of Service</a></li>
         <li><a href="#" onclick="openTrackModal()">Track My Order</a></li>
-        <li><a href="/contact">Contact Us</a></li>
+        <li><a href="/contact">Contact Support Desk</a></li>
         <li><a href="/returns">Returns & Refunds</a></li>
-        <li><a href="/faq">FAQ</a></li>
-        <li><a href="/shipping">Shipping Info</a></li>
+        <li><a href="/shipping">Shipping Policy</a></li>
       </ul>
     </div>
     <div>
-      <div class="footer-col-title">Company</div>
+      <div class="footer-col-title">Enterprise</div>
       <ul class="footer-links">
-        <li><a href="/about">About Us</a></li>
-        <li><a href="/privacy-policy">Privacy Policy</a></li>
-        <li><a href="/terms">Terms of Service</a></li>
+        <li><a href="/about">About Shipping Wish LLC</a></li>
+        <li><a href="https://www.shippingwish.com" target="_blank" rel="noopener">Shipping Wish Corporate</a></li>
+        <li><a href="https://www.loadsnexus.com" target="_blank" rel="noopener">LoadsNexus Freight Network</a></li>
+        <li><a href="https://www.nyclimowish.com" target="_blank" rel="noopener">NYC Limo Wish Chauffeur</a></li>
         <li><a href="/sitemap.xml">Sitemap</a></li>
       </ul>
     </div>
   </div>
   <div class="footer-bottom">
-    <p>© 2026 BuyWishOnline™ — A Shipping Wish LLC Company. All Rights Reserved.</p>
+    <p>© 2026 BuyWishOnline™ — An Enterprise E-Commerce Product of <strong>Shipping Wish LLC</strong>. All rights reserved.</p>
+    <div style="display:flex; gap: 16px; font-size: 12.5px; align-items:center;">
+      <a href="/privacy-policy" style="color: #94a3b8;">Privacy Policy</a>
+      <span style="color: #475569;">•</span>
+      <a href="/terms" style="color: #94a3b8;">Terms of Service</a>
+      <span style="color: #475569;">•</span>
+      <span style="color: #10b981; font-weight: 700;">● 256-Bit SSL Encrypted</span>
+    </div>
     <div class="footer-pay-icons">
       <span class="pay-chip">VISA</span>
       <span class="pay-chip">Mastercard</span>

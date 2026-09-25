@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy | BuyWishOnline™ by Shipping Wish LLC</title>
+  <meta name="description" content="BuyWishOnline™ Privacy Policy — learn how Shipping Wish LLC collects, protects, and handles consumer data, Stripe payment processing, and customer privacy.">
+  <link rel="canonical" href="https://www.buywishonline.com/privacy-policy">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a1a2e;
+      --accent: #e94560;
+      --surface: #ffffff;
+      --bg: #f8fafc;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+
+    /* Navbar */
+    .navbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent) 0%, #a8063d 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      font-weight: 900;
+    }
+    .brand-logo .logo-text {
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--primary);
+      line-height: 1.15;
+    }
+    .brand-logo .logo-text span { color: var(--accent); }
+    .logo-subtext {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.03em;
+      margin-top: 1px;
+    }
+    .nav-links { display: flex; align-items: center; gap: 20px; font-size: 14px; font-weight: 600; color: #475569; }
+    .nav-links a:hover { color: var(--accent); }
+    .btn-home {
+      background: var(--primary);
+      color: #fff !important;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* Hero */
+    .legal-hero {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 56px 24px;
+      text-align: center;
+    }
+    .legal-badge {
+      display: inline-block;
+      background: rgba(233,69,96,0.2);
+      border: 1px solid rgba(233,69,96,0.4);
+      color: #ff8da1;
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .legal-hero h1 { font-size: 34px; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .legal-hero p { font-size: 15px; color: #94a3b8; max-width: 600px; margin: 0 auto; }
+
+    /* Content */
+    .legal-container {
+      max-width: 900px;
+      margin: -30px auto 60px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    @media (max-width: 640px) { .legal-container { padding: 24px; margin-top: 16px; } }
+
+    .callout-box {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+      border-radius: 0 10px 10px 0;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+      font-size: 14px;
+      color: #065f46;
+    }
+    .callout-box strong { color: #047857; }
+
+    h2 { font-size: 20px; font-weight: 800; color: var(--primary); margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; }
+    h3 { font-size: 16px; font-weight: 700; color: #334155; margin: 20px 0 8px; }
+    p { margin-bottom: 16px; font-size: 14.5px; color: #475569; }
+    ul { margin: 0 0 18px 24px; font-size: 14.5px; color: #475569; }
+    li { margin-bottom: 8px; }
+
+    .company-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 32px;
+    }
+    .company-card h4 { font-size: 16px; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+    .company-card p { font-size: 13.5px; margin-bottom: 4px; color: #475569; }
+
+    /* Footer */
+    footer {
+      background: var(--primary);
+      color: #94a3b8;
+      padding: 40px 24px;
+      font-size: 13px;
+      text-align: center;
+    }
+    footer a { color: #cbd5e1; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-wrap">
+    <a href="/" class="brand-logo">
+      <div class="logo-icon">B</div>
+      <div>
+        <div class="logo-text">BuyWish<span>Online</span>™</div>
+        <div class="logo-subtext">by Shipping Wish LLC</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="/">Catalog</a>
+      <a href="/terms">Terms</a>
+      <a href="/contact">Support</a>
+      <a href="/" class="btn-home">Shop Store →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="legal-hero">
+  <div class="legal-badge">Official Legal Disclosure</div>
+  <h1>Privacy Policy</h1>
+  <p>Effective Date: September 26, 2026 · Operating Entity: Shipping Wish LLC</p>
+</header>
+
+<!-- Main Document -->
+<main class="legal-container">
+  <div class="callout-box">
+    <strong>Corporate Notice:</strong> BuyWishOnline™ (www.buywishonline.com) is owned and operated by <strong>Shipping Wish LLC</strong>, a registered Delaware limited liability company (Headquarters: 19266 Coastal Hwy, Rehoboth Beach, DE 19971, USA). All transactions, data processing, and order fulfillments are managed under Shipping Wish LLC.
+  </div>
+
+  <h2>1. Introduction & Overview</h2>
+  <p>Shipping Wish LLC ("Shipping Wish", "Company", "we", "us", or "our") respects your privacy and is dedicated to safeguarding the personal data of customers, visitors, and users of BuyWishOnline™ ("the Website", "the Store"). This Privacy Policy explains our practices regarding the collection, use, disclosure, and protection of personal information when you visit our website, purchase products, or interact with our customer service team.</p>
+
+  <h2>2. Information We Collect</h2>
+  <p>To process orders, calculate sales tax accurately, and provide tracked global fulfillment, we collect several categories of information:</p>
+  <ul>
+    <li><strong>Order & Contact Information:</strong> Full name, billing address, shipping address, email address, and telephone number when placing an order or registering for tracking alerts.</li>
+    <li><strong>Payment Information:</strong> Credit/debit card details, Apple Pay, Google Pay, or other payment identifiers. <em>Important: All payment card details are encrypted and transmitted directly to our PCI-DSS Level 1 certified payment processor (Stripe, Inc.). Shipping Wish LLC does not store, access, or retain raw card numbers or CVV codes on our servers.</em></li>
+    <li><strong>Tax Identification Numbers:</strong> If you provide a state reseller exemption or international VAT/tax ID number for business purchases.</li>
+    <li><strong>Technical & Geolocation Data:</strong> IP address, browser type, device identifiers, and generalized country/state location used to provide automatic local currency rates (USD, GBP, CAD, EUR, AUD) and accurate regional delivery estimates.</li>
+    <li><strong>Customer Support Communications:</strong> Transcripts of emails, chat messages, or support tickets submitted to our customer care desk.</li>
+  </ul>
+
+  <h2>3. How We Use Your Information</h2>
+  <p>Shipping Wish LLC utilizes collected information exclusively for lawful business and fulfillment purposes:</p>
+  <ul>
+    <li><strong>Order Fulfillment & Logistics:</strong> Processing payments, routing orders to domestic and international fulfillment centers, and providing real-time carrier tracking numbers.</li>
+    <li><strong>Sales Tax & Regulatory Compliance:</strong> Calculating precise sales tax, GST, or VAT in compliance with state, federal, and international tax laws via Stripe Tax automated engines.</li>
+    <li><strong>Fraud Prevention & Security:</strong> Evaluating transactions for anti-fraud, identity verification, and dispute resolution.</li>
+    <li><strong>Customer Care & Updates:</strong> Providing order confirmations, dispatch notifications, and responding to inquiries.</li>
+  </ul>
+
+  <h2>4. Payment Security & Stripe Disclosures</h2>
+  <p>All online transactions on BuyWishOnline™ are conducted using industry-standard 256-Bit Secure Sockets Layer (SSL) encryption. Payment processing services are provided by <strong>Stripe, Inc.</strong></p>
+  <p>By purchasing on BuyWishOnline™, you acknowledge and agree that your payment credentials and transaction details are governed by the <a href="https://stripe.com/privacy" target="_blank" rel="noopener" style="color:#2563eb;font-weight:600;">Stripe Privacy Policy</a>. Stripe is audited by a qualified PCI-DSS Level 1 auditor and maintains the highest certification available in the payments industry.</p>
+
+  <h2>5. Data Sharing & Third-Party Partners</h2>
+  <p>We do not sell, rent, or trade your personal data. We only share information with trusted third parties strictly necessary to operate our e-commerce business:</p>
+  <ul>
+    <li><strong>Payment Processors:</strong> Stripe, Inc. for payment collection, fraud screening, and automatic tax calculations.</li>
+    <li><strong>Carriers & Logistics Partners:</strong> US Postal Service (USPS), UPS, FedEx, DHL, and domestic express carrier networks for order delivery.</li>
+    <li><strong>Legal & Regulatory Authorities:</strong> When required by lawful court orders, subpoenas, or applicable state and federal laws.</li>
+  </ul>
+
+  <h2>6. Your Rights & Choices</h2>
+  <p>Depending on your jurisdiction (including California under CCPA/CPRA, and the UK/EU under GDPR), you have specific data rights, including:</p>
+  <ul>
+    <li>The right to request access to the personal data we hold about you.</li>
+    <li>The right to request correction of inaccurate or incomplete information.</li>
+    <li>The right to request deletion of your personal information, subject to statutory tax and bookkeeping retention requirements.</li>
+    <li>The right to opt-out of non-essential marketing communications at any time.</li>
+  </ul>
+
+  <div class="company-card">
+    <h4>Data Controller & Legal Contact Information</h4>
+    <p><strong>Operating Legal Entity:</strong> Shipping Wish LLC</p>
+    <p><strong>Enterprise E-Commerce Brand:</strong> BuyWishOnline™</p>
+    <p><strong>Registered Corporate Headquarters:</strong> 19266 Coastal Hwy, Rehoboth Beach, DE 19971, United States</p>
+    <p><strong>Toll-Free Customer Support:</strong> +1 (800) 580-3101</p>
+    <p><strong>Support & Legal Inquiries:</strong> <a href="mailto:support@buywishonline.com" style="color:#2563eb;">support@buywishonline.com</a> · <a href="mailto:billing@shippingwish.com" style="color:#2563eb;">billing@shippingwish.com</a></p>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer>
+  <p>© 2026 BuyWishOnline™ — An Enterprise E-Commerce Product of <strong>Shipping Wish LLC</strong>. All rights reserved.</p>
+  <p style="margin-top: 8px;">
+    <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms of Service</a> · <a href="/contact">Support</a> · <a href="https://www.shippingwish.com">Corporate HQ</a>
+  </p>
+</footer>
+
+</body>
+</html>

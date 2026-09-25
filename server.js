@@ -200,6 +200,20 @@ app.use((req, res, next) => {
         return res.sendFile(indexPath);
       }
     }
+    // Legal & Support Pages
+    if (cleanP === '/privacy-policy' || cleanP === '/privacy' || cleanP === '/privacy.html' || cleanP === '/privacy-policy.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'privacy-policy.html'));
+    }
+    if (cleanP === '/terms-of-service' || cleanP === '/terms' || cleanP === '/terms.html' || cleanP === '/terms-of-service.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'terms.html'));
+    }
+    if (cleanP === '/contact' || cleanP === '/support' || cleanP === '/contact-us' || cleanP === '/contact.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'contact.html'));
+    }
+    if (cleanP === '/about' || cleanP === '/about-us' || cleanP === '/about.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'about.html'));
+    }
+
     // Static files (sitemap.xml, robots.txt, images, etc.)
     const filePath = path.join(__dirname, 'public', 'buywishonline', cleanP);
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {

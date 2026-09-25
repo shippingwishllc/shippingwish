@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us | BuyWishOnline™ by Shipping Wish LLC</title>
+  <meta name="description" content="About BuyWishOnline™ — curated direct-to-consumer e-commerce brand owned and operated by Shipping Wish LLC.">
+  <link rel="canonical" href="https://www.buywishonline.com/about">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a1a2e;
+      --accent: #e94560;
+      --surface: #ffffff;
+      --bg: #f8fafc;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+
+    .navbar { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-wrap { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .brand-logo { display: flex; align-items: center; gap: 12px; }
+    .brand-logo .logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent) 0%, #a8063d 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; font-weight: 900; }
+    .brand-logo .logo-text { font-size: 19px; font-weight: 900; letter-spacing: -0.03em; color: var(--primary); line-height: 1.15; }
+    .brand-logo .logo-text span { color: var(--accent); }
+    .logo-subtext { font-size: 10.5px; font-weight: 700; color: #64748b; letter-spacing: 0.03em; margin-top: 1px; }
+    .nav-links { display: flex; align-items: center; gap: 20px; font-size: 14px; font-weight: 600; color: #475569; }
+    .nav-links a:hover { color: var(--accent); }
+    .btn-home { background: var(--primary); color: #fff !important; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; }
+
+    .about-hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; padding: 56px 24px; text-align: center; }
+    .about-badge { display: inline-block; background: rgba(233,69,96,0.2); border: 1px solid rgba(233,69,96,0.4); color: #ff8da1; padding: 4px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 16px; }
+    .about-hero h1 { font-size: 34px; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .about-hero p { font-size: 15px; color: #94a3b8; max-width: 600px; margin: 0 auto; }
+
+    .about-container { max-width: 900px; margin: -30px auto 60px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 48px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+    @media (max-width: 640px) { .about-container { padding: 24px; margin-top: 16px; } }
+
+    .about-container h2 { font-size: 20px; font-weight: 800; color: var(--primary); margin: 32px 0 12px; }
+    .about-container p { font-size: 15px; color: #475569; margin-bottom: 16px; }
+    .about-container ul { margin: 0 0 18px 24px; font-size: 15px; color: #475569; }
+    .about-container li { margin-bottom: 8px; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 32px 0; text-align: center; }
+    @media (max-width: 600px) { .stats-row { grid-template-columns: 1fr; } }
+    .stat-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .stat-number { font-size: 28px; font-weight: 900; color: var(--accent); }
+    .stat-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+
+    .company-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-top: 32px; }
+    .company-card h4 { font-size: 16px; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+    .company-card p { font-size: 13.5px; margin-bottom: 4px; color: #475569; }
+
+    footer { background: var(--primary); color: #94a3b8; padding: 40px 24px; font-size: 13px; text-align: center; }
+    footer a { color: #cbd5e1; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-wrap">
+    <a href="/" class="brand-logo">
+      <div class="logo-icon">B</div>
+      <div>
+        <div class="logo-text">BuyWish<span>Online</span>™</div>
+        <div class="logo-subtext">by Shipping Wish LLC</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="/">Catalog</a>
+      <a href="/privacy-policy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/contact">Contact</a>
+      <a href="/" class="btn-home">Shop Store →</a>
+    </div>
+  </div>
+</nav>
+
+<header class="about-hero">
+  <div class="about-badge">Enterprise Profile</div>
+  <h1>About BuyWishOnline™</h1>
+  <p>A flagship direct-to-consumer e-commerce brand owned and operated by Shipping Wish LLC.</p>
+</header>
+
+<main class="about-container">
+  <h2>Our Mission & Vision</h2>
+  <p>BuyWishOnline™ was founded with a straightforward goal: making curated, top-tier trending products, smart tech gadgets, and household essentials accessible to consumers globally with rapid, reliable tracked delivery and complete purchase transparency.</p>
+  <p>As an enterprise brand of <strong>Shipping Wish LLC</strong>, we leverage specialized logistics management, domestic warehouse partnerships, and real-time carrier tracking to ensure every customer order is delivered safely, quickly, and securely.</p>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-number">50,000+</div>
+      <div class="stat-label">Happy Customers</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number">100%</div>
+      <div class="stat-label">Tracked Shipments</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number">30 Days</div>
+      <div class="stat-label">Satisfaction Guarantee</div>
+    </div>
+  </div>
+
+  <h2>Why Shop With Us?</h2>
+  <ul>
+    <li><strong>Curated Quality:</strong> Every item in our catalog undergoes rigorous vendor inspection to guarantee durability, safety, and functionality.</li>
+    <li><strong>Enterprise Payment Security:</strong> PCI-DSS Level 1 certified checkout through Stripe, Inc., accepting major credit cards, Apple Pay, Google Pay, and regional payment methods.</li>
+    <li><strong>Full Delivery Tracking:</strong> End-to-end tracking updates from warehouse dispatch to your doorstep.</li>
+    <li><strong>Customer-First Support:</strong> Dedicated US-based support desk available toll-free via phone and email to assist with orders and inquiries.</li>
+  </ul>
+
+  <div class="company-card">
+    <h4>Corporate Governance & Operating Entity</h4>
+    <p><strong>Parent Company:</strong> Shipping Wish LLC</p>
+    <p><strong>Corporate Registration:</strong> State of Delaware, United States</p>
+    <p><strong>Corporate Headquarters:</strong> 19266 Coastal Hwy, Rehoboth Beach, DE 19971, USA</p>
+    <p><strong>Customer Service Telephone:</strong> +1 (800) 580-3101</p>
+    <p><strong>Official Corporate Domain:</strong> <a href="https://www.shippingwish.com" target="_blank" rel="noopener" style="color:#2563eb;">www.shippingwish.com</a></p>
+    <p><strong>Freight Network:</strong> <a href="https://www.loadsnexus.com" target="_blank" rel="noopener" style="color:#2563eb;">www.loadsnexus.com</a></p>
+  </div>
+</main>
+
+<footer>
+  <p>© 2026 BuyWishOnline™ — An Enterprise E-Commerce Product of <strong>Shipping Wish LLC</strong>. All rights reserved.</p>
+  <p style="margin-top: 8px;">
+    <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms of Service</a> · <a href="/contact">Contact</a> · <a href="https://www.shippingwish.com">Corporate HQ</a>
+  </p>
+</footer>
+
+</body>
+</html>

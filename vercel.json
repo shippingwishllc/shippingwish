@@ -263,7 +263,17 @@
       "destination": "/api"
     },
     {
+      "source": "/privacy",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
       "source": "/terms",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/terms-of-service",
       "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
       "destination": "/api"
     },

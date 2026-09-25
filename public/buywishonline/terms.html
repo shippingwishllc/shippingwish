@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service | BuyWishOnline™ by Shipping Wish LLC</title>
+  <meta name="description" content="BuyWishOnline™ Terms of Service — legal agreement, pricing, 30-day money-back guarantee, Stripe payment processing terms, and Shipping Wish LLC corporate policies.">
+  <link rel="canonical" href="https://www.buywishonline.com/terms">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a1a2e;
+      --accent: #e94560;
+      --surface: #ffffff;
+      --bg: #f8fafc;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+
+    /* Navbar */
+    .navbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent) 0%, #a8063d 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      font-weight: 900;
+    }
+    .brand-logo .logo-text {
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--primary);
+      line-height: 1.15;
+    }
+    .brand-logo .logo-text span { color: var(--accent); }
+    .logo-subtext {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.03em;
+      margin-top: 1px;
+    }
+    .nav-links { display: flex; align-items: center; gap: 20px; font-size: 14px; font-weight: 600; color: #475569; }
+    .nav-links a:hover { color: var(--accent); }
+    .btn-home {
+      background: var(--primary);
+      color: #fff !important;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* Hero */
+    .legal-hero {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 56px 24px;
+      text-align: center;
+    }
+    .legal-badge {
+      display: inline-block;
+      background: rgba(233,69,96,0.2);
+      border: 1px solid rgba(233,69,96,0.4);
+      color: #ff8da1;
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .legal-hero h1 { font-size: 34px; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .legal-hero p { font-size: 15px; color: #94a3b8; max-width: 600px; margin: 0 auto; }
+
+    /* Content */
+    .legal-container {
+      max-width: 900px;
+      margin: -30px auto 60px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    @media (max-width: 640px) { .legal-container { padding: 24px; margin-top: 16px; } }
+
+    .callout-box {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      border-radius: 0 10px 10px 0;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+      font-size: 14px;
+      color: #1e40af;
+    }
+    .callout-box strong { color: #1d4ed8; }
+
+    h2 { font-size: 20px; font-weight: 800; color: var(--primary); margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; }
+    h3 { font-size: 16px; font-weight: 700; color: #334155; margin: 20px 0 8px; }
+    p { margin-bottom: 16px; font-size: 14.5px; color: #475569; }
+    ul { margin: 0 0 18px 24px; font-size: 14.5px; color: #475569; }
+    li { margin-bottom: 8px; }
+
+    .company-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 32px;
+    }
+    .company-card h4 { font-size: 16px; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+    .company-card p { font-size: 13.5px; margin-bottom: 4px; color: #475569; }
+
+    /* Footer */
+    footer {
+      background: var(--primary);
+      color: #94a3b8;
+      padding: 40px 24px;
+      font-size: 13px;
+      text-align: center;
+    }
+    footer a { color: #cbd5e1; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-wrap">
+    <a href="/" class="brand-logo">
+      <div class="logo-icon">B</div>
+      <div>
+        <div class="logo-text">BuyWish<span>Online</span>™</div>
+        <div class="logo-subtext">by Shipping Wish LLC</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="/">Catalog</a>
+      <a href="/privacy-policy">Privacy</a>
+      <a href="/contact">Support</a>
+      <a href="/" class="btn-home">Shop Store →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="legal-hero">
+  <div class="legal-badge">Terms & Conditions of Purchase</div>
+  <h1>Terms of Service</h1>
+  <p>Effective Date: September 26, 2026 · Operating Entity: Shipping Wish LLC</p>
+</header>
+
+<!-- Main Document -->
+<main class="legal-container">
+  <div class="callout-box">
+    <strong>Corporate Entity Notice:</strong> These Terms of Service constitute a legally binding agreement between you and <strong>Shipping Wish LLC</strong>, a Delaware limited liability company (Headquarters: 19266 Coastal Hwy, Rehoboth Beach, DE 19971, USA). BuyWishOnline™ is a registered e-commerce enterprise brand of Shipping Wish LLC.
+  </div>
+
+  <h2>1. Agreement to Terms</h2>
+  <p>By accessing www.buywishonline.com ("the Website"), browsing products, or submitting an order through our checkout system, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree with any part of these terms, please do not use our services.</p>
+
+  <h2>2. Business Operations & Products</h2>
+  <p>BuyWishOnline™ is a direct-to-consumer e-commerce retailer offering curated smart technology, home living essentials, fitness accessories, beauty products, and lifestyle goods. All products offered on the website are supplied through vetted domestic and international manufacturing and fulfillment partners, operating under the logistics oversight of Shipping Wish LLC.</p>
+
+  <h2>3. Pricing, Multi-Currency & Sales Tax</h2>
+  <p>All prices displayed on BuyWishOnline™ are clearly stated in your selected regional currency (USD, GBP, CAD, EUR, AUD). While we strive for absolute accuracy, pricing errors may occasionally occur. If an item is listed at an incorrect price, Shipping Wish LLC reserves the right to cancel the order and provide a full refund.</p>
+  <p><strong>Sales Tax & VAT:</strong> Sales tax, Goods and Services Tax (GST), or Value Added Tax (VAT) is automatically calculated at checkout based on your delivery address, in strict compliance with applicable state, federal, and international tax regulations via Stripe Tax automated engines.</p>
+
+  <h2>4. Payment Processing & Stripe Terms</h2>
+  <p>Payment processing for BuyWishOnline™ is powered by <strong>Stripe, Inc.</strong> By providing a credit card, debit card, Apple Pay, Google Pay, or other payment instrument, you represent and warrant that you are authorized to use the payment method and authorize Stripe to charge the total order amount.</p>
+  <p>Shipping Wish LLC does not store full credit card numbers or sensitive payment authentication credentials on our servers. All transaction data is encrypted under PCI-DSS Level 1 certification standards.</p>
+
+  <h2>5. Shipping, Delivery & Tracking</h2>
+  <p>We provide tracked express fulfillment across the United States, United Kingdom, Canada, Australia, and European Union countries:</p>
+  <ul>
+    <li><strong>Order Processing Time:</strong> 1 to 2 business days after payment confirmation.</li>
+    <li><strong>Standard Delivery Timeline:</strong> Typically 5 to 12 business days depending on customer delivery destination.</li>
+    <li><strong>Live Tracking:</strong> Every order is assigned a unique carrier tracking number (USPS, UPS, FedEx, DHL, or national postal service). Tracking information is emailed upon dispatch and accessible 24/7 at <a href="/?track=1" style="color:#2563eb;font-weight:600;">Track My Order</a>.</li>
+  </ul>
+
+  <h2>6. 30-Day Money-Back Guarantee & Returns Policy</h2>
+  <p>At BuyWishOnline™, customer satisfaction is guaranteed:</p>
+  <ul>
+    <li><strong>Return Window:</strong> You may request a return within <strong>30 calendar days</strong> of receiving your shipment.</li>
+    <li><strong>Item Condition:</strong> Products must be in original packaging with all included accessories.</li>
+    <li><strong>Damaged or Defective Items:</strong> If an item arrives damaged, defective, or incorrect, contact support within 7 days of delivery with photos for an immediate free replacement or 100% refund.</li>
+    <li><strong>Refund Processing:</strong> Approved refunds are credited back to the original payment method via Stripe within 3–5 business days.</li>
+  </ul>
+
+  <h2>7. Chargebacks & Friendly Fraud Resolution</h2>
+  <p>We are committed to resolving customer inquiries quickly and fairly. If you experience an issue with an order, billing discrepancy, or delayed delivery, please reach out to our dedicated support desk before initiating a bank chargeback. In the event of an unjustified chargeback, Shipping Wish LLC reserves the right to submit carrier delivery proof, signature confirmation, and order audit logs to the cardholder's issuing bank.</p>
+
+  <h2>8. Limitation of Liability & Governing Law</h2>
+  <p>These Terms of Service and any purchase made on BuyWishOnline™ are governed by and construed in accordance with the laws of the State of Delaware, United States, without regard to its conflict of law principles. Any dispute arising out of or related to these terms shall be subject to the exclusive jurisdiction of the state and federal courts located in Delaware.</p>
+
+  <div class="company-card">
+    <h4>Corporate Operator & Customer Support Desk</h4>
+    <p><strong>Operating Legal Entity:</strong> Shipping Wish LLC</p>
+    <p><strong>Store Website:</strong> www.buywishonline.com</p>
+    <p><strong>Registered Corporate Headquarters:</strong> 19266 Coastal Hwy, Rehoboth Beach, DE 19971, United States</p>
+    <p><strong>Customer Care Hotline:</strong> +1 (800) 580-3101</p>
+    <p><strong>Support & Returns Email:</strong> <a href="mailto:support@buywishonline.com" style="color:#2563eb;">support@buywishonline.com</a></p>
+    <p><strong>Corporate Portal:</strong> <a href="https://www.shippingwish.com" target="_blank" rel="noopener" style="color:#2563eb;">www.shippingwish.com</a></p>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer>
+  <p>© 2026 BuyWishOnline™ — An Enterprise E-Commerce Product of <strong>Shipping Wish LLC</strong>. All rights reserved.</p>
+  <p style="margin-top: 8px;">
+    <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms of Service</a> · <a href="/contact">Support</a> · <a href="https://www.shippingwish.com">Corporate HQ</a>
+  </p>
+</footer>
+
+</body>
+</html>
