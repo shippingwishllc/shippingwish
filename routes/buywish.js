@@ -579,9 +579,10 @@ router.patch('/admin/orders/:order_number/supplier', ...buyWishAdmin, async (req
     return res.status(400).json({ error: 'A valid Zendrop order ID is required.' });
   }
 
-  const client = await pool.connect();
+  let client;
   let transactionOpen = false;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
     transactionOpen = true;
     // Serialize links for the same supplier order ID so it cannot attach to two store orders concurrently.
@@ -652,12 +653,12 @@ router.patch('/admin/orders/:order_number/supplier', ...buyWishAdmin, async (req
     transactionOpen = false;
     res.json({ ok: true, already_linked: false, order: updated.rows[0] });
   } catch (err) {
-    if (transactionOpen) await client.query('ROLLBACK').catch(() => {});
+    if (transactionOpen && client) await client.query('ROLLBACK').catch(() => {});
     if (err.code === '23505') return res.status(409).json({ error: 'That Zendrop order ID is already linked to another store order.' });
     console.error('[BUYWISH SUPPLIER HANDOFF ERROR]:', err.message);
     res.status(500).json({ error: 'Could not save supplier order reference.' });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 // ============================================================
