@@ -2279,8 +2279,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // URL params
   const params = new URLSearchParams(window.location.search);
-  if (params.get('order_success')) {
-    setTimeout(() => showToast('✅', `Order #${params.get('order_success')} confirmed! Tracking details emailed.`), 500);
+  const orderSuccess = params.get('order_success');
+  const sessionId = params.get('session_id');
+
+  if (orderSuccess) {
+    // Clear shopping cart on successful checkout
+    cart = [];
+    updateCartUI();
+    try { localStorage.removeItem('bwo_cart'); } catch(e) {}
+
+    if (sessionId) {
+      // Verify session with backend to confirm live payment, tax, and order status
+      fetch(`/api/buywish/verify-session?session_id=${encodeURIComponent(sessionId)}&order_number=${encodeURIComponent(orderSuccess)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok && data.paid) {
+            const taxInfo = data.tax_amount > 0 ? ` (Includes Tax: ${data.currency} ${data.tax_amount.toFixed(2)})` : '';
+            showToast('✅', `Payment Confirmed! Order #${orderSuccess} placed${taxInfo}.`);
+          } else {
+            showToast('✅', `Order #${orderSuccess} confirmed! Tracking details emailed.`);
+          }
+        })
+        .catch(() => {
+          showToast('✅', `Order #${orderSuccess} confirmed! Tracking details emailed.`);
+        });
+    } else {
+      setTimeout(() => showToast('✅', `Order #${orderSuccess} confirmed! Tracking details emailed.`), 500);
+    }
+  }
+
+  if (params.get('canceled')) {
+    setTimeout(() => showToast('ℹ️', 'Checkout canceled. Your cart items are still saved!'), 500);
   }
   if (params.get('track')) {
     setTimeout(openTrackModal, 300);

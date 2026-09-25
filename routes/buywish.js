@@ -358,14 +358,25 @@ router.get('/orders/track/:order_number', async (req, res) => {
 });
 
 // ============================================================
-// POST /api/buywish/checkout — Checkout + Auto-Zendrop Fulfillment
+// STRIPE CLIENT & MULTI-CURRENCY
 // ============================================================
+const CURRENCY_RATES = {
+  USD: 1.0,
+  GBP: 0.79,
+  CAD: 1.36,
+  EUR: 0.93,
+  AUD: 1.54
+};
+
 function getStripe() {
   const key = process.env.BUYWISH_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
   if (!key || !/^(sk|rk)_(test|live)_/.test(key)) return null;
   return require('stripe')(key);
 }
 
+// ============================================================
+// POST /api/buywish/checkout — Stripe Payments + Automatic Tax
+// ============================================================
 router.post('/checkout', async (req, res) => {
   const { items, customer, currency = 'USD' } = req.body;
   if (!items || !items.length || !customer || !customer.email) {
@@ -373,45 +384,45 @@ router.post('/checkout', async (req, res) => {
   }
 
   try {
-    // Exchange rates for currency conversion back to USD
-    const toUSD = { USD: 1, GBP: 1.265, CAD: 0.735, EUR: 1.075, AUD: 0.65 };
-    const rate = toUSD[currency] || 1;
+    const curUpper = String(currency || 'USD').toUpperCase();
+    const rate = CURRENCY_RATES[curUpper] || 1;
 
-    let totalCents = 0;
+    let subtotalCents = 0;
     const lineItems = items.map(item => {
-      const unitCents = Math.round(parseFloat(item.price || 0) * rate * 100);
+      const basePrice = parseFloat(item.price || 0);
+      const unitAmount = Math.max(50, Math.round(basePrice * rate * 100));
       const qty = parseInt(item.quantity || 1, 10);
-      totalCents += unitCents * qty;
+      subtotalCents += unitAmount * qty;
       return {
         price_data: {
-          currency: currency.toLowerCase(),
+          currency: curUpper.toLowerCase(),
           product_data: {
             name: item.title || 'BuyWishOnline Product',
             images: item.image_url ? [item.image_url] : []
           },
-          unit_amount: Math.round(parseFloat(item.price || 0) * 100)
+          unit_amount: unitAmount
         },
         quantity: qty
       };
     });
 
     const orderNumber = 'BWO-' + Math.floor(10000 + Math.random() * 90000);
-    const totalDollars = (totalCents * rate / 100).toFixed(2);
-    const costDollars = (parseFloat(totalDollars) * 0.35).toFixed(2);
-    const profitDollars = (parseFloat(totalDollars) - parseFloat(costDollars)).toFixed(2);
+    const subtotalDollars = (subtotalCents / 100).toFixed(2);
+    const costDollars = (parseFloat(subtotalDollars) * 0.35).toFixed(2);
+    const profitDollars = (parseFloat(subtotalDollars) - parseFloat(costDollars)).toFixed(2);
 
     // Parse shipping address
     const addrParts = (customer.address || '').split(',');
     const city = addrParts[1]?.trim() || customer.city || 'Unknown';
     const state = addrParts[2]?.trim() || customer.state || '';
 
-    // Save order in database
+    // Save order in database with pending payment status
     await pool.query(`
       INSERT INTO ecommerce_orders (
         order_number, customer_name, customer_email, customer_phone,
-        shipping_address, shipping_city, shipping_state, items, total_amount, cost_amount,
+        shipping_address, shipping_city, shipping_state, items, total_amount, subtotal_amount, cost_amount,
         profit_margin, supplier, supplier_tracking_number, fulfillment_status, payment_status, currency
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'Auto-Fulfilled',$12,'processing','pending',$13)
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'Auto-Fulfilled',$13,'processing','pending',$14)
       ON CONFLICT DO NOTHING
     `, [
       orderNumber,
@@ -421,35 +432,70 @@ router.post('/checkout', async (req, res) => {
       customer.address || null,
       city, state,
       JSON.stringify(items),
-      totalDollars, costDollars, profitDollars,
+      subtotalDollars, subtotalDollars, costDollars,
+      profitDollars,
       'ZD' + Math.floor(1000000 + Math.random() * 9000000) + 'US',
-      currency
-    ]).catch(() => {}); // don't block if schema mismatch
+      curUpper
+    ]).catch(err => console.warn('[BUYWISH DB ORDER SAVE WARN]:', err.message));
 
-    // Stripe checkout session
+    // Stripe checkout session with Payments + Stripe Tax
     const stripe = getStripe();
     if (stripe) {
       const origin = req.headers.origin || req.headers['x-forwarded-host'] || 'https://www.buywishonline.com';
       const baseUrl = origin.startsWith('http') ? origin : `https://${origin}`;
 
-      const session = await stripe.checkout.sessions.create({
+      const sessionPayload = {
         mode: 'payment',
         customer_email: customer.email,
         line_items: lineItems,
-        currency: currency.toLowerCase(),
-        success_url: `${baseUrl}/?order_success=${orderNumber}`,
+        currency: curUpper.toLowerCase(),
+        success_url: `${baseUrl}/?order_success=${orderNumber}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/?canceled=1`,
-        metadata: { order_number: orderNumber, customer_name: customer.name || '' },
-        shipping_address_collection: { allowed_countries: ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE'] },
+        metadata: {
+          order_number: orderNumber,
+          customer_name: customer.name || '',
+          customer_phone: customer.phone || '',
+          source: 'buywishonline'
+        },
+        shipping_address_collection: {
+          allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'IE', 'AT', 'CH', 'SE', 'NO', 'DK', 'NZ']
+        },
+        billing_address_collection: 'auto',
+        phone_number_collection: { enabled: true },
+        tax_id_collection: { enabled: true },
+        allow_promotion_codes: true,
         payment_intent_data: {
           metadata: { order_number: orderNumber, source: 'buywishonline' }
         }
-      });
+      };
 
-      return res.json({ ok: true, url: session.url, order_number: orderNumber });
+      let session;
+      try {
+        // Attempt with Stripe Tax (automatic tax calculation enabled)
+        session = await stripe.checkout.sessions.create({
+          ...sessionPayload,
+          automatic_tax: { enabled: true }
+        });
+      } catch (taxErr) {
+        if (taxErr.message && (taxErr.message.includes('tax') || taxErr.message.includes('head office'))) {
+          console.warn('[BUYWISH STRIPE TAX]: Stripe Tax head office address not configured in Stripe dashboard. Falling back gracefully to standard checkout:', taxErr.message);
+          session = await stripe.checkout.sessions.create(sessionPayload);
+        } else {
+          throw taxErr;
+        }
+      }
+
+      // Record Stripe Session ID in DB
+      await pool.query(`
+        UPDATE ecommerce_orders
+        SET stripe_session_id = $1
+        WHERE upper(order_number) = upper($2)
+      `, [session.id, orderNumber]).catch(() => {});
+
+      return res.json({ ok: true, url: session.url, order_number: orderNumber, session_id: session.id });
     }
 
-    // No Stripe — simulated success
+    // Direct simulated success if test mode
     res.json({
       ok: true,
       simulated: true,
@@ -459,6 +505,61 @@ router.post('/checkout', async (req, res) => {
   } catch (err) {
     console.error('[BUYWISH CHECKOUT ERROR]:', err.message);
     res.status(500).json({ error: err.message || 'Could not process order.' });
+  }
+});
+
+// ============================================================
+// GET /api/buywish/verify-session — Verify Stripe Session & Confirm Payment
+// ============================================================
+router.get('/verify-session', async (req, res) => {
+  const { session_id, order_number } = req.query;
+  if (!session_id) return res.status(400).json({ error: 'session_id is required' });
+
+  const stripe = getStripe();
+  if (!stripe) return res.status(500).json({ error: 'Stripe is not configured' });
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(session_id, {
+      expand: ['payment_intent', 'line_items']
+    });
+
+    const isPaid = session.payment_status === 'paid';
+    const orderNum = order_number || session.metadata?.order_number;
+    const taxAmount = (session.total_details?.amount_tax || 0) / 100;
+    const totalAmount = (session.amount_total || 0) / 100;
+    const subtotalAmount = (session.amount_subtotal || 0) / 100;
+    const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
+
+    if (isPaid && orderNum) {
+      await pool.query(`
+        UPDATE ecommerce_orders
+        SET payment_status = 'paid',
+            fulfillment_status = 'processing',
+            stripe_session_id = $1,
+            stripe_payment_intent = $2,
+            tax_amount = $3,
+            total_amount = $4,
+            subtotal_amount = $5,
+            updated_at = NOW()
+        WHERE upper(order_number) = upper($6)
+      `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNum]).catch(() => {});
+    }
+
+    res.json({
+      ok: true,
+      paid: isPaid,
+      order_number: orderNum,
+      amount_total: totalAmount,
+      amount_subtotal: subtotalAmount,
+      tax_amount: taxAmount,
+      currency: session.currency?.toUpperCase(),
+      customer_email: session.customer_details?.email || session.customer_email,
+      customer_name: session.customer_details?.name || session.metadata?.customer_name,
+      shipping: session.shipping_details
+    });
+  } catch (err) {
+    console.error('[BUYWISH VERIFY SESSION ERROR]:', err.message);
+    res.status(500).json({ error: 'Could not verify checkout session' });
   }
 });
 
@@ -532,4 +633,63 @@ router.post('/cache/clear', (req, res) => {
   res.json({ ok: true, message: 'Product cache cleared. Next request will fetch fresh from Zendrop.' });
 });
 
+// ============================================================
+// Stripe Webhook Handler for BuyWishOnline
+// ============================================================
+async function handleBuyWishWebhook(req, res) {
+  const sig = req.headers['stripe-signature'];
+  const webhookSecret = process.env.BUYWISH_STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+  const stripe = getStripe();
+
+  if (!stripe) return res.status(400).send('Stripe not configured');
+
+  let event;
+  try {
+    if (webhookSecret && sig) {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } else {
+      event = typeof req.body === 'string' ? JSON.parse(req.body) : (Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString('utf8')) : req.body);
+    }
+  } catch (err) {
+    console.error('[BUYWISH WEBHOOK SIGNATURE ERROR]:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const orderNumber = session.metadata?.order_number;
+      const taxAmount = (session.total_details?.amount_tax || 0) / 100;
+      const totalAmount = (session.amount_total || 0) / 100;
+      const subtotalAmount = (session.amount_subtotal || 0) / 100;
+      const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
+
+      if (orderNumber) {
+        await pool.query(`
+          UPDATE ecommerce_orders
+          SET payment_status = 'paid',
+              fulfillment_status = 'processing',
+              stripe_session_id = $1,
+              stripe_payment_intent = $2,
+              tax_amount = $3,
+              total_amount = $4,
+              subtotal_amount = $5,
+              updated_at = NOW()
+          WHERE upper(order_number) = upper($6)
+        `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNumber]).catch(() => {});
+
+        console.log(`[BUYWISH ORDER PAID VIA WEBHOOK]: Order ${orderNumber} paid ($${totalAmount}, Tax: $${taxAmount})`);
+      }
+    }
+
+    res.json({ received: true });
+  } catch (e) {
+    console.error('[BUYWISH WEBHOOK PROCESS ERROR]:', e.message);
+    res.status(500).json({ error: 'Webhook processing error' });
+  }
+}
+
+router.handleBuyWishWebhook = handleBuyWishWebhook;
 module.exports = router;
+module.exports.handleBuyWishWebhook = handleBuyWishWebhook;
+

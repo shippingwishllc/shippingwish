@@ -9,6 +9,7 @@ const { buildTemplate, COMPANY } = require('./utils/email-templates');
 const { ensureGrowthSchema } = require('./utils/ensure-growth-schema');
 const { purgeExpiredTrash } = require('./utils/trash');
 const { webhookHandler } = require('./routes/billing');
+const { handleBuyWishWebhook } = require('./routes/buywish');
 const { requireAuth } = require('./middleware/auth');
 const { requireCarrierSubscription } = require('./middleware/subscription');
 
@@ -58,6 +59,11 @@ app.post(
   webhookHandler
 );
 app.post('/api/invoices/stripe-webhook', express.raw({ type: 'application/json' }), webhookHandler);
+app.post(
+  ['/api/buywish/stripe-webhook', '/api/buywish/webhook'],
+  express.raw({ type: 'application/json' }),
+  handleBuyWishWebhook
+);
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
