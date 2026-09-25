@@ -29,9 +29,11 @@ async function dispatchBooking(bookingId, actorId = null) {
     );
     const zones = pickupZones(booking);
     const { rows: partners } = await client.query(
-      `SELECT id, display_name, contact_email, platform_commission_rate
+      `SELECT limo_partner_bases.id, limo_partner_bases.display_name,
+              limo_partner_bases.contact_email, limo_partner_bases.platform_commission_rate
        FROM limo_partner_bases
-       WHERE approval_status = 'approved'
+       LEFT JOIN limo_partner_bases referral ON referral.id = $6
+       WHERE limo_partner_bases.approval_status = 'approved'
          AND availability_status = 'available'
          AND availability_updated_at >= now() - interval '10 minutes'
          AND tlc_base_license_expires_at >= $1
@@ -39,17 +41,18 @@ async function dispatchBooking(bookingId, actorId = null) {
          AND max_passengers >= $2
          AND service_areas && $3::text[]
          AND vehicle_classes @> ARRAY[$4]::text[]
-         AND platform_commission_rate IS NOT NULL
-         AND platform_commission_rate + referral_commission_rate <= 1
+         AND limo_partner_bases.platform_commission_rate IS NOT NULL
+         AND limo_partner_bases.platform_commission_rate +
+             CASE WHEN $6 IS NULL THEN 0 ELSE COALESCE(referral.referral_commission_rate, 0) END <= 1
          AND NOT EXISTS (
            SELECT 1 FROM limo_partner_offers prior
            WHERE prior.booking_id = $5 AND prior.partner_base_id = limo_partner_bases.id
              AND (prior.status IN ('declined', 'accepted')
                OR (prior.status = 'offered' AND prior.expires_at > now()))
          )
-       ORDER BY id
+       ORDER BY limo_partner_bases.id
        LIMIT 20`,
-      [booking.pickup_date, booking.passengers || 1, zones, booking.vehicle_id, booking.id]
+      [booking.pickup_date, booking.passengers || 1, zones, booking.vehicle_id, booking.id, booking.referral_base_id || null]
     );
     if (!partners.length) {
       await client.query(
@@ -149,6 +152,7 @@ async function createCommissionLedger(client, bookingId) {
      JOIN limo_partner_offers o ON o.id = b.accepted_offer_id AND o.status = 'accepted'
      LEFT JOIN limo_partner_bases r ON r.id = b.referral_base_id
      WHERE b.id = $1 AND b.status = 'completed' AND b.payment_status = 'paid'
+       AND o.platform_commission_rate + COALESCE(r.referral_commission_rate, 0) <= 1
      ON CONFLICT (booking_id) DO NOTHING
      RETURNING *`,
     [bookingId]
@@ -476,7 +480,13 @@ router.post('/partner/bookings/:id/status', ...partnerGate, async (req, res) => 
     await client.query('UPDATE limo_bookings SET status = $1, updated_at = now() WHERE id = $2', [status, booking.id]);
     await writeStatus(client, booking.id, status, 'Status updated by the accepted operator base.', req.user.id);
     let commission = null;
-    if (status === 'completed') commission = await createCommissionLedger(client, booking.id);
+    if (status === 'completed') {
+      commission = await createCommissionLedger(client, booking.id);
+      if (!commission) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Commission rates are missing or exceed the fare. Contact an administrator before completing this ride.' });
+      }
+    }
     await client.query('COMMIT');
     if (booking.passenger_email) {
       await require('../utils/mailer').sendEmail({
