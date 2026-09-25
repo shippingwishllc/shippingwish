@@ -178,6 +178,8 @@ ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS operator_paid_at TIM
 ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS referral_payout_status TEXT NOT NULL DEFAULT 'not_applicable';
 ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS referral_payout_reference TEXT;
 ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS referral_paid_at TIMESTAMPTZ;
+UPDATE limo_commission_ledger SET operator_payout_status = 'paid', operator_payout_reference = payout_reference, operator_paid_at = paid_at WHERE status = 'paid' AND operator_payout_status = 'earned';
+UPDATE limo_commission_ledger SET referral_payout_status = 'earned' WHERE referral_base_id IS NOT NULL AND referral_payout_status = 'not_applicable' AND status <> 'void';
 CREATE INDEX IF NOT EXISTS idx_limo_partner_offers_queue ON limo_partner_offers(partner_base_id, status, expires_at);
 CREATE INDEX IF NOT EXISTS idx_limo_partner_bases_eligibility ON limo_partner_bases(approval_status, availability_status);
 `;
