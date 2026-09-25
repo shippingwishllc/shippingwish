@@ -9,6 +9,14 @@
   },
   "rewrites": [
     {
+      "source": "/superadmin",
+      "destination": "/superadmin/index.html"
+    },
+    {
+      "source": "/superadmin-login",
+      "destination": "/superadmin-login.html"
+    },
+    {
       "source": "/",
       "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
       "destination": "/loadsnexus/index.html"
@@ -47,6 +55,51 @@
       "source": "/assets/(.*)",
       "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
       "destination": "/loadsnexus/assets/$1"
+    },
+    {
+      "source": "/",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/index.html"
+    },
+    {
+      "source": "/book",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/book.html"
+    },
+    {
+      "source": "/track",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/track.html"
+    },
+    {
+      "source": "/login",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/login.html"
+    },
+    {
+      "source": "/images/(.*)",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/images/$1"
+    },
+    {
+      "source": "/css/(.*)",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/css/$1"
+    },
+    {
+      "source": "/js/(.*)",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/js/$1"
+    },
+    {
+      "source": "/",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/buywishonline/index.html"
+    },
+    {
+      "source": "/index",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/buywishonline/index.html"
     },
     {
       "source": "/api/(.*)",

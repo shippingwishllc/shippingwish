@@ -295,12 +295,17 @@ function formatReplyFromAddress(toEmail) {
   return `${name} <${addr}>`;
 }
 
+async function sendEmail({ to, subject, html, text, from }) {
+  return sendBrandedEmail({ to, subject, html, text, from: from || mailFrom() });
+}
+
 module.exports = {
   getResend,
   mailFrom,
   replyToAddress,
   isUnsubscribed,
   sendBrandedEmail,
+  sendEmail,
   fetchReceivedEmail,
   fetchReceivedAttachments,
   formatReplyFromAddress,

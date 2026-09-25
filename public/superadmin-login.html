@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuperAdmin Executive Gateway — 2FA Security — Shipping Wish LLC</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #070b14;
+      --card-bg: rgba(15, 23, 42, 0.85);
+      --card-border: rgba(245, 158, 11, 0.25);
+      --amber-glow: #f59e0b;
+      --amber-light: #fbbf24;
+      --blue-accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow-x: hidden;
+      padding: 24px;
+    }
+
+    /* Ambient background grid and glow */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-radial {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 25%, rgba(245, 158, 11, 0.08) 0%, transparent 60%),
+                  radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .login-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7),
+                  0 0 30px rgba(245, 158, 11, 0.08);
+      padding: 40px 36px;
+      overflow: hidden;
+    }
+
+    .container-highlight {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #f59e0b, #3b82f6, #f59e0b);
+      background-size: 200% 100%;
+      animation: pulseGradient 4s linear infinite;
+    }
+
+    @keyframes pulseGradient {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--amber-light);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+    }
+
+    .header-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--amber-glow);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--amber-glow);
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-title span.gold {
+      color: var(--amber-light);
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+
+    .alert-box {
+      display: none;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 20px;
+      border: 1px solid transparent;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .alert-box.error {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+    }
+
+    .alert-box.success {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: #86efac;
+    }
+
+    .alert-box.info {
+      background: rgba(59, 130, 246, 0.12);
+      border-color: rgba(59, 130, 246, 0.35);
+      color: #93c5fd;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #ffffff;
+      padding: 13px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .form-input:focus {
+      border-color: var(--amber-glow);
+      background: rgba(30, 41, 59, 0.95);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 4px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #070b14;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+      margin-top: 10px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Step 2: 2FA Screen */
+    .step-2fa {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .otp-display-group {
+      margin: 24px 0;
+      text-align: center;
+    }
+
+    .otp-input-single {
+      width: 100%;
+      background: rgba(30, 41, 59, 0.85);
+      border: 2px solid var(--amber-glow);
+      color: var(--amber-light);
+      padding: 16px 20px;
+      border-radius: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 32px;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 12px;
+      outline: none;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+      transition: all 0.2s ease;
+    }
+
+    .otp-input-single:focus {
+      border-color: #fbbf24;
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);
+    }
+
+    .otp-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .timer-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--amber-light);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(245, 158, 11, 0.1);
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+
+    .resend-btn {
+      background: none;
+      border: none;
+      color: var(--blue-accent);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 4px;
+    }
+
+    .resend-btn:disabled {
+      color: #64748b;
+      cursor: not-allowed;
+      text-decoration: none;
+    }
+
+    .security-notice {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(148, 163, 184, 0.12);
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .security-notice a {
+      color: var(--amber-glow);
+      text-decoration: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="bg-radial"></div>
+
+  <div class="login-container">
+    <div class="container-highlight"></div>
+
+    <!-- Header Badge -->
+    <div class="header-badge">Executive Security Zone</div>
+
+    <div class="brand-title">
+      <span>Command</span>
+      <span class="gold">Center</span>
+    </div>
+    <div class="brand-subtitle">
+      Shipping Wish LLC &bull; LoadsNexus &bull; NYC Limo Wish &bull; BuyWishOnline
+    </div>
+
+    <!-- Feedback alerts -->
+    <div id="alertBox" class="alert-box"></div>
+
+    <!-- STEP 1: CREDENTIALS AUTHENTICATION -->
+    <form id="step1Form" autocomplete="on">
+      <div class="form-group">
+        <label class="form-label" for="superEmail">Executive Email</label>
+        <div class="input-wrapper">
+          <input 
+            type="email" 
+            id="superEmail" 
+            class="form-input" 
+            value="ahsan_me_9@yahoo.com" 
+            required 
+            autocomplete="username"
+            placeholder="Executive account email"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="superPassword">Security Password</label>
+        <div class="input-wrapper">
+          <input 
+            type="password" 
+            id="superPassword" 
+            class="form-input" 
+            required 
+            autocomplete="current-password"
+            placeholder="••••••••••••••••"
+          >
+          <button type="button" class="password-toggle" id="togglePassBtn" title="Toggle password visibility">👁️</button>
+        </div>
+      </div>
+
+      <button type="submit" id="step1Btn" class="btn-submit">
+        <span>Verify Credentials &amp; Request OTP</span>
+        <span>&rarr;</span>
+      </button>
+    </form>
+
+    <!-- STEP 2: 2FA OTP / TOTP SCREEN -->
+    <div id="step2Container" class="step-2fa">
+      <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 10px; padding: 12px 14px; margin-bottom: 20px;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--amber-light); margin-bottom: 4px;">
+          🔐 Two-Factor Authentication Required
+        </div>
+        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.45;">
+          A 6-digit one-time passcode was dispatched to <strong id="maskedEmailSpan" style="color:#ffffff;">ahsan_me_9@yahoo.com</strong>.
+          Enter the code below (or your Google Authenticator token) to proceed.
+        </div>
+      </div>
+
+      <form id="step2Form" autocomplete="off">
+        <div class="otp-display-group">
+          <label class="form-label" for="otpInput" style="text-align:center;">6-Digit Authorization Code</label>
+          <input 
+            type="text" 
+            id="otpInput" 
+            class="otp-input-single" 
+            maxlength="6" 
+            pattern="[0-9]*" 
+            inputmode="numeric" 
+            placeholder="000000" 
+            autofocus
+            required
+          >
+          <div class="otp-meta">
+            <span>Expires in: <span id="timerPill" class="timer-pill">10:00</span></span>
+            <button type="button" id="resendBtn" class="resend-btn">Resend OTP</button>
+          </div>
+        </div>
+
+        <button type="submit" id="step2Btn" class="btn-submit">
+          <span>Authorize Executive Session</span>
+          <span>&rarr;</span>
+        </button>
+
+        <div style="text-align: center; margin-top: 16px;">
+          <button type="button" id="backToStep1" style="background:none; border:none; color: #94a3b8; font-size: 12px; cursor: pointer;">
+            &larr; Use a different account
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="security-notice">
+      🛡️ 256-Bit Encrypted Hardware Session &bull; Single-Admin Authorization<br>
+      Automated IP logging &amp; brute-force protection active.
+    </div>
+  </div>
+
+  <script>
+    const alertBox = document.getElementById('alertBox');
+    const step1Form = document.getElementById('step1Form');
+    const step1Btn = document.getElementById('step1Btn');
+    const step2Container = document.getElementById('step2Container');
+    const step2Form = document.getElementById('step2Form');
+    const step2Btn = document.getElementById('step2Btn');
+    const otpInput = document.getElementById('otpInput');
+    const timerPill = document.getElementById('timerPill');
+    const resendBtn = document.getElementById('resendBtn');
+    const maskedEmailSpan = document.getElementById('maskedEmailSpan');
+    const backToStep1 = document.getElementById('backToStep1');
+    const superPassword = document.getElementById('superPassword');
+    const togglePassBtn = document.getElementById('togglePassBtn');
+
+    let currentTempToken = null;
+    let countdownInterval = null;
+    let timeLeftSeconds = 600; // 10 minutes
+    let resendCooldown = 60;
+    let resendInterval = null;
+
+    // Toggle password visibility
+    togglePassBtn.addEventListener('click', () => {
+      const isPass = superPassword.type === 'password';
+      superPassword.type = isPass ? 'text' : 'password';
+      togglePassBtn.textContent = isPass ? '🔒' : '👁️';
+    });
+
+    function showAlert(msg, type = 'error') {
+      alertBox.textContent = msg;
+      alertBox.className = `alert-box ${type}`;
+      alertBox.style.display = 'block';
+    }
+
+    function hideAlert() {
+      alertBox.style.display = 'none';
+    }
+
+    function startOtpTimer() {
+      clearInterval(countdownInterval);
+      timeLeftSeconds = 600;
+      updateTimerDisplay();
+
+      countdownInterval = setInterval(() => {
+        timeLeftSeconds--;
+        if (timeLeftSeconds <= 0) {
+          clearInterval(countdownInterval);
+          showAlert('2FA code has expired. Please request a new code.', 'error');
+          step2Btn.disabled = true;
+        }
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const m = Math.floor(timeLeftSeconds / 60);
+      const s = timeLeftSeconds % 60;
+      timerPill.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function startResendCooldown() {
+      resendBtn.disabled = true;
+      let left = 60;
+      resendBtn.textContent = `Resend in ${left}s`;
+      clearInterval(resendInterval);
+      resendInterval = setInterval(() => {
+        left--;
+        if (left <= 0) {
+          clearInterval(resendInterval);
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend OTP';
+        } else {
+          resendBtn.textContent = `Resend in ${left}s`;
+        }
+      }, 1000);
+    }
+
+    // Step 1: Submit Credentials
+    step1Form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+      step1Btn.disabled = true;
+      step1Btn.innerHTML = '<span>Verifying Credentials...</span>';
+
+      const email = document.getElementById('superEmail').value.trim();
+      const password = superPassword.value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          showAlert(data.error || 'Invalid executive credentials. Access denied.', 'error');
+          step1Btn.disabled = false;
+          step1Btn.innerHTML = '<span>Verify Credentials &amp; Request OTP</span> <span>&rarr;</span>';
+          return;
+        }
+
+        if (data.requires_2fa) {
+          currentTempToken = data.temp_token;
+          maskedEmailSpan.textContent = data.email_masked || email;
+          
+          step1Form.style.display = 'none';
+          step2Container.style.display = 'block';
+          showAlert('Security OTP dispatched to ' + (data.email_masked || email) + '. Enter code below.', 'info');
+          otpInput.value = '';
+          otpInput.focus();
+          startOtpTimer();
+          startResendCooldown();
+        } else if (data.user && (data.user.role === 'super_admin' || data.user.is_super_admin)) {
+          // Direct login (if 2FA was bypass - standard redirects to superadmin)
+          showAlert('Authentication confirmed. Entering Command Center...', 'success');
+          setTimeout(() => {
+            window.location.href = '/superadmin';
+          }, 600);
+        } else {
+          showAlert('Access restricted: SuperAdmin privileges required.', 'error');
+          step1Btn.disabled = false;
+          step1Btn.innerHTML = '<span>Verify Credentials &amp; Request OTP</span> <span>&rarr;</span>';
+        }
+      } catch (err) {
+        showAlert('Network communication error. Please try again.', 'error');
+        step1Btn.disabled = false;
+        step1Btn.innerHTML = '<span>Verify Credentials &amp; Request OTP</span> <span>&rarr;</span>';
+      }
+    });
+
+    // Step 2: Submit OTP / TOTP
+    step2Form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+      const otp = otpInput.value.trim().replace(/\D/g, '');
+
+      if (otp.length !== 6) {
+        showAlert('Please enter the full 6-digit code.', 'error');
+        otpInput.focus();
+        return;
+      }
+
+      step2Btn.disabled = true;
+      step2Btn.innerHTML = '<span>Authorizing Session...</span>';
+
+      try {
+        const res = await fetch('/api/auth/2fa/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            temp_token: currentTempToken,
+            otp: otp
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          showAlert(data.error || 'Incorrect or expired verification code.', 'error');
+          step2Btn.disabled = false;
+          step2Btn.innerHTML = '<span>Authorize Executive Session</span> <span>&rarr;</span>';
+          otpInput.select();
+          return;
+        }
+
+        showAlert('2FA Verified! Launching Executive Command Center...', 'success');
+        clearInterval(countdownInterval);
+        clearInterval(resendInterval);
+
+        setTimeout(() => {
+          window.location.href = data.redirect || '/superadmin';
+        }, 700);
+
+      } catch (err) {
+        showAlert('Network error verifying 2FA token. Please try again.', 'error');
+        step2Btn.disabled = false;
+        step2Btn.innerHTML = '<span>Authorize Executive Session</span> <span>&rarr;</span>';
+      }
+    });
+
+    // Resend OTP
+    resendBtn.addEventListener('click', async () => {
+      if (!currentTempToken || resendBtn.disabled) return;
+      hideAlert();
+
+      try {
+        const res = await fetch('/api/auth/2fa/resend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ temp_token: currentTempToken })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showAlert(data.error || 'Could not resend OTP right now.', 'error');
+        } else {
+          showAlert('A fresh 6-digit code has been sent to your email.', 'info');
+          startOtpTimer();
+          startResendCooldown();
+          step2Btn.disabled = false;
+        }
+      } catch (err) {
+        showAlert('Network error requesting new OTP code.', 'error');
+      }
+    });
+
+    // Back to Step 1
+    backToStep1.addEventListener('click', () => {
+      clearInterval(countdownInterval);
+      clearInterval(resendInterval);
+      currentTempToken = null;
+      step2Container.style.display = 'none';
+      step1Form.style.display = 'block';
+      step1Btn.disabled = false;
+      step1Btn.innerHTML = '<span>Verify Credentials &amp; Request OTP</span> <span>&rarr;</span>';
+      hideAlert();
+    });
+
+    // Auto-advance or sanitize OTP typing
+    otpInput.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+      if (e.target.value.length === 6) {
+        step2Btn.focus();
+      }
+    });
+  </script>
+</body>
+</html>

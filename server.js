@@ -77,21 +77,67 @@ app.use((req, res, next) => {
   next();
 });
 
-// Host-based routing for LoadsNexus domain (loadsnexus.com)
+// Host-based routing for 4 Brands: LoadsNexus, NYC Limo Wish, BuyWishOnline, ShippingWish
 app.use((req, res, next) => {
   const host = (req.headers.host || '').toLowerCase();
+  const p = req.path;
+
+  // Global SuperAdmin routes accessible from any brand domain
+  if (p === '/superadmin' || p === '/superadmin/' || p === '/superadmin/index.html') {
+    return res.sendFile(path.join(__dirname, 'public', 'superadmin', 'index.html'));
+  }
+  if (p === '/superadmin-login' || p === '/superadmin-login.html') {
+    return res.sendFile(path.join(__dirname, 'public', 'superadmin-login.html'));
+  }
+
+  // 1. LoadsNexus Domain (loadsnexus.com)
   if (host.includes('loadsnexus')) {
-    if (req.path.startsWith('/api') || req.path.startsWith('/loadsnexus') || req.path.startsWith('/uploads')) {
+    if (p.startsWith('/api') || p.startsWith('/loadsnexus') || p.startsWith('/uploads')) {
       return next();
     }
-    if (req.path.startsWith('/assets/')) {
-      return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', req.path));
+    if (p.startsWith('/assets/')) {
+      return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', p));
     }
     const lnRoutes = ['/', '/index', '/board', '/loads', '/post-load', '/login', '/checkout', '/pricing'];
-    if (lnRoutes.includes(req.path)) {
+    if (lnRoutes.includes(p)) {
       return res.sendFile(path.join(__dirname, 'public', 'loadsnexus', 'index.html'));
     }
   }
+
+  // 2. NYC Limo Wish Domain (nyclimowish.com)
+  if (host.includes('nyclimo')) {
+    if (p.startsWith('/api') || p.startsWith('/uploads')) {
+      return next();
+    }
+    if (p === '/' || p === '/index' || p === '/index.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'index.html'));
+    }
+    if (p === '/book' || p === '/book.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'book.html'));
+    }
+    if (p === '/track' || p === '/track.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'track.html'));
+    }
+    const filePath = path.join(__dirname, 'public', 'nyclimowish', p);
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      return res.sendFile(filePath);
+    }
+  }
+
+  // 3. BuyWishOnline Domain (buywishonline.com)
+  if (host.includes('buywish')) {
+    if (p.startsWith('/api') || p.startsWith('/uploads')) {
+      return next();
+    }
+    if (p === '/' || p === '/index' || p === '/index.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'index.html'));
+    }
+    const filePath = path.join(__dirname, 'public', 'buywishonline', p);
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      return res.sendFile(filePath);
+    }
+  }
+
   next();
 });
 
@@ -168,6 +214,9 @@ app.use('/api/ai-calling', require('./routes/ai-calling'));                 // A
 app.use('/api/chat', require('./routes/ai-chat'));                             // 24/7 Interactive AI Support Chatbot (Shipping Wish & LoadsNexus)
 app.use('/api', require('./routes/broker-team'));                           // Multi-Seat Broker Team Management & Sub-Users CRUD
 app.use('/api', require('./routes/broker-api'));                            // Broker API Key Management & Partner REST API v1 (/api/v1/loads)
+app.use('/api/superadmin', require('./routes/superadmin'));                 // Executive Command Center & Multi-Brand Master Control API
+app.use('/api/nyclimo', require('./routes/nyclimo'));                       // NYC Limo Wish Booking, Chauffeur & Luxury Rides API
+app.use('/api/buywish', require('./routes/buywish'));                       // BuyWishOnline E-Commerce, Zendrop Sync & AI Hunter API
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

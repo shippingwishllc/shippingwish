@@ -7,6 +7,7 @@ const { requireAuth, requireRole, requireSuperAdmin, optionalAuth, extractToken,
 const { sendBrandedEmail } = require('../utils/mailer');
 const { COMPANY, APP_URL, escapeHtml, buildTemplate } = require('../utils/email-templates');
 const { getCarrierAccess, TRIAL_DAYS, isCarrierRole } = require('../middleware/subscription');
+const { verifyTotp, generateBase32Secret, getOtpAuthUrl } = require('../utils/totp');
 
 const router = express.Router();
 
@@ -134,6 +135,7 @@ async function registerActiveSession(user, req) {
 }
 
 function signToken(user, sessionId = null) {
+  const isSuper = user.role === 'super_admin' || user.is_super_admin === true || (user.email && user.email.toLowerCase() === 'ahsan_me_9@yahoo.com');
   const payload = {
     id: user.id,
     name: user.name,
@@ -141,7 +143,8 @@ function signToken(user, sessionId = null) {
     role: user.role,
     company_name: user.company_name,
     organization_id: user.organization_id || null,
-    carrier_id: user.role === 'carrier' || user.role === 'carrier_admin' ? user.id : (user.organization_id || null)
+    carrier_id: user.role === 'carrier' || user.role === 'carrier_admin' ? user.id : (user.organization_id || null),
+    is_super_admin: isSuper
   };
   if (sessionId) {
     payload.session_id = sessionId;
@@ -632,7 +635,68 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Invalid email or password.', code: 'PASSWORD_MISMATCH' });
-    
+
+    // Two-Factor Authentication (2FA) for SuperAdmin and protected accounts
+    if (user.role === 'super_admin' || user.two_factor_enabled || user.is_super_admin || (user.email && user.email.toLowerCase() === 'ahsan_me_9@yahoo.com')) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpHash = await bcrypt.hash(otp, 10);
+      const tempToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      await pool.query(
+        `INSERT INTO admin_2fa_pending (user_id, email, otp_hash, temp_token, expires_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [user.id, user.email, otpHash, tempToken, expiresAt]
+      );
+
+      // Email OTP to ahsan_me_9@yahoo.com
+      try {
+        await sendBrandedEmail({
+          to: user.email,
+          from: NOREPLY_FROM,
+          subject: `🔐 SuperAdmin Login 2FA Code: ${otp}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #1e293b; border-radius: 12px; background: #0f172a; color: #f8fafc;">
+              <div style="border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 20px;">
+                <span style="color: #f59e0b; font-weight: 800; font-size: 20px; letter-spacing: 0.05em;">EXECUTIVE COMMAND CENTER</span>
+                <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Two-Factor Authentication (2FA) Security</div>
+              </div>
+              <h2 style="color: #ffffff; margin-top: 0; font-size: 18px;">SuperAdmin Access Verification</h2>
+              <p style="color: #cbd5e1; font-size: 14px; line-height: 1.5;">
+                Hello <strong>${escapeHtml(user.name || user.email)}</strong>,<br>
+                A login request was initiated for your SuperAdmin Executive Account. Enter the 6-digit verification code below to authorize this session:
+              </p>
+              <div style="text-align: center; margin: 28px 0;">
+                <span style="display: inline-block; font-size: 34px; font-weight: 900; letter-spacing: 8px; color: #fbbf24; background: #1e293b; padding: 14px 32px; border-radius: 10px; border: 2px solid #f59e0b;">
+                  ${otp}
+                </span>
+              </div>
+              <p style="color: #94a3b8; font-size: 13px; line-height: 1.5;">
+                ⏱️ This code is valid for <strong>10 minutes</strong>.<br>
+                📍 <strong>IP Address:</strong> ${escapeHtml(clientIp)}<br>
+                🛡️ <em>If you did not request this login, change your password immediately.</em>
+              </p>
+            </div>
+          `,
+          text: `SuperAdmin 2FA Security Code: ${otp}. Valid for 10 minutes. IP: ${clientIp}`,
+          emailType: 'admin_2fa_otp',
+          templateKey: 'security_alert',
+          transactional: true
+        });
+      } catch (mailErr) {
+        console.error('[AUTH 2FA] Error sending 2FA OTP:', mailErr.message);
+      }
+
+      return res.json({
+        ok: true,
+        requires_2fa: true,
+        temp_token: tempToken,
+        email_masked: user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+        has_totp: !!user.two_factor_secret,
+        message: `Security code sent to ${user.email}. Enter the 6-digit OTP to proceed.`
+      });
+    }
+
     // Check carrier subscription & cancellation state
     if (isCarrierRole(user.role)) {
       const access = await getCarrierAccess(user.id, user.email);
@@ -724,6 +788,180 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: err.message || 'Could not sign in right now.' });
+  }
+});
+
+// -------------------------------------------------------------
+// Two-Factor Authentication (2FA) Verification & Management
+// -------------------------------------------------------------
+router.post('/auth/2fa/verify', rateLimit(10, 60000), async (req, res) => {
+  const { temp_token, otp } = req.body;
+  if (!temp_token || !otp) {
+    return res.status(400).json({ error: 'Session token and 6-digit OTP code are required.' });
+  }
+
+  const cleanOtp = String(otp).trim().replace(/\s/g, '');
+
+  try {
+    const q = await pool.query(
+      `SELECT p.*, u.name, u.email, u.role, u.company_name, u.phone, u.mc_number, u.weekly_plan, u.two_factor_secret, u.is_super_admin
+       FROM admin_2fa_pending p
+       JOIN users u ON u.id = p.user_id
+       WHERE p.temp_token = $1`,
+      [temp_token]
+    );
+
+    if (q.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired 2FA session. Please log in again.' });
+    }
+
+    const row = q.rows[0];
+
+    if (new Date(row.expires_at) < new Date()) {
+      await pool.query('DELETE FROM admin_2fa_pending WHERE id = $1', [row.id]);
+      return res.status(400).json({ error: '2FA code has expired. Please log in again to receive a fresh code.' });
+    }
+
+    if (row.attempts >= 5) {
+      await pool.query('DELETE FROM admin_2fa_pending WHERE id = $1', [row.id]);
+      return res.status(429).json({ error: 'Too many incorrect attempts. Please log in again.' });
+    }
+
+    // Check Email OTP with bcrypt
+    let otpValid = await bcrypt.compare(cleanOtp, row.otp_hash).catch(() => false);
+
+    // If email OTP didn't match, also check if user entered Google Authenticator TOTP
+    if (!otpValid && row.two_factor_secret) {
+      otpValid = verifyTotp(row.two_factor_secret, cleanOtp);
+    }
+
+    if (!otpValid) {
+      await pool.query('UPDATE admin_2fa_pending SET attempts = attempts + 1 WHERE id = $1', [row.id]);
+      return res.status(400).json({ error: 'Incorrect 2FA code. Please check your email or authenticator app.' });
+    }
+
+    // Clean up pending row
+    await pool.query('DELETE FROM admin_2fa_pending WHERE id = $1', [row.id]);
+
+    const user = {
+      id: row.user_id,
+      name: row.name,
+      email: row.email,
+      role: row.role,
+      company_name: row.company_name,
+      phone: row.phone,
+      mc_number: row.mc_number,
+      weekly_plan: row.weekly_plan,
+      is_super_admin: true
+    };
+
+    const sessionInfo = await registerActiveSession(user, req);
+    const token = signToken(user, sessionInfo.sessionId);
+    setAuthCookie(res, token);
+
+    return res.json({
+      ok: true,
+      token,
+      user,
+      redirect: '/superadmin',
+      message: 'SuperAdmin 2FA verification successful. Access granted.'
+    });
+  } catch (err) {
+    console.error('[AUTH 2FA verify error]:', err);
+    return res.status(500).json({ error: 'Could not verify 2FA code right now.' });
+  }
+});
+
+router.post('/auth/2fa/resend', rateLimit(3, 60000), async (req, res) => {
+  const { temp_token } = req.body;
+  if (!temp_token) return res.status(400).json({ error: 'Session token is required.' });
+
+  try {
+    const q = await pool.query(
+      `SELECT p.id, p.user_id, u.email, u.name
+       FROM admin_2fa_pending p
+       JOIN users u ON u.id = p.user_id
+       WHERE p.temp_token = $1`,
+      [temp_token]
+    );
+
+    if (q.rows.length === 0) {
+      return res.status(400).json({ error: 'Session not found. Please log in again.' });
+    }
+
+    const row = q.rows[0];
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await pool.query(
+      `UPDATE admin_2fa_pending SET otp_hash = $1, attempts = 0, expires_at = $2 WHERE id = $3`,
+      [otpHash, expiresAt, row.id]
+    );
+
+    const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').split(',')[0].trim();
+
+    await sendBrandedEmail({
+      to: row.email,
+      from: NOREPLY_FROM,
+      subject: `🔐 Resent: SuperAdmin 2FA Security Code: ${otp}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #1e293b; border-radius: 12px; background: #0f172a; color: #f8fafc;">
+          <h2 style="color: #ffffff; margin-top: 0; font-size: 18px;">SuperAdmin 2FA Security Code</h2>
+          <p style="color: #cbd5e1; font-size: 14px;">Here is your new 6-digit SuperAdmin verification code:</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <span style="display: inline-block; font-size: 34px; font-weight: 900; letter-spacing: 8px; color: #fbbf24; background: #1e293b; padding: 12px 28px; border-radius: 10px; border: 2px solid #f59e0b;">
+              ${otp}
+            </span>
+          </div>
+          <p style="color: #94a3b8; font-size: 12px;">Valid for 10 minutes. IP: ${escapeHtml(clientIp)}</p>
+        </div>
+      `,
+      text: `Your new SuperAdmin 2FA verification code is ${otp}. Valid for 10 minutes.`,
+      emailType: 'admin_2fa_otp',
+      templateKey: 'security_alert',
+      transactional: true
+    });
+
+    res.json({ ok: true, message: `A fresh 2FA code has been sent to ${row.email}` });
+  } catch (err) {
+    console.error('2fa resend error:', err);
+    res.status(500).json({ error: 'Could not resend 2FA code.' });
+  }
+});
+
+// Setup Google Authenticator TOTP
+router.get('/auth/2fa/totp-setup', requireAuth, requireSuperAdmin, async (req, res) => {
+  try {
+    const secret = generateBase32Secret(20);
+    const otpauthUrl = getOtpAuthUrl(secret, req.user.email, 'ShippingWish Multi-Brand');
+    res.json({
+      ok: true,
+      secret,
+      otpauthUrl,
+      email: req.user.email
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not generate TOTP setup.' });
+  }
+});
+
+// Enable Google Authenticator TOTP
+router.post('/auth/2fa/totp-enable', requireAuth, requireSuperAdmin, async (req, res) => {
+  const { secret, code } = req.body;
+  if (!secret || !code) return res.status(400).json({ error: 'Secret and verification code are required.' });
+
+  const isValid = verifyTotp(secret, code);
+  if (!isValid) return res.status(400).json({ error: 'Invalid authenticator code. Check your app and try again.' });
+
+  try {
+    await pool.query(
+      `UPDATE users SET two_factor_secret = $1, two_factor_enabled = true WHERE id = $2`,
+      [secret, req.user.id]
+    );
+    res.json({ ok: true, message: 'Google Authenticator 2FA has been successfully enabled on your account!' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not save authenticator secret.' });
   }
 });
 

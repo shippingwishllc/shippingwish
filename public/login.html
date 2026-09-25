@@ -469,6 +469,15 @@
         alertBox.style.display = 'block';
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In →';
+      } else if (data.requires_2fa) {
+        // SuperAdmin Two-Factor Authentication required
+        submitBtn.textContent = '2FA Required — Transferring...';
+        alertBox.textContent = 'Two-Factor Authentication required. Redirecting to Executive Gateway...';
+        alertBox.className = 'form-alert info';
+        alertBox.style.display = 'block';
+        setTimeout(() => {
+          window.location.href = '/superadmin-login';
+        }, 500);
       } else {
         const role = data.user?.role || 'carrier';
         submitBtn.textContent = 'Redirecting...';

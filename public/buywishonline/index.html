@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BuyWishOnline™ — Curated Smart Tech & Trending Essentials</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --accent: #06b6d4;
+      --dark: #0f172a;
+      --card-bg: #ffffff;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background: #f8fafc; color: var(--dark); line-height: 1.5; }
+
+    /* Top Bar */
+    .announcement-bar {
+      background: linear-gradient(90deg, #4f46e5, #06b6d4);
+      color: #fff;
+      text-align: center;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-logo {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--dark);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-logo span { color: var(--primary); }
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-link { color: #334155; text-decoration: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: color .2s; }
+    .nav-link:hover { color: var(--primary); }
+    .cart-btn {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .2s;
+    }
+    .cart-btn:hover { background: #e2e8f0; }
+
+    /* Hero */
+    .hero {
+      background: radial-gradient(circle at 50% 0%, #ede9fe 0%, #f8fafc 70%);
+      padding: 60px 24px 40px;
+      text-align: center;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #e0e7ff;
+      color: var(--primary);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      color: #0f172a;
+    }
+    .hero p {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    /* Container */
+    .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Products Grid */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 28px;
+    }
+    .product-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform .2s, box-shadow .2s;
+      position: relative;
+    }
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px -10px rgba(0,0,0,0.08);
+    }
+    .product-img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      background: #f1f5f9;
+    }
+    .trend-tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(4px);
+      color: #38bdf8;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    .product-info { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
+    .product-category { font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 4px; }
+    .product-title { font-size: 16px; font-weight: 700; line-height: 1.4; margin-bottom: 8px; color: #1e293b; }
+    .product-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px; flex-grow: 1; }
+    .price-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+    .product-price { font-size: 22px; font-weight: 800; color: #0f172a; }
+    .btn-buy {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      width: 100%;
+      transition: background .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-buy:hover { background: var(--primary-hover); }
+
+    /* Trust Section */
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 60px;
+      padding: 30px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+    .trust-item { text-align: center; }
+    .trust-icon { font-size: 28px; margin-bottom: 8px; }
+    .trust-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; color: #0f172a; }
+    .trust-desc { font-size: 12px; color: var(--text-muted); }
+
+    /* Modal / Drawer */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-card {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 480px;
+      width: 100%;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+    .input-field {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    /* Footer */
+    footer {
+      background: #0f172a;
+      color: #94a3b8;
+      padding: 40px 24px;
+      font-size: 13px;
+      text-align: center;
+      margin-top: 60px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Announcement Bar -->
+  <div class="announcement-bar">
+    ⚡ FREE US TRACKED SHIPPING ON ALL ORDERS &bull; 30-DAY MONEY-BACK GUARANTEE &bull; ZENDROP POWERED
+  </div>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="/" class="brand-logo">
+        BUYWISH<span>ONLINE</span>
+      </a>
+      <div class="nav-links">
+        <a class="nav-link" href="#catalog">Catalog</a>
+        <a class="nav-link" onclick="openTrackModal()">Track Order</a>
+        <button class="cart-btn" onclick="openCartModal()">
+          🛒 Cart (<span id="cartCount">0</span>)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="badge-pill">🔥 Trending Viral Tech &amp; Essentials</div>
+    <h1>Smart Innovation for Everyday Life</h1>
+    <p>Curated viral products sourced directly for peak durability, high performance, and rapid tracked US fulfillment.</p>
+  </section>
+
+  <!-- Products Section -->
+  <main class="container" id="catalog">
+    <div class="section-title">
+      <h2>Handpicked Trending Deals</h2>
+      <span style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Direct Supplier Pricing</span>
+    </div>
+
+    <div class="products-grid" id="productsGrid">
+      <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #64748b;">Loading active products...</div>
+    </div>
+
+    <!-- Trust Badges -->
+    <div class="trust-grid">
+      <div class="trust-item">
+        <div class="trust-icon">📦</div>
+        <div class="trust-title">Free Express Shipping</div>
+        <div class="trust-desc">Real-time tracked delivery across all 50 US States.</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🛡️</div>
+        <div class="trust-title">30-Day Guarantee</div>
+        <div class="trust-desc">Hassle-free refunds &amp; satisfaction guaranteed.</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">⚡</div>
+        <div class="trust-title">Automated Zendrop Sync</div>
+        <div class="trust-desc">Orders routed instantly to US domestic warehouses.</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">💳</div>
+        <div class="trust-title">Stripe 256-Bit SSL</div>
+        <div class="trust-desc">PCI-DSS Level 1 Encrypted Card Checkout.</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Tracking Modal -->
+  <div class="modal-overlay" id="trackModal">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 class="modal-title">Track Your Shipment</h3>
+        <button onclick="closeModal('trackModal')" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button>
+      </div>
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Enter your BWO Order Number (e.g. <strong>BWO-89102</strong>) to view live tracking:</p>
+      <input type="text" id="trackInput" class="input-field" placeholder="BWO-XXXXX">
+      <button class="btn-buy" onclick="trackOrder()">Track Order &rarr;</button>
+      <div id="trackResult" style="margin-top: 16px; font-size: 13px; display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Cart / Checkout Modal -->
+  <div class="modal-overlay" id="cartModal">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 class="modal-title">Your Shopping Cart</h3>
+        <button onclick="closeModal('cartModal')" style="border:none;background:none;font-size:20px;cursor:pointer;">&times;</button>
+      </div>
+      <div id="cartItemsList" style="max-height: 200px; overflow-y: auto; margin-bottom: 16px;"></div>
+      <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 18px; margin-bottom: 20px;">
+        <span>Total:</span>
+        <span id="cartTotalDisplay">$0.00</span>
+      </div>
+      <input type="email" id="checkoutEmail" class="input-field" placeholder="Your Email Address" required>
+      <input type="text" id="checkoutName" class="input-field" placeholder="Full Name" required>
+      <input type="text" id="checkoutPhone" class="input-field" placeholder="Phone Number">
+      <button class="btn-buy" id="checkoutBtn" onclick="processCheckout()">Secure Checkout &rarr;</button>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 BuyWishOnline™. A Shipping Wish LLC Enterprise Company. All Rights Reserved.</p>
+    <p style="margin-top: 8px; font-size: 11px;">Powered by High-Speed Global Logistics &amp; Zendrop US Direct Fulfillment.</p>
+  </footer>
+
+  <script>
+    let cart = [];
+    let products = [];
+
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/buywish/products');
+        const data = await res.json();
+        if (data.ok && data.products) {
+          products = data.products;
+          renderProducts();
+        }
+      } catch (e) {
+        console.error('Products load error:', e);
+      }
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById('productsGrid');
+      if (!products.length) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;">No products available at this moment.</div>';
+        return;
+      }
+      grid.innerHTML = products.map(p => `
+        <div class="product-card">
+          <div class="trend-tag">⚡ ${p.trend_score || 95}% Trending</div>
+          <img class="product-img" src="${p.image_url || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=400&q=80'}" alt="${p.title}">
+          <div class="product-info">
+            <div class="product-category">${p.category || 'Trending Tech'}</div>
+            <h3 class="product-title">${p.title}</h3>
+            <p class="product-desc">${p.description || ''}</p>
+            <div class="price-row">
+              <span class="product-price">$${parseFloat(p.retail_price).toFixed(2)}</span>
+              <span style="font-size: 12px; color: #10b981; font-weight: 700;">In Stock (US Direct)</span>
+            </div>
+            <button class="btn-buy" onclick="addToCart(${p.id})">Add to Cart 🛒</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addToCart(productId) {
+      const p = products.find(x => x.id === productId);
+      if (!p) return;
+      cart.push({ ...p, quantity: 1 });
+      updateCartUi();
+      openCartModal();
+    }
+
+    function updateCartUi() {
+      document.getElementById('cartCount').textContent = cart.length;
+      const list = document.getElementById('cartItemsList');
+      if (!cart.length) {
+        list.innerHTML = '<p style="color:#64748b; font-size: 13px;">Your cart is empty.</p>';
+        document.getElementById('cartTotalDisplay').textContent = '$0.00';
+        return;
+      }
+      let total = 0;
+      list.innerHTML = cart.map((item, idx) => {
+        const itemTotal = parseFloat(item.retail_price);
+        total += itemTotal;
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f1f5f9; font-size:13px;">
+            <div>
+              <strong>${item.title}</strong>
+              <div style="color:#64748b;">$${itemTotal.toFixed(2)}</div>
+            </div>
+            <button onclick="removeFromCart(${idx})" style="border:none;background:none;color:#ef4444;cursor:pointer;font-weight:bold;">&times;</button>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('cartTotalDisplay').textContent = '$' + total.toFixed(2);
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartUi();
+    }
+
+    function openCartModal() {
+      document.getElementById('cartModal').style.display = 'flex';
+    }
+    function openTrackModal() {
+      document.getElementById('trackModal').style.display = 'flex';
+    }
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    async function processCheckout() {
+      const email = document.getElementById('checkoutEmail').value.trim();
+      const name = document.getElementById('checkoutName').value.trim();
+      const phone = document.getElementById('checkoutPhone').value.trim();
+      if (!email || !name) {
+        alert('Please enter your full name and email address.');
+        return;
+      }
+      if (!cart.length) {
+        alert('Your cart is empty.');
+        return;
+      }
+      const btn = document.getElementById('checkoutBtn');
+      btn.disabled = true;
+      btn.textContent = 'Redirecting to Checkout...';
+
+      try {
+        const res = await fetch('/api/buywish/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: cart.map(i => ({ title: i.title, price: i.retail_price, quantity: 1, image_url: i.image_url })),
+            customer: { name, email, phone }
+          })
+        });
+        const data = await res.json();
+        if (data.ok && data.url) {
+          window.location.href = data.url;
+        } else if (data.ok) {
+          alert('Order #' + data.order_number + ' placed successfully! Tracking details emailed.');
+          cart = [];
+          updateCartUi();
+          closeModal('cartModal');
+        } else {
+          alert(data.error || 'Could not start checkout.');
+        }
+      } catch (e) {
+        alert('Checkout error: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Secure Checkout →';
+      }
+    }
+
+    async function trackOrder() {
+      const num = document.getElementById('trackInput').value.trim();
+      const resultDiv = document.getElementById('trackResult');
+      if (!num) return;
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = '<span style="color:#64748b;">Locating shipment...</span>';
+
+      try {
+        const res = await fetch('/api/buywish/orders/track/' + encodeURIComponent(num));
+        const data = await res.json();
+        if (data.ok && data.order) {
+          const o = data.order;
+          resultDiv.innerHTML = `
+            <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0; line-height:1.6;">
+              <div><strong>Order:</strong> ${o.order_number}</div>
+              <div><strong>Status:</strong> <span style="color:#2563eb;font-weight:700;text-transform:uppercase;">${o.fulfillment_status}</span></div>
+              <div><strong>Carrier Tracking:</strong> ${o.supplier_tracking_number || 'Preparing for dispatch'} (${o.supplier || 'US Direct'})</div>
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = `<span style="color:#ef4444;">${data.error || 'Order not found.'}</span>`;
+        }
+      } catch (e) {
+        resultDiv.innerHTML = '<span style="color:#ef4444;">Tracking lookup failed.</span>';
+      }
+    }
+
+    // Auto-check if URL has order_success
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('order_success')) {
+      alert('Thank you! Order #' + urlParams.get('order_success') + ' has been confirmed and routed for express fulfillment.');
+    }
+    if (urlParams.get('track')) {
+      openTrackModal();
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>

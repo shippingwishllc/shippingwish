@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuperAdmin Executive Command Center — Shipping Wish LLC</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-base: #060911;
+      --bg-surface: #0b111e;
+      --bg-card: rgba(17, 24, 39, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(245, 158, 11, 0.4);
+      --gold-primary: #f59e0b;
+      --gold-light: #fbbf24;
+      --gold-dark: #b45309;
+      --blue-accent: #3b82f6;
+      --green-success: #10b981;
+      --red-danger: #ef4444;
+      --purple-accent: #a855f7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background grid */
+    .ambient-grid {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(245, 158, 11, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 158, 11, 0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Top Navigation Bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(11, 17, 30, 0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo-shield {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      color: #060911;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.35);
+    }
+
+    .brand-titles h1 {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-titles h1 span.gold { color: var(--gold-light); }
+    .brand-titles p {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    .pulse-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+
+    .user-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    .user-badge strong { color: var(--gold-light); }
+
+    .btn-action {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: rgba(51, 65, 85, 0.8);
+      border-color: var(--gold-primary);
+    }
+
+    .btn-logout {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    /* Layout Container */
+    .main-content {
+      position: relative;
+      z-index: 10;
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Executive KPI Banner Strip */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 16px 18px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-focus);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold-primary), transparent);
+    }
+
+    .kpi-card.blue::before { background: linear-gradient(90deg, var(--blue-accent), transparent); }
+    .kpi-card.green::before { background: linear-gradient(90deg, var(--green-success), transparent); }
+    .kpi-card.purple::before { background: linear-gradient(90deg, var(--purple-accent), transparent); }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-subtle);
+    }
+
+    .kpi-sub span.pos { color: #34d399; font-weight: 600; }
+    .kpi-sub span.warn { color: var(--gold-light); font-weight: 600; }
+
+    /* Navigation Tabs */
+    .tab-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: var(--gold-light);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Tab Panels */
+    .tab-panel {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards & Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .content-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title span.tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gold-light);
+      background: rgba(245, 158, 11, 0.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* Tables */
+    .table-responsive {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    thead th {
+      background: rgba(30, 41, 59, 0.7);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    tbody td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #e2e8f0;
+      vertical-align: middle;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Status Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-booked { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-empty { background: rgba(16, 185, 129, 0.15); color: #86efac; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-unloading { background: rgba(245, 158, 11, 0.15); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-paid { background: rgba(16, 185, 129, 0.15); color: #86efac; }
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: #fde68a; }
+    .badge-processing { background: rgba(168, 85, 247, 0.15); color: #d8b4fe; }
+    .badge-shipping { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+    .badge-delivered { background: rgba(16, 185, 129, 0.15); color: #86efac; }
+
+    /* Interactive Selectors inside table */
+    .status-select {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid var(--border-subtle);
+      color: #ffffff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .status-select:focus {
+      border-color: var(--gold-primary);
+    }
+
+    /* AI Tools Section */
+    .ai-box {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.8));
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .btn-ai-gold {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #060911;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-ai-gold:hover {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      transform: translateY(-1px);
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: var(--bg-surface);
+      border: 1px solid var(--gold-primary);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 520px;
+      padding: 30px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--gold-primary);
+      color: #ffffff;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-grid"></div>
+
+  <!-- TOP EXECUTIVE NAVIGATION BAR -->
+  <header class="topbar">
+    <div class="brand-section">
+      <div class="brand-logo-shield">W</div>
+      <div class="brand-titles">
+        <h1>Command <span class="gold">Center</span></h1>
+        <p>Shipping Wish LLC &bull; LoadsNexus &bull; NYC Limo Wish &bull; BuyWishOnline</p>
+      </div>
+      <div class="pulse-pill">
+        <span class="pulse-dot"></span>
+        <span id="syncStatus">LIVE PULSE</span>
+      </div>
+    </div>
+
+    <div class="user-actions">
+      <div class="user-badge">
+        <span>Owner:</span>
+        <strong id="adminName">Ahsan</strong>
+        <span style="color:var(--text-subtle);">(&bull;&bull;&bull;)</span>
+      </div>
+
+      <button id="refreshBtn" class="btn-action" title="Refresh Live Data">
+        <span id="refreshIcon">🔄</span>
+        <span>Refresh</span>
+      </button>
+
+      <button id="setupTotpBtn" class="btn-action" title="Google Authenticator TOTP Setup">
+        <span>📱 2FA Setup</span>
+      </button>
+
+      <button id="logoutBtn" class="btn-action btn-logout" title="Sign Out">
+        <span>Sign Out</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="main-content">
+
+    <!-- KPI SUMMARY STRIP -->
+    <section class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-label">
+          <span>Empire MRR</span>
+          <span>💳</span>
+        </div>
+        <div class="kpi-value" id="kpiMrr">$0</div>
+        <div class="kpi-sub">TMS &amp; AI Load Board recurring</div>
+      </div>
+
+      <div class="kpi-card blue">
+        <div class="kpi-label">
+          <span>Gross Volume</span>
+          <span>📈</span>
+        </div>
+        <div class="kpi-value" id="kpiGrossVolume">$0</div>
+        <div class="kpi-sub">Total revenue across 4 brands</div>
+      </div>
+
+      <div class="kpi-card green">
+        <div class="kpi-label">
+          <span>Active Subscribers</span>
+          <span>👥</span>
+        </div>
+        <div class="kpi-value" id="kpiSubscribers">0</div>
+        <div class="kpi-sub">Carriers &amp; Dispatch desks</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">
+          <span>Fleet Trucks</span>
+          <span>🚛</span>
+        </div>
+        <div class="kpi-value" id="kpiTrucks">0</div>
+        <div class="kpi-sub">
+          <span id="kpiTrucksEmpty" class="pos">0 Empty</span> &bull; 
+          <span id="kpiTrucksBooked">0 Booked</span>
+        </div>
+      </div>
+
+      <div class="kpi-card blue">
+        <div class="kpi-label">
+          <span>Spot Freight Valuation</span>
+          <span>📦</span>
+        </div>
+        <div class="kpi-value" id="kpiLoadValuation">$0</div>
+        <div class="kpi-sub">Loads posted on LoadsNexus</div>
+      </div>
+
+      <div class="kpi-card purple">
+        <div class="kpi-label">
+          <span>NYC Limo Rides</span>
+          <span>🗽</span>
+        </div>
+        <div class="kpi-value" id="kpiLimoRides">0</div>
+        <div class="kpi-sub"><span id="kpiLimoRevenue" class="pos">$0</span> gross fare</div>
+      </div>
+
+      <div class="kpi-card green">
+        <div class="kpi-label">
+          <span>E-Com Orders</span>
+          <span>🛍️</span>
+        </div>
+        <div class="kpi-value" id="kpiEcomOrders">0</div>
+        <div class="kpi-sub"><span id="kpiEcomProfit" class="pos">$0</span> net profit</div>
+      </div>
+    </section>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" data-tab="tab-overview">📊 Executive Overview</button>
+      <button class="tab-btn" data-tab="tab-tms">🚛 Shipping Wish TMS</button>
+      <button class="tab-btn" data-tab="tab-loadboard">⚡ LoadsNexus Board</button>
+      <button class="tab-btn" data-tab="tab-limo">🗽 NYC Limo Wish</button>
+      <button class="tab-btn" data-tab="tab-ecom">🛍️ BuyWishOnline</button>
+      <button class="tab-btn" data-tab="tab-ai">🤖 AI Matchmaker &amp; Marketing</button>
+    </nav>
+
+    <!-- TAB 1: EXECUTIVE OVERVIEW -->
+    <div id="tab-overview" class="tab-panel active">
+      <div class="grid-2">
+        <div class="content-card">
+          <div class="card-header">
+            <h3 class="card-title">4-Brand Empire Revenue Matrix <span class="tag">Live</span></h3>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Brand</th>
+                  <th>Core Model</th>
+                  <th>Primary Metric</th>
+                  <th>Financial Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>ShippingWish.com</strong></td>
+                  <td>TMS &amp; Dedicated Dispatch</td>
+                  <td id="matrixSwSubs">0 Active Weekly Carriers</td>
+                  <td><span class="badge badge-paid" id="matrixSwRevenue">$0 MRR</span></td>
+                </tr>
+                <tr>
+                  <td><strong>LoadsNexus.com</strong></td>
+                  <td>AI 50-State Load Board</td>
+                  <td id="matrixLnSubs">0 Active Tier Members</td>
+                  <td><span class="badge badge-paid" id="matrixLnRevenue">$0 MRR</span></td>
+                </tr>
+                <tr>
+                  <td><strong>NYCLimoWish.com</strong></td>
+                  <td>Luxury Airport &amp; VIP Chauffeur</td>
+                  <td id="matrixLimoBookings">0 Total Reservations</td>
+                  <td><span class="badge badge-booked" id="matrixLimoRev">$0 Gross</span></td>
+                </tr>
+                <tr>
+                  <td><strong>BuyWishOnline.com</strong></td>
+                  <td>Viral E-Commerce Dropship</td>
+                  <td id="matrixEcomOrders">0 Orders Handled</td>
+                  <td><span class="badge badge-delivered" id="matrixEcomRev">$0 Sales</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="content-card">
+          <div class="card-header">
+            <h3 class="card-title">Fleet Dispatch Pipeline <span class="tag">Real-Time</span></h3>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:18px;">
+            <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px; text-align:center;">
+              <div style="font-size:11px; color:#a7f3d0; font-weight:700;">🟢 EMPTY / NEED LOADS</div>
+              <div id="overviewEmptyCount" style="font-size:24px; font-weight:800; color:#34d399; font-family:'JetBrains Mono', monospace;">0</div>
+            </div>
+            <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.25); border-radius:10px; padding:12px; text-align:center;">
+              <div style="font-size:11px; color:#bfdbfe; font-weight:700;">🔴 CURRENTLY BOOKED</div>
+              <div id="overviewBookedCount" style="font-size:24px; font-weight:800; color:#60a5fa; font-family:'JetBrains Mono', monospace;">0</div>
+            </div>
+            <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); border-radius:10px; padding:12px; text-align:center;">
+              <div style="font-size:11px; color:#fde68a; font-weight:700;">🟡 UNLOADING TOMORROW</div>
+              <div id="overviewUnloadingCount" style="font-size:24px; font-weight:800; color:#fbbf24; font-family:'JetBrains Mono', monospace;">0</div>
+            </div>
+          </div>
+          <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
+            Our automated dispatch scheduler monitors next-available unload dates. Trucks unloading tomorrow are automatically prioritized for high-RPM reload lanes on LoadsNexus.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: SHIPPING WISH TMS & FLEET -->
+    <div id="tab-tms" class="tab-panel">
+      <!-- TMS Metrics Sub-Strip -->
+      <div class="grid-3" style="margin-bottom:20px;">
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Active Weekly Carriers</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono';" id="tmsActiveCarriers">0</div>
+          <div style="font-size:12px; color:var(--text-muted);">Weekly Plan Subscribers ($149 / $350 / $500)</div>
+        </div>
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Stripe Invoices Collected</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#34d399;" id="tmsPaidInvoices">$0</div>
+          <div style="font-size:12px; color:var(--text-muted);"><span id="tmsPendingInvoices">$0</span> pending collection</div>
+        </div>
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Past Due / Expired</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#f87171;" id="tmsPastDueCarriers">0</div>
+          <div style="font-size:12px; color:var(--text-muted);">Accounts requiring card re-authorization</div>
+        </div>
+      </div>
+
+      <!-- Fleet Trucks Live Status Manager -->
+      <div class="content-card" style="margin-bottom:24px;">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Fleet Dispatch Command &bull; Trucks Status Board</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+              Manage truck status in real-time. Select an updated status to instantly recalculate dispatch availability.
+            </p>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-action" onclick="filterTrucks('all')">All</button>
+            <button class="btn-action" onclick="filterTrucks('empty')">🟢 Empty</button>
+            <button class="btn-action" onclick="filterTrucks('booked')">🔴 Booked</button>
+            <button class="btn-action" onclick="filterTrucks('unloading_tomorrow')">🟡 Unloading Tomorrow</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table id="fleetTrucksTable">
+            <thead>
+              <tr>
+                <th>Unit / Truck #</th>
+                <th>Carrier / MC</th>
+                <th>Equipment</th>
+                <th>Driver &amp; Phone</th>
+                <th>Next Available Loc</th>
+                <th>Current Status</th>
+                <th>Change Status</th>
+              </tr>
+            </thead>
+            <tbody id="fleetTrucksBody">
+              <tr><td colspan="7" style="text-align:center; padding:30px;">Loading fleet trucks...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Onboarded Carriers List -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Onboarded Carrier Directory</h3>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Company</th>
+                <th>Owner Name</th>
+                <th>MC / DOT</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Fleet Size</th>
+                <th>Plan Status</th>
+              </tr>
+            </thead>
+            <tbody id="carrierDirectoryBody">
+              <tr><td colspan="7" style="text-align:center; padding:30px;">Loading carriers...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: LOADSNEXUS AI LOAD BOARD -->
+    <div id="tab-loadboard" class="tab-panel">
+      <div class="grid-3" style="margin-bottom:20px;">
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Active AI Passes</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono';" id="lnActivePasses">0</div>
+          <div style="font-size:12px; color:var(--text-muted);">
+            <span id="lnSoloTier">0 Solo ($19)</span> &bull; 
+            <span id="lnTeamTier">0 Team ($39)</span> &bull; 
+            <span id="lnFleetTier">0 Fleet ($69)</span>
+          </div>
+        </div>
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Registered Brokers</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono';" id="lnTotalBrokers">0</div>
+          <div style="font-size:12px; color:var(--text-muted);">Brokers posting loads 100% free</div>
+        </div>
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Spot Freight Valuation</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#34d399;" id="lnFreightValuation">$0</div>
+          <div style="font-size:12px; color:var(--text-muted);"><span id="lnTotalLoads">0</span> total spot loads processed</div>
+        </div>
+      </div>
+
+      <!-- Live Spot Loads Table -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Live Spot Freight Corridor Stream</h3>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Load #</th>
+                <th>Origin &rarr; Destination</th>
+                <th>Equipment</th>
+                <th>Miles</th>
+                <th>Rate / Pay</th>
+                <th>Rate/Mile</th>
+                <th>Broker</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="lnLoadsBody">
+              <tr><td colspan="8" style="text-align:center; padding:30px;">Loading live loads...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: NYC LIMO WISH -->
+    <div id="tab-limo" class="tab-panel">
+      <div class="grid-3" style="margin-bottom:20px;">
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Total Reservations</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono';" id="limoTotalCount">0</div>
+          <div style="font-size:12px; color:var(--text-muted);">Airport transfers &amp; VIP charters</div>
+        </div>
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Confirmed / Active</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#60a5fa;" id="limoConfirmedCount">0</div>
+          <div style="font-size:12px; color:var(--text-muted);"><span id="limoPendingCount">0</span> awaiting dispatch confirmation</div>
+        </div>
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Limo Gross Revenue</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#34d399;" id="limoTotalRevenue">$0</div>
+          <div style="font-size:12px; color:var(--text-muted);"><span id="limoCompletedCount">0</span> completed rides</div>
+        </div>
+      </div>
+
+      <!-- Live Limo Bookings -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Live Ride Reservations &amp; Chauffeur Dispatch</h3>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Booking #</th>
+                <th>Passenger</th>
+                <th>Service Type</th>
+                <th>Pickup &rarr; Dropoff</th>
+                <th>Pickup Date &amp; Time</th>
+                <th>Vehicle Class</th>
+                <th>Fare</th>
+                <th>Status Action</th>
+              </tr>
+            </thead>
+            <tbody id="limoBookingsBody">
+              <tr><td colspan="8" style="text-align:center; padding:30px;">Loading reservations...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: BUYWISHONLINE DROPSHIPPING -->
+    <div id="tab-ecom" class="tab-panel">
+      <div class="grid-3" style="margin-bottom:20px;">
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Total Store Orders</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono';" id="ecomOrdersCount">0</div>
+          <div style="font-size:12px; color:var(--text-muted);">Zendrop direct supplier pipeline</div>
+        </div>
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Gross Sales</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#60a5fa;" id="ecomSales">$0</div>
+          <div style="font-size:12px; color:var(--text-muted);"><span id="ecomInTransit">0</span> orders in transit</div>
+        </div>
+        <div class="content-card">
+          <div class="card-title" style="margin-bottom:8px;">Net Margin / Profit</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#34d399;" id="ecomProfit">$0</div>
+          <div style="font-size:12px; color:var(--text-muted);">After supplier product cost</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Recent E-com Orders -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3 class="card-title">Fulfillment Orders Stream</h3>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Total</th>
+                  <th>Zendrop Tracking</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="ecomOrdersBody">
+                <tr><td colspan="5" style="text-align:center; padding:20px;">Loading orders...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- AI Winning Products Hunter -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3 class="card-title">AI Winning Products Hunter <span class="tag">Zendrop AI</span></h3>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Retail</th>
+                  <th>Cost</th>
+                  <th>Margin</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody id="ecomProductsBody">
+                <tr><td colspan="6" style="text-align:center; padding:20px;">Loading products...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: CROSS-BRAND AI SUITE -->
+    <div id="tab-ai" class="tab-panel">
+      <!-- AI Matchmaker -->
+      <div class="ai-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div>
+            <h3 style="font-size:16px; font-weight:800; color:var(--gold-light);">🤖 AI Empty Fleet Matchmaker</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+              Cross-references our Empty and Unloading-Tomorrow fleet trucks with LoadsNexus spot corridors.
+            </p>
+          </div>
+          <button id="runAiMatchBtn" class="btn-ai-gold">
+            <span>⚡ Calculate AI Matches</span>
+          </button>
+        </div>
+
+        <div id="aiMatchResults" style="display:none; margin-top:16px;">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Truck Unit</th>
+                  <th>Carrier &amp; Contact</th>
+                  <th>Current Location</th>
+                  <th>Recommended Load</th>
+                  <th>Corridor</th>
+                  <th>Freight Pay</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="aiMatchesBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Multi-Brand Marketing Generator -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">⚡ Multi-Brand AI Marketing Campaign Generator</h3>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; margin-bottom:16px; align-items:end;">
+          <div>
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">BRAND</label>
+            <select id="mktBrand" class="status-select" style="width:100%; padding:9px;">
+              <option value="shippingwish">Shipping Wish LLC (TMS / Dispatch)</option>
+              <option value="loadsnexus">LoadsNexus (AI Load Board $19)</option>
+              <option value="nyclimowish">NYC Limo Wish (Airport / VIP)</option>
+              <option value="buywishonline">BuyWishOnline (E-Commerce)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">CHANNEL</label>
+            <select id="mktChannel" class="status-select" style="width:100%; padding:9px;">
+              <option value="email">High-Converting Email</option>
+              <option value="sms">SMS Blast (Direct &amp; Short)</option>
+              <option value="social">Social Media Post (LinkedIn / IG / FB)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">TARGET AUDIENCE</label>
+            <input type="text" id="mktAudience" class="form-input" style="padding:8px 12px; font-size:12px;" value="Owner Operators &amp; Fleets">
+          </div>
+          <div>
+            <button id="genMktBtn" class="btn-ai-gold" style="padding:9px 16px;">
+              <span>Generate Copy</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="mktOutputBox" style="display:none; background:rgba(15,23,42,0.9); border:1px solid rgba(245,158,11,0.25); border-radius:12px; padding:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div id="mktTitle" style="font-size:13px; font-weight:700; color:var(--gold-light);"></div>
+            <button class="btn-action" onclick="copyMktCopy()">📋 Copy Content</button>
+          </div>
+          <pre id="mktContent" style="white-space:pre-wrap; font-family:'Inter', sans-serif; font-size:13px; line-height:1.6; color:#e2e8f0;"></pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- TOTP SETUP MODAL -->
+  <div id="totpModal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeTotpModal()">&times;</button>
+      <h3 style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:8px;">
+        📱 Google Authenticator Setup
+      </h3>
+      <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:20px;">
+        Pair your Google Authenticator or Microsoft Authenticator app for instant 1-touch 2FA logins without waiting for Yahoo emails.
+      </p>
+
+      <div style="background:rgba(30,41,59,0.7); border:1px dashed var(--gold-primary); border-radius:10px; padding:16px; text-align:center; margin-bottom:20px;">
+        <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;">Manual Setup Secret Key</div>
+        <div id="totpSecretKey" style="font-family:'JetBrains Mono', monospace; font-size:18px; font-weight:700; color:var(--gold-light); letter-spacing:2px; user-select:all;">
+          LOADING...
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:6px;">Enter 6-Digit Code from App to Confirm</label>
+        <input type="text" id="verifyTotpInput" class="otp-input-single" maxlength="6" placeholder="000000" style="padding:10px; font-size:22px;">
+      </div>
+
+      <button id="confirmTotpBtn" class="btn-submit" style="width:100%;">
+        <span>Enable Google Authenticator</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script>
+    // Global State
+    let dashboardData = null;
+    let currentTrucksFilter = 'all';
+
+    // Elements
+    const refreshBtn = document.getElementById('refreshBtn');
+    const refreshIcon = document.getElementById('refreshIcon');
+    const syncStatus = document.getElementById('syncStatus');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const setupTotpBtn = document.getElementById('setupTotpBtn');
+    const totpModal = document.getElementById('totpModal');
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    // Toast Alert
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Tab Navigation
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => b.classList.remove('active'));
+        tabPanels.forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const targetId = btn.getAttribute('data-tab');
+        document.getElementById(targetId)?.classList.add('active');
+      });
+    });
+
+    // Formatting helpers
+    function fmtMoney(num) {
+      return '$' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    // Fetch and populate overview data
+    async function loadDashboardData() {
+      refreshIcon.style.display = 'inline-block';
+      refreshIcon.style.transform = 'rotate(360deg)';
+      refreshIcon.style.transition = 'transform 0.6s ease';
+      syncStatus.textContent = 'SYNCING...';
+
+      try {
+        const res = await fetch('/api/superadmin/overview', { credentials: 'include' });
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = '/superadmin-login';
+          return;
+        }
+
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Failed to load dashboard data');
+
+        dashboardData = data;
+        renderDashboard(data);
+        syncStatus.textContent = 'LIVE PULSE';
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+        showToast(err.message, 'error');
+        syncStatus.textContent = 'OFFLINE';
+      } finally {
+        setTimeout(() => {
+          refreshIcon.style.transform = 'none';
+        }, 600);
+      }
+    }
+
+    function renderDashboard(data) {
+      const exec = data.executive_summary || {};
+      const sw = data.shipping_wish || {};
+      const ln = data.loads_nexus || {};
+      const limo = data.nyclimo_wish || {};
+      const ecom = data.buywish_online || {};
+
+      // Top KPI Strip
+      document.getElementById('kpiMrr').textContent = fmtMoney(exec.total_empire_mrr_dollars);
+      document.getElementById('kpiGrossVolume').textContent = fmtMoney(exec.total_gross_volume_dollars);
+      document.getElementById('kpiSubscribers').textContent = Number(exec.total_subscribers || 0).toLocaleString();
+      document.getElementById('kpiTrucks').textContent = (sw.fleet_trucks || []).length;
+      document.getElementById('kpiTrucksEmpty').textContent = (exec.trucks_empty || 0) + ' Empty';
+      document.getElementById('kpiTrucksBooked').textContent = (exec.trucks_booked || 0) + ' Booked';
+      document.getElementById('kpiLoadValuation').textContent = fmtMoney(exec.active_loads_valuation);
+      document.getElementById('kpiLimoRides').textContent = exec.total_limo_rides || 0;
+      document.getElementById('kpiLimoRevenue').textContent = fmtMoney(limo.revenue_dollars);
+      document.getElementById('kpiEcomOrders').textContent = exec.total_ecom_orders || 0;
+      document.getElementById('kpiEcomProfit').textContent = fmtMoney(ecom.profit_dollars);
+
+      // Overview Matrix
+      document.getElementById('matrixSwSubs').textContent = (sw.active_subscribers || 0) + ' Active Carriers';
+      document.getElementById('matrixSwRevenue').textContent = fmtMoney(sw.mrr_dollars) + ' / mo';
+      document.getElementById('matrixLnSubs').textContent = (ln.active_subscribers || 0) + ' Paying Members';
+      document.getElementById('matrixLnRevenue').textContent = fmtMoney(ln.mrr_dollars) + ' / mo';
+      document.getElementById('matrixLimoBookings').textContent = (limo.total_bookings || 0) + ' Total Rides';
+      document.getElementById('matrixLimoRev').textContent = fmtMoney(limo.revenue_dollars);
+      document.getElementById('matrixEcomOrders').textContent = (ecom.total_orders || 0) + ' Orders';
+      document.getElementById('matrixEcomRev').textContent = fmtMoney(ecom.sales_dollars);
+
+      document.getElementById('overviewEmptyCount').textContent = exec.trucks_empty || 0;
+      document.getElementById('overviewBookedCount').textContent = exec.trucks_booked || 0;
+      document.getElementById('overviewUnloadingCount').textContent = exec.trucks_unloading_tomorrow || 0;
+
+      // TMS Tab
+      document.getElementById('tmsActiveCarriers').textContent = sw.active_subscribers || 0;
+      document.getElementById('tmsPaidInvoices').textContent = fmtMoney(sw.total_invoices_paid_dollars);
+      document.getElementById('tmsPendingInvoices').textContent = fmtMoney(sw.total_invoices_pending_dollars);
+      document.getElementById('tmsPastDueCarriers').textContent = sw.past_due_subscribers || 0;
+
+      renderFleetTrucks(sw.fleet_trucks || []);
+      renderCarriers(sw.onboarded_carriers || []);
+
+      // LoadsNexus Tab
+      document.getElementById('lnActivePasses').textContent = ln.active_subscribers || 0;
+      document.getElementById('lnSoloTier').textContent = (ln.tiers?.solo || 0) + ' Solo ($19)';
+      document.getElementById('lnTeamTier').textContent = (ln.tiers?.team || 0) + ' Team ($39)';
+      document.getElementById('lnFleetTier').textContent = (ln.tiers?.fleet || 0) + ' Fleet ($69)';
+      document.getElementById('lnTotalBrokers').textContent = ln.total_brokers || 0;
+      document.getElementById('lnFreightValuation').textContent = fmtMoney(ln.freight_valuation_dollars);
+      document.getElementById('lnTotalLoads').textContent = ln.total_loads || 0;
+      renderLoads(ln.recent_loads || []);
+
+      // NYC Limo Tab
+      document.getElementById('limoTotalCount').textContent = limo.total_bookings || 0;
+      document.getElementById('limoConfirmedCount').textContent = limo.confirmed || 0;
+      document.getElementById('limoPendingCount').textContent = limo.pending || 0;
+      document.getElementById('limoTotalRevenue').textContent = fmtMoney(limo.revenue_dollars);
+      document.getElementById('limoCompletedCount').textContent = limo.completed || 0;
+      renderLimo(limo.recent_bookings || []);
+
+      // BuyWishOnline Tab
+      document.getElementById('ecomOrdersCount').textContent = ecom.total_orders || 0;
+      document.getElementById('ecomSales').textContent = fmtMoney(ecom.sales_dollars);
+      document.getElementById('ecomInTransit').textContent = ecom.in_transit || 0;
+      document.getElementById('ecomProfit').textContent = fmtMoney(ecom.profit_dollars);
+      renderEcomOrders(ecom.recent_orders || []);
+      renderEcomProducts(ecom.ai_winning_products || []);
+    }
+
+    // Render Fleet Trucks Table with Interactive Status Selectors
+    function renderFleetTrucks(trucks) {
+      const tbody = document.getElementById('fleetTrucksBody');
+      const filtered = trucks.filter(t => {
+        const st = (t.dispatch_status || t.status || 'empty').toLowerCase();
+        if (currentTrucksFilter === 'all') return true;
+        if (currentTrucksFilter === 'empty') return st === 'empty';
+        if (currentTrucksFilter === 'booked') return st === 'booked' || st === 'dispatched';
+        if (currentTrucksFilter === 'unloading_tomorrow') return st === 'unloading_tomorrow';
+        return true;
+      });
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">No trucks matching filter "${currentTrucksFilter}".</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(t => {
+        const st = (t.dispatch_status || t.status || 'empty').toLowerCase();
+        let badgeClass = 'badge-empty';
+        let badgeLabel = '🟢 Empty (Ready)';
+        if (st === 'booked' || st === 'dispatched') {
+          badgeClass = 'badge-booked';
+          badgeLabel = '🔴 Booked';
+        } else if (st === 'unloading_tomorrow') {
+          badgeClass = 'badge-unloading';
+          badgeLabel = '🟡 Unloading Tomorrow';
+        }
+
+        return `
+          <tr>
+            <td><strong>#${t.unit_number || t.truck_number || ('TRK-' + t.id)}</strong></td>
+            <td>
+              <div><strong>${t.carrier_name || 'Fleet Partner'}</strong></div>
+              <div style="font-size:11px; color:var(--text-muted);">${t.carrier_mc ? 'MC: ' + t.carrier_mc : 'ID: #' + t.id}</div>
+            </td>
+            <td>${t.equipment_type || t.trailer_type || '53ft Dry Van'}</td>
+            <td>
+              <div>${t.assigned_driver_name || 'Assigned Driver'}</div>
+              <div style="font-size:11px; color:var(--gold-light);">${t.assigned_driver_phone || t.carrier_phone || 'Call Ops'}</div>
+            </td>
+            <td>${t.next_available_city || 'Regional Hub'}<br><span style="font-size:11px; color:var(--text-subtle);">${t.next_available_date ? new Date(t.next_available_date).toLocaleDateString() : 'Immediate'}</span></td>
+            <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+            <td>
+              <select class="status-select" onchange="updateTruckStatus(${t.id}, this.value)">
+                <option value="empty" ${st === 'empty' ? 'selected' : ''}>🟢 Empty</option>
+                <option value="booked" ${(st === 'booked' || st === 'dispatched') ? 'selected' : ''}>🔴 Booked</option>
+                <option value="unloading_tomorrow" ${st === 'unloading_tomorrow' ? 'selected' : ''}>🟡 Unloading Tomorrow</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    window.filterTrucks = function(type) {
+      currentTrucksFilter = type;
+      if (dashboardData?.shipping_wish?.fleet_trucks) {
+        renderFleetTrucks(dashboardData.shipping_wish.fleet_trucks);
+      }
+    };
+
+    window.updateTruckStatus = async function(truckId, newStatus) {
+      try {
+        const res = await fetch('/api/superadmin/trucks/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ truck_id: truckId, status: newStatus })
+        });
+        const resData = await res.json();
+        if (!res.ok) throw new Error(resData.error || 'Failed to update truck status');
+
+        showToast(`Truck #${truckId} marked as ${newStatus}`, 'success');
+        loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    };
+
+    // Render Onboarded Carriers
+    function renderCarriers(carriers) {
+      const tbody = document.getElementById('carrierDirectoryBody');
+      if (!carriers.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">No carriers onboarded yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = carriers.map(c => `
+        <tr>
+          <td><strong>${c.company_name || c.name}</strong></td>
+          <td>${c.name}</td>
+          <td>${c.mc_number || 'N/A'} / ${c.dot_number || 'N/A'}</td>
+          <td><a href="tel:${c.phone}" style="color:var(--gold-light); text-decoration:none;">${c.phone || 'N/A'}</a></td>
+          <td>${c.email}</td>
+          <td><span class="badge badge-booked">${c.truck_count || 1} Trucks</span></td>
+          <td><span class="badge badge-paid">${c.weekly_plan || 'Active TMS'}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // Render Spot Loads
+    function renderLoads(loads) {
+      const tbody = document.getElementById('lnLoadsBody');
+      if (!loads.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">No active loads.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = loads.map(l => {
+        const rpm = l.miles > 0 ? (l.rate / l.miles).toFixed(2) : '0.00';
+        return `
+          <tr>
+            <td><strong>#${l.load_number || l.id}</strong></td>
+            <td>${l.origin_city}, ${l.origin_state} &rarr; ${l.destination_city}, ${l.destination_state}</td>
+            <td>${l.equipment_type || 'Dry Van'}</td>
+            <td>${Number(l.miles || 0).toLocaleString()} mi</td>
+            <td><strong style="color:#34d399;">${fmtMoney(l.rate)}</strong></td>
+            <td><span style="color:var(--gold-light); font-weight:700;">$${rpm}/mi</span></td>
+            <td>${l.broker_name || 'Direct Broker'}</td>
+            <td><span class="badge ${l.status === 'covered' ? 'badge-booked' : 'badge-empty'}">${l.status || 'Available'}</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Render NYC Limo Reservations
+    function renderLimo(bookings) {
+      const tbody = document.getElementById('limoBookingsBody');
+      if (!bookings.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">No limo bookings recorded yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = bookings.map(b => `
+        <tr>
+          <td><strong>#${b.booking_number || b.id}</strong></td>
+          <td>
+            <div>${b.passenger_first_name} ${b.passenger_last_name}</div>
+            <div style="font-size:11px; color:var(--text-muted);">${b.passenger_phone || b.passenger_email}</div>
+          </td>
+          <td>${b.service_type || 'Airport Transfer'}</td>
+          <td style="max-width:220px; font-size:12px;">${b.pickup_address} &rarr; ${b.dropoff_address}</td>
+          <td>${b.pickup_date} @ ${b.pickup_time}</td>
+          <td><span class="badge badge-booked">${b.vehicle_id || 'Sedan / SUV'}</span></td>
+          <td><strong style="color:#34d399;">${fmtMoney(b.total_price)}</strong></td>
+          <td>
+            <select class="status-select" onchange="updateLimoStatus(${b.id}, this.value)">
+              <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="confirmed" ${b.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+              <option value="completed" ${b.status === 'completed' ? 'selected' : ''}>Completed</option>
+              <option value="cancelled" ${b.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    window.updateLimoStatus = async function(bookingId, status) {
+      try {
+        const res = await fetch('/api/superadmin/limo/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ booking_id: bookingId, status })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to update limo booking');
+        showToast(`Limo booking #${bookingId} marked as ${status}`, 'success');
+        loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    };
+
+    // Render E-com Orders
+    function renderEcomOrders(orders) {
+      const tbody = document.getElementById('ecomOrdersBody');
+      if (!orders.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No e-commerce orders yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = orders.map(o => `
+        <tr>
+          <td><strong>${o.order_number}</strong></td>
+          <td>${o.customer_name}<br><span style="font-size:11px; color:var(--text-muted);">${o.shipping_city}, ${o.shipping_state}</span></td>
+          <td><strong>${fmtMoney(o.total_amount)}</strong></td>
+          <td>
+            ${o.supplier_tracking_number 
+              ? `<a href="https://t.17track.net/en#nums=${o.supplier_tracking_number}" target="_blank" style="color:var(--blue-accent); font-family:monospace; text-decoration:none;">${o.supplier_tracking_number} ↗</a>` 
+              : '<span style="color:var(--text-subtle);">Awaiting Fulfillment</span>'}
+          </td>
+          <td>
+            <select class="status-select" onchange="updateEcomStatus(${o.id}, this.value)">
+              <option value="processing" ${o.fulfillment_status === 'processing' ? 'selected' : ''}>Processing</option>
+              <option value="in_transit" ${o.fulfillment_status === 'in_transit' ? 'selected' : ''}>In Transit</option>
+              <option value="delivered" ${o.fulfillment_status === 'delivered' ? 'selected' : ''}>Delivered</option>
+              <option value="cancelled" ${o.fulfillment_status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    window.updateEcomStatus = async function(orderId, fulfillment_status) {
+      try {
+        const res = await fetch('/api/superadmin/ecom/order-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ order_id: orderId, fulfillment_status })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to update order status');
+        showToast(`Order #${orderId} marked as ${fulfillment_status}`, 'success');
+        loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    };
+
+    // Render E-com Products
+    function renderEcomProducts(products) {
+      const tbody = document.getElementById('ecomProductsBody');
+      if (!products.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">No products found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = products.map(p => `
+        <tr>
+          <td><strong>${p.title}</strong></td>
+          <td>${p.category || 'General'}</td>
+          <td>${fmtMoney(p.retail_price)}</td>
+          <td style="color:var(--text-muted);">${fmtMoney(p.supplier_cost)}</td>
+          <td><span class="badge badge-paid">+${p.estimated_margin}%</span></td>
+          <td><strong style="color:var(--gold-light);">${p.trend_score}/100</strong></td>
+        </tr>
+      `).join('');
+    }
+
+    // AI Matchmaker Trigger
+    const runAiMatchBtn = document.getElementById('runAiMatchBtn');
+    const aiMatchResults = document.getElementById('aiMatchResults');
+    const aiMatchesBody = document.getElementById('aiMatchesBody');
+
+    runAiMatchBtn.addEventListener('click', async () => {
+      runAiMatchBtn.disabled = true;
+      runAiMatchBtn.textContent = 'Calculating Corridor Matches...';
+
+      try {
+        const res = await fetch('/api/superadmin/ai/match-loads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to match loads');
+
+        aiMatchResults.style.display = 'block';
+        if (!data.matches || !data.matches.length) {
+          aiMatchesBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">All trucks currently booked or no matching spot lanes in corridor.</td></tr>';
+          return;
+        }
+
+        aiMatchesBody.innerHTML = data.matches.map(m => `
+          <tr>
+            <td><strong>#${m.truck.unit || m.truck.id}</strong><br><span style="font-size:11px; color:var(--text-muted);">${m.truck.equipment}</span></td>
+            <td><strong>${m.truck.carrier}</strong><br><span style="font-size:11px; color:var(--gold-light);">${m.truck.phone || 'Ops Call'}</span></td>
+            <td>${m.truck.location}</td>
+            <td><strong>#${m.recommended_load.load_number || m.recommended_load.id}</strong> (${m.recommended_load.broker_name || 'Direct Broker'})</td>
+            <td>${m.recommended_load.origin_city}, ${m.recommended_load.origin_state} &rarr; ${m.recommended_load.destination_city}, ${m.recommended_load.destination_state}</td>
+            <td><strong style="color:#34d399;">${fmtMoney(m.recommended_load.rate)}</strong></td>
+            <td>
+              <button class="btn-action" onclick="showToast('Dispatch packet pre-generated for truck #${m.truck.unit}', 'success')">
+                Dispatch Load &rarr;
+              </button>
+            </td>
+          </tr>
+        `).join('');
+
+        showToast(`AI generated ${data.matches.length} high-RPM freight matches!`, 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        runAiMatchBtn.disabled = false;
+        runAiMatchBtn.textContent = '⚡ Calculate AI Matches';
+      }
+    });
+
+    // AI Marketing Generator Trigger
+    const genMktBtn = document.getElementById('genMktBtn');
+    const mktOutputBox = document.getElementById('mktOutputBox');
+    const mktTitle = document.getElementById('mktTitle');
+    const mktContent = document.getElementById('mktContent');
+
+    genMktBtn.addEventListener('click', async () => {
+      genMktBtn.disabled = true;
+      genMktBtn.textContent = 'Generating Copy...';
+
+      const brand = document.getElementById('mktBrand').value;
+      const channel = document.getElementById('mktChannel').value;
+      const audience = document.getElementById('mktAudience').value;
+
+      try {
+        const res = await fetch('/api/superadmin/ai/generate-marketing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ brand, channel, audience })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to generate campaign copy');
+
+        mktOutputBox.style.display = 'block';
+        mktTitle.textContent = `${brand.toUpperCase()} &bull; ${channel.toUpperCase()} CAMPAIGN`;
+
+        if (channel === 'email') {
+          mktContent.textContent = `SUBJECT: ${data.campaign.subject}\n\nHEADLINE: ${data.campaign.headline}\n\n${data.campaign.body}\n\nCALL TO ACTION: [ ${data.campaign.cta} ]`;
+        } else {
+          mktContent.textContent = typeof data.campaign === 'string' ? data.campaign : JSON.stringify(data.campaign, null, 2);
+        }
+
+        showToast('Marketing copy generated successfully!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        genMktBtn.disabled = false;
+        genMktBtn.textContent = 'Generate Copy';
+      }
+    });
+
+    window.copyMktCopy = function() {
+      navigator.clipboard.writeText(mktContent.textContent);
+      showToast('Campaign copy copied to clipboard!', 'success');
+    };
+
+    // Google Authenticator TOTP Modal
+    setupTotpBtn.addEventListener('click', async () => {
+      totpModal.style.display = 'flex';
+      try {
+        const res = await fetch('/api/auth/2fa/totp-setup', { credentials: 'include' });
+        const data = await res.json();
+        if (data.ok && data.secret) {
+          document.getElementById('totpSecretKey').textContent = data.secret;
+        } else {
+          document.getElementById('totpSecretKey').textContent = 'ENABLED OR UNAVAILABLE';
+        }
+      } catch (err) {
+        document.getElementById('totpSecretKey').textContent = 'ERROR FETCHING SECRET';
+      }
+    });
+
+    window.closeTotpModal = function() {
+      totpModal.style.display = 'none';
+    };
+
+    document.getElementById('confirmTotpBtn').addEventListener('click', async () => {
+      const code = document.getElementById('verifyTotpInput').value.trim();
+      if (code.length !== 6) {
+        showToast('Please enter the 6-digit authenticator code.', 'error');
+        return;
+      }
+      try {
+        const res = await fetch('/api/auth/2fa/totp-enable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ code })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to verify TOTP');
+
+        showToast('Google Authenticator activated successfully!', 'success');
+        closeTotpModal();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Refresh & Auto-Sync
+    refreshBtn.addEventListener('click', loadDashboardData);
+    setInterval(loadDashboardData, 30000); // 30s auto-pulse
+
+    // Logout
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      } catch (_) {}
+      document.cookie = 'sw_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      window.location.href = '/superadmin-login';
+    });
+
+    // Initial Load
+    loadDashboardData();
+  </script>
+</body>
+</html>
