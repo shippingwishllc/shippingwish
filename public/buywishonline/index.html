@@ -3116,7 +3116,7 @@ async function processCheckout() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: cart.map(i => ({ title: i.title, price: i.retail_price, quantity: i.qty, image_url: i.images ? i.images[0] : i.image_url })),
+        items: cart.map(i => ({ product_id: i.zendrop_id || i.id, quantity: i.qty })),
         customer: { name: fname + ' ' + lname, email, phone: document.getElementById('co_phone').value.trim(), address },
         currency: currentCurrency.code
       })
