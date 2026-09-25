@@ -6,6 +6,97 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const { ensureSchema } = require('../utils/limo-ensure-schema');
 
 const router = express.Router();
+async function dispatchBooking(bookingId, actorId = null) {
+  const client = await pool.connect();
+  try {
+    await ensureSchema();
+    await client.query('BEGIN');
+    const bookingResult = await client.query('SELECT * FROM limo_bookings WHERE id = $1 FOR UPDATE', [bookingId]);
+    const booking = bookingResult.rows[0];
+    if (!booking) {
+      await client.query('ROLLBACK');
+      return { ok: false, status: 404, error: 'Booking not found.' };
+    }
+    if (!['pending_operator', 'offering'].includes(booking.status) || booking.payment_status === 'paid') {
+      await client.query('ROLLBACK');
+      return { ok: false, status: 409, error: 'Only unpaid bookings awaiting an operator can be dispatched.' };
+    }
+
+    await client.query(
+      `UPDATE limo_partner_offers SET status = 'expired'
+       WHERE booking_id = $1 AND status = 'offered' AND expires_at <= now()`,
+      [booking.id]
+    );
+    const zones = pickupZones(booking);
+    const { rows: partners } = await client.query(
+      `SELECT id, display_name, contact_email, platform_commission_rate
+       FROM limo_partner_bases
+       WHERE approval_status = 'approved'
+         AND availability_status = 'available'
+         AND availability_updated_at >= now() - interval '10 minutes'
+         AND tlc_base_license_expires_at >= $1
+         AND insurance_expires_at >= $1
+         AND max_passengers >= $2
+         AND service_areas && $3::text[]
+         AND vehicle_classes @> ARRAY[$4]::text[]
+         AND platform_commission_rate IS NOT NULL
+         AND platform_commission_rate + referral_commission_rate <= 1
+         AND NOT EXISTS (
+           SELECT 1 FROM limo_partner_offers prior
+           WHERE prior.booking_id = $5 AND prior.partner_base_id = limo_partner_bases.id
+             AND (prior.status IN ('declined', 'accepted')
+               OR (prior.status = 'offered' AND prior.expires_at > now()))
+         )
+       ORDER BY id
+       LIMIT 20`,
+      [booking.pickup_date, booking.passengers || 1, zones, booking.vehicle_id, booking.id]
+    );
+    if (!partners.length) {
+      await client.query(
+        `UPDATE limo_bookings SET status = 'pending_operator', updated_at = now() WHERE id = $1`,
+        [booking.id]
+      );
+      await writeStatus(client, booking.id, 'pending_operator', 'No currently available verified operator matched this request.', actorId);
+      await client.query('COMMIT');
+      return { ok: false, status: 409, no_match: true, error: 'No verified available operator matches this trip yet.' };
+    }
+
+    const offerRound = Number(booking.partner_offer_round || 0) + 1;
+    const created = [];
+    for (const partner of partners) {
+      const result = await client.query(
+        `INSERT INTO limo_partner_offers (booking_id, partner_base_id, offer_round, status, platform_commission_rate, expires_at)
+         VALUES ($1,$2,$3,'offered',$4,now() + interval '10 minutes')
+         ON CONFLICT (booking_id, partner_base_id, offer_round) DO NOTHING
+         RETURNING id, partner_base_id, expires_at`,
+        [booking.id, partner.id, offerRound, partner.platform_commission_rate]
+      );
+      if (result.rows[0]) created.push({ ...result.rows[0], display_name: partner.display_name, contact_email: partner.contact_email });
+    }
+    await client.query(
+      `UPDATE limo_bookings SET status = 'offering', partner_offer_round = $1, updated_at = now() WHERE id = $2`,
+      [offerRound, booking.id]
+    );
+    await writeStatus(client, booking.id, 'offering', `Partner offers sent to ${created.length} verified base(s).`, actorId);
+    await client.query('COMMIT');
+
+    for (const partner of created) {
+      if (!partner.contact_email) continue;
+      require('../utils/mailer').sendEmail({
+        to: partner.contact_email,
+        subject: `New NYC Limo Wish operator offer`,
+        html: `<p>A new ride request matches your approved base profile.</p><p>Open the NYC Limo Wish partner portal to review the trip and accept or decline it. The offer expires in 10 minutes.</p><p>Operator offer #${partner.id}</p>`
+      }).catch((err) => console.warn('[LIMO PARTNER OFFER EMAIL]:', err.message));
+    }
+    return { ok: true, booking_number: booking.booking_number, offer_round: offerRound, offers: created.map(({ contact_email, ...offer }) => offer) };
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('[LIMO PARTNER DISPATCH ERROR]:', err.message);
+    return { ok: false, status: 500, error: 'Could not dispatch this booking.' };
+  } finally {
+    client.release();
+  }
+}
 const adminGate = [requireAuth, requireRole('admin')];
 const dispatchGate = [requireAuth, requireRole('admin', 'dispatcher')];
 const partnerGate = [requireAuth, requireRole('partner_dispatcher')];
@@ -209,80 +300,9 @@ router.patch('/partner/availability', ...partnerGate, async (req, res) => {
 });
 
 router.post('/erp/bookings/:id/offers', ...dispatchGate, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await ensureSchema();
-    await client.query('BEGIN');
-    const bookingResult = await client.query('SELECT * FROM limo_bookings WHERE id = $1 FOR UPDATE', [req.params.id]);
-    const booking = bookingResult.rows[0];
-    if (!booking) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Booking not found.' });
-    }
-    if (!['pending_operator', 'offering'].includes(booking.status) || booking.payment_status === 'paid') {
-      await client.query('ROLLBACK');
-      return res.status(409).json({ error: 'Only unpaid bookings awaiting an operator can be dispatched.' });
-    }
-
-    const zones = pickupZones(booking);
-    const { rows: partners } = await client.query(
-      `SELECT id, display_name, contact_email, platform_commission_rate
-       FROM limo_partner_bases
-       WHERE approval_status = 'approved'
-         AND availability_status = 'available'
-         AND availability_updated_at >= now() - interval '10 minutes'
-         AND tlc_base_license_expires_at >= $1
-         AND insurance_expires_at >= $1
-         AND max_passengers >= $2
-         AND service_areas && $3::text[]
-         AND vehicle_classes @> ARRAY[$4]::text[]
-         AND platform_commission_rate IS NOT NULL
-         AND platform_commission_rate + referral_commission_rate <= 1
-         AND NOT EXISTS (
-           SELECT 1 FROM limo_partner_offers old
-           WHERE old.booking_id = $5 AND old.partner_base_id = limo_partner_bases.id
-             AND old.status IN ('declined', 'accepted')
-         )
-       ORDER BY id
-       LIMIT 20`,
-      [booking.pickup_date, booking.passengers || 1, zones, booking.vehicle_id, booking.id]
-    );
-    if (!partners.length) {
-      await client.query(
-        `UPDATE limo_bookings SET status = 'pending_operator', updated_at = now() WHERE id = $1`,
-        [booking.id]
-      );
-      await writeStatus(client, booking.id, 'pending_operator', 'No currently available verified operator matched this request.', req.user.id);
-      await client.query('COMMIT');
-      return res.status(409).json({ ok: false, no_match: true, error: 'No verified available operator matches this trip yet.' });
-    }
-
-    const offerRound = Number(booking.partner_offer_round || 0) + 1;
-    const created = [];
-    for (const partner of partners) {
-      const result = await client.query(
-        `INSERT INTO limo_partner_offers (booking_id, partner_base_id, offer_round, status, platform_commission_rate, expires_at)
-         VALUES ($1,$2,$3,'offered',$4,now() + interval '10 minutes')
-         ON CONFLICT (booking_id, partner_base_id, offer_round) DO NOTHING
-         RETURNING id, partner_base_id, expires_at`,
-        [booking.id, partner.id, offerRound, partner.platform_commission_rate]
-      );
-      if (result.rows[0]) created.push({ ...result.rows[0], display_name: partner.display_name });
-    }
-    await client.query(
-      `UPDATE limo_bookings SET status = 'offering', partner_offer_round = $1, updated_at = now() WHERE id = $2`,
-      [offerRound, booking.id]
-    );
-    await writeStatus(client, booking.id, 'offering', `Partner offers sent to ${created.length} verified base(s).`, req.user.id);
-    await client.query('COMMIT');
-    res.json({ ok: true, booking_number: booking.booking_number, offer_round: offerRound, offers: created });
-  } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
-    console.error('[LIMO PARTNER DISPATCH ERROR]:', err.message);
-    res.status(500).json({ error: 'Could not dispatch this booking.' });
-  } finally {
-    client.release();
-  }
+  const result = await dispatchBooking(req.params.id, req.user.id);
+  if (!result.ok) return res.status(result.status || 500).json(result);
+  res.json(result);
 });
 
 router.get('/partner/offers', ...partnerGate, async (req, res) => {
@@ -363,6 +383,7 @@ router.post('/partner/offers/:id/respond', ...partnerGate, async (req, res) => {
        WHERE booking_id = $3 AND status = 'offered'`,
       [offer.id, req.user.id, offer.booking_id]
     );
+    await client.query("UPDATE limo_partner_bases SET availability_status = 'unavailable', availability_updated_at = now(), updated_at = now() WHERE id = $1", [req.user.partner_base_id]);
     await writeStatus(client, offer.booking_id, 'operator_accepted', 'A verified TLC-licensed partner base accepted the request. Payment is now available.', req.user.id);
     await client.query('COMMIT');
 
@@ -460,3 +481,4 @@ router.patch('/erp/commissions/:id/payout', ...adminGate, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.dispatchBooking = dispatchBooking;
