@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://www.buywishonline.com/sitemap.xml
+
+# Disallow admin and API paths
+Disallow: /api/
+Disallow: /api/buywish/checkout

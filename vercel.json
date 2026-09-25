@@ -205,12 +205,67 @@
     {
       "source": "/",
       "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
-      "destination": "/buywishonline/index.html"
+      "destination": "/api"
     },
     {
       "source": "/index",
       "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
-      "destination": "/buywishonline/index.html"
+      "destination": "/api"
+    },
+    {
+      "source": "/sitemap.xml",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/robots.txt",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/collections/(.*)",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/products/(.*)",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/about",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/contact",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/faq",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/shipping",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/returns",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/privacy-policy",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/terms",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
     },
     {
       "source": "/privacy-policy",

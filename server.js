@@ -178,9 +178,23 @@ app.use((req, res, next) => {
     if (cleanP.startsWith('/api') || p.startsWith('/api/buywish') || p.startsWith('/uploads')) {
       return next();
     }
+    // Homepage — inject geo country meta tag for auto-currency detection
     if (cleanP === '/' || cleanP === '/index' || cleanP === '/index.html') {
-      return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'index.html'));
+      const indexPath = path.join(__dirname, 'public', 'buywishonline', 'index.html');
+      try {
+        let html = fs.readFileSync(indexPath, 'utf8');
+        const geoCountry = req.headers['x-vercel-ip-country'] || req.headers['cf-ipcountry'] || req.headers['x-country-code'] || '';
+        if (geoCountry) {
+          html = html.replace('<head>', `<head>\n  <meta name="x-geo-country" content="${geoCountry.toUpperCase().replace(/[^A-Z]/g, '')}">`);
+        }
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+        return res.send(html);
+      } catch (e) {
+        return res.sendFile(indexPath);
+      }
     }
+    // Static files (sitemap.xml, robots.txt, images, etc.)
     const filePath = path.join(__dirname, 'public', 'buywishonline', cleanP);
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       return res.sendFile(filePath);
@@ -189,6 +203,8 @@ app.use((req, res, next) => {
     if (fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
       return res.sendFile(htmlPath);
     }
+    // SPA fallback — any unknown path on buywishonline.com returns homepage
+    return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'index.html'));
   }
 
   // ShippingWish / Default Legal Pages
