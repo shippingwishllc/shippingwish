@@ -324,7 +324,8 @@ app.use('/api/chat', require('./routes/ai-chat'));                             /
 app.use('/api', require('./routes/broker-team'));                           // Multi-Seat Broker Team Management & Sub-Users CRUD
 app.use('/api', require('./routes/broker-api'));                            // Broker API Key Management & Partner REST API v1 (/api/v1/loads)
 app.use('/api/superadmin', require('./routes/superadmin'));                 // Executive Command Center & Multi-Brand Master Control API
-app.use('/api/nyclimo', require('./routes/nyclimo'));                       // NYC Limo Wish Booking, Chauffeur & Luxury Rides API
+app.use('/api/nyclimo', require('./routes/nyclimo'));                       // NYC Limo Wish public, customer, driver, and ERP API
+app.use('/api/nyclimo', require('./routes/nyclimo-partners'));              // TLC-verified base offers, partner portal, status, and commission ledger
 app.use('/api/buywish', require('./routes/buywish'));                       // BuyWishOnline E-Commerce, Zendrop Sync & AI Hunter API
 
 // ---------- Public Contact / Service Request Form ----------
