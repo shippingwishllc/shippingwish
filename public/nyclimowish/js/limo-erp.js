@@ -1,16 +1,21 @@
 (function () {
   let vehicles = [];
   let bookings = [];
+  let currentRole = '';
+  const esc = (value) => String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;').replaceAll(\"'\",'&#39;');
 
   async function api(path, opts) {
     const res = await fetch('/api/nyclimo' + path, { credentials: 'include', ...opts });
     if (res.status === 401) { window.location.href = '/login?redirect=/erp'; return null; }
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
   }
 
   async function init() {
     const me = await fetch('/api/nyclimo/me', { credentials: 'include' }).then((r) => r.json()).catch(() => null);
     if (!me?.user) { window.location.href = '/login?redirect=/erp'; return; }
+    currentRole = me.user.role;
     document.getElementById('user-name').textContent = me.user.name;
 
     const vData = await api('/vehicles');
@@ -23,7 +28,51 @@
 
     loadStats();
     loadBookings();
+    loadCommissions();
   }
+
+  async function loadCommissions() {
+    const target = document.getElementById('commission-ledger');
+    try {
+      const data = await api('/erp/commissions');
+      if (!data || !target) return;
+      target.innerHTML = data.commissions.length ? data.commissions.map((c) => `
+        <div style="border-top:1px solid #eee;padding:12px 0;">
+          <strong>${esc(c.booking_number)}</strong> · ${esc(c.operator_name)}
+          <div>Operator payout: ${Number(c.operator_payout_amount).toFixed(2)} (${esc(c.operator_payout_status)})</div>
+          ${c.referral_base_id ? `<div>Referral: ${esc(c.referral_name || 'Partner')} · ${Number(c.referral_commission_amount).toFixed(2)} (${esc(c.referral_payout_status)})</div>` : ''}
+          <div style="font-size:.8rem;color:#666;">Platform commission: ${Number(c.platform_commission_amount).toFixed(2)} · ${esc(c.status)}</div>
+          ${currentRole === 'admin' && c.operator_payout_status === 'earned' ? `<button class="limo-btn limo-btn-dark" style="margin:6px 8px 0 0;padding:6px 10px;" data-payout="operator" data-id="${c.id}">Record operator payout</button>` : ''}
+          ${currentRole === 'admin' && c.referral_payout_status === 'earned' ? `<button class="limo-btn limo-btn-outline" style="margin-top:6px;padding:6px 10px;" data-payout="referral" data-id="${c.id}">Record referral payout</button>` : ''}
+        </div>`).join('') : '<p style="color:#999;">No completed paid rides have earned commission yet.</p>';
+      target.querySelectorAll('button[data-payout]').forEach((button) => button.addEventListener('click', async () => {
+        const reference = prompt('Enter the bank transfer or settlement reference. This only records settlement in the ledger.');
+        if (!reference) return;
+        button.disabled = true;
+        try {
+          await api('/erp/commissions/' + button.dataset.id + '/payout', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipient: button.dataset.payout, payout_reference: reference })
+          });
+          await loadCommissions();
+        } catch (err) { alert(err.message); button.disabled = false; }
+      }));
+    } catch (err) { target.innerHTML = '<p style="color:#b91c1c;">' + esc(err.message) + '</p>'; }
+  }
+
+  window.dispatchBooking = async (id) => {
+    try {
+      const data = await api('/erp/bookings/' + id + '/offers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      alert(data?.ok ? 'New offers sent to verified matching operator bases.' : (data?.error || 'No partner accepted this dispatch attempt.'));
+      await loadBookings();
+      await showDetail(id);
+    } catch (err) { alert(err.message); }
+  };
 
   async function loadStats() {
     const data = await api('/erp/stats');
@@ -48,7 +97,7 @@
   }
 
   function statusClass(s) {
-    const map = { pending: 'pending', confirmed: 'confirmed', dispatched: 'dispatched', completed: 'completed', cancelled: 'cancelled' };
+    const map = { pending: 'pending', pending_operator: 'pending', offering: 'dispatched', operator_accepted: 'confirmed', confirmed: 'confirmed', dispatched: 'dispatched', en_route: 'dispatched', completed: 'completed', cancelled: 'cancelled' };
     return 'limo-status-' + (map[s] || 'pending');
   }
 
@@ -61,15 +110,15 @@
     tbody.innerHTML = bookings.map((b) => {
       const route = b.service_type === 'hourly'
         ? b.pickup_address + ' (Hourly)'
-        : (b.pickup_address || '').slice(0, 25) + ' → ' + (b.dropoff_address || '').slice(0, 25);
+        : esc(b.pickup_address || '').slice(0, 25) + ' → ' + esc(b.dropoff_address || '').slice(0, 25);
       return `<tr style="cursor:pointer;" data-id="${b.id}">
-        <td><strong>${b.booking_number}</strong></td>
-        <td>${b.pickup_date}<br><small>${b.pickup_time}</small></td>
-        <td>${b.passenger_first_name} ${b.passenger_last_name}<br><small>${b.passenger_phone || ''}</small></td>
+        <td><strong>${esc(b.booking_number)}</strong></td>
+        <td>${esc(b.pickup_date)}<br><small>${esc(b.pickup_time)}</small></td>
+        <td>${esc(b.passenger_first_name)} ${esc(b.passenger_last_name)}<br><small>${b.passenger_phone || ''}</small></td>
         <td style="max-width:200px;font-size:0.8rem;">${route}</td>
-        <td>${b.vehicle_name || '—'}</td>
+        <td>${esc(b.vehicle_name || '—')}</td>
         <td><strong>$${parseFloat(b.total_price).toFixed(2)}</strong></td>
-        <td><span class="limo-status-pill ${statusClass(b.status)}">${b.status}</span></td>
+        <td><span class="limo-status-pill ${statusClass(b.status)}">${esc(b.status)}</span></td>
         <td>${b.is_manual ? '📞 Phone' : '🌐 Web'}</td>
         <td><button class="limo-btn limo-btn-dark" style="padding:4px 10px;font-size:0.7rem;" onclick="event.stopPropagation();updateStatus(${b.id})">Update</button></td>
       </tr>`;
@@ -86,11 +135,11 @@
     const b = data.booking;
     document.getElementById('detail-content').innerHTML = `
       <div style="margin-top:16px;font-size:0.85rem;line-height:1.8;">
-        <p><strong>${b.booking_number}</strong></p>
+        <p><strong>${esc(b.booking_number)}</strong></p>
         <p>📍 ${b.pickup_address}</p>
         ${b.dropoff_address ? `<p>📍 ${b.dropoff_address}</p>` : ''}
-        <p>📅 ${b.pickup_date} at ${b.pickup_time}</p>
-        <p>👤 ${b.passenger_first_name} ${b.passenger_last_name}</p>
+        <p>📅 ${esc(b.pickup_date)} at ${esc(b.pickup_time)}</p>
+        <p>👤 ${esc(b.passenger_first_name)} ${esc(b.passenger_last_name)}</p>
         <p>📧 ${b.passenger_email || '—'}</p>
         <p>📞 ${b.passenger_phone || '—'}</p>
         <p>🚗 ${b.vehicle_name || b.vehicle_id}</p>
@@ -104,6 +153,7 @@
             ).join('')}
           </select>
           <button class="limo-btn limo-btn-gold" style="padding:6px 14px;font-size:0.75rem;margin-left:8px;" onclick="saveStatus(${b.id})">Save Status</button>
+${['pending_operator','offering'].includes(b.status) ? '          <button class="limo-btn limo-btn-outline" style="padding:6px 14px;font-size:.75rem;margin-left:8px;" onclick="dispatchBooking(${b.id})">Send offers to verified operators</button>' : ''}
         </div>
         <div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px;">
           <strong>History</strong>
