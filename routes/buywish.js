@@ -8,13 +8,16 @@ const express = require('express');
 const router = express.Router();
 const https = require('https');
 const pool = require('../db');
+const { requireAuth, requireRole } = require('../middleware/auth');
+const buyWishAdmin = [requireAuth, requireRole('admin')];
 
 // ============================================================
 // ZENDROP API CLIENT
 // ============================================================
-const ZENDROP_TOKEN = process.env.ZENDROP_API_KEY || 'aqwxHRMel8Zt0MtyQRepREE6jOLFjNLMRuf3jac0zb4sOokHyGpBeW42ZKF79J3m';
+const ZENDROP_TOKEN = process.env.ZENDROP_API_KEY;
 
 function zendropCall(toolName, args = {}) {
+  if (!ZENDROP_TOKEN) return Promise.reject(new Error('Zendrop is not configured. Set ZENDROP_API_KEY.'));
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
       jsonrpc: '2.0',
@@ -378,133 +381,109 @@ function getStripe() {
 // POST /api/buywish/checkout — Stripe Payments + Automatic Tax
 // ============================================================
 router.post('/checkout', async (req, res) => {
-  const { items, customer, currency = 'USD' } = req.body;
-  if (!items || !items.length || !customer || !customer.email) {
-    return res.status(400).json({ error: 'Items and customer email are required.' });
+  const { items, customer, currency = 'USD' } = req.body || {};
+  if (!Array.isArray(items) || items.length < 1 || items.length > 20 || !customer || !customer.email) {
+    return res.status(400).json({ error: 'A valid cart and customer email are required.' });
   }
+
+  const stripe = getStripe();
+  if (!stripe) return res.status(503).json({ error: 'Checkout is temporarily unavailable.' });
 
   try {
     const curUpper = String(currency || 'USD').toUpperCase();
-    const rate = CURRENCY_RATES[curUpper] || 1;
-
+    if (!Object.hasOwn(CURRENCY_RATES, curUpper)) return res.status(400).json({ error: 'Unsupported currency.' });
+    const rate = CURRENCY_RATES[curUpper];
+    const trustedItems = [];
+    const lineItems = [];
     let subtotalCents = 0;
-    const lineItems = items.map(item => {
-      const basePrice = parseFloat(item.price || 0);
-      const unitAmount = Math.max(50, Math.round(basePrice * rate * 100));
-      const qty = parseInt(item.quantity || 1, 10);
+
+    for (const item of items) {
+      const productId = Number.parseInt(item.product_id, 10);
+      const qty = Number.parseInt(item.quantity, 10);
+      if (!Number.isSafeInteger(productId) || productId < 1 || !Number.isInteger(qty) || qty < 1 || qty > 10) {
+        return res.status(400).json({ error: 'Each item needs a valid product and quantity (1–10).' });
+      }
+      const productData = await zendropCall('get_catalog_product', { product_id: productId });
+      const product = normalizeProduct(productData.product || productData);
+      const price = Number(product.retail_price);
+      if (!product.id || Number(product.id) !== productId || !Number.isFinite(price) || price <= 0 || product.in_stock === false) {
+        return res.status(409).json({ error: 'A cart item is unavailable. Refresh your cart and try again.' });
+      }
+
+      const unitAmount = Math.max(50, Math.round(price * rate * 100));
       subtotalCents += unitAmount * qty;
-      return {
+      trustedItems.push({ product_id: productId, title: product.title, quantity: qty, supplier: 'Zendrop' });
+      lineItems.push({
         price_data: {
           currency: curUpper.toLowerCase(),
-          product_data: {
-            name: item.title || 'BuyWishOnline Product',
-            images: item.image_url ? [item.image_url] : []
-          },
+          product_data: { name: product.title, images: product.images?.[0] ? [product.images[0]] : [] },
           unit_amount: unitAmount
         },
         quantity: qty
-      };
-    });
+      });
+    }
 
-    const orderNumber = 'BWO-' + Math.floor(10000 + Math.random() * 90000);
+    const orderNumber = 'BWO-' + require('crypto').randomBytes(6).toString('hex').toUpperCase();
     const subtotalDollars = (subtotalCents / 100).toFixed(2);
-    const costDollars = (parseFloat(subtotalDollars) * 0.35).toFixed(2);
-    const profitDollars = (parseFloat(subtotalDollars) - parseFloat(costDollars)).toFixed(2);
-
-    // Parse shipping address
-    const addrParts = (customer.address || '').split(',');
+    const addrParts = String(customer.address || '').split(',');
     const city = addrParts[1]?.trim() || customer.city || 'Unknown';
     const state = addrParts[2]?.trim() || customer.state || '';
 
-    // Save order in database with pending payment status
+    // Persist before creating the payment session. No synthetic supplier tracking number is generated.
     await pool.query(`
       INSERT INTO ecommerce_orders (
         order_number, customer_name, customer_email, customer_phone,
-        shipping_address, shipping_city, shipping_state, items, total_amount, subtotal_amount, cost_amount,
-        profit_margin, supplier, supplier_tracking_number, fulfillment_status, payment_status, currency
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'Auto-Fulfilled',$13,'processing','pending',$14)
-      ON CONFLICT DO NOTHING
+        shipping_address, shipping_city, shipping_state, items, total_amount, subtotal_amount,
+        supplier, supplier_tracking_number, fulfillment_status, payment_status, currency
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'Zendrop',NULL,'awaiting_payment','pending',$11)
     `, [
       orderNumber,
-      customer.name || 'Valued Customer',
-      customer.email,
-      customer.phone || null,
-      customer.address || null,
+      String(customer.name || 'Valued Customer').slice(0, 160),
+      String(customer.email).slice(0, 254),
+      String(customer.phone || '').slice(0, 40) || null,
+      String(customer.address || '').slice(0, 500) || null,
       city, state,
-      JSON.stringify(items),
-      subtotalDollars, subtotalDollars, costDollars,
-      profitDollars,
-      'ZD' + Math.floor(1000000 + Math.random() * 9000000) + 'US',
-      curUpper
-    ]).catch(err => console.warn('[BUYWISH DB ORDER SAVE WARN]:', err.message));
+      JSON.stringify(trustedItems),
+      subtotalDollars, subtotalDollars, curUpper
+    ]);
 
-    // Stripe checkout session with Payments + Stripe Tax
-    const stripe = getStripe();
-    if (stripe) {
-      const origin = req.headers.origin || req.headers['x-forwarded-host'] || 'https://www.buywishonline.com';
-      const baseUrl = origin.startsWith('http') ? origin : `https://${origin}`;
+    const baseUrl = 'https://www.buywishonline.com';
+    const sessionPayload = {
+      mode: 'payment',
+      customer_email: String(customer.email).slice(0, 254),
+      line_items: lineItems,
+      success_url: `${baseUrl}/?order_success=${encodeURIComponent(orderNumber)}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/?canceled=1`,
+      metadata: { order_number: orderNumber, source: 'buywishonline' },
+      shipping_address_collection: {
+        allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'IE', 'AT', 'CH', 'SE', 'NO', 'DK', 'NZ']
+      },
+      billing_address_collection: 'auto',
+      phone_number_collection: { enabled: true },
+      allow_promotion_codes: true,
+      payment_intent_data: { metadata: { order_number: orderNumber, source: 'buywishonline' } }
+    };
 
-      const sessionPayload = {
-        mode: 'payment',
-        customer_email: customer.email,
-        line_items: lineItems,
-        currency: curUpper.toLowerCase(),
-        success_url: `${baseUrl}/?order_success=${orderNumber}&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/?canceled=1`,
-        metadata: {
-          order_number: orderNumber,
-          customer_name: customer.name || '',
-          customer_phone: customer.phone || '',
-          source: 'buywishonline'
-        },
-        shipping_address_collection: {
-          allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'IE', 'AT', 'CH', 'SE', 'NO', 'DK', 'NZ']
-        },
-        billing_address_collection: 'auto',
-        phone_number_collection: { enabled: true },
-        tax_id_collection: { enabled: true },
-        allow_promotion_codes: true,
-        payment_intent_data: {
-          metadata: { order_number: orderNumber, source: 'buywishonline' }
-        }
-      };
-
-      let session;
-      try {
-        // Attempt with Stripe Tax (automatic tax calculation enabled)
-        session = await stripe.checkout.sessions.create({
-          ...sessionPayload,
-          automatic_tax: { enabled: true }
-        });
-      } catch (taxErr) {
-        if (taxErr.message && (taxErr.message.includes('tax') || taxErr.message.includes('head office'))) {
-          console.warn('[BUYWISH STRIPE TAX]: Stripe Tax head office address not configured in Stripe dashboard. Falling back gracefully to standard checkout:', taxErr.message);
-          session = await stripe.checkout.sessions.create(sessionPayload);
-        } else {
-          throw taxErr;
-        }
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({ ...sessionPayload, automatic_tax: { enabled: true } });
+    } catch (taxErr) {
+      if (taxErr.message && (taxErr.message.includes('tax') || taxErr.message.includes('head office'))) {
+        console.warn('[BUYWISH STRIPE TAX]: Tax configuration unavailable; retrying without automatic tax.');
+        session = await stripe.checkout.sessions.create(sessionPayload);
+      } else {
+        throw taxErr;
       }
-
-      // Record Stripe Session ID in DB
-      await pool.query(`
-        UPDATE ecommerce_orders
-        SET stripe_session_id = $1
-        WHERE upper(order_number) = upper($2)
-      `, [session.id, orderNumber]).catch(() => {});
-
-      return res.json({ ok: true, url: session.url, order_number: orderNumber, session_id: session.id });
     }
 
-    // Direct simulated success if test mode
-    res.json({
-      ok: true,
-      simulated: true,
-      order_number: orderNumber,
-      message: 'Order confirmed! Auto-fulfillment initialized.'
-    });
+    await pool.query(
+      'UPDATE ecommerce_orders SET stripe_session_id = $1 WHERE upper(order_number) = upper($2)',
+      [session.id, orderNumber]
+    );
+    return res.json({ ok: true, url: session.url, order_number: orderNumber, session_id: session.id });
   } catch (err) {
     console.error('[BUYWISH CHECKOUT ERROR]:', err.message);
-    res.status(500).json({ error: err.message || 'Could not process order.' });
+    return res.status(500).json({ error: 'Could not process order.' });
   }
 });
 
@@ -566,7 +545,7 @@ router.get('/verify-session', async (req, res) => {
 // ============================================================
 // POST /api/buywish/import-product — Import Product to My Store
 // ============================================================
-router.post('/import-product', async (req, res) => {
+router.post('/import-product', ...buyWishAdmin, async (req, res) => {
   const { product_id } = req.body;
   if (!product_id) return res.status(400).json({ error: 'product_id required.' });
   try {
@@ -582,7 +561,7 @@ router.post('/import-product', async (req, res) => {
 // ============================================================
 // GET /api/buywish/my-products — Admin: View Imported Products
 // ============================================================
-router.get('/my-products', async (req, res) => {
+router.get('/my-products', ...buyWishAdmin, async (req, res) => {
   try {
     const data = await zendropCall('get_my_products', { limit: 50 });
     const products = (data.products || []).map(normalizeProduct);
@@ -616,7 +595,7 @@ router.get('/catalog/search', async (req, res) => {
 // ============================================================
 // GET /api/buywish/billing — Zendrop Credit Balance
 // ============================================================
-router.get('/billing', async (req, res) => {
+router.get('/billing', ...buyWishAdmin, async (req, res) => {
   try {
     const data = await zendropCall('get_billing_credit_balance', {});
     res.json({ ok: true, billing: data });
@@ -628,7 +607,7 @@ router.get('/billing', async (req, res) => {
 // ============================================================
 // DELETE cache — force refresh (admin use)
 // ============================================================
-router.post('/cache/clear', (req, res) => {
+router.post('/cache/clear', ...buyWishAdmin, (req, res) => {
   Object.keys(cache).forEach(k => delete cache[k]);
   res.json({ ok: true, message: 'Product cache cleared. Next request will fetch fresh from Zendrop.' });
 });
