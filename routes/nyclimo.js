@@ -14,7 +14,7 @@ const { sendEmail } = require('../utils/mailer');
 const APP_URL = (process.env.APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
 
 function signLimoToken(user) {
-  return jwt.sign({ id: user.id, name: user.name, email: user.email, role: user.role, is_limo_user: true }, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id: user.id, name: user.name, email: user.email, role: user.role, partner_base_id: user.partner_base_id || null, is_limo_user: true }, JWT_SECRET, { expiresIn: '7d' });
 }
 
 router.post('/login', async (req, res) => {
@@ -26,7 +26,7 @@ router.post('/login', async (req, res) => {
     if (!rows[0] || !(await bcrypt.compare(password, rows[0].password_hash))) {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
-    const user = { id: rows[0].id, name: rows[0].name, email: rows[0].email, role: rows[0].role };
+    const user = { id: rows[0].id, name: rows[0].name, email: rows[0].email, role: rows[0].role, partner_base_id: rows[0].partner_base_id || null };
     res.cookie('nlw_token', signLimoToken(user), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 86400 * 1000 });
     res.json({ ok: true, user });
   } catch (err) {
@@ -213,7 +213,9 @@ router.post('/bookings', async (req, res) => {
       'INSERT INTO limo_booking_status_history (booking_id, status, note) VALUES ($1,$2,$3)',
       [rows[0].id, 'pending_operator', 'Booking request received; a verified operator must accept before payment.']
     );
-    res.status(201).json({ booking: rows[0] });
+    const dispatch = await require('./nyclimo-partners').dispatchBooking(rows[0].id);
+    const current = await pool.query('SELECT id, booking_number, status, pickup_date, pickup_time, total_price, payment_status FROM limo_bookings WHERE id = $1', [rows[0].id]);
+    res.status(201).json({ booking: current.rows[0] || rows[0], dispatch: { accepted: dispatch.ok, pending: !dispatch.ok } });
   } catch (err) {
     console.error('[LIMO BOOKING CREATE ERROR]:', err.message);
     res.status(500).json({ error: 'Could not create this booking request.' });
@@ -399,19 +401,21 @@ router.get('/passenger/bookings', requireAuth, async (req, res) => {
 async function handleStripeWebhook(event) {
   if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) return;
   const session = event.data.object;
-  if (session.metadata?.type !== 'limo_booking' || session.payment_status !== 'paid') return;
+  if (session.metadata?.type !== 'limo_booking' || session.payment_status !== 'paid' || !session.id) return;
   const bookingId = session.metadata.booking_id;
-  const updated = await pool.query(`UPDATE limo_bookings SET payment_status = 'paid', status = 'awaiting_operator', stripe_payment_intent = $1, updated_at = now() WHERE id = $2 AND payment_status <> 'paid' RETURNING id`,
-    [session.payment_intent, bookingId]);
+  if (!bookingId) return;
+  const updated = await pool.query(`UPDATE limo_bookings SET payment_status = 'paid', status = 'confirmed', stripe_payment_intent = $1, updated_at = now()
+    WHERE id = $2 AND stripe_session_id = $3 AND status = 'operator_accepted' AND payment_status <> 'paid' RETURNING id`,
+    [session.payment_intent || null, bookingId, session.id]);
   if (!updated.rows.length) return;
-  await pool.query('INSERT INTO limo_booking_status_history (booking_id, status, note) VALUES ($1,$2,$3)', [bookingId, 'awaiting_operator', 'Payment received; licensed operator acceptance pending']);
+  await pool.query('INSERT INTO limo_booking_status_history (booking_id, status, note) VALUES ($1,$2,$3)', [bookingId, 'confirmed', 'Payment received after licensed operator acceptance']);
   const { rows } = await pool.query('SELECT * FROM limo_bookings WHERE id = $1', [bookingId]);
   if (rows[0]?.passenger_email) {
     await sendEmail({
       to: rows[0].passenger_email,
-      subject: `Payment received — operator confirmation pending — ${rows[0].booking_number}`,
-      html: `<p>We received your payment request. Your ride is not confirmed until a licensed operator accepts it.</p><p>${rows[0].pickup_address}<br>${rows[0].pickup_date} ${rows[0].pickup_time}</p><p>We will send an update after operator acceptance. Reference: ${rows[0].booking_number}</p>`
-    }).catch(() => {});
+      subject: `Ride confirmed — ${rows[0].booking_number}`,
+      html: `<p>Your payment is complete and your ride is confirmed with a licensed operator.</p><p>${rows[0].pickup_address}<br>${rows[0].pickup_date} ${rows[0].pickup_time}</p><p>Reference: ${rows[0].booking_number}</p>`
+    }).catch((err) => console.warn('[LIMO CONFIRMATION EMAIL]:', err.message));
   }
 }
 
