@@ -1662,6 +1662,55 @@ async function handleStripeEvent(event) {
     }).catch(() => {});
   }
 
+  // ---------- 2B. 3D SECURE (3DS) AUTHENTICATION REQUIRED ON RENEWAL ----------
+  if (type === 'invoice.payment_action_required') {
+    const customerId = obj.customer;
+    const subId = obj.subscription;
+    const amountDue = obj.amount_due ? `$${(obj.amount_due / 100).toFixed(2)}` : '$19.00';
+    const customerEmail = obj.customer_email || (obj.customer_details && obj.customer_details.email);
+    const hostedInvoiceUrl = obj.hosted_invoice_url || 'https://www.loadsnexus.com/?action=checkout';
+
+    if (subId) {
+      await pool.query(
+        `UPDATE billing_subscriptions SET status = 'past_due', updated_at = now() WHERE stripe_subscription_id = $1`,
+        [String(subId)]
+      ).catch(() => {});
+    }
+
+    if (customerEmail) {
+      try {
+        await sendBrandedEmail({
+          to: customerEmail,
+          subject: `🔐 Action Required: Complete Bank 3D Secure Verification (${amountDue})`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #3b82f6;border-radius:12px;background:#ffffff;">
+              <h2 style="color:#1d4ed8;margin-top:0;">Bank Verification Required (3D Secure)</h2>
+              <p>Hi,</p>
+              <p>Your card-issuing bank requires a quick 3D Secure identity verification (SMS OTP or mobile banking app approval) to authorize your scheduled subscription renewal of <strong>${amountDue}</strong>.</p>
+              <p>Please click below to verify with your bank in 1 click:</p>
+              <div style="margin:25px 0;">
+                <a href="${hostedInvoiceUrl}" style="background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">Complete Bank Verification &rarr;</a>
+              </div>
+              <p style="font-size:12px;color:#64748b;">Once verified, your subscription and Load Board access will continue uninterrupted without needing to re-enter your card details.</p>
+            </div>
+          `,
+          text: `Action Required: Your bank requires 3D Secure verification for your ${amountDue} subscription renewal. Please verify here: ${hostedInvoiceUrl}`
+        });
+      } catch (err) {
+        console.error('[Billing Webhook] 3DS payment_action_required email notice error:', err.message);
+      }
+    }
+
+    await notifyStaff({
+      subject: `🔐 3D Secure Verification Required: ${customerEmail || customerId} (${amountDue})`,
+      html: `<p>A subscription renewal requires 3DS bank verification from the cardholder.</p>
+             <p>Customer: ${escapeHtml(customerEmail || customerId)}<br>
+             Amount: ${amountDue}<br>
+             Action Link: <a href="${hostedInvoiceUrl}">${hostedInvoiceUrl}</a></p>`,
+      text: `3DS Action required for ${customerEmail || customerId} (${amountDue}). Link: ${hostedInvoiceUrl}`
+    }).catch(() => {});
+  }
+
   // ---------- 3. SUBSCRIPTION UPDATED OR CANCELED ----------
   if (type === 'customer.subscription.updated' || type === 'customer.subscription.deleted') {
     const subId = obj.id;
