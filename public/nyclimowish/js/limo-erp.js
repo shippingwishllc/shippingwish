@@ -3,13 +3,13 @@
   let bookings = [];
 
   async function api(path, opts) {
-    const res = await fetch('/api' + path, { credentials: 'include', ...opts });
+    const res = await fetch('/api/nyclimo' + path, { credentials: 'include', ...opts });
     if (res.status === 401) { window.location.href = '/login?redirect=/erp'; return null; }
     return res.json();
   }
 
   async function init() {
-    const me = await fetch('/api/me', { credentials: 'include' }).then((r) => r.json()).catch(() => null);
+    const me = await fetch('/api/nyclimo/me', { credentials: 'include' }).then((r) => r.json()).catch(() => null);
     if (!me?.user) { window.location.href = '/login?redirect=/erp'; return; }
     document.getElementById('user-name').textContent = me.user.name;
 
