@@ -102,7 +102,7 @@ document.getElementById('pwa-book-btn').addEventListener('click', () => {
 document.getElementById('track-btn').addEventListener('click', async () => {
   const num = document.getElementById('track-num').value.trim();
   if (!num) return;
-  const res = await fetch('/api/track/' + encodeURIComponent(num));
+  const res = await fetch('/api/nyclimo/track/' + encodeURIComponent(num));
   const data = await res.json();
   const el = document.getElementById('track-result');
   if (!res.ok) { el.innerHTML = '<p style="color:#ef4444;">Booking not found</p>'; return; }
@@ -117,7 +117,7 @@ document.getElementById('track-btn').addEventListener('click', async () => {
 });
 
 async function loadRides() {
-  const res = await fetch('/api/passenger/bookings', { credentials: 'include' });
+  const res = await fetch('/api/nyclimo/passenger/bookings', { credentials: 'include' });
   if (res.status === 401) return;
   const data = await res.json();
   const el = document.getElementById('rides-list');
@@ -135,7 +135,7 @@ async function loadRides() {
   `).join('');
 }
 
-fetch('/api/me', { credentials: 'include' }).then((r) => r.json()).then((d) => {
+fetch('/api/nyclimo/me', { credentials: 'include' }).then((r) => r.json()).then((d) => {
   if (d?.user) document.getElementById('auth-link').textContent = d.user.name.split(' ')[0];
 }).catch(() => {});
 
