@@ -34,13 +34,13 @@ async function dispatchBooking(bookingId, actorId = null) {
        FROM limo_partner_bases
        LEFT JOIN limo_partner_bases referral ON referral.id = $6
        WHERE limo_partner_bases.approval_status = 'approved'
-         AND availability_status = 'available'
-         AND availability_updated_at >= now() - interval '10 minutes'
-         AND tlc_base_license_expires_at >= $1
-         AND insurance_expires_at >= $1
-         AND max_passengers >= $2
-         AND service_areas && $3::text[]
-         AND vehicle_classes @> ARRAY[$4]::text[]
+         AND limo_partner_bases.availability_status = 'available'
+         AND limo_partner_bases.availability_updated_at >= now() - interval '10 minutes'
+         AND limo_partner_bases.tlc_base_license_expires_at >= $1
+         AND limo_partner_bases.insurance_expires_at >= $1
+         AND limo_partner_bases.max_passengers >= $2
+         AND limo_partner_bases.service_areas && $3::text[]
+         AND limo_partner_bases.vehicle_classes @> ARRAY[$4]::text[]
          AND limo_partner_bases.platform_commission_rate IS NOT NULL
          AND limo_partner_bases.platform_commission_rate +
              CASE WHEN $6 IS NULL THEN 0 ELSE COALESCE(referral.referral_commission_rate, 0) END <= 1
