@@ -20,26 +20,28 @@
 </div>
 <script>
 const params = new URLSearchParams(window.location.search);
-if (params.get('ref')) { document.getElementById('track-num').value = params.get('ref'); document.getElementById('track-btn').click(); }
+if (params.get('ref')) document.getElementById('track-num').value = params.get('ref');
 document.getElementById('track-btn').addEventListener('click', async () => {
   const num = document.getElementById('track-num').value.trim();
   if (!num) return;
-  const res = await fetch('/api/track/' + encodeURIComponent(num));
+  const res = await fetch('/api/nyclimo/track/' + encodeURIComponent(num));
   const data = await res.json();
   const el = document.getElementById('track-result');
   if (!res.ok) { el.innerHTML = '<p style="color:#ef4444;text-align:center;">Booking not found</p>'; return; }
   const b = data.booking;
+  const esc = (v) => String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
   el.innerHTML = `<div class="limo-widget">
-    <p><strong>${b.booking_number}</strong> — <span style="color:var(--limo-gold);">${b.status.toUpperCase()}</span></p>
-    <p style="margin-top:12px;font-size:0.9rem;">📍 ${b.pickup_address}</p>
-    ${b.dropoff_address ? `<p style="font-size:0.9rem;">📍 ${b.dropoff_address}</p>` : ''}
-    <p style="font-size:0.9rem;">📅 ${b.pickup_date} at ${b.pickup_time}</p>
-    <p style="font-size:0.9rem;">🚗 ${b.vehicle_name || '—'}</p>
-    <p style="font-size:0.9rem;">💰 $${parseFloat(b.total_price).toFixed(2)} (${b.payment_status})</p>
+    <p><strong>${esc(b.booking_number)}</strong> — <span style="color:var(--limo-gold);">${esc(b.status.toUpperCase())}</span></p>
+    <p style="margin-top:12px;font-size:0.9rem;">📍 ${esc(b.pickup_address)}</p>
+    ${b.dropoff_address ? `<p style="font-size:0.9rem;">📍 ${esc(b.dropoff_address)}</p>` : ''}
+    <p style="font-size:0.9rem;">📅 ${esc(b.pickup_date)} at ${esc(b.pickup_time)}</p>
+    <p style="font-size:0.9rem;">🚗 ${esc(b.vehicle_name || '—')}</p>
+    <p style="font-size:0.9rem;">💰 $${esc(parseFloat(b.total_price).toFixed(2))} (${esc(b.payment_status)})</p>
     ${data.history?.length ? '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.1);padding-top:12px;">' +
       data.history.map((h) => `<p style="font-size:0.8rem;color:var(--limo-gray);">${h.status} — ${new Date(h.created_at).toLocaleString()}</p>`).join('') + '</div>' : ''}
   </div>`;
 });
+if (params.get('ref')) document.getElementById('track-btn').click();
 </script>
 </body>
 </html>
