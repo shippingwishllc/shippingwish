@@ -582,10 +582,10 @@ router.get('/search', optionalAuth, async (req, res) => {
       );
       if (dbRes.rows && dbRes.rows.length) {
         liveDbLoads = dbRes.rows.map(r => {
-          let bName = r.broker_name || 'Verified Freight Broker';
-          let bMc = r.broker_mc || 'MC-VERIFIED';
-          let bPhone = '(800) 580-3101';
-          let bEmail = 'dispatch@broker.com';
+          let bName = r.broker_name || 'Broker details unavailable';
+          let bMc = r.broker_mc || '';
+          let bPhone = '';
+          let bEmail = '';
 
           if (r.broker_contact) {
             const parts = r.broker_contact.split('|');
@@ -634,11 +634,11 @@ router.get('/search', optionalAuth, async (req, res) => {
             broker_mc: bMc,
             broker_phone: bPhone,
             broker_email: bEmail,
-            credit_score: 'A+ (Verified)',
-            days_to_pay: 18,
-            bond_status: 'ACTIVE ($75,000 BMC-84)',
-            fraud_risk: 'LOW (Anti-Double Brokering Guard Passed)',
-            verified_broker: true,
+            credit_score: null,
+            days_to_pay: null,
+            bond_status: 'Not verified',
+            fraud_risk: 'Not assessed',
+            verified_broker: false,
             is_live_broker_post: true,
             posted_age: 'Just now',
             status: r.status || 'new',
