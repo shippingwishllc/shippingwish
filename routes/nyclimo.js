@@ -331,19 +331,20 @@ router.get('/passenger/bookings', requireAuth, async (req, res) => {
 });
 
 async function handleStripeWebhook(event) {
-  if (event.type !== 'checkout.session.completed') return;
+  if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) return;
   const session = event.data.object;
-  if (session.metadata?.type !== 'limo_booking') return;
+  if (session.metadata?.type !== 'limo_booking' || session.payment_status !== 'paid') return;
   const bookingId = session.metadata.booking_id;
-  await pool.query(`UPDATE limo_bookings SET payment_status = 'paid', status = 'confirmed', stripe_payment_intent = $1, updated_at = now() WHERE id = $2`,
+  const updated = await pool.query(`UPDATE limo_bookings SET payment_status = 'paid', status = 'awaiting_operator', stripe_payment_intent = $1, updated_at = now() WHERE id = $2 AND payment_status <> 'paid' RETURNING id`,
     [session.payment_intent, bookingId]);
-  await pool.query('INSERT INTO limo_booking_status_history (booking_id, status, note) VALUES ($1,$2,$3)', [bookingId, 'confirmed', 'Stripe payment']);
+  if (!updated.rows.length) return;
+  await pool.query('INSERT INTO limo_booking_status_history (booking_id, status, note) VALUES ($1,$2,$3)', [bookingId, 'awaiting_operator', 'Payment received; licensed operator acceptance pending']);
   const { rows } = await pool.query('SELECT * FROM limo_bookings WHERE id = $1', [bookingId]);
   if (rows[0]?.passenger_email) {
     await sendEmail({
       to: rows[0].passenger_email,
-      subject: `Confirmed — ${rows[0].booking_number}`,
-      html: `<p>Your ride is confirmed!</p><p>${rows[0].pickup_address}<br>${rows[0].pickup_date} ${rows[0].pickup_time}</p><p><a href="${APP_URL}/track?ref=${rows[0].booking_number}">Track ride</a></p>`
+      subject: `Payment received — operator confirmation pending — ${rows[0].booking_number}`,
+      html: `<p>We received your payment request. Your ride is not confirmed until a licensed operator accepts it.</p><p>${rows[0].pickup_address}<br>${rows[0].pickup_date} ${rows[0].pickup_time}</p><p>We will send an update after operator acceptance. Reference: ${rows[0].booking_number}</p>`
     }).catch(() => {});
   }
 }
