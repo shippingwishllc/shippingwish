@@ -3,7 +3,7 @@
     serviceType: 'point_to_point',
     pickup: '', dropoff: '', pickupDate: '', pickupTime: '',
     hours: 3, miles: 0, durationMins: 0,
-    quotes: [], selectedVehicle: null, bookingId: null
+    quotes: [], selectedVehicle: null, bookingId: null, bookingNumber: null
   };
 
   const VEHICLE_ICONS = {
@@ -76,7 +76,7 @@
     $('btn-step1').textContent = 'Calculating prices...';
 
     try {
-      const res = await fetch('/api/quote', {
+      const res = await fetch('/api/nyclimo/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -191,7 +191,7 @@
     $('btn-step3').textContent = 'Creating booking...';
 
     try {
-      const res = await fetch('/api/bookings', {
+      const res = await fetch('/api/nyclimo/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -209,13 +209,21 @@
           email,
           phone,
           tripNotes: $('p-notes').value,
-          childSeats: $('p-child-seats').checked ? 1 : 0
+          passengers: parseInt($('p-passengers').value || '1', 10),
+          childSeats: $('p-child-seats').checked ? 1 : 0,
+          referralCode: params.get('ref') || params.get('referral') || undefined
         })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       state.bookingId = data.booking.id;
+      state.bookingNumber = data.booking.booking_number;
+      $('btn-pay').disabled = data.booking.status !== 'operator_accepted';
+      $('operator-status').textContent = data.booking.status === 'operator_accepted'
+        ? 'A licensed operator accepted your request. Payment is ready.'
+        : 'Your request is with verified licensed operators. We will enable payment as soon as a partner accepts.';
       showStep(4);
+      pollOperatorStatus();
     } catch (err) {
       alert('Booking failed: ' + err.message);
     } finally {
@@ -224,11 +232,42 @@
     }
   });
 
+  let statusTimer = null;
+  async function pollOperatorStatus() {
+    if (statusTimer) clearInterval(statusTimer);
+    const check = async () => {
+      if (!state.bookingNumber) return;
+      try {
+        const response = await fetch('/api/nyclimo/track/' + encodeURIComponent(state.bookingNumber));
+        const data = await response.json();
+        if (!response.ok) return;
+        const booking = data.booking;
+        if (booking.status === 'operator_accepted') {
+          $('operator-status').textContent = 'A licensed operator accepted your request. Payment is ready.';
+          $('btn-pay').disabled = false;
+          clearInterval(statusTimer);
+          statusTimer = null;
+        } else if (booking.status === 'confirmed') {
+          $('operator-status').textContent = 'Your ride is confirmed and paid.';
+          $('btn-pay').disabled = true;
+          clearInterval(statusTimer);
+          statusTimer = null;
+        } else {
+          $('operator-status').textContent = 'Booking status: ' + booking.status.replaceAll('_', ' ') + '. Waiting for a verified operator to accept.';
+        }
+      } catch (_) {}
+    };
+    await check();
+    if (!$('btn-pay').disabled) return;
+    statusTimer = setInterval(check, 12000);
+  }
+
   $('btn-pay').addEventListener('click', async () => {
+    if ($('btn-pay').disabled) return;
     $('btn-pay').disabled = true;
     $('btn-pay').textContent = 'Redirecting to Stripe...';
     try {
-      const res = await fetch('/api/bookings/' + state.bookingId + '/checkout', { method: 'POST' });
+      const res = await fetch('/api/nyclimo/bookings/' + state.bookingId + '/checkout', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       window.location.href = data.url;
