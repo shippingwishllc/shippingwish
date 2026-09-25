@@ -1846,20 +1846,18 @@ async function webhookHandler(req, res) {
   const pathStr = (req.originalUrl || req.url || '').toLowerCase();
   const isLoadsNexusPath = pathStr.includes('loadsnexus') || req.query.brand === 'loadsnexus';
 
+  const Stripe = require('stripe');
   const lnSecret = process.env.LOADSNEXUS_STRIPE_WEBHOOK_SECRET || process.env.STRIPE_LOADSNEXUS_WEBHOOK_SECRET;
-  const lnStripe = getStripe('loadsnexus');
-
   const swSecret = process.env.STRIPE_WEBHOOK_SECRET || process.env.SHIPPINGWISH_STRIPE_WEBHOOK_SECRET;
-  const swStripe = getStripe('shippingwish');
 
   try {
     let verified = false;
 
     if (sig) {
       // 1. If explicitly on LoadsNexus path, verify with LoadsNexus secret first
-      if (isLoadsNexusPath && lnSecret && lnStripe) {
+      if (isLoadsNexusPath && lnSecret) {
         try {
-          event = lnStripe.webhooks.constructEvent(req.body, sig, lnSecret);
+          event = Stripe.webhooks.constructEvent(req.body, sig, lnSecret);
           verified = true;
         } catch (e) {
           console.warn('LoadsNexus dedicated webhook signature check failed:', e.message);
@@ -1867,15 +1865,15 @@ async function webhookHandler(req, res) {
       }
 
       // 2. Try Shipping Wish secret
-      if (!verified && swSecret && swStripe) {
+      if (!verified && swSecret) {
         try {
-          event = swStripe.webhooks.constructEvent(req.body, sig, swSecret);
+          event = Stripe.webhooks.constructEvent(req.body, sig, swSecret);
           verified = true;
         } catch (e) {
           // If Shipping Wish secret failed, check if LoadsNexus secret matches
-          if (lnSecret && lnStripe) {
+          if (lnSecret) {
             try {
-              event = lnStripe.webhooks.constructEvent(req.body, sig, lnSecret);
+              event = Stripe.webhooks.constructEvent(req.body, sig, lnSecret);
               verified = true;
             } catch (lnErr) {
               // Signature mismatch on both
@@ -1885,8 +1883,8 @@ async function webhookHandler(req, res) {
       }
 
       // 3. Fallback: If only LoadsNexus secret configured
-      if (!verified && lnSecret && lnStripe && !swSecret) {
-        event = lnStripe.webhooks.constructEvent(req.body, sig, lnSecret);
+      if (!verified && lnSecret && !swSecret) {
+        event = Stripe.webhooks.constructEvent(req.body, sig, lnSecret);
         verified = true;
       }
 
