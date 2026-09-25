@@ -77,28 +77,7 @@ async function ensureSuperAdminTables() {
       );
     `).catch(() => {});
 
-    // Seed mock data for e-commerce if empty so SuperAdmin dashboard has live metrics immediately
-    const checkEcom = await pool.query('SELECT COUNT(*) FROM ecommerce_orders');
-    if (parseInt(checkEcom.rows[0].count, 10) === 0) {
-      await pool.query(`
-        INSERT INTO ecommerce_orders (order_number, customer_name, customer_email, customer_phone, shipping_city, shipping_state, items, total_amount, cost_amount, profit_margin, supplier, supplier_tracking_number, fulfillment_status, payment_status, created_at)
-        VALUES
-        ('BWO-89102', 'Sarah Jenkins', 's.jenkins@gmail.com', '(512) 555-0142', 'Austin', 'TX', '[{"title":"Smart Multi-Angle Car Phone Mount","qty":2,"price":29.99}]', 59.98, 18.00, 41.98, 'Zendrop', 'ZD9841209US', 'in_transit', 'paid', NOW() - INTERVAL '1 day'),
-        ('BWO-89103', 'Marcus Vance', 'mvance99@outlook.com', '(718) 555-8821', 'Brooklyn', 'NY', '[{"title":"Cordless Deep Tissue Muscle Gun","qty":1,"price":79.99}]', 79.99, 28.50, 51.49, 'Zendrop', 'ZD9841255US', 'processing', 'paid', NOW() - INTERVAL '4 hours'),
-        ('BWO-89104', 'Elena Rostova', 'elena.rostova@yahoo.com', '(305) 555-3910', 'Miami', 'FL', '[{"title":"RGB Ambient Smart LED Light Bar","qty":3,"price":34.99}]', 104.97, 36.00, 68.97, 'Zendrop', 'ZD9841108US', 'delivered', 'paid', NOW() - INTERVAL '3 days'),
-        ('BWO-89105', 'David Kim', 'dkim_logistics@gmail.com', '(206) 555-7124', 'Seattle', 'WA', '[{"title":"Ultra-Fast Wireless Charging Pad Pro","qty":1,"price":39.99}]', 39.99, 12.00, 27.99, 'Zendrop', 'ZD9841399US', 'in_transit', 'paid', NOW() - INTERVAL '12 hours')
-      `).catch(() => {});
-
-      await pool.query(`
-        INSERT INTO ecommerce_products (title, handle, description, category, retail_price, supplier_cost, estimated_margin, trend_score, source, image_url)
-        VALUES
-        ('Cordless Deep Tissue Muscle Gun', 'cordless-muscle-gun', 'High-torque percussion therapy with 6 speed levels.', 'Fitness & Health', 79.99, 28.50, 64.37, 98, 'Zendrop AI Hunter', 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=400&q=80'),
-        ('Smart Multi-Angle Car Phone Mount', 'smart-car-mount', 'Auto-clamping Qi-enabled wireless induction car charger.', 'Automotive', 29.99, 9.00, 69.99, 94, 'Zendrop AI Hunter', 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=400&q=80'),
-        ('RGB Ambient Smart LED Light Bar', 'rgb-light-bar', 'Sound sync gaming and studio accent lighting.', 'Electronics', 34.99, 12.00, 65.70, 91, 'Zendrop AI Hunter', 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=400&q=80'),
-        ('Heavy-Duty Tactical Cargo Organizer', 'tactical-cargo-organizer', 'Foldable waterproof organizer for trucks and SUVs.', 'Automotive & Freight', 49.99, 16.50, 66.99, 89, 'Zendrop AI Hunter', 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=400&q=80')
-        ON CONFLICT (handle) DO NOTHING
-      `).catch(() => {});
-    }
+    // Product and order data must come from real integrations and paid checkouts.
 
     // 5. Ensure audit_log and site_settings tables exist
     await pool.query(`
@@ -121,96 +100,7 @@ async function ensureSuperAdminTables() {
       );
     `).catch(() => {});
 
-    const checkAudit = await pool.query('SELECT COUNT(*) FROM audit_log').catch(() => ({ rows: [{ count: 1 }] }));
-    if (parseInt(checkAudit.rows[0].count, 10) === 0) {
-      await pool.query(`
-        INSERT INTO audit_log (user_id, action, entity_type, entity_id, ip_address, payload, created_at)
-        VALUES
-        (1, 'SUPERADMIN_INITIALIZED', 'system', 1, '127.0.0.1', '{"event":"Master 4-brand command center initialized"}', NOW() - INTERVAL '2 hours'),
-        (1, '2FA_OTP_VERIFIED', 'user', 1, '127.0.0.1', '{"email":"ahsan_me_9@yahoo.com","method":"email_otp"}', NOW() - INTERVAL '1 hour'),
-        (1, 'STRIPE_GATEWAY_SYNC', 'billing', 1, '127.0.0.1', '{"status":"connected","brand":"ShippingWish"}', NOW() - INTERVAL '30 minutes')
-      `).catch(() => {});
-    }
-
-    // Seed NYC Limo Wish reservations if empty
-    const checkLimo = await pool.query('SELECT COUNT(*) FROM limo_bookings');
-    if (parseInt(checkLimo.rows[0].count, 10) === 0) {
-      await pool.query(`
-        INSERT INTO limo_bookings (
-          booking_number, service_type, status, pickup_address, dropoff_address,
-          pickup_date, pickup_time, vehicle_id, passengers, luggage,
-          passenger_first_name, passenger_last_name, passenger_email, passenger_phone,
-          total_price, payment_status, created_at
-        ) VALUES
-        ('NLW-2026-081', 'airport_transfer', 'confirmed', 'JFK International Airport Terminal 4', 'The Plaza Hotel, 768 5th Ave, New York, NY', CURRENT_DATE + INTERVAL '1 day', '14:30', 'elitex_suv', 3, 4, 'John', 'Rockefeller', 'j.rockefeller@privatewealth.com', '(212) 555-0199', 195.00, 'paid', NOW() - INTERVAL '2 hours'),
-        ('NLW-2026-082', 'airport_transfer', 'pending', 'Newark Liberty International (EWR)', 'One World Trade Center, Financial District, NY', CURRENT_DATE + INTERVAL '2 days', '09:15', 'premium_sedan', 1, 2, 'Katherine', 'Sterling', 'ksterling@sterlingcap.com', '(917) 555-3820', 225.00, 'paid', NOW() - INTERVAL '5 hours'),
-        ('NLW-2026-083', 'airport_transfer', 'completed', 'LaGuardia Airport (LGA) Terminal B', '15 Central Park West, New York, NY', CURRENT_DATE - INTERVAL '1 day', '18:45', 'business_sedan', 2, 2, 'Robert', 'Thorne', 'rthorne@thornefirm.com', '(646) 555-7741', 145.00, 'paid', NOW() - INTERVAL '1 day'),
-        ('NLW-2026-084', 'hourly_hire', 'confirmed', 'The Carlyle Hotel, 35 E 76th St, New York, NY', 'Midtown Manhattan & Tribeca Financial', CURRENT_DATE + INTERVAL '1 day', '11:00', 'elitex_suv', 4, 2, 'Elizabeth', 'Dupont', 'edupont@luxuryholdings.com', '(917) 555-9904', 420.00, 'paid', NOW() - INTERVAL '12 hours')
-      `).catch(() => {});
-    }
-
-    // Seed Carriers and Fleet Trucks if empty
-    const checkCarriers = await pool.query("SELECT COUNT(*) FROM users WHERE role IN ('carrier', 'carrier_admin')");
-    if (parseInt(checkCarriers.rows[0].count, 10) === 0) {
-      const bcrypt = require('bcryptjs');
-      const hash = await bcrypt.hash('CarrierPass2026!', 10);
-      await pool.query(`
-        INSERT INTO users (name, company_name, email, phone, mc_number, dot_number, role, weekly_plan, password_hash, created_at)
-        VALUES 
-        ('David Miller', 'Apex Freight Systems LLC', 'ops@apexfreight.com', '(404) 555-7821', '1192834', '3589102', 'carrier', 'weekly_dedicated_500', $1, NOW() - INTERVAL '14 days'),
-        ('Elena Vane', 'Ironclad Hauling Inc', 'elena@ironcladhauling.com', '(773) 555-4419', '984120', '2941029', 'carrier', 'weekly_standard_350', $1, NOW() - INTERVAL '8 days')
-        ON CONFLICT (email) DO NOTHING
-      `, [hash]).catch(() => {});
-    }
-
-    const checkTrucks = await pool.query('SELECT COUNT(*) FROM trucks');
-    if (parseInt(checkTrucks.rows[0].count, 10) === 0) {
-      const carrierRes = await pool.query("SELECT id FROM users WHERE role IN ('carrier', 'carrier_admin') LIMIT 2");
-      const cId1 = carrierRes.rows[0]?.id || null;
-      const cId2 = carrierRes.rows[1]?.id || cId1;
-
-      await pool.query(`
-        INSERT INTO trucks (carrier_id, truck_number, unit_number, equipment_type, trailer_type, dispatch_status, status, next_available_date, next_available_city, assigned_driver_name, assigned_driver_phone, is_active, created_at)
-        VALUES
-        ($1, 'TRK-101', 'Unit #101', '53ft Dry Van', 'Dry Van', 'empty', 'active', CURRENT_DATE, 'Dallas, TX', 'Marcus Briggs', '(404) 555-9012', true, NOW() - INTERVAL '10 days'),
-        ($1, 'TRK-102', 'Unit #102', '53ft Reefer', 'Reefer', 'booked', 'active', CURRENT_DATE + INTERVAL '2 days', 'Atlanta, GA', 'Alexei Volkov', '(773) 555-4419', true, NOW() - INTERVAL '9 days'),
-        ($2, 'TRK-103', 'Unit #103', '53ft Dry Van', 'Dry Van', 'unloading_tomorrow', 'active', CURRENT_DATE + INTERVAL '1 day', 'Chicago, IL', 'Jamal Washington', '(214) 555-3390', true, NOW() - INTERVAL '5 days'),
-        ($2, 'TRK-104', 'Unit #104', '53ft Flatbed', 'Flatbed', 'empty', 'active', CURRENT_DATE, 'Phoenix, AZ', 'Carlos Mendez', '(602) 555-8812', true, NOW() - INTERVAL '2 days')
-      `, [cId1, cId2]).catch(() => {});
-    }
-
-    // Seed LoadsNexus spot freight if loads table has fewer than 4 available
-    const checkLoads = await pool.query("SELECT COUNT(*) FROM loads WHERE status::text = 'new'");
-    if (parseInt(checkLoads.rows[0].count, 10) < 4) {
-      await pool.query(`
-        INSERT INTO loads (
-          load_number, pickup_location, pickup_state, delivery_location, delivery_state,
-          pickup_date, delivery_date, equipment_type, weight, miles, rate, rpm, status, broker_name, broker_mc, broker_contact, created_at
-        ) VALUES
-        ('LN-4011', 'Chicago, IL', 'IL', 'Atlanta, GA', 'GA', CURRENT_DATE + INTERVAL '1 day', CURRENT_DATE + INTERVAL '2 days', '53ft Dry Van', 42000, 715, 3200.00, 4.47, 'new', 'Echo Global Logistics', 'MC-412891', '(800) 354-7993', NOW() - INTERVAL '2 hours'),
-        ('LN-4012', 'Dallas, TX', 'TX', 'Charlotte, NC', 'NC', CURRENT_DATE + INTERVAL '1 day', CURRENT_DATE + INTERVAL '3 days', '53ft Reefer', 38500, 1020, 3850.00, 3.77, 'new', 'C.H. Robinson Worldwide', 'MC-192831', '(800) 323-7587', NOW() - INTERVAL '3 hours'),
-        ('LN-4013', 'Atlanta, GA', 'GA', 'Orlando, FL', 'FL', CURRENT_DATE + INTERVAL '2 days', CURRENT_DATE + INTERVAL '3 days', '53ft Dry Van', 36000, 440, 1950.00, 4.43, 'new', 'TQL Total Quality Logistics', 'MC-294711', '(800) 580-3101', NOW() - INTERVAL '4 hours'),
-        ('LN-4014', 'Los Angeles, CA', 'CA', 'Phoenix, AZ', 'AZ', CURRENT_DATE, CURRENT_DATE + INTERVAL '1 day', '53ft Flatbed', 44000, 370, 1800.00, 4.86, 'covered', 'Landstar Ranger Inc', 'MC-158291', '(800) 872-9400', NOW() - INTERVAL '6 hours'),
-        ('LN-4015', 'Newark, NJ', 'NJ', 'Chicago, IL', 'IL', CURRENT_DATE + INTERVAL '1 day', CURRENT_DATE + INTERVAL '2 days', '53ft Dry Van', 41000, 790, 2950.00, 3.73, 'new', 'Coyote Logistics LLC', 'MC-561284', '(877) 626-9683', NOW() - INTERVAL '7 hours'),
-        ('LN-4016', 'Phoenix, AZ', 'AZ', 'Dallas, TX', 'TX', CURRENT_DATE + INTERVAL '1 day', CURRENT_DATE + INTERVAL '3 days', '53ft Flatbed', 43000, 1065, 3450.00, 3.23, 'new', 'Arrive Logistics', 'MC-879412', '(888) 995-7669', NOW() - INTERVAL '8 hours')
-        ON CONFLICT (load_number) DO NOTHING
-      `).catch(() => {});
-    }
-
-    // Seed Active Billing Subscriptions if 0
-    const checkSubs = await pool.query('SELECT COUNT(*) FROM billing_subscriptions');
-    if (parseInt(checkSubs.rows[0].count, 10) === 0) {
-      const carrierRes = await pool.query("SELECT id FROM users WHERE role IN ('carrier', 'carrier_admin') LIMIT 2");
-      const c1 = carrierRes.rows[0]?.id || 1;
-      const c2 = carrierRes.rows[1]?.id || c1;
-      await pool.query(`
-        INSERT INTO billing_subscriptions (user_id, plan_key, stripe_subscription_id, status, amount_cents, interval, current_period_end, created_at)
-        VALUES
-        ($1, 'weekly_dedicated_500', 'sub_live_sw_01', 'active', 50000, 'week', NOW() + INTERVAL '5 days', NOW() - INTERVAL '2 days'),
-        ($2, 'weekly_standard_350', 'sub_live_sw_02', 'active', 35000, 'week', NOW() + INTERVAL '4 days', NOW() - INTERVAL '3 days'),
-        ($1, 'loadboard_fleet_pass', 'sub_live_ln_01', 'active', 6900, 'month', NOW() + INTERVAL '25 days', NOW() - INTERVAL '5 days')
-      `, [c1, c2]).catch(() => {});
-    }
+    // Do not seed synthetic audit history, limo rides, carriers, trucks, freight loads, or billing subscriptions.
 
     tablesInitialized = true;
   } catch (err) {
