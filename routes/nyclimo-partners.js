@@ -412,6 +412,25 @@ const nextPartnerStatus = {
   in_progress: ['completed']
 };
 
+router.get('/partner/bookings', ...partnerGate, async (req, res) => {
+  if (!req.user.partner_base_id) return res.status(403).json({ error: 'Operator account is not linked to a base.' });
+  try {
+    await ensureSchema();
+    const { rows } = await pool.query(
+      `SELECT id, booking_number, status, service_type, pickup_address, dropoff_address, pickup_date, pickup_time,
+              duration_hours, vehicle_id, passengers, luggage, passenger_first_name, passenger_last_name,
+              passenger_email, passenger_phone, trip_notes, total_price
+       FROM limo_bookings
+       WHERE operator_base_id = $1 AND payment_status = 'paid' AND status NOT IN ('completed', 'cancelled')
+       ORDER BY pickup_date, pickup_time LIMIT 100`,
+      [req.user.partner_base_id]
+    );
+    res.json({ ok: true, bookings: rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load assigned rides.' });
+  }
+});
+
 router.post('/partner/bookings/:id/status', ...partnerGate, async (req, res) => {
   const status = String(req.body?.status || '');
   const client = await pool.connect();
