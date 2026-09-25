@@ -2421,120 +2421,7 @@ let currentQty = 1;
 let cart = []; // { ...product, qty }
 
 // Demo products (shown when API has no products)
-const DEMO_PRODUCTS = [
-  {
-    id: 1001, title: 'ProMax Wireless Noise-Cancelling Headphones', category: 'Tech',
-    retail_price: '89.99', compare_price: '149.99',
-    images: [
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1487215078519-e21cc028cb29?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=600&q=80'
-    ],
-    description: 'Premium over-ear headphones with active noise cancellation, 40-hour battery life and Hi-Res audio certification. Perfect for home, office and travel.',
-    features: ['40-hour battery life','Active Noise Cancellation (ANC)','Hi-Res Audio certified','Foldable design for travel','Bluetooth 5.3 multipoint connection'],
-    badge: 'best', rating: 4.8, reviews: 2341, delivery: '3–7 business days',
-    ships_to: ['US','GB','CA','EU']
-  },
-  {
-    id: 1002, title: 'SmartFit Pro Fitness Tracker Watch', category: 'Fitness',
-    retail_price: '49.99', compare_price: '89.99',
-    images: [
-      'https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?auto=format&fit=crop&w=600&q=80'
-    ],
-    description: 'Track your fitness goals with 24/7 heart rate, SpO2, sleep tracking and 100+ workout modes. 7-day battery life with IP68 waterproofing.',
-    features: ['24/7 heart rate & SpO2','IP68 waterproof rating','7-day battery life','100+ workout modes','GPS + sleep tracking'],
-    badge: 'hot', rating: 4.7, reviews: 1876, delivery: '4–8 business days',
-    ships_to: ['US','GB','CA','EU']
-  },
-  {
-    id: 1003, title: 'LuxSkin Facial LED Therapy Mask', category: 'Beauty',
-    retail_price: '59.99', compare_price: '99.99',
-    images: [
-      'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1571646034647-52e6ea84b28c?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1556760544-74068565f05c?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=600&q=80'
-    ],
-    description: 'Professional-grade 7-color LED light therapy mask for anti-aging, acne reduction and skin rejuvenation. Used by dermatologists worldwide.',
-    features: ['7 LED light colors','Anti-aging & anti-acne','Clinically tested technology','20-min treatment sessions','Comfortable adjustable fit'],
-    badge: 'sale', rating: 4.9, reviews: 3102, delivery: '5–9 business days',
-    ships_to: ['US','GB','CA','EU']
-  },
-  {
-    id: 1004, title: 'AeroFlow Portable Air Purifier & Diffuser', category: 'Home',
-    retail_price: '44.99', compare_price: '74.99',
-    images: [
-      'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1556909172-8c2f041fca1e?auto=format&fit=crop&w=600&q=80'
-    ],
-    description: 'Ultra-quiet portable air purifier with HEPA-13 filter and built-in aromatherapy diffuser. Removes 99.97% of airborne particles including allergens.',
-    features: ['HEPA-13 medical-grade filter','Ultra-quiet (<25dB) operation','Aromatherapy diffuser built-in','Smart air quality sensor','USB-C powered, portable'],
-    badge: 'new', rating: 4.6, reviews: 987, delivery: '5–9 business days',
-    ships_to: ['US','GB','CA','EU']
-  },
-  {
-    id: 1005, title: 'ZenChef Electric Spice Grinder Set', category: 'Kitchen',
-    retail_price: '39.99', compare_price: '64.99',
-    images: [
-      'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1495521939206-a217db9df264?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1467453678174-768ec283a940?auto=format&fit=crop&w=600&q=80'
-    ],
-    description: 'Professional-grade electric spice and coffee grinder with stainless steel blades. One-touch operation with 3 grind settings from coarse to fine.',
-    features: ['Stainless steel blades','3 grind settings','Dishwasher-safe bowl','Compact & quiet motor','Includes 2 grinding bowls'],
-    badge: 'new', rating: 4.5, reviews: 734, delivery: '5–9 business days',
-    ships_to: ['US','GB','CA','EU']
-  },
-  {
-    id: 1006, title: 'PawGuard GPS Pet Tracker & Activity Monitor', category: 'Pets',
-    retail_price: '34.99', compare_price: '59.99',
-    images: [
-      'https://images.unsplash.com/photo-1574158622682-e40e69881006?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?auto=format&fit=crop&w=600&q=80'
-    ],
-    description: 'Real-time GPS tracker for dogs and cats with live activity monitoring, geo-fencing alerts and unlimited range via LTE network.',
-    features: ['Real-time GPS tracking','Unlimited LTE range','Geo-fence alerts','Activity & sleep monitoring','Waterproof design (IP67)'],
-    badge: 'hot', rating: 4.7, reviews: 1204, delivery: '4–8 business days',
-    ships_to: ['US','GB','CA','EU']
-  },
-  {
-    id: 1007, title: 'UltraLight Carbon Laptop Stand Riser', category: 'Tech',
-    retail_price: '29.99', compare_price: '49.99',
-    images: [
-      'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1484788984921-03950022c9ef?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80'
-    ],
-    description: 'Foldable aluminum laptop stand with 6-angle height adjustment. Compatible with all MacBook, iPad and laptops 10–17 inches. Folds flat for travel.',
-    features: ['Aircraft-grade aluminum','6 adjustable height levels','Folds flat in seconds','Fits 10–17" laptops & tablets','Anti-slip silicone pads'],
-    badge: 'sale', rating: 4.6, reviews: 2890, delivery: '3–7 business days',
-    ships_to: ['US','GB','CA','EU']
-  },
-  {
-    id: 1008, title: 'MegaFlow Cordless Handheld Vacuum', category: 'Home',
-    retail_price: '54.99', compare_price: '89.99',
-    images: [
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1581579439736-df9f63dab571?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?auto=format&fit=crop&w=600&q=80'
-    ],
-    description: 'Powerful 22kPa suction cordless handheld vacuum with HEPA filter, 45-minute battery life and flexible crevice tool for car and home.',
-    features: ['22kPa powerful suction','45-min battery life','HEPA filter included','3-in-1 accessory kit','Charges in 3 hours'],
-    badge: 'best', rating: 4.8, reviews: 1567, delivery: '5–9 business days',
-    ships_to: ['US','GB','CA','EU']
-  }
-];
+const DEMO_PRODUCTS = [];
 
 const SAMPLE_REVIEWS = [
   { author: 'Sarah M.', country: '🇺🇸', rating: 5, text: 'Absolutely love this product! Fast shipping, quality is incredible. Exactly as described. Will definitely order again!', date: 'Sep 2026', verified: true },
@@ -2560,8 +2447,8 @@ function renderProductCard(p) {
   const savePct = hasDiscount ? Math.round((1 - parseFloat(p.retail_price) / parseFloat(p.compare_price)) * 100) : 0;
   const badgeMap = { hot: 'HOT', new: 'NEW', sale: `${savePct}% OFF`, best: 'BESTSELLER' };
   const badge = p.badge || (hasDiscount ? 'sale' : 'new');
-  const rating = p.rating || (4.4 + Math.random() * 0.5);
-  const reviewCount = p.reviews || Math.floor(200 + Math.random() * 2000);
+  const rating = Number.isFinite(Number(p.rating)) && Number(p.rating) > 0 ? Number(p.rating) : null;
+  const reviewCount = Number.isFinite(Number(p.reviews)) ? Number(p.reviews) : 0;
 
   return `
     <article class="product-card" onclick="openDetail(${p.id})" itemscope itemtype="https://schema.org/Product">
@@ -2575,8 +2462,7 @@ function renderProductCard(p) {
         <div class="product-cat" itemprop="category">${p.category || 'Featured'}</div>
         <h3 class="product-name" itemprop="name">${p.title}</h3>
         <div class="product-rating">
-          <div class="stars">${renderStars(rating)}</div>
-          <span class="rating-count">(${reviewCount.toLocaleString()})</span>
+          ${rating && reviewCount ? `<div class="stars">${renderStars(rating)}</div><span class="rating-count">(${reviewCount.toLocaleString()})</span>` : `<span class="rating-count">No reviews yet</span>`}
         </div>
         <div class="product-price-row" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
           <meta itemprop="priceCurrency" content="${currentCurrency.code}">
@@ -2661,9 +2547,9 @@ function openDetail(productId) {
   document.getElementById('detailName').textContent = p.title;
 
   // Stars
-  const rating = p.rating || 4.7;
-  document.getElementById('detailStars').innerHTML = renderStars(rating);
-  document.getElementById('detailRatingCount').textContent = `(${(p.reviews || 854).toLocaleString()} reviews)`;
+  const rating = Number.isFinite(Number(p.rating)) && Number(p.rating) > 0 ? Number(p.rating) : null;
+  document.getElementById('detailStars').innerHTML = rating ? renderStars(rating) : '';
+  document.getElementById('detailRatingCount').textContent = rating && p.reviews ? `(${Number(p.reviews).toLocaleString()} reviews)` : '(No reviews yet)';
 
   // Price
   document.getElementById('detailPrice').textContent = formatPrice(p.retail_price);
@@ -2685,7 +2571,7 @@ function openDetail(productId) {
   featuresEl.innerHTML = (p.features || []).map(f => `<li>${f}</li>`).join('');
 
   // Delivery estimate
-  document.getElementById('detailDelivery').textContent = p.delivery || '5–9 business days';
+  document.getElementById('detailDelivery').textContent = p.delivery || 'Shipping estimate shown at checkout.';
 
   // Thumbnails
   const thumbsEl = document.getElementById('detailThumbs');
@@ -3218,17 +3104,17 @@ async function loadProducts() {
       allProducts = data.products.map(p => ({
         ...p,
         images: p.images || (p.image_url ? [p.image_url] : []),
-        rating: p.rating || (4.4 + Math.random() * 0.55),
-        reviews: p.reviews || Math.floor(200 + Math.random() * 2000),
+        rating: p.rating || null,
+        reviews: p.reviews || 0,
         badge: p.badge || (parseFloat(p.compare_price) > parseFloat(p.retail_price) ? 'sale' : 'new'),
         features: p.features || [],
-        delivery: '5–9 business days'
+        delivery: p.delivery || null
       }));
     } else {
-      allProducts = DEMO_PRODUCTS;
+      allProducts = [];
     }
   } catch (e) {
-    allProducts = DEMO_PRODUCTS;
+    allProducts = [];
   }
   filteredProducts = allProducts;
   document.getElementById('statProducts').textContent = allProducts.length + '+';
