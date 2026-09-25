@@ -295,7 +295,7 @@ router.post('/shipping/estimate', async (req, res) => {
 // ============================================================
 // GET /api/buywish/store — Zendrop Store Info
 // ============================================================
-router.get('/store', async (req, res) => {
+router.get('/store', ...buyWishAdmin, async (req, res) => {
   try {
     const data = await zendropCall('get_store', {});
     res.json({ ok: true, store: data });
@@ -307,7 +307,7 @@ router.get('/store', async (req, res) => {
 // ============================================================
 // GET /api/buywish/stats — Dashboard Stats
 // ============================================================
-router.get('/stats', async (req, res) => {
+router.get('/stats', ...buyWishAdmin, async (req, res) => {
   try {
     const [ordersBreakdown, weeklyPerf] = await Promise.allSettled([
       zendropCall('get_orders_breakdown', {}),
@@ -503,7 +503,10 @@ router.get('/verify-session', async (req, res) => {
     });
 
     const isPaid = session.payment_status === 'paid';
-    const orderNum = order_number || session.metadata?.order_number;
+    const orderNum = session.metadata?.order_number;
+    if (!orderNum || (order_number && String(order_number).toUpperCase() !== String(orderNum).toUpperCase())) {
+      return res.status(403).json({ error: 'Checkout session does not match this order.' });
+    }
     const taxAmount = (session.total_details?.amount_tax || 0) / 100;
     const totalAmount = (session.amount_total || 0) / 100;
     const subtotalAmount = (session.amount_subtotal || 0) / 100;
@@ -513,15 +516,15 @@ router.get('/verify-session', async (req, res) => {
       await pool.query(`
         UPDATE ecommerce_orders
         SET payment_status = 'paid',
-            fulfillment_status = 'processing',
+            fulfillment_status = 'payment_confirmed_pending_supplier',
             stripe_session_id = $1,
             stripe_payment_intent = $2,
             tax_amount = $3,
             total_amount = $4,
             subtotal_amount = $5,
             updated_at = NOW()
-        WHERE upper(order_number) = upper($6)
-      `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNum]).catch(() => {});
+        WHERE upper(order_number) = upper($6) AND stripe_session_id = $1
+      `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNum]);
     }
 
     res.json({
@@ -838,22 +841,21 @@ async function handleBuyWishWebhook(req, res) {
   const webhookSecret = process.env.BUYWISH_STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
   const stripe = getStripe();
 
-  if (!stripe) return res.status(400).send('Stripe not configured');
+  if (!stripe) return res.status(503).send('Stripe is not configured');
+  if (!webhookSecret || !sig || !Buffer.isBuffer(req.body)) {
+    return res.status(400).send('A configured signing secret, signature, and raw request body are required.');
+  }
 
   let event;
   try {
-    if (webhookSecret && sig) {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } else {
-      event = typeof req.body === 'string' ? JSON.parse(req.body) : (Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString('utf8')) : req.body);
-    }
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
     console.error('[BUYWISH WEBHOOK SIGNATURE ERROR]:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   try {
-    if (event.type === 'checkout.session.completed') {
+    if (['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) {
       const session = event.data.object;
       const orderNumber = session.metadata?.order_number;
       const taxAmount = (session.total_details?.amount_tax || 0) / 100;
@@ -861,11 +863,11 @@ async function handleBuyWishWebhook(req, res) {
       const subtotalAmount = (session.amount_subtotal || 0) / 100;
       const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
 
-      if (orderNumber) {
+      if (orderNumber && session.payment_status === 'paid') {
         await pool.query(`
           UPDATE ecommerce_orders
           SET payment_status = 'paid',
-              fulfillment_status = 'processing',
+              fulfillment_status = 'payment_confirmed_pending_supplier',
               stripe_session_id = $1,
               stripe_payment_intent = $2,
               tax_amount = $3,
@@ -873,7 +875,7 @@ async function handleBuyWishWebhook(req, res) {
               subtotal_amount = $5,
               updated_at = NOW()
           WHERE upper(order_number) = upper($6)
-        `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNumber]).catch(() => {});
+        `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNumber]);
 
         console.log(`[BUYWISH ORDER PAID VIA WEBHOOK]: Order ${orderNumber} paid ($${totalAmount}, Tax: $${taxAmount})`);
       }
