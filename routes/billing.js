@@ -18,17 +18,55 @@ function getStripe() {
 const PLANS = {
   loadboard_ai_pass: {
     key: 'loadboard_ai_pass',
-    name: 'Carrier AI Load Board & FMCSA Authority Suite',
-    trucks: 'Self-Dispatch',
+    name: 'Carrier AI Load Board — Solo Pass (1 Workstation + 1 Mobile)',
+    trucks: 'Solo Carrier (1 Seat)',
     amount_cents: parseInt(process.env.STRIPE_PLAN_LOADBOARD_CENTS || '1900', 10),
     price_env: 'STRIPE_PRICE_LOADBOARD',
     interval: 'month',
+    seats: 1,
     description: 'Instant self-dispatch access to 50-State Live Spot Freight AI Search, Direct Broker Contacts, and FMCSA Authority & Credit Score Check.',
     features: [
       'Unlimited 50-State Live Spot Freight AI Search',
       'Unmasked Direct Broker Phone Numbers & Emails',
       'Freight Brokers & FMCSA Authority Check (Credit Score, $75k Bond, DTP)',
       'Dynamic RPM & Deadhead Corridors Calculator',
+      'Instant Self-Dispatch Carrier Cockpit',
+      '1 Desktop Workstation + 1 Driver Mobile App (Single Device Guard)'
+    ]
+  },
+  loadboard_team_pass: {
+    key: 'loadboard_team_pass',
+    name: 'Carrier AI Load Board — Team Tier (3 Concurrent Seats)',
+    trucks: 'Small Fleet / Dispatch (3 Seats)',
+    amount_cents: parseInt(process.env.STRIPE_PLAN_LOADBOARD_TEAM_CENTS || '3900', 10),
+    price_env: 'STRIPE_PRICE_LOADBOARD_TEAM',
+    interval: 'month',
+    seats: 3,
+    description: '3 simultaneous active dispatcher seats. 50-State Live Spot Freight AI Search, Direct Broker Contacts, and FMCSA Authority & Credit Score Check.',
+    features: [
+      '3 Concurrent Active Dispatcher Seats (No Session Lockouts)',
+      'Unlimited 50-State Live Spot Freight AI Search',
+      'Unmasked Direct Broker Phone Numbers & Emails',
+      'Freight Brokers & FMCSA Authority Check (Credit Score, $75k Bond, DTP)',
+      'Dynamic RPM & Deadhead Corridors Calculator',
+      'Instant Self-Dispatch Carrier Cockpit'
+    ]
+  },
+  loadboard_fleet_pass: {
+    key: 'loadboard_fleet_pass',
+    name: 'Carrier AI Load Board — Fleet Enterprise (5 Concurrent Seats)',
+    trucks: 'Fleet Command (5 Seats)',
+    amount_cents: parseInt(process.env.STRIPE_PLAN_LOADBOARD_FLEET_CENTS || '6900', 10),
+    price_env: 'STRIPE_PRICE_LOADBOARD_FLEET',
+    interval: 'month',
+    seats: 5,
+    description: '5 simultaneous active dispatcher/fleet seats. Full AI Load Board & FMCSA Authority Suite with multi-dispatch collaboration.',
+    features: [
+      '5 Concurrent Active Dispatcher Seats (Enterprise Fleet Desk)',
+      'Unlimited 50-State Live Spot Freight AI Search',
+      'Unmasked Direct Broker Phone Numbers & Emails',
+      'Freight Brokers & FMCSA Authority Check (Credit Score, $75k Bond, DTP)',
+      'Priority Live Freight Stream & Instant Route Optimization',
       'Instant Self-Dispatch Carrier Cockpit'
     ]
   },
@@ -541,13 +579,14 @@ router.get('/session/:id', async (req, res) => {
         if (uRow.rows.length) userId = uRow.rows[0].id;
       }
 
+      const isLoadBoard = planKey && planKey.startsWith('loadboard_');
       const trialEndsAt = sub && sub.trial_end
         ? new Date(sub.trial_end * 1000)
-        : (planKey === 'loadboard_ai_pass' ? null : new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000));
+        : (isLoadBoard ? null : new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000));
       const periodEnd = sub && sub.current_period_end
         ? new Date(sub.current_period_end * 1000)
-        : (planKey === 'loadboard_ai_pass' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : trialEndsAt);
-      const subStatus = sub ? sub.status : (planKey === 'loadboard_ai_pass' ? 'active' : 'trialing');
+        : (isLoadBoard ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : trialEndsAt);
+      const subStatus = sub ? sub.status : (isLoadBoard ? 'active' : 'trialing');
 
       if (userId) {
         await pool.query(
@@ -630,10 +669,10 @@ router.get('/session/:id', async (req, res) => {
   }
 });
 
-// Create Stripe Checkout or Direct Subscription for AI Load Board Pass ($19/mo)
+// Create Stripe Checkout or Direct Subscription for AI Load Board Pass ($19 Solo, $39 Team, $69 Fleet)
 async function handleLoadBoardCheckoutRequest(req, res) {
   try {
-    const { name, company, phone, email, mc_number, dot_number, password } = req.body || {};
+    const { name, company, phone, email, mc_number, dot_number, password, plan_key, plan } = req.body || {};
 
     const cleanEmail = String(email || '').trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
@@ -652,6 +691,10 @@ async function handleLoadBoardCheckoutRequest(req, res) {
       return res.status(400).json({ error: 'Phone number is required.' });
     }
 
+    const requestedPlanKey = String(plan_key || plan || 'loadboard_ai_pass').trim();
+    const selectedPlan = PLANS[requestedPlanKey] || PLANS.loadboard_ai_pass;
+    const planCents = selectedPlan.amount_cents;
+
     // 1. Check existing user
     let user;
     const existingUser = await pool.query('SELECT * FROM users WHERE lower(email) = $1', [cleanEmail]);
@@ -663,16 +706,16 @@ async function handleLoadBoardCheckoutRequest(req, res) {
         });
       }
 
-      // Check if user already has an active load board subscription
+      // Check if user already has an active load board subscription of this exact tier
       const subCheck = await pool.query(
         `SELECT status, plan_key FROM billing_subscriptions
-         WHERE user_id = $1 AND plan_key = 'loadboard_ai_pass' AND status = 'active'
+         WHERE user_id = $1 AND plan_key = $2 AND status = 'active'
          ORDER BY id DESC LIMIT 1`,
-        [user.id]
+        [user.id, selectedPlan.key]
       );
-      if (subCheck.rows.length && user.weekly_plan === 'loadboard_ai_pass') {
+      if (subCheck.rows.length && user.weekly_plan === selectedPlan.key) {
         return res.status(400).json({
-          error: 'You already have an active $19/mo subscription! Please sign in at /login to use the Load Board.'
+          error: `You already have an active subscription for ${selectedPlan.name}! Please sign in at /login to use the Load Board.`
         });
       }
 
@@ -685,18 +728,18 @@ async function handleLoadBoardCheckoutRequest(req, res) {
            phone = COALESCE(NULLIF($3,''), phone),
            mc_number = COALESCE(NULLIF($4,''), mc_number),
            dot_number = COALESCE(NULLIF($5,''), dot_number),
-           weekly_plan = 'loadboard_ai_pass_pending'
-         WHERE id = $6`,
-        [hash, company || '', cleanPhone, mc_number || '', dot_number || '', user.id]
+           weekly_plan = $6
+         WHERE id = $7`,
+        [hash, company || '', cleanPhone, mc_number || '', dot_number || '', `${selectedPlan.key}_pending`, user.id]
       );
     } else {
       // 2. Create new user with the carrier's specified password hash
       const hash = await bcrypt.hash(cleanPassword, 10);
       const insUser = await pool.query(
         `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, weekly_plan, email_verified_at)
-         VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, 'loadboard_ai_pass_pending', now())
+         VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, $8, now())
          RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, weekly_plan`,
-        [cleanName, cleanEmail, hash, company || cleanName, cleanPhone, mc_number || null, dot_number || null]
+        [cleanName, cleanEmail, hash, company || cleanName, cleanPhone, mc_number || null, dot_number || null, `${selectedPlan.key}_pending`]
       );
       user = insUser.rows[0];
     }
@@ -709,15 +752,15 @@ async function handleLoadBoardCheckoutRequest(req, res) {
       phone: cleanPhone,
       mcNumber: String(mc_number || '').trim(),
       usdot: String(dot_number || '').trim(),
-      planKey: 'loadboard_ai_pass',
+      planKey: selectedPlan.key,
       status: 'new',
-      extraNote: 'Carrier AI Load Board Pass signup ($19/mo). Stripe checkout initiated.'
+      extraNote: `${selectedPlan.name} signup ($${(planCents / 100).toFixed(0)}/mo). Stripe checkout initiated.`
     });
 
     // 4. Check Stripe Integration
     const stripe = getStripe();
     if (stripe) {
-      // Create real Stripe Checkout Session for $19/mo subscription
+      // Create real Stripe Checkout Session for subscription
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         customer_email: cleanEmail,
@@ -730,21 +773,21 @@ async function handleLoadBoardCheckoutRequest(req, res) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'Carrier AI Load Board & FMCSA Authority Suite',
-              description: 'Instant self-dispatch access: Live spot market freight, direct unmasked broker contacts, and FMCSA credit score checks.'
+              name: selectedPlan.name,
+              description: selectedPlan.description
             },
-            unit_amount: 1900,
+            unit_amount: planCents,
             recurring: { interval: 'month' }
           },
           quantity: 1
         }],
-        success_url: `${APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}&plan=loadboard_ai_pass&email=${encodeURIComponent(cleanEmail)}`,
+        success_url: `${APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}&plan=${selectedPlan.key}&email=${encodeURIComponent(cleanEmail)}`,
         cancel_url: `${APP_URL}/load-booking?canceled=1`,
         metadata: {
           user_id: String(user.id),
           lead_id: leadId ? String(leadId) : '',
           email: cleanEmail,
-          plan_key: 'loadboard_ai_pass',
+          plan_key: selectedPlan.key,
           company: String(company || ''),
           phone: cleanPhone,
           mc_number: String(mc_number || ''),
@@ -753,21 +796,21 @@ async function handleLoadBoardCheckoutRequest(req, res) {
         subscription_data: {
           metadata: {
             user_id: String(user.id),
-            plan_key: 'loadboard_ai_pass',
+            plan_key: selectedPlan.key,
             company: String(company || '')
           }
         },
         custom_text: {
           submit: {
-            message: 'Billed at $19/month for self-dispatch load board & FMCSA authority check access. Cancel anytime.'
+            message: `Billed at $${(planCents / 100).toFixed(0)}/month for ${selectedPlan.name}. Cancel anytime.`
           }
         }
       });
 
       await pool.query(
         `INSERT INTO billing_subscriptions (user_id, lead_id, stripe_checkout_session_id, plan_key, amount_cents, interval, status)
-         VALUES ($1, $2, $3, 'loadboard_ai_pass', 1900, 'month', 'incomplete')`,
-        [user.id, leadId, session.id]
+         VALUES ($1, $2, $3, $4, $5, 'month', 'incomplete')`,
+        [user.id, leadId, session.id, selectedPlan.key, planCents]
       );
 
       return res.json({
@@ -780,13 +823,13 @@ async function handleLoadBoardCheckoutRequest(req, res) {
 
     // 5. Fallback if Stripe key is not set or in test mode
     await pool.query(
-      `UPDATE users SET weekly_plan = 'loadboard_ai_pass', email_verified_at = COALESCE(email_verified_at, now()) WHERE id = $1`,
-      [user.id]
+      `UPDATE users SET weekly_plan = $1, email_verified_at = COALESCE(email_verified_at, now()) WHERE id = $2`,
+      [selectedPlan.key, user.id]
     );
     await pool.query(
       `INSERT INTO billing_subscriptions (user_id, lead_id, plan_key, amount_cents, interval, status, current_period_end)
-       VALUES ($1, $2, 'loadboard_ai_pass', 1900, 'month', 'active', now() + interval '30 days')`,
-      [user.id, leadId || null]
+       VALUES ($1, $2, $3, $4, 'month', 'active', now() + interval '30 days')`,
+      [user.id, leadId || null, selectedPlan.key, planCents]
     );
 
     const token = jwt.sign(

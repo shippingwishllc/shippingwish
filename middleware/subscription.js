@@ -95,11 +95,18 @@ async function getCarrierAccess(userId, email) {
     };
   }
 
-  if ((user.weekly_plan === 'loadboard_ai_pass' || user.weekly_plan === 'loadboard_pass') && (!sub || ACTIVE_SUB_STATUSES.includes(String(sub.status || '').toLowerCase()))) {
+  const isLoadBoardPlan = user.weekly_plan && (
+    user.weekly_plan.startsWith('loadboard_') ||
+    user.weekly_plan === 'loadboard_pass' ||
+    user.weekly_plan === 'loadboard_ai_pass' ||
+    user.weekly_plan === 'loadboard_team_pass' ||
+    user.weekly_plan === 'loadboard_fleet_pass'
+  );
+  if (isLoadBoardPlan && (!sub || ACTIVE_SUB_STATUSES.includes(String(sub.status || '').toLowerCase()))) {
     return {
       allowed: true,
       mode: 'loadboard_subscription',
-      subscription: sub || { status: 'active', plan_key: 'loadboard_ai_pass' },
+      subscription: sub || { status: 'active', plan_key: user.weekly_plan },
       trialDays: 365
     };
   }

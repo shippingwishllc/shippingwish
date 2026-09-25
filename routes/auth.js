@@ -1,8 +1,9 @@
 const express = require('express');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
-const { requireAuth, requireRole, requireSuperAdmin, JWT_SECRET, setAuthCookie, clearAuthCookie } = require('../middleware/auth');
+const { requireAuth, requireRole, requireSuperAdmin, optionalAuth, extractToken, JWT_SECRET, setAuthCookie, clearAuthCookie } = require('../middleware/auth');
 const { sendBrandedEmail } = require('../utils/mailer');
 const { COMPANY, APP_URL, escapeHtml, buildTemplate } = require('../utils/email-templates');
 const { getCarrierAccess, TRIAL_DAYS, isCarrierRole } = require('../middleware/subscription');
@@ -30,22 +31,122 @@ function rateLimit(maxAttempts = 10, windowMs = 60000) {
   };
 }
 
+// -------------------------------------------------------------
+// DAT-Style Concurrent Session & Seat Guard
+// -------------------------------------------------------------
+function getDeviceType(req) {
+  const custom = req.headers['x-device-type'] || req.body?.device_type || req.query?.device_type;
+  if (custom === 'mobile' || custom === 'desktop') return custom;
+  const ua = req.headers['user-agent'] || '';
+  if (/Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+    return 'mobile';
+  }
+  return 'desktop';
+}
 
+function getPlanSeatLimit(user) {
+  // Super admin / admin / dispatcher staff / free broker: high limit (50 seats)
+  if (['super_admin', 'admin', 'dispatcher', 'sales_rep', 'broker'].includes(user.role)) {
+    return { tier: 'unlimited', maxSeats: 50, enforcePerDevice: false };
+  }
 
-function signToken(user) {
-  return jwt.sign(
-    {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      company_name: user.company_name,
-      organization_id: user.organization_id || null,
-      carrier_id: user.role === 'carrier' || user.role === 'carrier_admin' ? user.id : (user.organization_id || null)
-    },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
+  const plan = String(user.weekly_plan || '').toLowerCase();
+
+  // Tier 3: Fleet ($69/mo or enterprise dispatch desk) -> 5 Concurrent Seats
+  if (plan === 'loadboard_fleet_pass' || plan === 'fleet_weekly' || plan === 'command_weekly') {
+    return { tier: 'fleet_69', maxSeats: 5, enforcePerDevice: false };
+  }
+
+  // Tier 2: Team ($39/mo) -> 3 Concurrent Seats
+  if (plan === 'loadboard_team_pass') {
+    return { tier: 'team_39', maxSeats: 3, enforcePerDevice: false };
+  }
+
+  // Tier 1: Solo Carrier ($19/mo or trial) -> 1 Desktop + 1 Mobile Device Guard
+  return { tier: 'solo_19', maxSeats: 2, enforcePerDevice: true };
+}
+
+async function ensureSessionTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_active_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      session_id UUID NOT NULL UNIQUE,
+      device_type TEXT NOT NULL DEFAULT 'desktop',
+      ip_address TEXT,
+      user_agent TEXT,
+      last_active_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_active_sessions_user_id ON user_active_sessions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_active_sessions_session_id ON user_active_sessions(session_id);
+  `).catch(() => {});
+}
+
+async function registerActiveSession(user, req) {
+  await ensureSessionTable();
+  const deviceType = getDeviceType(req);
+  const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').split(',')[0].trim();
+  const userAgent = (req.headers['user-agent'] || 'Web Browser').slice(0, 500);
+  const sessionId = crypto.randomUUID();
+  const seatConfig = getPlanSeatLimit(user);
+
+  try {
+    if (seatConfig.enforcePerDevice) {
+      // Solo Plan ($19/mo): Strict 1 Desktop + 1 Mobile guard.
+      // Terminate any previous session of the SAME device type.
+      await pool.query(
+        `DELETE FROM user_active_sessions WHERE user_id = $1 AND device_type = $2`,
+        [user.id, deviceType]
+      );
+    } else {
+      // Multi-Seat Plan (Team=3, Fleet=5, Unlimited=50):
+      // Keep total active sessions within maxSeats.
+      const current = await pool.query(
+        `SELECT id FROM user_active_sessions WHERE user_id = $1 ORDER BY last_active_at ASC`,
+        [user.id]
+      );
+      if (current.rows.length >= seatConfig.maxSeats) {
+        const toDeleteCount = current.rows.length - seatConfig.maxSeats + 1;
+        const idsToDelete = current.rows.slice(0, toDeleteCount).map(r => r.id);
+        await pool.query(
+          `DELETE FROM user_active_sessions WHERE id = ANY($1::int[])`,
+          [idsToDelete]
+        );
+      }
+    }
+
+    // Insert the new session
+    await pool.query(
+      `INSERT INTO user_active_sessions (user_id, session_id, device_type, ip_address, user_agent, last_active_at, created_at)
+       VALUES ($1, $2, $3, $4, $5, now(), now())`,
+      [user.id, sessionId, deviceType, clientIp, userAgent]
+    );
+
+    // Clean up sessions older than 30 days
+    pool.query(`DELETE FROM user_active_sessions WHERE last_active_at < now() - interval '30 days'`).catch(() => {});
+
+    return { sessionId, deviceType, ...seatConfig };
+  } catch (err) {
+    console.error('registerActiveSession error:', err.message);
+    return { sessionId, deviceType, ...seatConfig };
+  }
+}
+
+function signToken(user, sessionId = null) {
+  const payload = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    company_name: user.company_name,
+    organization_id: user.organization_id || null,
+    carrier_id: user.role === 'carrier' || user.role === 'carrier_admin' ? user.id : (user.organization_id || null)
+  };
+  if (sessionId) {
+    payload.session_id = sessionId;
+  }
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
 async function createPortalSignupLead(user, meta) {
@@ -236,7 +337,8 @@ router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
     const user = result.rows[0];
     await pool.query('DELETE FROM signup_pending WHERE id = $1', [pending.id]);
 
-    const token = signToken(user);
+    const sessionInfo = await registerActiveSession(user, req);
+    const token = signToken(user, sessionInfo.sessionId);
     setAuthCookie(res, token);
     await createPortalSignupLead(user, {
       company: pending.company_name,
@@ -562,7 +664,8 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
     // Update IP for existing users if missing or on login
     await pool.query('UPDATE users SET signup_ip = $1 WHERE id = $2', [clientIp, user.id]);
 
-    const token = signToken(user);
+    const sessionInfo = await registerActiveSession(user, req);
+    const token = signToken(user, sessionInfo.sessionId);
     setAuthCookie(res, token);
     const userOut = {
       id: user.id,
@@ -572,9 +675,10 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
       company_name: user.company_name,
       phone: user.phone,
       mc_number: user.mc_number,
-      signup_ip: clientIp
+      signup_ip: clientIp,
+      weekly_plan: user.weekly_plan
     };
-    const payload = { ok: true, token, user: userOut };
+    const payload = { ok: true, token, user: userOut, session: sessionInfo };
     if (isCarrierRole(user.role)) {
       payload.access = await getCarrierAccess(user.id, user.email);
     }
@@ -653,10 +757,73 @@ router.get('/me', requireAuth, async (req, res) => {
   }
 });
 
-// Logout
-router.all(['/logout', '/signout'], (req, res) => {
+// Logout — Terminates current active seat & clears auth cookies
+router.all(['/logout', '/signout'], async (req, res) => {
+  try {
+    const token = extractToken(req);
+    if (token) {
+      const decoded = jwt.decode(token);
+      if (decoded && decoded.session_id) {
+        await pool.query('DELETE FROM user_active_sessions WHERE session_id = $1', [decoded.session_id]).catch(() => {});
+      }
+    }
+  } catch {}
   clearAuthCookie(res, req);
   res.json({ ok: true, message: 'Logged out successfully.' });
+});
+
+// DAT-Style Live Session Heartbeat & Seat Watchdog
+router.get(['/auth/session-heartbeat', '/session-heartbeat'], async (req, res) => {
+  const token = extractToken(req);
+  if (!token) {
+    return res.status(401).json({ ok: false, error: 'Not authenticated', code: 'UNAUTHENTICATED' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({ ok: false, error: 'Invalid token', code: 'INVALID_TOKEN' });
+    }
+
+    if (decoded.session_id) {
+      await ensureSessionTable();
+      const sessRes = await pool.query(
+        `SELECT id, device_type, last_active_at FROM user_active_sessions WHERE session_id = $1`,
+        [decoded.session_id]
+      );
+      if (sessRes.rows.length === 0) {
+        clearAuthCookie(res, req);
+        return res.status(401).json({
+          ok: false,
+          code: 'CONCURRENT_SESSION_TERMINATED',
+          error: 'Your session has ended because this account was logged into from another device or computer.'
+        });
+      }
+
+      // Keep session fresh
+      await pool.query(
+        `UPDATE user_active_sessions SET last_active_at = now() WHERE session_id = $1`,
+        [decoded.session_id]
+      ).catch(() => {});
+    }
+
+    // Active session count for this account
+    const activeCountRes = await pool.query(
+      `SELECT count(*) FROM user_active_sessions WHERE user_id = $1`,
+      [decoded.id]
+    ).catch(() => ({ rows: [{ count: 1 }] }));
+
+    return res.json({
+      ok: true,
+      active: true,
+      user_id: decoded.id,
+      session_id: decoded.session_id,
+      active_sessions: parseInt(activeCountRes.rows[0]?.count || 1, 10)
+    });
+  } catch (err) {
+    clearAuthCookie(res, req);
+    return res.status(401).json({ ok: false, error: 'Session expired', code: 'EXPIRED' });
+  }
 });
 
 // Change Password for logged in user

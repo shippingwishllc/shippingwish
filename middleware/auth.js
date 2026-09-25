@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const pool = require('../db');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
@@ -10,11 +11,31 @@ function extractToken(req) {
   return req.cookies ? req.cookies.sw_token : null;
 }
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const token = extractToken(req);
   if (!token) return res.status(401).json({ error: 'Not signed in.' });
   try {
     req.user = jwt.verify(token, JWT_SECRET);
+
+    // DAT-Style Concurrent Session Verification
+    if (req.user && req.user.session_id) {
+      try {
+        const sess = await pool.query(
+          'SELECT id FROM user_active_sessions WHERE session_id = $1',
+          [req.user.session_id]
+        );
+        if (sess.rows.length === 0) {
+          clearAuthCookie(res, req);
+          return res.status(401).json({
+            error: 'Your session has ended because this account was logged into from another device or computer.',
+            code: 'CONCURRENT_SESSION_TERMINATED'
+          });
+        }
+      } catch (dbErr) {
+        // Fail-open on transient database connection errors
+      }
+    }
+
     next();
   } catch (e) {
     return res.status(401).json({ error: 'Session expired, please sign in again.' });
@@ -42,7 +63,7 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
-function optionalAuth(req, res, next) {
+async function optionalAuth(req, res, next) {
   const token = extractToken(req);
   if (!token) {
     req.user = null;
@@ -50,6 +71,17 @@ function optionalAuth(req, res, next) {
   }
   try {
     req.user = jwt.verify(token, JWT_SECRET);
+    if (req.user && req.user.session_id) {
+      try {
+        const sess = await pool.query(
+          'SELECT id FROM user_active_sessions WHERE session_id = $1',
+          [req.user.session_id]
+        );
+        if (sess.rows.length === 0) {
+          req.user = null;
+        }
+      } catch {}
+    }
   } catch (e) {
     req.user = null;
   }
@@ -91,5 +123,5 @@ function clearAuthCookie(res, req) {
   ]);
 }
 
-module.exports = { requireAuth, requireRole, requireSuperAdmin, optionalAuth, JWT_SECRET, setAuthCookie, clearAuthCookie };
+module.exports = { requireAuth, requireRole, requireSuperAdmin, optionalAuth, extractToken, JWT_SECRET, setAuthCookie, clearAuthCookie };
 

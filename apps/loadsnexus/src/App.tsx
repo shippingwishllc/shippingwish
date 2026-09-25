@@ -14,7 +14,8 @@ import { CtaBanner } from './components/CtaBanner';
 import { Footer } from './components/Footer';
 import { LegalModal } from './components/LegalModal';
 import { BrokerPostModal } from './components/BrokerPostModal';
-import { CarrierCheckoutModal } from './components/CarrierCheckoutModal';
+import { CarrierCheckoutModal, type LoadBoardPlanTier } from './components/CarrierCheckoutModal';
+import { ConcurrentSessionModal } from './components/ConcurrentSessionModal';
 import { AuthModal } from './components/AuthModal';
 import { LoadDetailsModal } from './components/LoadDetailsModal';
 import { DispatchInquiryModal } from './components/DispatchInquiryModal';
@@ -153,6 +154,8 @@ export const App: React.FC = () => {
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [postModalPrefill, setPostModalPrefill] = useState<{ origin: string; dest: string } | null>(null);
   const [isCarrierCheckoutOpen, setIsCarrierCheckoutOpen] = useState(false);
+  const [checkoutPlanTier, setCheckoutPlanTier] = useState<LoadBoardPlanTier>('loadboard_ai_pass');
+  const [isConcurrentSessionOpen, setIsConcurrentSessionOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalRole, setAuthModalRole] = useState<'carrier' | 'broker'>('carrier');
   const [isLoadDetailsOpen, setIsLoadDetailsOpen] = useState(false);
@@ -277,6 +280,58 @@ export const App: React.FC = () => {
     }
   }, [fetchLoads, filter]);
 
+  // DAT-Style Live Session Heartbeat & Seat Watchdog
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user) return;
+
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/auth/session-heartbeat', { credentials: 'include' });
+        if (res.status === 401) {
+          const data = await res.json().catch(() => ({}));
+          if (data.code === 'CONCURRENT_SESSION_TERMINATED') {
+            setUser(null);
+            setIsConcurrentSessionOpen(true);
+          }
+        }
+      } catch {}
+    };
+
+    const interval = setInterval(checkSession, 20000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Global listener & fetch interceptor for session termination across tabs or API responses
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = () => {
+      setUser(null);
+      setIsConcurrentSessionOpen(true);
+    };
+    window.addEventListener('ln:concurrent-session-terminated', handler);
+
+    // Global fetch hook to catch 401 concurrent session termination on any endpoint
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const res = await originalFetch(...args);
+      if (res.status === 401) {
+        try {
+          const clone = res.clone();
+          const data = await clone.json();
+          if (data && data.code === 'CONCURRENT_SESSION_TERMINATED') {
+            window.dispatchEvent(new CustomEvent('ln:concurrent-session-terminated'));
+          }
+        } catch {}
+      }
+      return res;
+    };
+
+    return () => {
+      window.removeEventListener('ln:concurrent-session-terminated', handler);
+      window.fetch = originalFetch;
+    };
+  }, []);
+
   // Real-Time Server-Sent Events (SSE) Stream
   useEffect(() => {
     if (typeof window === 'undefined' || !isLiveStreaming) return;
@@ -384,7 +439,8 @@ export const App: React.FC = () => {
     setIsAuthModalOpen(true);
   };
 
-  const handleOpenCarrierCheckout = () => {
+  const handleOpenCarrierCheckout = (tier: LoadBoardPlanTier = 'loadboard_ai_pass') => {
+    setCheckoutPlanTier(tier);
     setIsCarrierCheckoutOpen(true);
   };
 
@@ -597,6 +653,20 @@ export const App: React.FC = () => {
         onOpenAuth={handleOpenAuth}
         onShowToast={showToast}
         onSuccess={() => fetchLoads(filter)}
+        initialPlan={checkoutPlanTier}
+      />
+
+      <ConcurrentSessionModal
+        isOpen={isConcurrentSessionOpen}
+        onClose={() => setIsConcurrentSessionOpen(false)}
+        onOpenLogin={() => {
+          setIsConcurrentSessionOpen(false);
+          handleOpenAuth('carrier');
+        }}
+        onOpenUpgrade={(tier) => {
+          setIsConcurrentSessionOpen(false);
+          handleOpenCarrierCheckout(tier);
+        }}
       />
 
       <AuthModal

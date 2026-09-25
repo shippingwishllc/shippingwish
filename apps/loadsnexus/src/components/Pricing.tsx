@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import type { LoadBoardPlanTier } from './CarrierCheckoutModal';
 
 interface PricingProps {
-  onOpenCarrierCheckout: () => void;
+  onOpenCarrierCheckout: (tier?: LoadBoardPlanTier) => void;
   onOpenDispatchInquiry: () => void;
   onOpenBrokerPost: () => void;
 }
@@ -11,6 +12,32 @@ export const Pricing: React.FC<PricingProps> = ({
   onOpenDispatchInquiry,
   onOpenBrokerPost,
 }) => {
+  const [carrierTier, setCarrierTier] = useState<LoadBoardPlanTier>('loadboard_ai_pass');
+
+  const tierMeta = {
+    loadboard_ai_pass: {
+      name: 'Solo Carrier Pass',
+      price: '$19',
+      badge: '1 Workstation + 1 Mobile',
+      seatsText: '1 Desktop / Laptop + 1 Driver Mobile App',
+      cta: 'Start Solo Pass ($19/mo) →'
+    },
+    loadboard_team_pass: {
+      name: 'Team Carrier Pass',
+      price: '$39',
+      badge: '3 Concurrent Seats',
+      seatsText: '3 Simultaneous Active Dispatcher Workstations',
+      cta: 'Start Team Pass (3 Seats — $39/mo) →'
+    },
+    loadboard_fleet_pass: {
+      name: 'Fleet Enterprise Pass',
+      price: '$69',
+      badge: '5 Concurrent Seats',
+      seatsText: '5 Simultaneous Active Dispatcher Desks',
+      cta: 'Start Fleet Pass (5 Seats — $69/mo) →'
+    }
+  }[carrierTier];
+
   return (
     <section className="py-20 bg-white border-b border-slate-200/60" id="pricing">
       <div className="max-w-[1220px] mx-auto px-6">
@@ -19,15 +46,15 @@ export const Pricing: React.FC<PricingProps> = ({
             Simple &amp; Transparent
           </div>
           <h2 className="text-3xl md:text-4xl font-display font-extrabold text-slate-900 tracking-tight">
-            Plans Built for Carriers of Every Size
+            Plans Built for Carriers &amp; Brokers of Every Size
           </h2>
           <p className="mt-3 text-sm md:text-base text-slate-600">
-            Self-dispatch independently for just $19/mo, or get the entire load board free with a Shipping Wish dedicated operations desk.
+            Self-dispatch independently from just $19/mo with DAT-style single-device guards, or unlock multi-seat dispatcher workstations for your team.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
-          {/* Plan 1: Carrier $19/mo (Featured) */}
+          {/* Plan 1: Carrier Multi-Tier Self-Dispatch (Featured) */}
           <div className="bg-white border-2 border-blue-600 rounded-3xl p-7 flex flex-col justify-between shadow-xl shadow-blue-500/10 relative">
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-sm">
               Most Popular
@@ -37,14 +64,56 @@ export const Pricing: React.FC<PricingProps> = ({
               <div className="text-sm font-extrabold text-blue-600 uppercase tracking-wide">
                 Carrier — AI Load Board
               </div>
-              <div className="text-4xl font-black text-slate-900 mt-2 mb-1">
-                $19<span className="text-sm text-slate-500 font-semibold"> / month</span>
+
+              {/* Sub-tier selector */}
+              <div className="mt-3 mb-4 p-1 bg-slate-100 rounded-xl flex items-center gap-1 text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setCarrierTier('loadboard_ai_pass')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg transition-all text-center ${
+                    carrierTier === 'loadboard_ai_pass'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Solo $19
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCarrierTier('loadboard_team_pass')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg transition-all text-center ${
+                    carrierTier === 'loadboard_team_pass'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Team $39 (3 Seats)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCarrierTier('loadboard_fleet_pass')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg transition-all text-center ${
+                    carrierTier === 'loadboard_fleet_pass'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Fleet $69 (5 Seats)
+                </button>
               </div>
-              <p className="text-xs text-slate-500 mb-6">
-                Instant self-dispatch access · Direct broker booking · Cancel anytime
+
+              <div className="text-4xl font-black text-slate-900 mt-2 mb-1">
+                {tierMeta.price}<span className="text-sm text-slate-500 font-semibold"> / month</span>
+              </div>
+              <p className="text-xs text-blue-700 font-bold mb-5 flex items-center gap-1.5">
+                <span>🛡️</span> {tierMeta.seatsText}
               </p>
 
               <ul className="space-y-3 text-xs text-slate-700 font-medium mb-8">
+                <li className="flex items-start gap-2.5">
+                  <span className="text-emerald-600 font-black">✔</span>
+                  <span><strong>{tierMeta.seatsText}</strong> without concurrent lockouts</span>
+                </li>
                 <li className="flex items-start gap-2.5">
                   <span className="text-emerald-600 font-black">✔</span>
                   <span>Unlimited 50-state live spot load search</span>
@@ -59,10 +128,6 @@ export const Pricing: React.FC<PricingProps> = ({
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="text-emerald-600 font-black">✔</span>
-                  <span>Post available truck capacity to verified brokers</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-emerald-600 font-black">✔</span>
                   <span>Dynamic RPM &amp; deadhead corridor calculator</span>
                 </li>
                 <li className="flex items-start gap-2.5">
@@ -74,10 +139,10 @@ export const Pricing: React.FC<PricingProps> = ({
 
             <button
               type="button"
-              onClick={onOpenCarrierCheckout}
+              onClick={() => onOpenCarrierCheckout(carrierTier)}
               className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/30 transition-all text-center"
             >
-              Start Load Board ($19/mo) →
+              {tierMeta.cta}
             </button>
           </div>
 
@@ -97,7 +162,7 @@ export const Pricing: React.FC<PricingProps> = ({
               <ul className="space-y-3 text-xs text-slate-700 font-medium mb-8">
                 <li className="flex items-start gap-2.5">
                   <span className="text-emerald-600 font-black">✔</span>
-                  <span><strong className="text-slate-900">Full AI Load Board Included ($19 value)</strong></span>
+                  <span><strong className="text-slate-900">Full AI Load Board Included Free</strong></span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="text-emerald-600 font-black">✔</span>

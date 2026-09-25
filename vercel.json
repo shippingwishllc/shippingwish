@@ -55,6 +55,25 @@
   ],
   "headers": [
     {
+      "source": "/",
+      "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/loadsnexus/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/(.*\\.html)",
       "headers": [
         {

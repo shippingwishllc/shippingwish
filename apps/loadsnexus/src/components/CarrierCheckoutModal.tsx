@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+export type LoadBoardPlanTier = 'loadboard_ai_pass' | 'loadboard_team_pass' | 'loadboard_fleet_pass';
 
 interface CarrierCheckoutModalProps {
   isOpen: boolean;
@@ -6,7 +8,42 @@ interface CarrierCheckoutModalProps {
   onOpenAuth: (role?: 'carrier' | 'broker') => void;
   onShowToast: (msg: string) => void;
   onSuccess: () => void;
+  initialPlan?: LoadBoardPlanTier;
 }
+
+const PLAN_DETAILS: Record<LoadBoardPlanTier, {
+  name: string;
+  badge: string;
+  price: string;
+  seats: string;
+  desc: string;
+  color: string;
+}> = {
+  loadboard_ai_pass: {
+    name: 'Solo Carrier',
+    badge: 'Standard',
+    price: '$19',
+    seats: '1 Desktop + 1 Driver Mobile App',
+    desc: 'Perfect for independent owner-operators & solo dispatchers.',
+    color: 'blue'
+  },
+  loadboard_team_pass: {
+    name: 'Team Carrier',
+    badge: '3 Concurrent Seats',
+    price: '$39',
+    seats: '3 Simultaneous Active Dispatcher Seats',
+    desc: 'Best for 2-5 truck small fleets & dispatch teams.',
+    color: 'emerald'
+  },
+  loadboard_fleet_pass: {
+    name: 'Fleet Enterprise',
+    badge: '5 Concurrent Seats',
+    price: '$69',
+    seats: '5 Simultaneous Active Dispatcher Desks',
+    desc: 'Maximum throughput for dispatch offices & growing motor carriers.',
+    color: 'purple'
+  }
+};
 
 export const CarrierCheckoutModal: React.FC<CarrierCheckoutModalProps> = ({
   isOpen,
@@ -14,7 +51,9 @@ export const CarrierCheckoutModal: React.FC<CarrierCheckoutModalProps> = ({
   onOpenAuth,
   onShowToast,
   onSuccess,
+  initialPlan = 'loadboard_ai_pass',
 }) => {
+  const [selectedPlan, setSelectedPlan] = useState<LoadBoardPlanTier>(initialPlan);
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
   const [email, setEmail] = useState('');
@@ -26,7 +65,15 @@ export const CarrierCheckoutModal: React.FC<CarrierCheckoutModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  useEffect(() => {
+    if (initialPlan) {
+      setSelectedPlan(initialPlan);
+    }
+  }, [initialPlan]);
+
   if (!isOpen) return null;
+
+  const currentPlan = PLAN_DETAILS[selectedPlan];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +93,7 @@ export const CarrierCheckoutModal: React.FC<CarrierCheckoutModalProps> = ({
           mc_number: mc,
           dot_number: dot,
           password,
+          plan_key: selectedPlan,
         }),
       });
 
@@ -62,7 +110,7 @@ export const CarrierCheckoutModal: React.FC<CarrierCheckoutModalProps> = ({
       } else {
         setIsSubmitting(false);
         onClose();
-        onShowToast('🎉 Carrier Pro Pass activated ($19/mo)! Unlocked all unmasked broker contacts.');
+        onShowToast(`🎉 ${currentPlan.name} Pass activated (${currentPlan.price}/mo)! Unlocked all unmasked broker contacts.`);
         onSuccess();
       }
     } catch {
@@ -77,17 +125,17 @@ export const CarrierCheckoutModal: React.FC<CarrierCheckoutModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-lg w-full my-8 overflow-hidden"
+        className="bg-white border border-slate-200 rounded-3xl shadow-2xl max-w-lg w-full my-8 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 className="text-xl font-display font-bold text-slate-900 flex items-center gap-2">
-              <span>🔷</span> LoadsNexus™ Carrier Pro Pass
+              <span>🔷</span> LoadsNexus™ Carrier Pass
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              $19 / Month · First Day Charged $19 · Zero Free Trial · Cancel Anytime
+              Select your required workstation seats · First day billed · Zero lock-in · Cancel anytime
             </p>
           </div>
           <button
@@ -101,18 +149,56 @@ export const CarrierCheckoutModal: React.FC<CarrierCheckoutModalProps> = ({
 
         {/* Body */}
         <div className="p-6 max-h-[80vh] overflow-y-auto">
-          {/* Price Overview Banner */}
-          <div className="p-4 mb-6 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between">
+          {/* Plan Selector Tabs */}
+          <div className="mb-5">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+              Choose Dispatcher Seat Tier
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.keys(PLAN_DETAILS) as LoadBoardPlanTier[]).map((tierKey) => {
+                const p = PLAN_DETAILS[tierKey];
+                const isActive = selectedPlan === tierKey;
+                return (
+                  <button
+                    key={tierKey}
+                    type="button"
+                    onClick={() => setSelectedPlan(tierKey)}
+                    className={`p-2.5 rounded-2xl border text-left transition-all relative ${
+                      isActive
+                        ? 'border-blue-600 bg-blue-50/80 shadow-sm ring-1 ring-blue-600/30'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <div className="text-[10px] font-bold text-slate-500 truncate">
+                      {p.name}
+                    </div>
+                    <div className="text-lg font-black text-slate-900 mt-0.5">
+                      {p.price}<span className="text-[10px] font-semibold text-slate-400">/mo</span>
+                    </div>
+                    <div className="text-[10px] font-bold text-blue-700 mt-1 truncate">
+                      {p.badge}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Active Plan Highlights Banner */}
+          <div className="p-4 mb-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 flex items-center justify-between">
             <div>
-              <div className="text-xs font-black text-blue-900 uppercase tracking-wide">
-                Carrier AI Load Board Pass
+              <div className="text-xs font-black text-blue-900 uppercase tracking-wide flex items-center gap-1.5">
+                <span>⚡</span> {currentPlan.name} Pass ({currentPlan.price}/month)
               </div>
-              <div className="text-[11px] text-blue-700 mt-0.5">
-                Unlimited 50-State Spot Search · Direct Unmasked Phone &amp; Email Contacts
+              <div className="text-[11px] text-blue-800 font-semibold mt-1">
+                {currentPlan.seats}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                {currentPlan.desc}
               </div>
             </div>
-            <div className="text-2xl font-black text-blue-700">
-              $19<span className="text-xs text-slate-500 font-semibold">/mo</span>
+            <div className="text-2xl font-black text-blue-700 shrink-0 ml-3">
+              {currentPlan.price}
             </div>
           </div>
 
@@ -228,8 +314,8 @@ export const CarrierCheckoutModal: React.FC<CarrierCheckoutModalProps> = ({
               className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-xl text-sm font-bold shadow-md shadow-emerald-600/30 transition-all text-center"
             >
               {isSubmitting
-                ? 'Connecting to Stripe Checkout ($19/mo)…'
-                : 'Activate Carrier Pass — $19 Due Today →'}
+                ? `Connecting to Stripe Checkout (${currentPlan.price}/mo)…`
+                : `Activate ${currentPlan.name} Pass — ${currentPlan.price} Due Today →`}
             </button>
 
             <div className="pt-2 text-center text-xs text-slate-500 font-medium">

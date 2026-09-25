@@ -50,8 +50,14 @@ async function prerender() {
           path.join(distAssetsDir, file),
           path.join(targetAssetsDir, file)
         );
+        if (file.endsWith('.css')) {
+          fs.copyFileSync(path.join(distAssetsDir, file), path.join(targetAssetsDir, 'index.css'));
+        }
+        if (file.endsWith('.js')) {
+          fs.copyFileSync(path.join(distAssetsDir, file), path.join(targetAssetsDir, 'index.js'));
+        }
       }
-      console.log(`[SSG] Copied ${files.length} asset bundle(s) to ${targetAssetsDir}`);
+      console.log(`[SSG] Copied ${files.length} asset bundle(s) and created index.css/index.js fallbacks to ${targetAssetsDir}`);
     }
   }
 
