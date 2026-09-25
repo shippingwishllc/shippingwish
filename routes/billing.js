@@ -9,8 +9,16 @@ const { buildTemplate, COMPANY, APP_URL, escapeHtml } = require('../utils/email-
 
 const TRIAL_DAYS = parseInt(process.env.STRIPE_TRIAL_DAYS || '7', 10);
 
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY;
+function getStripe(brand = 'shippingwish') {
+  let key = null;
+  if (brand === 'loadsnexus') {
+    key = process.env.LOADSNEXUS_STRIPE_SECRET_KEY ||
+          process.env.STRIPE_LOADSNEXUS_SECRET_KEY ||
+          process.env.STRIPE_SECRET_KEY;
+  } else {
+    key = process.env.STRIPE_SECRET_KEY ||
+          process.env.SHIPPINGWISH_STRIPE_SECRET_KEY;
+  }
   if (!key || !/^(sk|rk)_(test|live)_/.test(key)) return null;
   return require('stripe')(key);
 }
@@ -380,8 +388,9 @@ async function createWeeklyCheckout({
   successUrl,
   cancelUrl
 }) {
-  const stripe = getStripe();
   const plan = PLANS[planKey] || PLANS.solo_weekly;
+  const isLoadBoardPlan = plan.key && plan.key.startsWith('loadboard_');
+  const stripe = isLoadBoardPlan ? (getStripe('loadsnexus') || getStripe('shippingwish')) : getStripe('shippingwish');
   const amount = amountOverride || plan.amount_cents;
   const success = successUrl || `${APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}`;
   const cancel = cancelUrl || `${APP_URL}/checkout?plan=${plan.key}&canceled=1`;
@@ -550,19 +559,40 @@ router.post('/checkout', async (req, res) => {
 
 router.get('/session/:id', async (req, res) => {
   try {
-    const stripe = getStripe();
-    if (!stripe) {
-      return res.json({
-        ok: true,
-        simulated: true,
-        plan_key: req.query.plan || 'loadboard_ai_pass',
-        portal_ready: true
-      });
+    const isLoadBoardReq = req.query.brand === 'loadsnexus' || (req.query.plan && String(req.query.plan).startsWith('loadboard_'));
+    let stripe = isLoadBoardReq ? (getStripe('loadsnexus') || getStripe('shippingwish')) : getStripe('shippingwish');
+    let session = null;
+
+    if (stripe) {
+      try {
+        session = await stripe.checkout.sessions.retrieve(req.params.id, {
+          expand: ['subscription', 'customer']
+        });
+      } catch (err) {
+        // Fallback: If not found, try the alternate account
+        const altStripe = isLoadBoardReq ? getStripe('shippingwish') : getStripe('loadsnexus');
+        if (altStripe) {
+          try {
+            session = await altStripe.checkout.sessions.retrieve(req.params.id, {
+              expand: ['subscription', 'customer']
+            });
+            stripe = altStripe;
+          } catch {}
+        }
+      }
     }
 
-    const session = await stripe.checkout.sessions.retrieve(req.params.id, {
-      expand: ['subscription', 'customer']
-    });
+    if (!session) {
+      if (!stripe) {
+        return res.json({
+          ok: true,
+          simulated: true,
+          plan_key: req.query.plan || 'loadboard_ai_pass',
+          portal_ready: true
+        });
+      }
+      return res.status(404).json({ error: 'Checkout session not found' });
+    }
     const sub = session.subscription && typeof session.subscription === 'object' ? session.subscription : null;
     const email = session.customer_details?.email || session.customer_email || (session.metadata && session.metadata.email);
     let portalReady = false;
@@ -757,8 +787,8 @@ async function handleLoadBoardCheckoutRequest(req, res) {
       extraNote: `${selectedPlan.name} signup ($${(planCents / 100).toFixed(0)}/mo). Stripe checkout initiated.`
     });
 
-    // 4. Check Stripe Integration
-    const stripe = getStripe();
+    // 4. Check Stripe Integration (LoadsNexus dedicated account)
+    const stripe = getStripe('loadsnexus');
     if (stripe) {
       // Create real Stripe Checkout Session for subscription
       const session = await stripe.checkout.sessions.create({
@@ -1752,15 +1782,62 @@ async function handleStripeEvent(event) {
 }
 
 async function webhookHandler(req, res) {
-  const stripe = getStripe();
   let event = req.body;
+  const sig = req.headers['stripe-signature'];
+  const pathStr = (req.originalUrl || req.url || '').toLowerCase();
+  const isLoadsNexusPath = pathStr.includes('loadsnexus') || req.query.brand === 'loadsnexus';
+
+  const lnSecret = process.env.LOADSNEXUS_STRIPE_WEBHOOK_SECRET || process.env.STRIPE_LOADSNEXUS_WEBHOOK_SECRET;
+  const lnStripe = getStripe('loadsnexus');
+
+  const swSecret = process.env.STRIPE_WEBHOOK_SECRET || process.env.SHIPPINGWISH_STRIPE_WEBHOOK_SECRET;
+  const swStripe = getStripe('shippingwish');
+
   try {
-    if (process.env.STRIPE_WEBHOOK_SECRET && stripe) {
-      const sig = req.headers['stripe-signature'];
-      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    let verified = false;
+
+    if (sig) {
+      // 1. If explicitly on LoadsNexus path, verify with LoadsNexus secret first
+      if (isLoadsNexusPath && lnSecret && lnStripe) {
+        try {
+          event = lnStripe.webhooks.constructEvent(req.body, sig, lnSecret);
+          verified = true;
+        } catch (e) {
+          console.warn('LoadsNexus dedicated webhook signature check failed:', e.message);
+        }
+      }
+
+      // 2. Try Shipping Wish secret
+      if (!verified && swSecret && swStripe) {
+        try {
+          event = swStripe.webhooks.constructEvent(req.body, sig, swSecret);
+          verified = true;
+        } catch (e) {
+          // If Shipping Wish secret failed, check if LoadsNexus secret matches
+          if (lnSecret && lnStripe) {
+            try {
+              event = lnStripe.webhooks.constructEvent(req.body, sig, lnSecret);
+              verified = true;
+            } catch (lnErr) {
+              // Signature mismatch on both
+            }
+          }
+        }
+      }
+
+      // 3. Fallback: If only LoadsNexus secret configured
+      if (!verified && lnSecret && lnStripe && !swSecret) {
+        event = lnStripe.webhooks.constructEvent(req.body, sig, lnSecret);
+        verified = true;
+      }
+
+      if (!verified && (swSecret || lnSecret)) {
+        throw new Error('Webhook signature verification failed for all configured Stripe accounts.');
+      }
     } else if (Buffer.isBuffer(req.body)) {
       event = JSON.parse(req.body.toString('utf8'));
     }
+
     await handleStripeEvent(event);
     res.json({ received: true });
   } catch (err) {
@@ -1769,15 +1846,22 @@ async function webhookHandler(req, res) {
   }
 }
 
-router.get('/stripe-webhook', (req, res) => {
+// Support both endpoint paths for convenience
+const webhookPaths = ['/stripe-webhook', '/webhook', '/stripe-webhook/loadsnexus', '/webhook/loadsnexus'];
+
+router.get(webhookPaths, (req, res) => {
   res.json({
     ok: true,
-    message: 'Stripe webhook is live. Paste this URL in Stripe Dashboard → Developers → Webhooks. Do not open it in a browser — Stripe sends POST events here.',
-    method: 'POST'
+    message: 'Stripe webhook endpoint is live. Configure this URL in your Stripe Dashboard (Developers → Webhooks).',
+    method: 'POST',
+    endpoints: {
+      loads_nexus: '/api/billing/webhook/loadsnexus',
+      shipping_wish: '/api/billing/stripe-webhook'
+    }
   });
 });
 
-router.post('/stripe-webhook', express.raw({ type: 'application/json' }), webhookHandler);
+router.post(webhookPaths, express.raw({ type: 'application/json' }), webhookHandler);
 
 module.exports = router;
 module.exports.webhookHandler = webhookHandler;

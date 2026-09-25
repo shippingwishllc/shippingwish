@@ -51,7 +51,11 @@ app.use((req, res, next) => {
 const ADMIN_EMAILS = [process.env.ADMIN_EMAIL_1, process.env.ADMIN_EMAIL_2].filter(Boolean);
 
 // Stripe signatures require the raw body. These must be registered BEFORE express.json().
-app.post('/api/billing/stripe-webhook', express.raw({ type: 'application/json' }), webhookHandler);
+app.post(
+  ['/api/billing/stripe-webhook', '/api/billing/webhook', '/api/billing/stripe-webhook/loadsnexus', '/api/billing/webhook/loadsnexus'],
+  express.raw({ type: 'application/json' }),
+  webhookHandler
+);
 app.post('/api/invoices/stripe-webhook', express.raw({ type: 'application/json' }), webhookHandler);
 
 app.use(express.json({ limit: '2mb' }));
