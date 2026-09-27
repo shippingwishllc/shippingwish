@@ -25,16 +25,24 @@ export const Faq: React.FC = () => {
       question: 'Can I cancel?',
       answer: 'Yes. Cancel anytime in Stripe. If you cancel during the free week, the subscription never bills.',
     },
+    {
+      question: 'Which carriers is this for?',
+      answer: 'U.S. owner-operators and small fleets running in the Lower 48. We do not dispatch freight outside the United States.',
+    },
+    {
+      question: 'Do you guarantee a rate per mile?',
+      answer: 'No. The broker’s rate is whatever you approve on that load. We do not advertise an average RPM or a ranking. The weekly plan is the only Shipping Wish charge.',
+    },
   ];
 
   return (
-    <section className="py-20 bg-slate-950 border-b border-slate-800/80">
+    <section className="py-20 bg-[#f4f7fb] border-b border-slate-200" id="faq">
       <div className="max-w-[1240px] mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-blue-400 mb-2">
+          <div className="text-xs font-extrabold uppercase tracking-wider text-amber-700 mb-2">
             Questions
           </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-display font-black text-[#0b1f3a] tracking-tight">
             Clear answers before you put a card on file.
           </h2>
         </div>
@@ -45,18 +53,19 @@ export const Faq: React.FC = () => {
             return (
               <div
                 key={idx}
-                className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden transition-colors"
+                className="bg-white border border-slate-200 rounded-2xl overflow-hidden"
               >
                 <button
                   type="button"
                   onClick={() => setOpenIdx(isOpen ? null : idx)}
-                  className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-sm text-white hover:text-blue-400 transition-colors"
+                  className="w-full p-5 text-left flex items-center justify-between gap-4 font-bold text-sm text-[#0b1f3a]"
+                  aria-expanded={isOpen}
                 >
                   <span>{faq.question}</span>
                   <span className="text-slate-400 text-lg">{isOpen ? '−' : '+'}</span>
                 </button>
                 {isOpen && (
-                  <div className="px-5 pb-5 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-slate-800/60 pt-3">
+                  <div className="px-5 pb-5 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
                     {faq.answer}
                   </div>
                 )}

@@ -8,11 +8,15 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-slate-900 text-slate-100 antialiased font-sans;
+    @apply bg-[#f4f7fb] text-slate-900 antialiased font-sans;
   }
   h1, h2, h3, h4 {
-    @apply font-display tracking-tight text-white;
+    @apply font-display tracking-tight text-[#0b1f3a];
   }
+}
+
+body.sw-menu-open .sw-chat {
+  display: none !important;
 }
 
 @keyframes livePulse {

@@ -2,7 +2,7 @@ import React from 'react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-slate-950 text-slate-400 py-16 border-t border-slate-900 text-xs" role="contentinfo">
+    <footer className="bg-[#071628] text-slate-300 py-16 border-t border-white/10 text-xs" role="contentinfo">
       <div className="max-w-[1240px] mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-slate-800/80">
           
@@ -13,12 +13,12 @@ export const Footer: React.FC = () => {
                 SW
               </div>
               <div className="text-lg font-display font-black text-white tracking-tight">
-                Shipping <span className="text-blue-500">Wish</span>
+                Shipping <span className="text-amber-400">Wish</span>
               </div>
             </div>
 
             <p className="leading-relaxed text-slate-400">
-              Dedicated fleet operations managers, live load booking, and enterprise TMS software for motor carriers on a flat weekly subscription.
+              U.S. truck dispatch and fleet operations for owner-operators and small fleets. Flat weekly plan. You keep broker pay.
             </p>
 
             <div className="text-[11px] text-slate-500 leading-relaxed">

@@ -19,7 +19,7 @@
     if (!document.querySelector('link[href*="public-theme.css"]')) {
       const theme = document.createElement('link');
       theme.rel = 'stylesheet';
-      theme.href = '/css/public-theme.css?v=2';
+      theme.href = '/css/public-theme.css?v=4';
       document.head.appendChild(theme);
     }
   }
@@ -81,6 +81,7 @@
 
   function mobileHtml() {
     return `
+      <div class="nav-mobile-links">
       <a href="/" data-nav-close>Home</a>
       <a href="/carrier-setup" data-nav-close style="color:#facc15;font-weight:700;">⚡ Carrier Setup (Online)</a>
       <a href="https://www.loadsnexus.com" target="_blank" rel="noopener" data-nav-close style="color:#60a5fa;font-weight:700;">🔷 LoadsNexus™ AI Load Board ↗</a>
@@ -92,6 +93,7 @@
       <a href="/about" data-nav-close>About</a>
       <a href="/blog" data-nav-close>Insights</a>
       <a href="/contact" data-nav-close>Contact</a>
+      </div>
       <div class="nav-mobile-cta-group">
         <a href="/login" class="btn btn-secondary-glass" data-nav-close>Sign In</a>
         <a href="/pricing" class="btn btn-primary-amber" data-nav-close>Start Free Week →</a>

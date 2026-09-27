@@ -15,7 +15,7 @@ export const AiSupportChat: React.FC = () => {
     {
       id: 'welcome',
       sender: 'assistant',
-      text: "👋 Hi! I'm Alex, your 24/7 Operations Assistant at Shipping Wish LLC. Ready to keep your trucks moving at $7,500 – $12,000+ gross/week with our 7-Day $0 Free Trial?",
+      text: "Hi, this is the Shipping Wish operations desk. We dispatch for U.S. owner-operators and small fleets. Ask how the 7-day free week works, what is included, or how to start carrier setup.",
       time: 'Just now'
     }
   ]);
@@ -91,13 +91,13 @@ export const AiSupportChat: React.FC = () => {
 
   const quickPrompts = [
     'How does 7-day free trial work?',
-    'What are your weekly gross rates?',
+    'Who is the desk for?',
     'Do you take a percentage cut?',
     'What back-office work is included?'
   ];
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="sw-chat fixed bottom-6 right-6 z-40 flex flex-col items-end">
       {/* Expanded Chat Window */}
       {isOpen && (
         <div className="w-[92vw] sm:w-[380px] h-[520px] max-h-[80vh] bg-white border border-slate-200/90 rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-3.5 animate-in fade-in slide-in-from-bottom-5 duration-200">
