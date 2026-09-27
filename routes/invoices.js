@@ -4,6 +4,7 @@ const path = require('path');
 const os = require('os');
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { getApprovedStripe, approvedWebhookSecret } = require('../utils/stripe-account');
 
 const router = express.Router();
 const PUBLIC_INVOICE_DIR = process.env.VERCEL ? path.join(os.tmpdir(), 'invoices') : path.join(__dirname, '..', 'public', 'invoices');
@@ -465,10 +466,8 @@ router.post('/:id/send-stripe', requireAuth, requireRole('dispatcher', 'admin', 
 
     const targetEmail = recipientEmail || inv.carrier_email || 'dispatch@shippingwish.com';
 
-    // If Stripe Secret Key is present, trigger real Stripe API Call
-    if (process.env.STRIPE_SECRET_KEY) {
-      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-      
+    const stripe = getApprovedStripe();
+    if (stripe) {
       // 1. Create or retrieve Stripe Customer
       let customer;
       const customers = await stripe.customers.list({ email: targetEmail, limit: 1 });
@@ -541,12 +540,15 @@ router.post('/stripe-webhook', express.raw({ type: 'application/json' }), async 
   const sig = req.headers['stripe-signature'];
   let event;
   try {
-    if (process.env.STRIPE_WEBHOOK_SECRET) {
-      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    } else {
-      event = req.body;
+    const stripe = getApprovedStripe();
+    const webhookSecret = approvedWebhookSecret();
+    if (!stripe || !webhookSecret) {
+      return res.status(503).send('Stripe webhook signing secret is not configured.');
     }
+    if (!sig || !Buffer.isBuffer(req.body)) {
+      return res.status(400).send('Invalid Stripe webhook request.');
+    }
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
 
     if (event.type === 'invoice.paid') {
       const invoice = event.data.object;
