@@ -8,19 +8,10 @@ const { sendBrandedEmail } = require('../utils/mailer');
 const { buildTemplate, COMPANY, APP_URL, escapeHtml } = require('../utils/email-templates');
 
 const TRIAL_DAYS = parseInt(process.env.STRIPE_TRIAL_DAYS || '7', 10);
+const { getApprovedStripe, approvedWebhookSecret, approvedSecret } = require('../utils/stripe-account');
 
-function getStripe(brand = 'shippingwish') {
-  let key = null;
-  if (brand === 'loadsnexus') {
-    key = process.env.LOADSNEXUS_STRIPE_SECRET_KEY ||
-          process.env.STRIPE_LOADSNEXUS_SECRET_KEY ||
-          process.env.STRIPE_SECRET_KEY;
-  } else {
-    key = process.env.STRIPE_SECRET_KEY ||
-          process.env.SHIPPINGWISH_STRIPE_SECRET_KEY;
-  }
-  if (!key || !/^(sk|rk)_(test|live)_/.test(key)) return null;
-  return require('stripe')(key);
+function getStripe() {
+  return getApprovedStripe();
 }
 
 const PLANS = {
@@ -267,7 +258,8 @@ function publicPlans() {
 
 function lineItemForPlan(plan, amount) {
   const priceId = process.env[plan.price_env];
-  if (priceId) {
+  const loadboardPrice = String(plan.price_env || '').includes('LOADBOARD');
+  if (priceId && !loadboardPrice) {
     return { price: priceId, quantity: 1 };
   }
   const interval = plan.interval || 'week';
@@ -389,8 +381,7 @@ async function createWeeklyCheckout({
   cancelUrl
 }) {
   const plan = PLANS[planKey] || PLANS.solo_weekly;
-  const isLoadBoardPlan = plan.key && plan.key.startsWith('loadboard_');
-  const stripe = isLoadBoardPlan ? (getStripe('loadsnexus') || getStripe('shippingwish')) : getStripe('shippingwish');
+  const stripe = getStripe();
   const amount = amountOverride || plan.amount_cents;
   const success = successUrl || `${APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}`;
   const cancel = cancelUrl || `${APP_URL}/checkout?plan=${plan.key}&canceled=1`;
@@ -478,7 +469,7 @@ router.get('/plans', (req, res) => {
     trial_days: TRIAL_DAYS,
     currency: 'usd',
     interval: 'week',
-    configured: Boolean(process.env.STRIPE_SECRET_KEY)
+    configured: Boolean(approvedSecret())
   });
 });
 
@@ -559,8 +550,7 @@ router.post('/checkout', async (req, res) => {
 
 router.get('/session/:id', async (req, res) => {
   try {
-    const isLoadBoardReq = req.query.brand === 'loadsnexus' || (req.query.plan && String(req.query.plan).startsWith('loadboard_'));
-    let stripe = isLoadBoardReq ? (getStripe('loadsnexus') || getStripe('shippingwish')) : getStripe('shippingwish');
+    const stripe = getStripe();
     let session = null;
 
     if (stripe) {
@@ -569,16 +559,7 @@ router.get('/session/:id', async (req, res) => {
           expand: ['subscription', 'customer']
         });
       } catch (err) {
-        // Fallback: If not found, try the alternate account
-        const altStripe = isLoadBoardReq ? getStripe('shippingwish') : getStripe('loadsnexus');
-        if (altStripe) {
-          try {
-            session = await altStripe.checkout.sessions.retrieve(req.params.id, {
-              expand: ['subscription', 'customer']
-            });
-            stripe = altStripe;
-          } catch {}
-        }
+        console.error('Stripe session retrieve:', err.message);
       }
     }
 
@@ -597,8 +578,22 @@ router.get('/session/:id', async (req, res) => {
     const email = session.customer_details?.email || session.customer_email || (session.metadata && session.metadata.email);
     let portalReady = false;
 
+    // Only Shipping Wish and LoadsNexus plans provision a carrier login.
+    const metaPlan = session.metadata && session.metadata.plan_key;
+    const queryPlan = req.query.plan;
+    const planKey = PLANS[metaPlan] ? metaPlan : (PLANS[queryPlan] ? queryPlan : null);
+    if (!planKey) {
+      return res.json({
+        ok: true,
+        email,
+        status: session.status,
+        payment_status: session.payment_status,
+        plan_key: metaPlan || null,
+        portal_ready: false
+      });
+    }
+
     // Fulfill subscription immediately upon successful checkout return
-    const planKey = (session.metadata && session.metadata.plan_key) || req.query.plan || 'solo_weekly';
     const subId = sub ? sub.id : session.subscription;
     const custId = session.customer && typeof session.customer === 'object' ? session.customer.id : session.customer;
 
@@ -787,8 +782,8 @@ async function handleLoadBoardCheckoutRequest(req, res) {
       extraNote: `${selectedPlan.name} signup ($${(planCents / 100).toFixed(0)}/mo). Stripe checkout initiated.`
     });
 
-    // 4. Check Stripe Integration (LoadsNexus dedicated account)
-    const stripe = getStripe('loadsnexus');
+    // Charges the approved Shipping Wish Stripe account.
+    const stripe = getStripe();
     if (stripe) {
       try {
         // Create real Stripe Checkout Session for subscription
@@ -1390,7 +1385,7 @@ async function handleStripeEvent(event) {
   const type = event.type;
   const obj = event.data && event.data.object ? event.data.object : {};
 
-  if (type === 'checkout.session.completed') {
+  if (type === 'checkout.session.completed' && PLANS[(obj.metadata || {}).plan_key]) {
     const sessionId = obj.id;
     const subId = obj.subscription;
     const customerId = obj.customer;
@@ -1843,66 +1838,24 @@ async function handleStripeEvent(event) {
 async function webhookHandler(req, res) {
   let event = req.body;
   const sig = req.headers['stripe-signature'];
-  const pathStr = (req.originalUrl || req.url || '').toLowerCase();
-  const isLoadsNexusPath = pathStr.includes('loadsnexus') || req.query.brand === 'loadsnexus';
-
-  const Stripe = require('stripe');
-  const lnSecret = process.env.LOADSNEXUS_STRIPE_WEBHOOK_SECRET || process.env.STRIPE_LOADSNEXUS_WEBHOOK_SECRET;
-  const swSecret = process.env.STRIPE_WEBHOOK_SECRET || process.env.SHIPPINGWISH_STRIPE_WEBHOOK_SECRET;
+  const stripe = getApprovedStripe();
+  const swSecret = approvedWebhookSecret();
 
   try {
     if (!sig || !Buffer.isBuffer(req.body)) {
       throw new Error('Missing Stripe signature or raw request body.');
     }
-    if (!swSecret && !lnSecret) {
-      return res.status(503).send('Stripe webhook signing secrets are not configured.');
+    if (!stripe || !swSecret) {
+      return res.status(503).send('Stripe webhook signing secret is not configured.');
     }
-
-    let verified = false;
-
-    if (sig) {
-      // 1. If explicitly on LoadsNexus path, verify with LoadsNexus secret first
-      if (isLoadsNexusPath && lnSecret) {
-        try {
-          event = Stripe.webhooks.constructEvent(req.body, sig, lnSecret);
-          verified = true;
-        } catch (e) {
-          console.warn('LoadsNexus dedicated webhook signature check failed:', e.message);
-        }
-      }
-
-      // 2. Try Shipping Wish secret
-      if (!verified && swSecret) {
-        try {
-          event = Stripe.webhooks.constructEvent(req.body, sig, swSecret);
-          verified = true;
-        } catch (e) {
-          // If Shipping Wish secret failed, check if LoadsNexus secret matches
-          if (lnSecret) {
-            try {
-              event = Stripe.webhooks.constructEvent(req.body, sig, lnSecret);
-              verified = true;
-            } catch (lnErr) {
-              // Signature mismatch on both
-            }
-          }
-        }
-      }
-
-      // 3. Fallback: If only LoadsNexus secret configured
-      if (!verified && lnSecret && !swSecret) {
-        event = Stripe.webhooks.constructEvent(req.body, sig, lnSecret);
-        verified = true;
-      }
-
-      if (!verified && (swSecret || lnSecret)) {
-        throw new Error('Webhook signature verification failed for all configured Stripe accounts.');
-      }
-    } else {
-      throw new Error('Webhook signature verification failed.');
-    }
+    event = stripe.webhooks.constructEvent(req.body, sig, swSecret);
 
     await handleStripeEvent(event);
+    // The approved account's existing webhook also receives BuyWish and NYC checkouts.
+    const { handleStripeWebhook: handleLimoPaid } = require('./nyclimo');
+    await handleLimoPaid(event);
+    const { applyCheckoutEvent } = require('./buywish');
+    await applyCheckoutEvent(event);
     res.json({ received: true });
   } catch (err) {
     console.error('Stripe webhook error:', err.message);

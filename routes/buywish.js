@@ -375,10 +375,10 @@ const CURRENCY_RATES = {
   AUD: 1.54
 };
 
+const { getApprovedStripe, approvedWebhookSecret } = require('../utils/stripe-account');
+
 function getStripe() {
-  const key = process.env.BUYWISH_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
-  if (!key || !/^(sk|rk)_(test|live)_/.test(key)) return null;
-  return require('stripe')(key);
+  return getApprovedStripe();
 }
 
 // ============================================================
@@ -949,9 +949,37 @@ router.post('/reviews/:id/helpful', async (req, res) => {
 // ============================================================
 // Stripe Webhook Handler for BuyWishOnline
 // ============================================================
+async function applyCheckoutEvent(event) {
+  if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) return;
+  const session = event.data && event.data.object;
+  if (!session || session.metadata?.source !== 'buywishonline') return;
+  const orderNumber = session.metadata?.order_number;
+  const taxAmount = (session.total_details?.amount_tax || 0) / 100;
+  const totalAmount = (session.amount_total || 0) / 100;
+  const subtotalAmount = (session.amount_subtotal || 0) / 100;
+  const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
+
+  if (orderNumber && session.payment_status === 'paid') {
+    await pool.query(`
+      UPDATE ecommerce_orders
+      SET payment_status = 'paid',
+          fulfillment_status = 'payment_confirmed_pending_supplier',
+          stripe_session_id = $1,
+          stripe_payment_intent = $2,
+          tax_amount = $3,
+          total_amount = $4,
+          subtotal_amount = $5,
+          updated_at = NOW()
+      WHERE upper(order_number) = upper($6)
+    `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNumber]);
+
+    console.log(`[BUYWISH ORDER PAID VIA WEBHOOK]: Order ${orderNumber} paid ($${totalAmount}, Tax: $${taxAmount})`);
+  }
+}
+
 async function handleBuyWishWebhook(req, res) {
   const sig = req.headers['stripe-signature'];
-  const webhookSecret = process.env.BUYWISH_STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = approvedWebhookSecret();
   const stripe = getStripe();
 
   if (!stripe) return res.status(503).send('Stripe is not configured');
@@ -968,32 +996,7 @@ async function handleBuyWishWebhook(req, res) {
   }
 
   try {
-    if (['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) {
-      const session = event.data.object;
-      const orderNumber = session.metadata?.order_number;
-      const taxAmount = (session.total_details?.amount_tax || 0) / 100;
-      const totalAmount = (session.amount_total || 0) / 100;
-      const subtotalAmount = (session.amount_subtotal || 0) / 100;
-      const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
-
-      if (orderNumber && session.payment_status === 'paid') {
-        await pool.query(`
-          UPDATE ecommerce_orders
-          SET payment_status = 'paid',
-              fulfillment_status = 'payment_confirmed_pending_supplier',
-              stripe_session_id = $1,
-              stripe_payment_intent = $2,
-              tax_amount = $3,
-              total_amount = $4,
-              subtotal_amount = $5,
-              updated_at = NOW()
-          WHERE upper(order_number) = upper($6)
-        `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNumber]);
-
-        console.log(`[BUYWISH ORDER PAID VIA WEBHOOK]: Order ${orderNumber} paid ($${totalAmount}, Tax: $${taxAmount})`);
-      }
-    }
-
+    await applyCheckoutEvent(event);
     res.json({ received: true });
   } catch (e) {
     console.error('[BUYWISH WEBHOOK PROCESS ERROR]:', e.message);
@@ -1004,4 +1007,5 @@ async function handleBuyWishWebhook(req, res) {
 router.handleBuyWishWebhook = handleBuyWishWebhook;
 module.exports = router;
 module.exports.handleBuyWishWebhook = handleBuyWishWebhook;
+module.exports.applyCheckoutEvent = applyCheckoutEvent;
 

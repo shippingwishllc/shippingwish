@@ -491,16 +491,28 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
     );
 
     // Stripe accounts operational health
+    const approvedKey = process.env.STRIPE_SECRET_KEY || process.env.SHIPPINGWISH_STRIPE_SECRET_KEY || '';
+    const stripeMode = approvedKey.startsWith('sk_live_') ? 'LIVE PRODUCTION' : (approvedKey ? 'TEST MODE' : 'NOT CONFIGURED');
     const stripeHealth = {
       shipping_wish: {
-        configured: Boolean(process.env.STRIPE_SECRET_KEY),
-        mode: (process.env.STRIPE_SECRET_KEY || '').startsWith('sk_live_') ? 'LIVE PRODUCTION' : 'TEST MODE',
+        configured: Boolean(approvedKey),
+        mode: stripeMode,
         account: 'Shipping Wish LLC'
       },
       loads_nexus: {
-        configured: Boolean(process.env.STRIPE_LOADSNEXUS_SECRET_KEY || process.env.STRIPE_SECRET_KEY),
-        mode: (process.env.STRIPE_LOADSNEXUS_SECRET_KEY || '').startsWith('sk_live_') ? 'LIVE PRODUCTION' : 'TEST / UNDER REVIEW',
-        account: 'LoadsNexus Dedicated'
+        configured: Boolean(approvedKey),
+        mode: stripeMode,
+        account: 'Shipping Wish LLC'
+      },
+      nyc_limo: {
+        configured: Boolean(approvedKey),
+        mode: stripeMode,
+        account: 'Shipping Wish LLC'
+      },
+      buywish: {
+        configured: Boolean(approvedKey),
+        mode: stripeMode,
+        account: 'Shipping Wish LLC'
       }
     };
 

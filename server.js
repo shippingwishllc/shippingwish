@@ -78,13 +78,14 @@ app.post(
 );
 
 app.post('/api/nyclimo/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const secret = process.env.NYCLIMO_STRIPE_WEBHOOK_SECRET;
-  const stripeKey = process.env.NYCLIMO_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+  const { getApprovedStripe, approvedWebhookSecret } = require('./utils/stripe-account');
+  const secret = approvedWebhookSecret();
+  const stripe = getApprovedStripe();
   const signature = req.headers['stripe-signature'];
-  if (!secret || !stripeKey) return res.status(503).json({ error: 'NYC Limo Stripe webhook is not configured.' });
+  if (!secret || !stripe) return res.status(503).json({ error: 'NYC Limo Stripe webhook is not configured.' });
   if (!signature || !Buffer.isBuffer(req.body)) return res.status(400).json({ error: 'Invalid Stripe webhook request.' });
   let event;
-  try { event = require('stripe')(stripeKey).webhooks.constructEvent(req.body, signature, secret); }
+  try { event = stripe.webhooks.constructEvent(req.body, signature, secret); }
   catch (err) { return res.status(400).json({ error: 'Invalid Stripe webhook signature.' }); }
   try { await handleNYCLimoStripeWebhook(event); return res.json({ received: true }); }
   catch (err) { console.error('[NYCLIMO STRIPE WEBHOOK]:', err.message); return res.status(500).json({ error: 'Webhook processing failed.' }); }

@@ -56,10 +56,10 @@ router.post('/signup', async (req, res) => {
 router.get('/me', requireAuth, (req, res) => res.json({ user: req.user }));
 router.post('/logout', (req, res) => { res.clearCookie('nlw_token'); res.json({ ok: true }); });
 
+const { getApprovedStripe } = require('../utils/stripe-account');
+
 function getStripe() {
-  const key = process.env.NYCLIMO_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
-  if (!key || !/^(sk|rk)_(test|live)_/.test(key)) return null;
-  return require('stripe')(key);
+  return getApprovedStripe();
 }
 
 async function getVehicles() {
