@@ -407,151 +407,44 @@ router.get('/zip-lookup', (req, res) => {
 // 0.1 Public Load Board Live Statistics & Verified Corridors Ticker
 router.get('/public-stats', async (req, res) => {
   try {
-    const hour = new Date().getUTCHours();
-    const liveActiveLoads = 2480 + ((hour * 13) % 95);
-    const loadsTodayStr = `${Number(liveActiveLoads).toLocaleString()}+`;
-    const avgRpmStr = '$3.24 / mi';
-
-    const today = new Date();
-    const dateFormatted = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-    // Fetch real high-paying spot loads from PostgreSQL database if available
-    let dbCorridors = [];
-    try {
-      const realLoads = await pool.query(`
-        SELECT id, load_number, rate, pickup_location, delivery_location, equipment_type, weight, commodity, notes
-        FROM loads
-        WHERE status != 'cancelled'
-        ORDER BY rate DESC LIMIT 4
-      `);
-      dbCorridors = (realLoads.rows || []).map(r => ({
+    const stats = await pool.query(`
+      SELECT COUNT(*) FILTER (WHERE status NOT IN ('cancelled', 'covered')) AS active,
+             ROUND(AVG(rpm) FILTER (WHERE rpm > 0 AND status NOT IN ('cancelled', 'covered'))::numeric, 2) AS avg_rpm
+      FROM loads
+    `);
+    const active = parseInt(stats.rows[0].active, 10) || 0;
+    const avgRpm = stats.rows[0].avg_rpm;
+    const realLoads = await pool.query(`
+      SELECT id, load_number, rate, miles, rpm, pickup_location, delivery_location,
+             equipment_type, weight, commodity, broker_name, pickup_date
+      FROM loads
+      WHERE status NOT IN ('cancelled', 'covered')
+      ORDER BY created_at DESC
+      LIMIT 8
+    `);
+    const liveCorridors = (realLoads.rows || []).map((r) => {
+      const miles = Number(r.miles) || 0;
+      const rate = Number(r.rate) || 0;
+      return {
         id: `LOAD #${r.load_number || r.id}`,
-        origin: r.pickup_location || 'Dallas, TX',
-        destination: r.delivery_location || 'Atlanta, GA',
-        miles: 750,
-        rate: r.rate || 3450,
-        rpm: (Number(r.rate || 3450) / 750).toFixed(2),
-        equipment: r.equipment_type || '53ft Reefer',
-        weight: `${(r.weight || 42000).toLocaleString()} lbs`,
-        broker: 'LoadNexus Verified Broker',
+        origin: r.pickup_location || '',
+        destination: r.delivery_location || '',
+        miles,
+        rate,
+        rpm: r.rpm || (miles > 0 ? (rate / miles).toFixed(2) : null),
+        equipment: r.equipment_type || 'Not listed',
+        weight: r.weight ? `${Number(r.weight).toLocaleString()} lbs` : 'Not listed',
+        broker: r.broker_name || 'Broker details on file',
         commodity: r.commodity || 'General Freight',
-        pickup_date: dateFormatted
-      }));
-    } catch (e) { /* ignore */ }
-
-    const liveCorridors = [
-      ...dbCorridors,
-      {
-        id: `LOAD SW-${98400 + ((hour * 3) % 89)}`,
-        origin: 'Chicago, IL',
-        destination: 'Atlanta, GA',
-        miles: 715,
-        rate: 3450,
-        rpm: 4.82,
-        equipment: '53ft Reefer',
-        weight: '38,500 lbs',
-        broker: 'C.H. Robinson',
-        commodity: 'Refrigerated Food & Produce',
-        pickup_date: dateFormatted
-      },
-      {
-        id: `LOAD SW-${98410 + ((hour * 5) % 83)}`,
-        origin: 'Dallas, TX',
-        destination: 'Charlotte, NC',
-        miles: 1020,
-        rate: 3950,
-        rpm: 3.87,
-        equipment: '53ft Dry Van',
-        weight: '41,000 lbs',
-        broker: 'TQL (Total Quality Logistics)',
-        commodity: 'Consumer Electronics & CPG',
-        pickup_date: dateFormatted
-      },
-      {
-        id: `LOAD SW-${98420 + ((hour * 7) % 79)}`,
-        origin: 'Allentown, PA',
-        destination: 'Lakeland, FL',
-        miles: 1065,
-        rate: 4420,
-        rpm: 4.15,
-        equipment: '53ft Flatbed',
-        weight: '44,200 lbs',
-        broker: 'Echo Global Logistics',
-        commodity: 'Commercial Building Materials',
-        pickup_date: dateFormatted
-      },
-      {
-        id: `LOAD SW-${98430 + ((hour * 11) % 73)}`,
-        origin: 'Ontario, CA',
-        destination: 'Denver, CO',
-        miles: 1015,
-        rate: 4180,
-        rpm: 4.12,
-        equipment: '53ft Reefer',
-        weight: '36,800 lbs',
-        broker: 'Coyote Logistics',
-        commodity: 'Fresh Produce / Temp Controlled',
-        pickup_date: dateFormatted
-      },
-      {
-        id: `LOAD SW-${98440 + ((hour * 4) % 67)}`,
-        origin: 'Savannah, GA',
-        destination: 'Columbus, OH',
-        miles: 680,
-        rate: 3250,
-        rpm: 4.78,
-        equipment: '53ft Stepdeck',
-        weight: '43,000 lbs',
-        broker: 'Arrive Logistics',
-        commodity: 'Port Container Drayage & Industrial Steel',
-        pickup_date: dateFormatted
-      },
-      {
-        id: `LOAD SW-${98450 + ((hour * 9) % 61)}`,
-        origin: 'Houston, TX',
-        destination: 'Los Angeles, CA',
-        miles: 1540,
-        rate: 5120,
-        rpm: 3.32,
-        equipment: '53ft Dry Van',
-        weight: '42,500 lbs',
-        broker: 'RXO Freight',
-        commodity: 'Retail Goods & High Value Freight',
-        pickup_date: dateFormatted
-      },
-      {
-        id: `LOAD SW-${98460 + ((hour * 6) % 59)}`,
-        origin: 'Indianapolis, IN',
-        destination: 'Laredo, TX',
-        miles: 1190,
-        rate: 4350,
-        rpm: 3.66,
-        equipment: '53ft Dry Van',
-        weight: '39,400 lbs',
-        broker: 'Landstar Ranger',
-        commodity: 'Automotive Parts & Assemblies',
-        pickup_date: dateFormatted
-      },
-      {
-        id: `LOAD SW-${98470 + ((hour * 8) % 53)}`,
-        origin: 'Elizabeth, NJ',
-        destination: 'Chicago, IL',
-        miles: 790,
-        rate: 3650,
-        rpm: 4.62,
-        equipment: '53ft Reefer',
-        weight: '37,200 lbs',
-        broker: 'J.B. Hunt Transport',
-        commodity: 'Cold Chain Pharmaceuticals & Food',
-        pickup_date: dateFormatted
-      }
-    ];
+        pickup_date: r.pickup_date ? new Date(r.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
+      };
+    });
 
     res.json({
       ok: true,
-      loads_today: loadsTodayStr,
-      loads_count: liveActiveLoads,
-      avg_rpm: avgRpmStr,
+      loads_today: String(active),
+      loads_count: active,
+      avg_rpm: avgRpm != null ? `$${avgRpm} / mi` : '—',
       broker_pay_kept: '100%',
       desk_coverage: '24/7',
       live_corridors: liveCorridors
@@ -609,9 +502,9 @@ router.get('/search', optionalAuth, async (req, res) => {
             if (mMatch) bMc = mMatch[1].trim();
           }
 
-          const miles = Number(r.miles) || 650;
-          const rate = Number(r.rate) || 2500;
-          const rpm = Number(r.rpm) || (rate / miles).toFixed(2);
+          const miles = Number(r.miles) || 0;
+          const rate = Number(r.rate) || 0;
+          const rpm = Number(r.rpm) || (miles > 0 ? (rate / miles).toFixed(2) : null);
           const pDate = r.pickup_date ? new Date(r.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Immediate';
           const dDate = r.delivery_date ? new Date(r.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Next Day';
           const isCovered = (r.status === 'covered');
@@ -624,7 +517,7 @@ router.get('/search', optionalAuth, async (req, res) => {
             rate,
             rpm: String(rpm),
             equipment_type: r.equipment_type || '53ft Dry Van',
-            weight: r.weight ? `${Number(r.weight).toLocaleString()} lbs` : '42,000 lbs',
+            weight: r.weight ? `${Number(r.weight).toLocaleString()} lbs` : 'Not listed',
             commodity: r.commodity || 'General Freight',
             pickup_date: pDate,
             delivery_date: dDate,
@@ -700,7 +593,9 @@ router.get('/search', optionalAuth, async (req, res) => {
           const row = userCheck.rows[0];
           const isSubActive = ['active', 'trialing'].includes(String(row.sub_status || '').toLowerCase());
           const isTrial = row.trial_ends_at && new Date(row.trial_ends_at) > new Date();
-          const isPlan = row.weekly_plan === 'loadboard_ai_pass' || row.sub_plan === 'loadboard_ai_pass' || Boolean(row.weekly_plan);
+          const planKey = String(row.weekly_plan || '');
+          const subKey = String(row.sub_plan || '');
+          const isPlan = planKey.startsWith('loadboard_') || subKey.startsWith('loadboard_');
           if (isSubActive || isTrial || isPlan) {
             hasFullAccess = true;
           }
@@ -2031,14 +1926,13 @@ router.get('/lane-alerts', optionalAuth, async (req, res) => {
     const userId = req.user ? req.user.id : null;
     const userEmail = req.user ? req.user.email : null;
     let result;
-    if (userId || userEmail) {
-      result = await pool.query(
-        `SELECT * FROM carrier_lane_alerts WHERE is_active = true AND (user_id = $1 OR contact_email = $2) ORDER BY created_at DESC`,
-        [userId, userEmail]
-      );
-    } else {
-      result = await pool.query(`SELECT * FROM carrier_lane_alerts WHERE is_active = true ORDER BY created_at DESC LIMIT 10`);
+    if (!userId && !userEmail) {
+      return res.json({ ok: true, alerts: [] });
     }
+    result = await pool.query(
+      `SELECT * FROM carrier_lane_alerts WHERE is_active = true AND (user_id = $1 OR contact_email = $2) ORDER BY created_at DESC`,
+      [userId, userEmail]
+    );
     res.json({ ok: true, alerts: result.rows });
   } catch (err) {
     console.error('Fetch lane alerts error:', err);
@@ -2093,10 +1987,14 @@ router.post('/lane-alerts', optionalAuth, async (req, res) => {
 });
 
 // DELETE /api/loadboard/lane-alerts/:id — Delete alert
-router.delete('/lane-alerts/:id', optionalAuth, async (req, res) => {
+router.delete('/lane-alerts/:id', requireAuth, async (req, res) => {
   try {
     const alertId = req.params.id;
-    await pool.query(`DELETE FROM carrier_lane_alerts WHERE id = $1`, [alertId]);
+    const deleted = await pool.query(
+      `DELETE FROM carrier_lane_alerts WHERE id = $1 AND (user_id = $2 OR lower(contact_email) = lower($3)) RETURNING id`,
+      [alertId, req.user.id, req.user.email || '']
+    );
+    if (!deleted.rows.length) return res.status(404).json({ error: 'Lane alert not found.' });
     res.json({ ok: true, message: 'Lane alert removed successfully.' });
   } catch (err) {
     res.status(500).json({ error: 'Could not delete lane alert.' });
@@ -2113,33 +2011,26 @@ router.get('/stats/live', optionalAuth, async (req, res) => {
       pool.query(`SELECT COUNT(*) as count FROM brokers`)
     ]);
 
-    const activeLoads = parseInt(loadsCountRes.rows[0]?.count, 10) || 110;
-    const availableTrucks = parseInt(trucksCountRes.rows[0]?.count, 10) || 42;
-    const monitoredBrokers = parseInt(brokersCountRes.rows[0]?.count, 10) || 28;
+    const activeLoads = parseInt(loadsCountRes.rows[0]?.count, 10) || 0;
+    const availableTrucks = parseInt(trucksCountRes.rows[0]?.count, 10) || 0;
+    const monitoredBrokers = parseInt(brokersCountRes.rows[0]?.count, 10) || 0;
+    const rpmRes = await pool.query(`SELECT ROUND(AVG(rpm)::numeric, 2) AS avg_rpm FROM loads WHERE rpm > 0 AND status NOT IN ('cancelled', 'covered')`);
+    const avgRpm = rpmRes.rows[0]?.avg_rpm;
 
     res.json({
       ok: true,
       timestamp: new Date().toISOString(),
       stats: {
-        active_loads: activeLoads < 50 ? activeLoads + 65 : activeLoads,
-        available_trucks: availableTrucks < 20 ? availableTrucks + 25 : availableTrucks,
-        monitored_brokers: monitoredBrokers < 10 ? monitoredBrokers + 18 : monitoredBrokers,
+        active_loads: activeLoads,
+        available_trucks: availableTrucks,
+        monitored_brokers: monitoredBrokers,
         anti_double_brokering_protected: '100%',
-        avg_rate_per_mile: '$3.18'
+        avg_rate_per_mile: avgRpm != null ? `$${avgRpm}` : '—'
       }
     });
   } catch (err) {
     console.error('Live stats error:', err);
-    res.json({
-      ok: true,
-      stats: {
-        active_loads: 110,
-        available_trucks: 42,
-        monitored_brokers: 28,
-        anti_double_brokering_protected: '100%',
-        avg_rate_per_mile: '$3.18'
-      }
-    });
+    res.status(500).json({ error: 'Could not load live stats.' });
   }
 });
 

@@ -37,6 +37,7 @@ router.post('/login', async (req, res) => {
 router.post('/signup', async (req, res) => {
   const { name, email, password, phone } = req.body || {};
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, password required.' });
+  if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
   try {
     await ensureSchema();
     const hash = await bcrypt.hash(password, 10);
@@ -315,7 +316,7 @@ router.post('/bookings/:id/checkout', async (req, res) => {
         unit_amount: Math.round(Number(booking.total_price) * 100)
       }, quantity: 1 }],
       metadata: { type: 'limo_booking', booking_id: String(booking.id), booking_number: booking.booking_number },
-      success_url: `${APP_URL}/book/success?booking=${encodeURIComponent(booking.booking_number)}`,
+      success_url: `${APP_URL}/book/success?booking=${encodeURIComponent(booking.booking_number)}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${APP_URL}/book?canceled=1`
     }, { idempotencyKey: `limo-booking-${booking.id}` });
     await pool.query('UPDATE limo_bookings SET stripe_session_id = $1, updated_at = now() WHERE id = $2', [session.id, booking.id]);
@@ -323,6 +324,49 @@ router.post('/bookings/:id/checkout', async (req, res) => {
   } catch (err) {
     console.error('[LIMO CHECKOUT ERROR]:', err.message);
     res.status(500).json({ error: 'Could not start payment for this booking.' });
+  }
+});
+
+router.get('/bookings/confirm', async (req, res) => {
+  try {
+    await ensureSchema();
+    const bookingNumber = String(req.query.booking || '').trim();
+    const sessionId = String(req.query.session_id || '').trim();
+    if (!bookingNumber) return res.status(400).json({ error: 'Booking reference required.' });
+    const { rows } = await pool.query(
+      'SELECT id, booking_number, status, payment_status, stripe_session_id FROM limo_bookings WHERE booking_number = $1',
+      [bookingNumber]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Booking not found.' });
+    const booking = rows[0];
+    let paid = booking.payment_status === 'paid';
+    if (!paid && sessionId && sessionId === booking.stripe_session_id) {
+      const stripe = getStripe();
+      if (stripe) {
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        paid = session.payment_status === 'paid' && session.metadata?.booking_number === booking.booking_number;
+        if (paid && booking.status === 'operator_accepted') {
+          await handleStripeWebhook({
+            type: 'checkout.session.completed',
+            data: { object: session }
+          });
+        }
+      }
+    }
+    const current = await pool.query(
+      'SELECT booking_number, status, payment_status FROM limo_bookings WHERE id = $1',
+      [booking.id]
+    );
+    const row = current.rows[0] || booking;
+    res.json({
+      booking_number: row.booking_number,
+      status: row.status,
+      payment_status: row.payment_status,
+      confirmed: row.payment_status === 'paid'
+    });
+  } catch (err) {
+    console.error('[LIMO CONFIRM ERROR]:', err.message);
+    res.status(500).json({ error: 'Could not confirm this payment.' });
   }
 });
 

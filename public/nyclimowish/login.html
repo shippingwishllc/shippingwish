@@ -35,7 +35,9 @@
         el.style.display = 'block';
         return;
       }
-      window.location.href = params.get('redirect') || (data.user.role === 'admin' || data.user.role === 'dispatcher' ? '/erp' : (data.user.role === 'partner_dispatcher' ? '/partner' : '/passenger'));
+      const role = data.user.role;
+      const home = role === 'admin' || role === 'dispatcher' ? '/erp' : (role === 'partner_dispatcher' ? '/partner' : (role === 'driver' ? '/driver' : '/passenger'));
+      window.location.href = params.get('redirect') || home;
     });
   </script>
 </body>

@@ -68,11 +68,6 @@ export default function ShippingWishTmsApp() {
     }
   };
 
-  const fillDemoDispatcher = () => {
-    setEmail('dispatcher@shippingwish.com');
-    setPassword('DispatcherPass2026!');
-  };
-
   const fetchLoads = async () => {
     setLoadingLoads(true);
     const res = await api.getLoads();

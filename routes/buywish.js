@@ -760,23 +760,19 @@ async function ensureReviewsTable() {
       CREATE INDEX IF NOT EXISTS idx_reviews_status ON ecommerce_reviews(status);
     `);
 
-    // Seed realistic verified customer reviews if empty
-    const countRes = await pool.query('SELECT COUNT(*) FROM ecommerce_reviews');
-    if (parseInt(countRes.rows[0].count, 10) === 0) {
-      await pool.query(`
-        INSERT INTO ecommerce_reviews (
-          product_id, product_title, author_name, author_email, rating, title,
-          comment, country_code, country_name, verified_purchase, helpful_count, created_at
-        ) VALUES
-        ('global-1', 'Cordless Deep Tissue Muscle Gun', 'Marcus Vance', 'm.vance@gmail.com', 5, 'Absolute game changer for recovery!', 'This muscle gun has serious power. The battery lasts all week and the 6 speeds allow me to target sore muscles without stalling. Arrived in Austin, TX in just 3 days.', 'US', 'United States', true, 19, NOW() - INTERVAL '3 days'),
-        ('global-2', 'Smart Multi-Angle Car Phone Mount', 'Sarah Jenkins', 'sarah.j@outlook.com', 5, 'Holds firmly and charges fast', 'Best car mount I have owned. The automatic clamping works flawlessly every time I put my phone near it, and fast wireless charging keeps my battery full.', 'US', 'United States', true, 14, NOW() - INTERVAL '5 days'),
-        ('global-3', 'RGB Ambient Smart LED Light Bar', 'Liam O''Connor', 'liam.oc@btinternet.com', 5, 'Incredible atmosphere in my setup', 'Synced with my gaming PC and television setup. The colors are rich and responsive. Shipped to London within 4 business days. Packaging was pristine.', 'GB', 'United Kingdom', true, 11, NOW() - INTERVAL '6 days'),
-        ('global-4', 'Ultra-Fast Wireless Charging Pad Pro', 'Chloe Tremblay', 'chloe.tremblay@gmail.com', 5, 'Sleek and charges 3 devices simultaneously', 'I keep this on my bedside table in Montreal. Clean design, soft LED indicator that doesn''t disturb sleep, and charges phone, watch and earbuds all at once.', 'CA', 'Canada', true, 9, NOW() - INTERVAL '9 days'),
-        ('global-5', 'Heavy-Duty Tactical Cargo Organizer', 'David Miller', 'dmiller_transport@yahoo.com', 5, 'Built like a tank — fits truck bed perfectly', 'Very durable canvas material with solid base plates. Doesn''t slide around when turning. Kept all my supplies neat and organized.', 'US', 'United States', true, 16, NOW() - INTERVAL '11 days'),
-        ('global-6', 'Ergonomic Memory Foam Lumbar Cushion', 'Emma Watson', 'emma.w@gmail.com', 4, 'Great back support for long office hours', 'Made a noticeable difference for my lower back during 8-hour desk work. Soft breathable cover that washes easily. Shipped quickly to Chicago.', 'US', 'United States', true, 7, NOW() - INTERVAL '14 days'),
-        ('global-7', 'Portable Ultrasonic Mini Air Humidifier', 'Sophie Moreau', 'sophie.m@orange.fr', 5, 'Super quiet and beautiful soft glow', 'So quiet you cannot even tell it is running. Perfect for bedroom. Ordered from France and arrived without any customs hassles.', 'FR', 'France', true, 8, NOW() - INTERVAL '16 days')
-      `);
-    }
+    await pool.query(`
+      DELETE FROM ecommerce_reviews
+      WHERE product_id LIKE 'global-%'
+        AND lower(author_email) IN (
+          'm.vance@gmail.com',
+          'sarah.j@outlook.com',
+          'liam.oc@btinternet.com',
+          'chloe.tremblay@gmail.com',
+          'dmiller_transport@yahoo.com',
+          'emma.w@gmail.com',
+          'sophie.m@orange.fr'
+        )
+    `);
 
     reviewsTableReady = true;
   } catch (err) {
@@ -799,8 +795,8 @@ router.get('/reviews', async (req, res) => {
         SELECT id, product_id, product_title, author_name, rating, title, comment,
                country_code, country_name, verified_purchase, helpful_count, created_at
         FROM ecommerce_reviews
-        WHERE status = 'approved' AND (product_id = $1 OR product_id LIKE 'global-%')
-        ORDER BY (product_id = $1) DESC, verified_purchase DESC, helpful_count DESC, created_at DESC
+        WHERE status = 'approved' AND product_id = $1
+        ORDER BY verified_purchase DESC, helpful_count DESC, created_at DESC
         LIMIT $2
       `;
       params = [productId, limit];
@@ -820,7 +816,7 @@ router.get('/reviews', async (req, res) => {
 
     // Calculate rating breakdown and summary
     const statsQuery = productId && productId !== 'all'
-      ? `SELECT rating, count(*) as count FROM ecommerce_reviews WHERE status = 'approved' AND (product_id = $1 OR product_id LIKE 'global-%') GROUP BY rating`
+      ? `SELECT rating, count(*) as count FROM ecommerce_reviews WHERE status = 'approved' AND product_id = $1 GROUP BY rating`
       : `SELECT rating, count(*) as count FROM ecommerce_reviews WHERE status = 'approved' GROUP BY rating`;
     const statsParams = (productId && productId !== 'all') ? [productId] : [];
     const statsRes = await pool.query(statsQuery, statsParams);
@@ -837,8 +833,8 @@ router.get('/reviews', async (req, res) => {
       totalCount += c;
     });
 
-    const averageRating = totalCount > 0 ? parseFloat((totalScore / totalCount).toFixed(1)) : 4.9;
-    const recommendedPercent = totalCount > 0 ? Math.round(((breakdown[5] + breakdown[4]) / totalCount) * 100) : 98;
+    const averageRating = totalCount > 0 ? parseFloat((totalScore / totalCount).toFixed(1)) : 0;
+    const recommendedPercent = totalCount > 0 ? Math.round(((breakdown[5] + breakdown[4]) / totalCount) * 100) : 0;
 
     res.json({
       success: true,
@@ -902,7 +898,7 @@ router.post('/reviews', async (req, res) => {
       INSERT INTO ecommerce_reviews (
         product_id, product_title, author_name, author_email, rating, title,
         comment, country_code, country_name, verified_purchase, order_number, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'approved')
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING id, product_id, product_title, author_name, rating, title, comment, country_code, country_name, verified_purchase, helpful_count, created_at
     `, [
       product_id || 'general',
@@ -915,14 +911,15 @@ router.post('/reviews', async (req, res) => {
       countryCode,
       countryName,
       isVerified,
-      (order_number || '').trim().slice(0, 40)
+      (order_number || '').trim().slice(0, 40),
+      isVerified ? 'approved' : 'pending'
     ]);
 
     res.json({
       success: true,
       message: isVerified
         ? 'Thank you! Your verified purchase review has been published.'
-        : 'Thank you! Your review has been published.',
+        : 'Thank you! Your review was received and will appear after it is checked.',
       review: insertRes.rows[0]
     });
   } catch (err) {

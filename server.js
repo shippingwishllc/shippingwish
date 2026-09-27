@@ -161,8 +161,17 @@ app.use((req, res, next) => {
     // API routing
     if (cleanP.startsWith('/api') || p.startsWith('/api/nyclimo')) {
       const nyclimoRouter = require('./routes/nyclimo');
+      const partnerRouter = require('./routes/nyclimo-partners');
+      const originalUrl = req.url;
       req.url = req.url.replace(/^\/(?:api\/nyclimo|nyclimowish\/api|api)/, '') || '/';
-      return nyclimoRouter(req, res, next);
+      return nyclimoRouter(req, res, (err) => {
+        if (err) return next(err);
+        return partnerRouter(req, res, (partnerErr) => {
+          if (partnerErr) return next(partnerErr);
+          req.url = originalUrl;
+          return next();
+        });
+      });
     }
     if (p.startsWith('/uploads')) {
       return next();
@@ -177,8 +186,11 @@ app.use((req, res, next) => {
     if (cleanP === '/track' || cleanP === '/track.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'track.html'));
     }
-    if (cleanP === '/login' || cleanP === '/login.html' || cleanP === '/signup') {
+    if (cleanP === '/login' || cleanP === '/login.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'login.html'));
+    }
+    if (cleanP === '/signup' || cleanP === '/signup.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'signup.html'));
     }
     if (cleanP === '/erp' || cleanP === '/erp.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'erp.html'));
@@ -510,17 +522,20 @@ async function seedAdminUsers() {
     const bcrypt = require('bcryptjs');
     const adminCheck = await pool.query("SELECT id FROM users WHERE role IN ('super_admin', 'admin') LIMIT 1");
     if (adminCheck.rows.length === 0) {
-      const superPass = process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin2026!';
-      const hash = await bcrypt.hash(superPass, 10);
-      await pool.query(
-        `INSERT INTO users (name, email, password_hash, role, company_name, phone)
-         VALUES 
-          ('Super Admin', 'admin@shippingwish.com', $1, 'super_admin', 'Shipping Wish HQ', '+1 (917) 737-0021'),
-          ('Company Owner', 'owner@shippingwish.com', $1, 'super_admin', 'Shipping Wish HQ', '+1 (917) 737-0021')
-         ON CONFLICT (email) DO NOTHING`,
-        [hash]
-      );
-      console.log('[SEED] Default Super Admin accounts created: admin@shippingwish.com & owner@shippingwish.com');
+      const superPass = process.env.SUPER_ADMIN_PASSWORD;
+      const adminEmail = (process.env.SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+      if (!superPass || !adminEmail) {
+        console.warn('[SEED] No super admin exists. Set SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD to create the first one.');
+      } else {
+        const hash = await bcrypt.hash(superPass, 12);
+        await pool.query(
+          `INSERT INTO users (name, email, password_hash, role, company_name, phone)
+           VALUES ('Super Admin', $1, $2, 'super_admin', 'Shipping Wish HQ', $3)
+           ON CONFLICT (email) DO NOTHING`,
+          [adminEmail, hash, process.env.COMPANY_PHONE || '+1 (917) 737-0021']
+        );
+        console.log('[SEED] Super admin account created from SUPER_ADMIN_EMAIL.');
+      }
     }
   } catch (err) {
     console.error('[SEED] Admin seed check:', err.message);

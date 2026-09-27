@@ -7,8 +7,12 @@ async function seedTestUsers() {
 
   try {
     // 1. Password hashes
-    const carrierPlainPassword = 'CarrierPass2026!';
-    const brokerPlainPassword = 'BrokerPass2026!';
+    const carrierPlainPassword = process.env.DEMO_CARRIER_PASSWORD;
+    const brokerPlainPassword = process.env.DEMO_BROKER_PASSWORD;
+    if (!carrierPlainPassword || !brokerPlainPassword) {
+      console.error('Set DEMO_CARRIER_PASSWORD and DEMO_BROKER_PASSWORD. Built-in demo passwords are disabled.');
+      process.exit(1);
+    }
 
     const carrierHash = await bcrypt.hash(carrierPlainPassword, 10);
     const brokerHash = await bcrypt.hash(brokerPlainPassword, 10);

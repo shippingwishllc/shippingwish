@@ -103,25 +103,22 @@ function setAuthCookie(res, token) {
 
 function clearAuthCookie(res, req) {
   const isSecure = process.env.NODE_ENV === 'production' || (process.env.APP_URL && process.env.APP_URL.startsWith('https://')) || (req && (req.secure || req.headers['x-forwarded-proto'] === 'https'));
-  
-  const clearOpts = {
-    httpOnly: true,
-    secure: isSecure,
-    sameSite: 'lax',
-    path: '/'
-  };
-
-  res.clearCookie('sw_token', clearOpts);
-  res.clearCookie('sw_token', { path: '/' });
-  res.clearCookie('sw_token', { path: '/', domain: '.shippingwish.com' });
-  res.clearCookie('sw_token', { path: '/', domain: 'shippingwish.com' });
-
-  // Force Set-Cookie headers with 1970 expiration and Max-Age=0 across all domain variants
-  res.header('Set-Cookie', [
-    `sw_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`,
-    `sw_token=; Path=/; Domain=.shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`,
-    `sw_token=; Path=/; Domain=shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`
-  ]);
+  const host = String((req && (req.headers['x-forwarded-host'] || req.headers.host)) || '').split(',')[0].trim().split(':')[0].toLowerCase();
+  const domains = new Set(['.shippingwish.com', 'shippingwish.com', '.nyclimowish.com', 'nyclimowish.com', '.loadsnexus.com', 'loadsnexus.com', '.buywishonline.com', 'buywishonline.com']);
+  if (host) {
+    domains.add(host);
+    const parts = host.split('.');
+    if (parts.length >= 2) domains.add('.' + parts.slice(-2).join('.'));
+  }
+  const secure = isSecure ? '; Secure' : '';
+  const cookies = [];
+  for (const name of ['sw_token', 'nlw_token']) {
+    cookies.push(`${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; SameSite=Lax${secure}`);
+    for (const domain of domains) {
+      cookies.push(`${name}=; Path=/; Domain=${domain}; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; SameSite=Lax${secure}`);
+    }
+  }
+  res.setHeader('Set-Cookie', cookies);
 }
 
 module.exports = { requireAuth, requireRole, requireSuperAdmin, optionalAuth, extractToken, JWT_SECRET, setAuthCookie, clearAuthCookie };

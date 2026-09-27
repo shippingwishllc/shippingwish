@@ -590,19 +590,24 @@ router.post('/carriers/add', requireAuth, requireSuperAdmin, async (req, res) =>
   try {
     await client.query('BEGIN');
     const bcrypt = require('bcryptjs');
-    const safeEmail = email && email.trim() ? email.trim() : `carrier_${Date.now()}@shippingwish.com`;
-    const hash = await bcrypt.hash('CarrierPass2026!', 10);
+    const crypto = require('crypto');
+    const safeEmail = email && email.trim() ? email.trim().toLowerCase() : `carrier_${Date.now()}@shippingwish.com`;
+    const existing = await client.query('SELECT id FROM users WHERE lower(email) = lower($1)', [safeEmail]);
+    const temporaryPassword = existing.rows.length ? null : crypto.randomBytes(9).toString('base64url');
+    const hash = temporaryPassword ? await bcrypt.hash(temporaryPassword, 12) : null;
 
-    const userRes = await client.query(`
-      INSERT INTO users (name, company_name, email, phone, mc_number, dot_number, role, weekly_plan, password_hash)
-      VALUES ($1, $2, $3, $4, $5, $6, 'carrier', $7, $8)
-      ON CONFLICT (email) DO UPDATE SET
-        company_name = EXCLUDED.company_name,
-        phone = EXCLUDED.phone,
-        mc_number = EXCLUDED.mc_number,
-        weekly_plan = EXCLUDED.weekly_plan
-      RETURNING id, name, company_name
-    `, [owner_name || company_name, company_name, safeEmail, phone, mc_number || null, dot_number || null, weekly_plan || 'weekly_dedicated_500', hash]);
+    const userRes = existing.rows.length
+      ? await client.query(`
+          UPDATE users
+          SET name = $1, company_name = $2, phone = $3, mc_number = $4, dot_number = $5, weekly_plan = $6
+          WHERE id = $7
+          RETURNING id, name, company_name
+        `, [owner_name || company_name, company_name, phone, mc_number || null, dot_number || null, weekly_plan || 'weekly_dedicated_500', existing.rows[0].id])
+      : await client.query(`
+          INSERT INTO users (name, company_name, email, phone, mc_number, dot_number, role, weekly_plan, password_hash)
+          VALUES ($1, $2, $3, $4, $5, $6, 'carrier', $7, $8)
+          RETURNING id, name, company_name
+        `, [owner_name || company_name, company_name, safeEmail, phone, mc_number || null, dot_number || null, weekly_plan || 'weekly_dedicated_500', hash]);
 
     const carrierId = userRes.rows[0].id;
 
@@ -630,7 +635,14 @@ router.post('/carriers/add', requireAuth, requireSuperAdmin, async (req, res) =>
     }
 
     await client.query('COMMIT');
-    res.json({ ok: true, message: `Carrier "${company_name}" onboarded successfully with fleet unit.` });
+    res.json({
+      ok: true,
+      message: temporaryPassword
+        ? `Carrier "${company_name}" onboarded. Share the one-time password, then have them change it.`
+        : `Carrier "${company_name}" was updated. Their existing password was left unchanged.`,
+      email: safeEmail,
+      temporary_password: temporaryPassword
+    });
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: err.message || 'Could not add carrier.' });
