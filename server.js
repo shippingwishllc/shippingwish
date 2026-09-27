@@ -302,6 +302,7 @@ app.use('/api/ifta', carrierApiGate, require('./routes/ifta'));
 app.use('/api/invoices', carrierApiGate, require('./routes/invoices'));
 app.use('/api/portal', carrierApiGate, require('./routes/portal'));
 app.use('/api/loadboard', require('./routes/loadboard'));
+app.use('/api/dispatch-desk', require('./routes/dispatch-desk'));
 app.use('/api/loadboard/matches', require('./routes/loadboard-matchmaking')); // Smart Freight & Capacity Matchmaking Engine
 app.use('/api/crm', require('./routes/crm'));             // CRM Carrier Leads, Dispositions & Daily Tasks
 app.use('/api/email', require('./routes/email'));         // 1-Click branded outreach, inbound replies, unsubscribe
@@ -563,6 +564,13 @@ if (require.main === module) {
     .then(() => {
       app.listen(PORT, () => {
         console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
+        if (!process.env.VERCEL) {
+          const dispatchDesk = require('./routes/dispatch-desk');
+          setInterval(() => {
+            dispatchDesk.syncDueSources().catch((err) => console.warn('[LOADBOARD] sync:', err.message));
+            dispatchDesk.sendDueMorningTexts().catch((err) => console.warn('[AI-DISPATCH] morning:', err.message));
+          }, 60000);
+        }
       });
     });
 } else {

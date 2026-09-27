@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '24';
+  const SIDEBAR_VERSION = '25';
   // #endregion
 
   function clearRoleCache() {
@@ -84,6 +84,7 @@
     { key: 'overview', navId: 'nav-tab-loads', href: '/admin-dashboard', icon: '📊', label: 'Overview & Loads' },
     { key: 'loadnexus', href: '/admin-loadnexus', icon: '🛡️', label: 'LoadNexus Command' },
     { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: '🎧', label: 'Dispatch Desk' },
+    { key: 'ai-dispatch', href: '/ai-dispatch', icon: '🤖', label: 'AI Dispatch', adminOnly: true },
     { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Match' },
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
@@ -138,6 +139,7 @@
     'admin-loadnexus.html': 'loadnexus',
     'admin-dashboard.html': 'overview',
     'dispatcher-dashboard.html': 'dispatch',
+    'ai-dispatch.html': 'ai-dispatch',
     'load-booking.html': 'loadboard',
     'brokers.html': 'brokers',
     'fleet.html': 'fleet',

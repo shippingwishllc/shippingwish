@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Dispatch — Shipping Wish</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/design-system.css">
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">AI Dispatch</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Start work for each carrier you add. Loads come from brokers or a licensed JSON API.</p>
+      </div>
+    </header>
+    <main class="app-content">
+      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
+        <h2 style="margin:0 0 8px;font-size:15px;">Three ways a load reaches the board</h2>
+        <ol style="margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.55;">
+          <li>A broker posts it on LoadsNexus. That path is already live.</li>
+          <li>You paste a licensed load-board API here. The desk calls that https JSON URL with your key. It does not open websites or copy another board’s pages.</li>
+          <li>When a load is covered, expired, or missing from the latest API reply, it leaves the public board.</li>
+        </ol>
+        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">The board stays empty until a broker posts or an API returns real loads. Start sends a good-morning text asking for the empty ZIP. A broker is not called until the driver replies YES on that exact load.</p>
+      </section>
+
+      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
+        <h2 style="margin:0 0 10px;font-size:15px;">Licensed load-board API</h2>
+        <form id="source-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end;">
+          <label style="font-size:12px;color:#475569;">Board name<input name="name" required style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">HTTPS JSON URL<input name="base_url" type="url" required placeholder="https://api.example.com/loads" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">Header name<input name="header_name" value="Authorization" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">API key<input name="api_key" type="password" autocomplete="off" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <button type="submit" style="background:#0b1f3a;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;">Save API</button>
+        </form>
+        <p id="source-msg" style="font-size:13px;color:#b45309;min-height:1.2em;"></p>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+          <button type="button" id="sync-due" style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;">Refresh due APIs</button>
+        </div>
+        <div id="source-list" style="font-size:13px;color:#475569;">Loading APIs…</div>
+      </section>
+
+      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+          <h2 style="margin:0;font-size:15px;">Carriers on AI dispatch</h2>
+          <button type="button" id="start-all" style="background:#2563eb;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;">Start all</button>
+        </div>
+        <p style="font-size:13px;color:#64748b;">Start marks the carrier active and texts them for the ZIP they are empty in. Texts send Monday–Saturday, 9:00 a.m. to 5:00 p.m. in that phone’s local time. Outside those hours the carrier stays active and the text waits.</p>
+        <form id="carrier-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;align-items:end;">
+          <label style="font-size:12px;color:#475569;">Company<input name="company_name" required style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">Contact<input name="contact_name" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">Phone<input name="phone" required style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">Email<input name="email" type="email" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">Equipment<input name="equipment" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">Empty ZIP<input name="empty_zip" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">Preferred destination<input name="prefer_destination" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <button type="submit" style="background:#0b1f3a;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;">Add carrier</button>
+        </form>
+        <p id="carrier-msg" style="font-size:13px;color:#b45309;min-height:1.2em;"></p>
+        <div id="carrier-list" style="font-size:13px;color:#475569;">Loading carriers…</div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="/js/app-shell.js?v=25"></script>
+<script>
+  function esc(value) {
+    return String(value || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+  async function api(path, options) {
+    const opts = Object.assign({ credentials: 'include' }, options || {});
+    if (opts.body) opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    const res = await fetch(path, opts);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  }
+  async function guard() {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/login'; return false; }
+    const data = await res.json();
+    if (!data.user || !['admin', 'super_admin'].includes(data.user.role)) {
+      window.location.href = '/login';
+      return false;
+    }
+    return true;
+  }
+  async function loadSources() {
+    const box = document.getElementById('source-list');
+    const data = await api('/api/dispatch-desk/sources');
+    if (!data.sources.length) {
+      box.textContent = 'No licensed API is connected. Broker posts can still appear on the board.';
+      return;
+    }
+    box.innerHTML = data.sources.map((row) => {
+      const when = row.last_sync_at ? new Date(row.last_sync_at).toLocaleString() : 'not synced';
+      return '<div style="padding:10px 0;border-top:1px solid #e2e8f0;">' +
+        '<strong>' + esc(row.name) + '</strong> · ' + esc(row.base_url) +
+        '<br><span style="color:#64748b;">Key ' + esc(row.api_key || 'not set') + ' · ' + esc(row.last_status || 'waiting') + ' · ' + esc(when) +
+        (row.last_error ? ' · ' + esc(row.last_error) : '') + '</span>' +
+        '<div style="margin-top:6px;display:flex;gap:8px;">' +
+        '<button type="button" data-sync="' + esc(row.id) + '" style="border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Sync now</button>' +
+        '<button type="button" data-remove="' + esc(row.id) + '" style="border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:8px;padding:6px 10px;cursor:pointer;">Remove</button>' +
+        '</div></div>';
+    }).join('');
+  }
+  async function loadCarriers() {
+    const box = document.getElementById('carrier-list');
+    const data = await api('/api/dispatch-desk/carriers');
+    if (!data.carriers.length) {
+      box.textContent = 'No carriers yet. Add one, then press Start.';
+      return;
+    }
+    box.innerHTML = data.carriers.map((row) => {
+      const when = row.last_sms_at ? new Date(row.last_sms_at).toLocaleString() : 'no text yet';
+      return '<div style="padding:10px 0;border-top:1px solid #e2e8f0;">' +
+        '<strong>' + esc(row.company_name) + '</strong> · ' + esc(row.status) +
+        '<br><span style="color:#64748b;">' + esc([row.contact_name, row.phone, row.equipment, row.empty_zip].filter(Boolean).join(' · ')) +
+        '<br>Last text: ' + esc(when) + ' · ' + esc(row.last_sms_status || 'not sent') + '</span>' +
+        '<div style="margin-top:6px;display:flex;gap:8px;">' +
+        '<button type="button" data-start="' + esc(row.id) + '" style="border:0;background:#2563eb;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Start</button>' +
+        '<button type="button" data-pause="' + esc(row.id) + '" style="border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Pause</button>' +
+        '</div></div>';
+    }).join('');
+  }
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!(await guard())) return;
+    try { await loadSources(); await loadCarriers(); }
+    catch (err) { document.getElementById('source-msg').textContent = err.message; }
+
+    document.getElementById('source-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const msg = document.getElementById('source-msg');
+      const body = Object.fromEntries(new FormData(event.target).entries());
+      try {
+        await api('/api/dispatch-desk/sources', { method: 'POST', body: JSON.stringify(body) });
+        event.target.reset();
+        event.target.header_name.value = 'Authorization';
+        msg.textContent = 'API saved. Press Sync now to pull the first loads.';
+        await loadSources();
+      } catch (err) { msg.textContent = err.message; }
+    });
+    document.getElementById('carrier-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const msg = document.getElementById('carrier-msg');
+      const body = Object.fromEntries(new FormData(event.target).entries());
+      try {
+        await api('/api/dispatch-desk/carriers', { method: 'POST', body: JSON.stringify(body) });
+        event.target.reset();
+        msg.textContent = 'Carrier added. Press Start when you want the morning text to go out.';
+        await loadCarriers();
+      } catch (err) { msg.textContent = err.message; }
+    });
+    document.getElementById('sync-due').addEventListener('click', async () => {
+      const msg = document.getElementById('source-msg');
+      try {
+        await api('/api/dispatch-desk/sources/sync-due', { method: 'POST', body: '{}' });
+        msg.textContent = 'Refresh finished.';
+        await loadSources();
+      } catch (err) { msg.textContent = err.message; }
+    });
+    document.getElementById('start-all').addEventListener('click', async () => {
+      const msg = document.getElementById('carrier-msg');
+      try {
+        await api('/api/dispatch-desk/carriers/start-all', { method: 'POST', body: '{}' });
+        msg.textContent = 'Start requested for every carrier on this list.';
+        await loadCarriers();
+      } catch (err) { msg.textContent = err.message; }
+    });
+    document.body.addEventListener('click', async (event) => {
+      const sync = event.target.getAttribute && event.target.getAttribute('data-sync');
+      const remove = event.target.getAttribute && event.target.getAttribute('data-remove');
+      const start = event.target.getAttribute && event.target.getAttribute('data-start');
+      const pause = event.target.getAttribute && event.target.getAttribute('data-pause');
+      try {
+        if (sync) {
+          await api('/api/dispatch-desk/sources/' + sync + '/sync', { method: 'POST', body: '{}' });
+          await loadSources();
+        } else if (remove) {
+          await api('/api/dispatch-desk/sources/' + remove, { method: 'DELETE' });
+          await loadSources();
+        } else if (start) {
+          await api('/api/dispatch-desk/carriers/' + start + '/start', { method: 'POST', body: '{}' });
+          await loadCarriers();
+        } else if (pause) {
+          await api('/api/dispatch-desk/carriers/' + pause + '/pause', { method: 'POST', body: '{}' });
+          await loadCarriers();
+        }
+      } catch (err) {
+        document.getElementById(start || pause ? 'carrier-msg' : 'source-msg').textContent = err.message;
+      }
+    });
+  });
+</script>
+</body>
+</html>

@@ -408,8 +408,8 @@ router.get('/zip-lookup', (req, res) => {
 router.get('/public-stats', async (req, res) => {
   try {
     const stats = await pool.query(`
-      SELECT COUNT(*) FILTER (WHERE status NOT IN ('cancelled', 'covered')) AS active,
-             ROUND(AVG(rpm) FILTER (WHERE rpm > 0 AND status NOT IN ('cancelled', 'covered'))::numeric, 2) AS avg_rpm
+      SELECT COUNT(*) FILTER (WHERE status NOT IN ('cancelled', 'covered', 'expired')) AS active,
+             ROUND(AVG(rpm) FILTER (WHERE rpm > 0 AND status NOT IN ('cancelled', 'covered', 'expired'))::numeric, 2) AS avg_rpm
       FROM loads
     `);
     const active = parseInt(stats.rows[0].active, 10) || 0;
@@ -418,7 +418,7 @@ router.get('/public-stats', async (req, res) => {
       SELECT id, load_number, rate, miles, rpm, pickup_location, delivery_location,
              equipment_type, weight, commodity, broker_name, pickup_date
       FROM loads
-      WHERE status NOT IN ('cancelled', 'covered')
+      WHERE status NOT IN ('cancelled', 'covered', 'expired')
       ORDER BY created_at DESC
       LIMIT 8
     `);
@@ -463,13 +463,16 @@ router.get('/search', optionalAuth, async (req, res) => {
 
     // Fetch live posted broker loads from PostgreSQL
     let liveDbLoads = [];
+    setImmediate(() => {
+      require('../utils/loadboard-sync').syncDueSources().catch(() => {});
+    });
     try {
       const dbRes = await pool.query(
         `SELECT id, load_number, status, rate, pickup_location, delivery_location,
                 pickup_date, delivery_date, equipment_type, weight, commodity,
                 notes, broker_name, broker_mc, broker_contact, miles, rpm, created_at, updated_at
          FROM loads
-         WHERE status != 'cancelled' AND (status != 'covered' OR updated_at > NOW() - interval '20 seconds')
+         WHERE status NOT IN ('cancelled', 'expired') AND (status != 'covered' OR updated_at > NOW() - interval '20 seconds')
          ORDER BY created_at DESC
          LIMIT 40`
       );
@@ -669,7 +672,7 @@ router.post('/ai-match', requireAuth, async (req, res) => {
       `SELECT id, load_number, pickup_location, delivery_location, miles, rate, rpm,
               equipment_type, weight, commodity, pickup_date, broker_name, broker_mc
        FROM loads
-       WHERE status NOT IN ('cancelled', 'covered')
+       WHERE status NOT IN ('cancelled', 'covered', 'expired')
          AND pickup_location ILIKE $1
          AND delivery_location ILIKE $2
          AND equipment_type ILIKE $3
@@ -877,7 +880,7 @@ router.post('/ai-dispatch-driver-offers', requireAuth, requireRole('dispatcher',
               pickup_location, delivery_location, pickup_date, delivery_date,
               rate, miles, rpm, equipment_type
        FROM loads
-       WHERE status NOT IN ('cancelled', 'covered')
+       WHERE status NOT IN ('cancelled', 'covered', 'expired')
          AND pickup_location ILIKE $1
          AND delivery_location ILIKE $2
          AND equipment_type ILIKE $3
@@ -1648,6 +1651,9 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS broker_contact TEXT;
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS miles NUMERIC(8,2) DEFAULT 0;
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS rpm NUMERIC(6,2) DEFAULT 0;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS source_type TEXT;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS source_id INTEGER;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS external_id TEXT;
     `).catch(() => {});
 
     const loadNumber = 'SW-' + Math.floor(100000 + Math.random() * 900000);
@@ -1656,8 +1662,8 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
       `INSERT INTO loads (
         load_number, status, rate, pickup_location, delivery_location,
         pickup_date, delivery_date, equipment_type, weight, commodity,
-        notes, broker_name, broker_mc, broker_contact, miles, rpm, created_at, updated_at
-      ) VALUES ($1, 'new', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
+        notes, broker_name, broker_mc, broker_contact, miles, rpm, source_type, created_at, updated_at
+      ) VALUES ($1, 'new', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'broker', NOW(), NOW())
       RETURNING *`,
       [
         loadNumber, numRate, origin, destination,
