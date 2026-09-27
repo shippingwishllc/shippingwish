@@ -15,7 +15,7 @@ export const AiSupportChat: React.FC = () => {
     {
       id: 'welcome',
       sender: 'assistant',
-      text: "Hi, this is the Shipping Wish operations desk. We dispatch for U.S. owner-operators and small fleets. Ask how the 7-day free week works, what is included, or how to start carrier setup.",
+      text: "Hi, this is the Shipping Wish operations desk. We place a named fleet manager with U.S. owner-operators and small fleets. Ask how the 7-day free week works, what is included, or how to start carrier setup.",
       time: 'Just now'
     }
   ]);
@@ -64,7 +64,7 @@ export const AiSupportChat: React.FC = () => {
       });
 
       const data = await res.json();
-      const replyText = data?.reply || "Thank you. Our dispatch desk is available toll-free 24/7 at +1 (800) 580-3101.";
+      const replyText = data?.reply || "Thank you. The operations desk is available at +1 (800) 580-3101.";
 
       const aiMsg: ChatMessage = {
         id: `${Date.now()}-ai`,
@@ -80,7 +80,7 @@ export const AiSupportChat: React.FC = () => {
         {
           id: `${Date.now()}-err`,
           sender: 'assistant',
-          text: "I'm connecting with our dispatch desk. Please call our toll-free line anytime at +1 (800) 580-3101 or email dispatch@shippingwish.com.",
+          text: "I'm connecting you with the operations desk. Please call +1 (800) 580-3101 or email dispatch@shippingwish.com.",
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);

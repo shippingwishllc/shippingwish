@@ -5,7 +5,7 @@ export const CtaBanner: React.FC = () => {
     <section className="py-20 bg-[#0b1f3a] text-center">
       <div className="max-w-[1240px] mx-auto px-6">
         <h2 className="text-3xl sm:text-5xl font-display font-black text-white tracking-tight">
-          Put a dispatcher on your U.S. fleet this week.
+          Put a manager on your U.S. fleet this week.
         </h2>
         <p className="mt-4 text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
           $0 due now. TMS included. Call{' '}
@@ -18,7 +18,7 @@ export const CtaBanner: React.FC = () => {
         <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
           <a
             href="/pricing"
-            className="px-7 py-4 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-2xl text-sm font-black transition-all"
+            className="px-7 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-sm font-black transition-all"
           >
             See weekly plans
           </a>
