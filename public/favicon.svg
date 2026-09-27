@@ -1,42 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
   <defs>
-    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#f59e0b"/>
-      <stop offset="50%" stop-color="#fbbf24"/>
-      <stop offset="100%" stop-color="#d97706"/>
+    <linearGradient id="sw" x1="18%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#1d4ed8"/>
+    <stop offset="100%" stop-color="#1e3a8a"/>
     </linearGradient>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#141820"/>
-      <stop offset="100%" stop-color="#0c0f14"/>
-    </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="12" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
   </defs>
-
-  <!-- Background Base -->
-  <rect width="512" height="512" rx="110" fill="url(#bgGrad)"/>
-  <rect x="16" y="16" width="480" height="480" rx="94" fill="none" stroke="url(#amberGrad)" stroke-width="12" opacity="0.8"/>
-
-  <!-- Glowing Amber Accent Dot -->
-  <circle cx="410" cy="102" r="28" fill="#f59e0b" filter="url(#glow)"/>
-
-  <!-- Truck / Freight Emblem -->
-  <g fill="url(#amberGrad)" transform="translate(64, 120)">
-    <!-- Truck Cab & Trailer Silhouette -->
-    <path d="M 40,200 L 220,200 L 220,60 L 40,60 Z" opacity="0.95"/>
-    <path d="M 235,200 L 330,200 L 330,120 L 285,60 L 235,60 Z"/>
-    
-    <!-- Speed Lines / Freight Wings -->
-    <path d="M 10,90 L 180,90 L 160,115 L 10,115 Z" fill="#ffffff" opacity="0.9"/>
-    <path d="M 40,135 L 200,135 L 180,160 L 40,160 Z" fill="#ffffff" opacity="0.9"/>
-
-    <!-- Wheels -->
-    <circle cx="100" cy="210" r="32" fill="#0c0f14" stroke="url(#amberGrad)" stroke-width="10"/>
-    <circle cx="270" cy="210" r="32" fill="#0c0f14" stroke="url(#amberGrad)" stroke-width="10"/>
-  </g>
-
-  <!-- SW Initials Branding -->
-  <text x="256" y="440" font-family="'Outfit', sans-serif" font-weight="900" font-size="72" fill="#ffffff" text-anchor="middle" letter-spacing="6">SHIPPING WISH</text>
+  <rect width="64" height="64" rx="14" fill="url(#sw)"/>
+  <circle cx="50" cy="13.5" r="4.6" fill="#fbbf24"/>
+  <path d="M681.0 -22Q412.0 -22 251.5 101.5Q91.0 225 85.0 462H382.0Q390.0 349 472.5 292.5Q555.0 236 678.0 236Q800.0 236 874.5 288.5Q949.0 341 949.0 426Q949.0 503 881.5 544.0Q814.0 585 692.0 615L528.0 656Q339.0 702 232.0 800.5Q125.0 899 125.0 1061Q125.0 1196 197.5 1297.0Q270.0 1398 396.5 1454.0Q523.0 1510 685.0 1510Q850.0 1510 973.0 1453.5Q1096.0 1397 1165.0 1296.5Q1234.0 1196 1236.0 1065H941.0Q933.0 1155 864.5 1204.0Q796.0 1253 682.0 1253Q565.0 1253 501.5 1204.5Q438.0 1156 438.0 1081Q438.0 998 509.5 957.0Q581.0 916 676.0 893L811.0 860Q936.0 831 1037.0 776.5Q1138.0 722 1197.0 635.5Q1256.0 549 1256.0 424Q1256.0 221 1104.5 99.5Q953.0 -22 681.0 -22ZM1494.98 0 1094.98 1490H1427.98L1600.98 757Q1623.98 654 1643.48 537.0Q1662.98 420 1680.98 305Q1700.98 420 1721.98 537.0Q1742.98 654 1767.98 757L1949.98 1490H2266.98L2447.98 757Q2472.98 655 2493.98 539.0Q2514.98 423 2534.98 309Q2552.98 423 2572.48 539.0Q2591.98 655 2614.98 757L2787.98 1490H3121.98L2720.98 0H2372.98L2174.98 762Q2154.98 843 2138.98 932.5Q2122.98 1022 2106.98 1118Q2092.98 1025 2077.98 935.5Q2062.98 846 2040.98 762L1843.98 0Z" fill="#ffffff" transform="translate(32 33.2) scale(0.016464 -0.016464) translate(-1603.49 -744.00)"/>
 </svg>
