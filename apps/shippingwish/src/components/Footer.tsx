@@ -13,12 +13,12 @@ export const Footer: React.FC = () => {
                 SW
               </div>
               <div className="text-lg font-display font-black text-white tracking-tight">
-                Shipping <span className="text-amber-400">Wish</span>
+                Shipping <span className="text-blue-400">Wish</span>
               </div>
             </div>
 
             <p className="leading-relaxed text-slate-400">
-              A named fleet operations manager for U.S. owner-operators and small fleets. Flat weekly plan. You keep broker pay.
+              Dedicated fleet operations managers, live load booking, and enterprise TMS software for motor carriers on a flat weekly subscription.
             </p>
 
             <div className="text-[11px] text-slate-500 leading-relaxed">
