@@ -37,3 +37,18 @@ body.sw-menu-open .sw-chat {
 .hero-glow-orb {
   animation: heroGlow 8s ease-in-out infinite;
 }
+
+.lane-flow {
+  stroke-dasharray: 8 10;
+  animation: laneFlow 1.6s linear infinite;
+}
+
+@keyframes laneFlow {
+  to { stroke-dashoffset: -72; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lane-flow { animation: none; }
+  .usa-motion { display: none; }
+  .hero-glow-orb, .live-pulse-dot { animation: none; }
+}
