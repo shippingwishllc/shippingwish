@@ -1,4 +1,4 @@
-/* Shipping Wish public pages: navy header, light page, amber actions.
+/* Shipping Wish public pages: the original near-black header, light page, amber actions.
    Inner pages already use marketing.css. This file only tightens the corporate chrome
    and the homepage menu breakpoint. It does not paint the page black. */
 
@@ -9,15 +9,15 @@ body.marketing {
 }
 
 body.marketing .nav {
-  background: #0b1f3a;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #020617;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
   box-shadow: none;
 }
 
 body.marketing .nav-logo-text { color: #f8fafc; }
-body.marketing .nav-logo-text span { color: #fbbf24; }
+body.marketing .nav-logo-text span { color: #60a5fa; }
 body.marketing .nav-logo-mark {
-  background: linear-gradient(135deg, #2563eb, #1e3a8a);
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
   color: #fff;
 }
 
@@ -53,8 +53,8 @@ body.marketing .nav .btn-secondary {
   border-color: rgba(255, 255, 255, 0.28);
 }
 body.marketing .nav .btn-primary {
-  background: #fbbf24;
-  color: #0b1f3a;
+  background: linear-gradient(90deg, #2563eb, #4f46e5);
+  color: #fff;
   border-color: transparent;
 }
 
