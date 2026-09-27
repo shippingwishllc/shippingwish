@@ -35,7 +35,7 @@ export const CarrierGuide: React.FC = () => {
             Built for U.S. carriers
           </div>
           <h2 className="text-3xl sm:text-4xl font-display font-black text-[#0b1f3a] tracking-tight">
-            Dispatch help for owner-operators and small fleets in the United States.
+            A named manager for owner-operators and small fleets in the United States.
           </h2>
           <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed">
             Shipping Wish LLC is a U.S. fleet operations desk in Rehoboth Beach, Delaware. We work for motor carriers that run in the Lower 48.
@@ -66,7 +66,7 @@ export const CarrierGuide: React.FC = () => {
         </div>
 
         <div className="mt-10 flex flex-wrap gap-3">
-          <a href="/services" className="px-5 py-3 rounded-xl bg-[#0b1f3a] text-white text-sm font-bold">Read dispatch services</a>
+          <a href="/services" className="px-5 py-3 rounded-xl bg-[#0b1f3a] text-white text-sm font-bold">See how the desk works</a>
           <a href="/pricing" className="px-5 py-3 rounded-xl bg-amber-400 text-slate-950 text-sm font-extrabold">See weekly plans</a>
           <a href="/carrier-setup" className="px-5 py-3 rounded-xl border border-slate-300 text-slate-800 text-sm font-bold">Start carrier setup</a>
         </div>

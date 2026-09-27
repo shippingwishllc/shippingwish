@@ -48,7 +48,7 @@ export const PricingTiers: React.FC = () => {
         'Company operations team',
         'Lane strategy + compliance',
         'Custom TMS setup',
-        'Dedicated senior dispatcher',
+        'Named senior operations manager',
         'Priority 24/7 telematics desk',
       ],
       ctaUrl: '/checkout?plan=command_weekly',

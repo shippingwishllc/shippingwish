@@ -12,7 +12,7 @@ export const MobileSuite: React.FC = () => {
             TMS and driver tools that come with the desk
           </h2>
           <p className="mt-4 text-sm sm:text-base text-slate-600">
-            The weekly plan includes the carrier portal. Drivers and dispatchers use it in the browser on a phone or laptop. Store badges are not shown until an app is listed there.
+            The weekly plan includes the carrier portal. Drivers and the office use it in the browser on a phone or laptop. Store badges are not shown until an app is listed there.
           </p>
         </div>
 

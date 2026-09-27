@@ -18,7 +18,7 @@ export const Footer: React.FC = () => {
             </div>
 
             <p className="leading-relaxed text-slate-400">
-              U.S. truck dispatch and fleet operations for owner-operators and small fleets. Flat weekly plan. You keep broker pay.
+              A named fleet operations manager for U.S. owner-operators and small fleets. Flat weekly plan. You keep broker pay.
             </p>
 
             <div className="text-[11px] text-slate-500 leading-relaxed">

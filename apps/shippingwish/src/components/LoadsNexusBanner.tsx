@@ -16,7 +16,7 @@ export const LoadsNexusBanner: React.FC = () => {
             </h2>
 
             <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
-              A separate Shipping Wish product for carriers and brokers who want to search posted freight. Dispatch clients still approve every load. LoadsNexus is not a promise of a specific rate.
+              A separate Shipping Wish product for carriers and brokers who want to search posted freight. Operations clients still approve every load. LoadsNexus is not a promise of a specific rate.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 mt-8">
@@ -32,7 +32,7 @@ export const LoadsNexusBanner: React.FC = () => {
                 href="/services"
                 className="px-6 py-3.5 bg-white hover:bg-slate-50 text-[#0b1f3a] border border-slate-300 rounded-xl text-sm font-bold transition-all"
               >
-                Stay on dispatch
+                See the operations desk
               </a>
             </div>
           </div>
