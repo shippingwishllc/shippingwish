@@ -100,8 +100,8 @@
       --shadow-hover: 0 12px 40px rgba(0,0,0,0.13);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    html { scroll-behavior: smooth; overflow-x: clip; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip; }
     a { text-decoration: none; color: inherit; }
     img { max-width: 100%; display: block; }
     button { cursor: pointer; font-family: inherit; }
@@ -121,6 +121,9 @@
       position: relative;
     }
     .topbar-track {
+      position: absolute;
+      left: 0;
+      top: 50%;
       display: flex;
       gap: 80px;
       animation: ticker 30s linear infinite;
@@ -128,7 +131,7 @@
     }
     .topbar-track span { display: inline-flex; align-items: center; gap: 8px; }
     .topbar-track span::before { content: '★'; color: var(--gold); }
-    @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    @keyframes ticker { 0% { transform: translateY(-50%) translateX(0); } 100% { transform: translateY(-50%) translateX(-50%); } }
     .topbar-cta {
       position: absolute;
       right: 20px;
@@ -320,9 +323,9 @@
       transition: background 0.2s;
     }
     .mobile-menu-btn:hover { background: #e5e7eb; }
-    @media (max-width: 900px) {
+    @media (max-width: 1180px) {
       .nav-cats { display: none; }
-      .search-bar { width: 180px; }
+      .search-bar { width: min(180px, 28vw); }
       .mobile-menu-btn { display: flex; }
       .nav-wrap { gap: 14px; padding: 0 16px; }
     }
@@ -1499,6 +1502,7 @@
     .footer-bottom p { font-size: 12.5px; color: #94a3b8; }
     .footer-pay-icons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .pay-card-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .stripe-pay-note { font-size: 12px; font-weight: 700; letter-spacing: .01em; color: #334155; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 999px; padding: 6px 10px; }
     .pay-svg-icon { border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.25); display: block; transition: transform 0.15s; }
     .pay-svg-icon:hover { transform: translateY(-2px); }
 
@@ -1648,16 +1652,16 @@
   <div class="topbar-track" id="topbarTrack">
     <span>FREE Express Shipping on Orders Over $49</span>
     <span>30-Day Money-Back Guarantee</span>
-    <span>Trusted by 50,000+ Customers Worldwide</span>
+    <span>Secure checkout on every order</span>
     <span>Secure Checkout — 256-Bit SSL Encrypted</span>
-    <span>Same-Day Dispatch on 1,000+ Products</span>
+    <span>Orders ship from the warehouse</span>
     <span>Shop Now, Pay Later — Available at Checkout</span>
     <!-- duplicated for seamless loop -->
     <span>FREE Express Shipping on Orders Over $49</span>
     <span>30-Day Money-Back Guarantee</span>
-    <span>Trusted by 50,000+ Customers Worldwide</span>
+    <span>Secure checkout on every order</span>
     <span>Secure Checkout — 256-Bit SSL Encrypted</span>
-    <span>Same-Day Dispatch on 1,000+ Products</span>
+    <span>Orders ship from the warehouse</span>
     <span>Shop Now, Pay Later — Available at Checkout</span>
   </div>
   <span class="topbar-cta">⚡ NEW ARRIVALS →</span>
@@ -1980,7 +1984,7 @@
     <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 14px;border:1px solid var(--border);border-radius:10px;">
       <span style="font-size:15px;font-weight:900;color:var(--primary);">4.9 / 5.0</span>
       <span style="color:#f59e0b;font-size:16px;">★★★★★</span>
-      <span style="font-size:11px;color:#059669;font-weight:700;">(50,000+ Happy Customers)</span>
+      <span style="font-size:11px;color:#059669;font-weight:700;">(Secure checkout)</span>
     </div>
   </div>
   <div class="home-reviews-grid" id="homeReviewsGrid">
@@ -2088,22 +2092,7 @@
         <svg width="15" height="15" viewBox="0 0 40 40" fill="none"><path d="M19.9 0C8.9 0 0 8.9 0 19.9s8.9 19.9 19.9 19.9 19.9-8.9 19.9-19.9S30.9 0 19.9 0z" fill="#635BFF"/><path d="M19.3 15.6c0-1.1.9-1.5 2.3-1.5 2.1 0 4.7.7 6.8 1.9V9.7c-2.3-.9-4.7-1.3-7-1.3-5.8 0-9.7 3-9.7 8 0 7.8 10.8 6.5 10.8 9.9 0 1.3-1.1 1.7-2.7 1.7-2.3 0-5.4-1-7.8-2.3v6.4c2.7 1.2 5.4 1.7 8 1.7 6 0 10.2-3 10.2-8.2 0-8.5-10.9-7-10.9-10z" fill="#ffffff"/></svg>
         <span>Verified by Stripe</span>
       </div>
-      <div class="pay-card-badges">
-        <!-- Visa -->
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="Visa"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M19.8 21.5h-3.4l2.1-13h3.4l-2.1 13zm12.3-12.7c-.7-.3-1.8-.5-3.1-.5-3.4 0-5.8 1.8-5.8 4.4 0 1.9 1.7 3 3 3.6 1.3.6 1.8 1 1.8 1.6 0 .9-1.1 1.3-2.1 1.3-1.4 0-2.2-.2-3.4-.7l-.5-.2-.5 3.1c.8.4 2.4.7 4 .7 3.8 0 6.2-1.9 6.2-4.6 0-1.5-.9-2.7-3-3.7-1.2-.6-2-1-2-1.6 0-.6.7-1.1 2.1-1.1 1.2 0 2 .2 2.7.5l.3.2.6-3.1zm8.9 0h-2.6c-.8 0-1.4.2-1.8 1.1l-5.1 11.6h3.6l.7-2h4.4l.4 2h3.2l-2.8-12.7zm-4.4 8.2l1.8-4.9c0 0 .4-1 .6-1.5l.3 1.4 1 5h-3.7zm-22.3-8.2l-3.3 8.9-.4-1.8c-.6-2.1-2.5-4.4-4.6-5.5l3 11.4h3.6l5.4-13h-3.7z" fill="#1A1F71"/><path d="M9.8 8.8H4.2c-.3 0-.5.2-.6.4-.9 2.2-2.8 5.7-4.6 7l2.8 1.4c1.3-1 2.6-2.8 3.4-4.8l2.6-4.4c.1-.4.2-.6.4-.6h1.6z" fill="#F7B600"/></svg>
-        <!-- Mastercard -->
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="Mastercard"><rect width="50" height="32" rx="4" fill="#1e293b"/><circle cx="19" cy="16" r="9" fill="#EB001B"/><circle cx="31" cy="16" r="9" fill="#F79E1B"/><path d="M25 9.7a8.9 8.9 0 0 1 3.5 6.3 8.9 8.9 0 0 1-3.5 6.3 8.9 8.9 0 0 1-3.5-6.3 8.9 8.9 0 0 1 3.5-6.3z" fill="#FF5F00"/></svg>
-        <!-- Amex -->
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="American Express"><rect width="50" height="32" rx="4" fill="#006FCF"/><path d="M7 11h5l1.2 3 1.2-3h5l-3.4 8 3.4 8h-5l-1.2-3-1.2 3H7l3.4-8L7 11zm15 0h4v16h-4V11zm7 0h11v4h-7v2h6v4h-6v2h7v4H29V11z" fill="#ffffff"/></svg>
-        <!-- Discover -->
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="Discover"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M6 11h4c3 0 5 1.8 5 4.5s-2 4.5-5 4.5H6V11zm2.5 7h1.5c1.5 0 2.5-.8 2.5-2.5s-1-2.5-2.5-2.5H8.5V18zm8.5-7h3v9h-3v-9z" fill="#231F20"/><circle cx="34" cy="16" r="6" fill="#F47216"/></svg>
-        <!-- Apple Pay -->
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="Apple Pay"><rect width="50" height="32" rx="4" fill="#000000"/><path d="M16.5 12.3c-.6.8-1.5 1.3-2.4 1.2-.1-.9.3-1.8.8-2.4.6-.7 1.6-1.2 2.4-1.1.1 1-.2 1.8-.8 2.3zm.8 1.3c-1.3-.1-2.4.8-3 .8-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 1 1 2 2 3.2 2 .7 0 1.3-.4 2-.4.8 0 1.3.4 2.1.4 1.2 0 2-1 2.7-2 .8-1.2 1.1-2.4 1.1-2.5-.1 0-2.2-.8-2.2-3.3 0-2 1.7-3 1.8-3.1-1-1.4-2.5-1.5-3-1.6zm8.8-3.4v13.5h2.2v-4.6h3.4c2.8 0 4.8-1.9 4.8-4.4 0-2.6-2-4.5-4.8-4.5h-5.6zm2.2 2.1h3.1c1.7 0 2.8 1 2.8 2.4 0 1.3-1.1 2.4-2.8 2.4h-3.1v-4.8zm11 4.7c-1.7 0-3 1.2-3 2.8 0 1.6 1.3 2.8 3 2.8 1.6 0 2.8-1.2 2.8-2.8s-1.2-2.8-2.8-2.8z" fill="#ffffff"/></svg>
-        <!-- Google Pay -->
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="Google Pay"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M17.8 16.2c0-.4 0-.8-.1-1.2H12v2.3h3.3c-.1.8-.6 1.4-1.2 1.9v1.5h2c1.2-1.1 1.7-2.7 1.7-4.5z" fill="#4285F4"/><path d="M12 22c1.6 0 3-.5 4-1.5l-2-1.5c-.5.4-1.2.6-2 .6-1.5 0-2.8-1-3.3-2.4H6.6v1.6C7.6 20.8 9.6 22 12 22z" fill="#34A853"/><path d="M8.7 17.2c-.1-.4-.2-.8-.2-1.2s.1-.8.2-1.2V13.2H6.6C6.2 14.1 6 15 6 16s.2 1.9.6 2.8l2.1-1.6z" fill="#FBBC05"/><path d="M12 12.3c.9 0 1.7.3 2.3.9l1.7-1.7C15 10.5 13.6 10 12 10c-2.4 0-4.4 1.2-5.4 3.2l2.1 1.6c.5-1.5 1.8-2.5 3.3-2.5z" fill="#EA4335"/><path d="M23 10.5v11h-2.2v-11H23zm8.5 7.8c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.1 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5zm9.5 0c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.2 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5z" fill="#5F6368"/></svg>
-        <!-- PayPal -->
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="46" height="28" aria-label="PayPal"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M19 8h6c3.5 0 5.5 1.8 5 4.5-.6 3.5-3.5 5.5-7 5.5h-2l-1.5 8H15L19 8z" fill="#003087"/><path d="M22 13h5.5c3 0 4.5 1.5 4 4-.6 3-3 4.5-6 4.5H23l-1.2 6.5h-3.8L22 13z" fill="#0079C1"/></svg>
-      </div>
+      <div class="pay-card-badges"><span class="stripe-pay-note">Cards and wallets through Stripe</span></div>
     </div>
   </div>
 </footer>
@@ -2189,14 +2178,7 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="#10b981"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
             <span>Guaranteed Safe & Secure Checkout</span>
           </div>
-          <div class="pay-card-badges">
-            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Visa"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M19.8 21.5h-3.4l2.1-13h3.4l-2.1 13zm12.3-12.7c-.7-.3-1.8-.5-3.1-.5-3.4 0-5.8 1.8-5.8 4.4 0 1.9 1.7 3 3 3.6 1.3.6 1.8 1 1.8 1.6 0 .9-1.1 1.3-2.1 1.3-1.4 0-2.2-.2-3.4-.7l-.5-.2-.5 3.1c.8.4 2.4.7 4 .7 3.8 0 6.2-1.9 6.2-4.6 0-1.5-.9-2.7-3-3.7-1.2-.6-2-1-2-1.6 0-.6.7-1.1 2.1-1.1 1.2 0 2 .2 2.7.5l.3.2.6-3.1zm8.9 0h-2.6c-.8 0-1.4.2-1.8 1.1l-5.1 11.6h3.6l.7-2h4.4l.4 2h3.2l-2.8-12.7zm-4.4 8.2l1.8-4.9c0 0 .4-1 .6-1.5l.3 1.4 1 5h-3.7zm-22.3-8.2l-3.3 8.9-.4-1.8c-.6-2.1-2.5-4.4-4.6-5.5l3 11.4h3.6l5.4-13h-3.7z" fill="#1A1F71"/><path d="M9.8 8.8H4.2c-.3 0-.5.2-.6.4-.9 2.2-2.8 5.7-4.6 7l2.8 1.4c1.3-1 2.6-2.8 3.4-4.8l2.6-4.4c.1-.4.2-.6.4-.6h1.6z" fill="#F7B600"/></svg>
-            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Mastercard"><rect width="50" height="32" rx="4" fill="#1e293b"/><circle cx="19" cy="16" r="9" fill="#EB001B"/><circle cx="31" cy="16" r="9" fill="#F79E1B"/><path d="M25 9.7a8.9 8.9 0 0 1 3.5 6.3 8.9 8.9 0 0 1-3.5 6.3 8.9 8.9 0 0 1-3.5-6.3 8.9 8.9 0 0 1 3.5-6.3z" fill="#FF5F00"/></svg>
-            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="American Express"><rect width="50" height="32" rx="4" fill="#006FCF"/><path d="M7 11h5l1.2 3 1.2-3h5l-3.4 8 3.4 8h-5l-1.2-3-1.2 3H7l3.4-8L7 11zm15 0h4v16h-4V11zm7 0h11v4h-7v2h6v4h-6v2h7v4H29V11z" fill="#ffffff"/></svg>
-            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Apple Pay"><rect width="50" height="32" rx="4" fill="#000000"/><path d="M16.5 12.3c-.6.8-1.5 1.3-2.4 1.2-.1-.9.3-1.8.8-2.4.6-.7 1.6-1.2 2.4-1.1.1 1-.2 1.8-.8 2.3zm.8 1.3c-1.3-.1-2.4.8-3 .8-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 1 1 2 2 3.2 2 .7 0 1.3-.4 2-.4.8 0 1.3.4 2.1.4 1.2 0 2-1 2.7-2 .8-1.2 1.1-2.4 1.1-2.5-.1 0-2.2-.8-2.2-3.3 0-2 1.7-3 1.8-3.1-1-1.4-2.5-1.5-3-1.6zm8.8-3.4v13.5h2.2v-4.6h3.4c2.8 0 4.8-1.9 4.8-4.4 0-2.6-2-4.5-4.8-4.5h-5.6zm2.2 2.1h3.1c1.7 0 2.8 1 2.8 2.4 0 1.3-1.1 2.4-2.8 2.4h-3.1v-4.8zm11 4.7c-1.7 0-3 1.2-3 2.8 0 1.6 1.3 2.8 3 2.8 1.6 0 2.8-1.2 2.8-2.8s-1.2-2.8-2.8-2.8z" fill="#ffffff"/></svg>
-            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Google Pay"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M17.8 16.2c0-.4 0-.8-.1-1.2H12v2.3h3.3c-.1.8-.6 1.4-1.2 1.9v1.5h2c1.2-1.1 1.7-2.7 1.7-4.5z" fill="#4285F4"/><path d="M12 22c1.6 0 3-.5 4-1.5l-2-1.5c-.5.4-1.2.6-2 .6-1.5 0-2.8-1-3.3-2.4H6.6v1.6C7.6 20.8 9.6 22 12 22z" fill="#34A853"/><path d="M8.7 17.2c-.1-.4-.2-.8-.2-1.2s.1-.8.2-1.2V13.2H6.6C6.2 14.1 6 15 6 16s.2 1.9.6 2.8l2.1-1.6z" fill="#FBBC05"/><path d="M12 12.3c.9 0 1.7.3 2.3.9l1.7-1.7C15 10.5 13.6 10 12 10c-2.4 0-4.4 1.2-5.4 3.2l2.1 1.6c.5-1.5 1.8-2.5 3.3-2.5z" fill="#EA4335"/><path d="M23 10.5v11h-2.2v-11H23zm8.5 7.8c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.1 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5zm9.5 0c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.2 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5z" fill="#5F6368"/></svg>
-            <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="PayPal"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M19 8h6c3.5 0 5.5 1.8 5 4.5-.6 3.5-3.5 5.5-7 5.5h-2l-1.5 8H15L19 8z" fill="#003087"/><path d="M22 13h5.5c3 0 4.5 1.5 4 4-.6 3-3 4.5-6 4.5H23l-1.2 6.5h-3.8L22 13z" fill="#0079C1"/></svg>
-          </div>
+          <div class="pay-card-badges"><span class="stripe-pay-note">Cards and wallets through Stripe</span></div>
           <div class="safe-note">🔒 Encrypted 256-Bit SSL · Processed directly by <strong>Stripe</strong></div>
         </div>
       </div>
@@ -2315,13 +2297,7 @@
       <div class="checkout-security-desc">
         Your payment is securely processed directly by Stripe, Inc. (PCI-DSS Level 1 Certified). Shipping Wish LLC never sees or stores your full card credentials.
       </div>
-      <div class="pay-card-badges" style="justify-content:center;margin-top:6px;">
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Visa"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M19.8 21.5h-3.4l2.1-13h3.4l-2.1 13zm12.3-12.7c-.7-.3-1.8-.5-3.1-.5-3.4 0-5.8 1.8-5.8 4.4 0 1.9 1.7 3 3 3.6 1.3.6 1.8 1 1.8 1.6 0 .9-1.1 1.3-2.1 1.3-1.4 0-2.2-.2-3.4-.7l-.5-.2-.5 3.1c.8.4 2.4.7 4 .7 3.8 0 6.2-1.9 6.2-4.6 0-1.5-.9-2.7-3-3.7-1.2-.6-2-1-2-1.6 0-.6.7-1.1 2.1-1.1 1.2 0 2 .2 2.7.5l.3.2.6-3.1zm8.9 0h-2.6c-.8 0-1.4.2-1.8 1.1l-5.1 11.6h3.6l.7-2h4.4l.4 2h3.2l-2.8-12.7zm-4.4 8.2l1.8-4.9c0 0 .4-1 .6-1.5l.3 1.4 1 5h-3.7zm-22.3-8.2l-3.3 8.9-.4-1.8c-.6-2.1-2.5-4.4-4.6-5.5l3 11.4h3.6l5.4-13h-3.7z" fill="#1A1F71"/><path d="M9.8 8.8H4.2c-.3 0-.5.2-.6.4-.9 2.2-2.8 5.7-4.6 7l2.8 1.4c1.3-1 2.6-2.8 3.4-4.8l2.6-4.4c.1-.4.2-.6.4-.6h1.6z" fill="#F7B600"/></svg>
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Mastercard"><rect width="50" height="32" rx="4" fill="#1e293b"/><circle cx="19" cy="16" r="9" fill="#EB001B"/><circle cx="31" cy="16" r="9" fill="#F79E1B"/><path d="M25 9.7a8.9 8.9 0 0 1 3.5 6.3 8.9 8.9 0 0 1-3.5 6.3 8.9 8.9 0 0 1-3.5-6.3 8.9 8.9 0 0 1 3.5-6.3z" fill="#FF5F00"/></svg>
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="American Express"><rect width="50" height="32" rx="4" fill="#006FCF"/><path d="M7 11h5l1.2 3 1.2-3h5l-3.4 8 3.4 8h-5l-1.2-3-1.2 3H7l3.4-8L7 11zm15 0h4v16h-4V11zm7 0h11v4h-7v2h6v4h-6v2h7v4H29V11z" fill="#ffffff"/></svg>
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Apple Pay"><rect width="50" height="32" rx="4" fill="#000000"/><path d="M16.5 12.3c-.6.8-1.5 1.3-2.4 1.2-.1-.9.3-1.8.8-2.4.6-.7 1.6-1.2 2.4-1.1.1 1-.2 1.8-.8 2.3zm.8 1.3c-1.3-.1-2.4.8-3 .8-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 1 1 2 2 3.2 2 .7 0 1.3-.4 2-.4.8 0 1.3.4 2.1.4 1.2 0 2-1 2.7-2 .8-1.2 1.1-2.4 1.1-2.5-.1 0-2.2-.8-2.2-3.3 0-2 1.7-3 1.8-3.1-1-1.4-2.5-1.5-3-1.6zm8.8-3.4v13.5h2.2v-4.6h3.4c2.8 0 4.8-1.9 4.8-4.4 0-2.6-2-4.5-4.8-4.5h-5.6zm2.2 2.1h3.1c1.7 0 2.8 1 2.8 2.4 0 1.3-1.1 2.4-2.8 2.4h-3.1v-4.8zm11 4.7c-1.7 0-3 1.2-3 2.8 0 1.6 1.3 2.8 3 2.8 1.6 0 2.8-1.2 2.8-2.8s-1.2-2.8-2.8-2.8z" fill="#ffffff"/></svg>
-        <svg class="pay-svg-icon" viewBox="0 0 50 32" width="38" height="24" aria-label="Google Pay"><rect width="50" height="32" rx="4" fill="#ffffff" stroke="#e2e8f0"/><path d="M17.8 16.2c0-.4 0-.8-.1-1.2H12v2.3h3.3c-.1.8-.6 1.4-1.2 1.9v1.5h2c1.2-1.1 1.7-2.7 1.7-4.5z" fill="#4285F4"/><path d="M12 22c1.6 0 3-.5 4-1.5l-2-1.5c-.5.4-1.2.6-2 .6-1.5 0-2.8-1-3.3-2.4H6.6v1.6C7.6 20.8 9.6 22 12 22z" fill="#34A853"/><path d="M8.7 17.2c-.1-.4-.2-.8-.2-1.2s.1-.8.2-1.2V13.2H6.6C6.2 14.1 6 15 6 16s.2 1.9.6 2.8l2.1-1.6z" fill="#FBBC05"/><path d="M12 12.3c.9 0 1.7.3 2.3.9l1.7-1.7C15 10.5 13.6 10 12 10c-2.4 0-4.4 1.2-5.4 3.2l2.1 1.6c.5-1.5 1.8-2.5 3.3-2.5z" fill="#EA4335"/><path d="M23 10.5v11h-2.2v-11H23zm8.5 7.8c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.1 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5zm9.5 0c0 1.9-1.5 3.4-3.4 3.4-1.9 0-3.4-1.5-3.4-3.4 0-1.9 1.5-3.4 3.4-3.4 1.9 0 3.4 1.5 3.4 3.4zm-2.2 0c0-.8-.6-1.5-1.3-1.5-.7 0-1.3.7-1.3 1.5 0 .8.6 1.5 1.3 1.5.7 0 1.3-.7 1.3-1.5z" fill="#5F6368"/></svg>
-      </div>
+      <div class="pay-card-badges"><span class="stripe-pay-note">Cards and wallets through Stripe</span></div>
     </div>
   </div>
 </div>

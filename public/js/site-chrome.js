@@ -16,24 +16,16 @@
       l.href = '/css/marketing.css';
       document.head.appendChild(l);
     }
+    if (!document.querySelector('link[href*="public-theme.css"]')) {
+      const theme = document.createElement('link');
+      theme.rel = 'stylesheet';
+      theme.href = '/css/public-theme.css?v=2';
+      document.head.appendChild(theme);
+    }
   }
 
   function payBadges() {
-    return `
-      <div class="pay-cards" aria-label="Accepted payment methods">
-        <span class="pay-card pay-card-visa" title="Visa">
-          <svg viewBox="0 0 48 32" aria-hidden="true"><rect width="48" height="32" rx="4" fill="#1A1F71"/><text x="24" y="21" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Arial,sans-serif" font-style="italic">VISA</text></svg>
-        </span>
-        <span class="pay-card pay-card-mc" title="Mastercard">
-          <svg viewBox="0 0 48 32" aria-hidden="true"><rect width="48" height="32" rx="4" fill="#fff"/><circle cx="19" cy="16" r="9" fill="#EB001B"/><circle cx="29" cy="16" r="9" fill="#F79E1B"/><path d="M24 9.2a9 9 0 0 1 0 13.6 9 9 0 0 1 0-13.6z" fill="#FF5F00"/></svg>
-        </span>
-        <span class="pay-card pay-card-amex" title="American Express">
-          <svg viewBox="0 0 48 32" aria-hidden="true"><rect width="48" height="32" rx="4" fill="#2E77BC"/><text x="24" y="19" text-anchor="middle" fill="#fff" font-size="7.5" font-weight="700" font-family="Arial,sans-serif">AMEX</text></svg>
-        </span>
-        <span class="pay-card pay-card-disc" title="Discover">
-          <svg viewBox="0 0 48 32" aria-hidden="true"><rect width="48" height="32" rx="4" fill="#4A4A4A"/><text x="22" y="19" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="700" font-family="Arial,sans-serif">DISCOVER</text><circle cx="36" cy="16" r="7" fill="#F47216"/></svg>
-        </span>
-      </div>`;
+    return `<span class="pay-note">Cards and wallets through Stripe</span>`;
   }
 
   function navHtml() {
@@ -127,14 +119,8 @@
         </div>
 
         <div class="footer-app-badges">
-          <a href="/login" class="footer-app-btn" title="Carrier Portal App for iOS">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 1.01-2.87-.96.04-2.12.64-2.8 1.43-.6.68-1.12 1.76-.98 2.81 1.07.08 2.16-.58 2.77-1.37z"/></svg>
-            <span>iOS App</span>
-          </a>
-          <a href="/login" class="footer-app-btn" title="Carrier Portal App for Android">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3.5 2.2 14.2 12 3.5 21.8V2.2Z" fill="#EA4335"/><path d="M14.2 12 17.6 8.9l3.7 2.1c1.1.63 1.1 2.37 0 3l-3.7 2.1L14.2 12Z" fill="#FBBC04"/><path d="M14.2 12 3.5 21.8l10.7-6.1L17.6 15.1 14.2 12Z" fill="#4285F4"/><path d="M14.2 12 17.6 8.9 14.2 5.8 3.5 2.2 14.2 12Z" fill="#34A853"/></svg>
-            <span>Android App</span>
-          </a>
+          <a href="/login" class="footer-app-btn">Open carrier portal</a>
+          <a href="/mobile-apps" class="footer-app-btn">Mobile apps</a>
         </div>
       </div>
 
@@ -276,7 +262,7 @@
     });
 
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 992) setMenuOpen(false);
+      if (window.innerWidth > 1399) setMenuOpen(false);
     });
   }
 
