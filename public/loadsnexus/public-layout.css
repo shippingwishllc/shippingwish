@@ -1,0 +1,17 @@
+/* LoadsNexus SPA nav: compiled lg: starts at 1024px and crowds iPad / small laptops. */
+@media (max-width: 1399px) {
+  nav[aria-label="Main Navigation"] .lg\:flex {
+    display: none !important;
+  }
+  nav[aria-label="Main Navigation"] .lg\:hidden,
+  .fixed.lg\:hidden {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .ln-nav-links,
+  .ln-powered-badge,
+  .ln-nav-actions .ln-btn-secondary { display: none !important; }
+  .ln-hamburger { display: flex !important; }
+}

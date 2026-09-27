@@ -89,12 +89,6 @@ export default function DriverApp() {
     }
   };
 
-  // Quick fill test login
-  const fillTestLogin = () => {
-    setEmail('driver@shippingwish.com');
-    setPassword('DriverPass2026!');
-  };
-
   // Fetch loads assigned to this driver
   const fetchDriverLoads = async () => {
     setRefreshing(true);
@@ -290,10 +284,6 @@ export default function DriverApp() {
                   <Text style={styles.buttonText}>SIGN IN TO CONSOLE</Text>
                 </>
               )}
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.testCredsButton} onPress={fillTestLogin}>
-              <Text style={styles.testCredsText}>⚡ Fill Demo Driver Credentials</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.serverSettingsLink} onPress={() => setShowServerModal(true)}>

@@ -13,23 +13,19 @@ async function initDb() {
 
     // Ensure Super Admin accounts exist (up to 2 accounts as requested)
     const adminCheck = await pool.query("SELECT id, email, role FROM users WHERE role IN ('super_admin', 'admin')");
-    if (adminCheck.rows.length === 0) {
+    const superPass = process.env.SUPER_ADMIN_PASSWORD;
+    const adminEmail = (process.env.SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+    if (adminCheck.rows.length === 0 && superPass && adminEmail) {
       const bcrypt = require('bcryptjs');
-      const superPass = process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin2026!';
-      const hash = await bcrypt.hash(superPass, 10);
-      
+      const hash = await bcrypt.hash(superPass, 12);
       await pool.query(
         `INSERT INTO users (name, email, password_hash, role, company_name, phone)
-         VALUES ($1, $2, $3, 'super_admin', 'Shipping Wish HQ', '+1 917 737 0021')`,
-        ['Super Admin 1', 'admin@shippingwish.com', hash]
+         VALUES ($1, $2, $3, 'super_admin', 'Shipping Wish HQ', $4)`,
+        ['Super Admin', adminEmail, hash, process.env.COMPANY_PHONE || '+1 917 737 0021']
       );
-      await pool.query(
-        `INSERT INTO users (name, email, password_hash, role, company_name, phone)
-         VALUES ($1, $2, $3, 'super_admin', 'Shipping Wish HQ', '+1 917 737 0021')`,
-        ['Super Admin 2', 'owner@shippingwish.com', hash]
-      );
-      console.log('Created default Super Admin accounts: admin@shippingwish.com and owner@shippingwish.com');
-      console.log('Default Password:', superPass);
+      console.log('Created super admin from SUPER_ADMIN_EMAIL.');
+    } else if (adminCheck.rows.length === 0) {
+      console.log('No admin user yet. Set SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD, then run this script again.');
     } else {
       console.log(`Found ${adminCheck.rows.length} existing admin/super_admin user(s).`);
     }

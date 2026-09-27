@@ -19,8 +19,15 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+function unsubscribeSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === 'production') throw new Error('JWT_SECRET must be configured.');
+  return 'dev-secret-change-me';
+}
+
 function unsubscribeToken(email) {
-  const secret = process.env.JWT_SECRET || 'dev-secret-change-me';
+  const secret = unsubscribeSecret();
   const payload = Buffer.from(String(email).trim().toLowerCase()).toString('base64url');
   const sig = crypto.createHmac('sha256', secret).update(payload).digest('base64url').slice(0, 24);
   return `${payload}.${sig}`;
@@ -29,7 +36,7 @@ function unsubscribeToken(email) {
 function verifyUnsubscribeToken(token) {
   if (!token || !token.includes('.')) return null;
   const [payload, sig] = token.split('.');
-  const secret = process.env.JWT_SECRET || 'dev-secret-change-me';
+  const secret = unsubscribeSecret();
   const expected = crypto.createHmac('sha256', secret).update(payload).digest('base64url').slice(0, 24);
   if (sig !== expected) return null;
   try {

