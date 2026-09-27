@@ -10,17 +10,17 @@ export const Partners: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-slate-900 border-b border-slate-800/80">
+    <section className="py-20 bg-white border-b border-slate-200">
       <div className="max-w-[1240px] mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-blue-400 mb-2">
+          <div className="text-xs font-extrabold uppercase tracking-wider text-amber-700 mb-2">
             On The Road With Us
           </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-black text-white tracking-tight">
-            Carriers &amp; broker partners we work with
+          <h2 className="text-3xl sm:text-4xl font-display font-black text-[#0b1f3a] tracking-tight">
+            Carriers and broker partners we work with
           </h2>
-          <p className="mt-4 text-sm sm:text-base text-slate-300">
-            Real motor carriers and freight partners across the Lower 48 — the same desks that trust Shipping Wish for daily operations.
+          <p className="mt-4 text-sm sm:text-base text-slate-600">
+            Motor carriers and freight partners across the Lower 48. Names are companies we work with. This is not a ranking or a customer-count claim.
           </p>
         </div>
 
@@ -28,12 +28,12 @@ export const Partners: React.FC = () => {
           {partners.map((partner, idx) => (
             <div
               key={idx}
-              className="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 text-center flex flex-col justify-center hover:border-slate-700 transition-colors"
+              className="bg-[#f4f7fb] border border-slate-200 rounded-2xl p-5 text-center flex flex-col justify-center"
             >
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
                 {partner.type}
               </span>
-              <strong className="text-sm font-extrabold text-white">
+              <strong className="text-sm font-extrabold text-[#0b1f3a]">
                 {partner.name}
               </strong>
             </div>

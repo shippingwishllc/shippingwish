@@ -20,18 +20,18 @@ export const DeskTimeline: React.FC = () => {
     {
       num: '04',
       title: 'Reload before empty',
-      desc: 'Next load staged before you drop. That is how RPM rises and deadhead falls.',
+      desc: 'Next load staged before you drop, so the truck is not waiting empty for the next phone call.',
     },
   ];
 
   return (
-    <section className="py-20 bg-slate-950 border-b border-slate-800/80">
+    <section className="py-20 bg-white border-b border-slate-200">
       <div className="max-w-[1240px] mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-blue-400 mb-2">
+          <div className="text-xs font-extrabold uppercase tracking-wider text-amber-700 mb-2">
             A Week On The Desk
           </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-display font-black text-[#0b1f3a] tracking-tight">
             What your manager actually does.
           </h2>
         </div>
@@ -40,11 +40,11 @@ export const DeskTimeline: React.FC = () => {
           {steps.map((step, idx) => (
             <div
               key={idx}
-              className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 shadow-md hover:border-slate-700 transition-colors"
+              className="bg-[#f4f7fb] border border-slate-200 rounded-3xl p-6 shadow-sm"
             >
-              <div className="text-2xl font-black text-blue-500 mb-3">{step.num}</div>
-              <h3 className="text-base font-bold text-white mb-2">{step.title}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{step.desc}</p>
+              <div className="text-2xl font-black text-amber-600 mb-3">{step.num}</div>
+              <h3 className="text-base font-bold text-[#0b1f3a] mb-2">{step.title}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">{step.desc}</p>
             </div>
           ))}
         </div>

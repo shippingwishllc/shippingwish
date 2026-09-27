@@ -15,7 +15,7 @@ export const PricingTiers: React.FC = () => {
         'Load booking + TMS',
         'You keep freight pay',
         'Direct broker packet handling',
-        'Dynamic RPM optimization',
+        'Lane planning with your approval',
       ],
       ctaUrl: '/checkout?plan=solo_weekly',
     },
@@ -31,7 +31,7 @@ export const PricingTiers: React.FC = () => {
       features: [
         'Dedicated operations desk',
         'Multi-truck planning',
-        'RPM & deadhead reporting',
+        'Empty-mile planning',
         'Full document camera vault',
         'LoadsNexus AI Load Board access',
       ],
@@ -56,16 +56,16 @@ export const PricingTiers: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-slate-900 border-b border-slate-800/80" id="plans">
+    <section className="py-20 bg-[#f4f7fb] border-b border-slate-200" id="plans">
       <div className="max-w-[1240px] mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-blue-400 mb-2">
+          <div className="text-xs font-extrabold uppercase tracking-wider text-amber-700 mb-2">
             Weekly Subscription
           </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-display font-black text-[#0b1f3a] tracking-tight">
             Pick a desk. Card on file. Charge starts next week.
           </h2>
-          <p className="mt-4 text-sm sm:text-base text-slate-300">
+          <p className="mt-4 text-sm sm:text-base text-slate-600">
             Secure Stripe Checkout. $0 due now. If you cancel before the first charge, the trial ends and you owe nothing.
           </p>
         </div>
@@ -76,33 +76,33 @@ export const PricingTiers: React.FC = () => {
               key={plan.id}
               className={`rounded-3xl p-7 flex flex-col justify-between transition-all relative ${
                 plan.featured
-                  ? 'bg-slate-950 border-2 border-blue-500 shadow-2xl shadow-blue-500/10'
-                  : 'bg-slate-950/70 border border-slate-800 shadow-lg'
+                  ? 'bg-white border-2 border-amber-400 shadow-xl'
+                  : 'bg-white border border-slate-200 shadow-sm'
               }`}
             >
               {plan.badge && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-amber-400 text-slate-950 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md">
                   {plan.badge}
                 </div>
               )}
 
               <div>
-                <div className="text-base font-bold text-white mb-0.5">{plan.name}</div>
-                <div className="text-xs text-slate-400 font-semibold mb-4">{plan.trucks}</div>
+                <div className="text-base font-bold text-[#0b1f3a] mb-0.5">{plan.name}</div>
+                <div className="text-xs text-slate-500 font-semibold mb-4">{plan.trucks}</div>
 
-                <div className="text-4xl font-black text-white mb-1">
+                <div className="text-4xl font-black text-[#0b1f3a] mb-1">
                   ${plan.price}
-                  <span className="text-xs text-slate-400 font-normal ml-1">{plan.period}</span>
+                  <span className="text-xs text-slate-500 font-normal ml-1">{plan.period}</span>
                 </div>
 
-                <div className="text-xs font-bold text-emerald-400 mb-6 bg-emerald-500/10 px-2.5 py-1 rounded-lg inline-block border border-emerald-500/20">
+                <div className="text-xs font-bold text-emerald-700 mb-6 bg-emerald-50 px-2.5 py-1 rounded-lg inline-block border border-emerald-200">
                   {plan.trial}
                 </div>
 
-                <ul className="space-y-3 text-xs text-slate-300 mb-8 border-t border-slate-800/80 pt-6">
+                <ul className="space-y-3 text-xs text-slate-600 mb-8 border-t border-slate-200 pt-6">
                   {plan.features.map((feat, fIdx) => (
                     <li key={fIdx} className="flex items-center gap-2">
-                      <span className="text-blue-400 font-bold">✔</span>
+                      <span className="text-emerald-600 font-bold">✔</span>
                       <span>{feat}</span>
                     </li>
                   ))}
@@ -113,8 +113,8 @@ export const PricingTiers: React.FC = () => {
                 href={plan.ctaUrl}
                 className={`w-full py-3.5 px-4 rounded-xl text-xs font-bold text-center transition-all ${
                   plan.featured
-                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30'
-                    : 'bg-slate-800 hover:bg-slate-700 text-white'
+                    ? 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                    : 'bg-[#0b1f3a] hover:bg-[#16325c] text-white'
                 }`}
               >
                 Checkout securely →
@@ -124,15 +124,12 @@ export const PricingTiers: React.FC = () => {
         </div>
 
         {/* Stripe Security Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-10 text-xs font-semibold text-slate-400">
-          <span className="px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 flex items-center gap-1.5">
-            🔒 256-bit Stripe checkout
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-10 text-xs font-semibold text-slate-500">
+          <span className="px-3 py-1.5 rounded-full bg-white border border-slate-200">
+            Stripe checkout
           </span>
-          <span className="px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 flex items-center gap-1.5">
-            ✓ PCI-DSS via Stripe
-          </span>
-          <span className="px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 flex items-center gap-1.5">
-            Visa · Mastercard · Amex · Discover
+          <span className="px-3 py-1.5 rounded-full bg-white border border-slate-200">
+            Cancel before the first charge
           </span>
         </div>
       </div>

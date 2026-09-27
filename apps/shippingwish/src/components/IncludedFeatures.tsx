@@ -18,8 +18,8 @@ export const IncludedFeatures: React.FC = () => {
       icon: '🎯',
     },
     {
-      title: 'High RPM, less deadhead',
-      desc: 'Reload planning before you empty. Lane strategy built to lift revenue per mile and cut empty miles.',
+      title: 'Reload before you empty',
+      desc: 'The desk plans the next lane around your equipment, hours, and home time so the truck is not sitting empty between drops.',
       icon: '📈',
     },
     {
@@ -35,13 +35,13 @@ export const IncludedFeatures: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-slate-950 border-b border-slate-800/80" id="included">
+    <section className="py-20 bg-white border-b border-slate-200" id="included">
       <div className="max-w-[1240px] mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-blue-400 mb-2">
+          <div className="text-xs font-extrabold uppercase tracking-wider text-amber-700 mb-2">
             What's In The Plan
           </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-display font-black text-[#0b1f3a] tracking-tight">
             Everything your company needs to stay loaded.
           </h2>
         </div>
@@ -50,11 +50,11 @@ export const IncludedFeatures: React.FC = () => {
           {features.map((feat, idx) => (
             <div
               key={idx}
-              className="bg-slate-900/80 border border-slate-800 rounded-3xl p-7 shadow-lg hover:border-slate-700 transition-colors"
+              className="bg-[#f4f7fb] border border-slate-200 rounded-3xl p-7 shadow-sm"
             >
               <div className="text-3xl mb-4">{feat.icon}</div>
-              <h3 className="text-lg font-bold text-white mb-2">{feat.title}</h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">{feat.desc}</p>
+              <h3 className="text-lg font-bold text-[#0b1f3a] mb-2">{feat.title}</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{feat.desc}</p>
             </div>
           ))}
         </div>

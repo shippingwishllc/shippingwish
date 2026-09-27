@@ -1,77 +1,93 @@
-/* Shared public theme: dark slate pages match the Shipping Wish homepage. */
+/* Shipping Wish public pages: navy header, light page, amber actions.
+   Inner pages already use marketing.css. This file only tightens the corporate chrome
+   and the homepage menu breakpoint. It does not paint the page black. */
 
 body.marketing {
-  background: #020617;
-  color: #e2e8f0;
+  background: #f4f7fb;
+  color: #0f172a;
   overflow-x: clip;
 }
 
 body.marketing .nav {
-  background: rgba(2, 6, 23, 0.88);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  background: #0b1f3a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: none;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
 }
 
 body.marketing .nav-logo-text { color: #f8fafc; }
-body.marketing .nav-logo-text span { color: #60a5fa; }
+body.marketing .nav-logo-text span { color: #fbbf24; }
 body.marketing .nav-logo-mark {
-  background: linear-gradient(135deg, #2563eb, #60a5fa);
+  background: linear-gradient(135deg, #2563eb, #1e3a8a);
   color: #fff;
 }
 
-body.marketing .nav-links a { color: #cbd5e1; }
+body.marketing .nav-links a { color: #e2e8f0; }
 body.marketing .nav-links a:hover {
   color: #fff;
-  background: rgba(148, 163, 184, 0.12);
+  background: rgba(255, 255, 255, 0.08);
 }
 body.marketing .nav-links a.active { color: #fbbf24; }
 
 body.marketing .nav-dropdown-menu {
-  background: #0f172a;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
 }
-body.marketing .nav-dropdown-menu a { color: #e2e8f0; }
+body.marketing .nav-dropdown-menu a { color: #334155; }
 body.marketing .nav-dropdown-menu a:hover {
-  background: rgba(37, 99, 235, 0.16);
-  color: #fff;
+  background: #f8fafc;
+  color: #0b1f3a;
 }
-body.marketing .dropdown-label { color: #94a3b8; }
+body.marketing .dropdown-label { color: #64748b; }
 
 body.marketing .live-status {
-  color: #6ee7b7;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.28);
+  color: #d1fae5;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(110, 231, 183, 0.35);
 }
 
-body.marketing .nav-hamburger span { background: #e2e8f0; }
+body.marketing .nav-hamburger span { background: #f8fafc; }
+body.marketing .nav .btn-secondary {
+  background: transparent;
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+body.marketing .nav .btn-primary {
+  background: #fbbf24;
+  color: #0b1f3a;
+  border-color: transparent;
+}
 
 body.marketing .nav-mobile {
-  background: #020617;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: none;
+  background: #ffffff !important;
+  color: #0f172a;
+  padding: 84px 22px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
 }
-body.marketing .nav-mobile a { color: #e2e8f0 !important; }
+body.marketing .nav-mobile.open {
+  display: flex !important;
+  flex-direction: column;
+  overflow: hidden;
+}
+body.marketing .nav-mobile-links {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+body.marketing .nav-mobile a { color: #0f172a !important; }
 body.marketing .nav-mobile a:hover,
 body.marketing .nav-mobile a:active {
-  color: #fbbf24 !important;
-  background: rgba(148, 163, 184, 0.1);
+  color: #b45309 !important;
+  background: #fffbeb;
 }
-
-body.marketing .btn-secondary {
-  background: rgba(15, 23, 42, 0.8);
-  color: #e2e8f0;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+body.marketing .nav-mobile-cta-group {
+  position: static;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 12px 0 0;
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
 }
-body.marketing .btn-primary {
-  background: linear-gradient(90deg, #2563eb, #4f46e5);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
-}
-body.marketing .btn-primary:hover { color: #fff; }
 
 .pay-note,
 .stripe-pay-note {
@@ -79,184 +95,14 @@ body.marketing .btn-primary:hover { color: #fff; }
   align-items: center;
   font-size: 12px;
   font-weight: 700;
-  color: #cbd5e1;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: #334155;
+  background: #fff;
+  border: 1px solid #e2e8f0;
   border-radius: 999px;
   padding: 6px 12px;
 }
 
-@keyframes swOrbDrift {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(18px, -16px, 0); }
-}
-body.marketing .mkt-orb { animation: swOrbDrift 10s ease-in-out infinite; }
-body.marketing .mkt-orb-b { animation-delay: -3.5s; }
-body.marketing .mkt-orb-c { animation-delay: -6s; }
-
-@keyframes swGlowPulse {
-  0%, 100% { opacity: 0.55; }
-  50% { opacity: 1; }
-}
-.hero-glow-orb { animation: swGlowPulse 7s ease-in-out infinite; }
-
-body.marketing .mkt-hero {
-  background:
-    radial-gradient(900px 420px at 12% -10%, rgba(37, 99, 235, 0.28), transparent 60%),
-    radial-gradient(700px 380px at 90% 0%, rgba(245, 158, 11, 0.16), transparent 55%),
-    linear-gradient(180deg, #020617 0%, #0f172a 58%, #020617 100%);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-}
-
-body.marketing .mkt-kicker,
-body.marketing .safe-pill {
-  background: rgba(37, 99, 235, 0.12);
-  border: 1px solid rgba(96, 165, 250, 0.28);
-  color: #93c5fd;
-}
-body.marketing .mkt-kicker-dot { background: #60a5fa; }
-
-body.marketing .mkt-h1,
-body.marketing .mkt-h2,
-body.marketing .mkt-quote {
-  color: #f8fafc;
-}
-body.marketing .mkt-h1 em { color: #fbbf24; }
-body.marketing .mkt-lede,
-body.marketing .mkt-sub,
-body.marketing .mkt-card p,
-body.marketing .mkt-tl p,
-body.marketing .mkt-quote span {
-  color: #94a3b8;
-}
-body.marketing .mkt-eyebrow { color: #fbbf24; }
-
-body.marketing .mkt-section { background: transparent; }
-body.marketing .mkt-section.alt {
-  background: #0f172a;
-  border-block: 1px solid rgba(148, 163, 184, 0.1);
-}
-body.marketing .mkt-section.ink { background: #020617; }
-
-body.marketing .mkt-card,
-body.marketing .mkt-panel,
-body.marketing .mkt-hero-tool-card,
-body.marketing .checkout-shell,
-body.marketing .price-card,
-body.marketing .price-card.featured,
-body.marketing .pricing-card,
-body.marketing .pricing-card.featured {
-  background: rgba(15, 23, 42, 0.92) !important;
-  color: #e2e8f0;
-  border: 1px solid rgba(148, 163, 184, 0.16) !important;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
-}
-body.marketing .price-card.featured,
-body.marketing .pricing-card.featured {
-  border: 2px solid #3b82f6 !important;
-  box-shadow: 0 22px 48px rgba(37, 99, 235, 0.18);
-}
-body.marketing .price-name,
-body.marketing .price-amt,
-body.marketing .pricing-card h3,
-body.marketing .pricing-rate .num,
-body.marketing .mkt-card h3,
-body.marketing .mkt-hero-tool-title {
-  color: #f8fafc !important;
-}
-body.marketing .price-trucks,
-body.marketing .price-amt span,
-body.marketing .pricing-trucks,
-body.marketing .pricing-rate .unit,
-body.marketing .pricing-desc,
-body.marketing .pricing-features li,
-body.marketing .mkt-hero-tool-desc {
-  color: #94a3b8 !important;
-}
-body.marketing .mkt-hero-tool-card::before { box-shadow: inset 3px 0 0 #f59e0b; }
-body.marketing .mkt-hero-tool-icon {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.35);
-}
-body.marketing .mkt-hero-tool-cta {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.35);
-}
-
-body.marketing .mkt-load { background: #020617; }
-body.marketing .mkt-trust { color: #cbd5e1; }
-body.marketing .mkt-compare,
-body.marketing .calc-card-wrapper,
-body.marketing .calc-body,
-body.marketing .guarantee-card,
-body.marketing .compare-table-wrapper {
-  color: #0f172a;
-}
-body.marketing .mkt-compare { background: #fff; }
-body.marketing .mkt-compare td,
-body.marketing .table-compare-v2 td { color: #334155; background: transparent; }
-body.marketing .mkt-compare th,
-body.marketing .table-compare-v2 th { color: #0f172a; }
-body.marketing .mkt-compare td:last-child { color: #047857; }
-body.marketing .table-compare-v2 td.highlight { color: #b45309; }
-body.marketing .guarantee-title { color: #0f172a; }
-body.marketing .guarantee-desc { color: #475569; }
-
-body.marketing .mkt-tl::before { box-shadow: 0 0 0 6px #0f172a; }
-body.marketing .mkt-tl h3,
-body.marketing .service-content h2 { color: #f8fafc; }
-body.marketing .service-content p,
-body.marketing .service-content li { color: #94a3b8; }
-
-body.marketing .pricing-name,
-body.marketing .pricing-card h3,
-body.marketing .pricing-card .pricing-rate,
-body.marketing .pricing-card .pricing-rate .num { color: #f8fafc !important; }
-body.marketing .pricing-fleet,
-body.marketing .pricing-card p,
-body.marketing .pricing-card li { color: #94a3b8; }
-
-/* White form cards stay readable on the dark page. */
-body.marketing .contact-form-card,
-body.marketing .contact-method {
-  background: #ffffff !important;
-  color: #0f172a;
-}
-body.marketing .contact-form-card .form-label,
-body.marketing .contact-method h4,
-body.marketing .contact-method p { color: #0f172a; }
-body.marketing .contact-form-card .form-input,
-body.marketing .contact-form-card input,
-body.marketing .contact-form-card select,
-body.marketing .contact-form-card textarea {
-  background: #fff;
-  color: #0f172a;
-  border: 1px solid #cbd5e1;
-}
-
-body.marketing .form-label { color: #cbd5e1; }
-body.marketing .form-input,
-body.marketing input:not([type="checkbox"]):not([type="radio"]),
-body.marketing select,
-body.marketing textarea {
-  background: #020617;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  color: #f8fafc;
-}
-body.marketing .mkt-note {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.28);
-  color: #fde68a;
-}
-
-body.marketing .footer {
-  background: #020617;
-  color: #94a3b8;
-  border-top: 1px solid rgba(148, 163, 184, 0.14);
-}
-
-/* Full nav only when every laptop width can hold it. iPad and smaller laptops use the drawer. */
+/* Full nav only when a laptop can hold every link. */
 @media (max-width: 1399px) {
   body.marketing .nav-links,
   body.marketing .nav-actions {
@@ -275,16 +121,13 @@ body.marketing .footer {
   body.marketing .nav-actions { gap: 8px; }
 }
 
-/* Homepage React nav: compiled CSS has lg: at 1024 and no wider utility. */
+/* Homepage React nav: compiled CSS hides the drawer from 1024px. Keep the hamburger until 1400. */
 @media (max-width: 1399px) {
-  body.bg-slate-950 nav[aria-label="Main Navigation"] .lg\:flex {
+  body.sw-home nav[aria-label="Main Navigation"] .lg\:flex {
     display: none !important;
   }
-  body.bg-slate-950 nav[aria-label="Main Navigation"] .lg\:hidden {
+  body.sw-home nav[aria-label="Main Navigation"] .lg\:hidden {
     display: flex !important;
-  }
-  body.bg-slate-950 .fixed.lg\:hidden {
-    display: block !important;
   }
 }
 

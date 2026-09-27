@@ -2,24 +2,24 @@ import React from 'react';
 
 export const CapacityStats: React.FC = () => {
   const stats = [
-    { num: '100+', label: 'Dedicated operations staff' },
-    { num: '24/7', label: 'Coverage on active freight' },
-    { num: '48', label: 'States we work' },
+    { num: '24/7', label: 'Desk coverage on active freight' },
+    { num: '48', label: 'U.S. states we work' },
     { num: '$0', label: 'Due during your first week' },
+    { num: '100%', label: 'Broker pay stays with you' },
   ];
 
   return (
-    <section className="py-20 bg-slate-900 border-b border-slate-800/80">
+    <section className="py-20 bg-[#0b1f3a] border-b border-slate-800">
       <div className="max-w-[1240px] mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-blue-400 mb-2">
-            Company Capacity
+          <div className="text-xs font-extrabold uppercase tracking-wider text-amber-300 mb-2">
+            What you can count on
           </div>
           <h2 className="text-3xl sm:text-4xl font-display font-black text-white tracking-tight">
-            100+ dedicated people managing your work.
+            A U.S. operations desk with a clear weekly plan.
           </h2>
           <p className="mt-4 text-sm sm:text-base text-slate-300">
-            Built to run as an extension of your motor carrier — booking, paperwork, and profit protection across the Lower 48.
+            We do not publish headcount or average rate claims. These are the terms of the service: coverage, geography, the free week, and who keeps the freight pay.
           </p>
         </div>
 
@@ -27,12 +27,12 @@ export const CapacityStats: React.FC = () => {
           {stats.map((stat, idx) => (
             <div
               key={idx}
-              className="bg-slate-950/80 border border-slate-800 rounded-2xl p-6 text-center shadow-lg"
+              className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center"
             >
-              <div className="text-3xl sm:text-4xl font-black text-blue-400 mb-1">
+              <div className="text-3xl sm:text-4xl font-black text-amber-300 mb-1">
                 {stat.num}
               </div>
-              <p className="text-xs text-slate-400 font-semibold">{stat.label}</p>
+              <p className="text-xs text-slate-300 font-semibold">{stat.label}</p>
             </div>
           ))}
         </div>

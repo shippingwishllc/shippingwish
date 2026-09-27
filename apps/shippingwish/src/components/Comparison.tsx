@@ -21,39 +21,39 @@ export const Comparison: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-slate-900 border-b border-slate-800/80">
+    <section className="py-20 bg-[#f4f7fb] border-b border-slate-200">
       <div className="max-w-[1240px] mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-blue-400 mb-2">
+          <div className="text-xs font-extrabold uppercase tracking-wider text-amber-700 mb-2">
             A Different Model
           </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-black text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-display font-black text-[#0b1f3a] tracking-tight">
             Not a load-board pitch. A company desk that books for you.
           </h2>
-          <p className="mt-4 text-sm sm:text-base text-slate-300">
+          <p className="mt-4 text-sm sm:text-base text-slate-600">
             Carriers do not need another “find your own freight” product. They need people who already work the phones, the brokers, and the paperwork — as if they were on your payroll.
           </p>
         </div>
 
-        <div className="overflow-x-auto max-w-4xl mx-auto border border-slate-800 rounded-3xl shadow-xl bg-slate-950/60">
+        <div className="overflow-x-auto max-w-4xl mx-auto border border-slate-200 rounded-3xl shadow-sm bg-white">
           <table className="w-full text-left text-xs sm:text-sm border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 uppercase tracking-wider text-[11px] font-extrabold">
+              <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase tracking-wider text-[11px] font-extrabold">
                 <th className="py-4 px-6 w-1/2">What most carriers are sold</th>
-                <th className="py-4 px-6 w-1/2 bg-blue-950/40 text-blue-300 border-l border-slate-800">
+                <th className="py-4 px-6 w-1/2 bg-amber-50 text-amber-800 border-l border-slate-200">
                   Shipping Wish weekly plan
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/70">
+            <tbody className="divide-y divide-slate-100">
               {comparisons.map((row, idx) => (
-                <tr key={idx} className="hover:bg-slate-900/50 transition-colors">
-                  <td className="py-4 px-6 text-slate-400 font-medium">
-                    <span className="text-rose-400 font-bold mr-2">✖</span>
+                <tr key={idx}>
+                  <td className="py-4 px-6 text-slate-500 font-medium">
+                    <span className="text-rose-500 font-bold mr-2">✖</span>
                     {row.typical}
                   </td>
-                  <td className="py-4 px-6 text-slate-100 font-bold bg-blue-950/20 border-l border-slate-800">
-                    <span className="text-emerald-400 font-bold mr-2">✔</span>
+                  <td className="py-4 px-6 text-[#0b1f3a] font-bold bg-amber-50/40 border-l border-slate-200">
+                    <span className="text-emerald-600 font-bold mr-2">✔</span>
                     {row.sw}
                   </td>
                 </tr>
