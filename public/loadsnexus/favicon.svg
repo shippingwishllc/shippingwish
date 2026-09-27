@@ -1,47 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
   <defs>
-    <linearGradient id="bgRoyal" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e40af"/>
-      <stop offset="50%" stop-color="#2563eb"/>
-      <stop offset="100%" stop-color="#3b82f6"/>
+    <linearGradient id="ln" x1="18%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#2563eb"/>
+    <stop offset="100%" stop-color="#312e81"/>
     </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.3"/>
-    </filter>
   </defs>
-
-  <!-- High-Gloss Rounded App Icon Surface -->
-  <rect width="512" height="512" rx="120" fill="url(#bgRoyal)"/>
-
-  <!-- Subtle Inner Border -->
-  <rect x="12" y="12" width="488" height="488" rx="108" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.25"/>
-
-  <!-- Network / Freight Exchange Icon -->
-  <g transform="translate(68, 115)" filter="url(#shadow)">
-    <!-- Trailer box -->
-    <rect x="25" y="70" width="220" height="125" rx="12" fill="#ffffff" opacity="0.95"/>
-    <rect x="45" y="90" width="180" height="8" rx="4" fill="#2563eb" opacity="0.3"/>
-    <rect x="45" y="110" width="120" height="8" rx="4" fill="#2563eb" opacity="0.3"/>
-
-    <!-- Cab -->
-    <path d="M255,90 L255,195 L345,195 L345,130 L295,70 L255,70 Z" fill="#ffffff"/>
-    <!-- Cab window -->
-    <path d="M265,85 L265,125 L335,125 L300,78 Z" fill="#1e40af" opacity="0.9"/>
-    
-    <!-- Wheels -->
-    <circle cx="100" cy="210" r="32" fill="#0f172a" stroke="#ffffff" stroke-width="6"/>
-    <circle cx="215" cy="210" r="32" fill="#0f172a" stroke="#ffffff" stroke-width="6"/>
-    <circle cx="310" cy="210" r="32" fill="#0f172a" stroke="#ffffff" stroke-width="6"/>
-    
-    <circle cx="100" cy="210" r="12" fill="#94a3b8"/>
-    <circle cx="215" cy="210" r="12" fill="#94a3b8"/>
-    <circle cx="310" cy="210" r="12" fill="#94a3b8"/>
-
-    <!-- Speed & AI Signal Lines -->
-    <path d="M-10,45 L150,45 L135,62 L-10,62 Z" fill="#67e8f9"/>
-    <path d="M10,80 L180,80 L165,97 L10,97 Z" fill="#ffffff" opacity="0.8"/>
-  </g>
-
-  <!-- LN Brand Initials -->
-  <text x="256" y="445" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-weight="900" font-size="64" fill="#ffffff" text-anchor="middle" letter-spacing="8">LOADSNEXUS</text>
+  <rect width="64" height="64" rx="14" fill="url(#ln)"/>
+  <path d="M135.0 0V1490H440.0V253H1083.0V0ZM1061.4 0V1490H1401.4L1872.4 736Q1916.4 663 1963.4 575.5Q2010.4 488 2059.4 371Q2051.4 481 2045.9 591.5Q2040.4 702 2040.4 775V1490H2352.4V0H2011.4L1583.4 684Q1542.4 751 1507.4 814.0Q1472.4 877 1435.9 948.5Q1399.4 1020 1353.4 1113Q1361.4 978 1367.4 864.5Q1373.4 751 1373.4 685V0Z" fill="#ffffff" transform="translate(32 33.2) scale(0.022549 -0.022549) translate(-1243.70 -745.00)"/>
 </svg>
