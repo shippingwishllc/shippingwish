@@ -516,10 +516,24 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       }
     };
 
+    let carrierSetupRequests = [];
+    try {
+      const setupRows = await pool.query(
+        `SELECT id, company_name, owner_name, phone, email, mc_number, dot_number, num_trucks, created_at
+         FROM onboarding_submissions
+         ORDER BY created_at DESC
+         LIMIT 15`
+      );
+      carrierSetupRequests = setupRows.rows;
+    } catch (setupErr) {
+      carrierSetupRequests = [];
+    }
+
     res.json({
       ok: true,
       timestamp: new Date().toISOString(),
       stripe_health: stripeHealth,
+      carrier_setup_requests: carrierSetupRequests,
       executive_summary: {
         total_empire_mrr_dollars: totalEmpireMrrDollars,
         total_subscribers: swActiveSubsCount + lnActiveSubsCount,

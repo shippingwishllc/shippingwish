@@ -111,9 +111,10 @@ async function sendBrandedEmail({
     if (attachments && Array.isArray(attachments) && attachments.length) {
       payload.attachments = attachments.map(att => {
         if (!att) return null;
+        const content = Buffer.isBuffer(att.content) ? att.content.toString('base64') : att.content;
         return {
           filename: att.filename || 'attachment',
-          content: att.content,
+          content,
           path: att.path
         };
       }).filter(Boolean);

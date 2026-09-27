@@ -7,6 +7,9 @@ const pool = require('../db');
 const { sendBrandedEmail } = require('../utils/mailer');
 const { notifyAdmins } = require('../utils/notifications');
 const { isValidEmail } = require('../utils/email-valid');
+const { buildCarrierSetupPdf, welcomeSms } = require('../utils/carrier-setup-packet');
+const { sendTwilioSms, sendTwilioWhatsApp } = require('./voip');
+const { logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
 
 const os = require('os');
 
@@ -164,6 +167,10 @@ router.post('/submit', uploadFields, async (req, res) => {
     }
     if (!signerName) {
       return res.status(400).json({ error: 'Signer legal full name is required' });
+    }
+    const agreed = String(body.agree_terms || '').trim().toLowerCase();
+    if (!['true', 'on', 'yes', '1'].includes(agreed)) {
+      return res.status(400).json({ error: 'You must accept the carrier agreement before submitting.' });
     }
 
     // Process file paths
@@ -348,15 +355,48 @@ IP Address: ${ipAddress}
       ]
     );
 
-    // 3. Automated Confirmation Email with Official Onboarding Packet Attached
-    const packetPdfPath = path.join(__dirname, '../public/downloads/Shipping-Wish-Carrier-Onboarding-Packet.pdf');
-    const attachments = [];
-    if (fs.existsSync(packetPdfPath)) {
-      attachments.push({
-        filename: 'Shipping-Wish-Carrier-Onboarding-Packet.pdf',
-        content: fs.readFileSync(packetPdfPath)
-      });
+    // 3. Welcome email with the carrier's own signed details and the agreement they accepted.
+    let signatureBuffer = null;
+    if (signaturePath && fs.existsSync(signaturePath)) {
+      try { signatureBuffer = fs.readFileSync(signaturePath); } catch (err) { signatureBuffer = null; }
     }
+    const signedAt = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }) + ' ET';
+    let setupPdf = null;
+    try {
+      setupPdf = await buildCarrierSetupPdf({
+        companyName,
+        dba,
+        ownerName,
+        phone,
+        email,
+        address,
+        city,
+        state,
+        zip,
+        mcNumber,
+        dotNumber,
+        equipmentTypes,
+        numTrucks,
+        numDrivers,
+        preferredLanes,
+        excludedStates,
+        minRpm,
+        factoringCompany,
+        eldProvider,
+        signerName,
+        signerTitle,
+        signedAt,
+        ipAddress,
+        signatureBuffer,
+        typedSignature: signatureType === 'type' ? rawSignatureData : signerName
+      });
+    } catch (pdfErr) {
+      console.warn('[ONBOARDING_PDF_WARN]', pdfErr.message);
+    }
+    const safeMc = String(mcNumber || dotNumber || 'carrier').replace(/[^a-zA-Z0-9_-]/g, '');
+    const attachments = setupPdf
+      ? [{ filename: `Shipping-Wish-Carrier-Setup-${safeMc}.pdf`, content: setupPdf }]
+      : [];
 
     const emailHtml = `
 <!DOCTYPE html>
@@ -419,7 +459,7 @@ IP Address: ${ipAddress}
         </div>
         <div class="info-row">
           <span class="info-label">Status:</span>
-          <span class="info-value" style="color:#059669;">✓ Packet Signed & Verified</span>
+          <span class="info-value" style="color:#059669;">✓ Signed and received</span>
         </div>
       </div>
 
@@ -431,7 +471,7 @@ IP Address: ${ipAddress}
         </div>
         <div class="step-item">
           <div class="step-num">2</div>
-          <div class="step-desc"><strong>Dedicated Dispatcher Assigned:</strong> A dedicated operations manager will contact your dispatch line (<strong>${escapeHtml(phone)}</strong>) to confirm target lanes and rate preferences.</div>
+          <div class="step-desc"><strong>Operations manager assigned:</strong> A named operations manager will contact your phone (<strong>${escapeHtml(phone)}</strong>) to confirm lanes and rate preferences.</div>
         </div>
         <div class="step-item">
           <div class="step-num">3</div>
@@ -440,7 +480,7 @@ IP Address: ${ipAddress}
       </div>
 
       <p style="font-size:14px;color:#475569;line-height:1.6;">
-        Attached to this email is a copy of your completed <strong>Shipping-Wish-Carrier-Onboarding-Packet.pdf</strong> containing the signed Limited Power of Attorney (POA), Carrier Profile, and payment terms for your corporate files.
+        Attached is your signed setup PDF. It includes the company details you entered and the four dispatch terms you accepted on the form.
       </p>
 
       <table class="contacts-table">
@@ -469,29 +509,89 @@ IP Address: ${ipAddress}
 </html>
 `;
 
+    let emailStatus = 'skipped';
     try {
       await sendBrandedEmail({
         to: email,
         subject: `Carrier Setup & Onboarding Packet Confirmed — ${companyName} [MC# ${mcNumber || 'Authority'}]`,
         html: emailHtml,
-        text: `Welcome to Shipping Wish LLC! Your carrier onboarding packet for ${companyName} (MC# ${mcNumber}) has been confirmed. A dedicated dispatcher will reach out to ${phone} within 2 hours. 24/7 Operations Line: +1 (551) 400-6300.`,
+        text: `Welcome to Shipping Wish LLC. We received the carrier setup for ${companyName}${mcNumber ? ' (MC ' + mcNumber + ')' : ''}. Your signed packet is attached. A manager will contact ${phone}.`,
         leadId,
         transactional: true,
         templateKey: 'onboarding',
         from: 'Shipping Wish Operations <operations@shippingwish.com>',
         attachments
       });
+      emailStatus = 'sent';
     } catch (mailErr) {
+      emailStatus = 'error';
       console.warn('[ONBOARDING_EMAIL_WARN] Could not send auto-reply email:', mailErr.message);
+    }
+
+    const welcomeText = welcomeSms({ companyName, mcNumber });
+    let smsStatus = 'skipped';
+    let whatsappStatus = 'skipped';
+    try {
+      const sms = await sendTwilioSms(phone, welcomeText);
+      smsStatus = sms.status || 'sent';
+      if (smsStatus === 'sent' || smsStatus === 'logged') {
+        await logSmsMessage({
+          direction: 'outbound',
+          from_number: OUR_NUMBER,
+          to_number: phone,
+          body: sms.body || welcomeText,
+          lead_id: leadId,
+          twilio_sid: sms.sid,
+          disposition: smsStatus,
+          is_read: true
+        }).catch(() => {});
+      }
+    } catch (smsErr) {
+      smsStatus = 'error';
+      console.warn('[ONBOARDING_SMS_WARN]', smsErr.message);
+    }
+    try {
+      const whatsapp = await sendTwilioWhatsApp(phone, welcomeText);
+      whatsappStatus = whatsapp.status || 'sent';
+      if (whatsapp.sid) {
+        await pool.query(
+          `INSERT INTO outreach_sends (lead_id, channel, template_key, recipient, subject, body_preview, provider_id, status)
+           VALUES ($1, 'whatsapp', 'carrier_setup_welcome', $2, 'WhatsApp', $3, $4, $5)`,
+          [leadId, phone, welcomeText.slice(0, 280), whatsapp.sid, whatsappStatus]
+        ).catch(() => {});
+      }
+    } catch (waErr) {
+      whatsappStatus = 'error';
+      console.warn('[ONBOARDING_WHATSAPP_WARN]', waErr.message);
+    }
+
+    try {
+      const opsTo = process.env.OPERATIONS_EMAIL || process.env.OPS_EMAIL || 'operations@shippingwish.com';
+      await sendBrandedEmail({
+        to: opsTo,
+        subject: `New carrier setup — ${companyName}${mcNumber ? ' MC ' + mcNumber : ''}`,
+        html: `<p><strong>${escapeHtml(companyName)}</strong> submitted carrier setup.</p>
+          <p>${escapeHtml(ownerName)} · ${escapeHtml(email)} · ${escapeHtml(phone)}<br>
+          MC ${escapeHtml(mcNumber || '—')} · DOT ${escapeHtml(dotNumber || '—')}<br>
+          ${escapeHtml(equipmentTypes)} · ${numTrucks} truck(s)</p>
+          <p>The signed PDF is attached. The same request is in Admin and Super Admin under Carrier setup requests, and in Sales CRM.</p>`,
+        text: `New carrier setup: ${companyName}, ${ownerName}, ${email}, ${phone}, MC ${mcNumber || 'n/a'}.`,
+        leadId,
+        transactional: true,
+        templateKey: 'internal_lead',
+        attachments
+      });
+    } catch (opsErr) {
+      console.warn('[ONBOARDING_OPS_EMAIL_WARN]', opsErr.message);
     }
 
     // 4. Notify Admins
     try {
       await notifyAdmins(
         `New Carrier Setup: ${companyName}`,
-        `${ownerName || companyName} registered MC# ${mcNumber || 'N/A'} with ${numTrucks} truck(s) (${equipmentTypes}). Contact: ${phone}.`,
+        `${ownerName || companyName} submitted carrier setup. MC ${mcNumber || 'N/A'}, ${numTrucks} truck(s), ${phone}, ${email}.`,
         'success',
-        '/crm-sales.html'
+        '/admin-dashboard'
       );
     } catch (notifErr) {
       console.warn('[ADMIN_NOTIFY_WARN]', notifErr.message);
@@ -502,12 +602,28 @@ IP Address: ${ipAddress}
       lead_id: leadId,
       company_name: companyName,
       mc_number: mcNumber,
-      message: 'Carrier onboarding packet submitted successfully! Confirmation email dispatched.',
-      download_packet_url: '/downloads/Shipping-Wish-Carrier-Onboarding-Packet.pdf'
+      message: 'Carrier setup received. A welcome email, text, and WhatsApp message were queued for the contact on this form.',
+      delivery: { email: emailStatus, sms: smsStatus, whatsapp: whatsappStatus }
     });
   } catch (err) {
     console.error('Carrier setup submission error:', err);
     return res.status(500).json({ error: err.message || 'Internal server error while processing carrier setup' });
+  }
+});
+
+router.get('/recent', require('../middleware/auth').requireAuth, require('../middleware/auth').requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    await ensureOnboardingTable();
+    const { rows } = await pool.query(
+      `SELECT id, company_name, owner_name, phone, email, mc_number, dot_number, equipment_types, num_trucks, created_at
+       FROM onboarding_submissions
+       ORDER BY created_at DESC
+       LIMIT 25`
+    );
+    res.json({ ok: true, submissions: rows });
+  } catch (err) {
+    console.error('[CARRIER_SETUP_RECENT]', err.message);
+    res.status(500).json({ error: 'Could not load carrier setup requests.' });
   }
 });
 
