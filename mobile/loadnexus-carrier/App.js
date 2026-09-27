@@ -87,11 +87,6 @@ export default function LoadNexusCarrierApp() {
     }
   };
 
-  const fillDemoCarrier = () => {
-    setEmail('carrier@shippingwish.com');
-    setPassword('CarrierPass2026!');
-  };
-
   // Search loads
   const handleSearchLoads = async () => {
     setSearching(true);

@@ -111,6 +111,7 @@
         </div>
         <div class="limo-field"><label>Email Address</label><input class="limo-input" type="email" id="p-email" required></div>
         <div class="limo-field"><label>Phone Number</label><input class="limo-input" type="tel" id="p-phone" required placeholder="+1 (555) 000-0000"></div>
+        <div class="limo-field"><label>Passengers</label><input class="limo-input" type="number" id="p-passengers" min="1" max="60" value="1" required></div>
         <div class="limo-field"><label>Trip Notes</label><textarea class="limo-input" id="p-notes" rows="3" placeholder="Flight number, child seats, special requests..." style="padding-left:16px;resize:vertical;"></textarea></div>
         <div class="limo-field" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
           <input type="checkbox" id="p-child-seats"> <label for="p-child-seats" style="margin:0;text-transform:none;font-size:0.9rem;">Child seats needed?</label>
@@ -127,7 +128,8 @@
       <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:8px;">Secure Payment</h2>
       <p style="color:#666;margin-bottom:24px;">You'll be redirected to Stripe for secure payment processing.</p>
       <div class="limo-price-breakdown" id="final-price" style="text-align:left;margin-bottom:24px;"></div>
-      <button class="limo-btn limo-btn-gold limo-btn-block limo-btn-lg" id="btn-pay">Pay with Stripe →</button>
+      <p id="operator-status" role="status" aria-live="polite" style="color:#555;margin:0 0 16px;">Your request will be sent to a licensed operator for acceptance before payment.</p>
+      <button class="limo-btn limo-btn-gold limo-btn-block limo-btn-lg" id="btn-pay" disabled>Pay with Stripe →</button>
       <p style="font-size:0.75rem;color:#999;margin-top:16px;">🔒 256-bit encryption · PCI compliant via Stripe · Gratuity included</p>
     </div>
   </div>
