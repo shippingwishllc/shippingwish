@@ -1,4 +1,5 @@
 import React from 'react';
+import { UsaLaneMap } from './UsaLaneMap';
 
 export const Hero: React.FC = () => {
   return (
@@ -22,6 +23,10 @@ export const Hero: React.FC = () => {
                 You keep the freight pay.
               </em>
             </h1>
+
+            <div className="mt-6 lg:hidden">
+              <UsaLaneMap idPrefix="mobile" />
+            </div>
 
             <p className="mt-6 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
               Shipping Wish LLC places a named fleet operations manager on your motor carrier. We book loads, handle broker packets, and run the TMS that is included in a flat weekly plan.
@@ -81,48 +86,8 @@ export const Hero: React.FC = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-5">
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 shadow-xl relative">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200 text-xs font-bold">
-                <span className="text-[#0b1f3a]">How a booked lane is shown</span>
-                <span className="text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                  Example only
-                </span>
-              </div>
-
-              <div className="mt-5 p-5 rounded-2xl bg-[#f4f7fb] border border-slate-200">
-                <div className="text-xs font-bold text-slate-500 mb-2">Illustrative dry van lane</div>
-                <div className="flex items-center gap-2 text-sm font-extrabold text-[#0b1f3a] my-3">
-                  <span>Dallas, TX</span>
-                  <span className="text-amber-600">→</span>
-                  <span>Atlanta, GA</span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Your manager negotiates the rate, sends the packet, and waits for your approval. The broker pays your company. Shipping Wish bills only the weekly plan. We do not publish a guaranteed rate per mile.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 mt-5">
-                {[
-                  ['100%', 'Broker pay kept'],
-                  ['$0', 'Due in week 1'],
-                  ['24/7', 'Desk on active freight'],
-                  ['48', 'States we cover'],
-                ].map(([value, label]) => (
-                  <div key={label} className="p-3.5 rounded-xl bg-[#f8fafc] border border-slate-200 text-center">
-                    <div className="text-base font-black text-[#0b1f3a]">{value}</div>
-                    <div className="text-[11px] text-slate-500 font-medium mt-0.5">{label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <a
-                href="/dispatch"
-                className="mt-5 w-full py-3 px-4 rounded-xl text-xs font-extrabold text-slate-950 bg-amber-400 hover:bg-amber-300 transition-all flex items-center justify-center text-center"
-              >
-                See what the desk handles
-              </a>
-            </div>
+          <div className="hidden lg:block lg:col-span-5">
+            <UsaLaneMap idPrefix="desk" />
           </div>
         </div>
       </div>

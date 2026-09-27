@@ -36,25 +36,25 @@ export const Navbar: React.FC = () => {
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
           scrolled
-            ? 'bg-[#0b1f3a] shadow-lg border-b border-white/10'
-            : 'bg-[#0b1f3a]/95 backdrop-blur-md border-b border-white/10'
+            ? 'bg-slate-900/95 backdrop-blur-md shadow-lg border-b border-slate-800'
+            : 'bg-slate-950 border-b border-slate-800'
         }`}
         role="navigation"
         aria-label="Main Navigation"
       >
         <div className="max-w-[1240px] mx-auto px-6 h-[76px] flex items-center justify-between">
           <a href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white font-black flex items-center justify-center text-sm shadow-md shadow-blue-900/30 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 text-white font-black flex items-center justify-center text-sm shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
               SW
             </div>
             <div className="text-xl font-display font-extrabold text-white tracking-tight">
-              Shipping <span className="text-amber-400">Wish</span>
+              Shipping <span className="text-blue-400">Wish</span>
             </div>
           </a>
 
           <ul className="hidden lg:flex items-center gap-7 text-sm font-semibold text-slate-200">
             <li>
-              <a href="/" className="text-white hover:text-amber-300 transition-colors">
+              <a href="/" className="text-white hover:text-blue-400 transition-colors">
                 Home
               </a>
             </li>
@@ -152,7 +152,7 @@ export const Navbar: React.FC = () => {
             </a>
             <a
               href="/pricing"
-              className="px-4 py-2 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-md shadow-amber-500/20 transition-all hover:scale-[1.02]"
+              className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-md shadow-blue-600/30 transition-all hover:scale-[1.02]"
             >
               Start Free Week
             </a>
@@ -174,18 +174,18 @@ export const Navbar: React.FC = () => {
 
       {drawerOpen && (
         <div className="sw-drawer fixed inset-0 z-[80] bg-white flex flex-col" role="dialog" aria-modal="true" aria-label="Menu">
-          <div className="h-[76px] px-5 flex items-center justify-between border-b border-slate-200 shrink-0">
+          <div className="h-[76px] px-5 flex items-center justify-between border-b border-slate-800 shrink-0 bg-slate-950">
             <a href="/" onClick={close} className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black flex items-center justify-center text-sm">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 text-white font-black flex items-center justify-center text-sm">
                 SW
               </div>
-              <div className="text-lg font-display font-extrabold text-[#0b1f3a] tracking-tight">
-                Shipping <span className="text-amber-600">Wish</span>
+              <div className="text-lg font-display font-extrabold text-white tracking-tight">
+                Shipping <span className="text-blue-400">Wish</span>
               </div>
             </a>
             <button
               type="button"
-              className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900"
+              className="w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white"
               onClick={close}
               aria-label="Close menu"
             >
