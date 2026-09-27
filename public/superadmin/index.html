@@ -786,6 +786,14 @@
         </div>
       </div>
 
+      <div class="content-card" style="margin-top:20px;">
+        <div class="card-header">
+          <h3 class="card-title">Carrier setup requests <span class="tag">Form</span></h3>
+          <a href="/admin-dashboard" style="font-size:12px;color:#93c5fd;">Open admin desk</a>
+        </div>
+        <div id="carrier-setup-requests" style="font-size:13px;color:#cbd5e1;">Loading carrier setup forms…</div>
+      </div>
+
       <!-- STRIPE ACCOUNTS DUAL BRAND GATEWAYS -->
       <div class="content-card" style="margin-top:20px;">
         <div class="card-header">
@@ -1764,6 +1772,18 @@
       document.getElementById('overviewEmptyCount').textContent = exec.trucks_empty || 0;
       document.getElementById('overviewBookedCount').textContent = exec.trucks_booked || 0;
       document.getElementById('overviewUnloadingCount').textContent = exec.trucks_unloading_tomorrow || 0;
+      const setupBox = document.getElementById('carrier-setup-requests');
+      if (setupBox) {
+        const setups = data.carrier_setup_requests || [];
+        setupBox.innerHTML = setups.length
+          ? setups.map((row) => {
+              const esc = (value) => String(value || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+              const when = row.created_at ? new Date(row.created_at).toLocaleString() : '';
+              const mc = esc(row.mc_number ? 'MC ' + row.mc_number : 'No MC');
+              return '<div style="padding:8px 0;border-top:1px solid rgba(148,163,184,0.25);"><strong style="color:#fff;">' + esc(row.company_name || 'Carrier') + '</strong> · ' + mc + '<br><span style="color:#94a3b8;">' + esc([row.owner_name, row.email, row.phone, when].filter(Boolean).join(' · ')) + '</span></div>';
+            }).join('')
+          : 'No carrier setup forms yet. A submission on shippingwish.com/carrier-setup will show here.';
+      }
 
       // Stripe Accounts Health Matrix
       if (data.stripe_health) {

@@ -70,6 +70,24 @@ async function sendTwilioSms(toNumber, message) {
   return { status: 'sent', sid: twilioMsg.sid, body };
 }
 
+async function sendTwilioWhatsApp(toNumber, message) {
+  const rawFrom = String(process.env.TWILIO_WHATSAPP_FROM || process.env.TWILIO_FROM_NUMBER || '').trim();
+  const to = normalizePhone(toNumber);
+  if (!rawFrom || !to) return { status: 'not_configured', sid: null };
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+    return { status: 'logged', sid: null };
+  }
+  if (await isSmsOptedOut(to)) return { status: 'opted_out', sid: null };
+  const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  const from = rawFrom.startsWith('whatsapp:') ? rawFrom : `whatsapp:${normalizePhone(rawFrom) || rawFrom}`;
+  const twilioMsg = await twilio.messages.create({
+    from,
+    to: `whatsapp:${to}`,
+    body: String(message || '').slice(0, 1000)
+  });
+  return { status: 'sent', sid: twilioMsg.sid };
+}
+
 async function sendTemplatedSms({ lead_id, to_number, template_key, company_name, user, load_summary }) {
   const key = template_key || 'dedicated_manager';
   const builder = SMS_TEMPLATES[key] || SMS_TEMPLATES.dedicated_manager;
@@ -504,3 +522,4 @@ router.all('/twilio-inbound', async (req, res) => {
 module.exports = router;
 module.exports.sendTemplatedSms = sendTemplatedSms;
 module.exports.sendTwilioSms = sendTwilioSms;
+module.exports.sendTwilioWhatsApp = sendTwilioWhatsApp;
