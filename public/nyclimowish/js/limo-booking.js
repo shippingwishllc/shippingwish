@@ -180,6 +180,10 @@
   if (params.get('pickupDate')) $('b-date').value = params.get('pickupDate');
   if (params.get('pickupTime')) $('b-time').value = params.get('pickupTime');
   if (params.get('serviceType') === 'hourly') setTab('hourly');
+  if (params.get('hours') && $('b-hours')) {
+    const hours = params.get('hours');
+    if ([...$('b-hours').options].some((option) => option.value === hours)) $('b-hours').value = hours;
+  }
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
