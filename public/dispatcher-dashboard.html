@@ -812,38 +812,16 @@
           </tr>
         `).join('');
       } else {
-        renderSampleAssignedFleets();
+        renderSampleAssignedFleets('Could not load your carriers. Refresh to try again.');
       }
     } catch (e) {
-      renderSampleAssignedFleets();
+      renderSampleAssignedFleets('Could not load your carriers. Refresh to try again.');
     }
   }
 
-  function renderSampleAssignedFleets() {
+  function renderSampleAssignedFleets(message) {
     const tbody = document.getElementById('fleets-tbody');
-    tbody.innerHTML = `
-      <tr>
-        <td><strong style="color:var(--text-primary);">Apex Transport LLC</strong></td>
-        <td>MC: MC-149201<br>DOT: 3940192</td>
-        <td>+1 917 555 0192<br>dispatch@apextransport.com</td>
-        <td><span class="badge badge-amber">2 active loads</span></td>
-        <td><a href="/fleet" class="btn btn-secondary btn-sm">View Fleet</a></td>
-      </tr>
-      <tr>
-        <td><strong style="color:var(--text-primary);">BlueSky Logistics</strong></td>
-        <td>MC: MC-284910<br>DOT: 4820193</td>
-        <td>+1 404 555 0148<br>mvance@blueskyfreight.com</td>
-        <td><span class="badge badge-amber">1 active load</span></td>
-        <td><a href="/fleet" class="btn btn-secondary btn-sm">View Fleet</a></td>
-      </tr>
-      <tr>
-        <td><strong style="color:var(--text-primary);">Tri-State Hauling</strong></td>
-        <td>MC: MC-940281<br>DOT: 5820491</td>
-        <td>+1 312 555 0184<br>robert@tristatehaul.com</td>
-        <td><span class="badge badge-amber">3 active loads</span></td>
-        <td><a href="/fleet" class="btn btn-secondary btn-sm">View Fleet</a></td>
-      </tr>
-    `;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted);">${escapeHtml(message || 'No carriers are assigned to you yet.')}</td></tr>`;
   }
 
   function escapeHtml(str) {

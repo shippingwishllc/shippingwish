@@ -1,9 +1,10 @@
 const express = require('express');
+const { requestBrokerBooking } = require('../utils/broker-booking-request');
 const router = express.Router();
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const staffOnly = requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep');
-const { SMS_TEMPLATES } = require('../utils/email-templates');
+const { SMS_TEMPLATES, COMPANY } = require('../utils/email-templates');
 const {
   normalizePhone,
   appendLegalFooter,
@@ -348,6 +349,30 @@ function twiml(message) {
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${safe}</Message></Response>`;
 }
 
+// "YES" is both an opt-in keyword and how drivers approve a load. It only means opt-in when the
+// number is opted out, or when nothing is waiting on this driver's answer.
+async function treatYesAsOptIn(from, body) {
+  if (/^\s*(yes|y|ok)\s*#?\s*\d+/i.test(String(body || ''))) return false;
+  if (await isSmsOptedOut(from)) return true;
+  if (!/^\s*(yes|y|ok)\b/i.test(String(body || ''))) return true;
+  try {
+    const open = await pool.query(
+      `SELECT 1 FROM load_offers o JOIN users u ON u.id = o.carrier_id
+        WHERE right(regexp_replace(u.phone, '\\D', '', 'g'), 10) = right(regexp_replace($1, '\\D', '', 'g'), 10)
+          AND o.status = 'pending'
+       UNION ALL
+       SELECT 1 FROM ai_dispatch_offers d JOIN ai_dispatch_carriers c ON c.id = d.carrier_id
+        WHERE right(regexp_replace(c.phone, '\\D', '', 'g'), 10) = right(regexp_replace($1, '\\D', '', 'g'), 10)
+          AND d.status = 'offered' AND d.expires_at > now()
+       LIMIT 1`,
+      [from]
+    );
+    return open.rows.length === 0;
+  } catch {
+    return true;
+  }
+}
+
 // ALL /api/voip/twilio-inbound — Twilio "A message comes in" webhook (handles both POST form-encoded and GET)
 router.all('/twilio-inbound', async (req, res) => {
   try {
@@ -364,7 +389,7 @@ router.all('/twilio-inbound', async (req, res) => {
       await require('../utils/dispatch-brain').optOutPhone(from).catch((e) => console.warn('[AI DISPATCH] opt-out:', e.message));
       disposition = 'opt_out';
       reply = stopConfirmReply();
-    } else if (isStartKeyword(body)) {
+    } else if (isStartKeyword(body) && await treatYesAsOptIn(from, body)) {
       await removeSmsOptOut(from);
       disposition = 'opt_in';
       reply = startConfirmReply();
@@ -397,78 +422,35 @@ router.all('/twilio-inbound', async (req, res) => {
       if (yesMatch) {
         const offerId = yesMatch[2] ? parseInt(yesMatch[2], 10) : null;
         try {
-          let offerRes;
-          if (offerId) {
-            offerRes = await pool.query('SELECT * FROM load_offers WHERE id = $1 AND driver_approval_status = \'pending\'', [offerId]);
-          } else {
-            // Find most recent pending offer for this phone / carrier
-            offerRes = await pool.query(
-              `SELECT o.* FROM load_offers o
-               JOIN users u ON u.id = o.carrier_id
-               WHERE regexp_replace(u.phone, '\\D', '', 'g') LIKE '%' || right(regexp_replace($1, '\\D', '', 'g'), 10)
-                 AND o.driver_approval_status = 'pending'
-               ORDER BY o.created_at DESC LIMIT 1`,
-              [from]
-            );
-          }
+          const offerRes = await pool.query(
+            `SELECT o.* FROM load_offers o
+             JOIN users u ON u.id = o.carrier_id
+             WHERE right(regexp_replace(u.phone, '\\D', '', 'g'), 10) = right(regexp_replace($1, '\\D', '', 'g'), 10)
+               AND length(regexp_replace($1, '\\D', '', 'g')) >= 10
+               AND o.status = 'pending' AND o.driver_approval_status = 'pending'
+               AND ($2::int IS NULL OR o.id = $2::int)
+             ORDER BY o.created_at DESC LIMIT 1`,
+            [from, offerId]
+          );
 
-          if (offerRes.rows.length) {
-            offerApproved = offerRes.rows[0];
+          const claimed = offerRes.rows.length
+            ? await pool.query(
+              `UPDATE load_offers SET status = 'accepted', driver_approval_status = 'approved' WHERE id = $1 AND status = 'pending' RETURNING *`,
+              [offerRes.rows[0].id]
+            )
+            : { rows: [] };
+          if (claimed.rows.length) {
+            offerApproved = claimed.rows[0];
             const offer = offerApproved;
-            await pool.query(
-              `UPDATE load_offers SET status = 'accepted', driver_approval_status = 'approved', broker_negotiation_status = 'bidding' WHERE id = $1`,
-              [offer.id]
-            );
-
             await pool.query(
               `INSERT INTO ai_load_negotiations (offer_id, event_type, sender_type, message_text, rate_offered, rpm)
                VALUES ($1, 'driver_approved', 'driver', $2, $3, $4)`,
-              [offer.id, `Driver approved offer #${offer.id} via SMS reply: "${textBody}"`, offer.rate, offer.rpm]
+              [offer.id, `Driver approved offer #${offer.id} via SMS reply: "${textBody.slice(0, 80)}"`, offer.rate, offer.rpm]
             );
-
-            // Trigger AI broker bidding email
-            const targetBid = (parseFloat(offer.rate) + 150).toFixed(2);
-            await pool.query(
-              `UPDATE load_offers SET initial_bid_rate = $1 WHERE id = $2`,
-              [targetBid, offer.id]
-            );
-
-            const { sendBrandedEmail } = require('../utils/mailer');
-            const carrierRes = await pool.query('SELECT * FROM users WHERE id = $1', [offer.carrier_id]);
-            const carrier = carrierRes.rows[0] || {};
-            const carrierCompany = carrier.company_name || carrier.name || 'Motor Carrier';
-            const carrierMc = carrier.mc_number || '149201';
-
-            const emailSubject = `Rate Inquiry & Load Booking: ${offer.pickup_location} ➔ ${offer.delivery_location} (${offer.equipment_type}) — MC# ${carrierMc}`;
-            const emailBodyText = `Hi ${offer.broker_name} Dispatch,\n\n` +
-              `Shipping Wish LLC is bidding on behalf of ${carrierCompany} (MC# ${carrierMc}).\n\n` +
-              `Load Details:\n` +
-              `• Lane: ${offer.pickup_location} ➔ ${offer.delivery_location}\n` +
-              `• Equipment: ${offer.equipment_type}\n` +
-              `• Distance: ${offer.miles} miles\n` +
-              `• Requested Rate: $${targetBid} ($${(targetBid / offer.miles).toFixed(2)}/mile)\n\n` +
-              `Our truck is empty and ready for immediate dispatch. Please confirm rate and send Rate Confirmation to dispatch@shippingwish.com.\n\n` +
-              `Best regards,\nShipping Wish Autonomous Dispatch Engine\nhttps://www.shippingwish.com`;
-
-            try {
-              await sendBrandedEmail({
-                to: offer.broker_email || 'dispatch@broker.com',
-                subject: emailSubject,
-                text: emailBodyText,
-                html: `<pre style="font-family:sans-serif;font-size:14px;">${emailBodyText}</pre>`,
-                emailType: 'broker_bid'
-              });
-            } catch (e) {
-              console.warn('Inbound SMS broker bid email notice:', e.message);
-            }
-
-            await pool.query(
-              `INSERT INTO ai_load_negotiations (offer_id, event_type, sender_type, message_text, rate_offered, rpm)
-               VALUES ($1, 'broker_bid_sent', 'ai_bot', $2, $3, $4)`,
-              [offer.id, `AI dispatched official rate inquiry email to ${offer.broker_name} (${offer.broker_email}) requesting $${targetBid}`, targetBid, (targetBid / offer.miles).toFixed(2)]
-            );
-
-            reply = `${COMPANY.name}: Load offer #${offer.id} (${offer.pickup_location} ➔ ${offer.delivery_location}) APPROVED! AI has emailed ${offer.broker_name} requesting $${targetBid}. We will notify you once deal is locked!`;
+            const request = await requestBrokerBooking(pool, offer, { via: 'SMS' });
+            reply = request.sent
+              ? `${COMPANY.name}: Offer #${offer.id} (${offer.pickup_location} → ${offer.delivery_location}) approved. We asked the broker to confirm at $${request.rate}. Do not roll until we text BOOKED.`
+              : `${COMPANY.name}: Offer #${offer.id} approved. A dispatcher will confirm it with the broker and text you.`;
             disposition = 'driver_load_approval';
           }
         } catch (err) {

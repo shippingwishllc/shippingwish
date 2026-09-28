@@ -921,23 +921,23 @@ router.post('/ai/generate-marketing', requireAuth, requireSuperAdmin, async (req
   const templates = {
     shippingwish: {
       email: {
-        subject: '🚀 Eliminate Deadhead: Dedicated Fleet Operations for Your Trucks ($0 First Week)',
-        headline: 'Keep Your Trucks Rolling at Peak RPM Every Day',
-        body: 'Top owner operators spend 15+ hours a week chasing rate cons, negotiating broker packets, and fighting for detention pay. Shipping Wish assigns you a named 24/7 dedicated dispatch operations desk to book top-dollar spot freight with ZERO percentage cuts from your rate. Keep 100% of your freight pay. Try 7 days completely free.',
+        subject: 'A dispatch manager for your trucks — first 7 days free',
+        headline: 'Your own dispatch manager, flat weekly price',
+        body: 'Shipping Wish gives your trucks a dispatch manager who finds loads, handles broker paperwork, and follows up on detention. You pay a flat weekly price instead of a percentage of your freight, and you approve every load. The first 7 days are free.',
         cta: 'Claim Your 7-Day Free Operations Desk'
       },
-      sms: 'Shipping Wish Ops: Need high-paying reloads this week? We book direct shipper and broker freight with 0% cut. Start 7 days free: shippingwish.com/signup',
-      social: '🚛 Why pay 10% dispatch fees? Shipping Wish provides full enterprise TMS, named fleet managers, and high-RPM lane strategy for a flat weekly retainer. You keep 100% of broker freight pay. Claim your 7-day free trial today.'
+      sms: 'Shipping Wish: a dispatch manager for your trucks at a flat weekly price, no percentage of your freight. First 7 days free: shippingwish.com/signup',
+      social: 'Shipping Wish dispatch: a manager for your trucks, a TMS for your paperwork, and a flat weekly price instead of a percentage of your freight. First 7 days free.'
     },
     loadsnexus: {
       email: {
-        subject: '⚡ Stop Paying $150/mo for Slow Load Boards — AI Spot Freight at $19/mo',
-        headline: 'Instant 50-State Live Freight with Unmasked Broker Contacts',
-        body: 'Tired of stale DAT postings and hidden phone numbers? LoadsNexus AI scans 50 states for high-RPM spot freight, reveals direct broker contact info unmasked, and provides instant FMCSA credit check and $75k bond verification. Start self-dispatching today for only $19/month.',
+        subject: 'LoadsNexus: broker-posted loads with direct contacts, $19/month',
+        headline: 'Loads posted by brokers, with the broker contact on every load',
+        body: 'LoadsNexus shows loads that brokers post directly, with the broker phone and email on each one, plus an FMCSA authority lookup before you call. How many loads are open changes day to day. Plans start at $19/month.',
         cta: 'Activate $19 Solo Pass Now'
       },
-      sms: 'LoadsNexus: 50-State spot freight with direct broker phone numbers & credit scores. Only $19/mo. Sign in now: loadsnexus.com/login',
-      social: '🔥 Disruping freight tech: LoadsNexus gives carriers unlimited AI load search, unmasked broker contacts, and FMCSA credit scores for just $19/mo. 1 Workstation + 1 Driver Mobile single-device guard included.'
+      sms: 'LoadsNexus: broker-posted loads with direct broker contacts and FMCSA authority lookup, from $19/month: loadsnexus.com/login',
+      social: 'LoadsNexus: search loads posted by brokers, see the broker contact on each load, and check FMCSA authority before you call. From $19/month, one workstation plus one driver phone.'
     },
     nyclimowish: {
       email: {
