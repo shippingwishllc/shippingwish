@@ -112,18 +112,18 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
     }
 
     const numRate = Number(rate);
-    const numMiles = Number(miles) > 0 ? Number(miles) : 650;
+    const numMiles = Number(miles) > 0 ? Number(miles) : 0;
     const rpmVal = numRate / numMiles;
 
     if (numRate < 150) {
       setErrorMessage('Load rate must be at least $150 USD.');
       return;
     }
-    if (rpmVal < 1.00) {
+    if (numMiles && rpmVal < 1.00) {
       setErrorMessage(`Rate per mile ($${rpmVal.toFixed(2)}/mi) is below standard spot market minimum ($1.00/mi).`);
       return;
     }
-    if (rpmVal > 8.50 && numRate > 5000) {
+    if (numMiles && rpmVal > 8.50 && numRate > 5000) {
       setErrorMessage(`Rate per mile ($${rpmVal.toFixed(2)}/mi) exceeds reasonable spot market limits ($8.50/mi). Please verify rate.`);
       return;
     }
@@ -140,7 +140,7 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
           destination,
           equipment,
           rate: Number(rate),
-          miles: Number(miles) || 650,
+          miles: Number(miles) || 0,
           weight: Number(weight) || 42000,
           commodity,
           pickupDate,
@@ -165,22 +165,21 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
       }
 
       const newLoad: FreightLoad = {
-        id: data.load?.load_number || `SW-${Math.floor(1000 + Math.random() * 9000)}`,
+        id: data.load?.load_number || '',
         origin,
         destination,
         equipment_type: equipment,
         rate: Number(rate),
-        miles: Number(miles) || 650,
-        rpm: data.rpm || (rpmPreview ? Number(rpmPreview) : 3.15),
-        weight: `${Number(weight || 42000).toLocaleString()} lbs`,
-        commodity: commodity || 'General Freight',
+        miles: Number(miles) || Number(data.load?.miles) || 0,
+        rpm: data.rpm || (rpmPreview ? Number(rpmPreview) : 0),
+        weight: weight ? `${Number(weight).toLocaleString()} lbs` : '',
+        commodity: commodity || '',
         pickup_date: pickupDate,
-        broker_name: brokerName || user?.company_name || 'LoadsNexus™ Verified Brokerage',
-        broker_mc: brokerMc || user?.mc_number || 'MC-VERIFIED',
-        broker_phone: phone || user?.phone || '+1 (800) 580-3101',
-        broker_email: email || user?.email || 'dispatch@loadsnexus.com',
-        days_to_pay: '21 days',
-        credit_score: 'A+ (Verified)',
+        broker_name: brokerName || user?.company_name || '',
+        broker_mc: brokerMc || user?.mc_number || '',
+        broker_phone: phone || user?.phone || '',
+        broker_email: email || user?.email || '',
+        broker_fmcsa: data.fmcsa_check && data.fmcsa_check.verdict ? data.fmcsa_check.verdict : null,
         is_live_broker_post: true,
       };
 
@@ -246,7 +245,7 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
               <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                 <span>Pickup: <strong>{postedLoad.pickup_date}</strong></span>
                 <span className="font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  {postedLoad.days_to_pay}
+                  {postedLoad.broker_fmcsa === 'ok' ? 'FMCSA active' : postedLoad.broker_fmcsa === 'caution' ? 'FMCSA: check flags' : 'Posted'}
                 </span>
               </div>
               <div className="text-base font-bold text-slate-900 mb-1">
@@ -266,7 +265,7 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
             {/* Actions */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
               <a
-                href={`/api/loadboard/loads/${encodeURIComponent(postedLoad.id)}/ratecon-pdf?origin=${encodeURIComponent(postedLoad.origin || '')}&destination=${encodeURIComponent(postedLoad.destination || '')}&rate=${postedLoad.rate || 2850}&miles=${postedLoad.miles || 650}&rpm=${postedLoad.rpm || 3.15}&equipment=${encodeURIComponent(postedLoad.equipment_type || '')}&broker=${encodeURIComponent(postedLoad.broker_name || '')}&mc=${encodeURIComponent(postedLoad.broker_mc || '')}&phone=${encodeURIComponent(postedLoad.broker_phone || '')}&email=${encodeURIComponent(postedLoad.broker_email || '')}`}
+                href={`/api/loadboard/loads/${encodeURIComponent(postedLoad.id)}/ratecon-pdf?origin=${encodeURIComponent(postedLoad.origin || '')}&destination=${encodeURIComponent(postedLoad.destination || '')}&rate=${postedLoad.rate || 0}&miles=${postedLoad.miles || 0}&rpm=${postedLoad.rpm || 0}&equipment=${encodeURIComponent(postedLoad.equipment_type || '')}&broker=${encodeURIComponent(postedLoad.broker_name || '')}&mc=${encodeURIComponent(postedLoad.broker_mc || '')}&phone=${encodeURIComponent(postedLoad.broker_phone || '')}&email=${encodeURIComponent(postedLoad.broker_email || '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition-all hover:shadow-lg"

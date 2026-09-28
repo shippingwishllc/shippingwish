@@ -25,15 +25,12 @@ router.get('/truck', optionalAuth, async (req, res) => {
     let dbLoads = [];
     try {
       const dbRes = await pool.query(`
-        SELECT l.*, 
-               COALESCE(b.company_name, 'Verified LoadNexus Broker') as broker_name,
-               COALESCE(b.credit_rating, 'A') as broker_rating,
-               COALESCE(b.days_to_pay, 21) as days_to_pay,
-               COALESCE(b.bond_status, 'ACTIVE ($75,000 BMC-84)') as bond_status
+        SELECT l.id, l.load_number, l.pickup_location, l.delivery_location, l.equipment_type, l.rate, l.miles,
+               l.broker_name, b.company_name, b.credit_rating, b.days_to_pay, b.bond_status
         FROM loads l
         LEFT JOIN brokers b ON b.id = l.broker_id
-        WHERE l.status NOT IN ('delivered', 'cancelled')
-        ORDER BY l.rate DESC
+        WHERE l.status NOT IN ('delivered', 'cancelled', 'expired')
+        ORDER BY l.created_at DESC
         LIMIT 25
       `);
       dbLoads = dbRes.rows || [];
@@ -41,44 +38,28 @@ router.get('/truck', optionalAuth, async (req, res) => {
       console.warn('[Matchmaking] DB loads query fallback:', e.message);
     }
 
-    // 2. High-volume benchmark market loads
-    const benchmarkCorridors = [
-      { id: 'LN-B101', origin: 'Chicago, IL', destination: 'Atlanta, GA', equipment_type: 'Reefer', rate: 3450, miles: 716, broker_name: 'C.H. Robinson (Verified)', broker_rating: 'A+', days_to_pay: 19, bond_status: 'ACTIVE ($75,000)' },
-      { id: 'LN-B102', origin: 'Dallas, TX', destination: 'Savannah, GA', equipment_type: 'Dry Van', rate: 3100, miles: 928, broker_name: 'Total Quality Logistics (TQL)', broker_rating: 'A', days_to_pay: 22, bond_status: 'ACTIVE ($75,000)' },
-      { id: 'LN-B103', origin: 'Los Angeles, CA', destination: 'Phoenix, AZ', equipment_type: 'Flatbed', rate: 1950, miles: 372, broker_name: 'Echo Global Logistics', broker_rating: 'A+', days_to_pay: 18, bond_status: 'ACTIVE ($75,000)' },
-      { id: 'LN-B104', origin: 'Harrisburg, PA', destination: 'Columbus, OH', equipment_type: 'Dry Van', rate: 2250, miles: 388, broker_name: 'Arrive Logistics', broker_rating: 'A+', days_to_pay: 20, bond_status: 'ACTIVE ($75,000)' },
-      { id: 'LN-B105', origin: 'Atlanta, GA', destination: 'Orlando, FL', equipment_type: 'Reefer', rate: 2400, miles: 441, broker_name: 'Coyote Logistics', broker_rating: 'A', days_to_pay: 24, bond_status: 'ACTIVE ($75,000)' },
-      { id: 'LN-B106', origin: 'Indianapolis, IN', destination: 'Nashville, TN', equipment_type: 'Box Truck', rate: 1650, miles: 288, broker_name: 'RXO Logistics', broker_rating: 'A', days_to_pay: 21, bond_status: 'ACTIVE ($75,000)' }
-    ];
-
-    const allCandidateLoads = [
-      ...dbLoads.map(r => ({
-        id: `LOAD #${r.load_number || r.id}`,
-        origin: r.pickup_location || 'Dallas, TX',
-        destination: r.delivery_location || 'Atlanta, GA',
-        equipment_type: r.equipment_type || 'Dry Van',
-        rate: Number(r.rate || 2800),
-        miles: 650,
-        broker_name: r.broker_name,
-        broker_rating: r.broker_rating,
-        days_to_pay: r.days_to_pay,
-        bond_status: r.bond_status
-      })),
-      ...benchmarkCorridors
-    ];
+    const allCandidateLoads = dbLoads.map(r => ({
+      id: r.load_number || `SW-${r.id}`,
+      origin: r.pickup_location,
+      destination: r.delivery_location,
+      equipment_type: r.equipment_type,
+      rate: Number(r.rate) || 0,
+      miles: Number(r.miles) || 0,
+      broker_name: r.broker_name || r.company_name || null,
+      broker_rating: r.credit_rating || null,
+      days_to_pay: r.days_to_pay,
+      bond_status: r.bond_status || null
+    }));
 
     // Filter and score matches
     const matches = allCandidateLoads.map(load => {
       let score = 70; // base score
-      const rpm = (load.rate / (load.miles || 650));
+      const rpm = load.miles ? (load.rate / load.miles) : 0;
       load.rpm = parseFloat(rpm.toFixed(2));
+      load.deadhead_miles = null;
 
-      // Origin match
       if (origin && matchesLocation(load.origin, origin)) {
         score += 20;
-        load.deadhead_miles = 15;
-      } else {
-        load.deadhead_miles = 55;
       }
 
       // Destination match

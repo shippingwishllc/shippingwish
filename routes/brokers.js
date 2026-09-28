@@ -2,7 +2,14 @@ const express = require('express');
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { lookupCensusRow, digits } = require('../utils/fmcsa');
-const { getKnownBroker, aiAnalyzeBroker, lookupMotusBond, lookupInternalDtp, lookupLoadWrap } = require('../utils/broker-vet');
+const { lookupMotusBond, lookupInternalDtp, lookupLoadWrap } = require('../utils/broker-vet');
+const { assess } = require('../utils/broker-authority');
+
+const VERDICT_LABELS = {
+  ok: 'FMCSA AUTHORITY ACTIVE',
+  caution: 'FMCSA: CHECK FLAGS',
+  block: 'FMCSA: DO NOT BOOK'
+};
 
 const router = express.Router();
 
@@ -77,6 +84,24 @@ function censusBrokerPayload(row) {
   };
 }
 
+// Plain facts from the lookups above. Anything we don't have is said as missing, not estimated.
+function brokerFacts(payload, check) {
+  const parts = [];
+  if (payload.addDate) {
+    const years = check.authorityAgeDays != null ? Math.floor(check.authorityAgeDays / 365) : null;
+    parts.push(`Registered with FMCSA on ${payload.addDate}${years != null ? ` (${years ? `${years} year${years === 1 ? '' : 's'}` : 'under a year'} ago)` : ''}.`);
+  }
+  parts.push(payload.isBroker ? 'FMCSA lists broker authority.' : 'FMCSA does not list broker authority on this record.');
+  for (const flag of check.flags || []) {
+    if (flag.level !== 'info' && flag.code !== 'not_broker') parts.push(flag.text);
+  }
+  parts.push(payload.bondSource ? `Bond: ${payload.bondStatus}.` : 'No bond found in the FMCSA insurance feed; confirm BMC-84/85 on SAFER.');
+  parts.push(payload.paidLoadCount
+    ? `Paid us on ${payload.paidLoadCount} load${payload.paidLoadCount === 1 ? '' : 's'}, about ${payload.daysToPay} days on average.`
+    : 'No paid loads with this broker in our records yet.');
+  return parts.join(' ');
+}
+
 router.get('/credit-check/:mc', requireAuth, async (req, res) => {
   const rawInput = String(req.params.mc || '').trim();
   if (!rawInput) {
@@ -84,45 +109,6 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
   }
 
   try {
-    // 1. Check verified top brokers benchmark database first
-    const known = getKnownBroker(rawInput);
-    if (known) {
-      const d = digits(known.mcNumber);
-      const internalDtp = await lookupInternalDtp(pool, d);
-      return res.json({
-        ok: true,
-        authentic: true,
-        source: 'Verified Broker Network & FMCSA Intelligence',
-        mcNumber: known.mcNumber,
-        dotNumber: known.dotNumber,
-        companyName: known.companyName,
-        cityState: known.cityState,
-        address: known.address,
-        phone: known.phone,
-        email: known.email,
-        officer: known.officer,
-        entityTypes: 'Broker / Property Brokerage',
-        authorityStatus: 'USDOT ACTIVE — Broker Operating Authority Verified',
-        usdotActive: true,
-        isBroker: true,
-        addDate: 'Established Multi-Year Carrier Partner',
-        bondStatus: known.bondStatus,
-        bondUrl: `https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&query_string=${encodeURIComponent(known.dotNumber)}`,
-        creditRating: known.creditRating,
-        creditScore: known.creditScore,
-        creditSource: 'Verified Freight Bureau & Industry Benchmark',
-        daysToPay: (internalDtp && internalDtp.daysToPay) || known.daysToPay,
-        paidLoadCount: internalDtp ? internalDtp.paidLoadCount : null,
-        dtpSource: internalDtp ? 'internal' : 'Verified Industry Benchmark',
-        factoringStatus: known.factoringStatus,
-        creditLimit: '$100,000+ Pre-Approved',
-        riskLevel: known.riskLevel,
-        aboutBroker: known.aboutBroker,
-        verifiedAt: new Date().toISOString()
-      });
-    }
-
-    // 2. Query FMCSA Census
     const row = await lookupCensusRow(rawInput);
     if (!row) {
       return res.status(404).json({
@@ -132,19 +118,9 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
 
     const payload = censusBrokerPayload(row);
     const mcDigits = digits(payload.mcNumber);
-
-    // AI Analysis & Risk Score Calculation
-    const aiAnalysis = aiAnalyzeBroker(row, rawInput);
-    if (aiAnalysis) {
-      payload.creditScore = aiAnalysis.creditScore;
-      payload.creditRating = aiAnalysis.creditRating;
-      payload.riskLevel = aiAnalysis.riskLevel;
-      payload.daysToPay = aiAnalysis.daysToPay;
-      payload.factoringStatus = aiAnalysis.factoringStatus;
-      payload.aboutBroker = aiAnalysis.aboutBroker;
-      payload.creditSource = 'AI Freight Intelligence';
-      payload.dtpSource = 'AI Industry Estimate';
-    }
+    const fmcsaCheck = assess(row);
+    payload.fmcsaCheck = { verdict: fmcsaCheck.verdict, flags: fmcsaCheck.flags, authorityAgeDays: fmcsaCheck.authorityAgeDays };
+    payload.riskLevel = VERDICT_LABELS[fmcsaCheck.verdict] || payload.riskLevel;
 
     const [bond, internalDtp, wrap] = await Promise.all([
       lookupMotusBond(payload.mcNumber, payload.dotNumber),
@@ -175,7 +151,7 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
       payload.creditScore = wrap.creditScore;
       payload.creditRating = wrap.creditRating;
       payload.creditSource = 'LoadWrap';
-      payload.riskLevel = payload.usdotActive ? `LoadWrap ${wrap.creditScore}` : 'FMCSA INACTIVE';
+      if (fmcsaCheck.verdict !== 'block') payload.riskLevel = `LoadWrap ${wrap.creditScore}`;
     }
 
     if (wrap && wrap.factoringStatus) {
@@ -183,6 +159,10 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
     }
 
     payload.loadWrapConfigured = !!String(process.env.LOADWRAP_API_KEY || '').trim();
+    if (!payload.creditSource) {
+      payload.creditSource = payload.loadWrapConfigured ? 'No credit data returned' : 'No credit data source connected';
+    }
+    payload.aboutBroker = brokerFacts(payload, fmcsaCheck);
 
     try {
       const saved = await pool.query(

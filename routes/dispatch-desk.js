@@ -230,10 +230,11 @@ router.get('/offers', ...staff, async (req, res) => {
 
 router.post('/offers/:id/booked', ...staff, async (req, res) => {
   try {
-    const result = await brain.markBooked(req.params.id, String(req.body.note || '').slice(0, 200));
+    const result = await brain.markBooked(req.params.id, String(req.body.note || '').slice(0, 200), { force: req.body.force === true });
     if (!result) return res.status(404).json({ error: 'Offer not found.' });
     res.json({ ok: true, ...result });
   } catch (err) {
+    if (err.code === 'RATECON_MISMATCH') return res.status(409).json({ error: err.message, code: err.code });
     res.status(400).json({ error: err.message || 'Could not mark this booked.' });
   }
 });

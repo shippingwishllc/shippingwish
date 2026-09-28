@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Broker Directory &amp; MC Credit Verification — Shipping Wish LLC ERP</title>
-  <meta name="description" content="Instant Broker MC Credit Score Checker, $75k BMC-84 Surety Bond Verification, &amp; Factoring Approval Directory for Shipping Wish LLC.">
+  <meta name="description" content="Broker directory and FMCSA broker check for Shipping Wish LLC: authority status, BMC-84/85 bond, and payment history.">
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -45,9 +45,9 @@
       <!-- ================= LIVE BROKER MC CREDIT CHECK WIDGET ================= -->
       <div style="background:var(--color-surface-card);border:1px solid var(--border-default);border-radius:var(--radius-2xl);padding:var(--space-6);margin-bottom:var(--space-6);box-shadow:var(--shadow-md);">
         <div style="font-size:var(--text-base);font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          ⚡ Broker Credit Score, FMCSA Authority &amp; AI Risk Due Diligence
+          ⚡ Broker Check: FMCSA Authority, Bond &amp; Payment History
         </div>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:16px;">Instant Broker Credit Check, Solvency Score (0-100), Days-To-Pay (DTP), Factoring Pre-Approval, &amp; $75k BMC-84 Surety Bond Verification powered by FMCSA Live Census &amp; AI Freight Risk Intelligence.</p>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:16px;">Checks the FMCSA census for active broker authority, new-authority and contact red flags, the BMC-84/85 bond in the FMCSA insurance feed, and how fast this broker has paid us. A credit score only shows when a credit data source is connected.</p>
 
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
           <div class="search-input-group" style="flex:1;min-width:260px;">
@@ -55,7 +55,7 @@
             <input type="text" id="credit-mc-input" placeholder="Enter Broker MC# or DOT# (e.g. MC-159021, MC-325990, 426176)..." onkeyup="if(event.key==='Enter') checkBrokerCredit()">
           </div>
           <button class="btn btn-primary" onclick="checkBrokerCredit()" id="btn-credit-check">
-            🔍 Check Broker Credit
+            🔍 Check Broker
           </button>
         </div>
 
@@ -80,8 +80,8 @@
               <div id="cr-note" style="display:none;margin-top:6px;font-size:11px;color:#cbd5e1;background:rgba(59,130,246,0.15);padding:6px 10px;border-radius:6px;border:1px solid rgba(59,130,246,0.3);"></div>
             </div>
             <div style="text-align:right;">
-              <span id="cr-badge" style="padding:6px 16px;border-radius:20px;font-weight:800;font-size:13px;background:#10b981;color:#fff;display:inline-block;">A+ EXCELLENT</span>
-              <div style="font-size:12px;font-weight:700;color:#38bdf8;margin-top:4px;" id="cr-score">Credit Score: 98 / 100</div>
+              <span id="cr-badge" style="padding:6px 16px;border-radius:20px;font-weight:800;font-size:13px;background:#10b981;color:#fff;display:inline-block;">—</span>
+              <div style="font-size:12px;font-weight:700;color:#38bdf8;margin-top:4px;" id="cr-score">—</div>
             </div>
           </div>
 
@@ -89,23 +89,23 @@
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;margin-bottom:16px;">
             <div style="background:rgba(255,255,255,0.05);padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,200,0.06);">
               <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Operating Authority</div>
-              <div style="font-size:13px;font-weight:700;color:#34d399;margin-top:4px;" id="cr-authority">ACTIVE — AUTHORIZED</div>
+              <div style="font-size:13px;font-weight:700;color:#34d399;margin-top:4px;" id="cr-authority">—</div>
             </div>
 
             <div style="background:rgba(255,255,255,0.05);padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,200,0.06);">
-              <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">$75k Surety Bond</div>
-              <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-top:4px;" id="cr-bond">BMC-84 $75,000 ACTIVE</div>
+              <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">BMC-84/85 Bond</div>
+              <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-top:4px;" id="cr-bond">—</div>
               <a id="cr-bond-link" href="https://safer.fmcsa.dot.gov/" target="_blank" rel="noopener" style="display:inline-block;margin-top:4px;font-size:11px;color:#93c5fd;text-decoration:none;">Open FMCSA SAFER &rarr;</a>
             </div>
 
             <div style="background:rgba(255,255,255,0.05);padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,200,0.06);">
               <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Days To Pay (DTP)</div>
-              <div style="font-size:13px;font-weight:700;color:#fbbf24;margin-top:4px;" id="cr-dtp">24 Days Avg</div>
+              <div style="font-size:13px;font-weight:700;color:#fbbf24;margin-top:4px;" id="cr-dtp">—</div>
             </div>
 
             <div style="background:rgba(255,255,255,0.05);padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,200,0.06);">
               <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Factoring Approval</div>
-              <div style="font-size:13px;font-weight:700;color:#a7f3d0;margin-top:4px;" id="cr-factoring">APPROVED (Universal)</div>
+              <div style="font-size:13px;font-weight:700;color:#a7f3d0;margin-top:4px;" id="cr-factoring">—</div>
             </div>
           </div>
 
@@ -113,18 +113,18 @@
           <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);padding:14px 16px;border-radius:10px;margin-bottom:16px;">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
               <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#93c5fd;text-transform:uppercase;letter-spacing:0.5px;">
-                <span>🤖 About Broker &amp; AI Risk Due Diligence Dossier</span>
-                <span id="cr-source-tag" style="background:rgba(59,130,246,0.2);padding:2px 8px;border-radius:12px;font-size:10px;color:#bfdbfe;border:1px solid rgba(59,130,246,0.4);">AI Risk Engine</span>
+                <span>About this broker</span>
+                <span id="cr-source-tag" style="background:rgba(59,130,246,0.2);padding:2px 8px;border-radius:12px;font-size:10px;color:#bfdbfe;border:1px solid rgba(59,130,246,0.4);">FMCSA Census</span>
               </div>
               <div style="font-size:11px;color:#cbd5e1;" id="cr-verified-at"></div>
             </div>
             <div id="cr-about" style="font-size:13px;line-height:1.6;color:#e2e8f0;margin-bottom:10px;">
-              Loading broker intelligence dossier...
+              Loading...
             </div>
             <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:#94a3b8;border-top:1px solid rgba(255,255,255,0.08);padding-top:8px;">
-              <div>🏢 Type: <strong style="color:#fff;" id="cr-entity-type">Freight Broker</strong></div>
-              <div>📅 In Business: <strong style="color:#fff;" id="cr-add-date">Established</strong></div>
-              <div>🛡️ Credit Index: <strong style="color:#fff;" id="cr-bureau">AI Freight Intelligence</strong></div>
+              <div>🏢 Type: <strong style="color:#fff;" id="cr-entity-type">—</strong></div>
+              <div>📅 Registered: <strong style="color:#fff;" id="cr-add-date">—</strong></div>
+              <div>🛡️ Source: <strong style="color:#fff;" id="cr-bureau">FMCSA Census</strong></div>
               <div>👤 Principal / Rep: <strong style="color:#fff;" id="cr-officer">-</strong></div>
             </div>
           </div>
@@ -132,7 +132,7 @@
           <!-- Bottom Actions -->
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
             <div style="font-size:12px;color:#cbd5e1;">
-              Credit Line: <strong style="color:#fff;" id="cr-limit">$100,000+ Pre-Approved</strong>
+              Credit Line: <strong style="color:#fff;" id="cr-limit">—</strong>
             </div>
             <button class="btn btn-primary btn-sm" onclick="importCheckedBroker()">
               ➕ Save Broker to System Directory
@@ -339,7 +339,7 @@
       const res = await fetch(`/api/brokers/credit-check/${encodeURIComponent(input)}`, { credentials: 'include' });
       const data = await res.json();
       btn.disabled = false;
-      btn.textContent = '🔍 Check Broker Credit';
+      btn.textContent = '🔍 Check Broker';
 
       if (!res.ok) return alert(data.error || 'Broker lookup failed');
 
@@ -361,36 +361,33 @@
 
       const badge = document.getElementById('cr-badge');
       const score = data.creditScore;
-      badge.textContent = data.riskLevel || (score ? `GRADE ${data.creditRating}` : 'FMCSA ACTIVE');
-      if (data.usdotActive === false || score < 60) {
+      const verdict = data.fmcsaCheck && data.fmcsaCheck.verdict;
+      badge.textContent = data.riskLevel || (score != null ? `GRADE ${data.creditRating}` : 'FMCSA ACTIVE');
+      if (data.usdotActive === false || verdict === 'block' || (score != null && score < 60)) {
         badge.style.background = '#dc2626';
-      } else if (score >= 90) {
-        badge.style.background = '#10b981';
-      } else if (score >= 80) {
-        badge.style.background = '#059669';
-      } else if (score >= 70) {
+      } else if (verdict === 'caution' || (score != null && score < 80)) {
         badge.style.background = '#f59e0b';
       } else {
-        badge.style.background = '#f97316';
+        badge.style.background = '#059669';
       }
 
       document.getElementById('cr-score').textContent = score != null
         ? `Credit Score: ${score} / 100 (${data.creditRating || 'Verified'})`
-        : 'Credit Score: Unrated';
+        : `Credit Score: not rated (${data.creditSource || 'no credit data source'})`;
 
       document.getElementById('cr-authority').textContent = data.authorityStatus || (data.usdotActive ? 'ACTIVE' : 'INACTIVE');
       document.getElementById('cr-authority').style.color = data.usdotActive === false ? '#fca5a5' : '#34d399';
       
-      document.getElementById('cr-bond').textContent = data.bondStatus || 'BMC-84 $75,000 Verified';
+      document.getElementById('cr-bond').textContent = data.bondStatus || 'Not confirmed. Check BMC-84/85 on SAFER.';
       const bondLink = document.getElementById('cr-bond-link');
       if (bondLink && data.bondUrl) bondLink.href = data.bondUrl;
 
       document.getElementById('cr-dtp').textContent = data.daysToPay != null
-        ? `${data.daysToPay} Days Avg Settlement (${data.dtpSource || 'Industry Benchmark'})`
-        : 'Net 25-30 Days Standard';
+        ? `${data.daysToPay} days avg to pay (${data.dtpSource === 'internal' ? `our ${data.paidLoadCount || ''} paid loads` : data.dtpSource})`
+        : 'Unknown. No paid loads with us yet.';
 
-      document.getElementById('cr-factoring').textContent = data.factoringStatus || 'APPROVED (Standard Factoring)';
-      document.getElementById('cr-limit').textContent = data.creditLimit || (score >= 90 ? '$100,000+ Pre-Approved' : '$25,000 Tier 2');
+      document.getElementById('cr-factoring').textContent = data.factoringStatus || 'Unknown. Ask your factor.';
+      document.getElementById('cr-limit').textContent = data.creditLimit || 'Unknown';
 
       // AI Intelligence & About Broker Dossier
       const aboutEl = document.getElementById('cr-about');
@@ -399,7 +396,7 @@
       }
       const tagEl = document.getElementById('cr-source-tag');
       if (tagEl) {
-        tagEl.textContent = data.creditSource || 'AI Freight Intelligence';
+        tagEl.textContent = data.creditSource || 'FMCSA Census';
       }
       const verifiedAtEl = document.getElementById('cr-verified-at');
       if (verifiedAtEl) {
@@ -407,27 +404,27 @@
       }
       const typeEl = document.getElementById('cr-entity-type');
       if (typeEl) {
-        typeEl.textContent = data.entityTypes || 'Broker / Property Brokerage';
+        typeEl.textContent = data.entityTypes || 'Not listed';
       }
       const dateEl = document.getElementById('cr-add-date');
       if (dateEl) {
-        dateEl.textContent = data.addDate || 'Established';
+        dateEl.textContent = data.addDate || 'Unknown';
       }
       const bureauEl = document.getElementById('cr-bureau');
       if (bureauEl) {
-        bureauEl.textContent = data.source || 'AI Solvency & Safety Engine';
+        bureauEl.textContent = data.source || 'FMCSA Census';
       }
       const officerEl = document.getElementById('cr-officer');
       if (officerEl) {
-        officerEl.textContent = data.officer || 'Operations / Carrier Desk';
+        officerEl.textContent = data.officer || 'Not listed';
       }
 
       // Smooth scroll to result
       box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (e) {
       btn.disabled = false;
-      btn.textContent = '🔍 Check Broker Credit';
-      alert('Error connecting to FMCSA census or Broker Risk Engine.');
+      btn.textContent = '🔍 Check Broker';
+      alert('Could not reach the FMCSA census. Try again.');
     }
   }
 

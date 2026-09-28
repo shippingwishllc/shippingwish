@@ -103,6 +103,8 @@ async function createBoardSchema() {
     );
     CREATE INDEX IF NOT EXISTS ai_dispatch_offers_carrier_idx ON ai_dispatch_offers (carrier_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS ai_dispatch_offers_load_idx ON ai_dispatch_offers (load_id, status);
+    ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS broker_authority JSONB;
+    ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS ratecon JSONB;
     CREATE TABLE IF NOT EXISTS ai_dispatch_messages (
       id SERIAL PRIMARY KEY,
       carrier_id INTEGER NOT NULL REFERENCES ai_dispatch_carriers(id) ON DELETE CASCADE,

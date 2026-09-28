@@ -338,6 +338,10 @@
         bStateBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#fef3c7;color:#b45309;">Waiting on broker</span>`;
       } else if (o.broker_negotiation_status === 'needs_staff') {
         bStateBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#fee2e2;color:#b91c1c;">Dispatcher follow-up</span>`;
+      } else if (o.broker_negotiation_status === 'blocked') {
+        bStateBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#fee2e2;color:#b91c1c;">Broker failed FMCSA check</span>`;
+      } else if (['confirmed', 'ratecon_mismatch', 'confirmed_no_ratecon'].includes(o.broker_negotiation_status)) {
+        bStateBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#fef3c7;color:#b45309;">Broker replied · dispatcher checking</span>`;
       } else if (o.broker_negotiation_status === 'countered') {
         bStateBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#e0f2fe;color:#0369a1;">💬 Broker Countered</span>`;
       } else if (o.broker_negotiation_status === 'accepted' || o.status === 'booked') {
@@ -355,7 +359,7 @@
             ${o.status === 'pending' ? `
               <button class="btn btn-primary btn-sm" type="button" onclick="respondOffer(${o.id}, 'accepted')">✓ Approve</button>
               <button class="btn btn-light btn-sm" type="button" onclick="respondOffer(${o.id}, 'declined')">Decline</button>
-            ` : (['requested', 'bidding'].includes(o.broker_negotiation_status) ? '<span style="font-size:12px;color:#b45309;font-weight:600;">Do not roll until the rate confirmation arrives</span>' : '—')}
+            ` : (['requested', 'bidding', 'confirmed', 'ratecon_mismatch', 'confirmed_no_ratecon'].includes(o.broker_negotiation_status) ? '<span style="font-size:12px;color:#b45309;font-weight:600;">Do not roll until the rate confirmation arrives</span>' : '—')}
           </td>
         </tr>
       `;

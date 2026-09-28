@@ -43,15 +43,15 @@ export const LoadDetailsModal: React.FC<LoadDetailsModalProps> = ({
     )
   );
 
-  const origin = load.origin || load.pickup_location || 'Chicago, IL';
-  const dest = load.destination || load.delivery_location || 'Dallas, TX';
-  const rate = load.rate ? `$${Number(load.rate).toLocaleString()}` : '$2,450';
-  const miles = load.miles ? `${load.miles} mi` : '650 mi';
-  const rpm = load.rpm ? `$${parseFloat(String(load.rpm)).toFixed(2)}/mi` : '$3.15/mi';
-  const bName = load.broker_name || 'Verified Freight Broker';
-  const bMc = load.broker_mc || 'MC-981240';
-  const bPhone = load.broker_phone || '+1 (800) 580-3101';
-  const bEmail = load.broker_email || 'dispatch@brokerage.com';
+  const origin = load.origin || load.pickup_location || '—';
+  const dest = load.destination || load.delivery_location || '—';
+  const rate = load.rate ? `$${Number(load.rate).toLocaleString()}` : 'Rate n/a';
+  const miles = load.miles ? `${load.miles} mi` : 'Miles n/a';
+  const rpm = load.rpm ? `$${parseFloat(String(load.rpm)).toFixed(2)}/mi` : 'RPM n/a';
+  const bName = load.broker_name || 'Broker not named';
+  const bMc = load.broker_mc || '';
+  const bPhone = load.broker_phone || '';
+  const bEmail = load.broker_email || '';
 
   return (
     <div
@@ -68,7 +68,7 @@ export const LoadDetailsModal: React.FC<LoadDetailsModalProps> = ({
             <h3 className="text-xl font-display font-bold text-slate-900">
               Load Details &amp; Broker Contact
             </h3>
-            <p className="text-xs text-slate-500 mt-1">Verified Spot Freight Corridor</p>
+            <p className="text-xs text-slate-500 mt-1">Posted spot freight</p>
           </div>
           <button
             type="button"
@@ -88,7 +88,7 @@ export const LoadDetailsModal: React.FC<LoadDetailsModalProps> = ({
                 Load #{load.id}
               </span>
               <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                {load.days_to_pay || '18 days'} DTP · A+
+                {load.broker_fmcsa === 'ok' ? 'FMCSA authority active' : load.broker_fmcsa === 'block' ? 'Broker failed FMCSA check' : 'FMCSA not checked yet'}
               </span>
             </div>
 
@@ -109,34 +109,35 @@ export const LoadDetailsModal: React.FC<LoadDetailsModalProps> = ({
           {/* Direct Broker Contact */}
           <div className="p-5 mb-6 rounded-xl bg-blue-50/70 border border-blue-200">
             <div className="text-xs font-extrabold uppercase tracking-wider text-blue-900 mb-1">
-              Verified Brokerage Contact
+              Broker Contact
             </div>
             <div className="text-base font-extrabold text-slate-900">
-              {bName} {isSubscriber ? `(${bMc})` : '(MC-••••••)'}
+              {bName} {bMc ? (isSubscriber ? `(${bMc})` : '(MC-••••••)') : '(MC not listed)'}
             </div>
 
             {isSubscriber ? (
               <div className="flex flex-wrap gap-2.5 mt-3">
-                <a
+                {bPhone && <a
                   href={`tel:${bPhone.replace(/[^0-9+]/g, '')}`}
                   className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all"
                 >
                   📞 Call: {bPhone}
-                </a>
-                <a
+                </a>}
+                {bEmail && <a
                   href={`mailto:${bEmail}?subject=Inquiry%20regarding%20Load%20${load.id}`}
                   className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-all"
                 >
                   ✉️ Email: {bEmail}
-                </a>
-                {onOpenBrokerCredit && (
+                </a>}
+                {!bPhone && !bEmail && <span className="text-xs text-slate-600">No broker phone or email on this post.</span>}
+                {onOpenBrokerCredit && bMc && (
                   <button
                     type="button"
                     onClick={() => onOpenBrokerCredit(bMc)}
                     className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg text-xs font-bold transition-all"
-                    title="Check Live Broker Credit & Bond"
+                    title="Check the broker's FMCSA authority"
                   >
-                    🛡️ Credit: A+ (98)
+                    🛡️ Check broker on FMCSA
                   </button>
                 )}
               </div>
@@ -276,7 +277,7 @@ export const LoadDetailsModal: React.FC<LoadDetailsModalProps> = ({
           {/* Rate Confirmation PDF & Carrier Pass */}
           {isSubscriber ? (
             <a
-              href={`/api/loadboard/loads/${encodeURIComponent(load.id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${counterRate || load.rate || 2850}&miles=${load.miles || 650}&rpm=${load.rpm || 3.15}&equipment=${encodeURIComponent(load.equipment_type || "53' Dry Van")}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(bMc)}&phone=${encodeURIComponent(bPhone)}&email=${encodeURIComponent(bEmail)}&carrier_mc=${encodeURIComponent(carrierMc)}&carrier_phone=${encodeURIComponent(carrierPhone)}`}
+              href={`/api/loadboard/loads/${encodeURIComponent(load.id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${counterRate || load.rate || 0}&miles=${load.miles || 0}&rpm=${load.rpm || 0}&equipment=${encodeURIComponent(load.equipment_type || "53' Dry Van")}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(bMc)}&phone=${encodeURIComponent(bPhone)}&email=${encodeURIComponent(bEmail)}&carrier_mc=${encodeURIComponent(carrierMc)}&carrier_phone=${encodeURIComponent(carrierPhone)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full mb-3 py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all text-center flex items-center justify-center gap-2 border border-slate-700 hover:shadow-md"

@@ -450,7 +450,9 @@ router.all('/twilio-inbound', async (req, res) => {
             const request = await requestBrokerBooking(pool, offer, { via: 'SMS' });
             reply = request.sent
               ? `${COMPANY.name}: Offer #${offer.id} (${offer.pickup_location} → ${offer.delivery_location}) approved. We asked the broker to confirm at $${request.rate}. Do not roll until we text BOOKED.`
-              : `${COMPANY.name}: Offer #${offer.id} approved. A dispatcher will confirm it with the broker and text you.`;
+              : request.status === 'blocked'
+                ? `${COMPANY.name}: Offer #${offer.id} approved, but we did not contact the broker. ${request.reason}`
+                : `${COMPANY.name}: Offer #${offer.id} approved. A dispatcher will confirm it with the broker and text you.`;
             disposition = 'driver_load_approval';
           }
         } catch (err) {

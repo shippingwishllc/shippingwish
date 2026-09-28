@@ -429,17 +429,18 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 ) : (
                   visibleLoads.map((load, index) => {
                     const id = load.id || load.load_number || `SW-${2600 + index}`;
-                    const origin = load.origin || load.pickup_location || 'Chicago, IL';
-                    const dest = load.destination || load.delivery_location || 'Dallas, TX';
-                    const miles = load.miles ? `${load.miles} mi` : '650 mi';
-                    const rpmVal = parseFloat(String(load.rpm || 3.10));
+                    const origin = load.origin || load.pickup_location || '—';
+                    const dest = load.destination || load.delivery_location || '—';
+                    const miles = load.miles ? `${load.miles} mi` : 'Miles n/a';
+                    const rpmVal = Number(load.rpm) || 0;
+                    const rpmText = rpmVal ? `$${rpmVal.toFixed(2)}/mi` : 'RPM n/a';
                     const isHighRpm = rpmVal >= 3.30;
-                    const rateFormatted = load.rate ? `$${Number(load.rate).toLocaleString()}` : '$2,450';
+                    const rateFormatted = load.rate ? `$${Number(load.rate).toLocaleString()}` : 'Rate n/a';
                     const equip = load.equipment_type || load.equipment || "53' Dry Van";
-                    const weight = load.weight ? (typeof load.weight === 'number' ? `${load.weight.toLocaleString()} lbs` : load.weight) : '42,000 lbs';
-                    const puDate = load.pickup_date || 'Today';
-                    const bName = load.broker_name || 'Verified Freight Broker';
-                    const dtp = load.days_to_pay || '18 days';
+                    const weight = load.weight ? (typeof load.weight === 'number' ? `${load.weight.toLocaleString()} lbs` : load.weight) : 'Weight n/a';
+                    const puDate = load.pickup_date || 'Date open';
+                    const bName = load.broker_name || 'Broker not named';
+                    const dtp = load.days_to_pay ? `${load.days_to_pay} DTP` : 'DTP unknown';
                     const isLive = load.is_live_broker_post;
 
                     const isAlertMatched = isMatchAlert(load);
@@ -475,10 +476,8 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                               <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">
                                 ⚡ LIVE BROKER
                               </span>
-                            ) : index === 0 ? (
-                              'Just now'
                             ) : (
-                              `${index * 4 + 2}m ago`
+                              load.posted_age || ''
                             )}
                           </div>
                         </td>
@@ -516,7 +515,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                                   : 'bg-blue-50 text-blue-700'
                               }`}
                             >
-                              ${rpmVal.toFixed(2)} / mi
+                              {rpmText}
                             </span>
                           </div>
                         </td>
@@ -544,10 +543,10 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                           <div className="font-bold text-slate-900 truncate max-w-[150px]">{bName}</div>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[10px] font-extrabold px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">
-                              {dtp} DTP
+                              {dtp}
                             </span>
                             <span className="text-[10px] font-bold px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded">
-                              Bond Active
+                              {load.broker_fmcsa === 'ok' ? 'FMCSA active' : load.broker_fmcsa === 'block' ? 'FMCSA failed' : 'FMCSA not checked'}
                             </span>
                           </div>
                         </td>
@@ -562,7 +561,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                             ) : (
                               <>
                                 <a
-                                  href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 2850}&miles=${load.miles || 650}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
+                                  href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 0}&miles=${load.miles || 0}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   title="Download Official Rate Confirmation PDF"
@@ -654,17 +653,18 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
             ) : (
               visibleLoads.map((load, index) => {
                 const id = load.id || load.load_number || `SW-${2600 + index}`;
-                const origin = load.origin || load.pickup_location || 'Chicago, IL';
-                const dest = load.destination || load.delivery_location || 'Dallas, TX';
-                const miles = load.miles ? `${load.miles} mi` : '650 mi';
-                const rpmVal = parseFloat(String(load.rpm || 3.10));
+                const origin = load.origin || load.pickup_location || '—';
+                const dest = load.destination || load.delivery_location || '—';
+                const miles = load.miles ? `${load.miles} mi` : 'Miles n/a';
+                const rpmVal = Number(load.rpm) || 0;
+                const rpmText = rpmVal ? `$${rpmVal.toFixed(2)}/mi` : 'RPM n/a';
                 const isHighRpm = rpmVal >= 3.30;
-                const rateFormatted = load.rate ? `$${Number(load.rate).toLocaleString()}` : '$2,450';
+                const rateFormatted = load.rate ? `$${Number(load.rate).toLocaleString()}` : 'Rate n/a';
                 const equip = load.equipment_type || load.equipment || "53' Dry Van";
-                const weight = load.weight ? (typeof load.weight === 'number' ? `${load.weight.toLocaleString()} lbs` : load.weight) : '42,000 lbs';
-                const puDate = load.pickup_date || 'Today';
-                const bName = load.broker_name || 'Verified Freight Broker';
-                const dtp = load.days_to_pay || '18 days';
+                const weight = load.weight ? (typeof load.weight === 'number' ? `${load.weight.toLocaleString()} lbs` : load.weight) : 'Weight n/a';
+                const puDate = load.pickup_date || 'Date open';
+                const bName = load.broker_name || 'Broker not named';
+                const dtp = load.days_to_pay ? `${load.days_to_pay} DTP` : 'DTP unknown';
                 const isCovered = Boolean(coveredMap[id]);
                 const isRowBlurred = !isSubscriber && index >= 3;
 
@@ -689,7 +689,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                           </span>
                         ) : (
                           <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
-                            {index === 0 ? 'Just now' : `${index * 4 + 2}m ago`}
+                            {load.posted_age || 'Posted'}
                           </span>
                         )}
                       </div>
@@ -709,7 +709,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                         <span>{miles}</span>
                         <span>·</span>
                         <span className={`px-1.5 py-0.2 rounded text-[10px] ${isHighRpm ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
-                          ${rpmVal.toFixed(2)}/mi
+                          {rpmText}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
@@ -727,7 +727,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                       <div className="text-right">
                         <div className="text-xs font-bold text-slate-800 truncate max-w-[130px]">{bName}</div>
                         <span className="inline-block text-[10px] font-extrabold px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded mt-0.5">
-                          {dtp} DTP
+                          {dtp}
                         </span>
                       </div>
                     </div>
@@ -743,7 +743,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                           ⚡ Book Load
                         </button>
                         <a
-                          href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 2850}&miles=${load.miles || 650}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
+                          href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 0}&miles=${load.miles || 0}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 transition-all text-center"

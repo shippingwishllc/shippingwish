@@ -6,6 +6,7 @@ const {
   STATE_CENTERS, STATE_NAMES, REGIONS, AMBIGUOUS_CODES, KNOWN_CITIES,
   milesBetween, roadMiles, stateOf, stateCenter, parsePlace, placeLabel, geocode
 } = require('./geo');
+const { checkBrokerAuthority, cachedBlockedKeys, keyFor, summarize: summarizeAuthority } = require('./broker-authority');
 
 const OFFER_TTL_HOURS = 3;
 const MAX_OUTBOUND_PER_DAY = 12;
@@ -234,9 +235,12 @@ async function findMatches(carrier, { origin, destination, equipment, excludeLoa
     [excludeLoadIds.map(Number).filter(Number.isFinite), CANDIDATE_LIMIT]
   );
 
-  const reasons = { equipment: 0, too_far: 0, below_min_rpm: 0, avoided_state: 0 };
+  const reasons = { equipment: 0, too_far: 0, below_min_rpm: 0, avoided_state: 0, broker_failed_fmcsa: 0 };
+  const blocked = await cachedBlockedKeys().catch(() => new Set());
   const rough = [];
   for (const load of rows) {
+    const brokerKey = keyFor({ mc: load.broker_mc });
+    if (brokerKey && blocked.has(brokerKey)) { reasons.broker_failed_fmcsa++; continue; }
     const pState = (load.pickup_state || stateOf(load.pickup_location) || '').toUpperCase().trim();
     const dState = (load.delivery_state || stateOf(load.delivery_location) || '').toUpperCase().trim();
     const loadKind = equipmentKind(load.equipment_type);
@@ -405,6 +409,22 @@ async function requestBooking(carrier, offer) {
   }
 
   const brokerEmail = brokerEmailOf(load);
+  const brokerCheck = await checkBrokerAuthority({ mc: load.broker_mc, contactEmail: brokerEmail, contactPhone: brokerPhoneOf(load) })
+    .catch(() => ({ verdict: 'unknown', flags: [{ level: 'caution', code: 'check_failed', text: 'The FMCSA check failed. Check SAFER before booking.' }] }));
+  const brokerNote = summarizeAuthority(brokerCheck);
+  if (brokerCheck.verdict === 'block') {
+    await pool.query(
+      `UPDATE ai_dispatch_offers SET status = 'declined', note = $2, broker_authority = $3::jsonb, updated_at = now() WHERE id = $1`,
+      [offer.id, `Not requested. ${brokerNote}`.slice(0, 500), JSON.stringify(brokerCheck)]
+    );
+    await notify(
+      `Skipped ${load.load_number}: broker failed FMCSA check`,
+      `${load.broker_name || 'Broker'} ${load.broker_mc || ''} — ${brokerNote} ${carrier.company_name} asked for it; no email was sent.`,
+      'warning'
+    );
+    return { taken: false, blocked: true, load, note: brokerNote };
+  }
+
   const authority = [carrier.mc_number ? `MC ${carrier.mc_number}` : null, carrier.dot_number ? `USDOT ${carrier.dot_number}` : null].filter(Boolean).join(' / ');
   let note;
   if (brokerEmail && authority) {
@@ -443,10 +463,11 @@ async function requestBooking(carrier, offer) {
   } else {
     note = `No broker email; call ${brokerPhoneOf(load) || load.broker_name || 'the broker'}`;
   }
+  if (brokerCheck.verdict !== 'ok') note = `${note}. ${brokerNote}`;
 
   await pool.query(
-    `UPDATE ai_dispatch_offers SET status = 'requested', requested_at = now(), broker_email = $2, note = $3, updated_at = now() WHERE id = $1`,
-    [offer.id, brokerEmail, note]
+    `UPDATE ai_dispatch_offers SET status = 'requested', requested_at = now(), broker_email = $2, note = $3, broker_authority = $4::jsonb, updated_at = now() WHERE id = $1`,
+    [offer.id, brokerEmail, note.slice(0, 500), JSON.stringify(brokerCheck)]
   );
   await pool.query(
     `UPDATE ai_dispatch_offers SET status = 'expired', updated_at = now() WHERE carrier_id = $1 AND status = 'offered' AND id <> $2`,
@@ -454,8 +475,8 @@ async function requestBooking(carrier, offer) {
   );
   await notify(
     `Carrier wants ${load.load_number}: ${carrier.company_name}`,
-    `${load.pickup_location} → ${load.delivery_location} ${money(load.rate)}. ${note}.`,
-    'success'
+    `${load.pickup_location} → ${load.delivery_location} ${money(load.rate)}. ${note}`,
+    brokerCheck.verdict === 'ok' ? 'success' : 'warning'
   );
   return { taken: false, load, note };
 }
@@ -523,6 +544,11 @@ async function handleCarrierSms(fromPhone, body) {
         const fresh = origin ? await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier), excludeLoadIds: [offer.load_id] }) : null;
         reply = `Load ${result.load ? result.load.load_number : ''} was just taken.` + (fresh && fresh.offers.length ? `\n${fresh.reply}` : ' Text your ZIP for more.');
         action = 'book_taken';
+      } else if (result.blocked) {
+        const origin = await latestOrigin(carrier);
+        const fresh = origin ? await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier), excludeLoadIds: [...await shownLoadIds(carrier.id), offer.load_id] }) : null;
+        reply = `Shipping Wish: We won't request ${result.load.load_number}. That broker did not pass our FMCSA authority check.` + (fresh && fresh.offers.length ? `\n${fresh.reply}` : ' Text your ZIP for other loads.');
+        action = 'book_blocked';
       } else {
         reply = `Shipping Wish: Requesting ${result.load.load_number} (${result.load.pickup_location} → ${result.load.delivery_location}, ${money(result.load.rate)}) from the broker now. Do not roll until we text BOOKED with the rate confirmation.`;
         action = 'book_requested';
@@ -611,12 +637,20 @@ async function loadOffer(offerId) {
   return rows[0] || null;
 }
 
-async function markBooked(offerId, staffNote) {
+async function markBooked(offerId, staffNote, { force = false } = {}) {
   await ensureBoardSchema();
   const offer = await loadOffer(offerId);
   if (!offer) return null;
   if (!offer.load) throw new Error('The load for this offer no longer exists.');
   if (!['requested', 'offered'].includes(offer.status)) throw new Error(`This offer is already ${offer.status}.`);
+  if (!force && offer.ratecon && offer.ratecon.status === 'mismatch') {
+    const err = new Error(`The rate confirmation does not match: ${(offer.ratecon.issues || []).join(' ')}`);
+    err.code = 'RATECON_MISMATCH';
+    throw err;
+  }
+  if (offer.ratecon && offer.ratecon.status === 'mismatch') {
+    staffNote = [staffNote, 'booked over a rate confirmation mismatch'].filter(Boolean).join('; ');
+  }
   const load = offer.load;
   await pool.query(
     `UPDATE loads SET status = 'booked', updated_at = now(),
@@ -667,7 +701,7 @@ function classifyBrokerReply(text) {
   return 'question';
 }
 
-async function handleBrokerBookingReply({ fromEmail, subject, bodyText }) {
+async function handleBrokerBookingReply({ fromEmail, subject, bodyText, resendId, attachments }) {
   const m = String(subject || '').match(/\[SWD-(\d+)\]/i);
   if (!m) return null;
   await ensureBoardSchema();
@@ -686,8 +720,27 @@ async function handleBrokerBookingReply({ fromEmail, subject, bodyText }) {
     return { offer: offer.id, action: 'declined' };
   }
   if (kind === 'confirmed') {
-    await notify(`Broker confirmed ${loadNumber} for ${offer.carrier.company_name}`, 'Check the rate confirmation, then press Booked on the AI dispatch desk.', 'success');
-    return { offer: offer.id, action: 'confirmed' };
+    const load = offer.load || {};
+    const ratecon = await require('./ratecon-reader').checkRateCon({
+      resendId,
+      attachments,
+      bodyText,
+      expected: {
+        rate: load.rate,
+        carrierMc: offer.carrier.mc_number,
+        carrierDot: offer.carrier.dot_number,
+        pickup: load.pickup_location,
+        delivery: load.delivery_location
+      }
+    }).catch((err) => ({ status: 'unreadable', issues: [`Could not read it: ${err.message}`], checks: [] }));
+    await pool.query('UPDATE ai_dispatch_offers SET ratecon = $2::jsonb, updated_at = now() WHERE id = $1', [offer.id, JSON.stringify(ratecon)]);
+    const message = ratecon.status === 'match'
+      ? `Rate confirmation matches (${ratecon.checks.join(' ')}). Press Booked on the AI dispatch desk.`
+      : ratecon.status === 'mismatch'
+        ? `Rate confirmation does not match: ${ratecon.issues.join(' ')} Fix it with the broker before booking.`
+        : 'No readable rate confirmation came with the reply. Get it before pressing Booked.';
+    await notify(`Broker confirmed ${loadNumber} for ${offer.carrier.company_name}`, message, ratecon.status === 'match' ? 'success' : 'warning');
+    return { offer: offer.id, action: 'confirmed', ratecon: ratecon.status };
   }
   await notify(`Broker question on ${loadNumber}`, String(bodyText || '').slice(0, 160), 'warning', '/inbox.html');
   return { offer: offer.id, action: 'question' };
@@ -755,7 +808,7 @@ async function listOffers(limit = 50) {
   await ensureBoardSchema();
   const { rows } = await pool.query(
     `SELECT o.id, o.status, o.slot, o.deadhead_miles, o.loaded_miles, o.miles_estimated, o.all_in_rpm, o.note, o.broker_email,
-            o.broker_reply, o.requested_at, o.created_at, o.updated_at,
+            o.broker_reply, o.requested_at, o.created_at, o.updated_at, o.ratecon, o.broker_authority,
             c.id AS carrier_id, c.company_name, c.phone, c.mc_number,
             l.load_number, l.pickup_location, l.delivery_location, l.rate, l.pickup_date, l.broker_name, l.broker_contact
        FROM ai_dispatch_offers o
@@ -790,6 +843,7 @@ module.exports = {
   handleCarrierSms,
   handleBrokerBookingReply,
   classifyBrokerReply,
+  withoutQuotedEmail,
   markBooked,
   releaseOffer,
   sendLoadsNow,
