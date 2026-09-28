@@ -206,7 +206,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
               <div className="flex items-center gap-2 mt-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 radar-pulse-dot"></span>
                 <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  4,850+ Live Verified Loads
+                  {loads.length ? `${loads.length} posted load${loads.length === 1 ? '' : 's'}` : 'No posted loads yet'}
                 </span>
                 <span className="text-xs text-slate-500 hidden sm:inline">
                   · {lastRefreshedAt ? `Auto-synced ${lastRefreshedAt.toLocaleTimeString()}` : 'Updated live in real-time'}
@@ -604,10 +604,10 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                     🔒
                   </div>
                   <h3 className="text-xl sm:text-2xl font-display font-extrabold text-slate-900 tracking-tight">
-                    Unlock 4,850+ Live Loads &amp; Direct Contacts
+                    Unlock posted loads &amp; direct contacts
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
-                    Direct broker dispatch phone numbers, MC verification, Days-To-Pay credit scores, and instant 1-click RateCon booking are locked. Join 50,000+ carriers on LoadsNexus™.
+                    Direct broker dispatch phone numbers and FMCSA checks are locked for guests. Subscribe to see contacts on posted loads.
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
@@ -765,7 +765,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                     🔒
                   </div>
                   <h4 className="text-sm font-extrabold text-slate-900">
-                    Unlock 4,850+ Live Loads
+                    Unlock posted loads &amp; Direct Contacts
                   </h4>
                   <p className="text-[11px] text-slate-600 mt-1 mb-3.5 leading-relaxed">
                     Direct broker phone numbers and 1-click RateCon booking are locked.
@@ -802,14 +802,14 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
               ) : (
                 <div className="flex items-center gap-3">
                   <span className="font-semibold text-slate-600">
-                    Showing 3 live preview loads of 4,850+ active spot loads
+                    Showing {Math.min(3, visibleLoads.length)} preview load{Math.min(3, visibleLoads.length) === 1 ? '' : 's'} of {loads.length} posted
                   </span>
                   <button
                     type="button"
                     onClick={onOpenCarrierCheckout}
                     className="text-blue-600 font-bold hover:underline"
                   >
-                    Unlock All 4,850+ Loads ($19/mo) →
+                    Unlock posted loads ($19/mo) →
                   </button>
                 </div>
               )}

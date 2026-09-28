@@ -21,7 +21,7 @@ export const CtaBanner: React.FC<CtaBannerProps> = ({
         </h2>
 
         <p className="mt-4 text-sm md:text-base text-slate-400 max-w-xl mx-auto mb-8">
-          Join over 50,000 carrier owners and logistics coordinators across North America.
+          Search posted loads or post freight as a broker.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4">

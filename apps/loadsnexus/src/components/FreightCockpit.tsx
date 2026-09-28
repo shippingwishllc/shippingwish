@@ -418,8 +418,10 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
   const [capEquip, setCapEquip] = useState('all');
   const [capacityTrucks, setCapacityTrucks] = useState<CapacityTruck[]>(SAMPLE_CAPACITY_TRUCKS);
 
-  // Vetting Desk State
-  const [vettingMc, setVettingMc] = useState('MC-1094821');
+  // Vetting Desk State — empty until an FMCSA census lookup returns
+  const [vettingMc, setVettingMc] = useState('');
+  const [vettingLoading, setVettingLoading] = useState(false);
+  const [vettingError, setVettingError] = useState('');
   const [vettingResult, setVettingResult] = useState<{
     carrierName: string;
     mc: string;
@@ -434,21 +436,12 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
     doubleBrokerRisk: string;
     address: string;
     verified: boolean;
-  }>({
-    carrierName: 'Apex Global Freight LLC',
-    mc: 'MC-1094821',
-    dot: 'USDOT #3892011',
-    authorityStatus: 'ACTIVE — Authorized For Common & Contract Property',
-    authorityAge: '6 Years in Continuous Operation (Est. 2019)',
-    autoLiability: '$1,000,000 Active (Great American Insurance Co #PAC-918204)',
-    cargoInsurance: '$150,000 Active (Travelers Property Casualty #CRG-88210)',
-    safetyRating: 'SATISFACTORY (FMCSA Gold Standard)',
-    vehicleOosRate: '11.4% (National Avg: 21.4% — Superior)',
-    driverOosRate: '1.2% (National Avg: 5.8% — Superior)',
-    doubleBrokerRisk: '🟢 LOW RISK — Verified Asset-Based Carrier (0 Fraud Complaints)',
-    address: '1200 S Michigan Ave, Chicago, IL 60605',
-    verified: true,
-  });
+    verdict: string;
+    about: string;
+    bondStatus: string;
+    daysToPay: string;
+    creditRating: string;
+  } | null>(null);
 
   // Rate Intelligence Calculator State
   const [calcOrigin, setCalcOrigin] = useState('Chicago, IL');
@@ -734,45 +727,60 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
     window.location.href = '/';
   };
 
-  const handlePerformVetting = (e?: React.FormEvent) => {
+  const handlePerformVetting = async (e?: React.FormEvent, mcOverride?: string) => {
     if (e) e.preventDefault();
-    const query = (vettingMc || '').toUpperCase().trim();
+    const query = (mcOverride || vettingMc || '').toUpperCase().trim();
     if (!query) return;
-
-    if (query.includes('847291')) {
+    if (mcOverride) setVettingMc(mcOverride);
+    setVettingLoading(true);
+    setVettingError('');
+    setVettingResult(null);
+    try {
+      const res = await fetch(`/api/brokers/credit-check/${encodeURIComponent(query)}`, { credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setVettingError(data.error || 'FMCSA lookup failed.');
+        showToast(data.error || 'FMCSA lookup failed.');
+        return;
+      }
+      const days = data.fmcsaCheck?.authorityAgeDays;
+      const years = days != null ? Math.floor(Number(days) / 365) : null;
+      const age = data.addDate
+        ? `FMCSA add date ${data.addDate}${years != null ? ` (${years ? `${years} year${years === 1 ? '' : 's'}` : 'under a year'} ago)` : ''}`
+        : 'Add date not listed on the census';
+      const dtp = data.daysToPay != null
+        ? `${data.daysToPay} days (${data.dtpSource === 'internal' ? `${data.paidLoadCount || 0} paid loads with us` : data.dtpSource || 'sourced'})`
+        : 'n/a — no paid-load history or credit feed for this docket';
       setVettingResult({
-        carrierName: 'Eagle Express Transport Inc',
-        mc: 'MC-847291',
-        dot: 'USDOT #2981044',
-        authorityStatus: 'ACTIVE — Authorized For Common Property',
-        authorityAge: '4 Years 2 Months (Est. 2021)',
-        autoLiability: '$1,000,000 Active (Progressive Commercial #PL-892110)',
-        cargoInsurance: '$100,000 Active (Hartford Fire Insurance #C-449102)',
-        safetyRating: 'SATISFACTORY',
-        vehicleOosRate: '14.2% (National Avg: 21.4%)',
-        driverOosRate: '2.1% (National Avg: 5.8%)',
-        doubleBrokerRisk: '🟢 LOW RISK — Verified Asset Carrier',
-        address: '450 Joliet Rd, Joliet, IL 60431',
-        verified: true,
+        carrierName: data.companyName || 'Unknown',
+        mc: data.mcNumber || query,
+        dot: data.dotNumber ? `USDOT #${data.dotNumber}` : 'USDOT not listed',
+        authorityStatus: data.authorityStatus || data.riskLevel || 'See FMCSA census',
+        authorityAge: age,
+        autoLiability: 'Not in the FMCSA census. Confirm BMC-91 on SAFER.',
+        cargoInsurance: 'Not in the FMCSA census. Confirm cargo coverage with the carrier.',
+        safetyRating: 'Not in this lookup. Check the SAFER snapshot for the current rating.',
+        vehicleOosRate: 'n/a',
+        driverOosRate: 'n/a',
+        doubleBrokerRisk: data.isBroker
+          ? 'FMCSA lists broker authority on this docket — confirm they are not re-brokering this freight.'
+          : 'FMCSA does not list broker on this docket.',
+        address: data.address || data.cityState || 'Address not listed',
+        verified: Boolean(data.usdotActive) && data.fmcsaCheck?.verdict !== 'block',
+        verdict: data.fmcsaCheck?.verdict || (data.usdotActive ? 'ok' : 'unknown'),
+        about: data.aboutBroker || data.entityNote || '',
+        bondStatus: data.bondStatus || 'Bond not in our feed. Confirm BMC-84/85 on SAFER.',
+        daysToPay: dtp,
+        creditRating: data.creditScore != null
+          ? `${data.creditRating || data.creditScore} (${data.creditSource})`
+          : (data.creditRating && data.creditRating !== 'N/A' ? `${data.creditRating} (${data.creditSource || 'directory'})` : 'n/a — no credit source returned a score'),
       });
-      showToast(`Vetting Report generated for ${query}: Active & Compliant`);
-    } else {
-      setVettingResult({
-        carrierName: 'Apex Global Freight LLC',
-        mc: query.startsWith('MC-') ? query : `MC-${query}`,
-        dot: 'USDOT #3892011',
-        authorityStatus: 'ACTIVE — Authorized For Common & Contract Property',
-        authorityAge: '6 Years in Continuous Operation (Est. 2019)',
-        autoLiability: '$1,000,000 Active (Great American Insurance Co #PAC-918204)',
-        cargoInsurance: '$150,000 Active (Travelers Property Casualty #CRG-88210)',
-        safetyRating: 'SATISFACTORY (FMCSA Gold Standard)',
-        vehicleOosRate: '11.4% (National Avg: 21.4% — Superior)',
-        driverOosRate: '1.2% (National Avg: 5.8% — Superior)',
-        doubleBrokerRisk: '🟢 LOW RISK — Verified Asset-Based Carrier (0 Fraud Complaints)',
-        address: '1200 S Michigan Ave, Chicago, IL 60605',
-        verified: true,
-      });
-      showToast(`FMCSA & BMC-84 records verified for ${query}`);
+      showToast(`FMCSA census loaded for ${data.mcNumber || query}`);
+    } catch {
+      setVettingError('Network error looking up FMCSA.');
+      showToast('Network error looking up FMCSA.');
+    } finally {
+      setVettingLoading(false);
     }
   };
 
@@ -1177,7 +1185,7 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
                 <span>🔎</span>
                 <span>Live Spot Board</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950">
-                  4,850+ Live
+                  Live
                 </span>
               </button>
 
@@ -1283,7 +1291,7 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
               <div className={`rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
                 <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>Live Spot Loads</span>
                 <div className={`text-xl font-black mt-1 flex items-baseline gap-1.5 ${textTitle}`}>
-                  <span>4,850+</span>
+                  <span>—</span>
                   <span className="text-[11px] font-semibold text-emerald-600">Real-Time</span>
                 </div>
               </div>
@@ -2009,9 +2017,8 @@ print(response.json()) # Returns: {"ok": true, "load_id": "SW-109281", "status":
                     <button
                       type="button"
                       onClick={() => {
-                        setVettingMc(truck.mc_number);
                         setActiveTab('carrier-vetting');
-                        handlePerformVetting();
+                        handlePerformVetting(undefined, truck.mc_number);
                       }}
                       className="text-xs font-bold text-blue-600 hover:text-blue-500 transition-colors"
                     >
@@ -2033,7 +2040,7 @@ print(response.json()) # Returns: {"ok": true, "load_id": "SW-109281", "status":
                 <span>FMCSA Operating Authority &amp; Anti-Double-Brokering Guard</span>
               </div>
               <p className={`text-xs mb-4 ${textSub}`}>
-                Instant verification against FMCSA registry, $1M BMC-91X primary auto liability, $100k cargo, and unauthorized re-broker risk scoring.
+                Looks up the FMCSA census for this MC or USDOT. Insurance policy numbers, safety ratings, and OOS rates are not in that feed — we show n/a instead of inventing them.
               </p>
 
               <form onSubmit={handlePerformVetting} className="flex gap-3">
@@ -2041,16 +2048,20 @@ print(response.json()) # Returns: {"ok": true, "load_id": "SW-109281", "status":
                   type="text"
                   value={vettingMc}
                   onChange={(e) => setVettingMc(e.target.value)}
-                  placeholder="Enter Carrier MC# or USDOT# (e.g. MC-1094821)"
+                  placeholder="Enter MC# or USDOT#"
                   className={`flex-1 rounded-xl px-4 py-2.5 font-mono text-xs outline-none ${inputBg}`}
                 />
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/30 transition-all"
+                  disabled={vettingLoading}
+                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/30 transition-all"
                 >
-                  Verify Authority →
+                  {vettingLoading ? 'Looking up…' : 'Look up FMCSA →'}
                 </button>
               </form>
+              {vettingError && (
+                <p className="text-xs text-rose-600 mt-3">{vettingError}</p>
+              )}
             </div>
 
             {vettingResult && (
@@ -2059,62 +2070,61 @@ print(response.json()) # Returns: {"ok": true, "load_id": "SW-109281", "status":
                   <div>
                     <div className="flex items-center gap-2.5">
                       <h3 className={`text-xl font-bold ${textTitle}`}>{vettingResult.carrierName}</h3>
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase bg-emerald-100 border border-emerald-300 text-emerald-800">
-                        Active &amp; Authorized
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase border ${
+                        vettingResult.verdict === 'block'
+                          ? 'bg-rose-100 border-rose-300 text-rose-800'
+                          : vettingResult.verdict === 'caution'
+                            ? 'bg-amber-100 border-amber-300 text-amber-800'
+                            : vettingResult.verified
+                              ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                              : 'bg-slate-100 border-slate-300 text-slate-700'
+                      }`}>
+                        {vettingResult.verdict === 'block' ? 'Do not book' : vettingResult.verdict === 'caution' ? 'Check flags' : vettingResult.verified ? 'USDOT active' : 'See census'}
                       </span>
                     </div>
                     <div className={`text-xs mt-1 font-mono ${textSub}`}>
                       {vettingResult.mc} · {vettingResult.dot} · {vettingResult.address}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => showToast('Official FMCSA Vetting Certificate downloaded.')}
-                      className={`px-3.5 py-2 border rounded-xl text-xs font-bold transition-colors ${
-                        isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
-                      }`}
-                    >
-                      📄 Export Packet (PDF)
-                    </button>
+                    {vettingResult.about && (
+                      <p className={`text-xs mt-2 max-w-2xl ${textSub}`}>{vettingResult.about}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                   <div className={`p-4 rounded-xl space-y-2 ${innerCardBg}`}>
                     <span className={`text-[11px] font-bold uppercase tracking-wider block ${textSub}`}>FMCSA Authority</span>
-                    <strong className="text-emerald-600 block text-sm">{vettingResult.authorityStatus}</strong>
+                    <strong className={`block text-sm ${vettingResult.verdict === 'block' ? 'text-rose-600' : textTitle}`}>{vettingResult.authorityStatus}</strong>
                     <div className={`text-[11px] ${textSub}`}>{vettingResult.authorityAge}</div>
                   </div>
 
                   <div className={`p-4 rounded-xl space-y-2 ${innerCardBg}`}>
-                    <span className={`text-[11px] font-bold uppercase tracking-wider block ${textSub}`}>Auto Liability Insurance</span>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider block ${textSub}`}>Bond / BMC-84</span>
+                    <strong className={`block text-sm ${textTitle}`}>{vettingResult.bondStatus}</strong>
+                    <div className={`text-[11px] ${textSub}`}>Confirm on SAFER if not in our feed.</div>
+                  </div>
+
+                  <div className={`p-4 rounded-xl space-y-2 ${innerCardBg}`}>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider block ${textSub}`}>Days-To-Pay</span>
+                    <strong className={`block text-sm ${textTitle}`}>{vettingResult.daysToPay}</strong>
+                    <div className={`text-[11px] ${textSub}`}>{vettingResult.creditRating}</div>
+                  </div>
+
+                  <div className={`p-4 rounded-xl space-y-2 ${innerCardBg}`}>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider block ${textSub}`}>Auto Liability</span>
                     <strong className={`block text-sm ${textTitle}`}>{vettingResult.autoLiability}</strong>
-                    <div className="text-emerald-600 text-[11px] font-bold">✓ Direct Certificate of Insurance (COI) Active</div>
                   </div>
 
                   <div className={`p-4 rounded-xl space-y-2 ${innerCardBg}`}>
                     <span className={`text-[11px] font-bold uppercase tracking-wider block ${textSub}`}>Cargo Insurance</span>
                     <strong className={`block text-sm ${textTitle}`}>{vettingResult.cargoInsurance}</strong>
-                    <div className="text-emerald-600 text-[11px] font-bold">✓ Exceeds $100,000 Industry Threshold</div>
                   </div>
 
                   <div className={`p-4 rounded-xl space-y-2 ${innerCardBg}`}>
-                    <span className={`text-[11px] font-bold uppercase tracking-wider block ${textSub}`}>FMCSA Safety Rating</span>
-                    <strong className="text-emerald-600 block text-sm">{vettingResult.safetyRating}</strong>
-                    <div className={`text-[11px] ${textSub}`}>0 Critical Violations · 0 Conditional Flags</div>
-                  </div>
-
-                  <div className={`p-4 rounded-xl space-y-2 ${innerCardBg}`}>
-                    <span className={`text-[11px] font-bold uppercase tracking-wider block ${textSub}`}>Out-of-Service (OOS) Rates</span>
-                    <div className={`font-bold ${textTitle}`}>{vettingResult.vehicleOosRate}</div>
-                    <div className={`font-bold ${textTitle}`}>{vettingResult.driverOosRate}</div>
-                  </div>
-
-                  <div className={`p-4 rounded-xl space-y-2 ${innerCardBg}`}>
-                    <span className={`text-[11px] font-bold uppercase tracking-wider block ${textSub}`}>Double-Brokering Risk Guard</span>
-                    <strong className="text-emerald-600 block text-sm">{vettingResult.doubleBrokerRisk}</strong>
-                    <div className={`text-[11px] ${textSub}`}>Physical address matches DOT filings. No re-brokering alerts.</div>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider block ${textSub}`}>Safety / OOS / Re-broker</span>
+                    <strong className={`block text-sm ${textTitle}`}>{vettingResult.safetyRating}</strong>
+                    <div className={`text-[11px] ${textSub}`}>{vettingResult.doubleBrokerRisk}</div>
+                    <div className={`text-[11px] ${textSub}`}>Vehicle OOS {vettingResult.vehicleOosRate} · Driver OOS {vettingResult.driverOosRate}</div>
                   </div>
                 </div>
               </div>

@@ -454,7 +454,7 @@ export const App: React.FC = () => {
             />
 
             {/* Corridor Rates Ticker */}
-            <CorridorTicker />
+            <CorridorTicker loads={loads} />
 
             {/* DAT One Style Live Board */}
             <LiveLoadBoard

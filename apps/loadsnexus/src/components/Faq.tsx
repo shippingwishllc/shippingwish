@@ -11,11 +11,11 @@ export const Faq: React.FC<FaqProps> = ({ onOpenCarrierCheckout, onOpenBrokerPos
   const faqs = [
     {
       q: 'How does the $19/mo Carrier Pass work?',
-      a: 'The $19/mo Carrier Pass gives motor carriers and owner-operators unlimited access to 4,850+ live spot freight loads across all 50 US states. You get direct broker dispatch phone numbers, MC verification, Days-to-Pay (DTP) credit scores, automated 1-click Rate Confirmation PDFs, and our AI Rate Negotiation Copilot. There are zero contracts, zero transaction commissions, and you can cancel anytime with 1 click.'
+      a: 'The $19/mo Carrier Pass gives motor carriers and owner-operators access to posted spot freight on LoadsNexus. You get broker contacts when they are on the post, FMCSA authority checks, and rate confirmation tools. There are no long-term contracts, and you can cancel anytime.'
     },
     {
       q: 'Is posting loads 100% Free for Freight Brokers & 3PLs?',
-      a: 'Yes, 100% free! Freight brokers and shippers can post unlimited spot freight and truckload shipments without paying listing fees. We verify your active FMCSA MC/DOT authority and BMC-84 bond to ensure our carrier roster connects exclusively with legitimate, solvent brokerages.'
+      a: 'Yes. Brokers and shippers can post without listing fees. We check the FMCSA census for active broker authority before a post goes live. Bond status is shown when the insurance feed or LoadWrap returns it; otherwise we tell you to confirm BMC-84/85 on SAFER.'
     },
     {
       q: 'How do you prevent Double-Brokering and Fraudulent loads?',
@@ -23,7 +23,7 @@ export const Faq: React.FC<FaqProps> = ({ onOpenCarrierCheckout, onOpenBrokerPos
     },
     {
       q: 'What does Days-To-Pay (DTP) mean and how is it scored?',
-      a: 'Days-To-Pay (DTP) measures the historical average number of days a broker takes to pay carriers after receiving proof of delivery (POD). A broker with 15–20 days DTP and an A+ rating indicates excellent financial health and prompt settlement, allowing carriers to book with confidence.'
+      a: 'Days-To-Pay is the average number of days a broker took to pay after POD, shown only when we have paid-load history with that broker or a connected credit feed (LoadWrap) returns it. FMCSA does not publish DTP or letter grades. If you see n/a, we do not have that data yet.'
     },
     {
       q: 'What equipment types are supported on LoadsNexus™?',
@@ -31,7 +31,7 @@ export const Faq: React.FC<FaqProps> = ({ onOpenCarrierCheckout, onOpenBrokerPos
     },
     {
       q: 'How does the AI Carrier Rate Negotiation Copilot work?',
-      a: 'Our built-in AI copilot analyzes the corridor miles, diesel fuel costs (based on current US national averages), and deadhead miles to calculate your net driver profit. It then generates an assertive phone negotiation script and a professional booking offer email to help you counter-bid brokers for top dollar (averaging 12-15% higher pay per load).'
+      a: 'The copilot uses the posted lane, miles, and rate to draft a booking email or phone script. It does not promise a higher rate, and it will not invent miles, broker credit, or market averages we do not have.'
     },
     {
       q: 'Can I cancel my carrier subscription anytime?',
@@ -90,7 +90,7 @@ export const Faq: React.FC<FaqProps> = ({ onOpenCarrierCheckout, onOpenBrokerPos
               Ready to find high-paying spot freight?
             </h3>
             <p className="text-xs sm:text-sm text-slate-300 mt-1">
-              Join 50,000+ carriers and brokers moving freight on LoadsNexus™ today.
+              Search posted loads and post freight on LoadsNexus.
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
