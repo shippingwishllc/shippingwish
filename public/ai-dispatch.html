@@ -34,11 +34,11 @@
       <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
         <h2 style="margin:0 0 8px;font-size:15px;">What the AI dispatcher does with a driver's text</h2>
         <ol style="margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.55;">
-          <li>Reads texts like “75201 to Atlanta”, “empty in Dallas TX want GA or FL reefer”, “MORE”, “RELOAD”, “ARRIVED SHIPPER”, “LOADED”, “WAITING”, or “off today”.</li>
+          <li>Reads texts like “75201 to Atlanta”, “NEED 2600”, “too cheap”, “MORE”, “RELOAD”, “ARRIVED SHIPPER”, “LOADED”, “WAITING”, or “off today”.</li>
           <li>Finds open loads within the carrier's empty-mile limit, with matching equipment and destination, above their minimum $/mile. It ranks them by all-in $/mile, counting empty miles too.</li>
           <li>Texts the best three. The driver replies 1, 2 or 3.</li>
           <li>When a broker posts a load that fits an active carrier who already consented to texts, the desk texts that load during 9am–5pm in their timezone (max 12 outbound texts per carrier per day). It does not interrupt a driver who already has an open list or a pending booking.</li>
-          <li>Emails the broker a booking request with the carrier's MC or DOT and tells the driver not to roll yet.</li>
+          <li>Emails the broker a booking request with the carrier's MC or DOT and tells the driver not to roll yet. If the driver texts NEED 2600 (or a similar dollar they named), the desk asks the broker for that amount only when it is a little above the posted rate. It does not invent a bid. A broker counter is texted back; the driver must reply YES. We never book on a counter alone.</li>
           <li>If the broker replies “covered”, the driver gets the next best loads. If the broker confirms, you check the rate confirmation and press Booked. Then the driver gets a BOOKED text and a reload hint from the delivery city. On the road they text ARRIVED SHIPPER, LOADED, WAITING, ARRIVED RECEIVER, or DELIVERED, and they send a photo of the POD. Check-calls go out during 9am–5pm if they have not written in. Detention is clocked in minutes; no dollar amount is billed unless you set a rate. They reply RELOAD when empty.</li>
         </ol>
         <p style="margin:10px 0 0;font-size:13px;color:#64748b;">Rates shown are the broker's posted rate. Miles marked ~ are estimated from ZIP and city locations. After 12 texts to one carrier in a day, the AI hands off to a person. STOP pauses the carrier.</p>
@@ -59,7 +59,7 @@
           <h2 style="margin:0;font-size:15px;">Load requests</h2>
           <button type="button" id="offers-refresh" style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;">Refresh</button>
         </div>
-        <p style="font-size:13px;color:#64748b;margin:6px 0;">Loads a driver picked are listed first. Press Booked only after you have the broker's rate confirmation. Release sends the driver the next best loads. After Booked, this list shows check-call status, waiting minutes, and POD photos. The driver texts RELOAD when empty.</p>
+        <p style="font-size:13px;color:#64748b;margin:6px 0;">Loads a driver picked are listed first. Press Booked only after you have the broker's rate confirmation. Release sends the driver the next best loads. After Booked, this list shows check-call status, waiting minutes, and POD photos. If the driver asked for a higher rate, the named dollar and any broker counter show here. The driver texts RELOAD when empty.</p>
         <p id="offers-msg" style="font-size:13px;color:#b45309;min-height:1.2em;"></p>
         <div id="offers-list" style="font-size:13px;color:#475569;">Loading…</div>
       </section>
@@ -294,6 +294,16 @@
       '<a href="/api/dispatch-desk/pods/' + esc(p.id) + '" target="_blank" rel="noopener">photo ' + esc(p.id) + '</a>'
     ).join(' · ');
   }
+  function negotiationLine(n, posted) {
+    if (!n || (!n.driver_ask && !n.broker_offer && !n.agreed)) return '';
+    const bits = [];
+    if (n.driver_ask) bits.push('driver asked $' + Math.round(n.driver_ask).toLocaleString());
+    if (n.broker_offer) bits.push('broker counter $' + Math.round(n.broker_offer).toLocaleString());
+    if (n.agreed) bits.push('driver accepted $' + Math.round(n.agreed).toLocaleString());
+    else if (n.broker_offer && !n.agreed) bits.push('waiting on driver YES');
+    const post = posted ? ' (posted $' + Math.round(posted).toLocaleString() + ')' : '';
+    return '<br><span style="color:#7c3aed;font-weight:600;">Rate ask:</span> ' + esc(bits.join(' · ') + post);
+  }
   async function loadOffers() {
     const box = document.getElementById('offers-list');
     const data = await api('/api/dispatch-desk/offers');
@@ -312,7 +322,7 @@
         ' · ' + approx + esc(o.loaded_miles) + ' mi · ' + approx + '$' + esc(Number(o.all_in_rpm || 0).toFixed(2)) + '/mi all-in · ' + approx + esc(o.deadhead_miles) + ' empty' +
         '<br>Broker: ' + esc([o.broker_name, o.broker_contact].filter(Boolean).join(' · ') || 'not listed') +
         (o.note ? '<br>' + esc(o.note) : '') + (o.broker_reply ? '<br>Broker reply: ' + esc(o.broker_reply.slice(0, 200)) : '') +
-        authorityLine(o.broker_authority) + rateconLine(o.ratecon) + reloadLine(o.reload_plan) + transitLine(o.transit) + detentionLine(o.detention) + podLine(o.pods) + '</span>' +
+        authorityLine(o.broker_authority) + rateconLine(o.ratecon) + reloadLine(o.reload_plan) + transitLine(o.transit) + detentionLine(o.detention) + podLine(o.pods) + negotiationLine(o.negotiation, o.rate) + '</span>' +
         actions + '</div>';
     }).join('');
   }

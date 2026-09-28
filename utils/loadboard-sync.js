@@ -108,6 +108,7 @@ async function createBoardSchema() {
     ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS reload_plan JSONB;
     ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS transit JSONB;
     ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS detention JSONB;
+    ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS negotiation JSONB;
     CREATE TABLE IF NOT EXISTS ai_dispatch_pods (
       id SERIAL PRIMARY KEY,
       offer_id INTEGER NOT NULL REFERENCES ai_dispatch_offers(id) ON DELETE CASCADE,
