@@ -5,6 +5,7 @@ const { sendTwilioSms } = require('./voip');
 const { logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
 const { assertPublicHttps, ensureBoardSchema, syncSource, syncDueSources } = require('../utils/loadboard-sync');
 const { isWithinTcpaHours } = require('../utils/us-timezones');
+const { parseHomeDays, formatHomeDays } = require('../utils/dispatch-home-time');
 const brain = require('../utils/dispatch-brain');
 
 const router = express.Router();
@@ -96,6 +97,7 @@ router.get('/carriers', ...staff, async (req, res) => {
   try {
     await ensureBoardSchema();
     await sendDueMorningTexts().catch(() => {});
+    await brain.sendDueEmptySoonOffers().catch(() => {});
     const { rows } = await pool.query('SELECT * FROM ai_dispatch_carriers ORDER BY created_at DESC');
     res.json({ ok: true, carriers: rows });
   } catch (err) {
@@ -113,8 +115,8 @@ router.post('/carriers', ...staff, async (req, res) => {
     const prefs = carrierPrefs(req.body);
     const { rows } = await pool.query(
       `INSERT INTO ai_dispatch_carriers (company_name, contact_name, phone, email, equipment, empty_zip, prefer_destination, sms_consent, sms_consent_at,
-         mc_number, dot_number, min_rpm, max_deadhead, home_state, avoid_states)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8, CASE WHEN $8 THEN now() ELSE NULL END, $9,$10,$11, COALESCE($12, 150), $13,$14) RETURNING *`,
+         mc_number, dot_number, min_rpm, max_deadhead, home_state, avoid_states, home_days)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8, CASE WHEN $8 THEN now() ELSE NULL END, $9,$10,$11, COALESCE($12, 150), $13,$14,$15) RETURNING *`,
       [
         company,
         String(req.body.contact_name || '').trim() || null,
@@ -124,7 +126,7 @@ router.post('/carriers', ...staff, async (req, res) => {
         String(req.body.empty_zip || '').trim() || null,
         String(req.body.prefer_destination || '').trim() || null,
         consent,
-        prefs.mc_number, prefs.dot_number, prefs.min_rpm, prefs.max_deadhead, prefs.home_state, prefs.avoid_states
+        prefs.mc_number, prefs.dot_number, prefs.min_rpm, prefs.max_deadhead, prefs.home_state, prefs.avoid_states, prefs.home_days
       ]
     );
     res.json({ ok: true, carrier: rows[0] });
@@ -144,7 +146,8 @@ function carrierPrefs(body) {
     min_rpm: Number.isFinite(minRpm) && minRpm > 0 && minRpm < 20 ? Math.round(minRpm * 100) / 100 : null,
     max_deadhead: Number.isFinite(maxDeadhead) && maxDeadhead >= 10 && maxDeadhead <= 600 ? Math.round(maxDeadhead) : null,
     home_state: states(body.home_state) ? states(body.home_state).slice(0, 2) : null,
-    avoid_states: states(body.avoid_states)
+    avoid_states: states(body.avoid_states),
+    home_days: formatHomeDays(parseHomeDays(body.home_days)) || null
   };
 }
 
@@ -164,7 +167,8 @@ router.patch('/carriers/:id', ...staff, async (req, res) => {
       min_rpm: 'min_rpm' in req.body ? prefs.min_rpm : undefined,
       max_deadhead: 'max_deadhead' in req.body ? (prefs.max_deadhead || 150) : undefined,
       home_state: 'home_state' in req.body ? prefs.home_state : undefined,
-      avoid_states: 'avoid_states' in req.body ? prefs.avoid_states : undefined
+      avoid_states: 'avoid_states' in req.body ? prefs.avoid_states : undefined,
+      home_days: 'home_days' in req.body ? prefs.home_days : undefined
     };
     const keys = Object.keys(fields).filter((k) => fields[k] !== undefined);
     if (!keys.length) return res.status(400).json({ error: 'Nothing to update.' });
@@ -217,6 +221,21 @@ router.post('/carriers/:id/send-loads', ...staff, async (req, res) => {
     res.json({ ok: true, ...result });
   } catch (err) {
     res.status(500).json({ error: 'Could not send loads to this carrier.' });
+  }
+});
+
+router.post('/carriers/:id/empty-soon', ...staff, async (req, res) => {
+  try {
+    await ensureBoardSchema();
+    const { rows } = await pool.query('SELECT * FROM ai_dispatch_carriers WHERE id = $1', [req.params.id]);
+    const carrier = rows[0];
+    if (!carrier) return res.status(404).json({ error: 'Carrier not found.' });
+    if (!carrier.sms_consent) return res.status(422).json({ error: 'This carrier has not agreed to texts.' });
+    if (!isWithinTcpaHours(carrier.phone).allowed) return res.status(422).json({ error: "Outside the carrier's local 9am–5pm texting hours." });
+    const result = await brain.sendEmptySoonNow(carrier);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not send the empty-soon loads.' });
   }
 });
 
@@ -371,3 +390,4 @@ router.post('/carriers/:id/pause', ...staff, async (req, res) => {
 module.exports = router;
 module.exports.syncDueSources = syncDueSources;
 module.exports.sendDueMorningTexts = sendDueMorningTexts;
+module.exports.sendDueEmptySoonOffers = () => brain.sendDueEmptySoonOffers();

@@ -74,6 +74,7 @@ async function createBoardSchema() {
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS max_deadhead INTEGER NOT NULL DEFAULT 150;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS home_state TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS avoid_states TEXT;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS home_days TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS last_location TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS off_until TIMESTAMPTZ;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS last_inbound_at TIMESTAMPTZ;
@@ -101,6 +102,7 @@ async function createBoardSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+    ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS empty_soon_sent_at TIMESTAMPTZ;
     CREATE INDEX IF NOT EXISTS ai_dispatch_offers_carrier_idx ON ai_dispatch_offers (carrier_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS ai_dispatch_offers_load_idx ON ai_dispatch_offers (load_id, status);
     CREATE TABLE IF NOT EXISTS ai_dispatch_messages (
