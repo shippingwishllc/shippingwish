@@ -7,6 +7,7 @@ const {
   milesBetween, roadMiles, stateOf, stateCenter, parsePlace, placeLabel, geocode
 } = require('./geo');
 const { checkBrokerAuthority, cachedBlockedKeys, keyFor, summarize: summarizeAuthority } = require('./broker-authority');
+const reliability = require('./broker-reliability');
 const ops = require('./dispatch-ops');
 const neg = require('./dispatch-negotiate');
 const i18n = require('./dispatch-i18n');
@@ -347,16 +348,18 @@ async function findMatches(carrier, { origin, destination, equipment, excludeLoa
     });
     if (match) scored.push(match);
   }
+  await reliability.attachToMatches(scored);
   scored.sort((a, b) => b.score - a.score);
   const matches = scored.filter((s) => s.destMatch).slice(0, limit);
   const others = dest ? scored.filter((s) => !s.destMatch).slice(0, limit) : [];
   return { originPt, matches, others, reasons, considered: rows.length };
 }
 
-function offerLine(slot, m) {
+function offerLine(slot, m, lang) {
   const approx = m.estimated ? '~' : '';
   const equip = m.load.equipment_type ? ` | ${String(m.load.equipment_type).slice(0, 18)}` : '';
-  return `${slot}) ${pickupOf(m.load)} → ${deliveryOf(m.load)} | ${money(m.load.rate)} | ${approx}${m.loaded} mi | ${approx}$${m.allInRpm.toFixed(2)}/mi all-in | ${approx}${m.deadhead} mi empty | ${shortDate(m.load.pickup_date)}${equip}`;
+  const hist = reliability.smsBit(m.history, lang);
+  return `${slot}) ${pickupOf(m.load)} → ${deliveryOf(m.load)} | ${money(m.load.rate)} | ${approx}${m.loaded} mi | ${approx}$${m.allInRpm.toFixed(2)}/mi all-in | ${approx}${m.deadhead} mi empty | ${shortDate(m.load.pickup_date)}${equip}${hist}`;
 }
 
 async function logMessage(carrierId, direction, body, intent) {
@@ -423,7 +426,7 @@ async function offerLoads(carrier, { origin, destination, equipment, excludeLoad
     };
   }
   const offers = await saveOffers(carrier, list, originLabel);
-  const lines = list.map((m, i) => offerLine(i + 1, m));
+  const lines = list.map((m, i) => offerLine(i + 1, m, lang));
   const slots = list.map((_, i) => i + 1);
   const choices = slots.length > 1 ? `${slots.slice(0, -1).join(', ')} or ${slots[slots.length - 1]}` : '1';
   const reply = `${header}\n${lines.join('\n')}\n${i18n.t(lang, 'loads_footer', { choices })}`;
@@ -525,6 +528,7 @@ async function notifyMatchingCarriers(load, { limit = PROACTIVE_MAX_TEXTS } = {}
     [PROACTIVE_CANDIDATE_CAP]
   );
 
+  const history = await reliability.historyFor(load);
   const scored = [];
   for (const carrier of carriers) {
     const origin = await latestOrigin(carrier);
@@ -540,6 +544,8 @@ async function notifyMatchingCarriers(load, { limit = PROACTIVE_MAX_TEXTS } = {}
       pickupPt
     });
     if (!match || !match.destMatch) continue;
+    match.history = history;
+    match.score = Math.round((match.score + reliability.scoreBump(history)) * 100) / 100;
     scored.push({ carrier, origin, match });
   }
   scored.sort((a, b) => b.match.score - a.match.score);
@@ -570,7 +576,8 @@ async function notifyMatchingCarriers(load, { limit = PROACTIVE_MAX_TEXTS } = {}
     }
     const originLabel = placeLabel(item.origin);
     await saveOffers(item.carrier, [item.match], originLabel);
-    const text = i18n.t(langOfCarrier(item.carrier), 'proactive', { origin: originLabel, line: offerLine(1, item.match) });
+    const lang = langOfCarrier(item.carrier);
+    const text = i18n.t(lang, 'proactive', { origin: originLabel, line: offerLine(1, item.match, lang) });
     const sms = await textCarrier(item.carrier, text, 'proactive_match');
     if (sms === 'sent' || sms === 'logged') sent++;
     details.push({ carrier_id: item.carrier.id, sms, load_number: load.load_number });
@@ -689,6 +696,11 @@ async function requestBooking(carrier, offer, { askRate = null } = {}) {
     note = `No broker email; call ${brokerPhoneOf(load) || load.broker_name || 'the broker'}`;
   }
   if (brokerCheck.verdict !== 'ok') note = `${note}. ${brokerNote}`;
+  const hist = await reliability.historyFor(load).catch(() => null);
+  const withUs = hist && (hist.asked || hist.booked || hist.paidLoads)
+    ? ` With us: ${[hist.asked ? `asked ${hist.asked}` : '', hist.booked ? `booked ${hist.booked}` : '', hist.paidLoads ? `${hist.paidLoads} paid` : ''].filter(Boolean).join(', ')}.`
+    : '';
+  note = `${note}${withUs}`;
 
   await pool.query(
     `UPDATE ai_dispatch_offers SET status = 'requested', requested_at = now(), broker_email = $2, note = $3, broker_authority = $4::jsonb, negotiation = $5::jsonb, updated_at = now() WHERE id = $1`,
@@ -1337,6 +1349,7 @@ async function preview(carrier, text) {
     pickup_date: m.load.pickup_date,
     equipment: m.load.equipment_type,
     broker: m.load.broker_name,
+    broker_history: m.history ? m.history.summary : null,
     lane_benchmark: await laneBenchmark(m.pickupState, m.deliveryState).catch(() => null),
     sms_line: offerLine(1, m).slice(3)
   });
@@ -1364,7 +1377,7 @@ async function listOffers(limit = 50) {
             o.broker_reply, o.requested_at, o.created_at, o.updated_at, o.ratecon, o.broker_authority, o.reload_plan,
             o.transit, o.detention, o.negotiation,
             c.id AS carrier_id, c.company_name, c.phone, c.mc_number,
-            l.load_number, l.pickup_location, l.delivery_location, l.rate, l.pickup_date, l.broker_name, l.broker_contact,
+            l.load_number, l.pickup_location, l.delivery_location, l.rate, l.pickup_date, l.broker_name, l.broker_mc, l.broker_contact,
             COALESCE((
               SELECT json_agg(json_build_object('id', p.id, 'content_type', p.content_type, 'created_at', p.created_at) ORDER BY p.created_at)
                 FROM ai_dispatch_pods p WHERE p.offer_id = o.id
@@ -1377,11 +1390,23 @@ async function listOffers(limit = 50) {
       LIMIT $1`,
     [limit]
   );
-  return rows.map((row) => ({
-    ...row,
-    transit: ops.summarizeTransit(row.transit) || row.transit,
-    detention: ops.summarizeDetention(row.detention) || row.detention
-  }));
+  const cache = new Map();
+  const out = [];
+  for (const row of rows) {
+    const broker_history = await reliability.historyFor({
+      broker_mc: row.broker_mc,
+      broker_name: row.broker_name,
+      broker_contact: row.broker_contact,
+      broker_email: row.broker_email
+    }, cache);
+    out.push({
+      ...row,
+      broker_history,
+      transit: ops.summarizeTransit(row.transit) || row.transit,
+      detention: ops.summarizeDetention(row.detention) || row.detention
+    });
+  }
+  return out;
 }
 
 async function carrierMessages(carrierId, limit = 40) {
@@ -1434,5 +1459,6 @@ module.exports = {
   carrierMessages,
   findCarrierByPhone,
   runCheckCalls,
-  getPod: ops.getPod
+  getPod: ops.getPod,
+  historyFor: reliability.historyFor
 };
