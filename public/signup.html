@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+  (function () {
+    var host = location.hostname.toLowerCase();
+    if (host === 'nyclimowish.com' || host === 'www.nyclimowish.com' || host.endsWith('.nyclimowish.com')) {
+      location.replace('/nyclimowish/signup.html' + location.search);
+    }
+  })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create Account — Shipping Wish LLC Carrier Portal</title>
