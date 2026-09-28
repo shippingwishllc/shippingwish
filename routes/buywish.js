@@ -40,6 +40,7 @@ const {
   bundlePriceAllowed,
   clampMargin
 } = require('../utils/buywish-catalog');
+const { cleanMetaPixelId, cleanGoogleTagId } = require('../utils/buywish-tracking');
 const { selectOrderTool, buildOrderArguments, extractOrderId } = require('../utils/buywish-fulfillment');
 const buyWishAdmin = [requireAuth, requireRole('admin')];
 
@@ -1246,12 +1247,62 @@ router.post('/admin/catalog/sync', ...buyWishAdmin, async (req, res) => {
   }
 });
 
+let trackingIdCache = { at: 0, ids: { meta_pixel_id: '', google_tag_id: '' } };
+
+async function readTrackingIds() {
+  if (Date.now() - trackingIdCache.at < 60000) return trackingIdCache.ids;
+  const ids = { meta_pixel_id: '', google_tag_id: '' };
+  try {
+    await ensureBuyWishSchema();
+    const { rows } = await pool.query(
+      `SELECT key, value FROM buywish_settings WHERE key IN ('meta_pixel_id', 'google_tag_id')`
+    );
+    rows.forEach((row) => {
+      if (row.key === 'meta_pixel_id') ids.meta_pixel_id = cleanMetaPixelId(row.value) || '';
+      if (row.key === 'google_tag_id') ids.google_tag_id = cleanGoogleTagId(row.value) || '';
+    });
+  } catch (err) {
+    ids.meta_pixel_id = '';
+    ids.google_tag_id = '';
+  }
+  trackingIdCache = { at: Date.now(), ids };
+  return ids;
+}
+
+router.get('/tracking', async (req, res) => {
+  const ids = await readTrackingIds();
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  res.json({ ok: true, ...ids });
+});
+
 router.get('/admin/settings', ...buyWishAdmin, async (req, res) => {
   try {
     const margin_percent = await refreshStoreMargin();
-    res.json({ ok: true, margin_percent });
+    const tracking = await readTrackingIds();
+    res.json({ ok: true, margin_percent, ...tracking });
   } catch (err) {
     res.status(500).json({ error: 'Could not load shop settings.' });
+  }
+});
+
+router.put('/admin/settings/tracking', ...buyWishAdmin, async (req, res) => {
+  const meta = cleanMetaPixelId(req.body && req.body.meta_pixel_id);
+  const google = cleanGoogleTagId(req.body && req.body.google_tag_id);
+  if (meta == null) return res.status(400).json({ error: 'Meta Pixel ID is the number from Events Manager, for example 123456789012345.' });
+  if (google == null) return res.status(400).json({ error: 'Google tag starts with G-, AW-, or GTM-.' });
+  try {
+    await ensureBuyWishSchema();
+    await pool.query(
+      `INSERT INTO buywish_settings (key, value, updated_at) VALUES
+         ('meta_pixel_id', $1, now()),
+         ('google_tag_id', $2, now())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+      [meta, google]
+    );
+    trackingIdCache = { at: 0, ids: { meta_pixel_id: '', google_tag_id: '' } };
+    res.json({ ok: true, meta_pixel_id: meta, google_tag_id: google });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not save the tracking IDs.' });
   }
 });
 

@@ -13,6 +13,7 @@ const { handleBuyWishWebhook, loadLiveProductByKey, lookupCustomCategory, produc
 const pool = require('./db');
 const { storeProductFromRow, departmentBySlug, STORE_DEPARTMENTS, STORE_GROUPS, productHandle, groupBySlug, groupForDepartmentSlug, groupChildren } = require('./utils/buywish-catalog');
 const { renderProductPage, renderCollectionPage, renderSitemap, injectProductIntoStorefront } = require('./utils/buywish-pages');
+const { metaCatalogItems, renderMetaCatalogXml, renderMetaCatalogCsv } = require('./utils/buywish-meta-feed');
 const { handleStripeWebhook: handleNYCLimoStripeWebhook } = require('./routes/nyclimo');
 const { requireAuth } = require('./middleware/auth');
 const { requireCarrierSubscription } = require('./middleware/subscription');
@@ -228,6 +229,46 @@ async function sendBuyWishCollection(res, slug) {
   }
 }
 
+async function sendBuyWishMetaFeed(res, format) {
+  let rows = [];
+  try {
+    const found = await pool.query(
+      `SELECT p.zendrop_id, p.handle, p.title, p.description, p.retail_price, p.compare_price,
+              p.image_url, p.images, p.is_active
+       FROM ecommerce_products p
+       LEFT JOIN buywish_product_overrides o ON o.zendrop_id = p.zendrop_id
+       WHERE p.is_active = true
+         AND p.zendrop_id IS NOT NULL
+         AND p.retail_price > 0
+         AND COALESCE(o.is_hidden, false) = false
+       ORDER BY p.updated_at DESC NULLS LAST
+       LIMIT 5000`
+    );
+    rows = found.rows;
+  } catch (err) {
+    try {
+      const found = await pool.query(
+        `SELECT zendrop_id, handle, title, description, retail_price, compare_price, image_url, images, is_active
+         FROM ecommerce_products
+         WHERE is_active = true AND zendrop_id IS NOT NULL AND retail_price > 0
+         ORDER BY updated_at DESC NULLS LAST
+         LIMIT 5000`
+      );
+      rows = found.rows;
+    } catch (inner) {
+      return res.status(503).type('text/plain').send('The shop catalog is temporarily unavailable.');
+    }
+  }
+  const items = metaCatalogItems(rows);
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  if (format === 'csv') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    return res.send(renderMetaCatalogCsv(items));
+  }
+  res.setHeader('Content-Type', 'application/rss+xml; charset=utf-8');
+  return res.send(renderMetaCatalogXml(items));
+}
+
 async function sendBuyWishSitemap(res) {
   const urls = [
     { loc: 'https://www.buywishonline.com/', changefreq: 'daily', priority: '1.0' },
@@ -438,6 +479,9 @@ app.use((req, res, next) => {
     }
     if (cleanP === '/sitemap.xml') {
       return sendBuyWishSitemap(res);
+    }
+    if (cleanP === '/feeds/meta-catalog.xml' || cleanP === '/feeds/meta-catalog.csv') {
+      return sendBuyWishMetaFeed(res, cleanP.endsWith('.csv') ? 'csv' : 'xml');
     }
     const productMatch = cleanP.match(/^\/products\/([^/]+)$/);
     if (productMatch) {

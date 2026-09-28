@@ -245,5 +245,31 @@ assert.ok(storefront.includes('window.BUYWISH_PRODUCT='));
 assert.ok(storefront.includes('https://www.buywishonline.com/products/p-42'));
 assert.ok(storefront.includes('detailShareUrl') === false);
 assert.ok(storefront.includes('"shareUrl":"https://www.buywishonline.com/products/p-42"'));
+assert.ok(storefront.includes('product:price:amount" content="19.00"'));
+const { metaCatalogItems, renderMetaCatalogXml, renderMetaCatalogCsv } = require('../utils/buywish-meta-feed');
+const feedItems = metaCatalogItems([
+  { zendrop_id: '42', handle: 'p-42', title: 'Lamp & Light', description: 'A <b>lamp</b>', retail_price: '19.5', compare_price: '25', image_url: 'https://cdn.example/a.jpg', images: ['https://cdn.example/b.jpg'], is_active: true },
+  { zendrop_id: '7', title: 'No image', retail_price: '5', image_url: 'http://cdn.example/a.jpg', is_active: true }
+]);
+assert.strictEqual(feedItems.length, 1);
+assert.strictEqual(feedItems[0].price, '25.00 USD');
+assert.strictEqual(feedItems[0].sale_price, '19.50 USD');
+assert.strictEqual(feedItems[0].link, 'https://www.buywishonline.com/products/p-42');
+const feedXml = renderMetaCatalogXml(feedItems);
+assert.ok(feedXml.includes('<g:id>42</g:id>'));
+assert.ok(feedXml.includes('Lamp &amp; Light'));
+assert.ok(!feedXml.includes('<b>'));
+const feedCsv = renderMetaCatalogCsv(feedItems);
+assert.ok(feedCsv.startsWith('id,title,'));
+assert.ok(feedCsv.includes('"Lamp & Light"'));
+const { cleanMetaPixelId, cleanGoogleTagId } = require('../utils/buywish-tracking');
+assert.strictEqual(cleanMetaPixelId('123456789012345'), '123456789012345');
+assert.strictEqual(cleanMetaPixelId('abc'), null);
+assert.strictEqual(cleanMetaPixelId(''), '');
+assert.strictEqual(cleanGoogleTagId('g-ab12cd'), 'G-AB12CD');
+assert.strictEqual(cleanGoogleTagId('GTM-ABCD'), 'GTM-ABCD');
+assert.strictEqual(cleanGoogleTagId('aw-123456789'), 'AW-123456789');
+assert.strictEqual(cleanGoogleTagId('pixel'), null);
+assert.strictEqual(cleanGoogleTagId(''), '');
 
 console.log('buywish catalog tests passed');

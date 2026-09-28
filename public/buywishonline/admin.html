@@ -64,6 +64,18 @@
       </div>
       <p class="muted">Sync keeps a product only when Zendrop quotes shipping to the USA, Canada, and the United Kingdom, and the fastest USA lane is 14 days or fewer. Run it again until the batch is finished. Paid orders are sent to Zendrop only when Zendrop publishes an order-creation tool for this token. Otherwise the order stays here with the customer’s address so it can be placed in the Zendrop dashboard and linked.</p>
       <p id="syncResult"></p>
+      <p class="muted">Facebook and Instagram shop from this file, not from Shopify: <a href="https://www.buywishonline.com/feeds/meta-catalog.csv">buywishonline.com/feeds/meta-catalog.csv</a>. Disconnect the old Shopify catalog in Commerce Manager, then schedule this file once a day. Customers still pay on BuyWishOnline.</p>
+    </div>
+    <div class="card">
+      <h2>Meta Pixel and Google tag</h2>
+      <p class="muted">Paste the IDs here. The shop adds them to the website. Leave a box empty to turn that one off.</p>
+      <p class="muted">Meta Pixel ID is the number in Meta Events Manager. Google’s ID starts with G- (Analytics), AW- (Ads), or GTM- (Tag Manager).</p>
+      <form id="trackingForm" class="row">
+        <input id="metaPixelId" inputmode="numeric" placeholder="Meta Pixel ID" maxlength="20">
+        <input id="googleTagId" placeholder="G- / AW- / GTM-" maxlength="24">
+        <button type="submit">Save tracking</button>
+        <span id="trackingStatus" class="muted"></span>
+      </form>
     </div>
     <div class="card" id="catalogDesk">
       <h2>Catalog</h2>
@@ -157,8 +169,16 @@
     loadCatalog();
     loadDeskCategories();
     loadMargin();
+    loadTracking();
     loadDeals();
     loadOrders();
+  }
+  async function loadTracking() {
+    const res = await fetch('/api/buywish/admin/settings', { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) return;
+    document.getElementById('metaPixelId').value = data.meta_pixel_id || '';
+    document.getElementById('googleTagId').value = data.google_tag_id || '';
   }
   async function loadMargin() {
     const res = await fetch('/api/buywish/admin/settings', { headers: authHeaders() });
@@ -332,6 +352,19 @@
   };
   document.getElementById('refreshBtn').onclick = loadOrders;
   document.getElementById('loadDeskProductsBtn').onclick = loadDeskProducts;
+  document.getElementById('trackingForm').onsubmit = async (event) => {
+    event.preventDefault();
+    const res = await fetch('/api/buywish/admin/settings/tracking', {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        meta_pixel_id: document.getElementById('metaPixelId').value,
+        google_tag_id: document.getElementById('googleTagId').value
+      })
+    });
+    const data = await res.json();
+    document.getElementById('trackingStatus').textContent = data.error || 'Tracking saved. It appears on the shop within a minute.';
+  };
   document.getElementById('marginForm').onsubmit = async (event) => {
     event.preventDefault();
     const res = await fetch('/api/buywish/admin/settings/margin', {
