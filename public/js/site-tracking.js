@@ -1,5 +1,6 @@
 (function () {
   const DEFAULT_GTM = 'GTM-55MF65H2';
+  const DEFAULT_GA = 'G-LW66Y70PFE';
 
   function isOtherBrand() {
     const h = String(location.hostname || '').toLowerCase();
@@ -15,9 +16,23 @@
     return /^GTM-[A-Z0-9]+$/.test(id) ? id : '';
   }
 
+  function gaId(value) {
+    const id = String(value || '').trim().toUpperCase();
+    return /^G-[A-Z0-9]{4,20}$/.test(id) ? id : '';
+  }
+
   function pixelId(value) {
     const id = String(value || '').replace(/\s/g, '');
     return /^\d{6,20}$/.test(id) ? id : '';
+  }
+
+  function insertScript(src) {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = src;
+    const first = document.getElementsByTagName('script')[0];
+    if (first && first.parentNode) first.parentNode.insertBefore(script, first);
+    else (document.head || document.documentElement).appendChild(script);
   }
 
   function installGtm(id) {
@@ -26,12 +41,7 @@
     window.__swGtmId = container;
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-    const first = document.getElementsByTagName('script')[0];
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = 'https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(container);
-    if (first && first.parentNode) first.parentNode.insertBefore(script, first);
-    else (document.head || document.documentElement).appendChild(script);
+    insertScript('https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(container));
 
     const placeNoscript = () => {
       if (!document.body || document.getElementById('sw-gtm-noscript')) return;
@@ -44,6 +54,17 @@
     };
     if (document.body) placeNoscript();
     else document.addEventListener('DOMContentLoaded', placeNoscript);
+  }
+
+  function installGa4(id) {
+    const measurement = gaId(id);
+    if (!measurement || window.__swGaId === measurement) return;
+    window.__swGaId = measurement;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    insertScript('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurement));
+    window.gtag('config', measurement);
   }
 
   function installFacebookPixel(id) {
@@ -59,12 +80,7 @@
       fbq.loaded = true;
       fbq.version = '2.0';
       fbq.queue = [];
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = 'https://connect.facebook.net/en_US/fbevents.js';
-      const first = document.getElementsByTagName('script')[0];
-      if (first && first.parentNode) first.parentNode.insertBefore(script, first);
-      else (document.head || document.documentElement).appendChild(script);
+      insertScript('https://connect.facebook.net/en_US/fbevents.js');
     }
     window.fbq('init', pixel);
     window.fbq('track', 'PageView');
@@ -73,6 +89,7 @@
   function apply(settings) {
     if (isLoggedInShell()) return;
     if (!window.__swGtmId) installGtm((settings && settings.gtm_container_id) || DEFAULT_GTM);
+    if (!window.__swGaId) installGa4((settings && settings.ga_measurement_id) || DEFAULT_GA);
     if (settings && settings.facebook_pixel_id) installFacebookPixel(settings.facebook_pixel_id);
   }
 
