@@ -230,6 +230,14 @@ router.get('/offers', ...staff, async (req, res) => {
   }
 });
 
+router.get('/metrics', ...staff, async (req, res) => {
+  try {
+    res.json({ ok: true, metrics: await require('../utils/dispatch-metrics').deskMetrics() });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load desk activity counts.' });
+  }
+});
+
 router.post('/offers/:id/booked', ...staff, async (req, res) => {
   try {
     const result = await brain.markBooked(req.params.id, String(req.body.note || '').slice(0, 200), { force: req.body.force === true });
@@ -279,6 +287,10 @@ async function deliverMorning(carrier) {
         disposition: smsStatus,
         is_read: true
       }).catch(() => {});
+      await pool.query(
+        'INSERT INTO ai_dispatch_messages (carrier_id, direction, body, intent) VALUES ($1,$2,$3,$4)',
+        [carrier.id, 'outbound', text, 'morning']
+      ).catch(() => {});
     }
   } catch (err) {
     smsStatus = 'error';
