@@ -2,9 +2,13 @@
   const state = {
     serviceType: 'point_to_point',
     pickup: '', dropoff: '', pickupDate: '', pickupTime: '',
-    hours: 3, miles: 0, durationMins: 0, routeIsEstimate: true,
-    quotes: [], selectedVehicle: null, bookingId: null, bookingNumber: null
+    hours: 3, miles: 0, durationMins: 0, routeIsEstimate: true, routeSource: '',
+    stops: [],
+    quotes: [], selectedVehicle: null, bookingId: null, bookingNumber: null,
+    mapUrl: '', mapProvider: 'none'
   };
+
+  const sessions = new WeakMap();
 
   const VEHICLE_ICONS = {
     business_sedan: '🚗', premium_sedan: '🚗', elitex_suv: '🚙',
@@ -30,6 +34,146 @@
     window.scrollTo(0, 0);
   }
 
+  function showError(id, message) {
+    const el = $(id);
+    if (el) el.textContent = message || '';
+  }
+
+  function tokenFor(input) {
+    if (!sessions.has(input)) sessions.set(input, crypto.randomUUID());
+    return sessions.get(input);
+  }
+
+  function resetToken(input) {
+    sessions.set(input, crypto.randomUUID());
+  }
+
+  function placePayload(input) {
+    if (!input) return { address: '' };
+    const placeId = input.dataset.placeId || '';
+    return {
+      address: input.value.trim(),
+      placeId: placeId || undefined,
+      sessionToken: placeId ? tokenFor(input) : undefined
+    };
+  }
+
+  function hideList(list) {
+    if (!list) return;
+    list.hidden = true;
+    list.innerHTML = '';
+  }
+
+  function bindAddress(input) {
+    if (!input || input.dataset.bound === '1') return;
+    input.dataset.bound = '1';
+    input.setAttribute('autocomplete', 'off');
+    const list = input.parentElement?.querySelector('.limo-suggest');
+    let timer = null;
+
+    input.addEventListener('input', () => {
+      if (input.dataset.placeLabel !== input.value.trim()) {
+        input.dataset.placeId = '';
+        input.dataset.placeLabel = '';
+      }
+      clearTimeout(timer);
+      const value = input.value.trim();
+      if (value.length < 3) {
+        hideList(list);
+        if (!value) resetToken(input);
+        return;
+      }
+      timer = setTimeout(() => searchAddress(input, list), 350);
+    });
+
+    input.addEventListener('blur', () => {
+      setTimeout(() => hideList(list), 180);
+    });
+  }
+
+  async function searchAddress(input, list) {
+    const query = input.value.trim();
+    if (!list || query.length < 3) return;
+    try {
+      const res = await fetch('/api/nyclimo/places/autocomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: query, sessionToken: tokenFor(input) })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (input.value.trim() !== query) return;
+      if (!res.ok) {
+        hideList(list);
+        return;
+      }
+      const suggestions = data.suggestions || [];
+      if (!suggestions.length) {
+        hideList(list);
+        return;
+      }
+      list.innerHTML = suggestions.map((item, index) =>
+        `<button type="button" data-index="${index}">${escapeHtml(item.mainText || item.label)}${item.secondaryText ? `<small>${escapeHtml(item.secondaryText)}</small>` : ''}</button>`
+      ).join('');
+      list.hidden = false;
+      list.querySelectorAll('button').forEach((button) => {
+        button.addEventListener('mousedown', (event) => {
+          event.preventDefault();
+          const item = suggestions[Number(button.dataset.index)];
+          if (!item) return;
+          input.value = item.label;
+          input.dataset.placeId = item.placeId || '';
+          input.dataset.placeLabel = item.label;
+          hideList(list);
+        });
+      });
+    } catch (_) {
+      hideList(list);
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+  }
+
+  function collectStops() {
+    return [...document.querySelectorAll('#b-stops .limo-address')]
+      .map(placePayload)
+      .filter((stop) => stop.address);
+  }
+
+  function addStop(prefill) {
+    const wrap = $('b-stops');
+    if (wrap.querySelectorAll('.limo-stop').length >= 5) return;
+    const row = document.createElement('div');
+    row.className = 'limo-field limo-stop';
+    row.innerHTML = `<label>Stop</label>
+      <div class="limo-address-box">
+        <span class="limo-field-icon">➕</span>
+        <input class="limo-input limo-address" placeholder="Add a stop" autocomplete="off" style="background:#f9f9f9;color:#000;border-color:#ddd;">
+        <div class="limo-suggest" hidden></div>
+      </div>
+      <button type="button" class="limo-stop-remove">Remove stop</button>`;
+    wrap.appendChild(row);
+    const input = row.querySelector('input');
+    bindAddress(input);
+    if (prefill) input.value = prefill;
+    row.querySelector('.limo-stop-remove').addEventListener('click', () => {
+      row.remove();
+      updateStopButton();
+    });
+    updateStopButton();
+  }
+
+  function updateStopButton() {
+    const count = document.querySelectorAll('#b-stops .limo-stop').length;
+    $('btn-add-stop').hidden = count >= 5;
+  }
+
+  document.querySelectorAll('.limo-address').forEach(bindAddress);
+  $('btn-add-stop').addEventListener('click', () => addStop());
+
   const params = new URLSearchParams(window.location.search);
   if (params.get('pickup')) $('b-pickup').value = params.get('pickup');
   if (params.get('dropoff')) $('b-dropoff').value = params.get('dropoff');
@@ -52,23 +196,30 @@
     document.querySelectorAll('.limo-tab').forEach((t) => {
       t.classList.toggle('active', t.dataset.tab === type);
     });
-    $('b-dropoff-wrap').style.display = type === 'hourly' ? 'none' : 'block';
-    $('b-duration-wrap').style.display = type === 'hourly' ? 'block' : 'none';
+    const hourly = type === 'hourly';
+    $('b-dropoff-wrap').style.display = hourly ? 'none' : 'block';
+    $('b-stops-wrap').style.display = hourly ? 'none' : 'block';
+    $('b-duration-wrap').style.display = hourly ? 'block' : 'none';
   }
 
   $('btn-step1').addEventListener('click', async () => {
-    state.pickup = $('b-pickup').value.trim();
-    state.dropoff = $('b-dropoff').value.trim();
+    const pickup = placePayload($('b-pickup'));
+    const dropoff = placePayload($('b-dropoff'));
+    const stops = collectStops();
+    state.pickup = pickup.address;
+    state.dropoff = dropoff.address;
+    state.stops = stops.map((stop) => stop.address);
     state.pickupDate = $('b-date').value;
     state.pickupTime = $('b-time').value;
     state.hours = parseFloat($('b-hours').value) || 3;
+    showError('step1-error', '');
 
     if (!state.pickup || !state.pickupDate || !state.pickupTime) {
-      alert('Please fill in pickup, date, and time.');
+      showError('step1-error', 'Please fill in pickup, date, and time.');
       return;
     }
     if (state.serviceType === 'point_to_point' && !state.dropoff) {
-      alert('Please enter a drop-off location.');
+      showError('step1-error', 'Please enter a drop-off location.');
       return;
     }
 
@@ -81,33 +232,95 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           serviceType: state.serviceType,
-          pickup: state.pickup,
-          dropoff: state.dropoff,
+          pickup: pickup.address,
+          pickupPlaceId: pickup.placeId,
+          pickupSessionToken: pickup.sessionToken,
+          dropoff: dropoff.address,
+          dropoffPlaceId: dropoff.placeId,
+          dropoffSessionToken: dropoff.sessionToken,
+          stops: stops.map((stop) => ({
+            address: stop.address,
+            placeId: stop.placeId,
+            sessionToken: stop.sessionToken
+          })),
           hours: state.hours
         })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || 'Pricing is unavailable.');
 
+      applyVerifiedAddress($('b-pickup'), data.pickup);
+      applyVerifiedAddress($('b-dropoff'), data.dropoff);
+      (data.stops || []).forEach((stop, index) => {
+        const input = document.querySelectorAll('#b-stops .limo-address')[index];
+        applyVerifiedAddress(input, stop);
+      });
+      state.pickup = data.pickup?.formatted || state.pickup;
+      state.dropoff = data.dropoff?.formatted || state.dropoff;
+      state.stops = (data.stops || []).map((stop) => stop.formatted).filter(Boolean);
       state.quotes = data.quotes;
       state.miles = data.distance?.miles || 0;
       state.durationMins = data.distance?.durationMins || 0;
       state.routeIsEstimate = data.distance?.isEstimate !== false;
+      state.routeSource = data.distance?.source || '';
+      state.mapUrl = safeMapUrl(data.map?.embedUrl);
+      state.mapProvider = state.mapUrl ? (data.map?.provider || 'none') : 'none';
 
       renderSidebar();
       renderVehicles();
       showStep(2);
     } catch (err) {
-      alert('Could not calculate pricing: ' + err.message);
+      showError('step1-error', err.message || 'Could not calculate pricing.');
     } finally {
       $('btn-step1').disabled = false;
       $('btn-step1').textContent = 'Continue →';
     }
   });
 
+  function applyVerifiedAddress(input, geo) {
+    if (!input || !geo?.formatted) return;
+    input.value = geo.formatted;
+    input.dataset.placeLabel = geo.formatted;
+    resetToken(input);
+  }
+
+  function safeMapUrl(url) {
+    try {
+      const parsed = new URL(url);
+      const google = parsed.protocol === 'https:' && parsed.hostname === 'www.google.com' && parsed.pathname.startsWith('/maps/embed/');
+      const osm = parsed.protocol === 'https:' && parsed.hostname === 'www.openstreetmap.org' && parsed.pathname.startsWith('/export/embed');
+      return google || osm ? parsed.toString() : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function renderMap() {
+    const box = $('sidebar-map');
+    box.textContent = '';
+    if (!state.mapUrl) {
+      box.textContent = 'Route map';
+      $('map-note').textContent = '';
+      return;
+    }
+    const frame = document.createElement('iframe');
+    frame.title = 'Driving route';
+    frame.loading = 'lazy';
+    frame.referrerPolicy = 'origin';
+    frame.src = state.mapUrl;
+    box.appendChild(frame);
+    $('map-note').textContent = state.mapProvider === 'google_embed'
+      ? 'Map: Google Maps Embed'
+      : 'Map: OpenStreetMap';
+  }
+
   function renderSidebar() {
+    renderMap();
     $('sb-pickup').textContent = state.pickup;
     $('sb-dropoff').textContent = state.serviceType === 'hourly' ? 'Hourly Service' : state.dropoff;
+    $('sb-stops').innerHTML = state.stops.map((stop) =>
+      `<div class="limo-route-pin">➕ <span>${escapeHtml(stop)}</span></div>`
+    ).join('');
     const d = new Date(state.pickupDate + 'T' + state.pickupTime);
     $('sb-datetime').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     if (state.serviceType === 'hourly') {
@@ -115,7 +328,9 @@
       $('sidebar-stats').textContent = '';
     } else {
       $('sb-duration').textContent = '';
-      $('sidebar-stats').textContent = state.miles + ' mi · ' + Math.floor(state.durationMins / 60) + 'h ' + (state.durationMins % 60) + 'm · ' + (state.routeIsEstimate ? 'estimated route' : 'road route');
+      const hours = Math.floor(state.durationMins / 60);
+      const mins = state.durationMins % 60;
+      $('sidebar-stats').textContent = state.miles + ' mi · ' + hours + 'h ' + mins + 'm · ' + (state.routeIsEstimate ? 'estimated route' : 'driving route');
     }
   }
 
@@ -127,8 +342,8 @@
         <div class="limo-vehicle-img">${icon}</div>
         <div class="limo-vehicle-info">
           ${badge ? `<div class="limo-vehicle-badges"><span class="limo-badge ${badge[1]}">${badge[0]}</span></div>` : ''}
-          <h4>${q.name}</h4>
-          <p>${q.models || ''}</p>
+          <h4>${escapeHtml(q.name)}</h4>
+          <p>${escapeHtml(q.models || '')}</p>
           <div class="limo-amenities">
             <span class="limo-amenity" title="Passengers">👤 ${q.passengers}</span>
             <span class="limo-amenity" title="Luggage">🧳 ${q.luggage}</span>
@@ -158,6 +373,9 @@
 
     setTimeout(() => {
       renderPassengerSummary();
+      const capacity = Number(state.selectedVehicle?.passengers || 60);
+      $('p-passengers').max = String(capacity);
+      if (Number($('p-passengers').value) > capacity) $('p-passengers').value = String(capacity);
       showStep(3);
     }, 300);
   }
@@ -165,28 +383,35 @@
   function renderPassengerSummary() {
     const v = state.selectedVehicle;
     if (!v) return;
-    $('summary-vehicle').innerHTML = `<strong>${v.name}</strong><br><span style="color:#666;font-size:0.85rem;">${v.models || ''}</span>`;
+    $('summary-vehicle').innerHTML = `<strong>${escapeHtml(v.name)}</strong><br><span style="color:#666;font-size:0.85rem;">${escapeHtml(v.models || '')}</span>`;
     $('price-breakdown').innerHTML = priceHtml(v.pricing);
     $('final-price').innerHTML = priceHtml(v.pricing);
   }
 
   function priceHtml(p) {
-    return `<div class="limo-price-row"><span>Base fare</span><span>$${p.subtotal.toFixed(2)}</span></div>
-      ${p.tolls > 0 ? `<div class="limo-price-row"><span>Tolls</span><span>$${p.tolls.toFixed(2)}</span></div>` : ''}
-      <div class="limo-price-row"><span>Gratuity (included)</span><span>$${p.gratuity.toFixed(2)}</span></div>
-      <div class="limo-price-row total"><span>Total</span><span>$${p.total.toFixed(2)}</span></div>
+    const tolls = Number(p.tolls) || 0;
+    return `<div class="limo-price-row"><span>Base fare</span><span>$${Number(p.subtotal).toFixed(2)}</span></div>
+      ${tolls > 0 ? `<div class="limo-price-row"><span>Tolls</span><span>$${tolls.toFixed(2)}</span></div>` : ''}
+      <div class="limo-price-row"><span>Gratuity (included)</span><span>$${Number(p.gratuity).toFixed(2)}</span></div>
+      <div class="limo-price-row total"><span>Total</span><span>$${Number(p.total).toFixed(2)}</span></div>
       <p style="font-size:0.75rem;color:#999;margin-top:8px;">ℹ All-Inclusive Price</p>`;
   }
+
+  $('btn-back-2').addEventListener('click', () => showStep(1));
+  $('btn-back-3').addEventListener('click', () => showStep(2));
 
   $('btn-step3').addEventListener('click', async () => {
     const first = $('p-first').value.trim();
     const last = $('p-last').value.trim();
     const email = $('p-email').value.trim();
     const phone = $('p-phone').value.trim();
+    showError('step3-error', '');
     if (!first || !last || !email || !phone) {
-      alert('Please fill in all passenger details.');
+      showError('step3-error', 'Please fill in all passenger details.');
       return;
     }
+    const pickup = placePayload($('b-pickup'));
+    const dropoff = placePayload($('b-dropoff'));
 
     $('btn-step3').disabled = true;
     $('btn-step3').textContent = 'Creating booking...';
@@ -197,28 +422,46 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           serviceType: state.serviceType,
-          pickup: state.pickup,
-          dropoff: state.dropoff,
+          pickup: pickup.address,
+          pickupPlaceId: pickup.placeId,
+          pickupSessionToken: pickup.sessionToken,
+          dropoff: dropoff.address,
+          dropoffPlaceId: dropoff.placeId,
+          dropoffSessionToken: dropoff.sessionToken,
+          stops: collectStops(),
           pickupDate: state.pickupDate,
           pickupTime: state.pickupTime,
           durationHours: state.hours,
-          distanceMiles: state.miles,
-          durationMins: state.durationMins,
           vehicleId: state.selectedVehicle.id,
           firstName: first,
           lastName: last,
           email,
           phone,
           tripNotes: $('p-notes').value,
+          flightNumber: $('p-flight').value.trim(),
           passengers: parseInt($('p-passengers').value || '1', 10),
+          luggage: parseInt($('p-luggage').value || '0', 10),
           childSeats: $('p-child-seats').checked ? 1 : 0,
           referralCode: params.get('ref') || params.get('referral') || undefined
         })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || 'Booking failed.');
       state.bookingId = data.booking.id;
       state.bookingNumber = data.booking.booking_number;
+      if (data.booking.total_price != null) {
+        state.selectedVehicle = {
+          ...state.selectedVehicle,
+          pricing: {
+            ...state.selectedVehicle.pricing,
+            subtotal: Number(data.booking.base_price),
+            tolls: Number(data.booking.tolls),
+            gratuity: Number(data.booking.gratuity),
+            total: Number(data.booking.total_price)
+          }
+        };
+        renderPassengerSummary();
+      }
       $('btn-pay').disabled = data.booking.status !== 'operator_accepted';
       $('operator-status').textContent = data.booking.status === 'operator_accepted'
         ? 'A licensed operator accepted your request. Payment is ready.'
@@ -226,7 +469,7 @@
       showStep(4);
       pollOperatorStatus();
     } catch (err) {
-      alert('Booking failed: ' + err.message);
+      showError('step3-error', err.message || 'Booking failed.');
     } finally {
       $('btn-step3').disabled = false;
       $('btn-step3').textContent = 'Continue to Payment →';

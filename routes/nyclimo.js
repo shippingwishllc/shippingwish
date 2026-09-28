@@ -10,6 +10,9 @@ const {
   calcPointToPointPrice, calcHourlyPrice
 } = require('../utils/limo-pricing');
 const { sendEmail } = require('../utils/mailer');
+const {
+  autocompletePlaces, placeDetails, routeMap, cleanPlaceId, cleanSessionToken
+} = require('../utils/limo-places');
 
 const APP_URL = (process.env.APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
 
@@ -86,6 +89,48 @@ async function geocodeAddress(address) {
   return null;
 }
 
+async function resolvePoint(input) {
+  const source = input && typeof input === 'object' ? input : { address: input };
+  const placeId = cleanPlaceId(source.placeId);
+  const sessionToken = cleanSessionToken(source.sessionToken);
+  if (placeId) {
+    try {
+      const place = await placeDetails(placeId, sessionToken);
+      if (place) return place;
+    } catch (err) {
+      console.warn('[LIMO PLACE DETAILS]:', err.message);
+    }
+  }
+  const address = String(source.address || '').trim().slice(0, 300);
+  if (!address) return null;
+  return geocodeAddress(address);
+}
+
+function stopInputs(value) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 5).map((stop) => {
+    if (typeof stop === 'string') return { address: stop };
+    return {
+      address: stop?.address || stop?.location || '',
+      placeId: stop?.placeId,
+      sessionToken: stop?.sessionToken
+    };
+  }).filter((stop) => String(stop.address || '').trim() || cleanPlaceId(stop.placeId));
+}
+
+const autocompleteHits = new Map();
+function allowAutocomplete(ip) {
+  const now = Date.now();
+  const hits = (autocompleteHits.get(ip) || []).filter((at) => now - at < 60000);
+  if (hits.length >= 30) {
+    autocompleteHits.set(ip, hits);
+    return false;
+  }
+  hits.push(now);
+  autocompleteHits.set(ip, hits);
+  return true;
+}
+
 async function getRouteMetrics(points) {
   const estimate = () => {
     const straightMiles = points.slice(1).reduce((sum, point, index) =>
@@ -141,33 +186,77 @@ router.get('/vehicles', async (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.post('/places/autocomplete', async (req, res) => {
+  try {
+    const input = String(req.body?.input || '').trim();
+    if (input.length < 3) return res.json({ suggestions: [] });
+    if (!allowAutocomplete(req.ip || 'local')) {
+      return res.status(429).json({ error: 'Too many address searches. Wait a moment and try again.' });
+    }
+    const suggestions = await autocompletePlaces(input, cleanSessionToken(req.body?.sessionToken));
+    res.json({ suggestions });
+  } catch (err) {
+    console.warn('[LIMO AUTOCOMPLETE]:', err.message);
+    res.status(503).json({ error: 'Address search is unavailable right now.' });
+  }
+});
+
 router.post('/quote', async (req, res) => {
   try {
-    const { serviceType, pickup, dropoff, hours, pickupLat, pickupLng, dropoffLat, dropoffLng } = req.body || {};
+    const body = req.body || {};
+    const serviceType = body.serviceType === 'hourly' ? 'hourly' : 'point_to_point';
     const vehicles = await getVehicles();
-    let miles = 0, durationMins = 0, pickupGeo = null, dropoffGeo = null;
-    let route = { isEstimate: false, source: 'hourly_service' };
+    const pickupGeo = await resolvePoint({
+      placeId: body.pickupPlaceId,
+      sessionToken: body.pickupSessionToken,
+      address: body.pickup
+    });
+    if (!pickupGeo) {
+      return res.status(400).json({ error: 'Pickup address could not be verified. Pick a suggestion or enter a full US address.' });
+    }
 
-    if (pickupLat && pickupLng) pickupGeo = { lat: pickupLat, lng: pickupLng, formatted: pickup };
-    else if (pickup) pickupGeo = await geocodeAddress(pickup);
+    let miles = 0;
+    let durationMins = 0;
+    let dropoffGeo = null;
+    let verifiedStops = [];
+    let route = { isEstimate: false, source: 'hourly_service' };
+    const mapPoints = [pickupGeo];
 
     if (serviceType === 'hourly') {
-      durationMins = (parseFloat(hours) || 3) * 60;
+      durationMins = (parseFloat(body.hours) || 3) * 60;
     } else {
-      if (dropoffLat && dropoffLng) dropoffGeo = { lat: dropoffLat, lng: dropoffLng, formatted: dropoff };
-      else if (dropoff) dropoffGeo = await geocodeAddress(dropoff);
-      if (pickupGeo && dropoffGeo) {
-        route = await getRouteMetrics([pickupGeo, dropoffGeo]);
-        miles = route.miles;
-        durationMins = route.durationMins;
+      dropoffGeo = await resolvePoint({
+        placeId: body.dropoffPlaceId,
+        sessionToken: body.dropoffSessionToken,
+        address: body.dropoff
+      });
+      if (!dropoffGeo) {
+        return res.status(400).json({ error: 'Drop-off address could not be verified. Pick a suggestion or enter a full US address.' });
       }
+      const inputStops = stopInputs(body.stops);
+      if ((Array.isArray(body.stops) ? body.stops.length : 0) > 5) {
+        return res.status(400).json({ error: 'A trip can include at most five additional stops.' });
+      }
+      for (const stop of inputStops) {
+        const point = await resolvePoint(stop);
+        if (!point) return res.status(400).json({ error: 'A stop address could not be verified.' });
+        verifiedStops.push(point);
+        mapPoints.push(point);
+      }
+      mapPoints.push(dropoffGeo);
+      route = await getRouteMetrics(mapPoints);
+      miles = route.miles;
+      durationMins = route.durationMins;
     }
 
     res.json({
-      serviceType: serviceType || 'point_to_point',
+      serviceType,
       distance: { miles, durationMins, isEstimate: route.isEstimate, source: route.source },
-      pickup: pickupGeo, dropoff: dropoffGeo,
-      quotes: quoteAllVehicles(vehicles, { serviceType: serviceType || 'point_to_point', miles, hours: hours || 3 })
+      pickup: pickupGeo,
+      dropoff: dropoffGeo,
+      stops: verifiedStops,
+      map: routeMap(serviceType === 'hourly' ? [pickupGeo] : mapPoints),
+      quotes: quoteAllVehicles(vehicles, { serviceType, miles, hours: body.hours || 3 })
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -209,7 +298,11 @@ router.post('/bookings', async (req, res) => {
       referralBaseId = referral.rows[0].id;
     }
 
-    const pickupGeo = await geocodeAddress(String(b.pickup || '').trim());
+    const pickupGeo = await resolvePoint({
+      placeId: b.pickupPlaceId,
+      sessionToken: b.pickupSessionToken,
+      address: b.pickup
+    });
     if (!pickupGeo) return res.status(400).json({ error: 'Pickup address could not be verified.' });
     let dropoffGeo = null;
     let miles = 0;
@@ -223,14 +316,17 @@ router.post('/bookings', async (req, res) => {
       }
       durationMins = Math.round(durationHours * 60);
     } else {
-      dropoffGeo = await geocodeAddress(String(b.dropoff || '').trim());
+      dropoffGeo = await resolvePoint({
+        placeId: b.dropoffPlaceId,
+        sessionToken: b.dropoffSessionToken,
+        address: b.dropoff
+      });
       if (!dropoffGeo) return res.status(400).json({ error: 'Drop-off address could not be verified.' });
-      const inputStops = Array.isArray(b.stops) ? b.stops : [];
-      if (inputStops.length > 5) return res.status(400).json({ error: 'A booking can include at most five additional stops.' });
+      const inputStops = stopInputs(b.stops);
+      if ((Array.isArray(b.stops) ? b.stops.length : 0) > 5) return res.status(400).json({ error: 'A booking can include at most five additional stops.' });
       const points = [pickupGeo];
       for (const stop of inputStops) {
-        const address = typeof stop === 'string' ? stop : (stop.address || stop.location || '');
-        const point = await geocodeAddress(String(address).trim());
+        const point = await resolvePoint(stop);
         if (!point) return res.status(400).json({ error: 'A stop address could not be verified.' });
         points.push(point);
         verifiedStops.push({ address: point.formatted, lat: point.lat, lng: point.lng });
@@ -239,6 +335,10 @@ router.post('/bookings', async (req, res) => {
       const route = await getRouteMetrics(points);
       miles = route.miles;
       durationMins = route.durationMins;
+    }
+    const luggage = Number.parseInt(b.luggage ?? 1, 10);
+    if (!Number.isInteger(luggage) || luggage < 0 || luggage > 40) {
+      return res.status(400).json({ error: 'Luggage count must be between 0 and 40.' });
     }
     const pricing = serviceType === 'hourly'
       ? calcHourlyPrice(vehicle, durationHours)
@@ -259,7 +359,7 @@ router.post('/bookings', async (req, res) => {
       [bookingNumber, serviceType, pickupGeo.formatted, pickupGeo.lat, pickupGeo.lng,
        dropoffGeo?.formatted || '', dropoffGeo?.lat || null, dropoffGeo?.lng || null, JSON.stringify(verifiedStops),
        pickupDate, pickupTime, durationHours, miles, durationMins, vehicle.id,
-       passengers, Number.parseInt(b.luggage || 1, 10), Number.parseInt(b.childSeats || 0, 10),
+       passengers, luggage, Number.parseInt(b.childSeats || 0, 10),
        firstName, lastName, email, phone, String(b.tripNotes || '').slice(0, 1000),
        pricing.subtotal, pricing.tolls, pricing.gratuity, pricing.total,
        String(b.source || 'web').slice(0, 40), referralBaseId, String(b.flightNumber || '').slice(0, 30) || null, false]
@@ -269,7 +369,7 @@ router.post('/bookings', async (req, res) => {
       [rows[0].id, 'pending_operator', 'Booking request received; a verified operator must accept before payment.']
     );
     const dispatch = await require('./nyclimo-partners').dispatchBooking(rows[0].id);
-    const current = await pool.query('SELECT id, booking_number, status, pickup_date, pickup_time, total_price, payment_status, passenger_email FROM limo_bookings WHERE id = $1', [rows[0].id]);
+    const current = await pool.query('SELECT id, booking_number, status, pickup_date, pickup_time, base_price, tolls, gratuity, total_price, payment_status, passenger_email FROM limo_bookings WHERE id = $1', [rows[0].id]);
     const createdBooking = current.rows[0] || rows[0];
     if (!dispatch.ok && process.env.OPS_EMAIL) {
       await sendEmail({
