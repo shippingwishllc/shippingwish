@@ -91,9 +91,31 @@ app.post('/api/nyclimo/stripe-webhook', express.raw({ type: 'application/json' }
   catch (err) { console.error('[NYCLIMO STRIPE WEBHOOK]:', err.message); return res.status(500).json({ error: 'Webhook processing failed.' }); }
 });
 
+app.post('/api/outreach/resend-events', express.raw({ type: 'application/json' }), (req, res) =>
+  require('./routes/outreach').resendEventsHandler(req, res)
+);
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Gmail and Yahoo one-click unsubscribe POSTs to the List-Unsubscribe URL.
+app.post('/unsubscribe', async (req, res) => {
+  const { verifyUnsubscribeToken } = require('./utils/email-templates');
+  const pool = require('./db');
+  const email = verifyUnsubscribeToken(String(req.query.t || req.query.token || (req.body && req.body.t) || ''));
+  if (!email) return res.status(400).json({ error: 'Invalid unsubscribe link' });
+  try {
+    await pool.query(
+      `INSERT INTO unsubscribes (email, reason) VALUES ($1, 'one-click') ON CONFLICT (email) DO NOTHING`,
+      [email]
+    );
+    await require('./utils/outreach-engine').recordUnsubscribe(email).catch(() => {});
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not unsubscribe' });
+  }
+});
 
 function requestQuery(req) {
   const q = req.url.indexOf('?');
@@ -302,6 +324,8 @@ app.use('/api/ifta', carrierApiGate, require('./routes/ifta'));
 app.use('/api/invoices', carrierApiGate, require('./routes/invoices'));
 app.use('/api/portal', carrierApiGate, require('./routes/portal'));
 app.use('/api/loadboard', require('./routes/loadboard'));
+app.use('/api/dispatch-desk', require('./routes/dispatch-desk'));
+app.use('/api/outreach', require('./routes/outreach'));
 app.use('/api/loadboard/matches', require('./routes/loadboard-matchmaking')); // Smart Freight & Capacity Matchmaking Engine
 app.use('/api/crm', require('./routes/crm'));             // CRM Carrier Leads, Dispositions & Daily Tasks
 app.use('/api/email', require('./routes/email'));         // 1-Click branded outreach, inbound replies, unsubscribe
@@ -563,6 +587,14 @@ if (require.main === module) {
     .then(() => {
       app.listen(PORT, () => {
         console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
+        if (!process.env.VERCEL) {
+          const dispatchDesk = require('./routes/dispatch-desk');
+          setInterval(() => {
+            dispatchDesk.syncDueSources().catch((err) => console.warn('[LOADBOARD] sync:', err.message));
+            dispatchDesk.sendDueMorningTexts().catch((err) => console.warn('[AI-DISPATCH] morning:', err.message));
+            require('./utils/outreach-engine').tick().catch((err) => console.warn('[OUTREACH] tick:', err.message));
+          }, 60000);
+        }
       });
     });
 } else {

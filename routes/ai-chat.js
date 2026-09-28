@@ -20,7 +20,8 @@ COMPANY FACTS & DETAILS:
 - ZERO PERCENTAGE COMMISSION: The carrier keeps 100% of their freight checks directly from brokers. We never touch their money or take 8-10%.
 - 7-DAY ZERO-RISK FREE TRIAL ($0 TODAY): New carriers can test our dedicated dispatch operations for 1 full week at zero cost. Cancel anytime before week 2 with zero penalties.
 - Equipment Supported: 53' Dry Van, 53' Reefer, Flatbed / Step Deck, 26' Box Truck (under 10,000 lbs payload), Cargo Vans / Sprinters, Hotshot trailers, Power Only.
-- Corridors & Lanes: Nationwide across all 50 US states, with strong high-paying freight in Midwest, Southeast, Texas, and East Coast corridors. Average gross: $7,500 - $12,000+ per week per truck ($3.00 - $4.50+ / mile).
+- Lanes: The lower 48 states. The manager looks for loads from where the truck is empty toward where the carrier wants to go. The carrier approves every load.
+- Never promise weekly income, a rate per mile, or a number of loads. Rates depend on the lane, the week, and what brokers offer.
 - Back-Office Services: Dedicated personal dispatcher (no random call center), broker setup packets, Rate Confirmation reviews, unpaid detention collection, factoring setup, and quarterly IFTA fuel tax calculations.
 
 GUIDELINES:
@@ -40,7 +41,7 @@ COMPANY FACTS & DETAILS:
 - Carrier Subscription: Only $19/month (unlimited searches, direct unmasked broker contacts, RateCon downloads, and AI rate negotiation copilot). Zero contracts, cancel anytime with 1 click.
 - Broker Load Posting: 100% FREE for licensed freight brokers and 3PLs with active FMCSA authority and BMC-84 bond.
 - Anti-Double-Brokering: Proprietary 3-tier security guard checking real-time FMCSA authority, physical addresses, and IP telemetry.
-- Days-To-Pay (DTP): Verified broker payment health scores (e.g. 16-18 days average DTP, A+ rating) displayed on every load.
+- Loads on the board come from brokers who post them. The number of loads changes day to day. Never quote a load count, a days-to-pay score, or a rating that is not shown on the listing.
 - Equipment Supported: 53' Dry Van, 53' Reefer, Flatbed, 26' Box Truck, Cargo Van, Power Only, Hotshot.
 
 GUIDELINES:

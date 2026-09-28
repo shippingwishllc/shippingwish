@@ -285,7 +285,7 @@
           <label style="display:block;font-size:12px;font-weight:700;color:#334155;margin-bottom:4px;">Voice Campaign &amp; Pitch</label>
           <select id="call-input-brand" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
             <option value="shippingwish">Shipping Wish LLC (7-Day $0 Dispatch Trial)</option>
-            <option value="loadsnexus_carrier">LoadsNexus™ Carrier ($19/mo Pass &amp; 4,850+ Loads)</option>
+            <option value="loadsnexus_carrier">LoadsNexus™ Carrier ($19/mo Pass)</option>
             <option value="loadsnexus_broker">LoadsNexus™ Broker (Free Load Posting Desk)</option>
           </select>
         </div>
@@ -305,6 +305,11 @@
         <input type="text" id="call-input-state" placeholder="e.g. TX, IL, CA, FL (Default: US)" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;" />
         <span style="font-size:11px;color:#64748b;display:block;margin-top:3px;">Strict TCPA 9:00 AM - 5:00 PM local recipient window enforced.</span>
       </div>
+
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-bottom:18px;font-size:12px;color:#334155;">
+        <input type="checkbox" id="call-input-consent" required style="margin-top:2px;">
+        <span>This person agreed to receive a call from us (signed up, filled a form, or asked us to call). AI calls to people who did not agree are blocked by U.S. law.</span>
+      </label>
 
       <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #e2e8f0;padding-top:16px;">
         <button type="button" class="btn btn-secondary" onclick="closeTriggerCallModal()">Cancel</button>
@@ -557,6 +562,7 @@
       brand: document.getElementById('call-input-brand').value,
       equipment_type: document.getElementById('call-input-equip').value,
       state_code: document.getElementById('call-input-state').value || 'US',
+      consent_confirmed: document.getElementById('call-input-consent').checked
     };
 
     try {
