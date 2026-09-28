@@ -3,6 +3,7 @@ const pool = require('../db');
 const { requireAuth, requireRole, optionalAuth } = require('../middleware/auth');
 const { lookupZip, getZipForCityState, parseOriginWithZip, parseDestinationsWithZip } = require('../utils/us-zipcodes');
 const { generateRateConfirmationPDF } = require('../utils/ratecon-generator');
+const { requestBrokerBooking, realEmail } = require('../utils/broker-booking-request');
 const { parseFreightWithAI, saveLoadsToDatabase, normalizeEquipmentAndWeight } = require('../utils/ai-freight-extractor');
 
 const router = express.Router();
@@ -726,7 +727,7 @@ router.post('/offers', requireAuth, requireRole('dispatcher', 'admin', 'super_ad
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'pending', 'pending', 'idle', $17)
        RETURNING *`,
       [
-        carrierId, req.user.id, brokerName || 'DAT Load Board Broker', brokerMc || null, brokerPhone || null, brokerEmail || 'dispatch@broker.com',
+        carrierId, req.user.id, brokerName || 'Broker not named', brokerMc || null, brokerPhone || null, realEmail(brokerEmail),
         pickupLocation, pickupState || null, pickupDate || null,
         deliveryLocation, deliveryState || null, deliveryDate || null,
         numRate, numMiles, calcRpm, equipmentType || '53ft Dry Van', notes || null
@@ -777,8 +778,11 @@ router.patch('/offers/:id/respond', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const offerRes = await client.query('SELECT * FROM load_offers WHERE id = $1', [req.params.id]);
-    if (!offerRes.rows.length) return res.status(404).json({ error: 'Offer not found.' });
+    const offerRes = await client.query('SELECT * FROM load_offers WHERE id = $1 FOR UPDATE', [req.params.id]);
+    if (!offerRes.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Offer not found.' });
+    }
     const offer = offerRes.rows[0];
 
     if (['carrier', 'carrier_admin'].includes(req.user.role) && offer.carrier_id !== req.user.id) {
@@ -788,6 +792,11 @@ router.patch('/offers/:id/respond', requireAuth, async (req, res) => {
     if (req.user.role === 'dispatcher' && offer.dispatcher_id && offer.dispatcher_id !== req.user.id) {
       await client.query('ROLLBACK');
       return res.status(403).json({ error: 'You do not have access to this offer.' });
+    }
+
+    if (offer.status !== 'pending') {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: `This offer is already ${offer.status}.` });
     }
 
     const appStatus = response === 'accepted' ? 'approved' : 'declined';
@@ -803,52 +812,13 @@ router.patch('/offers/:id/respond', requireAuth, async (req, res) => {
         [offer.id, `Driver/Carrier approved load offer #${offer.id}`, offer.rate, offer.rpm]
       );
 
-      // Trigger Autonomous AI Broker Bidding Email!
-      const targetBid = (parseFloat(offer.rate) + 150).toFixed(2);
-      await client.query(
-        `UPDATE load_offers SET broker_negotiation_status = 'bidding', initial_bid_rate = $1 WHERE id = $2`,
-        [targetBid, offer.id]
-      );
-
-      const { sendBrandedEmail } = require('../utils/mailer');
-      const carrierRes = await client.query('SELECT * FROM users WHERE id = $1', [offer.carrier_id]);
-      const carrier = carrierRes.rows[0] || {};
-      const carrierCompany = carrier.company_name || carrier.name || 'Motor Carrier';
-      const carrierMc = carrier.mc_number || '149201';
-
-      const emailSubject = `Rate Inquiry & Load Booking: ${offer.pickup_location} ➔ ${offer.delivery_location} (${offer.equipment_type}) — MC# ${carrierMc}`;
-      const emailBody = `Hi ${offer.broker_name} Dispatch,\n\n` +
-        `Shipping Wish LLC is bidding on behalf of ${carrierCompany} (MC# ${carrierMc}).\n\n` +
-        `Load Details:\n` +
-        `• Lane: ${offer.pickup_location} ➔ ${offer.delivery_location}\n` +
-        `• Equipment: ${offer.equipment_type}\n` +
-        `• Distance: ${offer.miles} miles\n` +
-        `• Requested Rate: $${targetBid} ($${(targetBid / offer.miles).toFixed(2)}/mile)\n\n` +
-        `Our truck is empty and ready for immediate dispatch. Please confirm rate and send Rate Confirmation to dispatch@shippingwish.com.\n\n` +
-        `Best regards,\nShipping Wish Autonomous Dispatch Engine\nhttps://www.shippingwish.com`;
-
-      try {
-        await sendBrandedEmail({
-          to: offer.broker_email || 'dispatch@broker.com',
-          subject: emailSubject,
-          text: emailBody,
-          html: `<pre style="font-family:sans-serif;font-size:14px;">${emailBody}</pre>`,
-          emailType: 'broker_bid'
-        });
-      } catch (e) {
-        console.warn('Broker bid email notice:', e.message);
-      }
-
-      await client.query(
-        `INSERT INTO ai_load_negotiations (offer_id, event_type, sender_type, message_text, rate_offered, rpm)
-         VALUES ($1, 'broker_bid_sent', 'ai_bot', $2, $3, $4)`,
-        [offer.id, `AI dispatched official rate inquiry email to ${offer.broker_name} (${offer.broker_email}) requesting $${targetBid}`, targetBid, (targetBid / offer.miles).toFixed(2)]
-      );
-
+      const request = await requestBrokerBooking(client, offer, { via: 'portal' });
       negotiationResult = {
-        broker_negotiation_status: 'bidding',
-        initial_bid_rate: targetBid,
-        message: `Driver approved! AI emailed ${offer.broker_name} requesting $${targetBid} ($${(targetBid / offer.miles).toFixed(2)}/mi).`
+        broker_negotiation_status: request.status,
+        requested_rate: request.rate,
+        message: request.sent
+          ? `Approved. We emailed ${offer.broker_name || 'the broker'} to confirm at $${request.rate}. Do not roll until the rate confirmation arrives.`
+          : `Approved. ${request.reason} A dispatcher will follow up.`
       };
     }
 
@@ -1253,8 +1223,13 @@ router.post('/inquire-broker', requireAuth, async (req, res) => {
       notes
     } = req.body;
 
-    if (!brokerEmail || brokerEmail.includes('locked@') || !brokerEmail.includes('@')) {
-      return res.status(400).json({ error: 'Valid broker email address is required to dispatch rate inquiry.' });
+    if (!brokerEmail || brokerEmail.includes('locked@') || !realEmail(brokerEmail)) {
+      return res.status(400).json({ error: 'This load has no real broker email on file. Call the broker instead.' });
+    }
+    const mcDigits = String(carrierMc || req.user.mc_number || '').replace(/\D/g, '');
+    const dotDigits = String(carrierDot || req.user.dot_number || '').replace(/\D/g, '');
+    if (mcDigits.length < 4 && dotDigits.length < 4) {
+      return res.status(400).json({ error: 'Add the carrier MC or USDOT number first. Brokers cannot book without it.' });
     }
 
     const isStaff = ['super_admin', 'admin', 'dispatcher', 'sales_rep'].includes(req.user.role);

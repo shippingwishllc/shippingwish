@@ -3087,7 +3087,7 @@
 
       const mailtoSubject = encodeURIComponent(`Rate Confirmation & Inquiry: ${load.pickup_location} to ${load.delivery_location} (PU: ${load.pickup_date})`);
       const mailtoBody = encodeURIComponent(`Hi ${load.broker_name} Dispatch,\n\nWe have an empty truck ready to book your posted load:\n• Lane: ${load.pickup_location} -> ${load.delivery_location}\n• Pickup Date: ${load.pickup_date}\n• Delivery Date: ${load.delivery_date}\n• Equipment: ${load.equipment_type}\n• Miles: ${load.miles} mi\n• Rate: $${load.rate}\n\nPlease confirm availability and send Rate Confirmation to dispatch@shippingwish.com.\n\nThank you,\nShipping Wish LLC Dispatch Desk\n+1 (917) 737-0021`);
-      const mailtoLink = `mailto:${encodeURIComponent(load.broker_email || 'dispatch@broker.com')}?subject=${mailtoSubject}&body=${mailtoBody}`;
+      const mailtoLink = `mailto:${encodeURIComponent(load.broker_email || '')}?subject=${mailtoSubject}&body=${mailtoBody}`;
 
       let brokerHtml = '';
       if (load.is_teaser) {
@@ -3385,7 +3385,7 @@
       rateBadgeEl.textContent = `$${rateNum.toLocaleString()} ${rpmStr ? `(${rpmStr})` : ''}`;
     }
     if (brokerSummaryEl) {
-      brokerSummaryEl.innerHTML = `Broker: <strong>${escapeHtml(load.broker_name || 'Broker')}</strong> (${escapeHtml(load.broker_mc || 'MC-ON-FILE')}) · <span>${escapeHtml(load.broker_email || 'dispatch@broker.com')}</span>`;
+      brokerSummaryEl.innerHTML = `Broker: <strong>${escapeHtml(load.broker_name || 'Broker')}</strong> (${escapeHtml(load.broker_mc || 'MC-ON-FILE')}) · <span>${escapeHtml(load.broker_email || 'no broker email on file')}</span>`;
     }
 
     // Populate carrier select in modal
@@ -3510,7 +3510,7 @@
 
     return {
       brokerName: SELECTED_LOAD_FOR_INQUIRY.broker_name || 'Broker',
-      brokerEmail: SELECTED_LOAD_FOR_INQUIRY.broker_email || 'dispatch@broker.com',
+      brokerEmail: SELECTED_LOAD_FOR_INQUIRY.broker_email || '',
       brokerMc: SELECTED_LOAD_FOR_INQUIRY.broker_mc || '',
       pickupLocation: SELECTED_LOAD_FOR_INQUIRY.pickup_location,
       deliveryLocation: SELECTED_LOAD_FOR_INQUIRY.delivery_location,
@@ -3745,7 +3745,7 @@ ${p.contactName} | ${p.carrierCompany} (MC# ${p.carrierMc})`;
       const offers = data.offers || [];
 
       const pendingCount = offers.filter(o => o.status === 'pending').length;
-      const biddingCount = offers.filter(o => o.broker_negotiation_status === 'bidding' || o.status === 'accepted').length;
+      const biddingCount = offers.filter(o => ['requested', 'bidding'].includes(o.broker_negotiation_status) || o.status === 'accepted').length;
       const pendEl = document.getElementById('kpi-pending-offers');
       const bidEl = document.getElementById('kpi-active-bids');
       if (pendEl) pendEl.textContent = String(pendingCount);
@@ -3768,7 +3768,8 @@ ${p.contactName} | ${p.carrierCompany} (MC# ${p.carrierMc})`;
         if (o.status === 'accepted') statusBadge = '<span class="badge badge-paid">Driver Approved</span>';
         if (o.status === 'declined') statusBadge = '<span class="badge badge-error">Declined</span>';
         if (o.status === 'booked') statusBadge = '<span class="badge badge-booked">Booked & Confirmed</span>';
-        if (o.broker_negotiation_status === 'bidding') statusBadge = '<span class="badge badge-assigned">AI Bidding with Broker</span>';
+        if (['requested', 'bidding'].includes(o.broker_negotiation_status)) statusBadge = '<span class="badge badge-assigned">Waiting on broker</span>';
+        if (o.broker_negotiation_status === 'needs_staff') statusBadge = '<span class="badge badge-error">Dispatcher follow-up</span>';
 
         return `
           <tr>
@@ -3811,7 +3812,8 @@ ${p.contactName} | ${p.carrierCompany} (MC# ${p.carrierMc})`;
           if (o.status === 'accepted') statusBadge = '<span class="badge badge-paid">Approved</span>';
           if (o.status === 'declined') statusBadge = '<span class="badge badge-error">Declined</span>';
           if (o.status === 'booked') statusBadge = '<span class="badge badge-booked">Booked</span>';
-          if (o.broker_negotiation_status === 'bidding') statusBadge = '<span class="badge badge-assigned">AI Bidding</span>';
+          if (['requested', 'bidding'].includes(o.broker_negotiation_status)) statusBadge = '<span class="badge badge-assigned">Waiting on broker</span>';
+          if (o.broker_negotiation_status === 'needs_staff') statusBadge = '<span class="badge badge-error">Dispatcher follow-up</span>';
 
           return `
             <div class="mobile-load-card">
