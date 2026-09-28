@@ -20,6 +20,9 @@ const {
   slugifyCategory,
   validCategorySlug,
   publicDepartments,
+  storefrontCollections,
+  groupBySlug,
+  groupChildren,
   applyCatalogEdits,
   STORE_DEPARTMENTS
 } = require('../utils/buywish-catalog');
@@ -135,7 +138,13 @@ const flat = flattenCategories({
 });
 assert.strictEqual(categoriesForDepartment(flat, 'Tech')[0].name, 'Electronics');
 assert.strictEqual(productHandle(42), 'p-42');
-assert.strictEqual(departmentBySlug('tech').title, 'Tech & Gadgets');
+assert.strictEqual(departmentBySlug('tech').title, 'Tech');
+assert.strictEqual(groupBySlug('tech-gadgets').title, 'Tech & Gadgets');
+assert.deepStrictEqual(groupChildren(groupBySlug('tech-gadgets')).map((child) => child.slug), ['tech', 'phone']);
+const homeCollections = storefrontCollections();
+assert.ok(homeCollections.some((item) => item.slug === 'tech-gadgets' && item.hub));
+assert.ok(!homeCollections.some((item) => item.slug === 'phone'));
+assert.ok(homeCollections.some((item) => item.slug === 'beauty' && !item.hub));
 assert.ok(!departmentBySlug('beauty').blurb.toLowerCase().includes('zendrop'));
 const sameAsTrending = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
 const distinct = Array.from({ length: 10 }, (_, i) => ({ id: i + 100 }));

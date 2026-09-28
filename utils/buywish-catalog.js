@@ -49,9 +49,9 @@ const DEPARTMENT_ZENDROP_CATEGORIES = {
 };
 
 const STORE_DEPARTMENTS = {
-  Tech: { slug: 'tech', title: 'Tech & Gadgets', short: 'Tech', icon: '💻', blurb: 'Headphones, chargers, and everyday gadgets.', searches: ['wireless earbuds', 'bluetooth speaker', 'usb charger', 'laptop stand'] },
-  Phone: { slug: 'phone', title: 'Phone Accessories', short: 'Phone', icon: '📱', blurb: 'Cases, screen protection, and phone add-ons.', searches: ['phone case', 'screen protector', 'phone holder', 'tempered glass'], strict: true },
-  Home: { slug: 'home', title: 'Home & Living', short: 'Home', icon: '🏠', blurb: 'Decor, lighting, and comfort for every room.', searches: ['home organizer', 'led lamp', 'throw blanket', 'wall decor'] },
+  Tech: { slug: 'tech', title: 'Tech', short: 'Tech', icon: '💻', blurb: 'Headphones, chargers, and everyday gadgets.', searches: ['wireless earbuds', 'bluetooth speaker', 'usb charger', 'laptop stand'] },
+  Phone: { slug: 'phone', title: 'Phone', short: 'Phone', icon: '📱', blurb: 'Cases, screen protection, and phone add-ons.', searches: ['phone case', 'screen protector', 'phone holder', 'tempered glass'], strict: true },
+  Home: { slug: 'home', title: 'Home', short: 'Home', icon: '🏠', blurb: 'Decor, lighting, and comfort for every room.', searches: ['home organizer', 'led lamp', 'throw blanket', 'wall decor'] },
   Kitchen: { slug: 'kitchen', title: 'Kitchen & Cooking', short: 'Kitchen', icon: '🍳', blurb: 'Tools for cooking, coffee, and the table.', searches: ['kitchen gadget', 'coffee accessories', 'food container', 'cookware'] },
   Fitness: { slug: 'fitness', title: 'Fitness & Outdoors', short: 'Fitness', icon: '🏃', blurb: 'Gear for training, yoga, and time outside.', searches: ['resistance bands', 'yoga mat', 'fitness tracker', 'dumbbell'] },
   Beauty: { slug: 'beauty', title: 'Beauty & Wellness', short: 'Beauty', icon: '✨', blurb: 'Skin, hair, and daily self-care.', searches: ['skincare tool', 'makeup brush', 'hair tool', 'face serum'] },
@@ -67,6 +67,18 @@ const STORE_DEPARTMENTS = {
   Arts: { slug: 'arts', title: 'Arts & Crafts', short: 'Arts', icon: '🎨', blurb: 'Paint, sketching, and craft kits.', searches: ['acrylic paint', 'sketchbook', 'craft kit', 'watercolor set'], strict: true }
 };
 
+const STORE_GROUPS = [
+  { slug: 'tech-gadgets', title: 'Tech & Gadgets', short: 'Tech', icon: '💻', blurb: 'Tech and phone accessories, in one collection.', children: ['tech', 'phone'] },
+  { slug: 'home-living', title: 'Home & Living', short: 'Home', icon: '🏠', blurb: 'Home and kitchen, in one collection.', children: ['home', 'kitchen'] },
+  { slug: 'fashion', title: 'Fashion', short: 'Fashion', icon: '👗', blurb: 'Clothing, shoes, jewelry, and bags.', children: ['women', 'men', 'shoes', 'jewelry', 'bags'] },
+  { slug: 'beauty', title: 'Beauty & Wellness', short: 'Beauty', icon: '✨', blurb: 'Skin, hair, and daily self-care.', children: ['beauty'] },
+  { slug: 'fitness', title: 'Fitness & Outdoors', short: 'Fitness', icon: '🏃', blurb: 'Gear for training, yoga, and time outside.', children: ['fitness'] },
+  { slug: 'pets', title: 'Pet Supplies', short: 'Pets', icon: '🐾', blurb: 'Care and play for dogs and cats.', children: ['pets'] },
+  { slug: 'kids-baby', title: 'Kids & Baby', short: 'Kids', icon: '🧸', blurb: 'Toys and clothing for kids and babies.', children: ['kids', 'baby'] },
+  { slug: 'travel', title: 'Travel', short: 'Travel', icon: '🧳', blurb: 'Packing, luggage, and trip comfort.', children: ['travel'] },
+  { slug: 'arts', title: 'Arts & Crafts', short: 'Arts', icon: '🎨', blurb: 'Paint, sketching, and craft kits.', children: ['arts'] }
+];
+
 const WINNING_SEARCHES = Object.entries(STORE_DEPARTMENTS).flatMap(([category, dept]) => (
   dept.searches.slice(0, 1).map((q) => ({ category, q }))
 ));
@@ -75,6 +87,55 @@ function departmentBySlug(slug) {
   const key = Object.keys(STORE_DEPARTMENTS).find((name) => STORE_DEPARTMENTS[name].slug === String(slug || '').toLowerCase());
   if (!key) return null;
   return { key, ...STORE_DEPARTMENTS[key] };
+}
+
+function groupBySlug(slug) {
+  const clean = String(slug || '').toLowerCase();
+  return STORE_GROUPS.find((group) => group.slug === clean) || null;
+}
+
+function groupForDepartmentSlug(slug) {
+  const clean = String(slug || '').toLowerCase();
+  return STORE_GROUPS.find((group) => group.children.length > 1 && group.children.includes(clean)) || null;
+}
+
+function groupChildren(group) {
+  if (!group) return [];
+  return group.children.map((childSlug) => {
+    const dept = departmentBySlug(childSlug);
+    if (!dept) return null;
+    return { slug: dept.slug, title: dept.short || dept.title, icon: dept.icon || '🛍️', category: dept.key };
+  }).filter(Boolean);
+}
+
+function storefrontCollections(customRows) {
+  const links = STORE_GROUPS.map((group) => {
+    if (group.children.length === 1) {
+      const child = departmentBySlug(group.children[0]);
+      if (!child) return null;
+      return {
+        slug: child.slug,
+        title: group.title,
+        short: group.short,
+        icon: group.icon,
+        blurb: child.blurb || group.blurb,
+        hub: false
+      };
+    }
+    return {
+      slug: group.slug,
+      title: group.title,
+      short: group.short,
+      icon: group.icon,
+      blurb: group.blurb,
+      hub: true,
+      children: groupChildren(group)
+    };
+  }).filter(Boolean);
+  publicDepartments(customRows).filter((dept) => !dept.builtin).forEach((dept) => {
+    links.push({ slug: dept.slug, title: dept.title, short: dept.short, icon: dept.icon, blurb: dept.blurb, hub: false });
+  });
+  return links;
 }
 
 function departmentByQuery(value) {
@@ -530,8 +591,13 @@ module.exports = {
   TARGET_COUNTRIES,
   FAST_USA_DAYS,
   STORE_DEPARTMENTS,
+  STORE_GROUPS,
   WINNING_SEARCHES,
   departmentBySlug,
+  groupBySlug,
+  groupForDepartmentSlug,
+  groupChildren,
+  storefrontCollections,
   departmentByQuery,
   DEPARTMENT_ZENDROP_CATEGORIES,
   inferCategory,
