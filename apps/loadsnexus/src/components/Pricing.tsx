@@ -124,7 +124,7 @@ export const Pricing: React.FC<PricingProps> = ({
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="text-emerald-600 font-black">✔</span>
-                  <span>Real broker Days-To-Pay (DTP) &amp; $75k bond verification</span>
+                  <span>FMCSA authority checks and bond status when our feeds have it</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="text-emerald-600 font-black">✔</span>

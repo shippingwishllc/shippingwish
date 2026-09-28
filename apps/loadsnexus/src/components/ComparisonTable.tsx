@@ -16,8 +16,8 @@ export const ComparisonTable: React.FC = () => {
       ts: '✖ Manual Search Only',
     },
     {
-      feature: 'Real Broker Credit & Days-To-Pay',
-      ln: '✔ Included Free',
+      feature: 'FMCSA authority check',
+      ln: '✔ On posted brokers',
       dat: 'Extra Add-On Cost',
       ts: 'Extra Add-On Cost',
     },

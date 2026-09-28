@@ -13,8 +13,8 @@ export const Features: React.FC = () => {
       bg: 'bg-blue-50 text-blue-600',
     },
     {
-      title: 'Real Days-To-Pay (DTP) Ratings',
-      desc: 'Never haul for a slow-paying or defaulting broker. Live Days-To-Pay scores, credit limits, and $75,000 BMC-84 surety bond statuses verified on every load.',
+      title: 'Broker authority and pay history',
+      desc: 'FMCSA census authority on posted brokers. Days-To-Pay and credit only when we have paid-load history or a connected feed — never invented letter grades or $75k bond defaults.',
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <line x1="12" y1="1" x2="12" y2="23" />

@@ -373,6 +373,17 @@ async function treatYesAsOptIn(from, body) {
   }
 }
 
+function inboundMedia(req) {
+  const src = Object.assign({}, req.query || {}, req.body || {});
+  const n = Math.min(Number(src.NumMedia) || 0, 10);
+  const media = [];
+  for (let i = 0; i < n; i++) {
+    const url = src[`MediaUrl${i}`];
+    if (url) media.push({ url: String(url), contentType: String(src[`MediaContentType${i}`] || '') });
+  }
+  return media;
+}
+
 // ALL /api/voip/twilio-inbound — Twilio "A message comes in" webhook (handles both POST form-encoded and GET)
 router.all('/twilio-inbound', async (req, res) => {
   try {
@@ -380,6 +391,7 @@ router.all('/twilio-inbound', async (req, res) => {
     const body = req.body?.Body || req.body?.body || req.query?.Body || req.query?.body || '';
     const to = req.body?.To || req.body?.to || req.query?.To || req.query?.to || '';
     if (!from) return res.status(400).type('text/plain').send('Missing From');
+    const media = inboundMedia(req);
 
     let reply = helpReply();
     let disposition = 'inbound';
@@ -407,7 +419,7 @@ router.all('/twilio-inbound', async (req, res) => {
     } else {
       let deskResult = null;
       try {
-        deskResult = await require('../utils/dispatch-brain').handleCarrierSms(from, body);
+        deskResult = await require('../utils/dispatch-brain').handleCarrierSms(from, body, { media });
       } catch (err) {
         console.warn('[AI DISPATCH] inbound SMS:', err.message);
       }

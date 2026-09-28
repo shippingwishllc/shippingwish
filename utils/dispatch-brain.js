@@ -7,12 +7,18 @@ const {
   milesBetween, roadMiles, stateOf, stateCenter, parsePlace, placeLabel, geocode
 } = require('./geo');
 const { checkBrokerAuthority, cachedBlockedKeys, keyFor, summarize: summarizeAuthority } = require('./broker-authority');
+const reliability = require('./broker-reliability');
+const ops = require('./dispatch-ops');
+const neg = require('./dispatch-negotiate');
+const i18n = require('./dispatch-i18n');
 
 const OFFER_TTL_HOURS = 3;
 const MAX_OUTBOUND_PER_DAY = 12;
 const CANDIDATE_LIMIT = 400;
 const GEOCODE_LIMIT = 60;
 const DEFAULT_MAX_DEADHEAD = 150;
+const PROACTIVE_MAX_TEXTS = 5;
+const PROACTIVE_CANDIDATE_CAP = 40;
 
 const EQUIPMENT = [
   ['reefer', /\b(reefer|refrigerated|temp(erature)? control)/i],
@@ -85,7 +91,7 @@ function citiesIn(text) {
 function parseDestination(text, carrier) {
   const raw = String(text || '').trim();
   if (!raw) return null;
-  if (/\b(any ?where|any|all 48|open)\b/i.test(raw)) return { any: true, states: [], label: 'anywhere' };
+  if (/\b(any ?where|any|all 48|open|donde sea|cualquier(?:\s+lado)?)\b/i.test(raw)) return { any: true, states: [], label: 'anywhere' };
   const states = [];
   let point = null;
   if (/\bhome\b/i.test(raw) && carrier && carrier.home_state) states.push(carrier.home_state);
@@ -105,7 +111,7 @@ function parseDestination(text, carrier) {
 }
 
 function parseOrigin(text) {
-  const raw = String(text || '').replace(/\b(empty|i am|i'm|im|in|at|near|around|out of|from|currently)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+  const raw = String(text || '').replace(/\b(empty|i am|i'm|im|in|en|at|near|around|out of|from|currently|vacio|vacío|estoy|ando)\b/gi, ' ').replace(/\s+/g, ' ').trim();
   if (!raw) return null;
   const zip = raw.match(/\b(\d{5})\b/);
   if (zip) return { zip: zip[1] };
@@ -124,21 +130,29 @@ function parseCarrierText(text, carrier = {}) {
   const body = String(text || '').trim();
   const lower = body.toLowerCase();
   const out = { intent: 'unknown', origin: null, destination: null, equipment: equipmentKind(body), choice: null };
-  const pick = lower.match(/^(?:yes|y|book|take|want|ok)?\s*#?\s*([1-3])\s*[.!]?$/);
+  const folded = i18n.fold(body);
+  const pick = lower.match(/^(?:yes|y|book|take|want|ok|si|sí)?\s*#?\s*([1-3])\s*[.!]?$/);
   if (pick) return { ...out, intent: 'book', choice: Number(pick[1]) };
-  if (/^(no|nope|none|pass|more|other|others|next|not those|something else)\b/.test(lower)) return { ...out, intent: 'more' };
-  if (/\b(off today|day off|home time|not working|no loads today|taking (a|the) day|resting|on break|done for (the )?day)\b/.test(lower)) {
+  if (/^(no|nope|none|pass|more|other|others|next|not those|something else|mas|otros|siguientes)\b/.test(folded)) return { ...out, intent: 'more' };
+  if (/\b(off today|day off|home time|not working|no loads today|taking (a|the) day|resting|on break|done for (the )?day|hoy no|no trabajo|dia libre|descanso hoy|no cargas hoy)\b/.test(folded)) {
     return { ...out, intent: 'off' };
   }
-  if (/^(help|\?|what|how)\b/.test(lower) && !/\d{5}/.test(lower)) return { ...out, intent: 'question' };
+  const negotiate = neg.parseNegotiateText(body);
+  if (negotiate) return { ...out, intent: 'negotiate', choice: negotiate.choice, ask: negotiate.ask, unit: negotiate.unit };
+  if (/^(help|\?|what|how|ayuda)\b/.test(folded) && !/\d{5}/.test(lower)) return { ...out, intent: 'question' };
+  if (/^(reload|next load|unloaded|delivered|empty now|recarga|siguiente carga|descargado|entregado|vacio ahora|ya vacio)\b/.test(folded)) {
+    out.intent = 'reload';
+    out.origin = parseOrigin(body.replace(/^(reload|next load|unloaded|i'?m delivered|delivered|empty now|recarga|siguiente carga|descargado|entregado|vacio ahora|ya vacio|vacío ahora)\b/i, ' '));
+    return out;
+  }
 
-  const destLead = body.match(/^(?:i\s+)?(?:want to go to|want to go|wanna go to|wanna go|going to|heading to|headed to|looking for|wants|want|prefer|going|heading|to)\s+(.+)$/i);
+  const destLead = body.match(/^(?:i\s+)?(?:want to go to|want to go|wanna go to|wanna go|going to|heading to|headed to|looking for|wants|want|prefer|going|heading|quiero ir a|quiero ir|quiero|voy para|voy a|rumbo a|buscando|to)\s+(.+)$/i);
   if (destLead) {
     out.destination = parseDestination(destLead[1], carrier);
     if (out.destination) out.intent = 'loads';
     return out;
   }
-  const split = body.split(/\s+(?:going to|heading to|headed to|want to go to|want to go|wanna go to|wanna go|looking for|wants|want|prefer|to|going|heading)\s+|\s*(?:->|→)\s*/i);
+  const split = body.split(/\s+(?:going to|heading to|headed to|want to go to|want to go|wanna go to|wanna go|looking for|wants|want|prefer|to|going|heading|quiero ir a|quiero ir|voy para|rumbo a|buscando|quiero)\s+|\s*(?:->|→)\s*/i);
   const left = split[0];
   const right = split.slice(1).join(' ');
   out.origin = parseOrigin(left);
@@ -162,7 +176,7 @@ async function askModelToParse(text) {
       messages: [
         {
           role: 'system',
-          content: 'You read one text message from a US truck driver to a dispatcher. Return JSON: {"intent":"loads|book|more|off|question|other","origin":"ZIP or City, ST or empty","destination":"City, ST or state codes or anywhere or empty","equipment":"van|reefer|flatbed|step deck|power only|hotshot|box truck or empty","choice":1-3 or null}. Never guess a place the driver did not write.'
+          content: 'You read one text message from a US truck driver to a dispatcher. Return JSON: {"intent":"loads|book|more|off|question|negotiate|other","origin":"ZIP or City, ST or empty","destination":"City, ST or state codes or anywhere or empty","equipment":"van|reefer|flatbed|step deck|power only|hotshot|box truck or empty","choice":1-3 or null,"ask":dollar amount or null}. Never guess a place or a rate the driver did not write.'
         },
         { role: 'user', content: String(text || '').slice(0, 600) }
       ]
@@ -179,15 +193,18 @@ async function understand(text, carrier) {
   const ai = await askModelToParse(text).catch(() => null);
   if (!ai) return { ...parsed, via: 'rules' };
   const result = {
-    intent: ['loads', 'book', 'more', 'off', 'question'].includes(ai.intent) ? ai.intent : 'unknown',
+    intent: ['loads', 'book', 'more', 'off', 'question', 'negotiate'].includes(ai.intent) ? ai.intent : 'unknown',
     origin: ai.origin ? parseOrigin(String(ai.origin)) : null,
     destination: ai.destination ? parseDestination(String(ai.destination), carrier) : null,
     equipment: equipmentKind(ai.equipment) || parsed.equipment,
     choice: [1, 2, 3].includes(Number(ai.choice)) ? Number(ai.choice) : null,
+    ask: Number(ai.ask) > 0 ? Number(ai.ask) : parsed.ask || null,
+    unit: parsed.unit || null,
     via: 'ai'
   };
   if (result.intent === 'book' && !result.choice) result.intent = 'unknown';
   if (result.intent === 'loads' && !result.origin && !result.destination) result.intent = 'unknown';
+  if (result.intent === 'negotiate' && result.ask == null && parsed.intent !== 'negotiate') result.intent = 'unknown';
   return result;
 }
 
@@ -210,12 +227,81 @@ async function laneBenchmark(fromState, toState) {
   return row && row.n >= 5 ? { loads: row.n, rpm: Number(row.rpm) } : null;
 }
 
+function pickupOf(load) {
+  return load.pickup_location || load.origin || '';
+}
+
+function deliveryOf(load) {
+  return load.delivery_location || load.destination || '';
+}
+
+function bump(reasons, key) {
+  if (!reasons) return;
+  reasons[key] = (reasons[key] || 0) + 1;
+}
+
+async function scoreLoadForCarrier(carrier, load, originPt, { dest = null, destPt = null, blocked = null, reasons = null, pickupPt = null, equipment = null } = {}) {
+  if (!originPt || !load) return null;
+  const wantKind = equipmentKind(equipment || carrier.equipment);
+  const avoid = listStates(carrier.avoid_states);
+  const maxDeadhead = Number(carrier.max_deadhead) || DEFAULT_MAX_DEADHEAD;
+  const minRpm = Number(carrier.min_rpm) || 0;
+  const brokerKey = keyFor({ mc: load.broker_mc });
+  if (brokerKey && blocked && blocked.has(brokerKey)) { bump(reasons, 'broker_failed_fmcsa'); return null; }
+  const pState = (load.pickup_state || stateOf(pickupOf(load)) || '').toUpperCase().trim();
+  const dState = (load.delivery_state || stateOf(deliveryOf(load)) || '').toUpperCase().trim();
+  const loadKind = equipmentKind(load.equipment_type);
+  if (wantKind && loadKind && wantKind !== loadKind && wantKind !== 'power only') { bump(reasons, 'equipment'); return null; }
+  if (dState && avoid.includes(dState)) { bump(reasons, 'avoided_state'); return null; }
+  const pickup = pickupPt || await geocode(pickupOf(load));
+  if (!pickup) return null;
+  const deadhead = roadMiles(originPt, pickup);
+  if (deadhead == null || deadhead > maxDeadhead) { bump(reasons, 'too_far'); return null; }
+  let loaded = Number(load.miles) || 0;
+  let estimated = false;
+  if (!loaded) {
+    const deliveryPt = await geocode(deliveryOf(load));
+    loaded = deliveryPt ? roadMiles(pickup, deliveryPt) || 0 : 0;
+    estimated = true;
+  }
+  if (!loaded) return null;
+  estimated = estimated || pickup.approx || originPt.approx;
+  const rate = Number(load.rate);
+  if (!rate) return null;
+  const allIn = rate / (loaded + deadhead);
+  if (minRpm && allIn < minRpm) { bump(reasons, 'below_min_rpm'); return null; }
+  let destMatch = !dest;
+  let destNear = false;
+  if (dest) {
+    destMatch = dest.states.includes(dState);
+    if (destPt) {
+      const deliveryPt = await geocode(deliveryOf(load));
+      const off = deliveryPt ? milesBetween(destPt, deliveryPt) : null;
+      destNear = off != null && off <= 120;
+      destMatch = destMatch || destNear;
+    }
+  }
+  const homeBonus = carrier.home_state && dState === String(carrier.home_state).toUpperCase() ? 15 : 0;
+  const score = allIn * 100 - deadhead * 0.25 + (destNear ? 60 : destMatch && dest ? 40 : 0) + homeBonus;
+  return {
+    load,
+    pickupState: pState,
+    deliveryState: dState,
+    deadhead,
+    loaded,
+    estimated,
+    allInRpm: Math.round(allIn * 100) / 100,
+    loadedRpm: Math.round((rate / loaded) * 100) / 100,
+    destMatch,
+    score: Math.round(score * 100) / 100
+  };
+}
+
 async function findMatches(carrier, { origin, destination, equipment, excludeLoadIds = [], limit = 3 } = {}) {
   await ensureBoardSchema();
   const originPt = origin ? await geocode(origin) : null;
   if (!originPt) return { originPt: null, matches: [], others: [], reasons: { no_origin: 1 } };
   const maxDeadhead = Number(carrier.max_deadhead) || DEFAULT_MAX_DEADHEAD;
-  const minRpm = Number(carrier.min_rpm) || 0;
   const wantKind = equipmentKind(equipment || carrier.equipment);
   const avoid = listStates(carrier.avoid_states);
   const dest = destination && !destination.any ? destination : null;
@@ -256,59 +342,24 @@ async function findMatches(carrier, { origin, destination, equipment, excludeLoa
 
   const scored = [];
   for (const item of rough.slice(0, GEOCODE_LIMIT)) {
-    const { load, pState, dState } = item;
-    const pickupPt = await geocode(load.pickup_location);
-    if (!pickupPt) continue;
-    const deadhead = roadMiles(originPt, pickupPt);
-    if (deadhead == null || deadhead > maxDeadhead) { reasons.too_far++; continue; }
-    let loaded = Number(load.miles) || 0;
-    let estimated = false;
-    if (!loaded) {
-      const deliveryPt = await geocode(load.delivery_location);
-      loaded = deliveryPt ? roadMiles(pickupPt, deliveryPt) || 0 : 0;
-      estimated = true;
-    }
-    if (!loaded) continue;
-    estimated = estimated || pickupPt.approx || originPt.approx;
-    const rate = Number(load.rate);
-    const allIn = rate / (loaded + deadhead);
-    if (minRpm && allIn < minRpm) { reasons.below_min_rpm++; continue; }
-    let destMatch = !dest;
-    let destNear = false;
-    if (dest) {
-      destMatch = dest.states.includes(dState);
-      if (destPt) {
-        const deliveryPt = await geocode(load.delivery_location);
-        const off = deliveryPt ? milesBetween(destPt, deliveryPt) : null;
-        destNear = off != null && off <= 120;
-        destMatch = destMatch || destNear;
-      }
-    }
-    const homeBonus = carrier.home_state && dState === String(carrier.home_state).toUpperCase() ? 15 : 0;
-    const score = allIn * 100 - deadhead * 0.25 + (destNear ? 60 : destMatch && dest ? 40 : 0) + homeBonus;
-    scored.push({
-      load,
-      pickupState: pState,
-      deliveryState: dState,
-      deadhead,
-      loaded,
-      estimated,
-      allInRpm: Math.round(allIn * 100) / 100,
-      loadedRpm: Math.round((rate / loaded) * 100) / 100,
-      destMatch,
-      score: Math.round(score * 100) / 100
+    const pickupPt = await geocode(pickupOf(item.load));
+    const match = await scoreLoadForCarrier(carrier, item.load, originPt, {
+      dest, destPt, blocked, reasons, pickupPt, equipment
     });
+    if (match) scored.push(match);
   }
+  await reliability.attachToMatches(scored);
   scored.sort((a, b) => b.score - a.score);
   const matches = scored.filter((s) => s.destMatch).slice(0, limit);
   const others = dest ? scored.filter((s) => !s.destMatch).slice(0, limit) : [];
   return { originPt, matches, others, reasons, considered: rows.length };
 }
 
-function offerLine(slot, m) {
+function offerLine(slot, m, lang) {
   const approx = m.estimated ? '~' : '';
   const equip = m.load.equipment_type ? ` | ${String(m.load.equipment_type).slice(0, 18)}` : '';
-  return `${slot}) ${m.load.pickup_location} → ${m.load.delivery_location} | ${money(m.load.rate)} | ${approx}${m.loaded} mi | ${approx}$${m.allInRpm.toFixed(2)}/mi all-in | ${approx}${m.deadhead} mi empty | ${shortDate(m.load.pickup_date)}${equip}`;
+  const hist = reliability.smsBit(m.history, lang);
+  return `${slot}) ${pickupOf(m.load)} → ${deliveryOf(m.load)} | ${money(m.load.rate)} | ${approx}${m.loaded} mi | ${approx}$${m.allInRpm.toFixed(2)}/mi all-in | ${approx}${m.deadhead} mi empty | ${shortDate(m.load.pickup_date)}${equip}${hist}`;
 }
 
 async function logMessage(carrierId, direction, body, intent) {
@@ -346,38 +397,196 @@ async function saveOffers(carrier, list, originLabel) {
   return saved;
 }
 
-function whyNone(reasons) {
-  if (reasons.too_far) return ' Nothing within your empty-mile limit right now.';
-  if (reasons.below_min_rpm) return ' Some loads were below your minimum rate per mile.';
-  if (reasons.equipment) return ' Loads nearby need different equipment.';
+function whyNone(reasons, lang) {
+  if (reasons.too_far) return i18n.t(lang, 'why_too_far');
+  if (reasons.below_min_rpm) return i18n.t(lang, 'why_min_rpm');
+  if (reasons.equipment) return i18n.t(lang, 'why_equipment');
   return '';
 }
 
 async function offerLoads(carrier, { origin, destination, equipment, excludeLoadIds = [] }) {
+  const lang = langOfCarrier(carrier);
   const result = await findMatches(carrier, { origin, destination, equipment, excludeLoadIds });
   const originLabel = placeLabel(origin) || carrier.last_location || carrier.empty_zip || '';
   const destLabel = destination && !destination.any ? destination.label : '';
   if (!result.originPt) {
-    return { reply: 'Shipping Wish: Send the ZIP or city you are empty in, and where you want to go. Example: 75201 to Atlanta.', offers: [] };
+    return { reply: i18n.t(lang, 'need_zip'), offers: [], reasons: result.reasons };
   }
   let list = result.matches;
-  let header = `Shipping Wish loads near ${originLabel}${destLabel ? ` → ${destLabel}` : ''}:`;
+  let header = i18n.t(lang, 'loads_header', { origin: originLabel, dest: destLabel ? ` → ${destLabel}` : '' });
   if (!list.length && result.others.length) {
     list = result.others;
-    header = `Nothing to ${destLabel} right now. Closest other loads near ${originLabel}:`;
+    header = i18n.t(lang, 'loads_other_header', { dest: destLabel, origin: originLabel });
   }
   if (!list.length) {
     return {
-      reply: `Shipping Wish: No posted loads fit near ${originLabel}${destLabel ? ` to ${destLabel}` : ''} yet.${whyNone(result.reasons)} We will check again when you text a new ZIP, or reply ANY for all directions.`,
-      offers: []
+      reply: i18n.t(lang, 'loads_none', { origin: originLabel, dest: destLabel ? (lang === 'es' ? ` a ${destLabel}` : ` to ${destLabel}`) : '', why: whyNone(result.reasons, lang) }),
+      offers: [],
+      reasons: result.reasons
     };
   }
   const offers = await saveOffers(carrier, list, originLabel);
-  const lines = list.map((m, i) => offerLine(i + 1, m));
+  const lines = list.map((m, i) => offerLine(i + 1, m, lang));
   const slots = list.map((_, i) => i + 1);
   const choices = slots.length > 1 ? `${slots.slice(0, -1).join(', ')} or ${slots[slots.length - 1]}` : '1';
-  const reply = `${header}\n${lines.join('\n')}\nReply ${choices} to request one, or MORE. Rates are the broker's posted rate; ~ means estimated miles.`;
-  return { reply, offers, matches: list };
+  const reply = `${header}\n${lines.join('\n')}\n${i18n.t(lang, 'loads_footer', { choices })}`;
+  return { reply, offers, matches: list, reasons: result.reasons };
+}
+
+function langOfCarrier(carrier) {
+  return (carrier && carrier.sms_lang) === 'es' ? 'es' : 'en';
+}
+
+function compactReloadPlan(result, originLabel) {
+  const shape = (m) => ({
+    load_id: m.load.id,
+    load_number: m.load.load_number,
+    lane: `${pickupOf(m.load)} → ${deliveryOf(m.load)}`,
+    rate: Number(m.load.rate),
+    loaded_miles: m.loaded,
+    deadhead_miles: m.deadhead,
+    estimated: m.estimated,
+    all_in_rpm: m.allInRpm
+  });
+  return {
+    from: originLabel,
+    matches: (result.matches || []).map(shape),
+    others: (result.others || []).map(shape),
+    reasons: result.reasons || {}
+  };
+}
+
+async function lastBookedDelivery(carrier) {
+  const { rows } = await pool.query(
+    `SELECT l.delivery_location
+       FROM ai_dispatch_offers o
+       JOIN loads l ON l.id = o.load_id
+      WHERE o.carrier_id = $1 AND o.status = 'booked'
+      ORDER BY o.updated_at DESC LIMIT 1`,
+    [carrier.id]
+  );
+  return rows[0] ? parseOrigin(rows[0].delivery_location) : null;
+}
+
+async function reloadDestination(carrier, parsed) {
+  if (parsed && parsed.destination) return parsed.destination;
+  if (carrier.home_state) return parseDestination(carrier.home_state, carrier);
+  return { any: true, states: [], label: 'anywhere' };
+}
+
+async function planReload(carrier, fromPlace, { excludeLoadIds = [], bookedOfferId = null, limit = 3 } = {}) {
+  await ensureBoardSchema();
+  const origin = fromPlace && (fromPlace.city || fromPlace.zip || fromPlace.state)
+    ? fromPlace
+    : parseOrigin(fromPlace);
+  if (!origin) return { from: null, matches: [], others: [], reasons: { no_origin: 1 } };
+  const dest = await reloadDestination(carrier);
+  const result = await findMatches(carrier, { origin, destination: dest, excludeLoadIds, limit });
+  const plan = compactReloadPlan(result, placeLabel(origin));
+  if (bookedOfferId) {
+    await pool.query(
+      'UPDATE ai_dispatch_offers SET reload_plan = $2::jsonb, updated_at = now() WHERE id = $1',
+      [bookedOfferId, JSON.stringify(plan)]
+    );
+  }
+  return plan;
+}
+
+async function carrierIsBusy(carrierId) {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM ai_dispatch_offers
+      WHERE carrier_id = $1
+        AND (
+          (status = 'offered' AND expires_at > now())
+          OR status = 'requested'
+          OR (status = 'booked' AND COALESCE(transit->>'status', 'booked') <> 'delivered')
+        )
+      LIMIT 1`,
+    [carrierId]
+  );
+  return rows.length > 0;
+}
+
+async function notifyMatchingCarriers(load, { limit = PROACTIVE_MAX_TEXTS } = {}) {
+  await ensureBoardSchema();
+  if (!load || !load.id || Number(load.rate) <= 0) return { sent: 0, skipped: 'no_load' };
+  if (load.status && load.status !== 'new') return { sent: 0, skipped: 'not_open' };
+  const pickupPt = await geocode(pickupOf(load));
+  if (!pickupPt) return { sent: 0, skipped: 'no_pickup_geo' };
+  const blocked = await cachedBlockedKeys().catch(() => new Set());
+  const brokerKey = keyFor({ mc: load.broker_mc });
+  if (brokerKey && blocked.has(brokerKey)) return { sent: 0, skipped: 'broker_blocked' };
+
+  const { rows: carriers } = await pool.query(
+    `SELECT * FROM ai_dispatch_carriers
+      WHERE sms_consent = TRUE
+        AND status = 'active'
+        AND (off_until IS NULL OR off_until < now())
+        AND COALESCE(NULLIF(last_location, ''), NULLIF(empty_zip, '')) IS NOT NULL
+      ORDER BY last_inbound_at DESC NULLS LAST, id
+      LIMIT $1`,
+    [PROACTIVE_CANDIDATE_CAP]
+  );
+
+  const history = await reliability.historyFor(load);
+  const scored = [];
+  for (const carrier of carriers) {
+    const origin = await latestOrigin(carrier);
+    if (!origin) continue;
+    const originPt = await geocode(origin);
+    if (!originPt) continue;
+    const dest = parseDestination(carrier.prefer_destination, carrier);
+    const destPt = dest && dest.point && !dest.any ? await geocode(dest.point) : null;
+    const match = await scoreLoadForCarrier(carrier, load, originPt, {
+      dest: dest && !dest.any ? dest : null,
+      destPt,
+      blocked,
+      pickupPt
+    });
+    if (!match || !match.destMatch) continue;
+    match.history = history;
+    match.score = Math.round((match.score + reliability.scoreBump(history)) * 100) / 100;
+    scored.push({ carrier, origin, match });
+  }
+  scored.sort((a, b) => b.match.score - a.match.score);
+
+  let sent = 0;
+  const details = [];
+  for (const item of scored.slice(0, limit)) {
+    const hours = isWithinTcpaHours(item.carrier.phone);
+    if (!hours.allowed) {
+      details.push({ carrier_id: item.carrier.id, skipped: 'hours', reason: hours.reason });
+      continue;
+    }
+    if (await outboundToday(item.carrier.id) >= MAX_OUTBOUND_PER_DAY) {
+      details.push({ carrier_id: item.carrier.id, skipped: 'cap' });
+      continue;
+    }
+    if (await carrierIsBusy(item.carrier.id)) {
+      details.push({ carrier_id: item.carrier.id, skipped: 'busy' });
+      continue;
+    }
+    const already = await pool.query(
+      `SELECT 1 FROM ai_dispatch_offers WHERE carrier_id = $1 AND load_id = $2 AND created_at > now() - interval '12 hours' LIMIT 1`,
+      [item.carrier.id, load.id]
+    );
+    if (already.rows.length) {
+      details.push({ carrier_id: item.carrier.id, skipped: 'already_shown' });
+      continue;
+    }
+    const originLabel = placeLabel(item.origin);
+    await saveOffers(item.carrier, [item.match], originLabel);
+    const lang = langOfCarrier(item.carrier);
+    const text = i18n.t(lang, 'proactive', { origin: originLabel, line: offerLine(1, item.match, lang) });
+    const sms = await textCarrier(item.carrier, text, 'proactive_match');
+    if (sms === 'sent' || sms === 'logged') sent++;
+    details.push({ carrier_id: item.carrier.id, sms, load_number: load.load_number });
+  }
+  return { sent, considered: carriers.length, matched: scored.length, details };
+}
+
+function fanoutPostedLoad(load) {
+  notifyMatchingCarriers(load).catch((err) => console.warn('[dispatch] proactive match failed:', err.message));
 }
 
 function brokerEmailOf(load) {
@@ -396,7 +605,7 @@ async function notify(title, message, type, link) {
   } catch { /* notifications are best effort */ }
 }
 
-async function requestBooking(carrier, offer) {
+async function requestBooking(carrier, offer, { askRate = null } = {}) {
   const loadRes = await pool.query('SELECT * FROM loads WHERE id = $1', [offer.load_id]);
   const load = loadRes.rows[0];
   const held = await pool.query(
@@ -426,35 +635,59 @@ async function requestBooking(carrier, offer) {
   }
 
   const authority = [carrier.mc_number ? `MC ${carrier.mc_number}` : null, carrier.dot_number ? `USDOT ${carrier.dot_number}` : null].filter(Boolean).join(' / ');
+  const posted = Number(load.rate) || 0;
+  const ask = askRate && Number(askRate) > posted ? Number(askRate) : null;
   let note;
+  let negotiation = offer.negotiation || null;
   if (brokerEmail && authority) {
     const lane = `${load.pickup_location} → ${load.delivery_location}`;
-    const ops = process.env.DISPATCH_EMAIL || process.env.MAIL_REPLY_TO || require('./email-templates').COMPANY.operationsEmail;
+    const opsAddr = process.env.DISPATCH_EMAIL || process.env.MAIL_REPLY_TO || require('./email-templates').COMPANY.operationsEmail;
+    const rateLine = ask
+      ? `They want this load at ${money(ask)} (posted ${money(posted)}).`
+      : `They want load ${load.load_number} on LoadsNexus:`;
+    const close = ask
+      ? `If you can do ${money(ask)}, reply to confirm and send the rate confirmation${opsAddr ? ` to ${opsAddr}` : ''}. If not, reply with the best dollar amount you can do, or "covered".`
+      : `If it is still open, reply to confirm and send the rate confirmation${opsAddr ? ` to ${opsAddr}` : ''}. If it is covered, just reply "covered" and we will stop.`;
     const text = [
       `Hello ${load.broker_name || 'team'},`,
       '',
-      `Shipping Wish dispatches for ${carrier.company_name} (${authority}). They want load ${load.load_number} on LoadsNexus:`,
+      `Shipping Wish dispatches for ${carrier.company_name} (${authority}). ${rateLine}`,
       `Lane: ${lane}`,
       `Pickup: ${shortDate(load.pickup_date)}`,
-      `Posted rate: ${money(load.rate)}`,
+      ask ? `Asked rate: ${money(ask)}` : `Posted rate: ${money(posted)}`,
+      ask ? `Posted rate: ${money(posted)}` : null,
       `Equipment: ${carrier.equipment || load.equipment_type || 'as posted'}`,
       `Truck is empty about ${offer.deadhead_miles} miles from pickup${offer.miles_estimated ? ' (estimated)' : ''}.`,
       '',
-      `If it is still open, reply to confirm and send the rate confirmation${ops ? ` to ${ops}` : ''}. If it is covered, just reply "covered" and we will stop.`,
+      close,
       '',
       'Shipping Wish Dispatch'
-    ].join('\n');
+    ].filter((line) => line !== null).join('\n');
     try {
       await require('./mailer').sendBrandedEmail({
         to: brokerEmail,
-        subject: `Booking request ${load.load_number}: ${lane} [SWD-${offer.id}]`,
+        subject: ask
+          ? `Rate request ${money(ask)} on ${load.load_number}: ${lane} [SWD-${offer.id}]`
+          : `Booking request ${load.load_number}: ${lane} [SWD-${offer.id}]`,
         text,
         html: `<div style="font-family:Arial,sans-serif;font-size:14px;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
         transactional: true,
-        emailType: 'dispatch_booking',
-        replyTo: ops || undefined
+        emailType: ask ? 'dispatch_rate_ask' : 'dispatch_booking',
+        from: require('./brand-senders').getBrandSender('shippingwish', 'dispatch'),
+        replyTo: opsAddr || require('./brand-senders').replyAddress('shippingwish', 'dispatch')
       });
-      note = `Emailed ${brokerEmail}`;
+      note = ask ? `Emailed ${brokerEmail} asking ${money(ask)} (posted ${money(posted)})` : `Emailed ${brokerEmail}`;
+      if (ask) {
+        negotiation = {
+          ...(negotiation || {}),
+          status: 'asked',
+          posted,
+          driver_ask: ask,
+          broker_offer: null,
+          agreed: null,
+          emailed_at: new Date().toISOString()
+        };
+      }
     } catch (err) {
       note = 'Broker email failed; call the broker';
     }
@@ -464,10 +697,15 @@ async function requestBooking(carrier, offer) {
     note = `No broker email; call ${brokerPhoneOf(load) || load.broker_name || 'the broker'}`;
   }
   if (brokerCheck.verdict !== 'ok') note = `${note}. ${brokerNote}`;
+  const hist = await reliability.historyFor(load).catch(() => null);
+  const withUs = hist && (hist.asked || hist.booked || hist.paidLoads)
+    ? ` With us: ${[hist.asked ? `asked ${hist.asked}` : '', hist.booked ? `booked ${hist.booked}` : '', hist.paidLoads ? `${hist.paidLoads} paid` : ''].filter(Boolean).join(', ')}.`
+    : '';
+  note = `${note}${withUs}`;
 
   await pool.query(
-    `UPDATE ai_dispatch_offers SET status = 'requested', requested_at = now(), broker_email = $2, note = $3, broker_authority = $4::jsonb, updated_at = now() WHERE id = $1`,
-    [offer.id, brokerEmail, note.slice(0, 500), JSON.stringify(brokerCheck)]
+    `UPDATE ai_dispatch_offers SET status = 'requested', requested_at = now(), broker_email = $2, note = $3, broker_authority = $4::jsonb, negotiation = $5::jsonb, updated_at = now() WHERE id = $1`,
+    [offer.id, brokerEmail, note.slice(0, 500), JSON.stringify(brokerCheck), negotiation ? JSON.stringify(negotiation) : null]
   );
   await pool.query(
     `UPDATE ai_dispatch_offers SET status = 'expired', updated_at = now() WHERE carrier_id = $1 AND status = 'offered' AND id <> $2`,
@@ -475,10 +713,10 @@ async function requestBooking(carrier, offer) {
   );
   await notify(
     `Carrier wants ${load.load_number}: ${carrier.company_name}`,
-    `${load.pickup_location} → ${load.delivery_location} ${money(load.rate)}. ${note}`,
+    `${load.pickup_location} → ${load.delivery_location} ${ask ? money(ask) + ' asked, posted ' + money(posted) : money(posted)}. ${note}`,
     brokerCheck.verdict === 'ok' ? 'success' : 'warning'
   );
-  return { taken: false, load, note };
+  return { taken: false, load, note, ask };
 }
 
 async function findCarrierByPhone(phone) {
@@ -504,26 +742,280 @@ async function shownLoadIds(carrierId) {
   return rows.map((r) => r.load_id);
 }
 
+async function latestLiveOffer(carrierId, slot) {
+  const { rows } = await pool.query(
+    `SELECT o.*, row_to_json(l) AS load
+       FROM ai_dispatch_offers o
+       LEFT JOIN loads l ON l.id = o.load_id
+      WHERE o.carrier_id = $1
+        AND o.status IN ('offered', 'requested')
+        AND (o.status = 'requested' OR o.expires_at > now())
+        AND ($2::int IS NULL OR o.slot = $2)
+      ORDER BY CASE o.status WHEN 'requested' THEN 0 ELSE 1 END, o.created_at DESC
+      LIMIT 8`,
+    [carrierId, slot || null]
+  );
+  return rows;
+}
+
+async function sendFollowUpAsk(carrier, offer, load, ask) {
+  const brokerEmail = offer.broker_email || brokerEmailOf(load);
+  const authority = [carrier.mc_number ? `MC ${carrier.mc_number}` : null, carrier.dot_number ? `USDOT ${carrier.dot_number}` : null].filter(Boolean).join(' / ');
+  if (!brokerEmail || !authority) return { sent: false, reason: 'missing' };
+  const posted = Number(load.rate) || 0;
+  const lane = `${load.pickup_location} → ${load.delivery_location}`;
+  const opsAddr = process.env.DISPATCH_EMAIL || process.env.MAIL_REPLY_TO || require('./email-templates').COMPANY.operationsEmail;
+  const text = [
+    `Hello ${load.broker_name || 'team'},`,
+    '',
+    `Follow-up on load ${load.load_number} [SWD-${offer.id}]. ${carrier.company_name} (${authority}) needs ${money(ask)} (posted ${money(posted)}).`,
+    `Lane: ${lane}`,
+    '',
+    `If you can do ${money(ask)}, reply to confirm and send the rate confirmation${opsAddr ? ` to ${opsAddr}` : ''}. If not, reply with the best dollar amount you can do, or "covered".`,
+    '',
+    'Shipping Wish Dispatch'
+  ].join('\n');
+  await require('./mailer').sendBrandedEmail({
+    to: brokerEmail,
+    subject: `Rate request ${money(ask)} on ${load.load_number}: ${lane} [SWD-${offer.id}]`,
+    text,
+    html: `<div style="font-family:Arial,sans-serif;font-size:14px;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
+    transactional: true,
+    emailType: 'dispatch_rate_ask',
+    from: require('./brand-senders').getBrandSender('shippingwish', 'dispatch'),
+    replyTo: opsAddr || require('./brand-senders').replyAddress('shippingwish', 'dispatch')
+  });
+  const negotiation = {
+    ...(offer.negotiation || {}),
+    status: 'asked',
+    posted,
+    driver_ask: ask,
+    broker_offer: null,
+    agreed: null,
+    emailed_at: new Date().toISOString()
+  };
+  await pool.query(
+    `UPDATE ai_dispatch_offers SET negotiation = $2::jsonb, note = $3, updated_at = now() WHERE id = $1`,
+    [offer.id, JSON.stringify(negotiation), `Asked ${money(ask)} after posting ${money(posted)}`.slice(0, 500)]
+  );
+  await notify(
+    `Rate ask ${money(ask)} on ${load.load_number}`,
+    `${carrier.company_name} asked ${money(ask)} (posted ${money(posted)}). Emailed ${brokerEmail}.`,
+    'info'
+  );
+  return { sent: true, negotiation };
+}
+
+async function handleNegotiate(carrier, parsed) {
+  const lang = langOfCarrier(carrier);
+  const live = await latestLiveOffer(carrier.id, parsed.choice || null);
+  const offered = live.filter((o) => o.status === 'offered');
+  const requested = live.filter((o) => o.status === 'requested');
+  if (!parsed.choice && offered.length > 1 && !requested.length) {
+    return { reply: i18n.t(lang, 'negotiate_which'), action: 'negotiate_which' };
+  }
+  const offer = requested[0] || offered[0];
+  if (!offer || !offer.load) {
+    return { reply: i18n.t(lang, 'negotiate_none'), action: 'negotiate_none' };
+  }
+  const load = offer.load;
+  const posted = Number(load.rate) || 0;
+  const guarded = neg.guardAsk({
+    posted,
+    ask: parsed.ask,
+    unit: parsed.unit,
+    loaded: offer.loaded_miles,
+    deadhead: offer.deadhead_miles,
+    estimated: offer.miles_estimated,
+    minRpm: carrier.min_rpm,
+    lang
+  });
+  if (!guarded.ok) {
+    if (guarded.code === 'over_cap') {
+      await notify(
+        `${carrier.company_name} wants ${money(guarded.flat)} on ${load.load_number}`,
+        `Posted ${money(posted)}. Auto-ask cap is ${money(guarded.cap)}. Driver named this number; nothing was emailed.`,
+        'warning'
+      );
+    }
+    return { reply: `Shipping Wish: ${guarded.message}`, action: 'negotiate_' + guarded.code };
+  }
+  const existing = offer.negotiation || {};
+  if (existing.emailed_at && !existing.broker_offer && Number(existing.driver_ask) === guarded.flat) {
+    return { reply: i18n.t(lang, 'negotiate_waiting', { ask: money(guarded.flat), load: load.load_number }), action: 'negotiate_waiting' };
+  }
+  if (existing.emailed_at && !existing.broker_offer && Number(existing.driver_ask) !== guarded.flat) {
+    await notify(
+      `${carrier.company_name} changed the ask on ${load.load_number}`,
+      `First ask ${money(existing.driver_ask)}, now ${money(guarded.flat)}. A dispatcher should handle the next email.`,
+      'warning'
+    );
+    return { reply: i18n.t(lang, 'negotiate_one_email', { load: load.load_number }), action: 'negotiate_one_email' };
+  }
+  if (offer.status === 'requested') {
+    try {
+      const sent = await sendFollowUpAsk(carrier, offer, load, guarded.flat);
+      if (!sent.sent) {
+        await notify(`Call the broker on ${load.load_number}`, `${carrier.company_name} needs ${money(guarded.flat)}.`, 'warning');
+        return { reply: i18n.t(lang, 'negotiate_staff', { ask: money(guarded.flat), load: load.load_number }), action: 'negotiate_staff' };
+      }
+    } catch (err) {
+      return { reply: i18n.t(lang, 'negotiate_staff', { ask: money(guarded.flat), load: load.load_number }), action: 'negotiate_staff' };
+    }
+    return {
+      reply: i18n.t(lang, 'negotiate_asked_short', { ask: money(guarded.flat), load: load.load_number, posted: money(posted) }),
+      action: 'negotiate_asked'
+    };
+  }
+  const result = await requestBooking(carrier, offer, { askRate: guarded.flat });
+  if (result.taken) {
+    return { reply: i18n.t(lang, 'book_taken', { load: result.load ? result.load.load_number : '' }), action: 'book_taken' };
+  }
+  if (result.blocked) {
+    return { reply: i18n.t(lang, 'book_blocked', { load: result.load.load_number }), action: 'book_blocked' };
+  }
+  return {
+    reply: i18n.t(lang, 'negotiate_asked', { ask: money(guarded.flat), load: result.load.load_number, posted: money(posted) }),
+    action: 'negotiate_asked'
+  };
+}
+
+async function acceptBrokerCounter(carrier, offer) {
+  const lang = langOfCarrier(carrier);
+  const load = offer.load || {};
+  const rate = Number((offer.negotiation || {}).broker_offer);
+  if (!rate) return null;
+  const negotiation = { ...(offer.negotiation || {}), agreed: rate, status: 'driver_accepted' };
+  await pool.query(
+    `UPDATE ai_dispatch_offers SET negotiation = $2::jsonb, note = $3, updated_at = now() WHERE id = $1`,
+    [offer.id, JSON.stringify(negotiation), `Driver accepted broker counter ${money(rate)}`.slice(0, 500)]
+  );
+  await notify(
+    `${carrier.company_name} accepted ${money(rate)} on ${load.load_number || `offer ${offer.id}`}`,
+    `Posted ${money(load.rate)}. Check the rate confirmation before Booked.`,
+    'success'
+  );
+  return {
+    reply: i18n.t(lang, 'negotiate_accepted', { rate: money(rate), load: load.load_number || 'that load' }),
+    action: 'negotiate_accepted'
+  };
+}
+
+async function finishDeliveredLoad(offer, carrier, intent) {
+  const result = await ops.persistTransit(offer, intent || 'delivered');
+  const load = offer.load || {};
+  if (load.id) {
+    await pool.query(
+      `UPDATE loads SET status = CASE WHEN status = 'booked' THEN 'delivered' ELSE status END, updated_at = now() WHERE id = $1`,
+      [load.id]
+    ).catch(() => {});
+  }
+  await notify(
+    `${carrier.company_name} delivered ${load.load_number || `offer ${offer.id}`}`,
+    `${load.pickup_location || ''} → ${load.delivery_location || ''}. Driver can text RELOAD for the next load.`,
+    'success'
+  );
+  return result;
+}
+
+async function handleBookedInbound(carrier, offer, body, parsed, media) {
+  const lang = langOfCarrier(carrier);
+  const transit = ops.parseTransitText(body);
+  const wantsReload = parsed.intent === 'reload';
+  const photos = Array.isArray(media) ? media.filter((m) => m && m.url) : [];
+  let pods = { saved: [], errors: [] };
+  if (photos.length) {
+    pods = await ops.saveMediaPods(offer, carrier, photos, String(body || '').slice(0, 200));
+  }
+
+  const finishAndReload = wantsReload || (transit && (transit.intent === 'delivered' || transit.intent === 'departed'));
+  if (finishAndReload) {
+    await finishDeliveredLoad(offer, carrier, (transit && transit.intent) || 'delivered');
+    return { continueReload: true, pods };
+  }
+
+  if (transit && transit.intent !== 'pod') {
+    const result = await ops.persistTransit(offer, transit.intent);
+    let reply = ops.transitReply(transit.intent, offer.load, result.status, lang);
+    if (pods.saved.length) reply += i18n.t(lang, 'pod_saved_extra');
+    if (pods.errors.length) reply += i18n.t(lang, 'pod_one_fail');
+    return { reply, action: transit.intent, pods };
+  }
+
+  if (photos.length) {
+    const result = await ops.persistTransit(offer, 'pod');
+    let reply = ops.transitReply('pod', offer.load, result.status, lang);
+    if (pods.errors.length && !pods.saved.length) reply = i18n.t(lang, 'pod_fail');
+    else if (pods.errors.length) reply += i18n.t(lang, 'pod_one_fail');
+    return { reply, action: 'pod', pods };
+  }
+
+  if (transit && transit.intent === 'pod') {
+    const result = await ops.persistTransit(offer, 'pod');
+    return { reply: ops.transitReply('pod', offer.load, result.status, lang), action: 'pod', pods };
+  }
+  return null;
+}
+
+async function rememberLang(carrier, text) {
+  const detected = i18n.detectLang(text);
+  if (!detected) return langOfCarrier(carrier);
+  if (carrier.sms_lang !== detected) {
+    await pool.query('UPDATE ai_dispatch_carriers SET sms_lang = $2 WHERE id = $1', [carrier.id, detected]);
+    carrier.sms_lang = detected;
+  }
+  return detected;
+}
+
 // Handles a text from a carrier on the AI dispatch desk. Returns null when the phone isn't a
 // desk carrier so the regular SMS flow can answer instead.
-async function handleCarrierSms(fromPhone, body) {
+async function handleCarrierSms(fromPhone, body, extras = {}) {
   await ensureBoardSchema();
   const carrier = await findCarrierByPhone(fromPhone);
   if (!carrier) return null;
+  const media = Array.isArray(extras.media) ? extras.media : [];
+  await rememberLang(carrier, body);
+  const lang = langOfCarrier(carrier);
+  const booked = await ops.currentBookedOffer(carrier.id);
+  const transit = booked ? ops.parseTransitText(body) : null;
   const parsed = await understand(body, carrier);
-  await logMessage(carrier.id, 'inbound', body, parsed.intent);
+  if (booked && (transit || media.length) && parsed.intent === 'unknown') parsed.intent = (transit && transit.intent) || 'pod';
+  await logMessage(carrier.id, 'inbound', body || (media.length ? '[photo]' : ''), parsed.intent);
   await pool.query('UPDATE ai_dispatch_carriers SET last_inbound_at = now() WHERE id = $1', [carrier.id]);
+
+  if (booked && (transit || media.length || parsed.intent === 'reload')) {
+    const handled = await handleBookedInbound(carrier, booked, body, parsed, media);
+    if (handled && !handled.continueReload) {
+      await logMessage(carrier.id, 'outbound', handled.reply, handled.action);
+      return { carrier, parsed, reply: handled.reply, action: handled.action, pods: handled.pods };
+    }
+    if (handled && handled.continueReload) parsed.intent = 'reload';
+  }
 
   if (await outboundToday(carrier.id) >= MAX_OUTBOUND_PER_DAY) {
     await notify(`Dispatch desk: ${carrier.company_name} needs a person`, String(body).slice(0, 160), 'warning');
-    const reply = 'Shipping Wish: A dispatcher will text you shortly.';
+    const reply = i18n.t(lang, 'handoff');
     await logMessage(carrier.id, 'outbound', reply, 'handoff');
     return { carrier, parsed, reply, action: 'handoff' };
   }
 
+  const liveOffers = await latestLiveOffer(carrier.id, null);
+  const pendingCounter = liveOffers.find((o) => neg.awaitingDriverCounter(o));
+  if (pendingCounter && parsed.intent !== 'negotiate' && /^(yes|y|ok|take it|book it|si|sí)\b/i.test(String(body).trim())) {
+    const accepted = await acceptBrokerCounter(carrier, pendingCounter);
+    if (accepted) {
+      await logMessage(carrier.id, 'outbound', accepted.reply, accepted.action);
+      return { carrier, parsed, reply: accepted.reply, action: accepted.action };
+    }
+  }
+
   let reply;
   let action = parsed.intent;
-  if (parsed.intent === 'book') {
+  if (parsed.intent === 'negotiate') {
+    const handled = await handleNegotiate(carrier, parsed);
+    reply = handled.reply;
+    action = handled.action;
+  } else if (parsed.intent === 'book') {
     const { rows } = await pool.query(
       `SELECT * FROM ai_dispatch_offers WHERE carrier_id = $1 AND slot = $2 AND status = 'offered' AND expires_at > now()
         ORDER BY created_at DESC LIMIT 1`,
@@ -534,42 +1026,65 @@ async function handleCarrierSms(fromPhone, body) {
       const origin = await latestOrigin(carrier);
       const fresh = origin ? await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier) }) : null;
       reply = fresh && fresh.offers.length
-        ? `That list expired.\n${fresh.reply}`
-        : 'Shipping Wish: That list expired. Text the ZIP you are empty in to get fresh loads.';
+        ? `${i18n.t(lang, 'book_expired_lead')}\n${fresh.reply}`
+        : i18n.t(lang, 'book_expired');
       action = 'book_expired';
     } else {
       const result = await requestBooking(carrier, offer);
       if (result.taken) {
         const origin = await latestOrigin(carrier);
         const fresh = origin ? await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier), excludeLoadIds: [offer.load_id] }) : null;
-        reply = `Load ${result.load ? result.load.load_number : ''} was just taken.` + (fresh && fresh.offers.length ? `\n${fresh.reply}` : ' Text your ZIP for more.');
+        reply = i18n.t(lang, 'book_taken', { load: result.load ? result.load.load_number : '' }) + (fresh && fresh.offers.length ? `\n${fresh.reply}` : i18n.t(lang, 'zip_more_short'));
         action = 'book_taken';
       } else if (result.blocked) {
         const origin = await latestOrigin(carrier);
         const fresh = origin ? await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier), excludeLoadIds: [...await shownLoadIds(carrier.id), offer.load_id] }) : null;
-        reply = `Shipping Wish: We won't request ${result.load.load_number}. That broker did not pass our FMCSA authority check.` + (fresh && fresh.offers.length ? `\n${fresh.reply}` : ' Text your ZIP for other loads.');
+        reply = i18n.t(lang, 'book_blocked_more', { load: result.load.load_number }) + (fresh && fresh.offers.length ? `\n${fresh.reply}` : i18n.t(lang, 'zip_more'));
         action = 'book_blocked';
       } else {
-        reply = `Shipping Wish: Requesting ${result.load.load_number} (${result.load.pickup_location} → ${result.load.delivery_location}, ${money(result.load.rate)}) from the broker now. Do not roll until we text BOOKED with the rate confirmation.`;
+        reply = i18n.t(lang, 'book_requested', {
+          load: result.load.load_number,
+          lane: `${result.load.pickup_location} → ${result.load.delivery_location}`,
+          rate: money(result.load.rate)
+        });
         action = 'book_requested';
       }
     }
   } else if (parsed.intent === 'more') {
     const origin = await latestOrigin(carrier);
     if (!origin) {
-      reply = 'Shipping Wish: Text the ZIP you are empty in and where you want to go. Example: 75201 to Atlanta.';
+      reply = i18n.t(lang, 'more_need_zip');
     } else {
       const res = await offerLoads(carrier, {
         origin,
         destination: parseDestination(carrier.prefer_destination, carrier),
         excludeLoadIds: await shownLoadIds(carrier.id)
       });
-      reply = res.offers.length ? res.reply : `Shipping Wish: No other loads near ${placeLabel(origin)} right now. Reply ANY for all directions, or text a new ZIP later.`;
+      reply = res.offers.length ? res.reply : i18n.t(lang, 'more_none', { origin: placeLabel(origin) });
     }
   } else if (parsed.intent === 'off') {
     await pool.query(`UPDATE ai_dispatch_carriers SET off_until = now() + interval '20 hours' WHERE id = $1`, [carrier.id]);
     await pool.query(`UPDATE ai_dispatch_offers SET status = 'expired', updated_at = now() WHERE carrier_id = $1 AND status = 'offered'`, [carrier.id]);
-    reply = 'Shipping Wish: Got it, no loads today. We will check in on the next workday morning.';
+    reply = i18n.t(lang, 'off');
+  } else if (parsed.intent === 'reload') {
+    const origin = parsed.origin || await lastBookedDelivery(carrier) || await latestOrigin(carrier);
+    if (!origin) {
+      reply = i18n.t(lang, 'reload_need_zip');
+    } else {
+      await pool.query(
+        `UPDATE ai_dispatch_carriers
+            SET last_location = $2, empty_zip = COALESCE($3, empty_zip), off_until = NULL
+          WHERE id = $1`,
+        [carrier.id, placeLabel(origin), origin.zip || null]
+      );
+      const res = await offerLoads(
+        { ...carrier, last_location: placeLabel(origin) },
+        { origin, destination: await reloadDestination(carrier, parsed), excludeLoadIds: await shownLoadIds(carrier.id) }
+      );
+      reply = res.offers.length
+        ? res.reply
+        : i18n.t(lang, 'reload_none', { origin: placeLabel(origin), why: whyNone(res.reasons || {}, lang) });
+    }
   } else if (parsed.intent === 'loads') {
     const origin = parsed.origin || await latestOrigin(carrier);
     const destination = parsed.destination || parseDestination(carrier.prefer_destination, carrier);
@@ -586,13 +1101,13 @@ async function handleCarrierSms(fromPhone, body) {
         parsed.destination ? parsed.destination.label : null, parsed.equipment]
     );
     if (!origin) {
-      reply = `Shipping Wish: Noted${destination ? ` ${destination.label}` : ''}. What ZIP or city are you empty in?`;
+      reply = i18n.t(lang, 'noted_dest', { dest: destination ? ` ${destination.label}` : '' });
     } else {
       const res = await offerLoads({ ...carrier, equipment: parsed.equipment || carrier.equipment }, { origin, destination, equipment: parsed.equipment });
       reply = res.reply;
     }
   } else {
-    reply = 'Shipping Wish dispatch: text the ZIP or city you are empty in and where you want to go (example: 75201 to Atlanta). Reply 1-3 to request a load we sent, MORE for others, or OFF TODAY. A dispatcher reads every message.';
+    reply = i18n.t(lang, 'help');
     await notify(`Dispatch desk message: ${carrier.company_name}`, String(body).slice(0, 160), 'info');
   }
 
@@ -658,11 +1173,31 @@ async function markBooked(offerId, staffNote, { force = false } = {}) {
       WHERE id = $1`,
     [load.id, `AI dispatch: booked for ${offer.carrier.company_name}${offer.carrier.mc_number ? ` (MC ${offer.carrier.mc_number})` : ''}${staffNote ? ` — ${staffNote}` : ''}`]
   );
-  await pool.query(`UPDATE ai_dispatch_offers SET status = 'booked', updated_at = now() WHERE id = $1`, [offer.id]);
+  const bookedOps = ops.initBookedOps(Date.now(), offer.ratecon);
+  await pool.query(
+    `UPDATE ai_dispatch_offers SET status = 'booked', transit = $2::jsonb, detention = $3::jsonb, updated_at = now() WHERE id = $1`,
+    [offer.id, JSON.stringify(bookedOps.transit), JSON.stringify(bookedOps.detention)]
+  );
   await pool.query(`UPDATE ai_dispatch_offers SET status = 'expired', updated_at = now() WHERE load_id = $1 AND id <> $2 AND status IN ('offered','requested')`, [load.id, offer.id]);
-  const text = `Shipping Wish: BOOKED ${load.load_number}. ${load.pickup_location} → ${load.delivery_location}, pickup ${shortDate(load.pickup_date)}, ${money(load.rate)}. The rate confirmation and pickup details follow. Reply here with any question.`;
+  const deliveryOrigin = parseOrigin(load.delivery_location);
+  let reloadHint = '';
+  if (deliveryOrigin) {
+    const plan = await planReload(offer.carrier, deliveryOrigin, { excludeLoadIds: [load.id], bookedOfferId: offer.id });
+    const n = (plan.matches || []).length;
+    reloadHint = n
+      ? i18n.t(langOfCarrier(offer.carrier), 'reload_hint', { city: placeLabel(deliveryOrigin), n, s: n === 1 ? '' : 's' })
+      : i18n.t(langOfCarrier(offer.carrier), 'reload_hint_none', { city: placeLabel(deliveryOrigin) });
+  }
+  const bookedRate = neg.expectedRate(offer, load) || load.rate;
+  const text = i18n.t(langOfCarrier(offer.carrier), 'booked', {
+    load: load.load_number,
+    lane: `${load.pickup_location} → ${load.delivery_location}`,
+    date: shortDate(load.pickup_date),
+    rate: money(bookedRate),
+    reload: reloadHint
+  });
   const sms = await textCarrier(offer.carrier, text, 'booked');
-  return { offer: { ...offer, status: 'booked' }, sms };
+  return { offer: { ...offer, status: 'booked', transit: bookedOps.transit, detention: bookedOps.detention }, sms, reload_plan: deliveryOrigin ? true : false };
 }
 
 // Broker said no, or staff released it: free the carrier and send the next best loads.
@@ -673,16 +1208,17 @@ async function releaseOffer(offerId, reason) {
   if (offer.status === 'booked') throw new Error('This load is already booked.');
   await pool.query(`UPDATE ai_dispatch_offers SET status = 'declined', note = $2, updated_at = now() WHERE id = $1`, [offer.id, String(reason || 'released').slice(0, 200)]);
   const carrier = offer.carrier;
+  const lang = langOfCarrier(carrier);
   const origin = await latestOrigin(carrier);
   const loadNumber = offer.load ? offer.load.load_number : 'That load';
-  let text = `Shipping Wish: ${loadNumber} is no longer available.`;
+  let text = i18n.t(lang, 'released', { load: loadNumber });
   if (origin) {
     const res = await offerLoads(carrier, {
       origin,
       destination: parseDestination(carrier.prefer_destination, carrier),
       excludeLoadIds: [...await shownLoadIds(carrier.id), offer.load_id]
     });
-    text += res.offers.length ? `\n${res.reply}` : ' Text your ZIP again for fresh loads.';
+    text += res.offers.length ? `\n${res.reply}` : i18n.t(lang, 'released_zip');
   }
   let sms = 'held_for_hours';
   if (carrier.sms_consent && isWithinTcpaHours(carrier.phone).allowed) sms = await textCarrier(carrier, text, 'released');
@@ -713,7 +1249,8 @@ async function handleBrokerBookingReply({ fromEmail, subject, bodyText, resendId
     return { offer: offer.id, action: 'sender_mismatch' };
   }
   const kind = classifyBrokerReply(bodyText);
-  await pool.query(`UPDATE ai_dispatch_offers SET broker_reply = $2, updated_at = now() WHERE id = $1`, [offer.id, `${kind}: ${withoutQuotedEmail(bodyText).slice(0, 500)}`]);
+  const counter = kind === 'question' ? neg.parseBrokerRate(withoutQuotedEmail(bodyText)) : null;
+  await pool.query(`UPDATE ai_dispatch_offers SET broker_reply = $2, updated_at = now() WHERE id = $1`, [offer.id, `${counter ? 'counter' : kind}: ${withoutQuotedEmail(bodyText).slice(0, 500)}`]);
   const loadNumber = offer.load ? offer.load.load_number : `offer ${offer.id}`;
   if (kind === 'declined') {
     await releaseOffer(offer.id, `Broker replied covered (${fromEmail})`);
@@ -721,12 +1258,13 @@ async function handleBrokerBookingReply({ fromEmail, subject, bodyText, resendId
   }
   if (kind === 'confirmed') {
     const load = offer.load || {};
+    const expect = neg.expectedRate(offer, load);
     const ratecon = await require('./ratecon-reader').checkRateCon({
       resendId,
       attachments,
       bodyText,
       expected: {
-        rate: load.rate,
+        rate: expect,
         carrierMc: offer.carrier.mc_number,
         carrierDot: offer.carrier.dot_number,
         pickup: load.pickup_location,
@@ -740,7 +1278,35 @@ async function handleBrokerBookingReply({ fromEmail, subject, bodyText, resendId
         ? `Rate confirmation does not match: ${ratecon.issues.join(' ')} Fix it with the broker before booking.`
         : 'No readable rate confirmation came with the reply. Get it before pressing Booked.';
     await notify(`Broker confirmed ${loadNumber} for ${offer.carrier.company_name}`, message, ratecon.status === 'match' ? 'success' : 'warning');
-    return { offer: offer.id, action: 'confirmed', ratecon: ratecon.status };
+    return { offer: offer.id, action: 'confirmed', ratecon: ratecon.status, expected_rate: expect };
+  }
+  if (counter) {
+    const load = offer.load || {};
+    const posted = Number(load.rate) || 0;
+    const negotiation = {
+      ...(offer.negotiation || {}),
+      status: 'broker_counter',
+      posted: (offer.negotiation && offer.negotiation.posted) || posted,
+      broker_offer: counter,
+      agreed: null
+    };
+    await pool.query(
+      `UPDATE ai_dispatch_offers SET negotiation = $2::jsonb, updated_at = now() WHERE id = $1`,
+      [offer.id, JSON.stringify(negotiation)]
+    );
+    const text = i18n.t(langOfCarrier(offer.carrier), 'broker_counter', {
+      rate: money(counter),
+      load: loadNumber,
+      posted: money(posted)
+    });
+    let sms = 'held_for_hours';
+    if (offer.carrier.sms_consent && isWithinTcpaHours(offer.carrier.phone).allowed) {
+      sms = await textCarrier(offer.carrier, text, 'broker_counter');
+    } else {
+      await notify(`Tell ${offer.carrier.company_name}: broker offered ${money(counter)} on ${loadNumber}`, 'Outside their texting hours or no text consent on file.', 'warning');
+    }
+    await notify(`Broker counter ${money(counter)} on ${loadNumber}`, `${offer.carrier.company_name}. Posted ${money(posted)}. Driver must accept it; we did not book.`, 'info');
+    return { offer: offer.id, action: 'counter', rate: counter, sms };
   }
   await notify(`Broker question on ${loadNumber}`, String(bodyText || '').slice(0, 160), 'warning', '/inbox.html');
   return { offer: offer.id, action: 'question' };
@@ -785,6 +1351,7 @@ async function preview(carrier, text) {
     pickup_date: m.load.pickup_date,
     equipment: m.load.equipment_type,
     broker: m.load.broker_name,
+    broker_history: m.history ? m.history.summary : null,
     lane_benchmark: await laneBenchmark(m.pickupState, m.deliveryState).catch(() => null),
     sms_line: offerLine(1, m).slice(3)
   });
@@ -795,7 +1362,8 @@ async function preview(carrier, text) {
       origin: origin ? placeLabel(origin) : null,
       destination: destination ? destination.label : null,
       equipment: parsed.equipment || carrier.equipment || null,
-      choice: parsed.choice
+      choice: parsed.choice,
+      ask: parsed.ask || null
     },
     matches: await Promise.all(matches.matches.map(shape)),
     others: await Promise.all(matches.others.map(shape)),
@@ -808,9 +1376,14 @@ async function listOffers(limit = 50) {
   await ensureBoardSchema();
   const { rows } = await pool.query(
     `SELECT o.id, o.status, o.slot, o.deadhead_miles, o.loaded_miles, o.miles_estimated, o.all_in_rpm, o.note, o.broker_email,
-            o.broker_reply, o.requested_at, o.created_at, o.updated_at, o.ratecon, o.broker_authority,
+            o.broker_reply, o.requested_at, o.created_at, o.updated_at, o.ratecon, o.broker_authority, o.reload_plan,
+            o.transit, o.detention, o.negotiation,
             c.id AS carrier_id, c.company_name, c.phone, c.mc_number,
-            l.load_number, l.pickup_location, l.delivery_location, l.rate, l.pickup_date, l.broker_name, l.broker_contact
+            l.load_number, l.pickup_location, l.delivery_location, l.rate, l.pickup_date, l.broker_name, l.broker_mc, l.broker_contact,
+            COALESCE((
+              SELECT json_agg(json_build_object('id', p.id, 'content_type', p.content_type, 'created_at', p.created_at) ORDER BY p.created_at)
+                FROM ai_dispatch_pods p WHERE p.offer_id = o.id
+            ), '[]'::json) AS pods
        FROM ai_dispatch_offers o
        JOIN ai_dispatch_carriers c ON c.id = o.carrier_id
        LEFT JOIN loads l ON l.id = o.load_id
@@ -819,7 +1392,23 @@ async function listOffers(limit = 50) {
       LIMIT $1`,
     [limit]
   );
-  return rows;
+  const cache = new Map();
+  const out = [];
+  for (const row of rows) {
+    const broker_history = await reliability.historyFor({
+      broker_mc: row.broker_mc,
+      broker_name: row.broker_name,
+      broker_contact: row.broker_contact,
+      broker_email: row.broker_email
+    }, cache);
+    out.push({
+      ...row,
+      broker_history,
+      transit: ops.summarizeTransit(row.transit) || row.transit,
+      detention: ops.summarizeDetention(row.detention) || row.detention
+    });
+  }
+  return out;
 }
 
 async function carrierMessages(carrierId, limit = 40) {
@@ -831,14 +1420,33 @@ async function carrierMessages(carrierId, limit = 40) {
   return rows.reverse();
 }
 
+async function runCheckCalls() {
+  return ops.runCheckCalls({
+    textCarrier,
+    outboundToday,
+    maxOutbound: MAX_OUTBOUND_PER_DAY
+  });
+}
+
 module.exports = {
   parseCarrierText,
+  parseTransitText: ops.parseTransitText,
+  detectLang: i18n.detectLang,
+  parseNegotiateText: neg.parseNegotiateText,
+  parseBrokerRate: neg.parseBrokerRate,
+  guardAsk: neg.guardAsk,
+  expectedRate: neg.expectedRate,
   parseDestination,
   parseOrigin,
   equipmentKind,
   understand,
   findMatches,
+  scoreLoadForCarrier,
   offerLoads,
+  notifyMatchingCarriers,
+  fanoutPostedLoad,
+  planReload,
+  lastBookedDelivery,
   laneBenchmark,
   handleCarrierSms,
   handleBrokerBookingReply,
@@ -851,5 +1459,8 @@ module.exports = {
   preview,
   listOffers,
   carrierMessages,
-  findCarrierByPhone
+  findCarrierByPhone,
+  runCheckCalls,
+  getPod: ops.getPod,
+  historyFor: reliability.historyFor
 };

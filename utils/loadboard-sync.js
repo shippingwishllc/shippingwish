@@ -73,6 +73,7 @@ async function createBoardSchema() {
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS min_rpm NUMERIC(6,2);
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS max_deadhead INTEGER NOT NULL DEFAULT 150;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS home_state TEXT;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS sms_lang TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS avoid_states TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS last_location TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS off_until TIMESTAMPTZ;
@@ -105,6 +106,21 @@ async function createBoardSchema() {
     CREATE INDEX IF NOT EXISTS ai_dispatch_offers_load_idx ON ai_dispatch_offers (load_id, status);
     ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS broker_authority JSONB;
     ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS ratecon JSONB;
+    ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS reload_plan JSONB;
+    ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS transit JSONB;
+    ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS detention JSONB;
+    ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS negotiation JSONB;
+    CREATE TABLE IF NOT EXISTS ai_dispatch_pods (
+      id SERIAL PRIMARY KEY,
+      offer_id INTEGER NOT NULL REFERENCES ai_dispatch_offers(id) ON DELETE CASCADE,
+      carrier_id INTEGER NOT NULL REFERENCES ai_dispatch_carriers(id) ON DELETE CASCADE,
+      content_type TEXT NOT NULL,
+      bytes BYTEA NOT NULL,
+      twilio_sid TEXT,
+      note TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS ai_dispatch_pods_offer_idx ON ai_dispatch_pods (offer_id, created_at DESC);
     CREATE TABLE IF NOT EXISTS ai_dispatch_messages (
       id SERIAL PRIMARY KEY,
       carrier_id INTEGER NOT NULL REFERENCES ai_dispatch_carriers(id) ON DELETE CASCADE,
@@ -218,7 +234,7 @@ async function upsertApiLoads(source, loads) {
       );
     } else if (!load.covered) {
       const loadNumber = `LN-API-${source.id}-${String(load.externalId).replace(/[^a-zA-Z0-9]/g, '').slice(0, 18)}`;
-      await pool.query(
+      const ins = await pool.query(
         `INSERT INTO loads (
            load_number, status, rate, pickup_location, delivery_location,
            pickup_date, delivery_date, equipment_type, weight, commodity,
@@ -226,7 +242,7 @@ async function upsertApiLoads(source, loads) {
            source_type, source_id, external_id, created_at, updated_at
          ) VALUES (
            $1, 'new', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'api', $16, $17, now(), now()
-         )`,
+         ) RETURNING *`,
         [
           loadNumber, load.rate, load.origin, load.destination,
           load.pickupDate || null, load.deliveryDate || null, load.equipment, load.weight, load.commodity,
@@ -234,6 +250,9 @@ async function upsertApiLoads(source, loads) {
           load.brokerName, load.brokerMc, contact, load.miles, rpm, source.id, load.externalId
         ]
       );
+      try { require('./dispatch-brain').fanoutPostedLoad(ins.rows[0]); } catch (err) {
+        console.warn('[dispatch] API fanout failed:', err.message);
+      }
     }
   }
   await pool.query(

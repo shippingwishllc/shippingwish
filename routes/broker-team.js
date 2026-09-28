@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { sendBrandedEmail } = require('../utils/mailer');
+const { sendBrandedEmail, getBrandSender } = require('../utils/mailer');
 
 const router = express.Router();
 
@@ -114,7 +114,7 @@ router.post(['/broker/team', '/team'], requireAuth, requireBrokerAdmin, async (r
     const company = broker.company_name || 'LoadsNexus Brokerage';
     sendBrandedEmail({
       to: emailNorm,
-      from: 'LoadsNexus Team <dispatch@loadsnexus.com>',
+      from: getBrandSender('loadsnexus', 'dispatch'),
       subject: `Welcome to ${company} on LoadsNexus — Your Login Credentials`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">

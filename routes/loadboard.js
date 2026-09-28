@@ -928,7 +928,7 @@ router.post('/ai-dispatch-driver-offers', requireAuth, requireRole('dispatcher',
     // Send Driver Email Notification
     if (sendEmail !== false && carrier.email) {
       try {
-        const { sendBrandedEmail } = require('../utils/mailer');
+        const { sendBrandedEmail, getBrandSender } = require('../utils/mailer');
         const emailBody = `Hi ${carrier.name},\n\n` +
           `Shipping Wish AI matched a high-profit ${offer.equipment_type} load for your fleet:\n\n` +
           `• Lane: ${offer.pickup_location} ➔ ${offer.delivery_location}\n` +
@@ -944,7 +944,9 @@ router.post('/ai-dispatch-driver-offers', requireAuth, requireRole('dispatcher',
           subject: `AI Load Match: ${offer.pickup_location} ➔ ${offer.delivery_location} ($${offer.rate})`,
           text: emailBody,
           html: `<pre style="font-family:sans-serif;font-size:14px;">${emailBody}</pre>`,
-          emailType: 'load_offer'
+          emailType: 'load_offer',
+          from: getBrandSender('shippingwish', 'dispatch'),
+          transactional: true
         });
         emailSent = true;
       } catch (err) {
@@ -1234,7 +1236,7 @@ router.post('/inquire-broker', requireAuth, async (req, res) => {
     }
 
     const isStaff = ['super_admin', 'admin', 'dispatcher', 'sales_rep'].includes(req.user.role);
-    const { sendBrandedEmail } = require('../utils/mailer');
+    const { sendBrandedEmail, getBrandSender, replyAddress } = require('../utils/mailer');
 
     // Email variables configuration
     let fromAddress;
@@ -1252,10 +1254,9 @@ router.post('/inquire-broker', requireAuth, async (req, res) => {
     const rpmStr = milesNum > 0 && rateNum > 0 ? `$${(rateNum / milesNum).toFixed(2)}/mi` : '';
 
     if (isStaff) {
-      // 🏢 Internal Staff: Official Shipping Wish LLC Domain
-      fromAddress = process.env.MAIL_FROM || 'Shipping Wish LLC Dispatch <dispatch@shippingwish.com>';
-      replyToAddress = 'dispatch@shippingwish.com';
-      rateConNotice = 'Please confirm truck availability and send official Rate Confirmation to dispatch@shippingwish.com.';
+      fromAddress = getBrandSender('shippingwish', 'dispatch');
+      replyToAddress = replyAddress('shippingwish', 'dispatch');
+      rateConNotice = `Please confirm truck availability and send official Rate Confirmation to ${replyToAddress}.`;
       senderSignature = `
         <strong>Shipping Wish LLC Dispatch Desk</strong><br>
         Direct Desk: +1 (917) 737-0021<br>
@@ -1264,7 +1265,7 @@ router.post('/inquire-broker', requireAuth, async (req, res) => {
       `;
     } else {
       // 🚛 External Subscriber: Personal Email Reply-To & Carrier Profile
-      fromAddress = `"${carrierNameStr}" <dispatch@shippingwish.com>`;
+      fromAddress = `"${carrierNameStr}" <${replyAddress('shippingwish', 'dispatch')}>`;
       replyToAddress = agentEmail;
       rateConNotice = `Please confirm truck availability and send official Rate Confirmation directly to <strong>${escapeHtml(agentEmail)}</strong>.`;
       senderSignature = `
@@ -1677,6 +1678,7 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
     try {
       broadcastLoadboardEvent('load_posted', postedLoad);
       dispatchLaneAlerts(postedLoad);
+      require('../utils/dispatch-brain').fanoutPostedLoad(postedLoad);
     } catch (e) {
       console.warn('Real-time broadcast/alerts warning:', e.message);
     }
@@ -1866,7 +1868,7 @@ async function dispatchLaneAlerts(load) {
         // 2. Send Email alert via Resend
         if (alert.notify_email && alert.contact_email) {
           try {
-            const { sendBrandedEmail } = require('../utils/mailer');
+            const { sendBrandedEmail, getBrandSender } = require('../utils/mailer');
             const emailHtml = `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
                 <div style="background: #0f172a; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -1901,7 +1903,7 @@ async function dispatchLaneAlerts(load) {
             `;
             sendBrandedEmail({
               to: alert.contact_email,
-              from: 'LoadsNexus Alerts <alerts@loadsnexus.com>',
+              from: getBrandSender('loadsnexus', 'alerts'),
               subject: `⚡ Freight Alert: ${load.pickup_location || load.origin} -> ${load.delivery_location || load.destination} ($${load.rate} · $${load.rpm}/mi)`,
               html: emailHtml,
               text: `LoadsNexus Freight Alert: ${load.pickup_location || load.origin} -> ${load.delivery_location || load.destination} paying $${load.rate} ($${load.rpm}/mi). Call Broker: ${load.broker_phone}`,
@@ -2385,13 +2387,13 @@ router.post('/loads/:id/inquiry-reply', optionalAuth, async (req, res) => {
     return res.status(400).json({ error: 'Recipient carrier email address is required.' });
   }
 
-  const senderEmail = (req.user && req.user.email) || 'dispatch@loadsnexus.com';
+  const { sendBrandedEmail, getBrandSender, replyAddress } = require('../utils/mailer');
+  const senderEmail = (req.user && req.user.email) || replyAddress('loadsnexus', 'dispatch');
   const brokerName = broker_name || (req.user && (req.user.company_name || req.user.name)) || 'Broker';
   const brokerPhone = broker_phone || (req.user && req.user.phone) || '';
   const emailSubj = subject || `Rate Confirmation & Tender Details: ${pickup || 'Origin'} to ${delivery || 'Destination'} (Load #${loadId})`;
 
   try {
-    const { sendBrandedEmail } = require('../utils/mailer');
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
         <div style="background: #0f172a; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -2422,7 +2424,7 @@ ${escapeHtml(message || 'Please review the load details above. Reply to this ema
 
     await sendBrandedEmail({
       to: to_email,
-      from: `${brokerName} via LoadsNexus <dispatch@loadsnexus.com>`,
+      from: `${brokerName} via LoadsNexus <${replyAddress('loadsnexus', 'dispatch')}>`,
       replyTo: senderEmail,
       subject: emailSubj,
       html: emailHtml,
@@ -2483,6 +2485,7 @@ router.post('/ai-ingest', optionalAuth, async (req, res) => {
       for (const l of savedLoads) {
         broadcastLoadboardEvent('load_posted', l);
         dispatchLaneAlerts(l);
+        require('../utils/dispatch-brain').fanoutPostedLoad(l);
       }
     } catch (e) {
       console.warn('AI Ingest real-time broadcast warning:', e.message);
