@@ -11,7 +11,7 @@ const { purgeExpiredTrash } = require('./utils/trash');
 const { webhookHandler } = require('./routes/billing');
 const { handleBuyWishWebhook, loadLiveProductByKey, lookupCustomCategory, productIsHidden } = require('./routes/buywish');
 const pool = require('./db');
-const { storeProductFromRow, departmentBySlug, STORE_DEPARTMENTS, productHandle } = require('./utils/buywish-catalog');
+const { storeProductFromRow, departmentBySlug, STORE_DEPARTMENTS, STORE_GROUPS, productHandle, groupBySlug, groupForDepartmentSlug, groupChildren } = require('./utils/buywish-catalog');
 const { renderProductPage, renderCollectionPage, renderSitemap, injectProductIntoStorefront } = require('./utils/buywish-pages');
 const { handleStripeWebhook: handleNYCLimoStripeWebhook } = require('./routes/nyclimo');
 const { requireAuth } = require('./middleware/auth');
@@ -184,17 +184,25 @@ async function sendBuyWishProduct(res, key) {
 
 async function sendBuyWishCollection(res, slug) {
   const cleanSlug = String(slug || '').toLowerCase();
-  let department = cleanSlug === 'all'
-    ? { key: 'all', title: 'All Products', slug: 'all', blurb: 'The full BuyWishOnline shop, in one place.' }
-    : cleanSlug === 'deals'
-      ? { key: 'deals', title: 'Deals', slug: 'deals', blurb: 'Real price drops, and offers that pair two products together.' }
-      : departmentBySlug(slug);
+  const group = groupBySlug(cleanSlug);
+  let groupMeta = null;
+  let department = group && group.children.length > 1
+    ? { key: group.slug, title: group.title, slug: group.slug, blurb: group.blurb, hub: true, children: groupChildren(group) }
+    : cleanSlug === 'all'
+      ? { key: 'all', title: 'All Products', slug: 'all', blurb: 'The full BuyWishOnline shop, in one place.' }
+      : cleanSlug === 'deals'
+        ? { key: 'deals', title: 'Deals', slug: 'deals', blurb: 'Real price drops, and offers that pair two products together.' }
+        : departmentBySlug(slug);
   if (!department) {
     try {
       department = await lookupCustomCategory(slug);
     } catch (err) {
       department = null;
     }
+  }
+  if (department && !department.hub) {
+    const parent = groupForDepartmentSlug(department.slug);
+    if (parent) groupMeta = { slug: parent.slug, title: parent.title, children: groupChildren(parent) };
   }
   if (!department) return res.status(404).type('html').send(renderCollectionPage('Collection', []));
   try {
@@ -204,7 +212,10 @@ async function sendBuyWishCollection(res, slug) {
       category: department.key,
       title: department.title,
       slug: department.slug,
-      blurb: department.blurb || ''
+      blurb: department.blurb || '',
+      hub: Boolean(department.hub),
+      children: department.children || null,
+      group: groupMeta
     }).replace(/</g, '\\u003c');
     html = html.replace('<head>', `<head>\n  <script>window.BUYWISH_COLLECTION=${boot};</script>`);
     const safeTitle = String(department.title || 'Products').replace(/[<>&]/g, '');
@@ -226,6 +237,11 @@ async function sendBuyWishSitemap(res) {
     { loc: 'https://www.buywishonline.com/terms', changefreq: 'yearly', priority: '0.2' },
     { loc: 'https://www.buywishonline.com/collections/all', changefreq: 'daily', priority: '0.9' },
     { loc: 'https://www.buywishonline.com/collections/deals', changefreq: 'daily', priority: '0.9' },
+    ...STORE_GROUPS.filter((group) => group.children.length > 1).map((group) => ({
+      loc: `https://www.buywishonline.com/collections/${group.slug}`,
+      changefreq: 'daily',
+      priority: '0.8'
+    })),
     ...Object.values(STORE_DEPARTMENTS).map((dept) => ({
       loc: `https://www.buywishonline.com/collections/${dept.slug}`,
       changefreq: 'daily',

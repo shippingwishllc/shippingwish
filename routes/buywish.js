@@ -17,8 +17,6 @@ const {
   WINNING_SEARCHES,
   departmentByQuery,
   classifyProduct,
-  flattenCategories,
-  categoriesForDepartment,
   productMatchesQuery,
   categoryFilterIsTrusted,
   DEPARTMENT_ZENDROP_CATEGORIES,
@@ -33,6 +31,7 @@ const {
   validCategorySlug,
   cleanIcon,
   publicDepartments,
+  storefrontCollections,
   applyCatalogEdits,
   departmentBySlug,
   setStoreMarginPercent,
@@ -235,22 +234,9 @@ async function listSyncedProducts({ category, search, limit, page }) {
   };
 }
 
-async function loadZendropCategories() {
-  const cached = getCache('zendrop_category_flat');
-  if (cached) return cached;
-  try {
-    const data = await zendropCall('get_catalog_categories', {}, { timeoutMs: 8000 });
-    const flat = flattenCategories(data);
-    if (flat.length) setCache('zendrop_category_flat', flat, 60 * 60 * 1000);
-    return flat;
-  } catch (err) {
-    return [];
-  }
-}
-
 async function fetchCatalogSlice(tool, args) {
   try {
-    const data = await zendropCall(tool, args, { timeoutMs: 6000 });
+    const data = await zendropCall(tool, args, { timeoutMs: 4500 });
     return (data && data.products) || [];
   } catch (err) {
     return [];
@@ -275,42 +261,26 @@ async function fetchDepartmentProducts(department, { search, limit, page }) {
   const byId = new Map();
   const searchText = search && String(search).trim() ? String(search).trim().toLowerCase() : '';
   const labels = DEPARTMENT_ZENDROP_CATEGORIES[department.key] || [];
+  const label = labels[0] || '';
   const categoryJobs = [];
+  if (label) {
+    categoryJobs.push(fetchCatalogSlice('get_catalog_trending_products', { limit: 24, filters: { category: label } }));
+    categoryJobs.push(fetchCatalogSlice('get_catalog_products', { limit: 24, category: label }));
+  }
+  const query = searchText || ((department.searches || [])[0] || '');
+  const searchJobs = [];
+  if (query) {
+    const args = { limit: 24, search: query };
+    if (label) args.filters = { category: label };
+    searchJobs.push(fetchCatalogSlice('get_catalog_products', args));
+  }
 
-  labels.slice(0, 3).forEach((label) => {
-    categoryJobs.push(fetchCatalogSlice('get_catalog_products', { limit: 48, category: label }));
-    categoryJobs.push(fetchCatalogSlice('get_catalog_products', { limit: 48, page: 2, category: label }));
-    categoryJobs.push(fetchCatalogSlice('get_catalog_trending_products', { limit: 48, filters: { category: label } }));
-    categoryJobs.push(fetchCatalogSlice('get_catalog_products', { limit: 48, filters: { category: label } }));
-  });
-  const queries = searchText ? [searchText] : department.searches.slice(0, 4);
-  const searchJobs = queries.map((q) => {
-    const args = { limit: 24, search: q };
-    if (labels[0]) args.filters = { category: labels[0] };
-    return fetchCatalogSlice('get_catalog_products', args);
-  });
-  const idJob = Promise.race([
-    loadZendropCategories(),
-    new Promise((resolve) => setTimeout(() => resolve([]), 2500))
-  ]).then(async (flat) => {
-    const idJobs = categoriesForDepartment(flat, department.key).slice(0, 3).flatMap((cat) => {
-      const categoryId = Number(cat.id);
-      if (!Number.isFinite(categoryId)) return [];
-      return [
-        fetchCatalogSlice('get_catalog_products', { limit: 48, category_id: categoryId }),
-        fetchCatalogSlice('get_catalog_products', { limit: 48, page: 2, category_id: categoryId })
-      ];
-    });
-    return (await Promise.all(idJobs)).flat();
-  });
-
-  const [baseline, categoryBatches, searchBatches, idProducts] = await Promise.all([
-    fetchCatalogSlice('get_catalog_trending_products', { limit: 40 }),
+  const [baseline, categoryBatches, searchBatches] = await Promise.all([
+    fetchCatalogSlice('get_catalog_trending_products', { limit: 24 }),
     Promise.all(categoryJobs),
-    Promise.all(searchJobs),
-    idJob
+    Promise.all(searchJobs)
   ]);
-  const categoryProducts = categoryBatches.flat().concat(idProducts);
+  const categoryProducts = categoryBatches.flat();
   const trusted = categoryFilterIsTrusted(categoryProducts, baseline);
   const allowUnsorted = trusted && !department.strict;
   categoryProducts.forEach((product) => rememberDepartmentProduct(byId, product, department.key, searchText, allowUnsorted));
@@ -384,11 +354,8 @@ async function searchLiveProducts(query, { limit, page }) {
 
 async function fetchMixedCatalog() {
   const jobs = [
-    fetchCatalogSlice('get_catalog_trending_products', { limit: 80 }),
-    fetchCatalogSlice('get_catalog_trending_products', { limit: 40, page: 2 }),
-    fetchCatalogSlice('get_catalog_products', { limit: 48 }),
-    fetchCatalogSlice('get_catalog_products', { limit: 48, page: 2 }),
-    fetchCatalogSlice('get_catalog_products', { limit: 48, page: 3 })
+    fetchCatalogSlice('get_catalog_trending_products', { limit: 48 }),
+    fetchCatalogSlice('get_catalog_products', { limit: 48 })
   ];
   const batches = await Promise.all(jobs);
   const byId = new Map();
@@ -710,7 +677,7 @@ router.get('/departments', async (req, res) => {
   } catch (err) {
     custom = [];
   }
-  res.json({ ok: true, departments: publicDepartments(custom) });
+  res.json({ ok: true, departments: publicDepartments(custom), collections: storefrontCollections(custom) });
 });
 
 router.get('/products/categories', async (req, res) => {
