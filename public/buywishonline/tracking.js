@@ -42,9 +42,22 @@
     return false;
   }
 
+  function gtagPresent(id) {
+    const nodes = document.getElementsByTagName('script');
+    for (let i = 0; i < nodes.length; i++) {
+      const src = nodes[i].src || '';
+      if (src.indexOf('googletagmanager.com/gtag/js') !== -1 && src.indexOf(id) !== -1) return true;
+    }
+    return false;
+  }
+
   function installGoogle(id) {
     if (!id) return;
     if (id.indexOf('GTM-') === 0 && gtmPresent(id)) {
+      window.bwoGoogleInstalled = window.bwoGoogleInstalled || id;
+      return;
+    }
+    if ((id.indexOf('G-') === 0 || id.indexOf('AW-') === 0) && gtagPresent(id)) {
       window.bwoGoogleInstalled = window.bwoGoogleInstalled || id;
       return;
     }

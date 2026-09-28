@@ -281,6 +281,8 @@ const gtmId = 'GTM-PD9DZS54';
   const body = html.slice(html.indexOf('<body>'), html.indexOf('<body>') + 600);
   assert.ok(head.includes("'" + gtmId + "'"), name + ' head snippet');
   assert.ok(head.includes('https://www.googletagmanager.com/gtm.js?id='), name + ' gtm.js');
+  assert.ok(head.includes('https://www.googletagmanager.com/gtag/js?id=G-8Q973SH30G'), name + ' analytics');
+  assert.ok(head.includes("gtag('config', 'G-8Q973SH30G')"), name + ' analytics config');
   assert.ok(body.includes('https://www.googletagmanager.com/ns.html?id=' + gtmId), name + ' noscript');
   assert.strictEqual(html.split(gtmId).length - 1, 2, name + ' appears twice');
 });
@@ -289,5 +291,7 @@ assert.ok(!adminHtml.includes('googletagmanager.com/gtm.js'));
 const shell = renderCollectionPage('Shop', []);
 assert.ok(shell.includes("'" + gtmId + "'"));
 assert.ok(shell.includes('ns.html?id=' + gtmId));
+assert.ok(shell.includes('gtag/js?id=G-8Q973SH30G'));
+assert.ok(shell.includes("gtag('config', 'G-8Q973SH30G')"));
 
 console.log('buywish catalog tests passed');
