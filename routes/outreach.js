@@ -66,7 +66,7 @@ router.all('/tick', async (req, res) => {
       engine.tick(),
       Promise.resolve().then(() => {
         const desk = require('./dispatch-desk');
-        return Promise.all([desk.syncDueSources(), desk.sendDueMorningTexts()]);
+        return Promise.all([desk.syncDueSources(), desk.sendDueMorningTexts(), desk.runCheckCalls()]);
       }).catch((err) => ({ error: err.message }))
     ]);
     res.json({ ok: true, outreach, dispatch: Array.isArray(dispatch) ? 'ok' : dispatch });

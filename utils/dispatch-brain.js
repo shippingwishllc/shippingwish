@@ -7,6 +7,7 @@ const {
   milesBetween, roadMiles, stateOf, stateCenter, parsePlace, placeLabel, geocode
 } = require('./geo');
 const { checkBrokerAuthority, cachedBlockedKeys, keyFor, summarize: summarizeAuthority } = require('./broker-authority');
+const ops = require('./dispatch-ops');
 
 const OFFER_TTL_HOURS = 3;
 const MAX_OUTBOUND_PER_DAY = 12;
@@ -479,7 +480,11 @@ async function carrierIsBusy(carrierId) {
   const { rows } = await pool.query(
     `SELECT 1 FROM ai_dispatch_offers
       WHERE carrier_id = $1
-        AND ((status = 'offered' AND expires_at > now()) OR status = 'requested')
+        AND (
+          (status = 'offered' AND expires_at > now())
+          OR status = 'requested'
+          OR (status = 'booked' AND COALESCE(transit->>'status', 'booked') <> 'delivered')
+        )
       LIMIT 1`,
     [carrierId]
   );
@@ -688,15 +693,83 @@ async function shownLoadIds(carrierId) {
   return rows.map((r) => r.load_id);
 }
 
+async function finishDeliveredLoad(offer, carrier, intent) {
+  const result = await ops.persistTransit(offer, intent || 'delivered');
+  const load = offer.load || {};
+  if (load.id) {
+    await pool.query(
+      `UPDATE loads SET status = CASE WHEN status = 'booked' THEN 'delivered' ELSE status END, updated_at = now() WHERE id = $1`,
+      [load.id]
+    ).catch(() => {});
+  }
+  await notify(
+    `${carrier.company_name} delivered ${load.load_number || `offer ${offer.id}`}`,
+    `${load.pickup_location || ''} → ${load.delivery_location || ''}. Driver can text RELOAD for the next load.`,
+    'success'
+  );
+  return result;
+}
+
+async function handleBookedInbound(carrier, offer, body, parsed, media) {
+  const transit = ops.parseTransitText(body);
+  const wantsReload = parsed.intent === 'reload';
+  const photos = Array.isArray(media) ? media.filter((m) => m && m.url) : [];
+  let pods = { saved: [], errors: [] };
+  if (photos.length) {
+    pods = await ops.saveMediaPods(offer, carrier, photos, String(body || '').slice(0, 200));
+  }
+
+  const finishAndReload = wantsReload || (transit && (transit.intent === 'delivered' || transit.intent === 'departed'));
+  if (finishAndReload) {
+    await finishDeliveredLoad(offer, carrier, (transit && transit.intent) || 'delivered');
+    return { continueReload: true, pods };
+  }
+
+  if (transit && transit.intent !== 'pod') {
+    const result = await ops.persistTransit(offer, transit.intent);
+    let reply = ops.transitReply(transit.intent, offer.load, result.status);
+    if (pods.saved.length) reply += ' POD photo saved.';
+    if (pods.errors.length) reply += ' One photo did not save. Send it again.';
+    return { reply, action: transit.intent, pods };
+  }
+
+  if (photos.length) {
+    const result = await ops.persistTransit(offer, 'pod');
+    let reply = ops.transitReply('pod', offer.load, result.status);
+    if (pods.errors.length && !pods.saved.length) reply = 'Shipping Wish: Could not save that photo. Send the POD picture again.';
+    else if (pods.errors.length) reply += ' One photo did not save. Send it again.';
+    return { reply, action: 'pod', pods };
+  }
+
+  if (transit && transit.intent === 'pod') {
+    const result = await ops.persistTransit(offer, 'pod');
+    return { reply: ops.transitReply('pod', offer.load, result.status), action: 'pod', pods };
+  }
+  return null;
+}
+
 // Handles a text from a carrier on the AI dispatch desk. Returns null when the phone isn't a
 // desk carrier so the regular SMS flow can answer instead.
-async function handleCarrierSms(fromPhone, body) {
+async function handleCarrierSms(fromPhone, body, extras = {}) {
   await ensureBoardSchema();
   const carrier = await findCarrierByPhone(fromPhone);
   if (!carrier) return null;
+  const media = Array.isArray(extras.media) ? extras.media : [];
+  const booked = await ops.currentBookedOffer(carrier.id);
+  const transit = booked ? ops.parseTransitText(body) : null;
   const parsed = await understand(body, carrier);
-  await logMessage(carrier.id, 'inbound', body, parsed.intent);
+  if (booked && (transit || media.length) && parsed.intent === 'unknown') parsed.intent = (transit && transit.intent) || 'pod';
+  await logMessage(carrier.id, 'inbound', body || (media.length ? '[photo]' : ''), parsed.intent);
   await pool.query('UPDATE ai_dispatch_carriers SET last_inbound_at = now() WHERE id = $1', [carrier.id]);
+
+  if (booked && (transit || media.length || parsed.intent === 'reload')) {
+    const handled = await handleBookedInbound(carrier, booked, body, parsed, media);
+    if (handled && !handled.continueReload) {
+      await logMessage(carrier.id, 'outbound', handled.reply, handled.action);
+      return { carrier, parsed, reply: handled.reply, action: handled.action, pods: handled.pods };
+    }
+    if (handled && handled.continueReload) parsed.intent = 'reload';
+  }
 
   if (await outboundToday(carrier.id) >= MAX_OUTBOUND_PER_DAY) {
     await notify(`Dispatch desk: ${carrier.company_name} needs a person`, String(body).slice(0, 160), 'warning');
@@ -795,7 +868,7 @@ async function handleCarrierSms(fromPhone, body) {
       reply = res.reply;
     }
   } else {
-    reply = 'Shipping Wish dispatch: text the ZIP or city you are empty in and where you want to go (example: 75201 to Atlanta). Reply 1-3 to request a load we sent, MORE for others, RELOAD when empty at delivery, or OFF TODAY. A dispatcher reads every message.';
+    reply = 'Shipping Wish dispatch: text the ZIP or city you are empty in and where you want to go (example: 75201 to Atlanta). Reply 1-3 to request a load we sent, MORE for others, RELOAD when empty at delivery, or OFF TODAY. On a booked load reply ARRIVED SHIPPER, LOADED, WAITING, ARRIVED RECEIVER, or DELIVERED, and photo the POD. A dispatcher reads every message.';
     await notify(`Dispatch desk message: ${carrier.company_name}`, String(body).slice(0, 160), 'info');
   }
 
@@ -861,7 +934,11 @@ async function markBooked(offerId, staffNote, { force = false } = {}) {
       WHERE id = $1`,
     [load.id, `AI dispatch: booked for ${offer.carrier.company_name}${offer.carrier.mc_number ? ` (MC ${offer.carrier.mc_number})` : ''}${staffNote ? ` — ${staffNote}` : ''}`]
   );
-  await pool.query(`UPDATE ai_dispatch_offers SET status = 'booked', updated_at = now() WHERE id = $1`, [offer.id]);
+  const bookedOps = ops.initBookedOps(Date.now(), offer.ratecon);
+  await pool.query(
+    `UPDATE ai_dispatch_offers SET status = 'booked', transit = $2::jsonb, detention = $3::jsonb, updated_at = now() WHERE id = $1`,
+    [offer.id, JSON.stringify(bookedOps.transit), JSON.stringify(bookedOps.detention)]
+  );
   await pool.query(`UPDATE ai_dispatch_offers SET status = 'expired', updated_at = now() WHERE load_id = $1 AND id <> $2 AND status IN ('offered','requested')`, [load.id, offer.id]);
   const deliveryOrigin = parseOrigin(load.delivery_location);
   let reloadHint = '';
@@ -872,9 +949,9 @@ async function markBooked(offerId, staffNote, { force = false } = {}) {
       ? ` When empty in ${placeLabel(deliveryOrigin)}, reply RELOAD for ${n} next load${n === 1 ? '' : 's'} from there.`
       : ` When empty in ${placeLabel(deliveryOrigin)}, reply RELOAD and we will look again.`;
   }
-  const text = `Shipping Wish: BOOKED ${load.load_number}. ${load.pickup_location} → ${load.delivery_location}, pickup ${shortDate(load.pickup_date)}, ${money(load.rate)}. The rate confirmation and pickup details follow.${reloadHint}`;
+  const text = `Shipping Wish: BOOKED ${load.load_number}. ${load.pickup_location} → ${load.delivery_location}, pickup ${shortDate(load.pickup_date)}, ${money(load.rate)}. The rate confirmation and pickup details follow.${reloadHint} Reply ARRIVED SHIPPER, LOADED, WAITING, ARRIVED RECEIVER, or DELIVERED. Photo the POD when you unload.`;
   const sms = await textCarrier(offer.carrier, text, 'booked');
-  return { offer: { ...offer, status: 'booked' }, sms, reload_plan: deliveryOrigin ? true : false };
+  return { offer: { ...offer, status: 'booked', transit: bookedOps.transit, detention: bookedOps.detention }, sms, reload_plan: deliveryOrigin ? true : false };
 }
 
 // Broker said no, or staff released it: free the carrier and send the next best loads.
@@ -1021,8 +1098,13 @@ async function listOffers(limit = 50) {
   const { rows } = await pool.query(
     `SELECT o.id, o.status, o.slot, o.deadhead_miles, o.loaded_miles, o.miles_estimated, o.all_in_rpm, o.note, o.broker_email,
             o.broker_reply, o.requested_at, o.created_at, o.updated_at, o.ratecon, o.broker_authority, o.reload_plan,
+            o.transit, o.detention,
             c.id AS carrier_id, c.company_name, c.phone, c.mc_number,
-            l.load_number, l.pickup_location, l.delivery_location, l.rate, l.pickup_date, l.broker_name, l.broker_contact
+            l.load_number, l.pickup_location, l.delivery_location, l.rate, l.pickup_date, l.broker_name, l.broker_contact,
+            COALESCE((
+              SELECT json_agg(json_build_object('id', p.id, 'content_type', p.content_type, 'created_at', p.created_at) ORDER BY p.created_at)
+                FROM ai_dispatch_pods p WHERE p.offer_id = o.id
+            ), '[]'::json) AS pods
        FROM ai_dispatch_offers o
        JOIN ai_dispatch_carriers c ON c.id = o.carrier_id
        LEFT JOIN loads l ON l.id = o.load_id
@@ -1031,7 +1113,11 @@ async function listOffers(limit = 50) {
       LIMIT $1`,
     [limit]
   );
-  return rows;
+  return rows.map((row) => ({
+    ...row,
+    transit: ops.summarizeTransit(row.transit) || row.transit,
+    detention: ops.summarizeDetention(row.detention) || row.detention
+  }));
 }
 
 async function carrierMessages(carrierId, limit = 40) {
@@ -1043,8 +1129,17 @@ async function carrierMessages(carrierId, limit = 40) {
   return rows.reverse();
 }
 
+async function runCheckCalls() {
+  return ops.runCheckCalls({
+    textCarrier,
+    outboundToday,
+    maxOutbound: MAX_OUTBOUND_PER_DAY
+  });
+}
+
 module.exports = {
   parseCarrierText,
+  parseTransitText: ops.parseTransitText,
   parseDestination,
   parseOrigin,
   equipmentKind,
@@ -1068,5 +1163,7 @@ module.exports = {
   preview,
   listOffers,
   carrierMessages,
-  findCarrierByPhone
+  findCarrierByPhone,
+  runCheckCalls,
+  getPod: ops.getPod
 };

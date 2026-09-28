@@ -249,6 +249,18 @@ router.post('/offers/:id/release', ...staff, async (req, res) => {
   }
 });
 
+router.get('/pods/:id', ...staff, async (req, res) => {
+  try {
+    const pod = await brain.getPod(req.params.id);
+    if (!pod) return res.status(404).json({ error: 'Photo not found.' });
+    res.set('Content-Type', pod.content_type || 'image/jpeg');
+    res.set('Cache-Control', 'private, max-age=300');
+    res.send(pod.bytes);
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load this photo.' });
+  }
+});
+
 async function deliverMorning(carrier) {
   const text = morningText(carrier);
   let smsStatus = 'logged';
@@ -372,3 +384,4 @@ router.post('/carriers/:id/pause', ...staff, async (req, res) => {
 module.exports = router;
 module.exports.syncDueSources = syncDueSources;
 module.exports.sendDueMorningTexts = sendDueMorningTexts;
+module.exports.runCheckCalls = () => brain.runCheckCalls();

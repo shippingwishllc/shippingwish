@@ -34,12 +34,12 @@
       <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
         <h2 style="margin:0 0 8px;font-size:15px;">What the AI dispatcher does with a driver's text</h2>
         <ol style="margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.55;">
-          <li>Reads texts like “75201 to Atlanta”, “empty in Dallas TX want GA or FL reefer”, “MORE”, “RELOAD”, or “off today”.</li>
+          <li>Reads texts like “75201 to Atlanta”, “empty in Dallas TX want GA or FL reefer”, “MORE”, “RELOAD”, “ARRIVED SHIPPER”, “LOADED”, “WAITING”, or “off today”.</li>
           <li>Finds open loads within the carrier's empty-mile limit, with matching equipment and destination, above their minimum $/mile. It ranks them by all-in $/mile, counting empty miles too.</li>
           <li>Texts the best three. The driver replies 1, 2 or 3.</li>
           <li>When a broker posts a load that fits an active carrier who already consented to texts, the desk texts that load during 9am–5pm in their timezone (max 12 outbound texts per carrier per day). It does not interrupt a driver who already has an open list or a pending booking.</li>
           <li>Emails the broker a booking request with the carrier's MC or DOT and tells the driver not to roll yet.</li>
-          <li>If the broker replies “covered”, the driver gets the next best loads. If the broker confirms, you check the rate confirmation and press Booked. Then the driver gets a BOOKED text and a reload hint from the delivery city. They reply RELOAD when empty there.</li>
+          <li>If the broker replies “covered”, the driver gets the next best loads. If the broker confirms, you check the rate confirmation and press Booked. Then the driver gets a BOOKED text and a reload hint from the delivery city. On the road they text ARRIVED SHIPPER, LOADED, WAITING, ARRIVED RECEIVER, or DELIVERED, and they send a photo of the POD. Check-calls go out during 9am–5pm if they have not written in. Detention is clocked in minutes; no dollar amount is billed unless you set a rate. They reply RELOAD when empty.</li>
         </ol>
         <p style="margin:10px 0 0;font-size:13px;color:#64748b;">Rates shown are the broker's posted rate. Miles marked ~ are estimated from ZIP and city locations. After 12 texts to one carrier in a day, the AI hands off to a person. STOP pauses the carrier.</p>
       </section>
@@ -59,7 +59,7 @@
           <h2 style="margin:0;font-size:15px;">Load requests</h2>
           <button type="button" id="offers-refresh" style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;">Refresh</button>
         </div>
-        <p style="font-size:13px;color:#64748b;margin:6px 0;">Loads a driver picked are listed first. Press Booked only after you have the broker's rate confirmation. Release sends the driver the next best loads. After Booked, reload options from the delivery city appear here; the driver texts RELOAD when empty.</p>
+        <p style="font-size:13px;color:#64748b;margin:6px 0;">Loads a driver picked are listed first. Press Booked only after you have the broker's rate confirmation. Release sends the driver the next best loads. After Booked, this list shows check-call status, waiting minutes, and POD photos. The driver texts RELOAD when empty.</p>
         <p id="offers-msg" style="font-size:13px;color:#b45309;min-height:1.2em;"></p>
         <div id="offers-list" style="font-size:13px;color:#475569;">Loading…</div>
       </section>
@@ -265,6 +265,35 @@
     if (r.status === 'mismatch') return '<br><span style="color:#b91c1c;font-weight:600;">Rate con mismatch</span> ' + esc((r.issues || []).join(' '));
     return '<br><span style="color:#b45309;font-weight:600;">Rate con unreadable</span> Open the email and check it by hand.';
   }
+  function transitLine(t) {
+    if (!t || !t.status) return '';
+    const when = t.last_driver_update_at ? ' · driver ' + new Date(t.last_driver_update_at).toLocaleString() : '';
+    const check = t.last_check_at ? ' · last check-call ' + new Date(t.last_check_at).toLocaleString() : '';
+    return '<br><span style="color:#0f766e;font-weight:600;">Transit: ' + esc(String(t.status).replace(/_/g, ' ')) + '</span>' + esc(when + check);
+  }
+  function stopMinutes(stop, label) {
+    if (!stop || stop.minutes == null) return '';
+    const over = stop.over_free_minutes > 0 ? ' · ' + stop.over_free_minutes + ' min past free time' : '';
+    const assumed = stop.assumed ? ' (start time assumed from WAITING)' : '';
+    return label + ' ' + stop.minutes + ' min' + over + assumed;
+  }
+  function detentionLine(d) {
+    if (!d) return '';
+    const parts = [stopMinutes(d.shipper, 'Shipper'), stopMinutes(d.receiver, 'Receiver')].filter(Boolean);
+    if (!parts.length && !d.free_time_minutes) return '';
+    const free = d.assumed_2h_until_ratecon_says
+      ? 'Free time ' + (d.free_time_minutes || 120) + ' min (assumed 2h until the rate con says otherwise).'
+      : 'Free time ' + (d.free_time_minutes || 120) + ' min.';
+    const billed = d.billed_amount == null ? ' No dollar amount billed.' : ' Billed amount set by staff.';
+    return '<br><span style="color:#b45309;">Detention clock: ' + esc(parts.join(' · ') || 'not waiting') + '. ' + esc(free + billed) + '</span>';
+  }
+  function podLine(pods) {
+    const list = Array.isArray(pods) ? pods : [];
+    if (!list.length) return '';
+    return '<br><span style="color:#1d4ed8;font-weight:600;">POD:</span> ' + list.map((p) =>
+      '<a href="/api/dispatch-desk/pods/' + esc(p.id) + '" target="_blank" rel="noopener">photo ' + esc(p.id) + '</a>'
+    ).join(' · ');
+  }
   async function loadOffers() {
     const box = document.getElementById('offers-list');
     const data = await api('/api/dispatch-desk/offers');
@@ -283,7 +312,7 @@
         ' · ' + approx + esc(o.loaded_miles) + ' mi · ' + approx + '$' + esc(Number(o.all_in_rpm || 0).toFixed(2)) + '/mi all-in · ' + approx + esc(o.deadhead_miles) + ' empty' +
         '<br>Broker: ' + esc([o.broker_name, o.broker_contact].filter(Boolean).join(' · ') || 'not listed') +
         (o.note ? '<br>' + esc(o.note) : '') + (o.broker_reply ? '<br>Broker reply: ' + esc(o.broker_reply.slice(0, 200)) : '') +
-        authorityLine(o.broker_authority) + rateconLine(o.ratecon) + reloadLine(o.reload_plan) + '</span>' +
+        authorityLine(o.broker_authority) + rateconLine(o.ratecon) + reloadLine(o.reload_plan) + transitLine(o.transit) + detentionLine(o.detention) + podLine(o.pods) + '</span>' +
         actions + '</div>';
     }).join('');
   }
