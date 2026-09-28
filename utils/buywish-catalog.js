@@ -527,12 +527,27 @@ function categoryKeyFromSlug(slug) {
   return dept ? dept.key : String(slug || '').toLowerCase();
 }
 
+function applyOverrideFields(product, row) {
+  if (!product || !row) return product;
+  const copy = { ...product };
+  const title = String(row.title || '').trim();
+  if (title) copy.title = title.slice(0, 180);
+  const description = row.description == null ? '' : String(row.description).trim();
+  if (description) copy.description = description.slice(0, 2000);
+  const price = Number(row.retail_price);
+  if (Number.isFinite(price) && price > 0) copy.retail_price = price.toFixed(2);
+  if (row.category_slug) copy.category = categoryKeyFromSlug(row.category_slug);
+  return copy;
+}
+
 function applyCatalogEdits(products, edits, categoryFilter, { includeSaved = false } = {}) {
   const hidden = new Set();
   const moved = new Map();
+  const overrides = new Map();
   (edits && edits.overrides || []).forEach((row) => {
     const id = String(row.zendrop_id || '');
     if (!id) return;
+    overrides.set(id, row);
     if (row.is_hidden) hidden.add(id);
     if (row.category_slug) moved.set(id, categoryKeyFromSlug(row.category_slug));
   });
@@ -556,7 +571,11 @@ function applyCatalogEdits(products, edits, categoryFilter, { includeSaved = fal
       byId.set(id, { ...product, category });
     });
   }
-  return [...byId.values()].filter((product) => categoryMatches(product.category, categoryFilter));
+  return [...byId.values()].map((product) => {
+    const id = String((product && (product.zendrop_id || product.id)) || '');
+    const row = overrides.get(id);
+    return row && !row.is_hidden ? applyOverrideFields(product, row) : product;
+  }).filter((product) => categoryMatches(product.category, categoryFilter));
 }
 
 function storeProductFromRow(row) {
@@ -625,5 +644,6 @@ module.exports = {
   cleanIcon,
   publicDepartments,
   applyCatalogEdits,
+  applyOverrideFields,
   categoryKeyFromSlug
 };

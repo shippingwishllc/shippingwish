@@ -128,6 +128,16 @@ const edited = applyCatalogEdits(
   { includeSaved: true }
 );
 assert.deepStrictEqual(edited.map((product) => product.title).sort(), ['A', 'C']);
+const curated = applyCatalogEdits(
+  [{ id: 9, zendrop_id: '9', title: 'Raw title', description: 'Raw', retail_price: '10.00', category: 'Tech' }],
+  { overrides: [{ zendrop_id: '9', title: 'Shop title', description: 'Shop copy', retail_price: '24.00', category_slug: 'phone', is_hidden: false }] },
+  'Phone'
+);
+assert.strictEqual(curated.length, 1);
+assert.strictEqual(curated[0].title, 'Shop title');
+assert.strictEqual(curated[0].description, 'Shop copy');
+assert.strictEqual(curated[0].retail_price, '24.00');
+assert.strictEqual(curated[0].category, 'Phone');
 assert.strictEqual(classifyProduct({ title: 'Wireless earbuds', supplier_category: 'Apparel & Accessories' }).key, 'Tech');
 assert.strictEqual(classifyProduct({ title: 'Plain cotton tee', supplier_category: 'Apparel & Accessories' }), null);
 const tech = classifyProduct({ title: 'Bluetooth speaker' });
