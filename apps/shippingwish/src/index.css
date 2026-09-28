@@ -19,6 +19,18 @@ body.sw-menu-open .sw-chat {
   display: none !important;
 }
 
+/* Laptop/desktop company nav — not Tailwind lg (1024). Hashed bundle so live CSS cannot stay on the old 1400px hamburger. */
+body.sw-home .sw-desk-nav { display: none; }
+body.sw-home .sw-phone-nav { display: flex; }
+@media (min-width: 900px) {
+  body.sw-home .sw-desk-nav { display: flex !important; }
+  body.sw-home .sw-phone-nav { display: none !important; }
+}
+@media (max-width: 899px) {
+  body.sw-home .sw-desk-nav { display: none !important; }
+  body.sw-home .sw-phone-nav { display: flex !important; }
+}
+
 @keyframes livePulse {
   0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
   70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }

@@ -19,7 +19,7 @@
     if (!document.querySelector('link[href*="public-theme.css"]')) {
       const theme = document.createElement('link');
       theme.rel = 'stylesheet';
-      theme.href = '/css/public-theme.css?v=9';
+      theme.href = '/css/public-theme.css?v=10';
       document.head.appendChild(theme);
     }
   }
@@ -263,7 +263,7 @@
     });
 
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 1399) setMenuOpen(false);
+      if (window.innerWidth >= 900) setMenuOpen(false);
     });
   }
 

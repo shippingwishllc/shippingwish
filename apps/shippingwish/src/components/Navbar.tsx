@@ -12,7 +12,7 @@ export const Navbar: React.FC = () => {
 
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth >= 1024) setDrawerOpen(false);
+      if (window.innerWidth >= 900) setDrawerOpen(false);
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -51,7 +51,7 @@ export const Navbar: React.FC = () => {
             </div>
           </a>
 
-          <ul className="hidden lg:flex items-center gap-1 text-[13px] font-semibold text-slate-200">
+          <ul className="sw-desk-nav items-center gap-1 text-[13px] font-semibold text-slate-200">
             <li>
               <a href="/" className="px-3 py-2 rounded-lg text-white hover:bg-white/10 transition-colors">
                 Home
@@ -98,7 +98,7 @@ export const Navbar: React.FC = () => {
             </li>
           </ul>
 
-          <div className="hidden lg:flex items-center gap-3 shrink-0">
+          <div className="sw-desk-nav items-center gap-3 shrink-0">
             <a href="tel:+19177370021" className="text-[13px] font-bold text-slate-200 hover:text-white whitespace-nowrap">
               +1 (917) 737-0021
             </a>
@@ -118,7 +118,7 @@ export const Navbar: React.FC = () => {
 
           <button
             type="button"
-            className="lg:hidden flex flex-col justify-center items-center gap-1.5 w-10 h-10 rounded-xl border border-white/20 text-white"
+            className="sw-phone-nav flex-col justify-center items-center gap-1.5 w-10 h-10 rounded-xl border border-white/20 text-white"
             onClick={() => setDrawerOpen(!drawerOpen)}
             aria-label="Toggle navigation menu"
             aria-expanded={drawerOpen}
@@ -131,7 +131,7 @@ export const Navbar: React.FC = () => {
       </nav>
 
       {drawerOpen && (
-        <div className="sw-drawer lg:hidden fixed inset-0 z-[80] bg-white flex flex-col" role="dialog" aria-modal="true" aria-label="Menu">
+        <div className="sw-drawer fixed inset-0 z-[80] bg-white flex flex-col" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="h-[72px] px-5 flex items-center justify-between border-b border-slate-800 shrink-0 bg-slate-950">
             <a href="/" onClick={close} className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 text-white font-black flex items-center justify-center text-sm">

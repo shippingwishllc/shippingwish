@@ -119,8 +119,8 @@ body.marketing .nav-mobile-cta-group {
   padding: 6px 12px;
 }
 
-/* Desktop nav from 1024px. Hamburger only below that — not on laptops. */
-@media (min-width: 1024px) {
+/* Desktop/laptop nav from 900px. Hamburger only on phones. */
+@media (min-width: 900px) {
   body.marketing .nav-links,
   body.marketing .nav-actions {
     display: flex !important;
@@ -128,15 +128,15 @@ body.marketing .nav-mobile-cta-group {
   body.marketing .nav-hamburger {
     display: none !important;
   }
-  body.sw-home nav[aria-label="Main Navigation"] .lg\:flex {
+  body.sw-home .sw-desk-nav {
     display: flex !important;
   }
-  body.sw-home nav[aria-label="Main Navigation"] .lg\:hidden {
+  body.sw-home .sw-phone-nav {
     display: none !important;
   }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 899px) {
   body.marketing .nav-links,
   body.marketing .nav-actions {
     display: none !important;
@@ -144,9 +144,15 @@ body.marketing .nav-mobile-cta-group {
   body.marketing .nav-hamburger {
     display: flex !important;
   }
+  body.sw-home .sw-desk-nav {
+    display: none !important;
+  }
+  body.sw-home .sw-phone-nav {
+    display: flex !important;
+  }
 }
 
-@media (min-width: 1024px) and (max-width: 1280px) {
+@media (min-width: 900px) and (max-width: 1280px) {
   body.marketing .nav-links a {
     padding: 8px 8px;
     font-size: 13px;
