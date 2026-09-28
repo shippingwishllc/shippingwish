@@ -6,56 +6,110 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Shop desk | BuyWishOnline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root { --ink:#14120f; --ivory:#f6f1e8; --paper:#fffdf8; --line:#eadfce; --gold:#9c7b4a; --muted:#6f675e; }
+    :root { --primary:#1a1a2e; --accent:#e94560; --gold:#f5a623; --bg:#f7f7f9; --surface:#fff; --text:#1a1a2e; --muted:#6b7280; --border:#e5e7eb; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Outfit, sans-serif; background: var(--ivory); color: var(--ink); }
-    header, main { max-width: 1180px; margin: 0 auto; padding: 28px 20px; }
-    header { display: flex; justify-content: space-between; align-items: end; gap: 16px; }
-    h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 46px; margin: 0; }
-    a { color: inherit; }
-    button, input { font: inherit; }
+    body { margin: 0; font-family: Inter, sans-serif; background: var(--bg); color: var(--text); }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    .topbar { background: var(--primary); color: #fff; min-height: 36px; display: flex; align-items: center; justify-content: center; font-size: 12px; letter-spacing: .02em; }
+    header { max-width: 1180px; margin: 0 auto; padding: 22px 20px 0; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .logo { width: 42px; height: 42px; border-radius: 12px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 800; }
+    h1 { font-size: 28px; margin: 0; letter-spacing: -.03em; }
+    h2 { font-size: 22px; margin: 0 0 8px; }
+    main { max-width: 1180px; margin: 0 auto; padding: 20px; }
     .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    button, .btn { background: var(--ink); color: #fff; border: 0; padding: 12px 16px; cursor: pointer; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; }
-    button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
-    input, select, textarea { border: 1px solid var(--line); background: var(--paper); padding: 12px; min-width: 180px; font: inherit; }
-    h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 32px; margin: 0 0 8px; }
-    .thumb { width: 48px; height: 48px; object-fit: cover; background: #f3efe8; }
-    .card { background: var(--paper); border: 1px solid var(--line); padding: 16px; margin-top: 16px; }
+    button, .btn { background: var(--accent); color: #fff; border: 0; border-radius: 10px; padding: 12px 16px; cursor: pointer; font-weight: 700; }
+    button.ghost { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    input, select, textarea { border: 1px solid var(--border); background: #fff; border-radius: 10px; padding: 12px; min-width: 180px; }
+    textarea { width: 100%; min-height: 110px; }
+    .thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; background: #f3f4f6; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-top: 16px; box-shadow: 0 8px 24px rgba(26,26,46,.04); }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
     th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
     .muted { color: var(--muted); }
-    .pill { display: inline-block; border: 1px solid var(--line); padding: 2px 8px; font-size: 12px; }
+    .pill { display: inline-block; border-radius: 999px; background: #fff5f7; color: var(--accent); padding: 3px 8px; font-size: 12px; font-weight: 700; }
     #gate, #desk { display: none; }
-    .error { color: #8c3a2f; }
+    .error { color: #be123c; }
+    .login-wrap { min-height: calc(100vh - 120px); display: grid; place-items: center; }
+    .login-card { width: min(440px, 100%); background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 28px; box-shadow: 0 16px 40px rgba(26,26,46,.08); }
+    .login-card h1 { font-size: 32px; }
+    .login-card form { display: grid; gap: 12px; margin-top: 18px; }
+    .login-card input { width: 100%; }
+    .library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 14px; }
+    .library-card { display: block; width: 100%; text-align: left; background: #fff; color: var(--text); border: 1px solid var(--border); border-radius: 14px; padding: 0; overflow: hidden; }
+    .library-card img, .library-card .ph { width: 100%; height: 140px; object-fit: cover; background: #f3f4f6; display: block; }
+    .library-card div { padding: 10px 12px 12px; }
+    .library-card strong { display: block; font-size: 14px; line-height: 1.35; }
+    .editor { display: grid; grid-template-columns: 220px 1fr; gap: 16px; margin-top: 16px; }
+    .editor img { width: 100%; border-radius: 14px; background: #f3f4f6; }
+    .editor label { display: block; font-size: 13px; font-weight: 700; margin: 10px 0; }
+    .editor input, .editor select, .editor textarea { width: 100%; }
+    @media (max-width: 720px) { .editor { grid-template-columns: 1fr; } header { align-items: flex-start; } }
   </style>
 </head>
 <body>
+<div class="topbar">BuyWishOnline shop desk · Shipping Wish LLC</div>
 <header>
-  <div>
-    <div class="muted">BuyWishOnline · Shipping Wish LLC</div>
-    <h1>Shop desk</h1>
-  </div>
+  <a class="brand" href="/">
+    <div class="logo">B</div>
+    <div>
+      <strong>BuyWishOnline</strong>
+      <div class="muted" style="font-size:12px;">Shop desk</div>
+    </div>
+  </a>
   <a href="/">Back to the shop</a>
 </header>
 <main>
-  <section id="gate" class="card">
-    <p>Sign in with a BuyWish admin account. The same sign-in used for Shipping Wish admin applies, including the email code when two-factor authentication is on.</p>
-    <form id="loginForm" class="row">
-      <input id="email" type="email" placeholder="Email" required>
-      <input id="password" type="password" placeholder="Password" required>
-      <button type="submit">Sign in</button>
-    </form>
-    <form id="otpForm" class="row" style="display:none;margin-top:12px;">
-      <input id="otp" inputmode="numeric" placeholder="6-digit code" required>
-      <button type="submit">Confirm code</button>
-    </form>
-    <p id="loginError" class="error"></p>
+  <section id="gate" class="login-wrap">
+    <div class="login-card">
+      <div class="logo" style="margin-bottom:14px;">B</div>
+      <h1>Admin sign in</h1>
+      <p class="muted">Use the same BuyWish admin email and password. If a code is sent to your email, enter it here.</p>
+      <form id="loginForm">
+        <input id="email" type="email" placeholder="Email" required>
+        <input id="password" type="password" placeholder="Password" required>
+        <button type="submit">Sign in</button>
+      </form>
+      <form id="otpForm" style="display:none;">
+        <input id="otp" inputmode="numeric" placeholder="6-digit code" required>
+        <button type="submit">Confirm code</button>
+      </form>
+      <p id="loginError" class="error"></p>
+    </div>
   </section>
 
   <section id="desk">
+    <div class="card" id="libraryDesk">
+      <h2>Zendrop library</h2>
+      <p class="muted">Products on the shop were being pulled live and sorted by keywords, so a title or category can be wrong. They are not all saved in your directory until you open one here and save it. Search, open the product, choose the collection and category, edit the title, description, and price, then save. Customers see that saved copy.</p>
+      <form id="librarySearchForm" class="row">
+        <input id="librarySearch" placeholder="Search Zendrop products" maxlength="80">
+        <button type="submit">Search</button>
+        <button id="libraryPrev" class="ghost" type="button">Previous</button>
+        <button id="libraryNext" class="ghost" type="button">Next</button>
+        <span id="libraryStatus" class="muted"></span>
+      </form>
+      <div class="library-grid" id="libraryGrid"></div>
+      <div id="libraryEditor" class="editor" hidden>
+        <div>
+          <img id="editImage" alt="">
+          <p class="muted" id="editMeta"></p>
+        </div>
+        <form id="librarySaveForm">
+          <label>Title<input id="editTitle" required maxlength="180"></label>
+          <label>Description<textarea id="editDescription" maxlength="2000"></textarea></label>
+          <label>Selling price<input id="editPrice" inputmode="decimal" required></label>
+          <label>Collection<select id="editCollection"></select></label>
+          <label>Category<select id="editCategory"></select></label>
+          <button type="submit">Save to the shop</button>
+          <p id="editStatus" class="muted"></p>
+        </form>
+      </div>
+    </div>
     <div class="card">
       <div class="row">
         <button id="syncBtn" type="button">Sync winning products</button>
@@ -135,6 +189,9 @@
     return token ? { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
   };
   let deskDepartments = [];
+  let deskCollections = [];
+  let libraryPage = 1;
+  let editingId = '';
   function esc(value) {
     return String(value == null ? '' : value)
       .replace(/&/g, '&amp;')
@@ -155,7 +212,7 @@
     document.getElementById('gate').style.display = 'none';
     document.getElementById('desk').style.display = 'block';
     loadCatalog();
-    loadDeskCategories();
+    loadDeskCategories().finally(loadLibrary);
     loadMargin();
     loadDeals();
     loadOrders();
@@ -191,6 +248,8 @@
     const res = await fetch('/api/buywish/departments');
     const data = await res.json();
     deskDepartments = data.departments || [];
+    deskCollections = data.collections || [];
+    fillEditorCollections();
     const current = document.getElementById('deskCategory').value;
     document.getElementById('addProductCategory').innerHTML = categoryOptions(document.getElementById('addProductCategory').value || (deskDepartments[0] && deskDepartments[0].slug));
     document.getElementById('deskCategory').innerHTML = categoryOptions(current || (deskDepartments[0] && deskDepartments[0].slug));
@@ -235,7 +294,7 @@
     if (res.status === 401 || res.status === 403) {
       sessionStorage.removeItem(tokenKey);
       document.getElementById('desk').style.display = 'none';
-      document.getElementById('gate').style.display = 'block';
+      document.getElementById('gate').style.display = 'grid';
     }
   }
   async function hideProduct(id) {
@@ -264,7 +323,7 @@
     if (res.status === 401 || res.status === 403) {
       sessionStorage.removeItem(tokenKey);
       document.getElementById('desk').style.display = 'none';
-      document.getElementById('gate').style.display = 'block';
+      document.getElementById('gate').style.display = 'grid';
       return;
     }
     const data = await res.json();
@@ -397,6 +456,123 @@
       loadDeskProducts();
     }
   };
+  function collectionChoices() {
+    if (deskCollections.length) return deskCollections;
+    return deskDepartments.map((dept) => ({ slug: dept.slug, title: dept.title, children: [] }));
+  }
+  function categoriesInCollection(collectionSlug) {
+    const group = collectionChoices().find((item) => item.slug === collectionSlug);
+    if (group && Array.isArray(group.children) && group.children.length) {
+      return group.children.map((child) => {
+        const dept = deskDepartments.find((item) => item.slug === child.slug);
+        return dept || { slug: child.slug, key: child.category || child.slug, title: child.title };
+      });
+    }
+    const direct = deskDepartments.find((item) => item.slug === collectionSlug);
+    return direct ? [direct] : deskDepartments;
+  }
+  function fillEditorCollections() {
+    const select = document.getElementById('editCollection');
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = collectionChoices().map((item) => `<option value="${esc(item.slug)}">${esc(item.title)}</option>`).join('');
+    if (current) select.value = current;
+    fillEditorCategories();
+  }
+  function fillEditorCategories(selected) {
+    const collection = document.getElementById('editCollection').value;
+    const select = document.getElementById('editCategory');
+    const categories = categoriesInCollection(collection);
+    select.innerHTML = categories.map((dept) => `<option value="${esc(dept.slug)}">${esc(dept.title)}</option>`).join('');
+    if (selected) select.value = selected;
+  }
+  function renderLibrary(products) {
+    document.getElementById('libraryGrid').innerHTML = (products || []).map((product) => {
+      const id = String(product.id || '').replace(/\D/g, '');
+      const img = safeImg((product.images && product.images[0]) || product.image_url);
+      return `<button class="library-card" type="button" onclick="openLibraryProduct('${id}')">
+        ${img ? `<img alt="" src="${esc(img)}">` : '<span class="ph"></span>'}
+        <div>
+          <strong>${esc(product.title)}</strong>
+          <span class="muted">$${esc(product.retail_price)} · cost $${esc(product.supplier_cost || '0')}</span>
+          <div>${product.saved ? '<span class="pill">Saved</span>' : '<span class="muted">Not saved yet</span>'}</div>
+        </div>
+      </button>`;
+    }).join('') || '<p class="muted">No products on this page.</p>';
+  }
+  async function loadLibrary() {
+    const status = document.getElementById('libraryStatus');
+    status.textContent = 'Loading Zendrop products…';
+    const q = document.getElementById('librarySearch').value.trim();
+    const res = await fetch('/api/buywish/admin/library?page=' + libraryPage + '&q=' + encodeURIComponent(q), { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) {
+      status.textContent = data.error || 'Could not load products.';
+      return;
+    }
+    renderLibrary(data.products || []);
+    status.textContent = `Page ${data.page || libraryPage}`;
+  }
+  async function openLibraryProduct(id) {
+    if (!/^\d+$/.test(String(id))) return;
+    editingId = id;
+    const res = await fetch('/api/buywish/admin/library/' + id, { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok || !data.product) {
+      document.getElementById('libraryStatus').textContent = data.error || 'Could not open that product.';
+      return;
+    }
+    const product = data.product;
+    const editor = document.getElementById('libraryEditor');
+    editor.hidden = false;
+    const img = safeImg((product.images && product.images[0]) || product.image_url);
+    document.getElementById('editImage').src = img;
+    document.getElementById('editImage').style.display = img ? 'block' : 'none';
+    document.getElementById('editTitle').value = product.title || '';
+    document.getElementById('editDescription').value = product.description || '';
+    document.getElementById('editPrice').value = product.retail_price || '';
+    document.getElementById('editMeta').textContent = `ID ${id} · supplier category ${product.supplier_category || '—'} · you pay $${product.supplier_cost || '0'}`;
+    const collection = product.collection_slug || (collectionChoices()[0] && collectionChoices()[0].slug);
+    document.getElementById('editCollection').value = collection || '';
+    fillEditorCategories(product.category_slug || '');
+    document.getElementById('editStatus').textContent = product.saved ? 'This copy is already saved in the shop.' : 'Not in your directory yet.';
+    editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  window.openLibraryProduct = openLibraryProduct;
+  document.getElementById('librarySearchForm').onsubmit = (event) => {
+    event.preventDefault();
+    libraryPage = 1;
+    loadLibrary();
+  };
+  document.getElementById('libraryPrev').onclick = () => {
+    libraryPage = Math.max(1, libraryPage - 1);
+    loadLibrary();
+  };
+  document.getElementById('libraryNext').onclick = () => {
+    libraryPage += 1;
+    loadLibrary();
+  };
+  document.getElementById('editCollection').onchange = () => fillEditorCategories();
+  document.getElementById('librarySaveForm').onsubmit = async (event) => {
+    event.preventDefault();
+    const status = document.getElementById('editStatus');
+    status.textContent = 'Saving…';
+    const res = await fetch('/api/buywish/admin/library', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        zendrop_id: editingId,
+        title: document.getElementById('editTitle').value,
+        description: document.getElementById('editDescription').value,
+        retail_price: document.getElementById('editPrice').value,
+        collection: document.getElementById('editCollection').value,
+        category: document.getElementById('editCategory').value
+      })
+    });
+    const data = await res.json();
+    status.textContent = data.error || `Saved in ${data.collection || 'the shop'}. Customers now see this title and price.`;
+    if (res.ok) loadLibrary();
+  };
   document.getElementById('loginForm').onsubmit = async (event) => {
     event.preventDefault();
     document.getElementById('loginError').textContent = '';
@@ -408,7 +584,7 @@
     const data = await res.json();
     if (data.requires_2fa) {
       tempToken = data.temp_token;
-      document.getElementById('otpForm').style.display = 'flex';
+      document.getElementById('otpForm').style.display = 'grid';
       document.getElementById('loginError').textContent = data.message || 'Enter the code from your email.';
       return;
     }
@@ -435,7 +611,7 @@
     showDesk();
   };
   if (sessionStorage.getItem(tokenKey)) showDesk();
-  else document.getElementById('gate').style.display = 'block';
+  else document.getElementById('gate').style.display = 'grid';
 </script>
 </body>
 </html>

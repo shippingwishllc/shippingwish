@@ -5,60 +5,84 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, follow">
   <title>Account | BuyWishOnline</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="/buywishonline/favicon.ico" sizes="32x32">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root { --ink:#14120f; --ivory:#f6f1e8; --paper:#fffdf8; --line:#eadfce; --muted:#6f675e; }
+    :root { --primary:#1a1a2e; --accent:#e94560; --bg:#f7f7f9; --text:#1a1a2e; --muted:#6b7280; --border:#e5e7eb; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Outfit, sans-serif; background: var(--ivory); color: var(--ink); }
-    header, main { max-width: 880px; margin: 0 auto; padding: 28px 20px; }
-    h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 48px; margin: 0 0 8px; }
-    a { color: inherit; }
-    input, button { font: inherit; }
-    form, .card { background: var(--paper); border: 1px solid var(--line); padding: 18px; margin-top: 16px; }
-    label { display: block; margin: 10px 0; }
-    input { width: 100%; border: 1px solid var(--line); padding: 12px; background: #fff; }
-    button { background: var(--ink); color: #fff; border: 0; padding: 12px 16px; cursor: pointer; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; }
+    body { margin: 0; font-family: Inter, sans-serif; background: var(--bg); color: var(--text); }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+    .topbar { background: var(--primary); color: #fff; min-height: 36px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    header, main { max-width: 980px; margin: 0 auto; padding: 22px 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 0; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+    .logo { width: 42px; height: 42px; border-radius: 12px; background: var(--accent); color: #fff; display: grid; place-items: center; }
+    h1 { font-size: 34px; letter-spacing: -.03em; margin: 8px 0; }
     .muted { color: var(--muted); }
-    .error { color: #8c3a2f; }
-    .tabs { display: flex; gap: 8px; }
-    .tabs button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    .card, form.panel { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 18px; box-shadow: 0 8px 24px rgba(26,26,46,.04); }
+    .auth-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; align-items: start; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    label { display: block; font-size: 13px; font-weight: 700; margin: 12px 0; }
+    input { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 6px; }
+    button { background: var(--accent); color: #fff; border: 0; border-radius: 10px; padding: 12px 16px; font-weight: 700; cursor: pointer; }
+    button.ghost { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    .error { color: #be123c; }
+    .order { margin-top: 12px; }
+    .order-top { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+    .steps { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
+    .step { flex: 1; min-width: 120px; border-top: 3px solid var(--border); padding-top: 8px; font-size: 12px; color: var(--muted); }
+    .step.on { border-color: var(--accent); color: var(--text); font-weight: 700; }
+    .items { margin: 8px 0 0; padding-left: 18px; }
     #account { display: none; }
+    @media (max-width: 800px) { .auth-grid, .order-top { grid-template-columns: 1fr; display: grid; } }
   </style>
 </head>
 <body>
+<div class="topbar">Secure checkout · Orders ship from the warehouse</div>
 <header>
-  <div class="muted"><a href="/">BuyWishOnline</a></div>
-  <h1>Your account</h1>
-  <p class="muted">Sign in to see orders placed with this email, then track them through to delivery.</p>
+  <a class="brand" href="/"><span class="logo">B</span> BuyWishOnline</a>
+  <a href="/">Continue shopping</a>
 </header>
 <main>
-  <section id="auth">
-    <div class="tabs">
-      <button type="button" id="showLogin">Sign in</button>
-      <button type="button" id="showRegister" class="ghost">Create account</button>
+  <section id="auth" class="auth-grid">
+    <div>
+      <h1>Your account</h1>
+      <p class="muted">Sign in to see every order, the payment status, and the tracking number when the warehouse ships it.</p>
     </div>
-    <form id="loginForm">
-      <label>Email<input id="loginEmail" type="email" required></label>
-      <label>Password<input id="loginPassword" type="password" required></label>
-      <button type="submit">Sign in</button>
-      <p id="loginError" class="error"></p>
-    </form>
-    <form id="registerForm" style="display:none">
-      <label>Name<input id="regName" required></label>
-      <label>Email<input id="regEmail" type="email" required></label>
-      <label>Phone<input id="regPhone"></label>
-      <label>Password<input id="regPassword" type="password" minlength="8" required></label>
-      <button type="submit">Create account</button>
-      <p id="regError" class="error"></p>
-    </form>
+    <div class="card">
+      <div class="tabs">
+        <button type="button" id="showLogin">Sign in</button>
+        <button type="button" id="showRegister" class="ghost">Create account</button>
+      </div>
+      <form id="loginForm">
+        <label>Email<input id="loginEmail" type="email" required></label>
+        <label>Password<input id="loginPassword" type="password" required></label>
+        <button type="submit">Sign in</button>
+        <p id="loginError" class="error"></p>
+      </form>
+      <form id="registerForm" style="display:none">
+        <label>Name<input id="regName" required></label>
+        <label>Email<input id="regEmail" type="email" required></label>
+        <label>Phone<input id="regPhone"></label>
+        <label>Password<input id="regPassword" type="password" minlength="8" required></label>
+        <button type="submit">Create account</button>
+        <p id="regError" class="error"></p>
+      </form>
+    </div>
   </section>
   <section id="account">
-    <p id="hello"></p>
-    <button type="button" id="logoutBtn">Sign out</button>
+    <div class="order-top">
+      <div>
+        <h1>Orders</h1>
+        <p id="hello" class="muted"></p>
+      </div>
+      <button type="button" id="logoutBtn" class="ghost">Sign out</button>
+    </div>
     <div id="orders"></div>
-    <form id="trackForm">
-      <label>Track an order number<input id="trackNumber" placeholder="BWO-..." required></label>
+    <form id="trackForm" class="panel" style="margin-top:16px;">
+      <h2 style="margin:0 0 8px;">Track an order</h2>
+      <label>Order number<input id="trackNumber" placeholder="BWO-..." required></label>
       <button type="submit">Track</button>
       <div id="trackResult"></div>
     </form>
@@ -70,6 +94,51 @@
     const token = localStorage.getItem(tokenKey);
     return { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) };
   };
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  }
+  function money(order) {
+    if (order.total_amount == null || order.total_amount === '') return '';
+    const amount = Number(order.total_amount);
+    const shown = Number.isFinite(amount) ? amount.toFixed(2) : order.total_amount;
+    return `${order.currency || 'USD'} ${shown}`;
+  }
+  function itemList(items) {
+    const list = Array.isArray(items) ? items : [];
+    if (!list.length) return '';
+    return `<ul class="items">${list.map((item) => `<li>${esc(item.quantity || 1)} × ${esc(item.title || 'Product')}</li>`).join('')}</ul>`;
+  }
+  function stepIndex(order) {
+    const fulfillment = String(order.fulfillment_status || '');
+    const paid = String(order.payment_status || '') === 'paid';
+    if (order.supplier_tracking_number || /ship|transit|deliver/i.test(fulfillment)) return 3;
+    if (/supplier_order|warehouse|fulfill/i.test(fulfillment)) return 2;
+    if (paid || /payment_confirmed/i.test(fulfillment)) return 1;
+    return 0;
+  }
+  function statusLabel(order) {
+    const labels = ['Order placed', 'Payment confirmed', 'At the warehouse', 'Shipped'];
+    return labels[stepIndex(order)];
+  }
+  function orderCard(order) {
+    const active = stepIndex(order);
+    const steps = ['Placed', 'Paid', 'Warehouse', 'Shipped'].map((label, index) => (
+      `<div class="step${index <= active ? ' on' : ''}">${label}</div>`
+    )).join('');
+    const when = order.created_at ? new Date(order.created_at).toLocaleDateString() : '';
+    const tracking = order.supplier_tracking_number
+      ? `<div><strong>Tracking</strong> ${esc(order.supplier_tracking_number)}</div>`
+      : '<div class="muted">Tracking appears here after the warehouse ships the order.</div>';
+    return `<article class="card order">
+      <div class="order-top">
+        <div><strong>${esc(order.order_number)}</strong><div class="muted">${esc(when)} · ${esc(statusLabel(order))}</div></div>
+        <div><strong>${esc(money(order))}</strong></div>
+      </div>
+      <div class="steps">${steps}</div>
+      ${itemList(order.items)}
+      ${tracking}
+    </article>`;
+  }
   function showAccount() {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('account').style.display = 'block';
@@ -82,22 +151,19 @@
     document.getElementById('hello').textContent = `${data.customer.name} · ${data.customer.email}`;
     const ordersRes = await fetch('/api/buywish/account/orders', { headers: headers() });
     const orders = await ordersRes.json();
-    document.getElementById('orders').innerHTML = (orders.orders || []).map(order => `
-      <article class="card">
-        <strong>${order.order_number}</strong>
-        <div class="muted">${order.payment_status} · ${order.fulfillment_status}</div>
-        <div>${order.currency || 'USD'} ${order.total_amount}</div>
-        ${order.supplier_tracking_number ? `<div>Tracking ${order.supplier_tracking_number}</div>` : ''}
-      </article>
-    `).join('') || '<p class="muted">No orders for this account yet.</p>';
+    document.getElementById('orders').innerHTML = (orders.orders || []).map(orderCard).join('') || '<p class="muted">No orders for this account yet. When you check out with this email, the order shows up here.</p>';
   }
   document.getElementById('showLogin').onclick = () => {
     loginForm.style.display = 'block';
     registerForm.style.display = 'none';
+    showLogin.className = '';
+    showRegister.className = 'ghost';
   };
   document.getElementById('showRegister').onclick = () => {
     loginForm.style.display = 'none';
     registerForm.style.display = 'block';
+    showRegister.className = '';
+    showLogin.className = 'ghost';
   };
   loginForm.onsubmit = async (event) => {
     event.preventDefault();
@@ -133,8 +199,8 @@
     const res = await fetch('/api/buywish/orders/track/' + encodeURIComponent(trackNumber.value.trim()));
     const data = await res.json();
     trackResult.innerHTML = res.ok
-      ? `<p><strong>${data.order.order_number}</strong> · ${data.order.fulfillment_status}${data.order.supplier_tracking_number ? ' · ' + data.order.supplier_tracking_number : ''}</p>`
-      : `<p class="error">${data.error || 'Order not found.'}</p>`;
+      ? orderCard(data.order || {})
+      : `<p class="error">${esc(data.error || 'Order not found.')}</p>`;
   };
   if (localStorage.getItem(tokenKey)) showAccount();
 </script>
