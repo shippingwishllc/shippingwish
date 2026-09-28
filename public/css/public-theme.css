@@ -57,8 +57,10 @@ body.marketing .nav-phone {
 /* Dark tool heroes (carrier lookup): headings stay white on the navy band. */
 body.marketing .cs-hero,
 body.marketing .cs-hero h1,
-body.marketing .cs-hero h2 {
-  color: #fff;
+body.marketing .cs-hero h2,
+body.marketing .cs-hero .cs-heading,
+body.marketing #cs-heading {
+  color: #fff !important;
 }
 body.marketing .nav-phone:hover { color: #fff; }
 body.marketing .nav-hamburger span { background: #f8fafc; }

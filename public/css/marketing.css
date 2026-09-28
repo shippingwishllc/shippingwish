@@ -1292,13 +1292,15 @@ body.marketing .pricing-features li {
   padding: 0 20px;
   text-align: center;
 }
-.cs-hero h1 {
+.cs-hero h1,
+.cs-hero .cs-heading,
+#cs-heading {
   font-size: clamp(1.75rem, 4vw, 2.65rem);
   font-weight: 900;
   letter-spacing: -0.03em;
   line-height: 1.12;
   margin: 12px 0 16px;
-  color: #fff;
+  color: #fff !important;
 }
 .cs-hero-lede {
   font-size: 1.05rem;
