@@ -656,8 +656,12 @@ async function releaseOffer(offerId, reason) {
   return { offer: { ...offer, status: 'declined' }, sms };
 }
 
+function withoutQuotedEmail(text) {
+  return String(text || '').split(/\n\s*(?:on .+ wrote:|from:|-----original)/i)[0].trim();
+}
+
 function classifyBrokerReply(text) {
-  const t = String(text || '').toLowerCase().split(/\n\s*(on .+ wrote:|from:|-----original)/)[0];
+  const t = withoutQuotedEmail(text).toLowerCase();
   if (/\b(covered|no longer available|not available|already (booked|covered|gone)|been (booked|covered)|gone|taken|sorry|pass)\b/.test(t)) return 'declined';
   if (/\b(confirm(ed)?|booked|rate ?con|ratecon|attached|sending (it|the)|it'?s yours|go ahead|approved|yes)\b/.test(t)) return 'confirmed';
   return 'question';
@@ -675,7 +679,7 @@ async function handleBrokerBookingReply({ fromEmail, subject, bodyText }) {
     return { offer: offer.id, action: 'sender_mismatch' };
   }
   const kind = classifyBrokerReply(bodyText);
-  await pool.query(`UPDATE ai_dispatch_offers SET broker_reply = $2, updated_at = now() WHERE id = $1`, [offer.id, `${kind}: ${String(bodyText || '').slice(0, 500)}`]);
+  await pool.query(`UPDATE ai_dispatch_offers SET broker_reply = $2, updated_at = now() WHERE id = $1`, [offer.id, `${kind}: ${withoutQuotedEmail(bodyText).slice(0, 500)}`]);
   const loadNumber = offer.load ? offer.load.load_number : `offer ${offer.id}`;
   if (kind === 'declined') {
     await releaseOffer(offer.id, `Broker replied covered (${fromEmail})`);

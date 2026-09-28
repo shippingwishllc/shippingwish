@@ -133,7 +133,7 @@
 <script src="/js/app-shell.js?v=25"></script>
 <script>
   function esc(value) {
-    return String(value || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    return String(value == null ? '' : value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   }
   async function api(path, options) {
     const opts = Object.assign({ credentials: 'include' }, options || {});
