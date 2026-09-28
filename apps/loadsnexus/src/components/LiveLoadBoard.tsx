@@ -321,12 +321,8 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
           <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4 text-xs">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600">
-                <span>National Spot RPM:</span>
-                <strong className="text-slate-900 font-extrabold">$3.18 / mi</strong>
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600">
-                <span>Monitored Brokers:</span>
-                <strong className="text-slate-900 font-extrabold">28 Active</strong>
+                <span>Posted loads:</span>
+                <strong className="text-slate-900 font-extrabold">{loads.length}</strong>
               </div>
               {isSubscriber ? (
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-extrabold">
