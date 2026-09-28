@@ -53,6 +53,13 @@ body.marketing .nav-phone {
   white-space: nowrap;
   text-decoration: none;
 }
+
+/* Dark tool heroes (carrier lookup): headings stay white on the navy band. */
+body.marketing .cs-hero,
+body.marketing .cs-hero h1,
+body.marketing .cs-hero h2 {
+  color: #fff;
+}
 body.marketing .nav-phone:hover { color: #fff; }
 body.marketing .nav-hamburger span { background: #f8fafc; }
 body.marketing .nav .btn-secondary {

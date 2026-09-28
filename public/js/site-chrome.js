@@ -19,7 +19,7 @@
     if (!document.querySelector('link[href*="public-theme.css"]')) {
       const theme = document.createElement('link');
       theme.rel = 'stylesheet';
-      theme.href = '/css/public-theme.css?v=6';
+      theme.href = '/css/public-theme.css?v=7';
       document.head.appendChild(theme);
     }
   }
@@ -62,6 +62,7 @@
             <a href="/dot-compliance" role="menuitem">DOT Compliance</a>
           </div>
         </li>
+        <li><a href="/#how-dispatch-works">How it works</a></li>
         <li><a href="/pricing"${active('/pricing.html', ['checkout.html','checkout-success.html'])}>Pricing</a></li>
         <li><a href="/about"${active('/about.html')}>About</a></li>
         <li><a href="/contact"${active('/contact.html')}>Contact</a></li>
@@ -83,6 +84,7 @@
       <a href="https://www.loadsnexus.com" target="_blank" rel="noopener" data-nav-close style="color:#60a5fa;font-weight:700;">🔷 LoadsNexus™ AI Load Board ↗</a>
       <a href="/mobile-apps" data-nav-close style="color:#60a5fa;">📱 Mobile Apps (iOS &amp; Android)</a>
       <a href="/services" data-nav-close>Services</a>
+      <a href="/#how-dispatch-works" data-nav-close>How it works</a>
       <a href="/dispatch" data-nav-close>Fleet Operations</a>
       <a href="/pricing" data-nav-close>Pricing</a>
       <a href="/carrier-search" data-nav-close>Carrier Lookup</a>
@@ -91,6 +93,7 @@
       <a href="/contact" data-nav-close>Contact</a>
       </div>
       <div class="nav-mobile-cta-group">
+        <a href="tel:+19177370021" class="btn btn-secondary-glass" data-nav-close>Call +1 (917) 737-0021</a>
         <a href="/login" class="btn btn-secondary-glass" data-nav-close>Sign In</a>
         <a href="/pricing" class="btn btn-primary-amber" data-nav-close>Start Free Week →</a>
       </div>`;

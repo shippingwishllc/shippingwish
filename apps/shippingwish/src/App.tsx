@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { DeskStrip } from './components/DeskStrip';
 import { EquipmentDesk } from './components/EquipmentDesk';
 import { CarrierGuide } from './components/CarrierGuide';
 import { Comparison } from './components/Comparison';
@@ -25,6 +26,8 @@ export const App: React.FC = () => {
       <main className="flex-grow">
         {/* Hero with Live Operations Panel */}
         <Hero />
+
+        <DeskStrip />
 
         <EquipmentDesk />
 
