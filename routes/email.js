@@ -783,6 +783,17 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
     }
   }
 
+  let booking = null;
+  try {
+    booking = await require('../utils/dispatch-brain').handleBrokerBookingReply({
+      fromEmail: from,
+      subject: subjectFinal,
+      bodyText: bodyTextFinal || htmlToPlain(bodyHtmlFinal)
+    });
+  } catch (err) {
+    console.warn('[AI DISPATCH] broker reply:', err.message);
+  }
+
   let outreach = null;
   try {
     outreach = await require('../utils/outreach-engine').handleInboundReply({
@@ -793,11 +804,11 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
   } catch (err) {
     console.warn('[OUTREACH] inbound reply:', err.message);
   }
-  if (!leadId && !outreach) {
+  if (!leadId && !outreach && !booking) {
     await notifyAdmins(`Unmatched inbound email from ${from}`, (subject || '').slice(0, 140), 'warning', '/inbox.html');
   }
 
-  return { ok: true, inbound: ins.rows[0], lead_id: leadId, outreach };
+  return { ok: true, inbound: ins.rows[0], lead_id: leadId, outreach, booking };
 }
 
 function pickAddress(value) {
