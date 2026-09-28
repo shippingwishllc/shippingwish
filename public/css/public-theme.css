@@ -134,6 +134,16 @@ body.marketing .nav-mobile-cta-group {
   }
 }
 
+@media (max-width: 1023px) {
+  body.marketing .nav-links,
+  body.marketing .nav-actions {
+    display: none !important;
+  }
+  body.marketing .nav-hamburger {
+    display: flex !important;
+  }
+}
+
 @media (min-width: 1024px) and (max-width: 1280px) {
   body.marketing .nav-links a {
     padding: 8px 8px;

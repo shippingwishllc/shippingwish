@@ -19,7 +19,7 @@
     if (!document.querySelector('link[href*="public-theme.css"]')) {
       const theme = document.createElement('link');
       theme.rel = 'stylesheet';
-      theme.href = '/css/public-theme.css?v=7';
+      theme.href = '/css/public-theme.css?v=8';
       document.head.appendChild(theme);
     }
   }
