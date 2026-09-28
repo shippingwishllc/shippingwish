@@ -93,6 +93,28 @@
         </table>
       </div>
     </div>
+    <div class="card" id="dealsDesk">
+      <h2>Deals and margin</h2>
+      <p class="muted">If the supplier price is only what you pay, the shop adds your margin before the customer sees it. If the supplier already lists a higher selling price, that price stays. A two-product offer must stay above supplier cost and below the two selling prices added together.</p>
+      <form id="marginForm" class="row">
+        <input id="marginPercent" inputmode="numeric" min="0" max="80" placeholder="Margin %" required>
+        <button type="submit">Save margin</button>
+        <span id="marginStatus" class="muted"></span>
+      </form>
+      <form id="dealForm" class="row" style="margin-top:12px;">
+        <input id="dealTitle" placeholder="Offer name" required maxlength="80">
+        <input id="dealProductA" inputmode="numeric" placeholder="First product ID" required>
+        <input id="dealProductB" inputmode="numeric" placeholder="Second product ID" required>
+        <input id="dealPrice" inputmode="decimal" placeholder="Offer price" required>
+        <button type="submit">Create offer</button>
+      </form>
+      <div style="overflow:auto;">
+        <table>
+          <thead><tr><th>Offer</th><th>Price</th><th></th></tr></thead>
+          <tbody id="dealRows"></tbody>
+        </table>
+      </div>
+    </div>
     <div class="card" style="overflow:auto;">
       <table>
         <thead>
@@ -134,8 +156,37 @@
     document.getElementById('desk').style.display = 'block';
     loadCatalog();
     loadDeskCategories();
+    loadMargin();
+    loadDeals();
     loadOrders();
   }
+  async function loadMargin() {
+    const res = await fetch('/api/buywish/admin/settings', { headers: authHeaders() });
+    const data = await res.json();
+    if (res.ok && data.margin_percent != null) document.getElementById('marginPercent').value = data.margin_percent;
+  }
+  async function loadDeals() {
+    const res = await fetch('/api/buywish/admin/deals', { headers: authHeaders() });
+    const data = await res.json();
+    const rows = data.deals || [];
+    document.getElementById('dealRows').innerHTML = rows.map((deal) => {
+      const id = String(deal.id).replace(/\D/g, '');
+      const names = (deal.products || []).map((item) => esc(item.title)).join(' + ');
+      return `<tr>
+        <td><strong>${esc(deal.title)}</strong><div class="muted">${names}</div></td>
+        <td>${esc(deal.bundle_price)} <span class="muted">${esc(deal.compare_price)}</span></td>
+        <td><button class="ghost" type="button" onclick="removeDeal('${id}')">Remove</button></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="3">No two-product offers yet.</td></tr>';
+  }
+  async function removeDeal(id) {
+    if (!/^\d+$/.test(String(id))) return;
+    const res = await fetch('/api/buywish/admin/deals/' + id, { method: 'DELETE', headers: authHeaders() });
+    const data = await res.json();
+    document.getElementById('marginStatus').textContent = data.error || 'Offer removed.';
+    if (res.ok) loadDeals();
+  }
+  window.removeDeal = removeDeal;
   async function loadDeskCategories() {
     const res = await fetch('/api/buywish/departments');
     const data = await res.json();
@@ -281,6 +332,35 @@
   };
   document.getElementById('refreshBtn').onclick = loadOrders;
   document.getElementById('loadDeskProductsBtn').onclick = loadDeskProducts;
+  document.getElementById('marginForm').onsubmit = async (event) => {
+    event.preventDefault();
+    const res = await fetch('/api/buywish/admin/settings/margin', {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ margin_percent: Number(marginPercent.value) })
+    });
+    const data = await res.json();
+    document.getElementById('marginStatus').textContent = data.error || `Margin saved at ${data.margin_percent}%.`;
+  };
+  document.getElementById('dealForm').onsubmit = async (event) => {
+    event.preventDefault();
+    const res = await fetch('/api/buywish/admin/deals', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        title: dealTitle.value,
+        product_a: dealProductA.value,
+        product_b: dealProductB.value,
+        bundle_price: dealPrice.value
+      })
+    });
+    const data = await res.json();
+    document.getElementById('marginStatus').textContent = data.error || 'Offer created.';
+    if (res.ok) {
+      event.target.reset();
+      loadDeals();
+    }
+  };
   document.getElementById('categoryForm').onsubmit = async (event) => {
     event.preventDefault();
     const res = await fetch('/api/buywish/admin/categories', {

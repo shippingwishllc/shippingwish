@@ -34,7 +34,12 @@ const {
   cleanIcon,
   publicDepartments,
   applyCatalogEdits,
-  departmentBySlug
+  departmentBySlug,
+  setStoreMarginPercent,
+  getStoreMarginPercent,
+  priceWithMargin,
+  bundlePriceAllowed,
+  clampMargin
 } = require('../utils/buywish-catalog');
 const { selectOrderTool, buildOrderArguments, extractOrderId } = require('../utils/buywish-fulfillment');
 const buyWishAdmin = [requireAuth, requireRole('admin')];
@@ -141,6 +146,21 @@ async function ensureBuyWishSchema() {
       category_slug TEXT,
       is_hidden BOOLEAN NOT NULL DEFAULT false,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS buywish_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS buywish_deals (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      product_a TEXT NOT NULL,
+      product_b TEXT NOT NULL,
+      bundle_price NUMERIC(10,2) NOT NULL,
+      snapshot JSONB NOT NULL DEFAULT '{}',
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
   buyWishSchemaReady = true;
@@ -319,6 +339,7 @@ function parseProductKey(key) {
 }
 
 async function loadLiveProductByKey(key) {
+  await refreshStoreMargin();
   const id = parseProductKey(key);
   if (!id) return null;
   const data = await zendropCall('get_catalog_product', { product_id: Number(id) }, { timeoutMs: 8000 });
@@ -396,6 +417,65 @@ async function withCatalogEdits(products, categoryFilter, options = {}) {
   } catch (err) {
     return applyCatalogEdits(products, { overrides: [], saved: [] }, categoryFilter, { includeSaved: false }).slice(0, 96);
   }
+}
+
+async function refreshStoreMargin() {
+  let percent = clampMargin(process.env.BUYWISH_MARGIN_PERCENT);
+  try {
+    await ensureBuyWishSchema();
+    const { rows } = await pool.query(`SELECT value FROM buywish_settings WHERE key = 'margin_percent'`);
+    if (rows[0]) percent = clampMargin(rows[0].value);
+  } catch (err) {
+    percent = clampMargin(process.env.BUYWISH_MARGIN_PERCENT);
+  }
+  setStoreMarginPercent(percent);
+  return percent;
+}
+
+function publicDealFromRow(row) {
+  const snap = row.snapshot && typeof row.snapshot === 'object' ? row.snapshot : {};
+  const side = (item) => {
+    const listed = item && (item.listed != null ? item.listed : item.retail_price);
+    const selling = priceWithMargin(listed, item && item.supplier_cost);
+    return {
+      id: item && item.id,
+      title: (item && item.title) || 'Product',
+      image: (item && item.image) || null,
+      retail_price: selling
+    };
+  };
+  const a = side(snap.a || {});
+  const b = side(snap.b || {});
+  if (!a.id || !b.id) return null;
+  const sum = (Number(a.retail_price) + Number(b.retail_price)).toFixed(2);
+  return {
+    id: row.id,
+    title: row.title,
+    bundle_price: Number(row.bundle_price).toFixed(2),
+    compare_price: sum,
+    products: [a, b]
+  };
+}
+
+async function listPublicDeals() {
+  await refreshStoreMargin();
+  const cacheKey = `deals_${getStoreMarginPercent()}`;
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
+  const mixed = await fetchMixedCatalog();
+  const products = await withCatalogEdits(mixed.products, null, { includeSaved: true });
+  const sales = products.filter((product) => Number(product.compare_price) > Number(product.retail_price));
+  let bundles = [];
+  try {
+    await ensureBuyWishSchema();
+    const { rows } = await pool.query(`SELECT * FROM buywish_deals WHERE is_active = true ORDER BY id DESC LIMIT 24`);
+    bundles = rows.map(publicDealFromRow).filter(Boolean);
+  } catch (err) {
+    bundles = [];
+  }
+  const payload = { products: sales.slice(0, 48), bundles, total: sales.length };
+  if (sales.length || bundles.length) setCache(cacheKey, payload, 10 * 60 * 1000);
+  return payload;
 }
 
 async function lookupCustomCategory(slug) {
@@ -496,6 +576,7 @@ async function upsertStoreProduct(product) {
 // ============================================================
 router.get('/products', async (req, res) => {
   try {
+    await refreshStoreMargin();
     const { category, search, limit = 24, page = 1, sort = 'trending', source } = req.query;
     const queryText = search && String(search).trim();
     if (queryText && queryText.length >= 2) {
@@ -507,6 +588,10 @@ router.get('/products', async (req, res) => {
       }
       const products = await withCatalogEdits(found.products, null, { includeSaved: false });
       return res.json({ ok: true, ...found, products, total: products.length, source: 'search' });
+    }
+    if (String(category || '').toLowerCase() === 'deals') {
+      const found = await listPublicDeals();
+      return res.json({ ok: true, ...found, source: 'deals', category: 'Deals' });
     }
     const department = departmentByQuery(category);
     if (department) {
@@ -605,6 +690,15 @@ router.get('/products/trending', async (req, res) => {
 // ============================================================
 // GET /api/buywish/products/categories — Available Categories
 // ============================================================
+router.get('/deals', async (req, res) => {
+  try {
+    const found = await listPublicDeals();
+    res.json({ ok: true, ...found });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load deals.' });
+  }
+});
+
 router.get('/departments', async (req, res) => {
   let custom = [];
   try {
@@ -795,6 +889,7 @@ router.post('/checkout', async (req, res) => {
   if (!stripe) return res.status(503).json({ error: 'Checkout is temporarily unavailable.' });
 
   try {
+    await refreshStoreMargin();
     const curUpper = String(currency || 'USD').toUpperCase();
     if (!Object.hasOwn(CURRENCY_RATES, curUpper)) return res.status(400).json({ error: 'Unsupported currency.' });
     const rate = CURRENCY_RATES[curUpper];
@@ -803,8 +898,46 @@ router.post('/checkout', async (req, res) => {
     let subtotalCents = 0;
 
     for (const item of items) {
-      const productId = Number.parseInt(item.product_id, 10);
       const qty = Number.parseInt(item.quantity, 10);
+      if (item.deal_id != null && item.deal_id !== '') {
+        const dealId = Number.parseInt(item.deal_id, 10);
+        if (!Number.isInteger(dealId) || dealId < 1 || !Number.isInteger(qty) || qty < 1 || qty > 10) {
+          return res.status(400).json({ error: 'Each offer needs a valid quantity (1–10).' });
+        }
+        await ensureBuyWishSchema();
+        const dealRes = await pool.query(`SELECT * FROM buywish_deals WHERE id = $1 AND is_active = true`, [dealId]);
+        const deal = dealRes.rows[0];
+        if (!deal) return res.status(409).json({ error: 'That offer is no longer available.' });
+        const productA = await loadLiveProductByKey(deal.product_a);
+        const productB = await loadLiveProductByKey(deal.product_b);
+        if (!productA || !productB || productA.in_stock === false || productB.in_stock === false) {
+          return res.status(409).json({ error: 'A product in that offer is unavailable.' });
+        }
+        const check = bundlePriceAllowed({
+          priceA: productA.retail_price,
+          priceB: productB.retail_price,
+          costA: productA.supplier_cost,
+          costB: productB.supplier_cost,
+          bundlePrice: deal.bundle_price
+        });
+        if (!check.ok) return res.status(409).json({ error: 'That offer changed. Refresh the deals page and try again.' });
+        const unitAmount = Math.max(50, Math.round(Number(deal.bundle_price) * rate * 100));
+        subtotalCents += unitAmount * qty;
+        trustedItems.push(
+          { product_id: Number(productA.id), title: productA.title, quantity: qty, deal_id: dealId, supplier: 'Zendrop' },
+          { product_id: Number(productB.id), title: productB.title, quantity: qty, deal_id: dealId, supplier: 'Zendrop' }
+        );
+        lineItems.push({
+          price_data: {
+            currency: curUpper.toLowerCase(),
+            product_data: { name: deal.title, images: productA.image_url ? [productA.image_url] : [] },
+            unit_amount: unitAmount
+          },
+          quantity: qty
+        });
+        continue;
+      }
+      const productId = Number.parseInt(item.product_id, 10);
       if (!Number.isSafeInteger(productId) || productId < 1 || !Number.isInteger(qty) || qty < 1 || qty > 10) {
         return res.status(400).json({ error: 'Each item needs a valid product and quantity (1–10).' });
       }
@@ -1143,6 +1276,117 @@ router.post('/admin/catalog/sync', ...buyWishAdmin, async (req, res) => {
     res.status(500).json({ error: err.message || 'Catalog sync failed.' });
   } finally {
     catalogSyncing = false;
+  }
+});
+
+router.get('/admin/settings', ...buyWishAdmin, async (req, res) => {
+  try {
+    const margin_percent = await refreshStoreMargin();
+    res.json({ ok: true, margin_percent });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load shop settings.' });
+  }
+});
+
+router.put('/admin/settings/margin', ...buyWishAdmin, async (req, res) => {
+  const rawMargin = Number(req.body && req.body.margin_percent);
+  if (!Number.isFinite(rawMargin) || rawMargin < 0 || rawMargin > 80) {
+    return res.status(400).json({ error: 'Enter a margin percent from 0 to 80.' });
+  }
+  const margin = clampMargin(rawMargin);
+  try {
+    await ensureBuyWishSchema();
+    await pool.query(
+      `INSERT INTO buywish_settings (key, value, updated_at) VALUES ('margin_percent', $1, now())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+      [String(margin)]
+    );
+    setStoreMarginPercent(margin);
+    clearCatalogCache();
+    res.json({ ok: true, margin_percent: margin });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not save the margin.' });
+  }
+});
+
+async function loadDealProduct(id) {
+  await refreshStoreMargin();
+  const data = await zendropCall('get_catalog_product', { product_id: Number(id) }, { timeoutMs: 8000 });
+  const raw = data && data.product && (data.product.id || data.product.name) ? data.product : data;
+  if (!raw || !(raw.id || raw.name)) return null;
+  const product = normalizeProduct(raw);
+  if (!product || !product.id) return null;
+  return {
+    product,
+    side: {
+      id: product.id,
+      title: product.title,
+      image: product.image_url,
+      listed: parseFloat(raw.price || raw.retail_price || 0) || 0,
+      supplier_cost: product.supplier_cost || 0
+    }
+  };
+}
+
+router.get('/admin/deals', ...buyWishAdmin, async (req, res) => {
+  try {
+    await refreshStoreMargin();
+    await ensureBuyWishSchema();
+    const { rows } = await pool.query(`SELECT * FROM buywish_deals WHERE is_active = true ORDER BY id DESC LIMIT 50`);
+    res.json({ ok: true, deals: rows.map(publicDealFromRow).filter(Boolean), margin_percent: getStoreMarginPercent() });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load offers.' });
+  }
+});
+
+router.post('/admin/deals', ...buyWishAdmin, async (req, res) => {
+  const aId = parseZendropId(req.body && req.body.product_a);
+  const bId = parseZendropId(req.body && req.body.product_b);
+  const title = String((req.body && req.body.title) || '').trim().slice(0, 80);
+  if (!aId || !bId || aId === bId) return res.status(400).json({ error: 'Enter two different product IDs.' });
+  if (title.length < 2) return res.status(400).json({ error: 'Enter a name for this offer.' });
+  try {
+    const left = await loadDealProduct(aId);
+    const right = await loadDealProduct(bId);
+    if (!left || !right) return res.status(404).json({ error: 'One of those products was not found.' });
+    const sellA = priceWithMargin(left.side.listed, left.side.supplier_cost);
+    const sellB = priceWithMargin(right.side.listed, right.side.supplier_cost);
+    const check = bundlePriceAllowed({
+      priceA: sellA,
+      priceB: sellB,
+      costA: left.side.supplier_cost,
+      costB: right.side.supplier_cost,
+      bundlePrice: req.body && req.body.bundle_price
+    });
+    if (!check.ok) return res.status(400).json({ error: check.error });
+    await ensureBuyWishSchema();
+    const created = await pool.query(
+      `INSERT INTO buywish_deals (title, product_a, product_b, bundle_price, snapshot)
+       VALUES ($1, $2, $3, $4, $5::jsonb)
+       RETURNING id`,
+      [title, aId, bId, check.bundle, JSON.stringify({ a: left.side, b: right.side })]
+    );
+    clearCatalogCache();
+    res.json({ ok: true, id: created.rows[0].id, bundle_price: check.bundle, compare_price: check.sum });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not save the offer.' });
+  }
+});
+
+router.delete('/admin/deals/:id', ...buyWishAdmin, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'Unknown offer.' });
+  try {
+    await ensureBuyWishSchema();
+    const updated = await pool.query(
+      `UPDATE buywish_deals SET is_active = false WHERE id = $1 AND is_active = true RETURNING id`,
+      [id]
+    );
+    if (!updated.rows.length) return res.status(404).json({ error: 'Offer not found.' });
+    clearCatalogCache();
+    res.json({ ok: true, id });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not remove the offer.' });
   }
 });
 

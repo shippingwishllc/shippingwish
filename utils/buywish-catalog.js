@@ -185,6 +185,57 @@ function stripHtml(value) {
   return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function roundMoney(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+function clampMargin(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 30;
+  return Math.min(80, Math.max(0, Math.round(n)));
+}
+
+let storeMarginPercent = clampMargin(process.env.BUYWISH_MARGIN_PERCENT);
+
+function setStoreMarginPercent(value) {
+  storeMarginPercent = clampMargin(value);
+}
+
+function getStoreMarginPercent() {
+  return storeMarginPercent;
+}
+
+function priceWithMargin(listed, cost, marginPercent = getStoreMarginPercent()) {
+  const retail = roundMoney(listed);
+  const supplierCost = roundMoney(cost);
+  const margin = clampMargin(marginPercent);
+  if (supplierCost > 0 && retail > 0 && retail <= supplierCost) {
+    return roundMoney(supplierCost * (1 + margin / 100)).toFixed(2);
+  }
+  if (retail > 0) return retail.toFixed(2);
+  if (supplierCost > 0) return roundMoney(supplierCost * (1 + margin / 100)).toFixed(2);
+  return '0.00';
+}
+
+function bundlePriceAllowed({ priceA, priceB, costA, costB, bundlePrice }) {
+  const sellA = roundMoney(priceA);
+  const sellB = roundMoney(priceB);
+  const sum = roundMoney(sellA + sellB);
+  const bundle = roundMoney(bundlePrice);
+  const floorA = roundMoney(costA) > 0 ? roundMoney(costA) : sellA;
+  const floorB = roundMoney(costB) > 0 ? roundMoney(costB) : sellB;
+  const floor = roundMoney(floorA + floorB);
+  if (!(bundle > 0) || !(sum > bundle)) {
+    return { ok: false, error: 'The offer price has to be lower than the two selling prices added together.' };
+  }
+  if (bundle + 0.001 < floor) {
+    return { ok: false, error: 'That offer is below the supplier cost. Raise the price so the order still covers both products.' };
+  }
+  return { ok: true, sum: sum.toFixed(2), bundle: bundle.toFixed(2), floor: floor.toFixed(2) };
+}
+
 function normalizeProduct(p) {
   const images = [];
   if (p.image) images.push(p.image);
@@ -205,8 +256,10 @@ function normalizeProduct(p) {
   });
 
   const retailPrice = parseFloat(p.price || p.retail_price || 0) || 0;
+  const supplierCost = parseFloat(p.cost || p.supplier_cost || p.base_price || 0);
+  const sellingPrice = priceWithMargin(retailPrice, supplierCost);
   const suppliedComparePrice = parseFloat(p.compare_at_price || p.compare_price || 0);
-  const comparePrice = Number.isFinite(suppliedComparePrice) && suppliedComparePrice > retailPrice
+  const comparePrice = Number.isFinite(suppliedComparePrice) && suppliedComparePrice > Number(sellingPrice)
     ? suppliedComparePrice.toFixed(2)
     : null;
 
@@ -215,7 +268,6 @@ function normalizeProduct(p) {
   if (p.is_trending || p.trending) badge = 'hot';
   else if (comparePrice) badge = 'sale';
 
-  const supplierCost = parseFloat(p.cost || p.supplier_cost || p.base_price || 0);
   const supplierCategory = categoryName(p.category || p.category_name || p.category_title);
   const classified = classifyProduct({ title, description: cleanDesc, supplier_category: supplierCategory });
   const handle = productHandle(p.id);
@@ -227,7 +279,7 @@ function normalizeProduct(p) {
     title,
     category: classified ? classified.key : 'Featured',
     supplier_category: supplierCategory,
-    retail_price: retailPrice.toFixed(2),
+    retail_price: sellingPrice,
     compare_price: comparePrice,
     supplier_cost: Number.isFinite(supplierCost) && supplierCost > 0 ? supplierCost : 0,
     description: cleanDesc,
@@ -457,7 +509,7 @@ function storeProductFromRow(row) {
     handle: row.handle,
     title: row.title,
     category: row.category || 'Featured',
-    retail_price: Number.isFinite(retail) ? retail.toFixed(2) : '0.00',
+    retail_price: priceWithMargin(Number.isFinite(retail) ? retail : 0, row.supplier_cost || 0),
     compare_price: row.compare_price != null ? Number(row.compare_price).toFixed(2) : null,
     description: row.description || '',
     features,
@@ -496,6 +548,12 @@ module.exports = {
   deliveryLabel,
   productHandle,
   storeProductFromRow,
+  roundMoney,
+  clampMargin,
+  setStoreMarginPercent,
+  getStoreMarginPercent,
+  priceWithMargin,
+  bundlePriceAllowed,
   slugifyCategory,
   validCategorySlug,
   cleanIcon,

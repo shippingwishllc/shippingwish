@@ -14,6 +14,9 @@ const {
   productHandle,
   normalizeProduct,
   inferCategory,
+  setStoreMarginPercent,
+  priceWithMargin,
+  bundlePriceAllowed,
   slugifyCategory,
   validCategorySlug,
   publicDepartments,
@@ -64,6 +67,20 @@ const product = normalizeProduct({
   is_trending: true
 });
 assert.strictEqual(product.category, 'Tech');
+assert.strictEqual(product.retail_price, '19.00');
+setStoreMarginPercent(30);
+assert.strictEqual(priceWithMargin(10, 10, 30), '13.00');
+assert.strictEqual(priceWithMargin(20, 8, 30), '20.00');
+assert.strictEqual(priceWithMargin(15, 0, 30), '15.00');
+const marked = normalizeProduct({ id: 7, name: 'Plain item', price: '10.00', cost: '10.00' });
+assert.strictEqual(marked.retail_price, '13.00');
+assert.strictEqual(marked.supplier_cost, 10);
+const kept = normalizeProduct({ id: 8, name: 'Listed item', price: '20.00', cost: '8.00' });
+assert.strictEqual(kept.retail_price, '20.00');
+assert.strictEqual(bundlePriceAllowed({ priceA: 13, priceB: 13, costA: 10, costB: 10, bundlePrice: 22 }).ok, true);
+assert.strictEqual(bundlePriceAllowed({ priceA: 13, priceB: 13, costA: 10, costB: 10, bundlePrice: 15 }).ok, false);
+assert.strictEqual(bundlePriceAllowed({ priceA: 13, priceB: 13, costA: 10, costB: 10, bundlePrice: 26 }).ok, false);
+setStoreMarginPercent(30);
 assert.strictEqual(product.handle, 'p-42');
 assert.strictEqual(product.product_url, 'https://www.buywishonline.com/products/p-42');
 assert.strictEqual(productSharePath(product), '/products/p-42');

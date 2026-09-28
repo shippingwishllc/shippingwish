@@ -183,9 +183,12 @@ async function sendBuyWishProduct(res, key) {
 }
 
 async function sendBuyWishCollection(res, slug) {
-  let department = String(slug || '').toLowerCase() === 'all'
+  const cleanSlug = String(slug || '').toLowerCase();
+  let department = cleanSlug === 'all'
     ? { key: 'all', title: 'All Products', slug: 'all', blurb: 'The full BuyWishOnline shop, in one place.' }
-    : departmentBySlug(slug);
+    : cleanSlug === 'deals'
+      ? { key: 'deals', title: 'Deals', slug: 'deals', blurb: 'Real price drops, and offers that pair two products together.' }
+      : departmentBySlug(slug);
   if (!department) {
     try {
       department = await lookupCustomCategory(slug);
@@ -222,6 +225,7 @@ async function sendBuyWishSitemap(res) {
     { loc: 'https://www.buywishonline.com/privacy-policy', changefreq: 'yearly', priority: '0.2' },
     { loc: 'https://www.buywishonline.com/terms', changefreq: 'yearly', priority: '0.2' },
     { loc: 'https://www.buywishonline.com/collections/all', changefreq: 'daily', priority: '0.9' },
+    { loc: 'https://www.buywishonline.com/collections/deals', changefreq: 'daily', priority: '0.9' },
     ...Object.values(STORE_DEPARTMENTS).map((dept) => ({
       loc: `https://www.buywishonline.com/collections/${dept.slug}`,
       changefreq: 'daily',
