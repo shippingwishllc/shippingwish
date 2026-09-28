@@ -28,25 +28,26 @@ function parseTransitText(text) {
   const body = String(text || '').trim();
   if (!body) return null;
   const lower = body.toLowerCase();
-  if (/\b(arrived(?:\s+at)?\s+(?:the\s+)?shipper|at\s+(?:the\s+)?shipper|at\s+pickup|checked\s+in(?:\s+at)?\s+(?:the\s+)?(?:shipper|pickup)|here\s+at\s+(?:the\s+)?(?:shipper|pickup))\b/.test(lower)) {
+  const folded = lower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/\b(arrived(?:\s+at)?\s+(?:the\s+)?shipper|at\s+(?:the\s+)?shipper|at\s+pickup|checked\s+in(?:\s+at)?\s+(?:the\s+)?(?:shipper|pickup)|here\s+at\s+(?:the\s+)?(?:shipper|pickup)|llegue(?:\s+al)?\s+(?:el\s+)?shipper|en\s+(?:el\s+)?shipper|en\s+pickup)\b/.test(folded)) {
     return { intent: 'arrived_shipper' };
   }
-  if (/\b(arrived(?:\s+at)?\s+(?:the\s+)?(?:receiver|consignee|delivery|dest(?:ination)?)|at\s+(?:the\s+)?(?:receiver|consignee|delivery))\b/.test(lower)) {
+  if (/\b(arrived(?:\s+at)?\s+(?:the\s+)?(?:receiver|consignee|delivery|dest(?:ination)?)|at\s+(?:the\s+)?(?:receiver|consignee|delivery)|llegue(?:\s+al)?\s+(?:el\s+)?(?:receiver|consignee)|en\s+(?:el\s+)?receiver|en\s+delivery)\b/.test(folded)) {
     return { intent: 'arrived_receiver' };
   }
-  if (/\b(loaded|rolling|departed(?:\s+the)?\s+shipper|left(?:\s+the)?\s+shipper)\b/.test(lower)) {
+  if (/\b(loaded|rolling|departed(?:\s+the)?\s+shipper|left(?:\s+the)?\s+shipper|cargado|sali(?:\s+del)?\s+shipper)\b/.test(folded)) {
     return { intent: 'loaded' };
   }
-  if (/\b(waiting|detention|sitting|been\s+here)\b/.test(lower)) {
+  if (/\b(waiting|detention|sitting|been\s+here|esperando|detencion)\b/.test(folded)) {
     return { intent: 'waiting' };
   }
-  if (/\b(departed(?:\s+the)?\s+receiver|left(?:\s+the)?\s+receiver)\b/.test(lower)) {
+  if (/\b(departed(?:\s+the)?\s+receiver|left(?:\s+the)?\s+receiver|sali(?:\s+del)?\s+receiver)\b/.test(folded)) {
     return { intent: 'departed' };
   }
-  if (/\b(delivered|unloaded|empty\s+now|i'?m\s+empty|i\s+am\s+empty)\b/.test(lower)) {
+  if (/\b(delivered|unloaded|empty\s+now|i'?m\s+empty|i\s+am\s+empty|entregado|descargado|vacio ahora|ya vacio)\b/.test(folded)) {
     return { intent: 'delivered' };
   }
-  if (/\b(pod|proof\s+of\s+delivery|bill\s+of\s+lading|\bbol\b|paperwork)\b/.test(lower)) {
+  if (/\b(pod|proof\s+of\s+delivery|bill\s+of\s+lading|\bbol\b|paperwork|foto|comprobante)\b/.test(folded)) {
     return { intent: 'pod' };
   }
   return null;
@@ -289,7 +290,8 @@ async function emailDetention(offer, stop) {
       html: `<div style="font-family:Arial,sans-serif;font-size:14px;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
       transactional: true,
       emailType: 'dispatch_detention',
-      replyTo: ops || undefined
+      from: require('./brand-senders').getBrandSender('shippingwish', 'dispatch'),
+      replyTo: ops || require('./brand-senders').replyAddress('shippingwish', 'dispatch')
     });
     return { sent: true };
   } catch (err) {
@@ -310,17 +312,18 @@ async function persistTransit(offer, intent, at = Date.now()) {
   return result;
 }
 
-function transitReply(intent, load, status) {
+function transitReply(intent, load, status, lang) {
+  const { t } = require('./dispatch-i18n');
   const number = load && load.load_number ? load.load_number : 'the load';
-  if (intent === 'arrived_shipper') return `Shipping Wish: Noted, arrived at shipper on ${number}. Reply LOADED when you roll, or WAITING if they hold you.`;
-  if (intent === 'loaded') return `Shipping Wish: Noted, loaded on ${number}. Reply ARRIVED RECEIVER when you get there.`;
-  if (intent === 'arrived_receiver') return `Shipping Wish: Noted, arrived at receiver on ${number}. Reply WAITING if they hold you, DELIVERED when empty, and photo the POD.`;
-  if (intent === 'waiting') return `Shipping Wish: Noted, waiting on ${number}. We are clocking minutes. No dollar amount is billed until a dispatcher sets the rate. Photo the POD when you unload.`;
-  if (intent === 'pod') return `Shipping Wish: POD photo saved for ${number}. Reply RELOAD when you want the next load.`;
+  if (intent === 'arrived_shipper') return t(lang, 'arrived_shipper', { load: number });
+  if (intent === 'loaded') return t(lang, 'loaded', { load: number });
+  if (intent === 'arrived_receiver') return t(lang, 'arrived_receiver', { load: number });
+  if (intent === 'waiting') return t(lang, 'waiting', { load: number });
+  if (intent === 'pod') return t(lang, 'pod', { load: number });
   if (status === 'delivered' || intent === 'delivered' || intent === 'departed') {
-    return `Shipping Wish: ${number} marked delivered. Reply RELOAD for the next load from delivery.`;
+    return t(lang, 'delivered', { load: number });
   }
-  return `Shipping Wish: Update saved for ${number}.`;
+  return t(lang, 'transit_saved', { load: number });
 }
 
 async function saveMediaPods(offer, carrier, media, note) {
@@ -385,7 +388,10 @@ async function runCheckCalls({ textCarrier, outboundToday, maxOutbound }) {
       continue;
     }
     const load = offer.load || {};
-    const text = `Shipping Wish check-call on ${load.load_number || 'your load'} (${load.pickup_location || ''} → ${load.delivery_location || ''}). Where are you? Reply ARRIVED SHIPPER, LOADED, WAITING, ARRIVED RECEIVER, or DELIVERED. Photo the POD when you unload.`;
+    const text = require('./dispatch-i18n').t(carrier.sms_lang === 'es' ? 'es' : 'en', 'check_call', {
+      load: load.load_number || 'your load',
+      lane: `${load.pickup_location || ''} → ${load.delivery_location || ''}`
+    });
     const sms = await textCarrier(carrier, text, 'check_call');
     const next = {
       ...transit,

@@ -28,20 +28,30 @@
           <li>You paste a licensed load-board API here. The desk calls that https JSON URL with your key. It does not open websites or copy another board’s pages.</li>
           <li>When a load is covered, expired, or missing from the latest API reply, it leaves the public board.</li>
         </ol>
-        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">The board stays empty until a broker posts or an API returns real loads. Start sends a good-morning text asking for the empty ZIP. A broker is only contacted after the driver picks that exact load.</p>
+        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">The board stays empty until a broker posts or an API returns real loads. Start sends a good-morning text asking for the empty ZIP. A broker is only contacted after the driver picks that exact load. The activity counts at the top of this page are from this desk's tables only.</p>
       </section>
 
       <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
         <h2 style="margin:0 0 8px;font-size:15px;">What the AI dispatcher does with a driver's text</h2>
         <ol style="margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.55;">
-          <li>Reads texts like “75201 to Atlanta”, “empty in Dallas TX want GA or FL reefer”, “MORE”, “RELOAD”, “ARRIVED SHIPPER”, “LOADED”, “WAITING”, or “off today”.</li>
-          <li>Finds open loads within the carrier's empty-mile limit, with matching equipment and destination, above their minimum $/mile. It ranks them by all-in $/mile, counting empty miles too.</li>
+          <li>Reads texts like “75201 to Atlanta”, “vacío en Dallas TX quiero GA”, “NEED 2600”, “RELOAD”, “ARRIVED SHIPPER”, or “off today”. If the driver writes in Spanish, the desk answers in Spanish and keeps that for check-calls and BOOKED texts.</li>
+          <li>Finds open loads within the carrier's empty-mile limit, with matching equipment and destination, above their minimum $/mile. It ranks them by all-in $/mile, counting empty miles too. Brokers we have already booked with get a small bump from that count only.</li>
           <li>Texts the best three. The driver replies 1, 2 or 3.</li>
           <li>When a broker posts a load that fits an active carrier who already consented to texts, the desk texts that load during 9am–5pm in their timezone (max 12 outbound texts per carrier per day). It does not interrupt a driver who already has an open list or a pending booking.</li>
-          <li>Emails the broker a booking request with the carrier's MC or DOT and tells the driver not to roll yet.</li>
+          <li>Emails the broker a booking request with the carrier's MC or DOT and tells the driver not to roll yet. If the driver texts NEED 2600 (or a similar dollar they named), the desk asks the broker for that amount only when it is a little above the posted rate. It does not invent a bid. A broker counter is texted back; the driver must reply YES. We never book on a counter alone.</li>
           <li>If the broker replies “covered”, the driver gets the next best loads. If the broker confirms, you check the rate confirmation and press Booked. Then the driver gets a BOOKED text and a reload hint from the delivery city. On the road they text ARRIVED SHIPPER, LOADED, WAITING, ARRIVED RECEIVER, or DELIVERED, and they send a photo of the POD. Check-calls go out during 9am–5pm if they have not written in. Detention is clocked in minutes; no dollar amount is billed unless you set a rate. They reply RELOAD when empty.</li>
         </ol>
-        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">Rates shown are the broker's posted rate. Miles marked ~ are estimated from ZIP and city locations. After 12 texts to one carrier in a day, the AI hands off to a person. STOP pauses the carrier.</p>
+        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">Rates shown are the broker's posted rate. Miles marked ~ are estimated from ZIP and city locations. Broker facts (asked / booked / paid / waits over free time) are counts from loads we actually handled with that MC. They are not a DAT, Truckstop, or credit score. After 12 texts to one carrier in a day, the AI hands off to a person. STOP pauses the carrier.</p>
+      </section>
+
+      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+          <h2 style="margin:0;font-size:15px;">Desk activity</h2>
+          <button type="button" id="metrics-refresh" style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;">Refresh</button>
+        </div>
+        <p style="font-size:13px;color:#64748b;margin:6px 0;">Raw counts from this desk. Not DAT, Truckstop, or a company-wide load count. Detention is minutes only; no dollar is billed unless you set a rate.</p>
+        <p id="metrics-msg" style="font-size:13px;color:#b45309;min-height:1.2em;"></p>
+        <div id="metrics-grid" style="font-size:13px;color:#475569;">Loading…</div>
       </section>
 
       <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
@@ -59,7 +69,7 @@
           <h2 style="margin:0;font-size:15px;">Load requests</h2>
           <button type="button" id="offers-refresh" style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;">Refresh</button>
         </div>
-        <p style="font-size:13px;color:#64748b;margin:6px 0;">Loads a driver picked are listed first. Press Booked only after you have the broker's rate confirmation. Release sends the driver the next best loads. After Booked, this list shows check-call status, waiting minutes, and POD photos. The driver texts RELOAD when empty.</p>
+        <p style="font-size:13px;color:#64748b;margin:6px 0;">Loads a driver picked are listed first. Press Booked only after you have the broker's rate confirmation. Release sends the driver the next best loads. After Booked, this list shows check-call status, waiting minutes, and POD photos. If the driver asked for a higher rate, the named dollar and any broker counter show here. Broker facts on each row are our own asked/booked/paid counts for that MC, not a credit score. The driver texts RELOAD when empty.</p>
         <p id="offers-msg" style="font-size:13px;color:#b45309;min-height:1.2em;"></p>
         <div id="offers-list" style="font-size:13px;color:#475569;">Loading…</div>
       </section>
@@ -253,6 +263,10 @@
     const link = a.saferUrl ? ' <a href="' + esc(a.saferUrl) + '" target="_blank" rel="noopener">SAFER</a>' : '';
     return '<br><span style="color:' + colors[a.verdict] + ';font-weight:600;">' + esc(lead + name) + '</span>' + (flags ? ' ' + esc(flags) : '') + link;
   }
+  function historyLine(h) {
+    if (!h || !h.summary) return '';
+    return '<br><span style="color:#334155;">' + esc(h.summary) + '</span>';
+  }
   function reloadLine(plan) {
     if (!plan || !plan.from) return '';
     const list = (plan.matches || []).map((m) => (m.load_number || '') + ' ' + (m.lane || '') + ' $' + Math.round(m.rate || 0)).join('; ');
@@ -294,6 +308,45 @@
       '<a href="/api/dispatch-desk/pods/' + esc(p.id) + '" target="_blank" rel="noopener">photo ' + esc(p.id) + '</a>'
     ).join(' · ');
   }
+  function negotiationLine(n, posted) {
+    if (!n || (!n.driver_ask && !n.broker_offer && !n.agreed)) return '';
+    const bits = [];
+    if (n.driver_ask) bits.push('driver asked $' + Math.round(n.driver_ask).toLocaleString());
+    if (n.broker_offer) bits.push('broker counter $' + Math.round(n.broker_offer).toLocaleString());
+    if (n.agreed) bits.push('driver accepted $' + Math.round(n.agreed).toLocaleString());
+    else if (n.broker_offer && !n.agreed) bits.push('waiting on driver YES');
+    const post = posted ? ' (posted $' + Math.round(posted).toLocaleString() + ')' : '';
+    return '<br><span style="color:#7c3aed;font-weight:600;">Rate ask:</span> ' + esc(bits.join(' · ') + post);
+  }
+  function metricCard(label, value, detail) {
+    return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;">' +
+      '<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.03em;">' + esc(label) + '</div>' +
+      '<div style="font-size:22px;font-weight:800;color:#0f172a;margin-top:4px;">' + esc(value) + '</div>' +
+      (detail ? '<div style="font-size:12px;color:#64748b;margin-top:4px;">' + esc(detail) + '</div>' : '') +
+      '</div>';
+  }
+  async function loadMetrics() {
+    const box = document.getElementById('metrics-grid');
+    const data = await api('/api/dispatch-desk/metrics');
+    const m = data.metrics;
+    const c = m.carriers;
+    const o7 = m.offers.last_7d;
+    const open = m.offers.open;
+    const t24 = m.messages.last_24h;
+    const t7 = m.messages.last_7d;
+    box.style.display = 'grid';
+    box.style.gridTemplateColumns = 'repeat(auto-fit,minmax(160px,1fr))';
+    box.style.gap = '10px';
+    box.innerHTML =
+      metricCard('Carriers', c.total, c.active + ' active · ' + c.with_consent + ' consented · ' + c.spanish + ' Spanish') +
+      metricCard('Booked last 7 days', o7.booked, o7.requested + ' requested · ' + o7.declined + ' fell through') +
+      metricCard('On the road', open.booked_in_transit, open.requested + ' waiting on broker · ' + open.offered_live + ' lists still open') +
+      metricCard('Texts last 24h', t24.outbound + ' out / ' + t24.inbound + ' in', t24.drivers_texted + ' drivers wrote · ' + c.at_sms_cap_24h + ' at the 12-text cap') +
+      metricCard('Check-calls 7d', t7.check_calls, t7.morning + ' morning texts') +
+      metricCard('Waits over free time', m.detention.loads_over_free + ' loads', m.detention.minutes_over_free + ' min clocked. No dollar billed unless you set a rate.') +
+      metricCard('POD photos', m.pods.last_7d + ' / 7d', m.pods.all + ' saved in total') +
+      metricCard('Rate asks 7d', m.negotiate.last_7d.asked, m.negotiate.last_7d.countered + ' counters · ' + m.negotiate.last_7d.accepted + ' driver YES');
+  }
   async function loadOffers() {
     const box = document.getElementById('offers-list');
     const data = await api('/api/dispatch-desk/offers');
@@ -312,7 +365,7 @@
         ' · ' + approx + esc(o.loaded_miles) + ' mi · ' + approx + '$' + esc(Number(o.all_in_rpm || 0).toFixed(2)) + '/mi all-in · ' + approx + esc(o.deadhead_miles) + ' empty' +
         '<br>Broker: ' + esc([o.broker_name, o.broker_contact].filter(Boolean).join(' · ') || 'not listed') +
         (o.note ? '<br>' + esc(o.note) : '') + (o.broker_reply ? '<br>Broker reply: ' + esc(o.broker_reply.slice(0, 200)) : '') +
-        authorityLine(o.broker_authority) + rateconLine(o.ratecon) + reloadLine(o.reload_plan) + transitLine(o.transit) + detentionLine(o.detention) + podLine(o.pods) + '</span>' +
+        authorityLine(o.broker_authority) + historyLine(o.broker_history) + rateconLine(o.ratecon) + reloadLine(o.reload_plan) + transitLine(o.transit) + detentionLine(o.detention) + podLine(o.pods) + negotiationLine(o.negotiation, o.rate) + '</span>' +
         actions + '</div>';
     }).join('');
   }
@@ -320,9 +373,10 @@
     return list.map((m) => {
       const approx = m.estimated ? '~' : '';
       const bench = m.lane_benchmark ? ' · board average on this lane $' + Number(m.lane_benchmark.rpm).toFixed(2) + '/mi (' + m.lane_benchmark.loads + ' loads, 30 days)' : '';
+      const hist = m.broker_history ? ' · ' + m.broker_history : '';
       return '<div style="padding:6px 0;border-top:1px solid #f1f5f9;"><strong>' + esc(m.load_number) + '</strong> ' + esc(m.lane) +
         ' · $' + esc(Math.round(m.rate).toLocaleString()) + ' · ' + approx + esc(m.loaded_miles) + ' mi · ' + approx + esc(m.deadhead_miles) + ' empty · ' +
-        approx + '$' + esc(m.all_in_rpm.toFixed(2)) + '/mi all-in ($' + esc(m.loaded_rpm.toFixed(2)) + ' loaded)' + esc(bench) + '</div>';
+        approx + '$' + esc(m.all_in_rpm.toFixed(2)) + '/mi all-in ($' + esc(m.loaded_rpm.toFixed(2)) + ' loaded)' + esc(bench) + esc(hist) + '</div>';
     }).join('');
   }
   async function runPreview() {
@@ -388,7 +442,9 @@
     try { await loadSources(); await loadCarriers(); }
     catch (err) { document.getElementById('source-msg').textContent = err.message; }
     loadOffers().catch((err) => { document.getElementById('offers-msg').textContent = err.message; });
+    loadMetrics().catch((err) => { document.getElementById('metrics-msg').textContent = err.message; });
     document.getElementById('offers-refresh').addEventListener('click', () => loadOffers().catch((err) => { document.getElementById('offers-msg').textContent = err.message; }));
+    document.getElementById('metrics-refresh').addEventListener('click', () => loadMetrics().catch((err) => { document.getElementById('metrics-msg').textContent = err.message; }));
     document.getElementById('try-run').addEventListener('click', runPreview);
     document.getElementById('try-text').addEventListener('keydown', (event) => { if (event.key === 'Enter') runPreview(); });
     document.body.addEventListener('submit', async (event) => {
@@ -514,6 +570,7 @@
             msg.textContent = data.sms === 'held_for_hours' ? 'Released. The driver is outside texting hours or has no consent, so tell them yourself.' : 'Released and the driver got the next loads.';
           }
           await loadOffers();
+          loadMetrics().catch(() => {});
         } catch (err) { msg.textContent = err.message; }
         return;
       }
@@ -524,6 +581,7 @@
             const data = await api('/api/dispatch-desk/carriers/' + sendLoads + '/send-loads', { method: 'POST', body: '{}' });
             msg.textContent = data.sent ? 'Sent ' + data.offers + ' loads to the driver.' : (data.reason || 'Nothing sent.');
             await loadOffers();
+            loadMetrics().catch(() => {});
           } else if (rules) {
             const box = document.getElementById('carrier-extra-' + rules);
             box.innerHTML = box.innerHTML ? '' : rulesForm(carriersById[rules]);

@@ -1,5 +1,6 @@
 const pool = require('../db');
 const { digits } = require('./fmcsa');
+const reliability = require('./broker-reliability');
 
 const CACHE_HOURS = 24;
 const NEW_AUTHORITY_DAYS = 180;
@@ -99,24 +100,6 @@ function assess(row, { contactEmail, contactPhone } = {}) {
   };
 }
 
-async function internalHistory(mcDigits) {
-  if (!mcDigits) return null;
-  try {
-    const { rows } = await pool.query(
-      `SELECT COUNT(*)::int AS paid_count,
-              ROUND(AVG(EXTRACT(EPOCH FROM (i.paid_date::timestamp - COALESCE(l.delivery_date, i.issued_date)::timestamp)) / 86400.0))::int AS avg_days
-         FROM invoices i JOIN loads l ON l.id = i.load_id
-        WHERE i.status = 'paid' AND i.paid_date IS NOT NULL
-          AND regexp_replace(coalesce(l.broker_mc, ''), '[^0-9]', '', 'g') = $1`,
-      [mcDigits]
-    );
-    const row = rows[0];
-    return row && row.paid_count ? { paidLoads: row.paid_count, avgDaysToPay: row.avg_days } : null;
-  } catch {
-    return null;
-  }
-}
-
 // Returns a verdict for a broker before we ask them for a load: 'ok', 'caution', 'block', or
 // 'unknown' when FMCSA couldn't be reached. Census results are cached for a day; contact-based
 // flags are recomputed on each call because they depend on the load.
@@ -153,7 +136,9 @@ async function checkBrokerAuthority({ mc, dot, contactEmail, contactPhone, force
     );
   }
   const result = assess(row, { contactEmail, contactPhone });
-  result.history = await internalHistory(key.startsWith('mc:') ? key.slice(3) : digits(result.mcNumber));
+  result.history = await reliability.historyFor({
+    broker_mc: key.startsWith('mc:') ? key.slice(3) : digits(result.mcNumber)
+  });
   result.saferUrl = result.dotNumber
     ? `https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&query_string=${encodeURIComponent(result.dotNumber)}`
     : 'https://safer.fmcsa.dot.gov/';

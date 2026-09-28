@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const pool = require('../db');
-const { sendBrandedEmail } = require('../utils/mailer');
+const { sendBrandedEmail, getBrandSender } = require('../utils/mailer');
 const { notifyAdmins } = require('../utils/notifications');
 const { isValidEmail } = require('../utils/email-valid');
 const { buildCarrierSetupPdf, welcomeSms } = require('../utils/carrier-setup-packet');
@@ -519,7 +519,7 @@ IP Address: ${ipAddress}
         leadId,
         transactional: true,
         templateKey: 'onboarding',
-        from: 'Shipping Wish Operations <operations@shippingwish.com>',
+        from: getBrandSender('shippingwish', 'operations'),
         attachments
       });
       emailStatus = 'sent';
@@ -579,6 +579,7 @@ IP Address: ${ipAddress}
         leadId,
         transactional: true,
         templateKey: 'internal_lead',
+        from: getBrandSender('shippingwish', 'operations'),
         attachments
       });
     } catch (opsErr) {
