@@ -82,30 +82,29 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --primary: #14120f;
-      --accent: #9c7b4a;
-      --accent2: #c4a574;
-      --gold: #c4a574;
-      --surface: #fffdf8;
-      --bg: #f6f1e8;
-      --text: #14120f;
-      --text-muted: #6f675e;
-      --border: #eadfce;
-      --success: #3d5c4a;
-      --nav-h: 72px;
+      --primary: #1a1a2e;
+      --accent: #e94560;
+      --accent2: #f5a623;
+      --gold: #d4af37;
+      --surface: #ffffff;
+      --bg: #f7f7f9;
+      --text: #1a1a2e;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --success: #059669;
+      --nav-h: 68px;
       --topbar-h: 36px;
-      --radius: 2px;
-      --shadow: 0 10px 30px rgba(20,18,15,0.06);
-      --shadow-hover: 0 18px 40px rgba(20,18,15,0.12);
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.07);
+      --shadow-hover: 0 12px 40px rgba(0,0,0,0.13);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; overflow-x: clip; }
-    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip; }
-    h1, h2, h3, .logo-text, .hero-h1, .section-title { font-family: 'Cormorant Garamond', serif; font-weight: 500; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip; }
     a { text-decoration: none; color: inherit; }
     img { max-width: 100%; display: block; }
     button { cursor: pointer; font-family: inherit; }
@@ -175,7 +174,7 @@
     .brand-logo .logo-icon {
       width: 38px;
       height: 38px;
-      background: linear-gradient(145deg, #14120f 0%, #3a3126 100%);
+      background: linear-gradient(135deg, var(--accent) 0%, #a8063d 100%);
       border-radius: 10px;
       display: flex;
       align-items: center;
@@ -462,6 +461,7 @@
     .cat-strip-inner::-webkit-scrollbar { display: none; }
     .cat-chip {
       display: flex;
+      flex-shrink: 0;
       align-items: center;
       gap: 6px;
       padding: 10px 16px;
@@ -491,7 +491,7 @@
       gap: 20px;
     }
     .hero-main {
-      background: linear-gradient(160deg, #14120f 0%, #2a241c 55%, #3d3428 100%);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       border-radius: 20px;
       padding: 52px 52px;
       position: relative;
@@ -506,7 +506,7 @@
       position: absolute;
       top: -60px; right: -60px;
       width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(196,165,116,0.28) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(233,69,96,0.25) 0%, transparent 70%);
       pointer-events: none;
     }
     .hero-main::after {
@@ -521,9 +521,9 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(196,165,116,0.12);
-      border: 1px solid rgba(196,165,116,0.4);
-      color: #e6d3b1;
+      background: rgba(233,69,96,0.15);
+      border: 1px solid rgba(233,69,96,0.3);
+      color: #ff7a8a;
       padding: 6px 14px;
       border-radius: 999px;
       font-size: 12px;
@@ -573,7 +573,7 @@
       gap: 8px;
       transition: all 0.2s;
     }
-    .btn-primary:hover { background: #2a241c; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(20,18,15,0.25); }
+    .btn-primary:hover { background: #c73652; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(233,69,96,0.4); }
     .btn-outline-white {
       background: transparent;
       color: #fff;
@@ -877,7 +877,21 @@
     }
     .btn-add-cart:hover { background: var(--accent); transform: translateY(-1px); }
 
+    .collection-banner {
+      max-width: 1280px;
+      margin: 8px auto 0;
+      padding: 8px 24px 0;
+    }
+    .collection-banner h1 { font-size: 34px; letter-spacing: -0.03em; line-height: 1.1; }
+    .collection-banner p { color: var(--text-muted); max-width: 640px; }
+    body.is-collection .hero,
+    body.is-collection .cat-showcase,
+    body.is-collection .trust-bar { display: none; }
     @media (max-width: 640px) {
+      .collection-banner { padding: 4px 16px 0; }
+      .collection-banner h1 { font-size: 28px; }
+      .hero-actions .btn-primary, .hero-actions .btn-outline-white { width: 100%; justify-content: center; }
+      .section { padding-left: 16px; padding-right: 16px; }
       .products-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
@@ -1685,11 +1699,11 @@
     </a>
 
     <div class="nav-cats" role="menubar">
-      <button class="nav-cat-btn active" onclick="filterCategory('all')">All Products</button>
-      <button class="nav-cat-btn" onclick="filterCategory('Tech')">Tech & Gadgets</button>
-      <button class="nav-cat-btn" onclick="filterCategory('Home')">Home & Living</button>
-      <button class="nav-cat-btn" onclick="filterCategory('Fitness')">Fitness & Outdoors</button>
-      <button class="nav-cat-btn" onclick="filterCategory('Beauty')">Beauty & Wellness</button>
+      <a class="nav-cat-btn" data-dept="all" href="/collections/all">All Products</a>
+      <a class="nav-cat-btn" data-dept="tech" href="/collections/tech">Tech & Gadgets</a>
+      <a class="nav-cat-btn" data-dept="home" href="/collections/home">Home & Living</a>
+      <a class="nav-cat-btn" data-dept="fitness" href="/collections/fitness">Fitness & Outdoors</a>
+      <a class="nav-cat-btn" data-dept="beauty" href="/collections/beauty">Beauty & Wellness</a>
       <button class="nav-cat-btn" onclick="openTrackModal()">Track Order</button>
       <a class="nav-cat-btn" href="/account">Account</a>
     </div>
@@ -1729,15 +1743,15 @@
   </div>
   <div class="mobile-nav-body">
     <div class="mobile-nav-section-title">Shop by Category</div>
-    <button class="mobile-nav-link active" onclick="filterCategory('all'); closeMobileNav();">🛍️ All Products</button>
-    <button class="mobile-nav-link" onclick="filterCategory('Tech'); closeMobileNav();">💻 Tech & Gadgets</button>
-    <button class="mobile-nav-link" onclick="filterCategory('Home'); closeMobileNav();">🏠 Home & Living</button>
-    <button class="mobile-nav-link" onclick="filterCategory('Fitness'); closeMobileNav();">🏃 Fitness & Outdoors</button>
-    <button class="mobile-nav-link" onclick="filterCategory('Beauty'); closeMobileNav();">✨ Beauty & Wellness</button>
-    <button class="mobile-nav-link" onclick="filterCategory('Kitchen'); closeMobileNav();">🍳 Kitchen & Cooking</button>
-    <button class="mobile-nav-link" onclick="filterCategory('Pets'); closeMobileNav();">🐾 Pet Supplies</button>
-    <button class="mobile-nav-link" onclick="filterCategory('Travel'); closeMobileNav();">🧳 Travel & Bags</button>
-    <button class="mobile-nav-link" onclick="filterCategory('Kids'); closeMobileNav();">🧒 Kids & Toys</button>
+    <a class="mobile-nav-link" data-dept="all" href="/collections/all">🛍️ All Products</a>
+    <a class="mobile-nav-link" data-dept="tech" href="/collections/tech">💻 Tech & Gadgets</a>
+    <a class="mobile-nav-link" data-dept="home" href="/collections/home">🏠 Home & Living</a>
+    <a class="mobile-nav-link" data-dept="fitness" href="/collections/fitness">🏃 Fitness & Outdoors</a>
+    <a class="mobile-nav-link" data-dept="beauty" href="/collections/beauty">✨ Beauty & Wellness</a>
+    <a class="mobile-nav-link" data-dept="kitchen" href="/collections/kitchen">🍳 Kitchen & Cooking</a>
+    <a class="mobile-nav-link" data-dept="pets" href="/collections/pets">🐾 Pet Supplies</a>
+    <a class="mobile-nav-link" data-dept="travel" href="/collections/travel">🧳 Travel & Bags</a>
+    <a class="mobile-nav-link" data-dept="kids" href="/collections/kids">🧒 Kids & Toys</a>
     <div class="mobile-nav-divider"></div>
     <div class="mobile-nav-section-title">Customer Care</div>
     <a class="mobile-nav-link" href="/account" onclick="closeMobileNav();">Account &amp; Orders</a>
@@ -1761,27 +1775,27 @@
 <!-- Category Strip -->
 <div class="cat-strip">
   <div class="cat-strip-inner">
-    <button class="cat-chip active" onclick="filterCategory('all')"><span class="cat-emoji">🛍️</span> All</button>
-    <button class="cat-chip" onclick="filterCategory('Tech')"><span class="cat-emoji">💻</span> Tech</button>
-    <button class="cat-chip" onclick="filterCategory('Home')"><span class="cat-emoji">🏠</span> Home</button>
-    <button class="cat-chip" onclick="filterCategory('Fitness')"><span class="cat-emoji">🏃</span> Fitness</button>
-    <button class="cat-chip" onclick="filterCategory('Beauty')"><span class="cat-emoji">✨</span> Beauty</button>
-    <button class="cat-chip" onclick="filterCategory('Kitchen')"><span class="cat-emoji">🍳</span> Kitchen</button>
-    <button class="cat-chip" onclick="filterCategory('Pets')"><span class="cat-emoji">🐾</span> Pets</button>
-    <button class="cat-chip" onclick="filterCategory('Travel')"><span class="cat-emoji">🧳</span> Travel</button>
-    <button class="cat-chip" onclick="filterCategory('Kids')"><span class="cat-emoji">🧒</span> Kids</button>
+    <a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji">🛍️</span> All</a>
+    <a class="cat-chip" data-dept="tech" href="/collections/tech"><span class="cat-emoji">💻</span> Tech</a>
+    <a class="cat-chip" data-dept="home" href="/collections/home"><span class="cat-emoji">🏠</span> Home</a>
+    <a class="cat-chip" data-dept="fitness" href="/collections/fitness"><span class="cat-emoji">🏃</span> Fitness</a>
+    <a class="cat-chip" data-dept="beauty" href="/collections/beauty"><span class="cat-emoji">✨</span> Beauty</a>
+    <a class="cat-chip" data-dept="kitchen" href="/collections/kitchen"><span class="cat-emoji">🍳</span> Kitchen</a>
+    <a class="cat-chip" data-dept="pets" href="/collections/pets"><span class="cat-emoji">🐾</span> Pets</a>
+    <a class="cat-chip" data-dept="travel" href="/collections/travel"><span class="cat-emoji">🧳</span> Travel</a>
+    <a class="cat-chip" data-dept="kids" href="/collections/kids"><span class="cat-emoji">🧒</span> Kids</a>
   </div>
 </div>
 
 <!-- Hero Section -->
 <section class="hero" aria-label="Featured promotions">
   <div class="hero-main">
-    <div class="hero-eyebrow">The USA · Canada · United Kingdom Edit</div>
+    <div class="hero-eyebrow">Season's Bestsellers</div>
     <h1 class="hero-h1">
-      Objects with a<br>
-      <span class="accent-word">quiet kind of luxury</span>
+      Premium Products,<br>
+      <span class="accent-word">Delivered Worldwide</span>
     </h1>
-    <p class="hero-sub">Each piece is stocked only when Zendrop can ship it to the USA, Canada, and the United Kingdom, and the fastest USA lane is quoted at 14 days or fewer.</p>
+    <p class="hero-sub">Tech, home, fitness, and beauty from the Zendrop catalog, ready to ship to the USA, Canada, and the United Kingdom.</p>
     <div class="hero-actions">
       <button class="btn-primary" onclick="document.getElementById('catalogSection').scrollIntoView({behavior:'smooth'})">
         Shop Now →
@@ -1810,7 +1824,7 @@
     </div>
   </div>
   <div class="hero-side">
-    <div class="hero-side-card" onclick="filterCategory('Tech')">
+    <a class="hero-side-card" href="/collections/tech">
       <div class="hero-side-icon">💻</div>
       <div>
         <div class="hero-side-label">Trending</div>
@@ -1818,8 +1832,8 @@
         <div class="hero-side-sub">Smart devices, accessories</div>
       </div>
       <div class="hero-side-badge">HOT</div>
-    </div>
-    <div class="hero-side-card" onclick="filterCategory('Home')">
+    </a>
+    <a class="hero-side-card" href="/collections/home">
       <div class="hero-side-icon">🏠</div>
       <div>
         <div class="hero-side-label">Popular</div>
@@ -1827,8 +1841,8 @@
         <div class="hero-side-sub">Décor, organization & more</div>
       </div>
       <div class="hero-side-badge green">NEW</div>
-    </div>
-    <div class="hero-side-card" onclick="filterCategory('Beauty')">
+    </a>
+    <a class="hero-side-card" href="/collections/beauty">
       <div class="hero-side-icon">✨</div>
       <div>
         <div class="hero-side-label">Staff Pick</div>
@@ -1836,7 +1850,7 @@
         <div class="hero-side-sub">Skincare, self-care essentials</div>
       </div>
       <div class="hero-side-badge amber">SALE</div>
-    </div>
+    </a>
   </div>
 </section>
 
@@ -1890,47 +1904,53 @@
     </div>
   </div>
   <div class="cat-showcase">
-    <div class="cat-showcase-item" onclick="filterCategory('Tech')">
+    <a class="cat-showcase-item" href="/collections/tech">
       <div class="cat-showcase-icon">💻</div>
       <div class="cat-showcase-name">Tech & Gadgets</div>
-      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
-    </div>
-    <div class="cat-showcase-item" onclick="filterCategory('Home')">
+      <div class="cat-showcase-count">Shop the page</div>
+    </a>
+    <a class="cat-showcase-item" href="/collections/home">
       <div class="cat-showcase-icon">🏠</div>
       <div class="cat-showcase-name">Home & Living</div>
-      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
-    </div>
-    <div class="cat-showcase-item" onclick="filterCategory('Fitness')">
+      <div class="cat-showcase-count">Shop the page</div>
+    </a>
+    <a class="cat-showcase-item" href="/collections/fitness">
       <div class="cat-showcase-icon">🏃</div>
       <div class="cat-showcase-name">Fitness</div>
-      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
-    </div>
-    <div class="cat-showcase-item" onclick="filterCategory('Beauty')">
+      <div class="cat-showcase-count">Shop the page</div>
+    </a>
+    <a class="cat-showcase-item" href="/collections/beauty">
       <div class="cat-showcase-icon">✨</div>
       <div class="cat-showcase-name">Beauty</div>
-      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
-    </div>
-    <div class="cat-showcase-item" onclick="filterCategory('Kitchen')">
+      <div class="cat-showcase-count">Shop the page</div>
+    </a>
+    <a class="cat-showcase-item" href="/collections/kitchen">
       <div class="cat-showcase-icon">🍳</div>
       <div class="cat-showcase-name">Kitchen</div>
-      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
-    </div>
-    <div class="cat-showcase-item" onclick="filterCategory('Pets')">
+      <div class="cat-showcase-count">Shop the page</div>
+    </a>
+    <a class="cat-showcase-item" href="/collections/pets">
       <div class="cat-showcase-icon">🐾</div>
       <div class="cat-showcase-name">Pets</div>
-      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
-    </div>
+      <div class="cat-showcase-count">Shop the page</div>
+    </a>
   </div>
 </section>
+
+<div class="collection-banner" id="collectionBanner" hidden>
+  <p>BuyWishOnline</p>
+  <h1 id="collectionHeading">All Products</h1>
+  <p id="collectionCopy">Live products from the Zendrop catalog.</p>
+</div>
 
 <!-- Featured Products -->
 <section class="section" id="catalogSection" aria-label="Featured products">
   <div class="section-head">
     <div>
-      <div class="section-title">The winning edit</div>
-      <div class="section-sub">Trending Zendrop pieces that clear the USA, Canada, and UK shipping rule</div>
+      <div class="section-title" id="catalogTitle">Trending Now</div>
+      <div class="section-sub" id="catalogSub">Fresh picks from the Zendrop catalog</div>
     </div>
-    <a class="view-all" href="javascript:void(0)" onclick="filterCategory('all')">View All →</a>
+    <a class="view-all" href="/collections/all">View All →</a>
   </div>
   <div class="products-grid" id="productsGrid">
     <!-- Skeleton loaders -->
@@ -2056,12 +2076,12 @@
     <div>
       <div class="footer-col-title">Shop</div>
       <ul class="footer-links">
-        <li><a href="javascript:void(0)" onclick="filterCategory('all')">All Products</a></li>
-        <li><a href="javascript:void(0)" onclick="filterCategory('Tech')">Tech & Gadgets</a></li>
-        <li><a href="javascript:void(0)" onclick="filterCategory('Home')">Home & Living</a></li>
-        <li><a href="javascript:void(0)" onclick="filterCategory('Fitness')">Fitness & Outdoors</a></li>
-        <li><a href="javascript:void(0)" onclick="filterCategory('Beauty')">Beauty & Wellness</a></li>
-        <li><a href="javascript:void(0)" onclick="filterCategory('Kitchen')">Kitchen</a></li>
+        <li><a href="/collections/all">All Products</a></li>
+        <li><a href="/collections/tech">Tech & Gadgets</a></li>
+        <li><a href="/collections/home">Home & Living</a></li>
+        <li><a href="/collections/fitness">Fitness & Outdoors</a></li>
+        <li><a href="/collections/beauty">Beauty & Wellness</a></li>
+        <li><a href="/collections/kitchen">Kitchen</a></li>
       </ul>
     </div>
     <div>
@@ -2474,7 +2494,7 @@ function renderProducts() {
   const grid = document.getElementById('productsGrid');
   const toShow = filteredProducts.slice(0, 48);
   if (!toShow.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);font-size:15px;">No products found for this category. Try a different filter.</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);font-size:15px;">Products are loading from Zendrop. If this stays empty, refresh the page.</div>';
     return;
   }
   grid.innerHTML = toShow.map(renderProductCard).join('');
@@ -2501,13 +2521,8 @@ function applyFilters() {
 }
 
 function filterCategory(cat) {
-  currentCategory = cat;
-  // Update active states
-  document.querySelectorAll('.nav-cat-btn, .cat-chip, .cat-showcase-item').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll(`.nav-cat-btn`).forEach(el => { if (el.textContent.toLowerCase().includes(cat === 'all' ? 'all' : cat.toLowerCase())) el.classList.add('active'); });
-  document.querySelectorAll('.cat-chip').forEach(el => { if (cat === 'all' ? el.textContent.includes('All') : el.textContent.toLowerCase().includes(cat.toLowerCase())) el.classList.add('active'); });
-  applyFilters();
-  document.getElementById('catalogSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const slugs = { all: 'all', Tech: 'tech', Home: 'home', Fitness: 'fitness', Beauty: 'beauty', Kitchen: 'kitchen', Pets: 'pets', Travel: 'travel', Kids: 'kids' };
+  window.location.href = '/collections/' + (slugs[cat] || String(cat || 'all').toLowerCase());
 }
 
 function handleSearch(q) {
@@ -3085,10 +3100,36 @@ function hideLoading() {
 // ============================================================
 // LOAD PRODUCTS
 // ============================================================
+function applyCollectionChrome() {
+  const dept = window.BUYWISH_COLLECTION;
+  if (!dept) return;
+  document.body.classList.add('is-collection');
+  const banner = document.getElementById('collectionBanner');
+  if (banner) banner.hidden = false;
+  const heading = document.getElementById('collectionHeading');
+  const copy = document.getElementById('collectionCopy');
+  const title = document.getElementById('catalogTitle');
+  const sub = document.getElementById('catalogSub');
+  if (heading) heading.textContent = dept.title || 'Products';
+  if (title) title.textContent = dept.title || 'Products';
+  const blurb = dept.category === 'all'
+    ? 'Every product on this page is loaded from the Zendrop catalog.'
+    : 'These products are loaded from Zendrop for this category.';
+  if (copy) copy.textContent = blurb;
+  if (sub) sub.textContent = blurb;
+  document.querySelectorAll('[data-dept]').forEach((el) => {
+    el.classList.toggle('active', el.getAttribute('data-dept') === dept.slug);
+  });
+}
+
 async function loadProducts() {
   showLoading();
+  const dept = window.BUYWISH_COLLECTION;
+  const categoryQuery = dept && dept.category && dept.category !== 'all'
+    ? `&category=${encodeURIComponent(dept.category)}`
+    : '';
   try {
-    const res = await fetch('/api/buywish/products?limit=48&sort=winning', { signal: AbortSignal.timeout(8000) });
+    const res = await fetch(`/api/buywish/products?limit=48&source=live${categoryQuery}`, { signal: AbortSignal.timeout(14000) });
     const data = await res.json();
     if (data.ok && data.products && data.products.length) {
       allProducts = data.products.map(p => ({
@@ -3107,7 +3148,8 @@ async function loadProducts() {
     allProducts = [];
   }
   filteredProducts = allProducts;
-  document.getElementById('statProducts').textContent = allProducts.length ? String(allProducts.length) : '—';
+  const stat = document.getElementById('statProducts');
+  if (stat) stat.textContent = allProducts.length ? String(allProducts.length) : '—';
   renderProducts();
   renderNewArrivals();
   hideLoading();
@@ -3127,6 +3169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  applyCollectionChrome();
   detectCurrency();
   loadProducts();
   loadHomeReviews();

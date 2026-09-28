@@ -1,5 +1,6 @@
 const assert = require('assert');
 const {
+  departmentBySlug,
   summarizeLane,
   scoreProduct,
   qualifiesForStore,
@@ -55,6 +56,8 @@ assert.strictEqual(product.category, 'Tech');
 assert.strictEqual(product.features[0], 'Charging case');
 assert.strictEqual(inferCategory('Dog collar'), 'Pets');
 assert.strictEqual(productHandle(42), 'p-42');
+assert.strictEqual(departmentBySlug('tech').title, 'Tech & Gadgets');
+assert.strictEqual(departmentBySlug('nope'), null);
 
 assert.strictEqual(isOrderCreateTool({ name: 'get_orders' }), false);
 assert.strictEqual(isOrderCreateTool({ name: 'create_order' }), true);

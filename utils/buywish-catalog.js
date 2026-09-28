@@ -18,17 +18,37 @@ const CATEGORY_KEYWORDS = {
   Kids: ['kid', 'kids', 'child', 'baby', 'toy', 'toddler']
 };
 
-const WINNING_SEARCHES = [
-  { category: 'Tech', q: 'wireless earbuds' },
-  { category: 'Tech', q: 'phone accessories' },
-  { category: 'Home', q: 'home organizer' },
-  { category: 'Home', q: 'led lamp' },
-  { category: 'Fitness', q: 'resistance bands' },
-  { category: 'Beauty', q: 'skincare tool' },
-  { category: 'Kitchen', q: 'kitchen gadget' },
-  { category: 'Pets', q: 'pet grooming' },
-  { category: 'Travel', q: 'packing cubes' }
-];
+const STORE_DEPARTMENTS = {
+  Tech: { slug: 'tech', title: 'Tech & Gadgets', searches: ['wireless earbuds', 'phone stand', 'bluetooth speaker'] },
+  Home: { slug: 'home', title: 'Home & Living', searches: ['home organizer', 'led lamp', 'throw blanket'] },
+  Fitness: { slug: 'fitness', title: 'Fitness & Outdoors', searches: ['resistance bands', 'yoga mat', 'fitness tracker'] },
+  Beauty: { slug: 'beauty', title: 'Beauty & Wellness', searches: ['skincare tool', 'makeup brush', 'hair tool'] },
+  Kitchen: { slug: 'kitchen', title: 'Kitchen & Cooking', searches: ['kitchen gadget', 'coffee accessories', 'food container'] },
+  Pets: { slug: 'pets', title: 'Pet Supplies', searches: ['pet grooming', 'dog toy', 'cat bed'] },
+  Travel: { slug: 'travel', title: 'Travel & Bags', searches: ['packing cubes', 'travel pillow', 'toiletry bag'] },
+  Kids: { slug: 'kids', title: 'Kids & Toys', searches: ['kids toy', 'baby gift', 'building blocks'] }
+};
+
+const WINNING_SEARCHES = Object.entries(STORE_DEPARTMENTS).flatMap(([category, dept]) => (
+  dept.searches.slice(0, 1).map((q) => ({ category, q }))
+));
+
+function departmentBySlug(slug) {
+  const key = Object.keys(STORE_DEPARTMENTS).find((name) => STORE_DEPARTMENTS[name].slug === String(slug || '').toLowerCase());
+  if (!key) return null;
+  return { key, ...STORE_DEPARTMENTS[key] };
+}
+
+function departmentByQuery(value) {
+  const raw = String(value || '').trim();
+  if (!raw || raw.toLowerCase() === 'all') return null;
+  if (STORE_DEPARTMENTS[raw]) return { key: raw, ...STORE_DEPARTMENTS[raw] };
+  const bySlug = departmentBySlug(raw);
+  if (bySlug) return bySlug;
+  const lower = raw.toLowerCase();
+  const key = Object.keys(STORE_DEPARTMENTS).find((name) => name.toLowerCase() === lower || STORE_DEPARTMENTS[name].title.toLowerCase() === lower);
+  return key ? { key, ...STORE_DEPARTMENTS[key] } : null;
+}
 
 function inferCategory(name, supplied) {
   const given = String(supplied || '').trim();
@@ -218,7 +238,10 @@ function storeProductFromRow(row) {
 module.exports = {
   TARGET_COUNTRIES,
   FAST_USA_DAYS,
+  STORE_DEPARTMENTS,
   WINNING_SEARCHES,
+  departmentBySlug,
+  departmentByQuery,
   inferCategory,
   normalizeProduct,
   summarizeLane,
