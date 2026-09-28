@@ -108,9 +108,10 @@ router.post('/carriers', ...staff, async (req, res) => {
     const company = String(req.body.company_name || '').trim();
     const phone = String(req.body.phone || '').trim();
     if (!company || !phone) return res.status(400).json({ error: 'Company and phone are required.' });
+    const consent = [true, 'true', 'on', '1', 'yes'].includes(req.body.sms_consent);
     const { rows } = await pool.query(
-      `INSERT INTO ai_dispatch_carriers (company_name, contact_name, phone, email, equipment, empty_zip, prefer_destination)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      `INSERT INTO ai_dispatch_carriers (company_name, contact_name, phone, email, equipment, empty_zip, prefer_destination, sms_consent, sms_consent_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8, CASE WHEN $8 THEN now() ELSE NULL END) RETURNING *`,
       [
         company,
         String(req.body.contact_name || '').trim() || null,
@@ -118,7 +119,8 @@ router.post('/carriers', ...staff, async (req, res) => {
         String(req.body.email || '').trim() || null,
         String(req.body.equipment || '').trim() || null,
         String(req.body.empty_zip || '').trim() || null,
-        String(req.body.prefer_destination || '').trim() || null
+        String(req.body.prefer_destination || '').trim() || null,
+        consent
       ]
     );
     res.json({ ok: true, carrier: rows[0] });
@@ -160,6 +162,13 @@ async function startCarrier(id) {
   const { rows } = await pool.query('SELECT * FROM ai_dispatch_carriers WHERE id = $1', [id]);
   const carrier = rows[0];
   if (!carrier) return null;
+  if (!carrier.sms_consent) {
+    const updated = await pool.query(
+      `UPDATE ai_dispatch_carriers SET last_sms_status = $2 WHERE id = $1 RETURNING *`,
+      [id, 'Needs text consent before Start']
+    );
+    return updated.rows[0];
+  }
   const tcpa = isWithinTcpaHours(carrier.phone);
   if (!tcpa.allowed) {
     const updated = await pool.query(
@@ -177,7 +186,7 @@ async function sendDueMorningTexts() {
   await ensureBoardSchema();
   const { rows } = await pool.query(
     `SELECT * FROM ai_dispatch_carriers
-     WHERE status = 'active'
+     WHERE status = 'active' AND sms_consent = TRUE
        AND (last_sms_at IS NULL OR last_sms_at < now() - interval '20 hours')
      ORDER BY id`
   );
@@ -209,6 +218,20 @@ router.post('/carriers/:id/start', ...staff, async (req, res) => {
     res.json({ ok: true, carrier });
   } catch (err) {
     res.status(500).json({ error: 'Could not start AI dispatch for this carrier.' });
+  }
+});
+
+router.post('/carriers/:id/consent', ...staff, async (req, res) => {
+  try {
+    await ensureBoardSchema();
+    const { rows } = await pool.query(
+      `UPDATE ai_dispatch_carriers SET sms_consent = TRUE, sms_consent_at = now(), last_sms_status = 'Consent recorded' WHERE id = $1 RETURNING *`,
+      [req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Carrier not found.' });
+    res.json({ ok: true, carrier: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not record consent.' });
   }
 });
 

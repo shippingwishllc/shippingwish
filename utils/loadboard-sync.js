@@ -55,6 +55,8 @@ async function ensureBoardSchema() {
       last_sms_status TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS sms_consent BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS sms_consent_at TIMESTAMPTZ;
     ALTER TABLE loads ADD COLUMN IF NOT EXISTS source_type TEXT;
     ALTER TABLE loads ADD COLUMN IF NOT EXISTS source_id INTEGER;
     ALTER TABLE loads ADD COLUMN IF NOT EXISTS external_id TEXT;
