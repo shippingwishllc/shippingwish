@@ -38,47 +38,54 @@ function OperationsCard() {
 
 export const Hero: React.FC = () => {
   return (
-    <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 bg-gradient-to-b from-[#eef4fb] via-white to-[#f4f7fb] overflow-hidden border-b border-slate-200">
+    <section className="relative pt-28 pb-16 md:pt-36 md:pb-24 bg-white overflow-hidden border-b border-slate-200">
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-100/50 rounded-full blur-3xl"></div>
       </div>
 
       <div className="max-w-[1240px] mx-auto px-6 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           <div className="lg:col-span-7">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0b1f3a] text-white text-xs font-black uppercase tracking-wider mb-6">
               <span className="w-2 h-2 rounded-full bg-blue-400"></span>
               <span>24/7 Operations Desk</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-display font-black text-[#0b1f3a] tracking-tight leading-[1.08]">
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.35rem] font-display font-black text-[#0b1f3a] tracking-tight leading-[1.08]">
               Hire a manager for your trucking company.{' '}
               <span className="text-blue-700">We work as </span>
               <span className="text-amber-600">your staff.</span>
             </h1>
 
-            <p className="mt-6 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
-              Shipping Wish places a named Fleet Operations Manager inside your company — 24/7 load booking, broker handling, and a full TMS. You keep every dollar the broker pays. Flat weekly subscription. You do not buy your own load-board seat. First week is free.
+            <p className="mt-5 text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
+              Named Fleet Operations Manager, load booking you approve, and a TMS — on a flat weekly plan. You keep every dollar the broker pays. First week is $0.
             </p>
+
+            <div className="flex flex-wrap items-center gap-3 mt-7">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700">✓ 24/7 desk</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700">✓ You approve loads</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700">✓ No cut of the load</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700">✓ TMS included</span>
+            </div>
 
             <div className="flex flex-wrap items-center gap-4 mt-8">
               <a
                 href="/pricing"
-                className="px-7 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-sm font-black shadow-lg shadow-blue-600/25 transition-all text-center"
+                className="px-7 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-sm font-black shadow-lg shadow-blue-600/25 transition-all text-center uppercase tracking-wide"
               >
-                Start 7 days free — $0 today
+                Start 7 days free
               </a>
               <a
-                href="/about"
-                className="px-6 py-4 bg-white hover:bg-slate-50 text-[#0b1f3a] border border-slate-300 rounded-2xl text-sm font-bold transition-all text-center"
+                href="tel:+19177370021"
+                className="px-6 py-4 bg-white hover:bg-slate-50 text-[#0b1f3a] border border-slate-300 rounded-full text-sm font-bold transition-all text-center"
               >
-                See the company
+                Call +1 (917) 737-0021
               </a>
             </div>
 
             <a
               href="/carrier-search"
-              className="mt-8 p-4 bg-white border border-slate-200 hover:border-blue-300 rounded-2xl flex items-center justify-between gap-4 transition-all shadow-sm block max-w-xl"
+              className="mt-8 p-4 bg-[#f4f7fb] border border-slate-200 hover:border-blue-300 rounded-2xl flex items-center justify-between gap-4 transition-all block max-w-xl"
             >
               <div className="flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-[#0b1f3a] text-white flex items-center justify-center text-sm font-black shrink-0">
@@ -97,24 +104,9 @@ export const Hero: React.FC = () => {
                 Search →
               </span>
             </a>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 pt-6 border-t border-slate-200 text-xs font-semibold text-slate-600">
-              <div className="flex items-center gap-1.5">
-                <span className="text-emerald-600">✓</span> You keep broker pay
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-emerald-600">✓</span> Week 1 is $0
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-emerald-600">✓</span> You approve loads
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-emerald-600">✓</span> TMS included
-              </div>
-            </div>
           </div>
 
-          <div className="lg:col-span-5 lg:sticky lg:top-28">
+          <div className="lg:col-span-5">
             <OperationsCard />
           </div>
         </div>

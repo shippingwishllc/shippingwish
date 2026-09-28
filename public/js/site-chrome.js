@@ -19,7 +19,7 @@
     if (!document.querySelector('link[href*="public-theme.css"]')) {
       const theme = document.createElement('link');
       theme.rel = 'stylesheet';
-      theme.href = '/css/public-theme.css?v=5';
+      theme.href = '/css/public-theme.css?v=10';
       document.head.appendChild(theme);
     }
   }
@@ -45,33 +45,30 @@
       <ul class="nav-links" role="list">
         <li><a href="/"${isHome ? ' class="active" aria-current="page"' : ''}>Home</a></li>
         <li class="nav-item-dropdown">
-          <a href="/services"${active('/services.html', ['dispatch.html','load-booking.html','fleet-support.html','factoring.html','insurance.html','eld.html','dot-compliance.html'])}>Services ▾</a>
+          <a href="/services"${active('/services.html', ['dispatch.html','load-booking.html','fleet-support.html','factoring.html','insurance.html','eld.html','dot-compliance.html','carrier-search.html','carrier-setup.html'])}>Services ▾</a>
           <div class="nav-dropdown-menu" role="menu">
             <div class="dropdown-label">Operations</div>
-            <a href="/carrier-setup" role="menuitem" style="color:#facc15;font-weight:700;">⚡ Carrier Setup (Online)</a>
+            <a href="/carrier-setup" role="menuitem" style="color:#facc15;font-weight:700;">Carrier Setup (Online)</a>
             <a href="/dispatch" role="menuitem">Fleet Operations Manager</a>
             <a href="/fleet-support" role="menuitem">Fleet Support</a>
             <div class="dropdown-label">Load Board</div>
-            <a href="https://www.loadsnexus.com" target="_blank" rel="noopener" role="menuitem" style="color:#60a5fa;font-weight:700;">🔷 LoadsNexus™ AI Load Board ↗</a>
-            <a href="/mobile-apps" role="menuitem" style="color:#60a5fa;">📱 Mobile Apps (iOS &amp; Android)</a>
-            <div class="dropdown-label">Financial</div>
+            <a href="https://www.loadsnexus.com" target="_blank" rel="noopener" role="menuitem">LoadsNexus AI Load Board</a>
+            <a href="/mobile-apps" role="menuitem">Mobile Apps</a>
+            <div class="dropdown-label">Tools</div>
+            <a href="/carrier-search" role="menuitem">FMCSA Carrier Lookup</a>
             <a href="/factoring" role="menuitem">Factoring</a>
             <a href="/insurance" role="menuitem">Insurance</a>
-            <div class="dropdown-label">Compliance</div>
             <a href="/eld" role="menuitem">ELD &amp; Telematics</a>
             <a href="/dot-compliance" role="menuitem">DOT Compliance</a>
           </div>
         </li>
-        <li><a href="/carrier-setup"${active('/carrier-setup.html')}>Carrier Setup</a></li>
+        <li><a href="/#how-dispatch-works">How it works</a></li>
         <li><a href="/pricing"${active('/pricing.html', ['checkout.html','checkout-success.html'])}>Pricing</a></li>
-        <li><a href="/carrier-search"${active('/carrier-search.html')}>Carrier Lookup</a></li>
         <li><a href="/about"${active('/about.html')}>About</a></li>
-        <li><a href="/blog"${active('/blog.html', ['blog-post.html'])}>Insights</a></li>
         <li><a href="/contact"${active('/contact.html')}>Contact</a></li>
       </ul>
       <div class="nav-actions">
-        <div class="live-status" aria-live="polite"><span class="live-dot" aria-hidden="true"></span> 24/7 Desk</div>
-        <a href="/carrier-setup" class="btn btn-secondary btn-sm" id="nav-setup-btn" style="border-color:#eab308;color:#facc15;">Carrier Setup</a>
+        <a href="tel:+19177370021" class="nav-phone">+1 (917) 737-0021</a>
         <a href="/login" class="btn btn-secondary btn-sm" id="nav-login-btn">Sign In</a>
         <a href="/pricing" class="btn btn-primary btn-sm" id="nav-cta-btn">Start Free Week</a>
       </div>
@@ -87,6 +84,7 @@
       <a href="https://www.loadsnexus.com" target="_blank" rel="noopener" data-nav-close style="color:#60a5fa;font-weight:700;">🔷 LoadsNexus™ AI Load Board ↗</a>
       <a href="/mobile-apps" data-nav-close style="color:#60a5fa;">📱 Mobile Apps (iOS &amp; Android)</a>
       <a href="/services" data-nav-close>Services</a>
+      <a href="/#how-dispatch-works" data-nav-close>How it works</a>
       <a href="/dispatch" data-nav-close>Fleet Operations</a>
       <a href="/pricing" data-nav-close>Pricing</a>
       <a href="/carrier-search" data-nav-close>Carrier Lookup</a>
@@ -95,6 +93,7 @@
       <a href="/contact" data-nav-close>Contact</a>
       </div>
       <div class="nav-mobile-cta-group">
+        <a href="tel:+19177370021" class="btn btn-secondary-glass" data-nav-close>Call +1 (917) 737-0021</a>
         <a href="/login" class="btn btn-secondary-glass" data-nav-close>Sign In</a>
         <a href="/pricing" class="btn btn-primary-amber" data-nav-close>Start Free Week →</a>
       </div>`;
@@ -264,7 +263,7 @@
     });
 
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 1399) setMenuOpen(false);
+      if (window.innerWidth >= 900) setMenuOpen(false);
     });
   }
 
