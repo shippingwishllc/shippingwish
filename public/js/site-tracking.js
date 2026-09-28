@@ -1,6 +1,7 @@
 (function () {
   const DEFAULT_GTM = 'GTM-55MF65H2';
-  const DEFAULT_GA = 'G-LW66Y70PFE';
+  const DEFAULT_GA = 'G-X8LW2ZYJ63';
+  const RETIRED_GA = 'G-LW66Y70PFE';
 
   function isOtherBrand() {
     const h = String(location.hostname || '').toLowerCase();
@@ -89,7 +90,9 @@
   function apply(settings) {
     if (isLoggedInShell()) return;
     if (!window.__swGtmId) installGtm((settings && settings.gtm_container_id) || DEFAULT_GTM);
-    if (!window.__swGaId) installGa4((settings && settings.ga_measurement_id) || DEFAULT_GA);
+    const requested = gaId(settings && settings.ga_measurement_id);
+    const ga = !requested || requested === RETIRED_GA ? DEFAULT_GA : requested;
+    if (!window.__swGaId) installGa4(ga);
     if (settings && settings.facebook_pixel_id) installFacebookPixel(settings.facebook_pixel_id);
   }
 

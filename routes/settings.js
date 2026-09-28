@@ -17,7 +17,7 @@ const DEFAULT_SETTINGS = {
   instagram_url: 'https://instagram.com/shippingwish',
   youtube_url: 'https://youtube.com/@shippingwish',
   gtm_container_id: 'GTM-55MF65H2',
-  ga_measurement_id: 'G-LW66Y70PFE',
+  ga_measurement_id: 'G-X8LW2ZYJ63',
   facebook_pixel_id: ''
 };
 
@@ -50,7 +50,8 @@ async function loadSettingsFromDB() {
     if (!gtmContainerId(memorySettings.gtm_container_id)) {
       memorySettings.gtm_container_id = DEFAULT_SETTINGS.gtm_container_id;
     }
-    if (!gaMeasurementId(memorySettings.ga_measurement_id)) {
+    const storedGa = gaMeasurementId(memorySettings.ga_measurement_id);
+    if (!storedGa || storedGa === 'G-LW66Y70PFE') {
       memorySettings.ga_measurement_id = DEFAULT_SETTINGS.ga_measurement_id;
     }
     if (memorySettings.facebook_pixel_id == null) memorySettings.facebook_pixel_id = '';
@@ -99,7 +100,7 @@ router.put('/', requireAuth, requireRole('admin', 'super_admin'), async (req, re
         if (val.trim() && !stored) {
           return res.status(400).json({ error: 'Google Analytics Measurement ID must look like G-XXXXXXXX.' });
         }
-        if (!stored) stored = DEFAULT_SETTINGS.ga_measurement_id;
+        if (!stored || stored === 'G-LW66Y70PFE') stored = DEFAULT_SETTINGS.ga_measurement_id;
       }
       if (key === 'facebook_pixel_id') {
         stored = facebookPixelId(val);
