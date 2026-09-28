@@ -19,6 +19,7 @@ const {
   classifyProduct,
   flattenCategories,
   categoriesForDepartment,
+  productMatchesQuery,
   categoryFilterIsTrusted,
   DEPARTMENT_ZENDROP_CATEGORIES,
   normalizeProduct,
@@ -301,12 +302,54 @@ async function loadLiveProductByKey(key) {
   return product;
 }
 
+async function searchLiveProducts(query, { limit, page }) {
+  const q = String(query || '').trim();
+  const classified = classifyProduct({ title: q });
+  const jobs = [
+    fetchCatalogSlice('get_catalog_products', { search: q, limit: 48 }),
+    fetchCatalogSlice('get_catalog_products', { search: q, limit: 48, page: 2 }),
+    fetchCatalogSlice('get_catalog_trending_products', { limit: 40, filters: { category: q } }),
+    fetchCatalogSlice('get_catalog_trending_products', { limit: 40 })
+  ];
+  (DEPARTMENT_ZENDROP_CATEGORIES[classified && classified.key] || []).slice(0, 2).forEach((label) => {
+    jobs.push(fetchCatalogSlice('get_catalog_products', { limit: 48, category: label }));
+    jobs.push(fetchCatalogSlice('get_catalog_trending_products', { limit: 40, filters: { category: label } }));
+  });
+  const batches = await Promise.all(jobs);
+  const byId = new Map();
+  batches.flat().forEach((raw) => {
+    const product = normalizeProduct(raw);
+    if (!product.id || byId.has(String(product.id))) return;
+    if (!productMatchesQuery(product, q)) return;
+    byId.set(String(product.id), product);
+  });
+  const products = [...byId.values()];
+  const perPage = Math.min(Math.max(parseInt(limit, 10) || 24, 1), 48);
+  const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+  const offset = (pageNum - 1) * perPage;
+  return {
+    products: products.slice(offset, offset + perPage),
+    total: products.length,
+    page: pageNum,
+    per_page: perPage
+  };
+}
+
 // ============================================================
 // GET /api/buywish/products — Live Zendrop Catalog
 // ============================================================
 router.get('/products', async (req, res) => {
   try {
     const { category, search, limit = 24, page = 1, sort = 'trending', source } = req.query;
+    const queryText = search && String(search).trim();
+    if (queryText && queryText.length >= 2) {
+      const searchKey = `searchlive_${queryText.toLowerCase()}_${page}_${limit}`;
+      const searchCached = getCache(searchKey);
+      if (searchCached) return res.json({ ok: true, ...searchCached, source: 'cache' });
+      const found = await searchLiveProducts(queryText, { limit, page });
+      setCache(searchKey, found, 5 * 60 * 1000);
+      return res.json({ ok: true, ...found, source: 'search' });
+    }
     const department = departmentByQuery(category);
     if (department) {
       const deptKey = `dept_${department.key}_${search || ''}_${page}_${limit}`;

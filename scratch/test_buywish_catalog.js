@@ -3,6 +3,7 @@ const {
   classifyProduct,
   flattenCategories,
   categoriesForDepartment,
+  productMatchesQuery,
   categoryFilterIsTrusted,
   productSharePath,
   departmentBySlug,
@@ -85,6 +86,9 @@ const distinct = Array.from({ length: 10 }, (_, i) => ({ id: i + 100 }));
 assert.strictEqual(categoryFilterIsTrusted(sameAsTrending, sameAsTrending), false);
 assert.strictEqual(categoryFilterIsTrusted(distinct, sameAsTrending), true);
 assert.strictEqual(categoryFilterIsTrusted(distinct.slice(0, 4), []), false);
+assert.strictEqual(productMatchesQuery({ title: 'Wireless Earbuds', description: '' }, 'earbud'), true);
+assert.strictEqual(productMatchesQuery({ title: 'Blue Yoga Mat', description: 'for exercise' }, 'yoga mat'), true);
+assert.strictEqual(productMatchesQuery({ title: 'Throw Blanket', description: 'home decor' }, 'earbuds'), false);
 assert.strictEqual(departmentBySlug('nope'), null);
 
 assert.strictEqual(isOrderCreateTool({ name: 'get_orders' }), false);

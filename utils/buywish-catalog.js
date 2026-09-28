@@ -300,6 +300,13 @@ function productHandle(zendropId) {
   return id ? `p-${id}` : null;
 }
 
+function productMatchesQuery(product, query) {
+  const tokens = String(query || '').toLowerCase().split(/\s+/).filter((token) => token.length >= 2);
+  if (!tokens.length) return false;
+  const hay = `${(product && product.title) || ''} ${(product && product.description) || ''} ${(product && product.category) || ''}`.toLowerCase();
+  return tokens.every((token) => hay.includes(token));
+}
+
 function categoryFilterIsTrusted(categoryProducts, baselineProducts) {
   const baseline = new Set((baselineProducts || []).map((product) => String(product && (product.id || product.zendrop_id) || '')));
   const seen = new Set();
@@ -362,6 +369,7 @@ module.exports = {
   classifyProduct,
   flattenCategories,
   categoriesForDepartment,
+  productMatchesQuery,
   categoryFilterIsTrusted,
   normalizeProduct,
   productSharePath,

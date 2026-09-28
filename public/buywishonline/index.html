@@ -35,23 +35,14 @@
     "url": "https://www.buywishonline.com",
     "logo": "https://www.buywishonline.com/logo.png",
     "description": "Premium global e-commerce store operated by Shipping Wish LLC with fast express delivery across the USA, UK, Canada, and Europe.",
-    "parentOrganization": {
-      "@type": "Organization",
-      "name": "Shipping Wish LLC",
-      "url": "https://www.shippingwish.com",
       "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "19266 Coastal Hwy",
-        "addressLocality": "Rehoboth Beach",
-        "addressRegion": "DE",
-        "postalCode": "19971",
-        "addressCountry": "US"
-      }
+      "@type": "PostalAddress",
+      "streetAddress": "19266 Coastal Hwy",
+      "addressLocality": "Rehoboth Beach",
+      "addressRegion": "DE",
+      "postalCode": "19971",
+      "addressCountry": "US"
     },
-    "sameAs": [
-      "https://www.shippingwish.com",
-      "https://www.facebook.com/shippingwish0"
-    ],
     "contactPoint": {
       "@type": "ContactPoint",
       "contactType": "customer service",
@@ -237,6 +228,7 @@
     .search-bar {
       display: flex;
       align-items: center;
+      margin: 0;
       background: #f3f4f6;
       border: 1.5px solid transparent;
       border-radius: 10px;
@@ -908,6 +900,7 @@
     body.is-collection .trust-bar,
     body.is-collection .new-arrivals-section,
     body.is-collection #catalogSection .section-head { display: none; }
+    body.is-searching #catalogSection .section-head { display: flex; }
     body.is-collection #catalogSection { padding-top: 28px; }
     @media (max-width: 640px) {
       .collection-banner { padding: 28px 16px 24px; }
@@ -1541,7 +1534,7 @@
       margin: 0 auto;
       padding: 60px 24px 40px;
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr;
+      grid-template-columns: 2fr 1fr 1fr;
       gap: 40px;
     }
     .footer-brand .logo-text { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 12px; display: block; }
@@ -1755,10 +1748,10 @@
     </div>
 
     <div class="nav-right">
-      <div class="search-bar" role="search">
+      <form class="search-bar" role="search" onsubmit="return submitSearch(event, 'searchInput')">
         <input type="search" placeholder="Search products…" id="searchInput" aria-label="Search products" oninput="handleSearch(this.value)">
-        <button aria-label="Search">🔍</button>
-      </div>
+        <button type="submit" aria-label="Search">🔍</button>
+      </form>
 
       <div class="currency-badge" onclick="cycleCurrency()" title="Change currency" role="button" aria-label="Change currency">
         <span class="flag" id="currencyFlag">🇺🇸</span>
@@ -1812,10 +1805,10 @@
 
 <!-- Mobile Search Bar Strip -->
 <div class="mobile-search-strip">
-  <div class="search-bar" role="search">
+  <form class="search-bar" role="search" onsubmit="return submitSearch(event, 'mobileSearchInput')">
     <input type="search" placeholder="Search products..." id="mobileSearchInput" aria-label="Search products" oninput="handleSearch(this.value)">
-    <button aria-label="Search" onclick="handleSearch(document.getElementById('mobileSearchInput').value)">🔍</button>
-  </div>
+    <button type="submit" aria-label="Search">🔍</button>
+  </form>
 </div>
 
 <!-- Category Strip -->
@@ -2141,16 +2134,6 @@
         <li><a href="/contact">Contact Support Desk</a></li>
         <li><a href="/returns">Returns & Refunds</a></li>
         <li><a href="/shipping">Shipping Policy</a></li>
-      </ul>
-    </div>
-    <div>
-      <div class="footer-col-title">Enterprise</div>
-      <ul class="footer-links">
-        <li><a href="/about">About Shipping Wish LLC</a></li>
-        <li><a href="https://www.shippingwish.com" target="_blank" rel="noopener">Shipping Wish Corporate</a></li>
-        <li><a href="https://www.loadsnexus.com" target="_blank" rel="noopener">LoadsNexus Freight Network</a></li>
-        <li><a href="https://www.nyclimowish.com" target="_blank" rel="noopener">NYC Limo Wish Chauffeur</a></li>
-        <li><a href="/sitemap.xml">Sitemap</a></li>
       </ul>
     </div>
   </div>
@@ -2549,9 +2532,12 @@ function renderProducts() {
   const grid = document.getElementById('productsGrid');
   const toShow = filteredProducts.slice(0, 96);
   if (!toShow.length) {
-    const note = window.BUYWISH_COLLECTION
-      ? 'This collection is being stocked. Please check another category or refresh in a moment.'
-      : 'Products are loading. If this stays empty, refresh the page.';
+    const term = currentSearch.trim();
+    const note = term
+      ? `No products found for “${escHtml(term)}”. Try another word.`
+      : (window.BUYWISH_COLLECTION
+        ? 'This collection is being stocked. Please check another category or refresh in a moment.'
+        : 'Products are loading. If this stays empty, refresh the page.');
     grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);font-size:15px;">${note}</div>`;
     return;
   }
@@ -2597,9 +2583,92 @@ function filterCategory(cat) {
   window.location.href = '/collections/' + (slugs[cat] || String(cat || 'all').toLowerCase());
 }
 
+let searchTimer = null;
+let searchSeq = 0;
+
+function productMatchesTerm(product, term) {
+  const tokens = String(term || '').toLowerCase().split(/\s+/).filter(token => token.length >= 2);
+  if (!tokens.length) return true;
+  const hay = `${product.title || ''} ${product.description || ''} ${product.category || ''}`.toLowerCase();
+  return tokens.every(token => hay.includes(token));
+}
+
+function syncSearchInputs(value, sourceId) {
+  ['searchInput', 'mobileSearchInput'].forEach((id) => {
+    if (id === sourceId) return;
+    const input = document.getElementById(id);
+    if (input && input.value !== value) input.value = value;
+  });
+}
+
+function showSearchHeading(term) {
+  document.body.classList.toggle('is-searching', Boolean(term));
+  const title = document.getElementById('catalogTitle');
+  const sub = document.getElementById('catalogSub');
+  if (!term) return;
+  if (title) title.textContent = 'Search results';
+  if (sub) sub.textContent = `Products matching “${term}”`;
+}
+
 function handleSearch(q) {
-  currentSearch = q;
+  const value = String(q || '');
+  currentSearch = value;
+  const active = document.activeElement && document.activeElement.id;
+  syncSearchInputs(value, active || '');
+  const term = value.trim();
+  if (!term) {
+    searchSeq += 1;
+    document.body.classList.remove('is-searching');
+    filteredProducts = allProducts;
+    renderProducts();
+    return;
+  }
+  showSearchHeading(term);
   applyFilters();
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => runCatalogSearch(term), 350);
+}
+
+function submitSearch(event, inputId) {
+  if (event) event.preventDefault();
+  const input = document.getElementById(inputId);
+  const value = input ? input.value : '';
+  currentSearch = value;
+  syncSearchInputs(value, inputId);
+  clearTimeout(searchTimer);
+  runCatalogSearch(value.trim());
+  return false;
+}
+
+async function runCatalogSearch(term) {
+  const seq = ++searchSeq;
+  if (!term || term.length < 2) {
+    document.body.classList.remove('is-searching');
+    filteredProducts = allProducts.filter(product => productMatchesTerm(product, term));
+    renderProducts();
+    return;
+  }
+  showSearchHeading(term);
+  showLoading();
+  const localMatches = allProducts.filter(product => productMatchesTerm(product, term));
+  try {
+    const res = await fetch(`/api/buywish/products?limit=48&source=live&search=${encodeURIComponent(term)}`, { signal: AbortSignal.timeout(12000) });
+    const data = await res.json();
+    if (seq !== searchSeq || currentSearch.trim() !== term) return;
+    const remote = (data.ok && data.products) ? data.products : [];
+    const byId = new Map();
+    remote.concat(localMatches).forEach((product) => {
+      if (product && product.id != null) byId.set(String(product.id), product);
+    });
+    filteredProducts = [...byId.values()];
+  } catch (e) {
+    if (seq !== searchSeq) return;
+    filteredProducts = localMatches;
+  }
+  renderProducts();
+  const catalog = document.getElementById('catalogSection');
+  if (catalog) catalog.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  hideLoading();
 }
 
 // ============================================================
@@ -3269,10 +3338,13 @@ async function loadProducts() {
   }
   filteredProducts = allProducts;
   const stat = document.getElementById('statProducts');
-  if (stat && allProducts.length) stat.textContent = String(allProducts.length) + '+';
-  renderProducts();
+  if (stat && allProducts.length && !currentSearch.trim()) stat.textContent = String(allProducts.length) + '+';
   renderNewArrivals();
-  hideLoading();
+  if (currentSearch.trim()) runCatalogSearch(currentSearch.trim());
+  else {
+    renderProducts();
+    hideLoading();
+  }
 }
 
 // ============================================================
@@ -3291,6 +3363,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   applyCollectionChrome();
   detectCurrency();
+  const startupParams = new URLSearchParams(window.location.search);
+  if (startupParams.get('q')) {
+    currentSearch = startupParams.get('q');
+    const searchInput = document.getElementById('searchInput');
+    const mobileSearch = document.getElementById('mobileSearchInput');
+    if (searchInput) searchInput.value = currentSearch;
+    if (mobileSearch) mobileSearch.value = currentSearch;
+  }
   loadProducts();
   if (window.BUYWISH_PRODUCT && window.BUYWISH_PRODUCT.id) openDetail(window.BUYWISH_PRODUCT.id);
   window.addEventListener('popstate', () => {
@@ -3343,12 +3423,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (params.get('cat')) {
     filterCategory(params.get('cat'));
-  }
-  if (params.get('q')) {
-    const q = params.get('q');
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) searchInput.value = q;
-    handleSearch(q);
   }
   const productParam = params.get('product');
   if (productParam) {
