@@ -46,6 +46,14 @@ body.marketing .live-status {
   border: 1px solid rgba(110, 231, 183, 0.35);
 }
 
+body.marketing .nav-phone {
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+}
+body.marketing .nav-phone:hover { color: #fff; }
 body.marketing .nav-hamburger span { background: #f8fafc; }
 body.marketing .nav .btn-secondary {
   background: transparent;
@@ -102,33 +110,29 @@ body.marketing .nav-mobile-cta-group {
   padding: 6px 12px;
 }
 
-/* Full nav only when a laptop can hold every link. */
-@media (max-width: 1399px) {
+/* Desktop nav from 1024px. Hamburger only below that — not on laptops. */
+@media (min-width: 1024px) {
   body.marketing .nav-links,
   body.marketing .nav-actions {
-    display: none !important;
+    display: flex !important;
   }
   body.marketing .nav-hamburger {
+    display: none !important;
+  }
+  body.sw-home nav[aria-label="Main Navigation"] .lg\:flex {
     display: flex !important;
+  }
+  body.sw-home nav[aria-label="Main Navigation"] .lg\:hidden {
+    display: none !important;
   }
 }
 
-@media (min-width: 1400px) and (max-width: 1600px) {
+@media (min-width: 1024px) and (max-width: 1280px) {
   body.marketing .nav-links a {
     padding: 8px 8px;
     font-size: 13px;
   }
   body.marketing .nav-actions { gap: 8px; }
-}
-
-/* Homepage React nav: compiled CSS hides the drawer from 1024px. Keep the hamburger until 1400. */
-@media (max-width: 1399px) {
-  body.sw-home nav[aria-label="Main Navigation"] .lg\:flex {
-    display: none !important;
-  }
-  body.sw-home nav[aria-label="Main Navigation"] .lg\:hidden {
-    display: flex !important;
-  }
 }
 
 @media (max-width: 640px) {

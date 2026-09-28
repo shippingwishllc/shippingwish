@@ -63,6 +63,15 @@ body.marketing .live-status {
   text-transform: uppercase;
 }
 
+body.marketing .nav-phone {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+}
+body.marketing .nav-phone:hover { color: #1d4ed8; }
+
 body.marketing .nav-hamburger span { background: #0f172a; }
 
 body.marketing .nav-mobile {
