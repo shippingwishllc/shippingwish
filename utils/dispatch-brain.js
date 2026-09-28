@@ -673,7 +673,8 @@ async function requestBooking(carrier, offer, { askRate = null } = {}) {
         html: `<div style="font-family:Arial,sans-serif;font-size:14px;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
         transactional: true,
         emailType: ask ? 'dispatch_rate_ask' : 'dispatch_booking',
-        replyTo: opsAddr || undefined
+        from: require('./brand-senders').getBrandSender('shippingwish', 'dispatch'),
+        replyTo: opsAddr || require('./brand-senders').replyAddress('shippingwish', 'dispatch')
       });
       note = ask ? `Emailed ${brokerEmail} asking ${money(ask)} (posted ${money(posted)})` : `Emailed ${brokerEmail}`;
       if (ask) {
@@ -781,7 +782,8 @@ async function sendFollowUpAsk(carrier, offer, load, ask) {
     html: `<div style="font-family:Arial,sans-serif;font-size:14px;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
     transactional: true,
     emailType: 'dispatch_rate_ask',
-    replyTo: opsAddr || undefined
+    from: require('./brand-senders').getBrandSender('shippingwish', 'dispatch'),
+    replyTo: opsAddr || require('./brand-senders').replyAddress('shippingwish', 'dispatch')
   });
   const negotiation = {
     ...(offer.negotiation || {}),

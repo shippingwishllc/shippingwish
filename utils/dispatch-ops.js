@@ -290,7 +290,8 @@ async function emailDetention(offer, stop) {
       html: `<div style="font-family:Arial,sans-serif;font-size:14px;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
       transactional: true,
       emailType: 'dispatch_detention',
-      replyTo: ops || undefined
+      from: require('./brand-senders').getBrandSender('shippingwish', 'dispatch'),
+      replyTo: ops || require('./brand-senders').replyAddress('shippingwish', 'dispatch')
     });
     return { sent: true };
   } catch (err) {
