@@ -33,6 +33,11 @@
   <p class="muted">Sign in to see orders placed with this email, then track them through to delivery.</p>
 </header>
 <main>
+  <section class="card" id="savedOnDevice">
+    <h2 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:32px;margin:0 0 8px;">Saved products</h2>
+    <p class="muted">These stay in this browser. Open one to see it again.</p>
+    <div id="savedList"></div>
+  </section>
   <section id="auth">
     <div class="tabs">
       <button type="button" id="showLogin">Sign in</button>
@@ -136,6 +141,22 @@
       ? `<p><strong>${data.order.order_number}</strong> · ${data.order.fulfillment_status}${data.order.supplier_tracking_number ? ' · ' + data.order.supplier_tracking_number : ''}</p>`
       : `<p class="error">${data.error || 'Order not found.'}</p>`;
   };
+  function renderDeviceSaved() {
+    const box = document.getElementById('savedList');
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem('bwo_saved_products') || '[]'); } catch (err) { list = []; }
+    if (!Array.isArray(list) || !list.length) {
+      box.innerHTML = '<p class="muted">No saved products yet. Use the heart on a product.</p>';
+      return;
+    }
+    box.innerHTML = list.map((item) => {
+      const id = String(item.id || '').replace(/\D/g, '');
+      const href = '/products/p-' + id;
+      const title = String(item.title || 'Product').replace(/[&<>]/g, '');
+      return `<p><a href="${href}"><strong>${title}</strong></a> · $${Number(item.retail_price || 0).toFixed(2)}</p>`;
+    }).join('');
+  }
+  renderDeviceSaved();
   if (localStorage.getItem(tokenKey)) showAccount();
 </script>
 </body>
