@@ -28,7 +28,39 @@
           <li>You paste a licensed load-board API here. The desk calls that https JSON URL with your key. It does not open websites or copy another board’s pages.</li>
           <li>When a load is covered, expired, or missing from the latest API reply, it leaves the public board.</li>
         </ol>
-        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">The board stays empty until a broker posts or an API returns real loads. Start sends a good-morning text asking for the empty ZIP. A broker is not called until the driver replies YES on that exact load.</p>
+        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">The board stays empty until a broker posts or an API returns real loads. Start sends a good-morning text asking for the empty ZIP. A broker is only contacted after the driver picks that exact load.</p>
+      </section>
+
+      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
+        <h2 style="margin:0 0 8px;font-size:15px;">What the AI dispatcher does with a driver's text</h2>
+        <ol style="margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.55;">
+          <li>Reads texts like “75201 to Atlanta”, “empty in Dallas TX want GA or FL reefer”, “MORE”, or “off today”.</li>
+          <li>Finds open loads within the carrier's empty-mile limit, with matching equipment and destination, above their minimum $/mile. It ranks them by all-in $/mile, counting empty miles too.</li>
+          <li>Texts the best three. The driver replies 1, 2 or 3.</li>
+          <li>Emails the broker a booking request with the carrier's MC or DOT and tells the driver not to roll yet.</li>
+          <li>If the broker replies “covered”, the driver gets the next best loads. If the broker confirms, you check the rate confirmation and press Booked. Then the driver gets a BOOKED text.</li>
+        </ol>
+        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">Rates shown are the broker's posted rate. Miles marked ~ are estimated from ZIP and city locations. After 12 texts to one carrier in a day, the AI hands off to a person. STOP pauses the carrier.</p>
+      </section>
+
+      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
+        <h2 style="margin:0 0 10px;font-size:15px;">Try the AI (nothing is sent)</h2>
+        <div style="display:grid;grid-template-columns:minmax(160px,220px) 1fr auto;gap:10px;align-items:end;">
+          <label style="font-size:12px;color:#475569;">As carrier<select id="try-carrier" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"><option value="">Test carrier (van, 150 mi)</option></select></label>
+          <label style="font-size:12px;color:#475569;">Driver text<input id="try-text" placeholder="75201 to Atlanta" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <button type="button" id="try-run" style="background:#0b1f3a;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;">Test</button>
+        </div>
+        <div id="try-result" style="font-size:13px;color:#475569;margin-top:10px;"></div>
+      </section>
+
+      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+          <h2 style="margin:0;font-size:15px;">Load requests</h2>
+          <button type="button" id="offers-refresh" style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;">Refresh</button>
+        </div>
+        <p style="font-size:13px;color:#64748b;margin:6px 0;">Loads a driver picked are listed first. Press Booked only after you have the broker's rate confirmation. Release sends the driver the next best loads.</p>
+        <p id="offers-msg" style="font-size:13px;color:#b45309;min-height:1.2em;"></p>
+        <div id="offers-list" style="font-size:13px;color:#475569;">Loading…</div>
       </section>
 
       <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
@@ -83,6 +115,12 @@
           <label style="font-size:12px;color:#475569;">Equipment<input name="equipment" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
           <label style="font-size:12px;color:#475569;">Empty ZIP<input name="empty_zip" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
           <label style="font-size:12px;color:#475569;">Preferred destination<input name="prefer_destination" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">MC number<input name="mc_number" inputmode="numeric" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">USDOT<input name="dot_number" inputmode="numeric" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">Minimum $/mile all-in<input name="min_rpm" type="number" step="0.05" min="0" placeholder="2.00" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">Max empty miles<input name="max_deadhead" type="number" min="10" max="600" placeholder="150" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+          <label style="font-size:12px;color:#475569;">Home state<input name="home_state" maxlength="2" placeholder="TX" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase;"></label>
+          <label style="font-size:12px;color:#475569;">Never go to<input name="avoid_states" placeholder="NY, NJ" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase;"></label>
           <label style="font-size:12px;color:#475569;display:flex;gap:6px;align-items:flex-start;grid-column:1/-1;"><input type="checkbox" name="sms_consent" value="true" style="margin-top:2px;">The carrier agreed to receive texts from Shipping Wish. Start will not text anyone without this.</label>
           <button type="submit" style="background:#0b1f3a;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;">Add carrier</button>
         </form>
@@ -141,18 +179,111 @@
       box.textContent = 'No carriers yet. Add one, then press Start.';
       return;
     }
+    carriersById = {};
+    data.carriers.forEach((row) => { carriersById[row.id] = row; });
+    const select = document.getElementById('try-carrier');
+    select.innerHTML = '<option value="">Test carrier (van, 150 mi)</option>' +
+      data.carriers.map((row) => '<option value="' + esc(row.id) + '">' + esc(row.company_name) + '</option>').join('');
+    const btn = 'border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;';
     box.innerHTML = data.carriers.map((row) => {
       const when = row.last_sms_at ? new Date(row.last_sms_at).toLocaleString() : 'no text yet';
+      const rules = [
+        row.mc_number ? 'MC ' + row.mc_number : 'no MC yet',
+        row.dot_number ? 'DOT ' + row.dot_number : '',
+        row.min_rpm ? 'min $' + Number(row.min_rpm).toFixed(2) + '/mi' : '',
+        'max ' + (row.max_deadhead || 150) + ' empty mi',
+        row.home_state ? 'home ' + row.home_state : '',
+        row.avoid_states ? 'never ' + row.avoid_states : '',
+        row.last_location ? 'last seen ' + row.last_location : '',
+        row.prefer_destination ? 'wants ' + row.prefer_destination : '',
+        row.off_until && new Date(row.off_until) > new Date() ? 'off today' : ''
+      ].filter(Boolean).join(' · ');
       return '<div style="padding:10px 0;border-top:1px solid #e2e8f0;">' +
-        '<strong>' + esc(row.company_name) + '</strong> · ' + esc(row.status) +
+        '<strong>' + esc(row.company_name) + '</strong> · ' + esc(row.status) + (row.sms_consent ? '' : ' · <span style="color:#b45309;">no text consent</span>') +
         '<br><span style="color:#64748b;">' + esc([row.contact_name, row.phone, row.equipment, row.empty_zip].filter(Boolean).join(' · ')) +
+        '<br>' + esc(rules) +
         '<br>Last text: ' + esc(when) + ' · ' + esc(row.last_sms_status || 'not sent') + '</span>' +
-        '<div style="margin-top:6px;display:flex;gap:8px;">' +
-        (row.sms_consent ? '' : '<button type="button" data-consent="' + esc(row.id) + '" style="border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Carrier agreed to texts</button>') +
+        '<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">' +
+        (row.sms_consent ? '' : '<button type="button" data-consent="' + esc(row.id) + '" style="' + btn + '">Carrier agreed to texts</button>') +
         '<button type="button" data-start="' + esc(row.id) + '" style="border:0;background:#2563eb;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Start</button>' +
-        '<button type="button" data-pause="' + esc(row.id) + '" style="border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Pause</button>' +
-        '</div></div>';
+        '<button type="button" data-sendloads="' + esc(row.id) + '" style="' + btn + '">Send loads now</button>' +
+        '<button type="button" data-rules="' + esc(row.id) + '" style="' + btn + '">Rules</button>' +
+        '<button type="button" data-chat="' + esc(row.id) + '" style="' + btn + '">Conversation</button>' +
+        '<button type="button" data-pause="' + esc(row.id) + '" style="' + btn + '">Pause</button>' +
+        '</div><div id="carrier-extra-' + esc(row.id) + '"></div></div>';
     }).join('');
+  }
+  let carriersById = {};
+  function rulesForm(row) {
+    const field = (name, label, value, extra) =>
+      '<label style="font-size:12px;color:#475569;">' + label + '<input name="' + name + '" value="' + esc(value == null ? '' : value) + '" ' + (extra || '') +
+      ' style="display:block;width:100%;margin-top:4px;padding:6px;border:1px solid #cbd5e1;border-radius:8px;"></label>';
+    return '<form data-rulesform="' + esc(row.id) + '" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;align-items:end;margin-top:8px;background:#f8fafc;padding:10px;border-radius:10px;">' +
+      field('mc_number', 'MC number', row.mc_number) + field('dot_number', 'USDOT', row.dot_number) +
+      field('equipment', 'Equipment', row.equipment) + field('empty_zip', 'Empty ZIP', row.empty_zip) +
+      field('prefer_destination', 'Wants to go', row.prefer_destination) +
+      field('min_rpm', 'Min $/mile', row.min_rpm, 'type="number" step="0.05" min="0"') +
+      field('max_deadhead', 'Max empty miles', row.max_deadhead, 'type="number" min="10" max="600"') +
+      field('home_state', 'Home state', row.home_state, 'maxlength="2"') +
+      field('avoid_states', 'Never go to', row.avoid_states) +
+      '<button type="submit" style="background:#0b1f3a;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;">Save rules</button></form>';
+  }
+  async function showConversation(id) {
+    const box = document.getElementById('carrier-extra-' + id);
+    const data = await api('/api/dispatch-desk/carriers/' + id + '/messages');
+    box.innerHTML = '<div style="margin-top:8px;background:#f8fafc;padding:10px;border-radius:10px;max-height:320px;overflow:auto;">' +
+      (data.messages.length ? data.messages.map((m) =>
+        '<div style="margin:6px 0;text-align:' + (m.direction === 'inbound' ? 'left' : 'right') + ';">' +
+        '<div style="display:inline-block;max-width:85%;white-space:pre-wrap;text-align:left;padding:8px 10px;border-radius:10px;background:' + (m.direction === 'inbound' ? '#fff;border:1px solid #e2e8f0' : '#dbeafe') + ';">' + esc(m.body) + '</div>' +
+        '<div style="font-size:11px;color:#94a3b8;">' + esc(new Date(m.created_at).toLocaleString()) + (m.intent ? ' · ' + esc(m.intent) : '') + '</div></div>'
+      ).join('') : 'No texts with the AI dispatcher yet.') + '</div>';
+  }
+  const OFFER_LABELS = { requested: 'driver picked it — waiting on broker', offered: 'sent to driver', booked: 'booked', declined: 'fell through', expired: 'expired' };
+  async function loadOffers() {
+    const box = document.getElementById('offers-list');
+    const data = await api('/api/dispatch-desk/offers');
+    const rows = data.offers.filter((o) => o.status !== 'expired');
+    if (!rows.length) { box.textContent = 'No load requests yet. They appear when a driver replies to the loads the AI sent.'; return; }
+    box.innerHTML = rows.map((o) => {
+      const approx = o.miles_estimated ? '~' : '';
+      const actions = o.status === 'requested' || o.status === 'offered'
+        ? '<div style="margin-top:6px;display:flex;gap:8px;">' +
+          '<button type="button" data-booked="' + esc(o.id) + '" style="border:0;background:#16a34a;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Booked (rate con received)</button>' +
+          '<button type="button" data-release="' + esc(o.id) + '" style="border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:8px;padding:6px 10px;cursor:pointer;">Release</button></div>'
+        : '';
+      return '<div style="padding:10px 0;border-top:1px solid #e2e8f0;">' +
+        '<strong>' + esc(o.load_number || 'load removed') + '</strong> · ' + esc(OFFER_LABELS[o.status] || o.status) + ' · ' + esc(o.company_name) + (o.mc_number ? ' (MC ' + esc(o.mc_number) + ')' : '') +
+        '<br><span style="color:#64748b;">' + esc((o.pickup_location || '') + ' → ' + (o.delivery_location || '')) + ' · $' + esc(Math.round(o.rate || 0).toLocaleString()) +
+        ' · ' + approx + esc(o.loaded_miles) + ' mi · ' + approx + '$' + esc(Number(o.all_in_rpm || 0).toFixed(2)) + '/mi all-in · ' + approx + esc(o.deadhead_miles) + ' empty' +
+        '<br>Broker: ' + esc([o.broker_name, o.broker_contact].filter(Boolean).join(' · ') || 'not listed') +
+        (o.note ? '<br>' + esc(o.note) : '') + (o.broker_reply ? '<br>Broker reply: ' + esc(o.broker_reply.slice(0, 200)) : '') + '</span>' +
+        actions + '</div>';
+    }).join('');
+  }
+  function matchRows(list) {
+    return list.map((m) => {
+      const approx = m.estimated ? '~' : '';
+      const bench = m.lane_benchmark ? ' · board average on this lane $' + Number(m.lane_benchmark.rpm).toFixed(2) + '/mi (' + m.lane_benchmark.loads + ' loads, 30 days)' : '';
+      return '<div style="padding:6px 0;border-top:1px solid #f1f5f9;"><strong>' + esc(m.load_number) + '</strong> ' + esc(m.lane) +
+        ' · $' + esc(Math.round(m.rate).toLocaleString()) + ' · ' + approx + esc(m.loaded_miles) + ' mi · ' + approx + esc(m.deadhead_miles) + ' empty · ' +
+        approx + '$' + esc(m.all_in_rpm.toFixed(2)) + '/mi all-in ($' + esc(m.loaded_rpm.toFixed(2)) + ' loaded)' + esc(bench) + '</div>';
+    }).join('');
+  }
+  async function runPreview() {
+    const box = document.getElementById('try-result');
+    const text = document.getElementById('try-text').value.trim();
+    if (!text) { box.textContent = 'Type what a driver might text.'; return; }
+    box.textContent = 'Thinking…';
+    try {
+      const data = await api('/api/dispatch-desk/preview', { method: 'POST', body: JSON.stringify({ text, carrier_id: document.getElementById('try-carrier').value || undefined }) });
+      const p = data.parsed;
+      const filtered = Object.entries(data.filtered || {}).filter(([, n]) => n).map(([k, n]) => k.replace(/_/g, ' ') + ': ' + n).join(' · ');
+      box.innerHTML = '<div><strong>AI read it as:</strong> ' + esc(p.intent) + (p.via === 'ai' ? ' (model)' : ' (rules)') +
+        ' · from ' + esc(p.origin || '—') + ' · to ' + esc(p.destination || 'any') + ' · ' + esc(p.equipment || 'any equipment') + (p.choice ? ' · picked #' + esc(p.choice) : '') + '</div>' +
+        '<div style="margin-top:6px;"><strong>Would offer:</strong> ' + (data.matches.length ? '' : 'nothing that fits.') + '</div>' + matchRows(data.matches) +
+        (data.others.length ? '<div style="margin-top:6px;"><strong>Other directions:</strong></div>' + matchRows(data.others) : '') +
+        '<div style="margin-top:6px;color:#64748b;">Checked ' + esc(data.considered) + ' open loads.' + (filtered ? ' Skipped — ' + esc(filtered) : '') + '</div>';
+    } catch (err) { box.textContent = err.message; }
   }
   const STATUS_LABELS = {
     queued: 'waiting for first email',
@@ -200,6 +331,20 @@
     if (!(await guard())) return;
     try { await loadSources(); await loadCarriers(); }
     catch (err) { document.getElementById('source-msg').textContent = err.message; }
+    loadOffers().catch((err) => { document.getElementById('offers-msg').textContent = err.message; });
+    document.getElementById('offers-refresh').addEventListener('click', () => loadOffers().catch((err) => { document.getElementById('offers-msg').textContent = err.message; }));
+    document.getElementById('try-run').addEventListener('click', runPreview);
+    document.getElementById('try-text').addEventListener('keydown', (event) => { if (event.key === 'Enter') runPreview(); });
+    document.body.addEventListener('submit', async (event) => {
+      const id = event.target.getAttribute && event.target.getAttribute('data-rulesform');
+      if (!id) return;
+      event.preventDefault();
+      try {
+        await api('/api/dispatch-desk/carriers/' + id, { method: 'PATCH', body: JSON.stringify(Object.fromEntries(new FormData(event.target).entries())) });
+        document.getElementById('carrier-msg').textContent = 'Rules saved.';
+        await loadCarriers();
+      } catch (err) { document.getElementById('carrier-msg').textContent = err.message; }
+    });
     loadOutreach().catch((err) => { document.getElementById('outreach-msg').textContent = err.message; });
 
     document.getElementById('outreach-enabled').addEventListener('change', async (event) => {
@@ -287,6 +432,45 @@
       const start = event.target.getAttribute && event.target.getAttribute('data-start');
       const pause = event.target.getAttribute && event.target.getAttribute('data-pause');
       const consent = event.target.getAttribute && event.target.getAttribute('data-consent');
+      const attr = (name) => event.target.getAttribute && event.target.getAttribute(name);
+      const sendLoads = attr('data-sendloads');
+      const rules = attr('data-rules');
+      const chat = attr('data-chat');
+      const booked = attr('data-booked');
+      const release = attr('data-release');
+      if (booked || release) {
+        const msg = document.getElementById('offers-msg');
+        try {
+          if (booked) {
+            if (!confirm('Only press Booked after the broker sent the rate confirmation. Text the driver BOOKED now?')) return;
+            const data = await api('/api/dispatch-desk/offers/' + booked + '/booked', { method: 'POST', body: '{}' });
+            msg.textContent = 'Booked. Driver text: ' + data.sms + '.';
+          } else {
+            if (!confirm('Release this load and send the driver the next best loads?')) return;
+            const data = await api('/api/dispatch-desk/offers/' + release + '/release', { method: 'POST', body: '{}' });
+            msg.textContent = data.sms === 'held_for_hours' ? 'Released. The driver is outside texting hours or has no consent, so tell them yourself.' : 'Released and the driver got the next loads.';
+          }
+          await loadOffers();
+        } catch (err) { msg.textContent = err.message; }
+        return;
+      }
+      if (sendLoads || rules || chat) {
+        const msg = document.getElementById('carrier-msg');
+        try {
+          if (sendLoads) {
+            const data = await api('/api/dispatch-desk/carriers/' + sendLoads + '/send-loads', { method: 'POST', body: '{}' });
+            msg.textContent = data.sent ? 'Sent ' + data.offers + ' loads to the driver.' : (data.reason || 'Nothing sent.');
+            await loadOffers();
+          } else if (rules) {
+            const box = document.getElementById('carrier-extra-' + rules);
+            box.innerHTML = box.innerHTML ? '' : rulesForm(carriersById[rules]);
+          } else if (chat) {
+            const box = document.getElementById('carrier-extra-' + chat);
+            if (box.innerHTML) box.innerHTML = ''; else await showConversation(chat);
+          }
+        } catch (err) { msg.textContent = err.message; }
+        return;
+      }
       try {
         if (consent) {
           await api('/api/dispatch-desk/carriers/' + consent + '/consent', { method: 'POST', body: '{}' });

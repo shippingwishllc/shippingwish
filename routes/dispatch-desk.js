@@ -5,6 +5,7 @@ const { sendTwilioSms } = require('./voip');
 const { logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
 const { assertPublicHttps, ensureBoardSchema, syncSource, syncDueSources } = require('../utils/loadboard-sync');
 const { isWithinTcpaHours } = require('../utils/us-timezones');
+const brain = require('../utils/dispatch-brain');
 
 const router = express.Router();
 const staff = [requireAuth, requireRole('admin', 'super_admin')];
@@ -109,9 +110,11 @@ router.post('/carriers', ...staff, async (req, res) => {
     const phone = String(req.body.phone || '').trim();
     if (!company || !phone) return res.status(400).json({ error: 'Company and phone are required.' });
     const consent = [true, 'true', 'on', '1', 'yes'].includes(req.body.sms_consent);
+    const prefs = carrierPrefs(req.body);
     const { rows } = await pool.query(
-      `INSERT INTO ai_dispatch_carriers (company_name, contact_name, phone, email, equipment, empty_zip, prefer_destination, sms_consent, sms_consent_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8, CASE WHEN $8 THEN now() ELSE NULL END) RETURNING *`,
+      `INSERT INTO ai_dispatch_carriers (company_name, contact_name, phone, email, equipment, empty_zip, prefer_destination, sms_consent, sms_consent_at,
+         mc_number, dot_number, min_rpm, max_deadhead, home_state, avoid_states)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8, CASE WHEN $8 THEN now() ELSE NULL END, $9,$10,$11, COALESCE($12, 150), $13,$14) RETURNING *`,
       [
         company,
         String(req.body.contact_name || '').trim() || null,
@@ -120,12 +123,128 @@ router.post('/carriers', ...staff, async (req, res) => {
         String(req.body.equipment || '').trim() || null,
         String(req.body.empty_zip || '').trim() || null,
         String(req.body.prefer_destination || '').trim() || null,
-        consent
+        consent,
+        prefs.mc_number, prefs.dot_number, prefs.min_rpm, prefs.max_deadhead, prefs.home_state, prefs.avoid_states
       ]
     );
     res.json({ ok: true, carrier: rows[0] });
   } catch (err) {
     res.status(500).json({ error: 'Could not add this carrier.' });
+  }
+});
+
+function carrierPrefs(body) {
+  const digits = (v) => String(v || '').replace(/\D/g, '').slice(0, 10) || null;
+  const states = (v) => String(v || '').toUpperCase().split(/[^A-Z]+/).filter((s) => s.length === 2).slice(0, 20).join(',') || null;
+  const minRpm = Number(body.min_rpm);
+  const maxDeadhead = Number(body.max_deadhead);
+  return {
+    mc_number: digits(body.mc_number),
+    dot_number: digits(body.dot_number),
+    min_rpm: Number.isFinite(minRpm) && minRpm > 0 && minRpm < 20 ? Math.round(minRpm * 100) / 100 : null,
+    max_deadhead: Number.isFinite(maxDeadhead) && maxDeadhead >= 10 && maxDeadhead <= 600 ? Math.round(maxDeadhead) : null,
+    home_state: states(body.home_state) ? states(body.home_state).slice(0, 2) : null,
+    avoid_states: states(body.avoid_states)
+  };
+}
+
+router.patch('/carriers/:id', ...staff, async (req, res) => {
+  try {
+    await ensureBoardSchema();
+    const prefs = carrierPrefs(req.body);
+    const text = (key) => (key in req.body ? String(req.body[key] || '').trim() || null : undefined);
+    const fields = {
+      contact_name: text('contact_name'),
+      email: text('email'),
+      equipment: text('equipment'),
+      empty_zip: text('empty_zip'),
+      prefer_destination: text('prefer_destination'),
+      mc_number: 'mc_number' in req.body ? prefs.mc_number : undefined,
+      dot_number: 'dot_number' in req.body ? prefs.dot_number : undefined,
+      min_rpm: 'min_rpm' in req.body ? prefs.min_rpm : undefined,
+      max_deadhead: 'max_deadhead' in req.body ? (prefs.max_deadhead || 150) : undefined,
+      home_state: 'home_state' in req.body ? prefs.home_state : undefined,
+      avoid_states: 'avoid_states' in req.body ? prefs.avoid_states : undefined
+    };
+    const keys = Object.keys(fields).filter((k) => fields[k] !== undefined);
+    if (!keys.length) return res.status(400).json({ error: 'Nothing to update.' });
+    const sets = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
+    const { rows } = await pool.query(
+      `UPDATE ai_dispatch_carriers SET ${sets} WHERE id = $1 RETURNING *`,
+      [req.params.id, ...keys.map((k) => fields[k])]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Carrier not found.' });
+    res.json({ ok: true, carrier: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not update this carrier.' });
+  }
+});
+
+router.get('/carriers/:id/messages', ...staff, async (req, res) => {
+  try {
+    res.json({ ok: true, messages: await brain.carrierMessages(req.params.id) });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load the conversation.' });
+  }
+});
+
+router.post('/preview', ...staff, async (req, res) => {
+  try {
+    await ensureBoardSchema();
+    const text = String(req.body.text || '').trim().slice(0, 600);
+    if (!text) return res.status(400).json({ error: 'Type a carrier message to test.' });
+    let carrier = { id: 0, company_name: 'Test carrier', equipment: 'Dry Van', max_deadhead: 150 };
+    if (req.body.carrier_id) {
+      const { rows } = await pool.query('SELECT * FROM ai_dispatch_carriers WHERE id = $1', [req.body.carrier_id]);
+      if (!rows[0]) return res.status(404).json({ error: 'Carrier not found.' });
+      carrier = rows[0];
+    }
+    res.json({ ok: true, ...(await brain.preview(carrier, text)) });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not run the preview.' });
+  }
+});
+
+router.post('/carriers/:id/send-loads', ...staff, async (req, res) => {
+  try {
+    await ensureBoardSchema();
+    const { rows } = await pool.query('SELECT * FROM ai_dispatch_carriers WHERE id = $1', [req.params.id]);
+    const carrier = rows[0];
+    if (!carrier) return res.status(404).json({ error: 'Carrier not found.' });
+    if (!carrier.sms_consent) return res.status(422).json({ error: 'This carrier has not agreed to texts.' });
+    if (!isWithinTcpaHours(carrier.phone).allowed) return res.status(422).json({ error: "Outside the carrier's local 9am–5pm texting hours." });
+    const result = await brain.sendLoadsNow(carrier);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not send loads to this carrier.' });
+  }
+});
+
+router.get('/offers', ...staff, async (req, res) => {
+  try {
+    res.json({ ok: true, offers: await brain.listOffers() });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load dispatch offers.' });
+  }
+});
+
+router.post('/offers/:id/booked', ...staff, async (req, res) => {
+  try {
+    const result = await brain.markBooked(req.params.id, String(req.body.note || '').slice(0, 200));
+    if (!result) return res.status(404).json({ error: 'Offer not found.' });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Could not mark this booked.' });
+  }
+});
+
+router.post('/offers/:id/release', ...staff, async (req, res) => {
+  try {
+    const result = await brain.releaseOffer(req.params.id, String(req.body.reason || 'Released by staff').slice(0, 200));
+    if (!result) return res.status(404).json({ error: 'Offer not found.' });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Could not release this offer.' });
   }
 });
 
@@ -187,6 +306,7 @@ async function sendDueMorningTexts() {
   const { rows } = await pool.query(
     `SELECT * FROM ai_dispatch_carriers
      WHERE status = 'active' AND sms_consent = TRUE
+       AND (off_until IS NULL OR off_until < now())
        AND (last_sms_at IS NULL OR last_sms_at < now() - interval '20 hours')
      ORDER BY id`
   );
