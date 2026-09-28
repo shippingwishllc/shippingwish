@@ -85,10 +85,12 @@ async function dispatchBooking(bookingId, actorId = null) {
 
     for (const partner of created) {
       if (!partner.contact_email) continue;
-      require('../utils/mailer').sendEmail({
+      require('../utils/mailer').sendBrandMail('nyclimowish', 'bookings', {
         to: partner.contact_email,
         subject: `New NYC Limo Wish operator offer`,
-        html: `<p>A new ride request matches your approved base profile.</p><p>Open the NYC Limo Wish partner portal to review the trip and accept or decline it. The offer expires in 10 minutes.</p><p>Operator offer #${partner.id}</p>`
+        html: `<p>A new ride request matches your approved base profile.</p><p>Open the NYC Limo Wish partner portal to review the trip and accept or decline it. The offer expires in 10 minutes.</p><p>Operator offer #${partner.id}</p>`,
+        transactional: true,
+        emailType: 'limo_partner_offer'
       }).catch((err) => console.warn('[LIMO PARTNER OFFER EMAIL]:', err.message));
     }
     return { ok: true, booking_number: booking.booking_number, offer_round: offerRound, offers: created.map(({ contact_email, ...offer }) => offer) };
@@ -419,10 +421,12 @@ router.post('/partner/offers/:id/respond', ...partnerGate, async (req, res) => {
 
     const booking = update.rows[0];
     if (booking.passenger_email) {
-      await require('../utils/mailer').sendEmail({
+      await require('../utils/mailer').sendBrandMail('nyclimowish', 'bookings', {
         to: booking.passenger_email,
         subject: `A licensed operator accepted — ${booking.booking_number}`,
-        html: `<p>Your ride request was accepted by a licensed operator base.</p><p>${booking.pickup_address}<br>${booking.pickup_date} ${booking.pickup_time}</p><p>Continue to secure payment on the booking page to confirm your trip.</p>`
+        html: `<p>Your ride request was accepted by a licensed operator base.</p><p>${booking.pickup_address}<br>${booking.pickup_date} ${booking.pickup_time}</p><p>Continue to secure payment on the booking page to confirm your trip.</p>`,
+        transactional: true,
+        emailType: 'limo_operator_accepted'
       }).catch((err) => console.warn('[LIMO OPERATOR ACCEPTANCE EMAIL]:', err.message));
     }
     res.json({ ok: true, status: 'operator_accepted', booking_number: booking.booking_number });
@@ -493,10 +497,12 @@ router.post('/partner/bookings/:id/status', ...partnerGate, async (req, res) => 
     }
     await client.query('COMMIT');
     if (booking.passenger_email) {
-      await require('../utils/mailer').sendEmail({
+      await require('../utils/mailer').sendBrandMail('nyclimowish', 'bookings', {
         to: booking.passenger_email,
         subject: 'Ride update — ' + booking.booking_number,
-        html: '<p>Your ride status is now <strong>' + status.replaceAll('_', ' ') + '</strong>.</p><p>Reference: ' + booking.booking_number + '</p><p><a href="https://www.nyclimowish.com/track?ref=' + encodeURIComponent(booking.booking_number) + '">View current ride status</a></p>'
+        html: '<p>Your ride status is now <strong>' + status.replaceAll('_', ' ') + '</strong>.</p><p>Reference: ' + booking.booking_number + '</p><p><a href="https://www.nyclimowish.com/track?ref=' + encodeURIComponent(booking.booking_number) + '">View current ride status</a></p>',
+        transactional: true,
+        emailType: 'limo_ride_status'
       }).catch((err) => console.warn('[LIMO STATUS EMAIL]:', err.message));
     }
     res.json({ ok: true, status, commission });

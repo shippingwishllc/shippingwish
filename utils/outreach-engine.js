@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const pool = require('../db');
-const { sendBrandedEmail, getLoadsNexusSender } = require('./mailer');
+const { sendBrandedEmail, getLoadsNexusSender, getBrandSender, hasResendKey } = require('./mailer');
 const { sanitizeEmail } = require('./email-valid');
 const { resolveTimezone } = require('./us-timezones');
 const { notifyAdmins } = require('./notifications');
@@ -267,8 +267,8 @@ async function markSignedUp() {
 }
 
 function senderFor(brand) {
-  if (brand === 'loadsnexus') return process.env.OUTREACH_FROM_LOADSNEXUS || getLoadsNexusSender('support');
-  return process.env.OUTREACH_FROM_SHIPPINGWISH || process.env.MAIL_FROM || 'Shipping Wish LLC <info@shippingwish.com>';
+  if (brand === 'loadsnexus') return process.env.OUTREACH_FROM_LOADSNEXUS || getLoadsNexusSender('deals');
+  return process.env.OUTREACH_FROM_SHIPPINGWISH || process.env.MAIL_FROM || getBrandSender('shippingwish', 'info');
 }
 
 async function sendStep(contact) {
@@ -322,7 +322,7 @@ async function tick({ force = false } = {}) {
   await ensureOutreachSchema();
   let settings = await getSettings();
   if (!settings.enabled) return { ok: true, idle: settings.paused_reason || 'Outreach is off.' };
-  if (!process.env.RESEND_API_KEY && !process.env.RESEND_LOADSNEXUS_API_KEY) {
+  if (!hasResendKey()) {
     return { ok: false, idle: 'Email is not configured (RESEND_API_KEY).' };
   }
   if (!force && settings.last_tick_at && Date.now() - new Date(settings.last_tick_at).getTime() < TICK_GAP_MS) {
@@ -573,7 +573,7 @@ async function status() {
       last_tick_at: settings.last_tick_at,
       last_tick_note: settings.last_tick_note
     },
-    email_ready: Boolean(process.env.RESEND_API_KEY || process.env.RESEND_LOADSNEXUS_API_KEY),
+    email_ready: hasResendKey(),
     ai_replies_ready: Boolean(process.env.OPENAI_API_KEY),
     sent_today: today,
     health: h7,
