@@ -28,15 +28,15 @@
           <li>You paste a licensed load-board API here. The desk calls that https JSON URL with your key. It does not open websites or copy another board’s pages.</li>
           <li>When a load is covered, expired, or missing from the latest API reply, it leaves the public board.</li>
         </ol>
-        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">The board stays empty until a broker posts or an API returns real loads. Start sends a good-morning text asking for the empty ZIP. A broker is only contacted after the driver picks that exact load.</p>
+        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">The board stays empty until a broker posts or an API returns real loads. Start sends a good-morning text asking for the empty ZIP. A broker is only contacted after the driver picks that exact load. Home-time days are a skip rule, not forced dispatch.</p>
       </section>
 
       <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
         <h2 style="margin:0 0 8px;font-size:15px;">What the AI dispatcher does with a driver's text</h2>
         <ol style="margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.55;">
-          <li>Reads texts like “75201 to Atlanta”, “empty in Dallas TX want GA or FL reefer”, “MORE”, or “off today”.</li>
-          <li>Finds open loads within the carrier's empty-mile limit, with matching equipment and destination, above their minimum $/mile. It ranks them by all-in $/mile, counting empty miles too.</li>
-          <li>Texts the best three. The driver replies 1, 2 or 3.</li>
+          <li>Reads texts like “75201 to Atlanta”, “empty in Dallas TX want GA or FL reefer”, “MORE”, “off today”, “EMPTY SOON”, or “HOME FRI SAT”.</li>
+          <li>Finds open loads within the carrier's empty-mile limit, with matching equipment and destination, above their minimum $/mile. It ranks them by all-in $/mile, counting empty miles too. Home days (for example FRI,SAT) skip a pickup on those days unless the load is heading to the home state, and skip runs that would miss the next home evening.</li>
+          <li>Texts the best three. The driver replies 1, 2 or 3. About two to three hours before a booked drop, it texts the next three from that empty ZIP if the carrier agreed to texts.</li>
           <li>Emails the broker a booking request with the carrier's MC or DOT and tells the driver not to roll yet.</li>
           <li>If the broker replies “covered”, the driver gets the next best loads. If the broker confirms, you check the rate confirmation and press Booked. Then the driver gets a BOOKED text.</li>
         </ol>
@@ -120,6 +120,7 @@
           <label style="font-size:12px;color:#475569;">Minimum $/mile all-in<input name="min_rpm" type="number" step="0.05" min="0" placeholder="2.00" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
           <label style="font-size:12px;color:#475569;">Max empty miles<input name="max_deadhead" type="number" min="10" max="600" placeholder="150" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
           <label style="font-size:12px;color:#475569;">Home state<input name="home_state" maxlength="2" placeholder="TX" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase;"></label>
+          <label style="font-size:12px;color:#475569;">Home days<input name="home_days" placeholder="FRI, SAT" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase;"></label>
           <label style="font-size:12px;color:#475569;">Never go to<input name="avoid_states" placeholder="NY, NJ" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase;"></label>
           <label style="font-size:12px;color:#475569;display:flex;gap:6px;align-items:flex-start;grid-column:1/-1;"><input type="checkbox" name="sms_consent" value="true" style="margin-top:2px;">The carrier agreed to receive texts from Shipping Wish. Start will not text anyone without this.</label>
           <button type="submit" style="background:#0b1f3a;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;">Add carrier</button>
@@ -193,6 +194,7 @@
         row.min_rpm ? 'min $' + Number(row.min_rpm).toFixed(2) + '/mi' : '',
         'max ' + (row.max_deadhead || 150) + ' empty mi',
         row.home_state ? 'home ' + row.home_state : '',
+        row.home_days ? 'home days ' + row.home_days : '',
         row.avoid_states ? 'never ' + row.avoid_states : '',
         row.last_location ? 'last seen ' + row.last_location : '',
         row.prefer_destination ? 'wants ' + row.prefer_destination : '',
@@ -207,6 +209,7 @@
         (row.sms_consent ? '' : '<button type="button" data-consent="' + esc(row.id) + '" style="' + btn + '">Carrier agreed to texts</button>') +
         '<button type="button" data-start="' + esc(row.id) + '" style="border:0;background:#2563eb;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Start</button>' +
         '<button type="button" data-sendloads="' + esc(row.id) + '" style="' + btn + '">Send loads now</button>' +
+        '<button type="button" data-emptysoon="' + esc(row.id) + '" style="' + btn + '">Empty soon now</button>' +
         '<button type="button" data-rules="' + esc(row.id) + '" style="' + btn + '">Rules</button>' +
         '<button type="button" data-chat="' + esc(row.id) + '" style="' + btn + '">Conversation</button>' +
         '<button type="button" data-pause="' + esc(row.id) + '" style="' + btn + '">Pause</button>' +
@@ -225,6 +228,7 @@
       field('min_rpm', 'Min $/mile', row.min_rpm, 'type="number" step="0.05" min="0"') +
       field('max_deadhead', 'Max empty miles', row.max_deadhead, 'type="number" min="10" max="600"') +
       field('home_state', 'Home state', row.home_state, 'maxlength="2"') +
+      field('home_days', 'Home days', row.home_days, 'placeholder="FRI, SAT"') +
       field('avoid_states', 'Never go to', row.avoid_states) +
       '<button type="submit" style="background:#0b1f3a;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;">Save rules</button></form>';
   }
@@ -434,6 +438,7 @@
       const consent = event.target.getAttribute && event.target.getAttribute('data-consent');
       const attr = (name) => event.target.getAttribute && event.target.getAttribute(name);
       const sendLoads = attr('data-sendloads');
+      const emptySoon = attr('data-emptysoon');
       const rules = attr('data-rules');
       const chat = attr('data-chat');
       const booked = attr('data-booked');
@@ -454,12 +459,16 @@
         } catch (err) { msg.textContent = err.message; }
         return;
       }
-      if (sendLoads || rules || chat) {
+      if (sendLoads || emptySoon || rules || chat) {
         const msg = document.getElementById('carrier-msg');
         try {
           if (sendLoads) {
             const data = await api('/api/dispatch-desk/carriers/' + sendLoads + '/send-loads', { method: 'POST', body: '{}' });
             msg.textContent = data.sent ? 'Sent ' + data.offers + ' loads to the driver.' : (data.reason || 'Nothing sent.');
+            await loadOffers();
+          } else if (emptySoon) {
+            const data = await api('/api/dispatch-desk/carriers/' + emptySoon + '/empty-soon', { method: 'POST', body: '{}' });
+            msg.textContent = data.sent ? 'Empty-soon loads sent (' + data.offers + ').' : (data.reason || 'Nothing sent.');
             await loadOffers();
           } else if (rules) {
             const box = document.getElementById('carrier-extra-' + rules);

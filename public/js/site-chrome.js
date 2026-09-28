@@ -1,5 +1,11 @@
 (function () {
   if (location.hostname.includes('loadsnexus')) return;
+  if (!document.querySelector('script[src*="site-tracking.js"]')) {
+    const tracking = document.createElement('script');
+    tracking.src = '/js/site-tracking.js?v=2';
+    tracking.async = true;
+    document.head.appendChild(tracking);
+  }
   function slug() {
     const raw = (location.pathname.split('/').filter(Boolean).pop() || '').toLowerCase();
     if (!raw || raw === 'index' || raw === 'index.html') return '';

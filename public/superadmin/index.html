@@ -1107,6 +1107,24 @@
               <input type="url" class="form-input" id="setYoutubeUrl">
             </div>
           </div>
+          <h4 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#fbbf24;">ShippingWish.com tracking</h4>
+          <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;">
+            Google Tag Manager and Google Analytics are on the public Shipping Wish site. If this same G- ID is later added as a tag inside GTM, keep it in only one place. Facebook Pixel stays empty until Events Manager gives you a number.
+          </p>
+          <div class="form-grid-2" style="margin-bottom:16px;">
+            <div class="form-group">
+              <label class="form-label">Google Tag Manager ID</label>
+              <input type="text" class="form-input" id="setGtmContainerId" placeholder="GTM-55MF65H2" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Google Analytics Measurement ID</label>
+              <input type="text" class="form-input" id="setGaMeasurementId" placeholder="G-LW66Y70PFE" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Facebook Pixel ID (optional)</label>
+              <input type="text" class="form-input" id="setFacebookPixelId" inputmode="numeric" placeholder="From Events Manager" autocomplete="off">
+            </div>
+          </div>
           <button type="submit" class="btn-submit" id="saveSiteSettingsBtn">
             <span>💾 Save Website CMS Settings</span>
           </button>
@@ -2111,6 +2129,10 @@
       setVal('setTwitterUrl', s.twitter_url || 'https://x.com/shippingwish');
       setVal('setInstagramUrl', s.instagram_url || 'https://instagram.com/shippingwish');
       setVal('setYoutubeUrl', s.youtube_url || 'https://youtube.com/@shippingwish');
+      setVal('setGtmContainerId', s.gtm_container_id || 'GTM-55MF65H2');
+      setVal('setGaMeasurementId', s.ga_measurement_id || 'G-LW66Y70PFE');
+      const pixel = document.getElementById('setFacebookPixelId');
+      if (pixel) pixel.value = s.facebook_pixel_id || '';
     }
 
     window.saveTmsSiteSettings = async function(e) {
@@ -2128,7 +2150,10 @@
         facebook_url: document.getElementById('setFacebookUrl').value.trim(),
         twitter_url: document.getElementById('setTwitterUrl').value.trim(),
         instagram_url: document.getElementById('setInstagramUrl').value.trim(),
-        youtube_url: document.getElementById('setYoutubeUrl').value.trim()
+        youtube_url: document.getElementById('setYoutubeUrl').value.trim(),
+        gtm_container_id: document.getElementById('setGtmContainerId').value.trim(),
+        ga_measurement_id: document.getElementById('setGaMeasurementId').value.trim(),
+        facebook_pixel_id: document.getElementById('setFacebookPixelId').value.trim()
       };
 
       try {

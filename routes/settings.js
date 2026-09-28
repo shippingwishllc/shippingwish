@@ -15,8 +15,26 @@ const DEFAULT_SETTINGS = {
   facebook_url: 'https://facebook.com/shippingwish',
   twitter_url: 'https://x.com/shippingwish',
   instagram_url: 'https://instagram.com/shippingwish',
-  youtube_url: 'https://youtube.com/@shippingwish'
+  youtube_url: 'https://youtube.com/@shippingwish',
+  gtm_container_id: 'GTM-55MF65H2',
+  ga_measurement_id: 'G-LW66Y70PFE',
+  facebook_pixel_id: ''
 };
+
+function gtmContainerId(value) {
+  const id = String(value || '').trim().toUpperCase();
+  return /^GTM-[A-Z0-9]+$/.test(id) ? id : '';
+}
+
+function gaMeasurementId(value) {
+  const id = String(value || '').trim().toUpperCase();
+  return /^G-[A-Z0-9]{4,20}$/.test(id) ? id : '';
+}
+
+function facebookPixelId(value) {
+  const id = String(value || '').replace(/\s/g, '');
+  return /^\d{6,20}$/.test(id) ? id : '';
+}
 
 // Ensure settings table exists and load
 let memorySettings = { ...DEFAULT_SETTINGS };
@@ -29,6 +47,13 @@ async function loadSettingsFromDB() {
         memorySettings[row.key] = row.value;
       });
     }
+    if (!gtmContainerId(memorySettings.gtm_container_id)) {
+      memorySettings.gtm_container_id = DEFAULT_SETTINGS.gtm_container_id;
+    }
+    if (!gaMeasurementId(memorySettings.ga_measurement_id)) {
+      memorySettings.ga_measurement_id = DEFAULT_SETTINGS.ga_measurement_id;
+    }
+    if (memorySettings.facebook_pixel_id == null) memorySettings.facebook_pixel_id = '';
   } catch (err) {
     // If table doesn't exist yet, fallback to memorySettings
   }
@@ -60,15 +85,35 @@ router.put('/', requireAuth, requireRole('admin', 'super_admin'), async (req, re
     `);
 
     for (const [key, val] of Object.entries(updates)) {
-      if (typeof val === 'string') {
-        memorySettings[key] = val;
-        await pool.query(
-          `INSERT INTO site_settings (key, value, updated_at)
-           VALUES ($1, $2, now())
-           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
-          [key, val]
-        );
+      if (typeof val !== 'string') continue;
+      let stored = val;
+      if (key === 'gtm_container_id') {
+        stored = gtmContainerId(val);
+        if (val.trim() && !stored) {
+          return res.status(400).json({ error: 'Google Tag Manager ID must look like GTM-XXXXXXX.' });
+        }
+        if (!stored) stored = DEFAULT_SETTINGS.gtm_container_id;
       }
+      if (key === 'ga_measurement_id') {
+        stored = gaMeasurementId(val);
+        if (val.trim() && !stored) {
+          return res.status(400).json({ error: 'Google Analytics Measurement ID must look like G-XXXXXXXX.' });
+        }
+        if (!stored) stored = DEFAULT_SETTINGS.ga_measurement_id;
+      }
+      if (key === 'facebook_pixel_id') {
+        stored = facebookPixelId(val);
+        if (val.trim() && !stored) {
+          return res.status(400).json({ error: 'Facebook Pixel ID must be the number from Events Manager.' });
+        }
+      }
+      memorySettings[key] = stored;
+      await pool.query(
+        `INSERT INTO site_settings (key, value, updated_at)
+         VALUES ($1, $2, now())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+        [key, stored]
+      );
     }
 
     res.json({ success: true, message: 'Website settings updated successfully.', settings: memorySettings });

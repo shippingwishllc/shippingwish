@@ -697,3 +697,60 @@ body.limo-menu-open { overflow: hidden; }
   .limo-join-photo { min-height: 220px; }
   .limo-join-grid, .limo-join-phone { grid-template-columns: 1fr; }
 }
+
+/* Private client lounge */
+.pax-page { min-height: 100vh; background:
+  radial-gradient(ellipse 80% 40% at 10% -10%, rgba(201,162,39,0.18), transparent 55%),
+  var(--limo-black); }
+.pax-top { max-width: 1040px; margin: 0 auto; padding: 22px 24px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.pax-account { display: flex; align-items: center; gap: 12px; }
+.pax-name { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; }
+.pax-signout { background: none; border: 0; color: var(--limo-gray); font: inherit; font-size: 0.75rem; cursor: pointer; letter-spacing: 0.08em; text-transform: uppercase; }
+.pax-signout:hover { color: var(--limo-gold); }
+.pax-shell { max-width: 1040px; margin: 0 auto; padding: 28px 24px 120px; }
+.pax-book-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 36px; align-items: start; }
+.pax-intro { grid-column: 1; grid-row: 1; }
+.pax-aside { grid-column: 1; grid-row: 2; }
+.pax-ticket { grid-column: 2; grid-row: 1 / span 2; }
+.pax-kicker { color: var(--limo-gold); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 8px; }
+.pax-hello { font-family: var(--font-serif); font-weight: 600; font-size: clamp(2.6rem, 5vw, 4.2rem); line-height: 0.95; margin-bottom: 12px; }
+.pax-tag { font-family: var(--font-serif); font-style: italic; color: var(--limo-gold-light); font-size: 1.25rem; margin-bottom: 22px; }
+.pax-promises { display: grid; gap: 10px; margin-top: 22px; }
+.pax-promises div { display: flex; gap: 10px; align-items: baseline; color: var(--limo-gray-light); font-size: 0.88rem; }
+.pax-promises strong { color: var(--limo-white); font-weight: 700; min-width: 92px; }
+.pax-next, .pax-ride, .pax-empty { background: rgba(20,20,20,0.92); border: 1px solid rgba(201,162,39,0.28); border-radius: 18px; padding: 18px 18px 16px; }
+.pax-next { margin-bottom: 18px; box-shadow: 0 16px 40px rgba(0,0,0,0.28); cursor: pointer; }
+.pax-next-kicker, .pax-ride-status { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--limo-gold); }
+.pax-next h2, .pax-ride h3 { font-size: 1.05rem; margin: 6px 0; }
+.pax-next h2 { font-family: var(--font-serif); font-size: 1.65rem; font-weight: 600; line-height: 1.15; }
+.pax-route { border-left: 2px solid var(--limo-gold); padding-left: 12px; margin: 10px 0; font-size: 0.88rem; color: var(--limo-gray-light); }
+.pax-meta { display: flex; justify-content: space-between; gap: 12px; font-size: 0.82rem; color: var(--limo-gray-light); }
+.pax-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
+.pax-chip { border: 1px solid rgba(201,162,39,0.35); background: rgba(201,162,39,0.08); color: var(--limo-gold-light); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; }
+.pax-chip.active, .pax-chip:hover { background: var(--limo-gold); color: var(--limo-black); border-color: var(--limo-gold); }
+.pax-ticket .limo-input { color-scheme: dark; }
+.pax-error { color: #f0a8a8; font-size: 0.82rem; min-height: 1.2em; margin: 0 0 10px; }
+.pax-rides { display: grid; gap: 14px; }
+.pax-ride { cursor: pointer; }
+.pax-ride:hover { border-color: var(--limo-gold); }
+.pax-empty { text-align: center; padding: 36px 20px; }
+.pax-empty h2 { font-family: var(--font-serif); font-size: 2rem; font-weight: 600; margin-bottom: 8px; }
+.pax-empty p { color: var(--limo-gray-light); margin-bottom: 16px; }
+.pax-section-title { font-family: var(--font-serif); font-size: 2.4rem; font-weight: 600; margin-bottom: 6px; }
+.pax-section-lead { color: var(--limo-gray-light); margin-bottom: 18px; }
+.pax-bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; justify-content: center; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(to top, #0a0a0a 70%, transparent); }
+.pax-bottom-inner { width: min(520px, 100%); display: flex; background: #141414; border: 1px solid rgba(201,162,39,0.22); border-radius: 999px; padding: 6px; }
+.pax-nav { flex: 1; border: 0; background: none; color: var(--limo-gray); font: inherit; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 6px; border-radius: 999px; cursor: pointer; text-decoration: none; text-align: center; }
+.pax-nav.active { background: var(--limo-gold); color: var(--limo-black); }
+.pax-initials { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--limo-gold); color: var(--limo-black); font-weight: 800; font-size: 0.8rem; letter-spacing: 0; }
+.pax-signin { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.pax-book-grid .pax-ticket { position: sticky; top: 18px; }
+.pax-note { margin: 10px 0 0; font-size: 0.75rem; color: var(--limo-gray); }
+.pax-chips[hidden], .pax-field[hidden], .pax-signout[hidden], .pax-signin[hidden], .pax-initials[hidden] { display: none !important; }
+@media (max-width: 800px) {
+  .pax-book-grid { grid-template-columns: 1fr; gap: 22px; }
+  .pax-intro, .pax-aside, .pax-book-grid .pax-ticket { grid-column: 1; grid-row: auto; position: static; }
+  .pax-hello { font-size: 2.6rem; }
+  .pax-shell { padding: 18px 16px 120px; }
+  .pax-top { padding: 16px 16px 0; }
+}

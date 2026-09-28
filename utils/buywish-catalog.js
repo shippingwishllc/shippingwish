@@ -8,26 +8,76 @@ const TARGET_COUNTRIES = ['US', 'CA', 'GB'];
 const FAST_USA_DAYS = 14;
 
 const CATEGORY_KEYWORDS = {
-  Tech: ['electronic', 'phone', 'laptop', 'gadget', 'usb', 'wireless', 'bluetooth', 'camera', 'speaker', 'headphone', 'charger', 'smart', 'tech', 'led', 'light', 'watch', 'tracker', 'earbud'],
-  Home: ['home', 'house', 'room', 'decor', 'organiz', 'storage', 'curtain', 'pillow', 'lamp', 'vacuum', 'clean', 'mop', 'air', 'candle'],
-  Fitness: ['fitness', 'exercise', 'gym', 'sport', 'yoga', 'weight', 'muscle', 'protein', 'resistance', 'band', 'run', 'pedometer', 'health'],
-  Beauty: ['beauty', 'skin', 'face', 'hair', 'nail', 'makeup', 'cream', 'serum', 'mask', 'lip', 'eye', 'glow', 'moistur', 'cleanser', 'lash'],
-  Kitchen: ['kitchen', 'cook', 'food', 'chef', 'knife', 'pot', 'pan', 'coffee', 'blender', 'grinder', 'bottle', 'cup', 'mug', 'plate', 'bake'],
-  Pets: ['pet', 'dog', 'cat', 'animal', 'paw', 'collar', 'leash', 'grooming', 'treat'],
-  Travel: ['travel', 'luggage', 'bag', 'backpack', 'passport', 'packing', 'suitcase'],
-  Kids: ['kid', 'kids', 'child', 'baby', 'toy', 'toddler']
+  Tech: ['electronic', 'laptop', 'gadget', 'usb', 'wireless', 'bluetooth', 'camera', 'speaker', 'headphone', 'charger', 'smartwatch', 'tech', 'led', 'earbud', 'computer', 'tablet', 'ring light'],
+  Phone: ['cellphone', 'phone case', 'screen protector', 'phone holder', 'mobile case', 'iphone', 'phone accessory', 'tempered glass'],
+  Home: ['home', 'house', 'decor', 'organiz', 'storage', 'curtain', 'pillow', 'lamp', 'vacuum', 'clean', 'mop', 'candle', 'blanket', 'bedding'],
+  Fitness: ['fitness', 'exercise', 'gym', 'sport', 'sporting', 'yoga', 'weight', 'muscle', 'protein', 'resistance', 'band', 'pedometer', 'dumbbell', 'barbell', 'workout'],
+  Beauty: ['beauty', 'skin', 'face', 'hair', 'nail', 'makeup', 'cream', 'serum', 'mask', 'lipstick', 'lip balm', 'lash', 'glow', 'moistur', 'cleanser', 'skincare', 'cosmetic'],
+  Kitchen: ['kitchen', 'cook', 'food', 'chef', 'knife', 'coffee', 'blender', 'grinder', 'plate', 'bake', 'cookware', 'utensil'],
+  Jewelry: ['jewelry', 'necklace', 'bracelet', 'earring', 'pendant', 'wristwatch', 'watch', 'ring', 'anklet'],
+  Women: ['women', 'ladies', 'dress', 'blouse', 'skirt', 'legging', 'lingerie'],
+  Men: ['men', 'mens', 'polo', 'necktie'],
+  Shoes: ['shoe', 'sneaker', 'boot', 'sandal', 'heel', 'loafer', 'footwear'],
+  Bags: ['handbag', 'purse', 'tote', 'wallet', 'backpack', 'crossbody', 'clutch', 'duffel'],
+  Pets: ['pet', 'dog', 'cat', 'animal', 'paw', 'collar', 'leash', 'grooming', 'puppy', 'kitten'],
+  Travel: ['travel', 'luggage', 'passport', 'packing', 'suitcase', 'toiletry', 'travel pillow'],
+  Kids: ['kid', 'child', 'children', 'toy', 'toddler', 'puzzle', 'plush', 'doll'],
+  Baby: ['baby', 'newborn', 'infant', 'onesie', 'diaper'],
+  Arts: ['acrylic paint', 'canvas', 'watercolor', 'craft kit', 'sketchbook', 'drawing set', 'art supply']
+};
+
+// Official Zendrop catalog names. These are filters, not store labels.
+// Broad parents such as "Apparel & Accessories" are omitted so a supplier
+// label cannot pull an unrelated product into clothing or jewelry.
+const DEPARTMENT_ZENDROP_CATEGORIES = {
+  Tech: ['Electronics', 'Audio', 'Computers', 'Cameras & Optics', 'Cameras'],
+  Phone: ['Cell Phones', 'Mobile Phone Accessories', 'Phone Accessories', 'phone accessories'],
+  Home: ['Home & Garden', 'Decor', 'Lighting', 'Linens & Bedding', 'Household Appliances', 'Furniture'],
+  Fitness: ['Sporting Goods', 'Fitness & General Exercise Equipment', 'Outdoor Recreation', 'Athletics'],
+  Beauty: ['Health & Beauty', 'Personal Care', 'Health Care'],
+  Kitchen: ['Kitchen & Dining'],
+  Jewelry: ['Jewelry', 'Watches'],
+  Women: ["Women's Clothing", 'Dresses', 'Clothing'],
+  Men: ["Men's Clothing", 'Clothing'],
+  Shoes: ['Shoes', 'Footwear'],
+  Bags: ['Handbags', 'Backpacks', 'Wallets', 'Luggage & Bags'],
+  Pets: ['Animals & Pet Supplies', 'Pet Supplies'],
+  Travel: ['Suitcases', 'Luggage & Bags'],
+  Kids: ['Toys & Games', 'Toys'],
+  Baby: ['Baby & Toddler', 'Baby'],
+  Arts: ['Arts & Entertainment', 'Arts & Crafts', 'Crafts']
 };
 
 const STORE_DEPARTMENTS = {
-  Tech: { slug: 'tech', title: 'Tech & Gadgets', searches: ['wireless earbuds', 'phone stand', 'bluetooth speaker'] },
-  Home: { slug: 'home', title: 'Home & Living', searches: ['home organizer', 'led lamp', 'throw blanket'] },
-  Fitness: { slug: 'fitness', title: 'Fitness & Outdoors', searches: ['resistance bands', 'yoga mat', 'fitness tracker'] },
-  Beauty: { slug: 'beauty', title: 'Beauty & Wellness', searches: ['skincare tool', 'makeup brush', 'hair tool'] },
-  Kitchen: { slug: 'kitchen', title: 'Kitchen & Cooking', searches: ['kitchen gadget', 'coffee accessories', 'food container'] },
-  Pets: { slug: 'pets', title: 'Pet Supplies', searches: ['pet grooming', 'dog toy', 'cat bed'] },
-  Travel: { slug: 'travel', title: 'Travel & Bags', searches: ['packing cubes', 'travel pillow', 'toiletry bag'] },
-  Kids: { slug: 'kids', title: 'Kids & Toys', searches: ['kids toy', 'baby gift', 'building blocks'] }
+  Tech: { slug: 'tech', title: 'Tech', short: 'Tech', icon: '💻', blurb: 'Headphones, chargers, and everyday gadgets.', searches: ['wireless earbuds', 'bluetooth speaker', 'usb charger', 'laptop stand'] },
+  Phone: { slug: 'phone', title: 'Phone', short: 'Phone', icon: '📱', blurb: 'Cases, screen protection, and phone add-ons.', searches: ['phone case', 'screen protector', 'phone holder', 'tempered glass'], strict: true },
+  Home: { slug: 'home', title: 'Home', short: 'Home', icon: '🏠', blurb: 'Decor, lighting, and comfort for every room.', searches: ['home organizer', 'led lamp', 'throw blanket', 'wall decor'] },
+  Kitchen: { slug: 'kitchen', title: 'Kitchen & Cooking', short: 'Kitchen', icon: '🍳', blurb: 'Tools for cooking, coffee, and the table.', searches: ['kitchen gadget', 'coffee accessories', 'food container', 'cookware'] },
+  Fitness: { slug: 'fitness', title: 'Fitness & Outdoors', short: 'Fitness', icon: '🏃', blurb: 'Gear for training, yoga, and time outside.', searches: ['resistance bands', 'yoga mat', 'fitness tracker', 'dumbbell'] },
+  Beauty: { slug: 'beauty', title: 'Beauty & Wellness', short: 'Beauty', icon: '✨', blurb: 'Skin, hair, and daily self-care.', searches: ['skincare tool', 'makeup brush', 'hair tool', 'face serum'] },
+  Jewelry: { slug: 'jewelry', title: 'Jewelry & Watches', short: 'Jewelry', icon: '💍', blurb: 'Necklaces, earrings, bracelets, and watches.', searches: ['necklace', 'bracelet', 'earrings', 'wristwatch'], strict: true },
+  Women: { slug: 'women', title: "Women's Clothing", short: 'Women', icon: '👗', blurb: 'Dresses, tops, and everyday clothing.', searches: ['women dress', 'blouse', 'women leggings', 'skirt'], strict: true },
+  Men: { slug: 'men', title: "Men's Clothing", short: 'Men', icon: '👔', blurb: 'Shirts, layers, and everyday clothing.', searches: ['men shirt', 'men hoodie', 'men jacket', 'polo shirt'], strict: true },
+  Shoes: { slug: 'shoes', title: 'Shoes', short: 'Shoes', icon: '👟', blurb: 'Sneakers, sandals, and boots.', searches: ['sneakers', 'running shoes', 'sandals', 'boots'], strict: true },
+  Bags: { slug: 'bags', title: 'Bags & Accessories', short: 'Bags', icon: '👜', blurb: 'Bags, backpacks, and small accessories.', searches: ['handbag', 'backpack', 'wallet', 'crossbody bag'], strict: true },
+  Travel: { slug: 'travel', title: 'Travel Essentials', short: 'Travel', icon: '🧳', blurb: 'Packing, luggage, and trip comfort.', searches: ['packing cubes', 'travel pillow', 'luggage tag', 'toiletry kit'] },
+  Pets: { slug: 'pets', title: 'Pet Supplies', short: 'Pets', icon: '🐾', blurb: 'Care and play for dogs and cats.', searches: ['pet grooming', 'dog toy', 'cat bed', 'dog leash'] },
+  Kids: { slug: 'kids', title: 'Kids & Toys', short: 'Kids', icon: '🧸', blurb: 'Toys and small gifts for little ones.', searches: ['kids toy', 'building blocks', 'puzzle', 'plush toy'] },
+  Baby: { slug: 'baby', title: 'Baby & Kids Clothing', short: 'Baby', icon: '🍼', blurb: 'Clothing and care for babies.', searches: ['baby clothes', 'newborn onesie', 'baby bib', 'infant set'], strict: true },
+  Arts: { slug: 'arts', title: 'Arts & Crafts', short: 'Arts', icon: '🎨', blurb: 'Paint, sketching, and craft kits.', searches: ['acrylic paint', 'sketchbook', 'craft kit', 'watercolor set'], strict: true }
 };
+
+const STORE_GROUPS = [
+  { slug: 'tech-gadgets', title: 'Tech & Gadgets', short: 'Tech', icon: '💻', blurb: 'Tech and phone accessories, in one collection.', children: ['tech', 'phone'] },
+  { slug: 'home-living', title: 'Home & Living', short: 'Home', icon: '🏠', blurb: 'Home and kitchen, in one collection.', children: ['home', 'kitchen'] },
+  { slug: 'fashion', title: 'Fashion', short: 'Fashion', icon: '👗', blurb: 'Clothing, shoes, jewelry, and bags.', children: ['women', 'men', 'shoes', 'jewelry', 'bags'] },
+  { slug: 'beauty', title: 'Beauty & Wellness', short: 'Beauty', icon: '✨', blurb: 'Skin, hair, and daily self-care.', children: ['beauty'] },
+  { slug: 'fitness', title: 'Fitness & Outdoors', short: 'Fitness', icon: '🏃', blurb: 'Gear for training, yoga, and time outside.', children: ['fitness'] },
+  { slug: 'pets', title: 'Pet Supplies', short: 'Pets', icon: '🐾', blurb: 'Care and play for dogs and cats.', children: ['pets'] },
+  { slug: 'kids-baby', title: 'Kids & Baby', short: 'Kids', icon: '🧸', blurb: 'Toys and clothing for kids and babies.', children: ['kids', 'baby'] },
+  { slug: 'travel', title: 'Travel', short: 'Travel', icon: '🧳', blurb: 'Packing, luggage, and trip comfort.', children: ['travel'] },
+  { slug: 'arts', title: 'Arts & Crafts', short: 'Arts', icon: '🎨', blurb: 'Paint, sketching, and craft kits.', children: ['arts'] }
+];
 
 const WINNING_SEARCHES = Object.entries(STORE_DEPARTMENTS).flatMap(([category, dept]) => (
   dept.searches.slice(0, 1).map((q) => ({ category, q }))
@@ -37,6 +87,55 @@ function departmentBySlug(slug) {
   const key = Object.keys(STORE_DEPARTMENTS).find((name) => STORE_DEPARTMENTS[name].slug === String(slug || '').toLowerCase());
   if (!key) return null;
   return { key, ...STORE_DEPARTMENTS[key] };
+}
+
+function groupBySlug(slug) {
+  const clean = String(slug || '').toLowerCase();
+  return STORE_GROUPS.find((group) => group.slug === clean) || null;
+}
+
+function groupForDepartmentSlug(slug) {
+  const clean = String(slug || '').toLowerCase();
+  return STORE_GROUPS.find((group) => group.children.length > 1 && group.children.includes(clean)) || null;
+}
+
+function groupChildren(group) {
+  if (!group) return [];
+  return group.children.map((childSlug) => {
+    const dept = departmentBySlug(childSlug);
+    if (!dept) return null;
+    return { slug: dept.slug, title: dept.short || dept.title, icon: dept.icon || '🛍️', category: dept.key };
+  }).filter(Boolean);
+}
+
+function storefrontCollections(customRows) {
+  const links = STORE_GROUPS.map((group) => {
+    if (group.children.length === 1) {
+      const child = departmentBySlug(group.children[0]);
+      if (!child) return null;
+      return {
+        slug: child.slug,
+        title: group.title,
+        short: group.short,
+        icon: group.icon,
+        blurb: child.blurb || group.blurb,
+        hub: false
+      };
+    }
+    return {
+      slug: group.slug,
+      title: group.title,
+      short: group.short,
+      icon: group.icon,
+      blurb: group.blurb,
+      hub: true,
+      children: groupChildren(group)
+    };
+  }).filter(Boolean);
+  publicDepartments(customRows).filter((dept) => !dept.builtin).forEach((dept) => {
+    links.push({ slug: dept.slug, title: dept.title, short: dept.short, icon: dept.icon, blurb: dept.blurb, hub: false });
+  });
+  return links;
 }
 
 function departmentByQuery(value) {
@@ -50,23 +149,152 @@ function departmentByQuery(value) {
   return key ? { key, ...STORE_DEPARTMENTS[key] } : null;
 }
 
-function inferCategory(name, supplied) {
-  const given = String(supplied || '').trim();
-  if (given && !/^uncategor/i.test(given)) {
-    const lower = given.toLowerCase();
-    for (const cat of Object.keys(CATEGORY_KEYWORDS)) {
-      if (lower.includes(cat.toLowerCase())) return cat;
+function categoryName(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') return value.name || value.title || value.label || value.category_name || '';
+  return String(value);
+}
+
+function keywordScore(text, keywords) {
+  const hay = String(text || '').toLowerCase();
+  let score = 0;
+  keywords.forEach((kw) => {
+    const needle = String(kw || '').toLowerCase();
+    if (!needle) return;
+    const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Match a whole short word, and a longer stem only at the start of a word.
+    // "men" does not hit "women" or "mental", and "dress" does not hit "dresser".
+    const end = needle.length <= 5 ? '(?:es|s)?(?:[^a-z0-9]|$)' : '';
+    if (new RegExp(`(?:^|[^a-z0-9])${escaped}${end}`).test(hay)) score += needle.length;
+  });
+  return score;
+}
+
+function flattenCategories(payload) {
+  const out = [];
+  const seen = new Set();
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
     }
-  }
-  const hay = String(name || '').toLowerCase();
-  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    if (keywords.some((kw) => hay.includes(kw))) return cat;
-  }
-  return given || 'Featured';
+    const name = node.name || node.title || node.label || node.category_name;
+    const id = node.id != null ? node.id : node.category_id;
+    if (name && id != null) {
+      const key = String(id);
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push({ id, name: String(name) });
+      }
+    }
+    ['children', 'subcategories', 'categories', 'items'].forEach((key) => {
+      if (Array.isArray(node[key])) visit(node[key]);
+    });
+  };
+  if (payload && Array.isArray(payload.categories)) visit(payload.categories);
+  else visit(payload);
+  return out;
+}
+
+function categoriesForDepartment(flat, departmentKey) {
+  const hints = DEPARTMENT_ZENDROP_CATEGORIES[departmentKey] || [];
+  return (flat || [])
+    .map((cat) => {
+      const name = String(cat.name || '').toLowerCase();
+      const exact = hints.find((hint) => name === hint.toLowerCase());
+      const partial = hints.find((hint) => name.includes(hint.toLowerCase()));
+      if (!exact && !partial) return null;
+      return { id: cat.id, name: cat.name, rank: exact ? 0 : 1 };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 4);
+}
+
+function classifyProduct(product) {
+  const supplied = String((product && (product.supplier_category || product.category || product.category_name)) || '');
+  const suppliedLower = supplied.toLowerCase();
+  const text = `${(product && product.title) || ''} ${(product && product.description) || ''}`;
+  let best = null;
+  let bestScore = 0;
+  Object.keys(CATEGORY_KEYWORDS).forEach((key) => {
+    let score = keywordScore(text, CATEGORY_KEYWORDS[key]);
+    const hints = DEPARTMENT_ZENDROP_CATEGORIES[key] || [];
+    if (supplied && !/^uncategor/i.test(supplied) && hints.some((hint) => suppliedLower.includes(hint.toLowerCase()))) {
+      score += 12;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = key;
+    }
+  });
+  return bestScore > 0 ? { key: best, score: bestScore } : null;
+}
+
+function inferCategory(name, supplied) {
+  const found = classifyProduct({
+    title: name,
+    supplier_category: supplied && !/^uncategor/i.test(String(supplied)) ? supplied : ''
+  });
+  if (found) return found.key;
+  return 'Featured';
 }
 
 function stripHtml(value) {
   return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function roundMoney(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+function clampMargin(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 30;
+  return Math.min(80, Math.max(0, Math.round(n)));
+}
+
+let storeMarginPercent = clampMargin(process.env.BUYWISH_MARGIN_PERCENT);
+
+function setStoreMarginPercent(value) {
+  storeMarginPercent = clampMargin(value);
+}
+
+function getStoreMarginPercent() {
+  return storeMarginPercent;
+}
+
+function priceWithMargin(listed, cost, marginPercent = getStoreMarginPercent()) {
+  const retail = roundMoney(listed);
+  const supplierCost = roundMoney(cost);
+  const margin = clampMargin(marginPercent);
+  if (supplierCost > 0 && retail > 0 && retail <= supplierCost) {
+    return roundMoney(supplierCost * (1 + margin / 100)).toFixed(2);
+  }
+  if (retail > 0) return retail.toFixed(2);
+  if (supplierCost > 0) return roundMoney(supplierCost * (1 + margin / 100)).toFixed(2);
+  return '0.00';
+}
+
+function bundlePriceAllowed({ priceA, priceB, costA, costB, bundlePrice }) {
+  const sellA = roundMoney(priceA);
+  const sellB = roundMoney(priceB);
+  const sum = roundMoney(sellA + sellB);
+  const bundle = roundMoney(bundlePrice);
+  const floorA = roundMoney(costA) > 0 ? roundMoney(costA) : sellA;
+  const floorB = roundMoney(costB) > 0 ? roundMoney(costB) : sellB;
+  const floor = roundMoney(floorA + floorB);
+  if (!(bundle > 0) || !(sum > bundle)) {
+    return { ok: false, error: 'The offer price has to be lower than the two selling prices added together.' };
+  }
+  if (bundle + 0.001 < floor) {
+    return { ok: false, error: 'That offer is below the supplier cost. Raise the price so the order still covers both products.' };
+  }
+  return { ok: true, sum: sum.toFixed(2), bundle: bundle.toFixed(2), floor: floor.toFixed(2) };
 }
 
 function normalizeProduct(p) {
@@ -89,8 +317,10 @@ function normalizeProduct(p) {
   });
 
   const retailPrice = parseFloat(p.price || p.retail_price || 0) || 0;
+  const supplierCost = parseFloat(p.cost || p.supplier_cost || p.base_price || 0);
+  const sellingPrice = priceWithMargin(retailPrice, supplierCost);
   const suppliedComparePrice = parseFloat(p.compare_at_price || p.compare_price || 0);
-  const comparePrice = Number.isFinite(suppliedComparePrice) && suppliedComparePrice > retailPrice
+  const comparePrice = Number.isFinite(suppliedComparePrice) && suppliedComparePrice > Number(sellingPrice)
     ? suppliedComparePrice.toFixed(2)
     : null;
 
@@ -99,14 +329,18 @@ function normalizeProduct(p) {
   if (p.is_trending || p.trending) badge = 'hot';
   else if (comparePrice) badge = 'sale';
 
-  const supplierCost = parseFloat(p.cost || p.supplier_cost || p.base_price || 0);
+  const supplierCategory = categoryName(p.category || p.category_name || p.category_title);
+  const classified = classifyProduct({ title, description: cleanDesc, supplier_category: supplierCategory });
+  const handle = productHandle(p.id);
 
   return {
     id: p.id,
     zendrop_id: p.id,
+    handle,
     title,
-    category: inferCategory(title, p.category || p.category_name),
-    retail_price: retailPrice.toFixed(2),
+    category: classified ? classified.key : 'Featured',
+    supplier_category: supplierCategory,
+    retail_price: sellingPrice,
     compare_price: comparePrice,
     supplier_cost: Number.isFinite(supplierCost) && supplierCost > 0 ? supplierCost : 0,
     description: cleanDesc,
@@ -118,7 +352,7 @@ function normalizeProduct(p) {
     reviews: Number.isFinite(Number(p.review_count || p.reviews)) ? Number(p.review_count || p.reviews) : 0,
     delivery: p.estimated_delivery || p.delivery_estimate || null,
     ships_to: Array.isArray(p.ships_to) ? p.ships_to : [],
-    product_url: p.product_url || null,
+    product_url: handle ? `https://www.buywishonline.com/products/${handle}` : (p.product_url || null),
     in_stock: typeof p.in_stock === 'boolean'
       ? p.in_stock
       : (Number.isFinite(Number(p.inventory_quantity)) ? Number(p.inventory_quantity) > 0 : null),
@@ -207,6 +441,124 @@ function productHandle(zendropId) {
   return id ? `p-${id}` : null;
 }
 
+function productMatchesQuery(product, query) {
+  const tokens = String(query || '').toLowerCase().split(/\s+/).filter((token) => token.length >= 2);
+  if (!tokens.length) return false;
+  const hay = `${(product && product.title) || ''} ${(product && product.description) || ''} ${(product && product.category) || ''}`.toLowerCase();
+  return tokens.every((token) => hay.includes(token));
+}
+
+function categoryFilterIsTrusted(categoryProducts, baselineProducts) {
+  const baseline = new Set((baselineProducts || []).map((product) => String(product && (product.id || product.zendrop_id) || '')));
+  const seen = new Set();
+  let unique = 0;
+  let overlap = 0;
+  (categoryProducts || []).forEach((product) => {
+    const id = String(product && (product.id || product.zendrop_id) || '');
+    if (!id || seen.has(id)) return;
+    seen.add(id);
+    unique += 1;
+    if (baseline.has(id)) overlap += 1;
+  });
+  if (unique < 8) return false;
+  return overlap / unique < 0.45;
+}
+
+function productSharePath(product) {
+  if (!product) return null;
+  const handle = product.handle || productHandle(product.zendrop_id || product.id);
+  return handle ? `/products/${handle}` : null;
+}
+
+function slugifyCategory(title) {
+  return String(title || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
+function validCategorySlug(slug) {
+  return /^[a-z0-9-]{2,40}$/.test(String(slug || '')) && !String(slug).startsWith('-') && !String(slug).endsWith('-');
+}
+
+function cleanIcon(value) {
+  const icon = String(value || '').replace(/[<>]/g, '').trim();
+  return icon ? icon.slice(0, 8) : '';
+}
+
+function publicDepartments(customRows) {
+  const built = Object.entries(STORE_DEPARTMENTS).map(([key, dept]) => ({
+    key,
+    slug: dept.slug,
+    title: dept.title,
+    short: dept.short || dept.title,
+    blurb: dept.blurb,
+    icon: dept.icon || '🛍️',
+    builtin: true
+  }));
+  const taken = new Set(built.map((dept) => dept.slug));
+  const custom = (customRows || [])
+    .filter((row) => row && row.slug && row.is_active !== false && !taken.has(String(row.slug).toLowerCase()))
+    .map((row) => ({
+      key: String(row.slug).toLowerCase(),
+      slug: String(row.slug).toLowerCase(),
+      title: row.title,
+      short: row.short || row.title,
+      blurb: row.blurb || '',
+      icon: cleanIcon(row.icon) || '🛍️',
+      builtin: false
+    }));
+  return built.concat(custom);
+}
+
+function categoryMatches(productCategory, filter) {
+  const cat = String(productCategory || '').toLowerCase();
+  const raw = String(filter || '').trim().toLowerCase();
+  if (!raw || raw === 'all') return true;
+  if (cat === raw) return true;
+  const dept = departmentByQuery(filter);
+  return Boolean(dept && (cat === dept.key.toLowerCase() || cat === dept.slug));
+}
+
+function categoryKeyFromSlug(slug) {
+  const dept = departmentBySlug(slug) || departmentByQuery(slug);
+  return dept ? dept.key : String(slug || '').toLowerCase();
+}
+
+function applyCatalogEdits(products, edits, categoryFilter, { includeSaved = false } = {}) {
+  const hidden = new Set();
+  const moved = new Map();
+  (edits && edits.overrides || []).forEach((row) => {
+    const id = String(row.zendrop_id || '');
+    if (!id) return;
+    if (row.is_hidden) hidden.add(id);
+    if (row.category_slug) moved.set(id, categoryKeyFromSlug(row.category_slug));
+  });
+  const byId = new Map();
+  (products || []).forEach((product) => {
+    const id = String((product && (product.zendrop_id || product.id)) || '');
+    if (!id || hidden.has(id)) return;
+    const copy = { ...product };
+    if (moved.has(id)) copy.category = moved.get(id);
+    byId.set(id, copy);
+  });
+  if (includeSaved) {
+    (edits && edits.saved || []).forEach((product) => {
+      const id = String((product && (product.zendrop_id || product.id)) || '');
+      if (!id || hidden.has(id)) return;
+      const category = moved.get(id) || product.category;
+      if (byId.has(id)) {
+        byId.get(id).category = category;
+        return;
+      }
+      byId.set(id, { ...product, category });
+    });
+  }
+  return [...byId.values()].filter((product) => categoryMatches(product.category, categoryFilter));
+}
+
 function storeProductFromRow(row) {
   const images = Array.isArray(row.images) ? row.images : (row.image_url ? [row.image_url] : []);
   const features = Array.isArray(row.features) ? row.features : [];
@@ -218,7 +570,7 @@ function storeProductFromRow(row) {
     handle: row.handle,
     title: row.title,
     category: row.category || 'Featured',
-    retail_price: Number.isFinite(retail) ? retail.toFixed(2) : '0.00',
+    retail_price: priceWithMargin(Number.isFinite(retail) ? retail : 0, row.supplier_cost || 0),
     compare_price: row.compare_price != null ? Number(row.compare_price).toFixed(2) : null,
     description: row.description || '',
     features,
@@ -239,15 +591,39 @@ module.exports = {
   TARGET_COUNTRIES,
   FAST_USA_DAYS,
   STORE_DEPARTMENTS,
+  STORE_GROUPS,
   WINNING_SEARCHES,
   departmentBySlug,
+  groupBySlug,
+  groupForDepartmentSlug,
+  groupChildren,
+  storefrontCollections,
   departmentByQuery,
+  DEPARTMENT_ZENDROP_CATEGORIES,
   inferCategory,
+  classifyProduct,
+  flattenCategories,
+  categoriesForDepartment,
+  productMatchesQuery,
+  categoryFilterIsTrusted,
   normalizeProduct,
+  productSharePath,
   summarizeLane,
   scoreProduct,
   qualifiesForStore,
   deliveryLabel,
   productHandle,
-  storeProductFromRow
+  storeProductFromRow,
+  roundMoney,
+  clampMargin,
+  setStoreMarginPercent,
+  getStoreMarginPercent,
+  priceWithMargin,
+  bundlePriceAllowed,
+  slugifyCategory,
+  validCategorySlug,
+  cleanIcon,
+  publicDepartments,
+  applyCatalogEdits,
+  categoryKeyFromSlug
 };

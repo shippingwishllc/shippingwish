@@ -20,152 +20,379 @@
   </script>
 
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>NYC Limo Wish — Passenger App</title>
-  <meta name="description" content="Book and track your NYC Limo Wish rides from your phone.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your rides | NYC Limo Wish</title>
+  <meta name="description" content="Book, review, and track your NYC Limo Wish chauffeur rides.">
   <meta name="theme-color" content="#0a0a0a">
   <link rel="manifest" href="/passenger/manifest.json">
   <link rel="icon" href="/nyclimowish/favicon.ico" sizes="32x32">
   <link rel="icon" href="/nyclimowish/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/nyclimowish/apple-touch-icon.png">
   <link rel="stylesheet" href="/css/limo.css">
-  <style>
-    body { background: var(--limo-black); padding-bottom: 80px; }
-    .pwa-header { padding: 20px 20px 12px; display: flex; align-items: center; justify-content: space-between; }
-    .pwa-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 0 20px; }
-    .pwa-tab { flex: 1; padding: 12px; text-align: center; font-size: 0.8rem; font-weight: 600; color: var(--limo-gray); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; font-family: var(--font-sans); }
-    .pwa-tab.active { color: var(--limo-gold); border-bottom-color: var(--limo-gold); }
-    .pwa-content { padding: 20px; }
-    .pwa-ride-card { background: var(--limo-card); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; }
-    .pwa-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--limo-dark); border-top: 1px solid rgba(201,162,39,0.15); display: flex; padding: 8px 0; z-index: 100; }
-    .pwa-nav-item { flex: 1; text-align: center; padding: 8px; font-size: 0.7rem; color: var(--limo-gray); cursor: pointer; border: none; background: none; font-family: var(--font-sans); }
-    .pwa-nav-item.active { color: var(--limo-gold); }
-    .pwa-nav-item span { display: block; font-size: 1.3rem; margin-bottom: 2px; }
-  </style>
 </head>
-<body class="limo">
+<body class="limo pax-page">
   <!-- Google Tag Manager (noscript) -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KCZSXZ6K"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
 
 
-<div class="pwa-header">
-  <div class="limo-logo">NYC <span>LIMO</span> WISH</div>
-  <a href="/login" style="font-size:0.8rem;color:var(--limo-gold);" id="auth-link">Login</a>
-</div>
+<header class="pax-top">
+  <a href="/" class="limo-logo">NYC <span>LIMO</span> WISH</a>
+  <div class="pax-account">
+    <span class="pax-initials" id="pax-initials" hidden></span>
+    <span class="pax-name" id="pax-name"></span>
+    <a class="pax-signin" id="pax-signin" href="/login">Sign in</a>
+    <button type="button" class="pax-signout" id="pax-signout" hidden>Sign out</button>
+  </div>
+</header>
 
-<div class="pwa-tabs">
-  <button class="pwa-tab active" data-panel="book">Book</button>
-  <button class="pwa-tab" data-panel="rides">My Rides</button>
-  <button class="pwa-tab" data-panel="track">Track</button>
-</div>
-
-<div class="pwa-content">
-  <div id="panel-book">
-    <div class="limo-widget" style="margin-bottom:20px;">
-      <div class="limo-tabs">
-        <button class="limo-tab active" data-type="point_to_point">Point-to-Point</button>
-        <button class="limo-tab" data-type="hourly">Hourly</button>
+<main class="pax-shell">
+  <section id="panel-book">
+    <div class="pax-book-grid">
+      <div class="pax-intro">
+        <p class="pax-kicker" id="pax-greet">Good evening</p>
+        <h1 class="pax-hello" id="pax-hello">Your private car</h1>
+        <p class="pax-tag">Where every mile feels like first class.</p>
       </div>
-      <div class="limo-field"><label>Pickup</label><input class="limo-input" id="p-pickup" placeholder="Pickup address" style="padding-left:16px;"></div>
-      <div class="limo-field" id="p-drop-wrap"><label>Drop-off</label><input class="limo-input" id="p-dropoff" placeholder="Drop-off" style="padding-left:16px;"></div>
-      <div class="limo-field-row">
-        <div class="limo-field"><label>Date</label><input class="limo-input" type="date" id="p-date" style="padding-left:16px;"></div>
-        <div class="limo-field"><label>Time</label><input class="limo-input" type="time" id="p-time" style="padding-left:16px;"></div>
+      <form class="limo-widget limo-widget-hero pax-ticket" id="book-form">
+        <div class="limo-tabs" role="tablist" aria-label="Service">
+          <button type="button" class="limo-tab active" data-type="point_to_point">Point-to-point</button>
+          <button type="button" class="limo-tab" data-type="hourly">Hourly</button>
+        </div>
+        <div class="limo-field">
+          <label for="p-pickup">Pickup</label>
+          <input class="limo-input" id="p-pickup" placeholder="Hotel, address, or airport" autocomplete="street-address" style="padding-left:16px;">
+        </div>
+        <div class="limo-field pax-field" id="p-drop-wrap">
+          <label for="p-dropoff">Drop-off</label>
+          <input class="limo-input" id="p-dropoff" placeholder="Where should we take you?" autocomplete="street-address" style="padding-left:16px;">
+        </div>
+        <div class="pax-chips" id="p-chips">
+          <button type="button" class="pax-chip" data-address="John F. Kennedy International Airport, Queens, NY">JFK</button>
+          <button type="button" class="pax-chip" data-address="LaGuardia Airport, Queens, NY">LGA</button>
+          <button type="button" class="pax-chip" data-address="Newark Liberty International Airport, Newark, NJ">EWR</button>
+        </div>
+        <div class="limo-field pax-field" id="p-hours-wrap" hidden>
+          <label for="p-hours">Hours</label>
+          <select class="limo-input" id="p-hours" style="padding-left:16px;">
+            <option value="2">2 hours</option>
+            <option value="3" selected>3 hours</option>
+            <option value="4">4 hours</option>
+            <option value="5">5 hours</option>
+            <option value="6">6 hours</option>
+            <option value="8">8 hours</option>
+          </select>
+        </div>
+        <div class="limo-field-row">
+          <div class="limo-field">
+            <label for="p-date">Date</label>
+            <input class="limo-input" type="date" id="p-date" style="padding-left:16px;">
+          </div>
+          <div class="limo-field">
+            <label for="p-time">Time</label>
+            <input class="limo-input" type="time" id="p-time" style="padding-left:16px;">
+          </div>
+        </div>
+        <p class="pax-error" id="p-error" role="alert"></p>
+        <button type="submit" class="limo-btn limo-btn-gold limo-btn-block" id="pwa-book-btn">Find my ride →</button>
+        <p class="pax-note">Chauffeur quotes open next. Payment stays off until a licensed base accepts.</p>
+      </form>
+      <div class="pax-aside">
+        <div id="pax-next"></div>
+        <div class="pax-promises">
+          <div><strong>Meet &amp; greet</strong><span>Name board at the terminal, luggage handled.</span></div>
+          <div><strong>Flight watch</strong><span>Airport pickups wait if the inbound flight is late.</span></div>
+          <div><strong>Licensed base</strong><span>A TLC base accepts the ride before you pay.</span></div>
+        </div>
       </div>
-      <button class="limo-btn limo-btn-gold limo-btn-block" id="pwa-book-btn">Find My Ride →</button>
     </div>
-  </div>
+  </section>
 
-  <div id="panel-rides" style="display:none;">
-    <div id="rides-list"><p style="color:var(--limo-gray);text-align:center;padding:40px 0;">Login to see your rides</p></div>
-  </div>
+  <section id="panel-rides" hidden>
+    <h1 class="pax-section-title">Your rides</h1>
+    <p class="pax-section-lead">Every booking, from the first request through the drop-off.</p>
+    <div class="pax-rides" id="rides-list"></div>
+  </section>
 
-  <div id="panel-track" style="display:none;">
-    <div class="limo-field"><label>Booking Number</label><input class="limo-input" id="track-num" placeholder="NLW-..." style="padding-left:16px;"></div>
-    <button class="limo-btn limo-btn-gold limo-btn-block" id="track-btn">Track Ride</button>
-    <div id="track-result" style="margin-top:20px;"></div>
-  </div>
-</div>
+  <section id="panel-track" hidden>
+    <h1 class="pax-section-title">Track a ride</h1>
+    <p class="pax-section-lead">Enter the booking number from your confirmation.</p>
+    <form id="track-form" class="limo-widget limo-widget-hero" style="max-width:520px;">
+      <div class="limo-field">
+        <label for="track-num">Booking number</label>
+        <input class="limo-input" id="track-num" placeholder="NLW-..." autocomplete="off" style="padding-left:16px;">
+      </div>
+      <button type="submit" class="limo-btn limo-btn-gold limo-btn-block" id="track-btn">Track ride</button>
+    </form>
+    <div id="track-result" style="margin-top:18px;max-width:520px;"></div>
+  </section>
+</main>
 
-<nav class="pwa-bottom-nav">
-  <button class="pwa-nav-item active" data-panel="book"><span>🚗</span>Book</button>
-  <button class="pwa-nav-item" data-panel="rides"><span>📋</span>Rides</button>
-  <button class="pwa-nav-item" data-panel="track"><span>📍</span>Track</button>
-  <a class="pwa-nav-item" href="tel:+19177370021" style="text-decoration:none;"><span>📞</span>Call</a>
+<nav class="pax-bottom" aria-label="Passenger">
+  <div class="pax-bottom-inner">
+    <button type="button" class="pax-nav active" data-panel="book">Book</button>
+    <button type="button" class="pax-nav" data-panel="rides">Rides</button>
+    <button type="button" class="pax-nav" data-panel="track">Track</button>
+    <a class="pax-nav" href="tel:+19177370021">Call</a>
+  </div>
 </nav>
 
 <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/passenger/sw.js').catch(() => {});
-}
+(function () {
+  const STATUS = {
+    pending_operator: 'Awaiting chauffeur',
+    offering: 'Matching a chauffeur',
+    operator_accepted: 'Accepted',
+    confirmed: 'Confirmed',
+    dispatched: 'Chauffeur assigned',
+    en_route: 'On the way',
+    at_pickup: 'At pickup',
+    in_progress: 'In progress',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+    canceled: 'Cancelled'
+  };
+  let serviceType = 'point_to_point';
+  let bookings = [];
+  let signedIn = false;
 
-document.querySelectorAll('.pwa-tab, .pwa-nav-item[data-panel]').forEach((el) => {
-  el.addEventListener('click', () => {
-    const panel = el.dataset.panel;
-    document.querySelectorAll('.pwa-tab, .pwa-nav-item').forEach((t) => t.classList.remove('active'));
-    document.querySelectorAll('[data-panel="' + panel + '"]').forEach((t) => t.classList.add('active'));
-    ['book','rides','track'].forEach((p) => {
-      document.getElementById('panel-' + p).style.display = p === panel ? 'block' : 'none';
-    });
-    if (panel === 'rides') loadRides();
-  });
-});
-
-document.getElementById('pwa-book-btn').addEventListener('click', () => {
-  const params = new URLSearchParams({
-    pickup: document.getElementById('p-pickup').value,
-    dropoff: document.getElementById('p-dropoff').value,
-    pickupDate: document.getElementById('p-date').value,
-    pickupTime: document.getElementById('p-time').value
-  });
-  window.location.href = '/book?' + params.toString();
-});
-
-document.getElementById('track-btn').addEventListener('click', async () => {
-  const num = document.getElementById('track-num').value.trim();
-  if (!num) return;
-  const res = await fetch('/api/nyclimo/track/' + encodeURIComponent(num));
-  const data = await res.json();
-  const el = document.getElementById('track-result');
-  if (!res.ok) { el.innerHTML = '<p style="color:#ef4444;">Booking not found</p>'; return; }
-  const b = data.booking;
-  el.innerHTML = `<div class="pwa-ride-card">
-    <p><strong>${b.booking_number}</strong> — <span style="color:var(--limo-gold);">${b.status}</span></p>
-    <p style="font-size:0.85rem;margin-top:8px;">📍 ${b.pickup_address}</p>
-    ${b.dropoff_address ? `<p style="font-size:0.85rem;">📍 ${b.dropoff_address}</p>` : ''}
-    <p style="font-size:0.85rem;">📅 ${b.pickup_date} ${b.pickup_time}</p>
-    <p style="font-size:0.85rem;">🚗 ${b.vehicle_name || '—'} · $${parseFloat(b.total_price).toFixed(2)}</p>
-  </div>`;
-});
-
-async function loadRides() {
-  const res = await fetch('/api/nyclimo/passenger/bookings', { credentials: 'include' });
-  if (res.status === 401) return;
-  const data = await res.json();
-  const el = document.getElementById('rides-list');
-  if (!data.bookings?.length) {
-    el.innerHTML = '<p style="color:var(--limo-gray);text-align:center;padding:40px 0;">No rides yet</p>';
-    return;
+  function esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
   }
-  el.innerHTML = data.bookings.map((b) => `
-    <div class="pwa-ride-card">
-      <p><strong>${b.booking_number}</strong> — <span style="color:var(--limo-gold);">${b.status}</span></p>
-      <p style="font-size:0.85rem;margin-top:8px;">📍 ${b.pickup_address}</p>
-      <p style="font-size:0.85rem;">📅 ${b.pickup_date} ${b.pickup_time}</p>
-      <p style="font-size:0.85rem;">$${parseFloat(b.total_price).toFixed(2)}</p>
-    </div>
-  `).join('');
-}
 
-fetch('/api/nyclimo/me', { credentials: 'include' }).then((r) => r.json()).then((d) => {
-  if (d?.user) document.getElementById('auth-link').textContent = d.user.name.split(' ')[0];
-}).catch(() => {});
+  function statusLabel(status) {
+    return STATUS[status] || String(status || 'Requested').replace(/_/g, ' ');
+  }
 
-const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-document.getElementById('p-date').value = tomorrow.toISOString().split('T')[0];
-document.getElementById('p-time').value = '12:00';
+  function money(value) {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? '$' + amount.toFixed(2) : '';
+  }
+
+  function prettyDate(value) {
+    const raw = String(value || '').slice(0, 10);
+    const date = new Date(raw + 'T12:00:00');
+    if (Number.isNaN(date.getTime())) return raw;
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  function prettyTime(value) {
+    const match = String(value || '').match(/^(\d{1,2}):(\d{2})/);
+    if (!match) return String(value || '');
+    let hour = Number(match[1]);
+    const suffix = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 || 12;
+    return hour + ':' + match[2] + ' ' + suffix;
+  }
+
+  function stamp(booking) {
+    return String(booking.pickup_date || '').slice(0, 10) + 'T' + String(booking.pickup_time || '00:00').slice(0, 5);
+  }
+
+  function localStamp() {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+  }
+
+  function closed(booking) {
+    return ['completed', 'cancelled', 'canceled'].includes(booking.status);
+  }
+
+  function nextRide() {
+    const open = bookings.filter((booking) => !closed(booking));
+    const now = localStamp();
+    const upcoming = open.filter((booking) => stamp(booking) >= now).sort((a, b) => stamp(a).localeCompare(stamp(b)));
+    if (upcoming[0]) return upcoming[0];
+    return open.sort((a, b) => stamp(b).localeCompare(stamp(a)))[0] || null;
+  }
+
+  function placeLine(address) {
+    const first = String(address || '').split(',')[0].trim();
+    return first.length > 48 ? first.slice(0, 46) + '…' : first;
+  }
+
+  function rideCard(booking, heading) {
+    const next = heading === 'h2';
+    const price = money(booking.total_price);
+    const title = next
+      ? placeLine(booking.pickup_address) + (booking.dropoff_address ? ' → ' + placeLine(booking.dropoff_address) : '')
+      : booking.booking_number;
+    const kicker = next ? 'Your next ride · ' + statusLabel(booking.status) : statusLabel(booking.status);
+    const details = [next ? booking.booking_number : '', booking.vehicle_name, price].filter(Boolean).join(' · ');
+    return '<article class="' + (next ? 'pax-next' : 'pax-ride') + '" data-num="' + esc(booking.booking_number) + '">' +
+      '<p class="' + (next ? 'pax-next-kicker' : 'pax-ride-status') + '">' + esc(kicker) + '</p>' +
+      '<' + (next ? 'h2' : 'h3') + '>' + esc(title) + '</' + (next ? 'h2' : 'h3') + '>' +
+      '<div class="pax-route"><div>' + esc(booking.pickup_address) + '</div>' +
+      (booking.dropoff_address ? '<div>' + esc(booking.dropoff_address) + '</div>' : '') +
+      '</div><div class="pax-meta"><span>' + esc(prettyDate(booking.pickup_date) + ' · ' + prettyTime(booking.pickup_time)) + '</span>' +
+      '<span>' + esc(details) + '</span></div></article>';
+  }
+
+  function showPanel(name) {
+    ['book', 'rides', 'track'].forEach((panel) => {
+      document.getElementById('panel-' + panel).hidden = panel !== name;
+    });
+    document.querySelectorAll('.pax-nav[data-panel]').forEach((item) => {
+      item.classList.toggle('active', item.dataset.panel === name);
+    });
+    if (name === 'rides') renderRides();
+  }
+
+  function renderNext() {
+    const slot = document.getElementById('pax-next');
+    const ride = nextRide();
+    slot.innerHTML = ride ? rideCard(ride, 'h2') : '';
+  }
+
+  function renderRides() {
+    const list = document.getElementById('rides-list');
+    if (!signedIn) {
+      list.innerHTML = '<div class="pax-empty"><h2>Sign in to your rides</h2><p>Customer accounts keep every booking and its status in one place.</p><a class="limo-btn limo-btn-gold" href="/login">Sign in</a></div>';
+      return;
+    }
+    if (!bookings.length) {
+      list.innerHTML = '<div class="pax-empty"><h2>No rides yet</h2><p>When you book, the request, chauffeur, and drop-off all stay on this card.</p><button type="button" class="limo-btn limo-btn-gold" data-panel="book">Book a ride</button></div>';
+      return;
+    }
+    list.innerHTML = bookings.map((booking) => rideCard(booking)).join('');
+  }
+
+  function setType(type) {
+    serviceType = type === 'hourly' ? 'hourly' : 'point_to_point';
+    document.querySelectorAll('.limo-tab').forEach((tab) => {
+      tab.classList.toggle('active', tab.dataset.type === serviceType);
+    });
+    document.getElementById('p-drop-wrap').hidden = serviceType === 'hourly';
+    document.getElementById('p-chips').hidden = serviceType === 'hourly';
+    document.getElementById('p-hours-wrap').hidden = serviceType !== 'hourly';
+    document.getElementById('p-error').textContent = '';
+  }
+
+  function openTrack(number) {
+    document.getElementById('track-num').value = number;
+    showPanel('track');
+    track(number);
+  }
+
+  async function track(number) {
+    const result = document.getElementById('track-result');
+    const clean = String(number || '').trim();
+    if (!clean) {
+      result.innerHTML = '<p class="pax-error">Enter a booking number.</p>';
+      return;
+    }
+    result.innerHTML = '<p class="pax-section-lead">Looking up ' + esc(clean) + '…</p>';
+    try {
+      const res = await fetch('/api/nyclimo/track/' + encodeURIComponent(clean));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.booking) {
+        result.innerHTML = '<p class="pax-error">We could not find that booking.</p>';
+        return;
+      }
+      const booking = data.booking;
+      result.innerHTML = rideCard(booking) +
+        (booking.operator_name ? '<p class="pax-note">Base: ' + esc(booking.operator_name) + '</p>' : '');
+    } catch (err) {
+      result.innerHTML = '<p class="pax-error">Tracking is unavailable right now.</p>';
+    }
+  }
+
+  document.querySelectorAll('.limo-tab').forEach((tab) => {
+    tab.addEventListener('click', () => setType(tab.dataset.type));
+  });
+
+  document.querySelectorAll('.pax-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.pax-chip').forEach((item) => item.classList.remove('active'));
+      chip.classList.add('active');
+      document.getElementById('p-dropoff').value = chip.dataset.address;
+      document.getElementById('p-error').textContent = '';
+    });
+  });
+
+  document.getElementById('p-dropoff').addEventListener('input', () => {
+    document.querySelectorAll('.pax-chip').forEach((chip) => {
+      chip.classList.toggle('active', chip.dataset.address === document.getElementById('p-dropoff').value);
+    });
+  });
+
+  document.getElementById('book-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const pickup = document.getElementById('p-pickup').value.trim();
+    const dropoff = document.getElementById('p-dropoff').value.trim();
+    const date = document.getElementById('p-date').value;
+    const time = document.getElementById('p-time').value;
+    const error = document.getElementById('p-error');
+    if (!pickup) { error.textContent = 'Enter a pickup address.'; return; }
+    if (serviceType !== 'hourly' && !dropoff) { error.textContent = 'Enter a drop-off, or choose an airport.'; return; }
+    if (!date || !time) { error.textContent = 'Choose a date and time.'; return; }
+    const params = new URLSearchParams({
+      pickup: pickup,
+      pickupDate: date,
+      pickupTime: time,
+      serviceType: serviceType
+    });
+    if (serviceType === 'hourly') params.set('hours', document.getElementById('p-hours').value);
+    else params.set('dropoff', dropoff);
+    window.location.href = '/book?' + params.toString();
+  });
+
+  document.getElementById('track-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    track(document.getElementById('track-num').value);
+  });
+
+  document.querySelectorAll('.pax-nav[data-panel]').forEach((item) => {
+    item.addEventListener('click', () => showPanel(item.dataset.panel));
+  });
+
+  document.body.addEventListener('click', (event) => {
+    const book = event.target.closest('[data-panel="book"]');
+    if (book && book.closest('#rides-list')) { showPanel('book'); return; }
+    const card = event.target.closest('[data-num]');
+    if (card) openTrack(card.dataset.num);
+  });
+
+  document.getElementById('pax-signout').addEventListener('click', async () => {
+    try { await fetch('/api/nyclimo/logout', { method: 'POST', credentials: 'include' }); } catch (err) {}
+    window.location.href = '/login';
+  });
+
+  const hour = new Date().getHours();
+  document.getElementById('pax-greet').textContent = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById('p-date').value = tomorrow.toISOString().split('T')[0];
+  document.getElementById('p-time').value = '12:00';
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/passenger/sw.js').catch(() => {});
+  }
+
+  fetch('/api/nyclimo/me', { credentials: 'include' }).then(async (res) => {
+    if (!res.ok) return;
+    const data = await res.json();
+    const name = String(data?.user?.name || '').trim();
+    if (!name) return;
+    signedIn = true;
+    const first = name.split(/\s+/)[0];
+    document.getElementById('pax-hello').textContent = first;
+    document.getElementById('pax-name').textContent = first;
+    document.getElementById('pax-initials').textContent = first.slice(0, 1).toUpperCase();
+    document.getElementById('pax-initials').hidden = false;
+    document.getElementById('pax-signin').hidden = true;
+    document.getElementById('pax-signout').hidden = false;
+    const rides = await fetch('/api/nyclimo/passenger/bookings', { credentials: 'include' });
+    if (!rides.ok) return;
+    const body = await rides.json();
+    bookings = Array.isArray(body.bookings) ? body.bookings : [];
+    renderNext();
+  }).catch(() => {});
+})();
 </script>
 </body>
 </html>

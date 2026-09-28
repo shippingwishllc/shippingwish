@@ -9,10 +9,11 @@ const { buildTemplate, COMPANY } = require('./utils/email-templates');
 const { ensureGrowthSchema } = require('./utils/ensure-growth-schema');
 const { purgeExpiredTrash } = require('./utils/trash');
 const { webhookHandler } = require('./routes/billing');
-const { handleBuyWishWebhook } = require('./routes/buywish');
+const { handleBuyWishWebhook, loadLiveProductByKey, lookupCustomCategory, productIsHidden } = require('./routes/buywish');
 const pool = require('./db');
-const { storeProductFromRow, departmentBySlug, STORE_DEPARTMENTS } = require('./utils/buywish-catalog');
-const { renderProductPage, renderCollectionPage, renderSitemap } = require('./utils/buywish-pages');
+const { storeProductFromRow, departmentBySlug, STORE_DEPARTMENTS, STORE_GROUPS, productHandle, groupBySlug, groupForDepartmentSlug, groupChildren } = require('./utils/buywish-catalog');
+const { renderProductPage, renderCollectionPage, renderSitemap, injectProductIntoStorefront } = require('./utils/buywish-pages');
+const { metaCatalogItems, renderMetaCatalogXml, renderMetaCatalogCsv } = require('./utils/buywish-meta-feed');
 const { handleStripeWebhook: handleNYCLimoStripeWebhook } = require('./routes/nyclimo');
 const { requireAuth } = require('./middleware/auth');
 const { requireCarrierSubscription } = require('./middleware/subscription');
@@ -136,14 +137,7 @@ app.use((req, res, next) => {
 });
 
 const BUY_WISH_COLLECTIONS = {
-  tech: 'Tech',
-  home: 'Home',
-  fitness: 'Fitness',
-  beauty: 'Beauty',
-  kitchen: 'Kitchen',
-  pets: 'Pets',
-  travel: 'Travel',
-  kids: 'Kids',
+  ...Object.fromEntries(Object.entries(STORE_DEPARTMENTS).map(([key, dept]) => [dept.slug, key])),
   featured: 'Featured'
 };
 
@@ -157,35 +151,122 @@ async function loadBuyWishProducts(whereSql, params) {
 }
 
 async function sendBuyWishProduct(res, key) {
+  let product = null;
   try {
-    const rows = await loadBuyWishProducts('(handle = $1 OR zendrop_id = $1)', [key]);
-    const product = rows[0];
-    if (!product) return res.status(404).type('html').send(renderCollectionPage('Product', []));
+    const rows = await loadBuyWishProducts('(handle = $1 OR zendrop_id = $1 OR handle = $2)', [String(key), productHandle(String(key).replace(/^p-/i, ''))]);
+    product = rows[0] || null;
+  } catch (err) {
+    product = null;
+  }
+  if (!product) {
+    try {
+      product = await loadLiveProductByKey(key);
+    } catch (err) {
+      return res.status(503).type('html').send('The product catalog is temporarily unavailable.');
+    }
+  }
+  if (!product) return res.status(404).type('html').send(renderCollectionPage('Product', []));
+  const hiddenId = product.zendrop_id || product.id;
+  if (await productIsHidden(hiddenId)) return res.status(404).type('html').send(renderCollectionPage('Product', []));
+  try {
+    const indexPath = path.join(__dirname, 'public', 'buywishonline', 'index.html');
+    const html = injectProductIntoStorefront(fs.readFileSync(indexPath, 'utf8'), {
+      ...product,
+      handle: product.handle || productHandle(product.zendrop_id || product.id)
+    });
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=300');
-    return res.send(renderProductPage(product));
+    return res.send(html);
   } catch (err) {
-    return res.status(503).type('html').send('The product catalog is temporarily unavailable.');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(renderProductPage(product));
   }
 }
 
-function sendBuyWishCollection(res, slug) {
-  const department = String(slug || '').toLowerCase() === 'all'
-    ? { key: 'all', title: 'All Products', slug: 'all' }
-    : departmentBySlug(slug);
+async function sendBuyWishCollection(res, slug) {
+  const cleanSlug = String(slug || '').toLowerCase();
+  const group = groupBySlug(cleanSlug);
+  let groupMeta = null;
+  let department = group && group.children.length > 1
+    ? { key: group.slug, title: group.title, slug: group.slug, blurb: group.blurb, hub: true, children: groupChildren(group) }
+    : cleanSlug === 'all'
+      ? { key: 'all', title: 'All Products', slug: 'all', blurb: 'The full BuyWishOnline shop, in one place.' }
+      : cleanSlug === 'deals'
+        ? { key: 'deals', title: 'Deals', slug: 'deals', blurb: 'Real price drops, and offers that pair two products together.' }
+        : departmentBySlug(slug);
+  if (!department) {
+    try {
+      department = await lookupCustomCategory(slug);
+    } catch (err) {
+      department = null;
+    }
+  }
+  if (department && !department.hub) {
+    const parent = groupForDepartmentSlug(department.slug);
+    if (parent) groupMeta = { slug: parent.slug, title: parent.title, children: groupChildren(parent) };
+  }
   if (!department) return res.status(404).type('html').send(renderCollectionPage('Collection', []));
   try {
     const indexPath = path.join(__dirname, 'public', 'buywishonline', 'index.html');
     let html = fs.readFileSync(indexPath, 'utf8');
-    const boot = JSON.stringify({ category: department.key, title: department.title, slug: department.slug }).replace(/</g, '\\u003c');
+    const boot = JSON.stringify({
+      category: department.key,
+      title: department.title,
+      slug: department.slug,
+      blurb: department.blurb || '',
+      hub: Boolean(department.hub),
+      children: department.children || null,
+      group: groupMeta
+    }).replace(/</g, '\\u003c');
     html = html.replace('<head>', `<head>\n  <script>window.BUYWISH_COLLECTION=${boot};</script>`);
-    html = html.replace(/<title>[^<]*<\/title>/, `<title>${department.title} | BuyWishOnline</title>`);
+    const safeTitle = String(department.title || 'Products').replace(/[<>&]/g, '');
+    html = html.replace(/<title>[^<]*<\/title>/, `<title>${safeTitle} | BuyWishOnline</title>`);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=120');
     return res.send(html);
   } catch (err) {
     return res.status(500).type('html').send('The collection page is temporarily unavailable.');
   }
+}
+
+async function sendBuyWishMetaFeed(res, format) {
+  let rows = [];
+  try {
+    const found = await pool.query(
+      `SELECT p.zendrop_id, p.handle, p.title, p.description, p.retail_price, p.compare_price,
+              p.image_url, p.images, p.is_active
+       FROM ecommerce_products p
+       LEFT JOIN buywish_product_overrides o ON o.zendrop_id = p.zendrop_id
+       WHERE p.is_active = true
+         AND p.zendrop_id IS NOT NULL
+         AND p.retail_price > 0
+         AND COALESCE(o.is_hidden, false) = false
+       ORDER BY p.updated_at DESC NULLS LAST
+       LIMIT 5000`
+    );
+    rows = found.rows;
+  } catch (err) {
+    try {
+      const found = await pool.query(
+        `SELECT zendrop_id, handle, title, description, retail_price, compare_price, image_url, images, is_active
+         FROM ecommerce_products
+         WHERE is_active = true AND zendrop_id IS NOT NULL AND retail_price > 0
+         ORDER BY updated_at DESC NULLS LAST
+         LIMIT 5000`
+      );
+      rows = found.rows;
+    } catch (inner) {
+      return res.status(503).type('text/plain').send('The shop catalog is temporarily unavailable.');
+    }
+  }
+  const items = metaCatalogItems(rows);
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  if (format === 'csv') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    return res.send(renderMetaCatalogCsv(items));
+  }
+  res.setHeader('Content-Type', 'application/rss+xml; charset=utf-8');
+  return res.send(renderMetaCatalogXml(items));
 }
 
 async function sendBuyWishSitemap(res) {
@@ -196,6 +277,12 @@ async function sendBuyWishSitemap(res) {
     { loc: 'https://www.buywishonline.com/privacy-policy', changefreq: 'yearly', priority: '0.2' },
     { loc: 'https://www.buywishonline.com/terms', changefreq: 'yearly', priority: '0.2' },
     { loc: 'https://www.buywishonline.com/collections/all', changefreq: 'daily', priority: '0.9' },
+    { loc: 'https://www.buywishonline.com/collections/deals', changefreq: 'daily', priority: '0.9' },
+    ...STORE_GROUPS.filter((group) => group.children.length > 1).map((group) => ({
+      loc: `https://www.buywishonline.com/collections/${group.slug}`,
+      changefreq: 'daily',
+      priority: '0.8'
+    })),
     ...Object.values(STORE_DEPARTMENTS).map((dept) => ({
       loc: `https://www.buywishonline.com/collections/${dept.slug}`,
       changefreq: 'daily',
@@ -209,6 +296,19 @@ async function sendBuyWishSitemap(res) {
        ORDER BY winning_score DESC LIMIT 500`
     );
     const seen = new Set();
+    try {
+      const customCategories = await pool.query(
+        `SELECT slug FROM buywish_categories WHERE is_active = true ORDER BY sort_order ASC, title ASC`
+      );
+      customCategories.rows.forEach((row) => {
+        const slug = String(row.slug || '').toLowerCase();
+        if (!slug || seen.has(slug)) return;
+        seen.add(slug);
+        urls.push({ loc: `https://www.buywishonline.com/collections/${slug}`, changefreq: 'daily', priority: '0.8' });
+      });
+    } catch (err) {
+      // Built-in collections stay in the sitemap when custom categories are unavailable.
+    }
     rows.forEach((row) => {
       const slug = String(row.category || 'featured').toLowerCase();
       if (BUY_WISH_COLLECTIONS[slug] && !seen.has(slug)) {
@@ -382,6 +482,9 @@ app.use((req, res, next) => {
     }
     if (cleanP === '/sitemap.xml') {
       return sendBuyWishSitemap(res);
+    }
+    if (cleanP === '/feeds/meta-catalog.xml' || cleanP === '/feeds/meta-catalog.csv') {
+      return sendBuyWishMetaFeed(res, cleanP.endsWith('.csv') ? 'csv' : 'xml');
     }
     const productMatch = cleanP.match(/^\/products\/([^/]+)$/);
     if (productMatch) {
@@ -710,6 +813,7 @@ if (require.main === module) {
           setInterval(() => {
             dispatchDesk.syncDueSources().catch((err) => console.warn('[LOADBOARD] sync:', err.message));
             dispatchDesk.sendDueMorningTexts().catch((err) => console.warn('[AI-DISPATCH] morning:', err.message));
+            dispatchDesk.sendDueEmptySoonOffers().catch((err) => console.warn('[AI-DISPATCH] empty-soon:', err.message));
             require('./utils/outreach-engine').tick().catch((err) => console.warn('[OUTREACH] tick:', err.message));
           }, 60000);
         }

@@ -45,6 +45,21 @@ function head({ title, description, canonical, image, jsonLd, robots }) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-PD9DZS54');</script>
+  <!-- End Google Tag Manager -->
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8Q973SH30G"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-8Q973SH30G');
+  </script>
   <title>${esc(title)}</title>
   <meta name="description" content="${esc(description)}">
   <meta name="robots" content="${esc(robots || 'index, follow')}">
@@ -62,6 +77,10 @@ function head({ title, description, canonical, image, jsonLd, robots }) {
   ${jsonLd ? `<script type="application/ld+json">${jsonLd}</script>` : ''}
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PD9DZS54"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 <header>
   <a class="brand" href="/">BuyWishOnline</a>
   <nav>
@@ -74,10 +93,55 @@ function head({ title, description, canonical, image, jsonLd, robots }) {
 
 function foot() {
   return `<footer class="muted">
-  <p>BuyWishOnline is operated by Shipping Wish LLC. Orders for the USA, Canada, and the United Kingdom are fulfilled through Zendrop after payment.</p>
+  <p>BuyWishOnline is operated by Shipping Wish LLC. Orders ship to the USA, Canada, and the United Kingdom after payment.</p>
   <p><a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/privacy-policy">Privacy</a> · <a href="/terms">Terms</a></p>
 </footer>
 </body></html>`;
+}
+
+function injectProductIntoStorefront(html, product) {
+  const handle = product.handle || `p-${product.zendrop_id || product.id}`;
+  const shareUrl = `https://www.buywishonline.com/products/${handle}`;
+  const description = String(product.description || `${product.title} from BuyWishOnline.`).replace(/\s+/g, ' ').slice(0, 160);
+  const image = product.image_url || (product.images && product.images[0]) || '';
+  const boot = JSON.stringify({
+    id: product.id,
+    handle,
+    title: product.title,
+    category: product.category,
+    shareUrl
+  }).replace(/</g, '\\u003c');
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: product.description || product.title,
+    image: image || undefined,
+    sku: String(product.zendrop_id || handle),
+    brand: { '@type': 'Brand', name: 'BuyWishOnline' },
+    offers: {
+      '@type': 'Offer',
+      url: shareUrl,
+      priceCurrency: 'USD',
+      price: product.retail_price,
+      availability: product.in_stock === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock'
+    }
+  }).replace(/</g, '\\u003c');
+  let page = String(html || '');
+  page = page.replace('<head>', `<head>\n  <script>window.BUYWISH_PRODUCT=${boot};</script>`);
+  page = page.replace(/<title>[^<]*<\/title>/, `<title>${esc(product.title)} | BuyWishOnline</title>`);
+  page = page.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(description)}">`);
+  page = page.replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${esc(shareUrl)}">`);
+  page = page.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${esc(product.title)}">`);
+  page = page.replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${esc(description)}">`);
+  page = page.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${esc(shareUrl)}">`);
+  page = page.replace(/<meta property="og:type" content="website">/, '<meta property="og:type" content="product">');
+  if (image) page = page.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${esc(image)}">`);
+  const price = money(product.retail_price);
+  const retailerId = String(product.zendrop_id || product.id || handle);
+  const availability = product.in_stock === false ? 'out of stock' : 'in stock';
+  page = page.replace('</head>', `  <meta property="product:retailer_item_id" content="${esc(retailerId)}">\n  <meta property="product:price:amount" content="${esc(price)}">\n  <meta property="product:price:currency" content="USD">\n  <meta property="product:availability" content="${availability}">\n<script type="application/ld+json">${jsonLd}</script>\n</head>`);
+  return page;
 }
 
 function renderProductPage(product) {
@@ -119,6 +183,7 @@ function renderProductPage(product) {
       <p>${esc(product.delivery || 'Shipping time is confirmed for USA, Canada, and the United Kingdom before this piece is stocked.')}</p>
       <p>${esc(product.description || '')}</p>
       ${(product.features || []).length ? `<ul>${product.features.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+      <p>Share this product: <a href="${esc(canonical)}">${esc(canonical)}</a></p>
       <p><a class="btn" href="/?product=${encodeURIComponent(product.id)}">Add to bag</a></p>
     </div>
   </div>
@@ -130,7 +195,7 @@ function renderCollectionPage(category, products) {
   const slug = String(category || 'featured').toLowerCase();
   const canonical = `https://www.buywishonline.com/collections/${encodeURIComponent(slug)}`;
   const title = `${category} | BuyWishOnline`;
-  const description = `Shop ${category} pieces that Zendrop can ship to the USA, Canada, and the United Kingdom.`;
+  const description = `Shop ${category} at BuyWishOnline. Delivery to the USA, Canada, and the United Kingdom.`;
   const cards = products.map((p) => {
     const img = p.image_url || (p.images && p.images[0]) || '';
     return `<a class="card" href="/products/${esc(p.handle)}">
@@ -147,7 +212,7 @@ function renderCollectionPage(category, products) {
 <main>
   <p class="muted">Collection</p>
   <h1>${esc(category)}</h1>
-  <p>Pieces in this edit have a Zendrop shipping quote for the USA, Canada, and the United Kingdom, with USA delivery quoted at 14 days or faster.</p>
+  <p>Shop this collection. Orders ship to the USA, Canada, and the United Kingdom.</p>
   <div class="grid">${cards || '<p>This collection is being stocked. Check back after the next catalog sync.</p>'}</div>
 </main>
 ${foot()}`;
@@ -161,4 +226,4 @@ ${body}
 </urlset>`;
 }
 
-module.exports = { esc, renderProductPage, renderCollectionPage, renderSitemap };
+module.exports = { esc, renderProductPage, renderCollectionPage, renderSitemap, injectProductIntoStorefront };

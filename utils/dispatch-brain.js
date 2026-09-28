@@ -6,6 +6,10 @@ const {
   STATE_CENTERS, STATE_NAMES, REGIONS, AMBIGUOUS_CODES, KNOWN_CITIES,
   milesBetween, roadMiles, stateOf, stateCenter, parsePlace, placeLabel, geocode
 } = require('./geo');
+const {
+  parseHomeDays, formatHomeDays, homeTimeSkipReason,
+  combineDeliveryAt, isEmptySoon, parseHomeRulesText, nextHomeMoment
+} = require('./dispatch-home-time');
 
 const OFFER_TTL_HOURS = 3;
 const MAX_OUTBOUND_PER_DAY = 12;
@@ -126,7 +130,12 @@ function parseCarrierText(text, carrier = {}) {
   const pick = lower.match(/^(?:yes|y|book|take|want|ok)?\s*#?\s*([1-3])\s*[.!]?$/);
   if (pick) return { ...out, intent: 'book', choice: Number(pick[1]) };
   if (/^(no|nope|none|pass|more|other|others|next|not those|something else)\b/.test(lower)) return { ...out, intent: 'more' };
-  if (/\b(off today|day off|home time|not working|no loads today|taking (a|the) day|resting|on break|done for (the )?day)\b/.test(lower)) {
+  if (/\b(empty soon|unloading|almost empty|dropping now|at the receiver|empty in \d)\b/.test(lower)) {
+    return { ...out, intent: 'empty_soon' };
+  }
+  const homeRules = parseHomeRulesText(body);
+  if (homeRules && homeRules.days.length) return { ...out, intent: 'home_rules', homeDays: homeRules.days };
+  if (/\b(off today|day off|not working|no loads today|taking (a|the) day|resting|on break|done for (the )?day)\b/.test(lower)) {
     return { ...out, intent: 'off' };
   }
   if (/^(help|\?|what|how)\b/.test(lower) && !/\d{5}/.test(lower)) return { ...out, intent: 'question' };
@@ -161,7 +170,7 @@ async function askModelToParse(text) {
       messages: [
         {
           role: 'system',
-          content: 'You read one text message from a US truck driver to a dispatcher. Return JSON: {"intent":"loads|book|more|off|question|other","origin":"ZIP or City, ST or empty","destination":"City, ST or state codes or anywhere or empty","equipment":"van|reefer|flatbed|step deck|power only|hotshot|box truck or empty","choice":1-3 or null}. Never guess a place the driver did not write.'
+          content: 'You read one text message from a US truck driver to a dispatcher. Return JSON: {"intent":"loads|book|more|off|question|empty_soon|home_rules|other","origin":"ZIP or City, ST or empty","destination":"City, ST or state codes or anywhere or empty","equipment":"van|reefer|flatbed|step deck|power only|hotshot|box truck or empty","choice":1-3 or null,"home_days":"FRI,SAT or empty"}. empty_soon means they are unloading or will be empty in a few hours. home_rules means they named weekdays they must be home. Never guess a place the driver did not write. Never invent a load or a rate.'
         },
         { role: 'user', content: String(text || '').slice(0, 600) }
       ]
@@ -178,13 +187,15 @@ async function understand(text, carrier) {
   const ai = await askModelToParse(text).catch(() => null);
   if (!ai) return { ...parsed, via: 'rules' };
   const result = {
-    intent: ['loads', 'book', 'more', 'off', 'question'].includes(ai.intent) ? ai.intent : 'unknown',
+    intent: ['loads', 'book', 'more', 'off', 'question', 'empty_soon', 'home_rules'].includes(ai.intent) ? ai.intent : 'unknown',
     origin: ai.origin ? parseOrigin(String(ai.origin)) : null,
     destination: ai.destination ? parseDestination(String(ai.destination), carrier) : null,
     equipment: equipmentKind(ai.equipment) || parsed.equipment,
     choice: [1, 2, 3].includes(Number(ai.choice)) ? Number(ai.choice) : null,
+    homeDays: parsed.homeDays || parseHomeDays(ai.home_days || ai.homeDays) || null,
     via: 'ai'
   };
+  if (result.homeDays && !result.homeDays.length) result.homeDays = null;
   if (result.intent === 'book' && !result.choice) result.intent = 'unknown';
   if (result.intent === 'loads' && !result.origin && !result.destination) result.intent = 'unknown';
   return result;
@@ -234,7 +245,7 @@ async function findMatches(carrier, { origin, destination, equipment, excludeLoa
     [excludeLoadIds.map(Number).filter(Number.isFinite), CANDIDATE_LIMIT]
   );
 
-  const reasons = { equipment: 0, too_far: 0, below_min_rpm: 0, avoided_state: 0 };
+  const reasons = { equipment: 0, too_far: 0, below_min_rpm: 0, avoided_state: 0, home_time: 0 };
   const rough = [];
   for (const load of rows) {
     const pState = (load.pickup_state || stateOf(load.pickup_location) || '').toUpperCase().trim();
@@ -242,6 +253,8 @@ async function findMatches(carrier, { origin, destination, equipment, excludeLoa
     const loadKind = equipmentKind(load.equipment_type);
     if (wantKind && loadKind && wantKind !== loadKind && !(wantKind === 'power only')) { reasons.equipment++; continue; }
     if (dState && avoid.includes(dState)) { reasons.avoided_state++; continue; }
+    const homeSkip = homeTimeSkipReason(carrier, { pickupDate: load.pickup_date, deliveryState: dState, deadhead: 0, loaded: 0 });
+    if (homeSkip === 'home_day_pickup') { reasons.home_time++; continue; }
     const center = stateCenter(pState);
     const guess = center ? milesBetween(originPt, center) : null;
     // A state center can sit a few hundred miles from its border, so this only drops the obvious misses.
@@ -269,6 +282,13 @@ async function findMatches(carrier, { origin, destination, equipment, excludeLoa
     const rate = Number(load.rate);
     const allIn = rate / (loaded + deadhead);
     if (minRpm && allIn < minRpm) { reasons.below_min_rpm++; continue; }
+    const lateHome = homeTimeSkipReason(carrier, {
+      pickupDate: load.pickup_date,
+      deliveryState: dState,
+      deadhead,
+      loaded
+    });
+    if (lateHome) { reasons.home_time++; continue; }
     let destMatch = !dest;
     let destNear = false;
     if (dest) {
@@ -343,13 +363,26 @@ async function saveOffers(carrier, list, originLabel) {
 }
 
 function whyNone(reasons) {
+  if (reasons.home_time) return ' Home-time rules on file skipped those loads.';
   if (reasons.too_far) return ' Nothing within your empty-mile limit right now.';
   if (reasons.below_min_rpm) return ' Some loads were below your minimum rate per mile.';
   if (reasons.equipment) return ' Loads nearby need different equipment.';
   return '';
 }
 
-async function offerLoads(carrier, { origin, destination, equipment, excludeLoadIds = [] }) {
+function destinationForHomeTime(carrier) {
+  const homeDays = parseHomeDays(carrier.home_days);
+  const homeState = String(carrier.home_state || '').toUpperCase().slice(0, 2);
+  if (homeState && homeDays.length) {
+    const homeBy = nextHomeMoment(new Date(), homeDays);
+    if (homeBy && (homeBy.getTime() - Date.now()) / 3600000 <= 48) {
+      return { any: false, states: [homeState], point: null, label: homeState };
+    }
+  }
+  return parseDestination(carrier.prefer_destination, carrier);
+}
+
+async function offerLoads(carrier, { origin, destination, equipment, excludeLoadIds = [], heading } = {}) {
   const result = await findMatches(carrier, { origin, destination, equipment, excludeLoadIds });
   const originLabel = placeLabel(origin) || carrier.last_location || carrier.empty_zip || '';
   const destLabel = destination && !destination.any ? destination.label : '';
@@ -357,7 +390,7 @@ async function offerLoads(carrier, { origin, destination, equipment, excludeLoad
     return { reply: 'Shipping Wish: Send the ZIP or city you are empty in, and where you want to go. Example: 75201 to Atlanta.', offers: [] };
   }
   let list = result.matches;
-  let header = `Shipping Wish loads near ${originLabel}${destLabel ? ` → ${destLabel}` : ''}:`;
+  let header = heading || `Shipping Wish loads near ${originLabel}${destLabel ? ` → ${destLabel}` : ''}:`;
   if (!list.length && result.others.length) {
     list = result.others;
     header = `Nothing to ${destLabel} right now. Closest other loads near ${originLabel}:`;
@@ -511,7 +544,7 @@ async function handleCarrierSms(fromPhone, body) {
     const offer = rows[0];
     if (!offer) {
       const origin = await latestOrigin(carrier);
-      const fresh = origin ? await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier) }) : null;
+      const fresh = origin ? await offerLoads(carrier, { origin, destination: destinationForHomeTime(carrier) }) : null;
       reply = fresh && fresh.offers.length
         ? `That list expired.\n${fresh.reply}`
         : 'Shipping Wish: That list expired. Text the ZIP you are empty in to get fresh loads.';
@@ -520,7 +553,7 @@ async function handleCarrierSms(fromPhone, body) {
       const result = await requestBooking(carrier, offer);
       if (result.taken) {
         const origin = await latestOrigin(carrier);
-        const fresh = origin ? await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier), excludeLoadIds: [offer.load_id] }) : null;
+        const fresh = origin ? await offerLoads(carrier, { origin, destination: destinationForHomeTime(carrier), excludeLoadIds: [offer.load_id] }) : null;
         reply = `Load ${result.load ? result.load.load_number : ''} was just taken.` + (fresh && fresh.offers.length ? `\n${fresh.reply}` : ' Text your ZIP for more.');
         action = 'book_taken';
       } else {
@@ -535,7 +568,7 @@ async function handleCarrierSms(fromPhone, body) {
     } else {
       const res = await offerLoads(carrier, {
         origin,
-        destination: parseDestination(carrier.prefer_destination, carrier),
+        destination: destinationForHomeTime(carrier),
         excludeLoadIds: await shownLoadIds(carrier.id)
       });
       reply = res.offers.length ? res.reply : `Shipping Wish: No other loads near ${placeLabel(origin)} right now. Reply ANY for all directions, or text a new ZIP later.`;
@@ -544,9 +577,20 @@ async function handleCarrierSms(fromPhone, body) {
     await pool.query(`UPDATE ai_dispatch_carriers SET off_until = now() + interval '20 hours' WHERE id = $1`, [carrier.id]);
     await pool.query(`UPDATE ai_dispatch_offers SET status = 'expired', updated_at = now() WHERE carrier_id = $1 AND status = 'offered'`, [carrier.id]);
     reply = 'Shipping Wish: Got it, no loads today. We will check in on the next workday morning.';
+  } else if (parsed.intent === 'home_rules') {
+    const days = formatHomeDays(parsed.homeDays);
+    await pool.query(`UPDATE ai_dispatch_carriers SET home_days = $2 WHERE id = $1`, [carrier.id, days || null]);
+    carrier.home_days = days;
+    reply = days
+      ? `Shipping Wish: Home days saved (${days}${carrier.home_state ? `, home ${carrier.home_state}` : ''}). We will skip loads that miss that window. Reply 1-3 to pick a load, or text a ZIP.`
+      : 'Shipping Wish: Text the weekdays you want to be home, like HOME FRI SAT.';
+  } else if (parsed.intent === 'empty_soon') {
+    const sent = await offerEmptySoon(carrier, { force: true });
+    reply = sent.reply;
+    action = sent.action;
   } else if (parsed.intent === 'loads') {
     const origin = parsed.origin || await latestOrigin(carrier);
-    const destination = parsed.destination || parseDestination(carrier.prefer_destination, carrier);
+    const destination = parsed.destination || destinationForHomeTime(carrier);
     await pool.query(
       `UPDATE ai_dispatch_carriers
           SET last_location = COALESCE($2, last_location),
@@ -566,7 +610,7 @@ async function handleCarrierSms(fromPhone, body) {
       reply = res.reply;
     }
   } else {
-    reply = 'Shipping Wish dispatch: text the ZIP or city you are empty in and where you want to go (example: 75201 to Atlanta). Reply 1-3 to request a load we sent, MORE for others, or OFF TODAY. A dispatcher reads every message.';
+    reply = 'Shipping Wish dispatch: text the ZIP or city you are empty in and where you want to go (example: 75201 to Atlanta). Reply 1-3 to request a load we sent, MORE for others, OFF TODAY, EMPTY SOON, or HOME FRI SAT. A dispatcher reads every message.';
     await notify(`Dispatch desk message: ${carrier.company_name}`, String(body).slice(0, 160), 'info');
   }
 
@@ -593,10 +637,117 @@ async function sendLoadsNow(carrier) {
   await ensureBoardSchema();
   const origin = await latestOrigin(carrier);
   if (!origin) return { sent: false, reason: 'No empty ZIP or city on file for this carrier.' };
-  const res = await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier) });
+  const res = await offerLoads(carrier, { origin, destination: destinationForHomeTime(carrier) });
   if (!res.offers.length) return { sent: false, reason: res.reply };
   const sms = await textCarrier(carrier, res.reply, 'staff_sent_loads');
   return { sent: sms === 'sent' || sms === 'logged', sms, offers: res.offers.length, text: res.reply };
+}
+
+async function bookedDrops(carrierId) {
+  const { rows } = await pool.query(
+    `SELECT o.id AS booked_offer_id, o.empty_soon_sent_at,
+            l.delivery_location, l.delivery_state, l.delivery_date, l.delivery_time, l.equipment_type
+       FROM ai_dispatch_offers o
+       JOIN loads l ON l.id = o.load_id
+      WHERE o.carrier_id = $1 AND o.status = 'booked'
+      ORDER BY o.updated_at DESC
+      LIMIT 8`,
+    [carrierId]
+  );
+  return rows;
+}
+
+function originFromDrop(drop) {
+  if (!drop) return null;
+  return parseOrigin(drop.delivery_location)
+    || (drop.delivery_state ? parseOrigin(String(drop.delivery_state)) : null);
+}
+
+async function markEmptySoonSent(offerId) {
+  if (!offerId) return;
+  await pool.query(
+    `UPDATE ai_dispatch_offers SET empty_soon_sent_at = now(), updated_at = now() WHERE id = $1`,
+    [offerId]
+  );
+}
+
+// 1.5–3.5 hours before a booked drop, offer the next three loads from that empty ZIP.
+// force=true is a driver/staff request; cron calls this without force and never texts without consent.
+async function offerEmptySoon(carrier, { force = false } = {}) {
+  await ensureBoardSchema();
+  const drops = await bookedDrops(carrier.id);
+  let drop = null;
+  if (force) {
+    drop = drops[0] || null;
+  } else {
+    drop = drops.find((row) => !row.empty_soon_sent_at && isEmptySoon(combineDeliveryAt(row.delivery_date, row.delivery_time))) || null;
+    if (!drop) return { sent: false, action: 'empty_soon_skip', reply: null, offers: [] };
+  }
+
+  const origin = originFromDrop(drop) || await latestOrigin(carrier);
+  const destination = destinationForHomeTime(carrier);
+  if (!origin) {
+    return {
+      sent: false,
+      action: 'empty_soon_no_origin',
+      offers: [],
+      reply: 'Shipping Wish: Text the ZIP you will be empty in. We will send three loads that fit your equipment and home-time days.'
+    };
+  }
+
+  await pool.query(
+    `UPDATE ai_dispatch_carriers
+        SET last_location = COALESCE($2, last_location),
+            empty_zip = COALESCE($3, empty_zip)
+      WHERE id = $1`,
+    [carrier.id, placeLabel(origin), origin.zip || null]
+  );
+
+  const originLabel = placeLabel(origin);
+  const destLabel = destination && !destination.any ? destination.label : '';
+  const heading = `Shipping Wish: emptying soon near ${originLabel}${destLabel ? ` → ${destLabel}` : ''}. Next loads:`;
+  const res = await offerLoads({ ...carrier, last_location: originLabel }, {
+    origin,
+    destination,
+    equipment: (drop && drop.equipment_type) || carrier.equipment,
+    heading
+  });
+
+  if (!force && !res.offers.length) {
+    return { sent: false, action: 'empty_soon_none', reply: null, offers: [] };
+  }
+  if (drop) await markEmptySoonSent(drop.booked_offer_id);
+  return { sent: !!res.offers.length, action: 'empty_soon', reply: res.reply, offers: res.offers };
+}
+
+async function sendEmptySoonNow(carrier) {
+  await ensureBoardSchema();
+  const result = await offerEmptySoon(carrier, { force: true });
+  if (!result.reply) return { sent: false, reason: 'No booked delivery or empty ZIP on file for this carrier.' };
+  const sms = await textCarrier(carrier, result.reply, 'staff_empty_soon');
+  return { sent: sms === 'sent' || sms === 'logged', sms, offers: (result.offers || []).length, text: result.reply };
+}
+
+async function sendDueEmptySoonOffers() {
+  await ensureBoardSchema();
+  const { rows } = await pool.query(
+    `SELECT DISTINCT ON (c.id) c.*
+       FROM ai_dispatch_carriers c
+       JOIN ai_dispatch_offers o ON o.carrier_id = c.id AND o.status = 'booked' AND o.empty_soon_sent_at IS NULL
+      WHERE c.status = 'active' AND c.sms_consent = TRUE
+        AND (c.off_until IS NULL OR c.off_until < now())
+      ORDER BY c.id`
+  );
+  const sent = [];
+  for (const carrier of rows) {
+    if (!isWithinTcpaHours(carrier.phone).allowed) continue;
+    if (await outboundToday(carrier.id) >= MAX_OUTBOUND_PER_DAY) continue;
+    const result = await offerEmptySoon(carrier, { force: false });
+    if (!result.sent || !result.reply) continue;
+    const sms = await textCarrier(carrier, result.reply, 'empty_soon');
+    sent.push({ carrier_id: carrier.id, sms, offers: (result.offers || []).length });
+  }
+  return sent;
 }
 
 async function loadOffer(offerId) {
@@ -645,7 +796,7 @@ async function releaseOffer(offerId, reason) {
   if (origin) {
     const res = await offerLoads(carrier, {
       origin,
-      destination: parseDestination(carrier.prefer_destination, carrier),
+      destination: destinationForHomeTime(carrier),
       excludeLoadIds: [...await shownLoadIds(carrier.id), offer.load_id]
     });
     text += res.offers.length ? `\n${res.reply}` : ' Text your ZIP again for fresh loads.';
@@ -714,9 +865,9 @@ async function preview(carrier, text) {
   await ensureBoardSchema();
   const parsed = await understand(text, carrier);
   const origin = parsed.origin || await latestOrigin(carrier);
-  const destination = parsed.destination || parseDestination(carrier.prefer_destination, carrier);
+  const destination = parsed.destination || destinationForHomeTime(carrier);
   let matches = { matches: [], others: [], reasons: {} };
-  if (origin && ['loads', 'more', 'unknown'].includes(parsed.intent)) {
+  if (origin && ['loads', 'more', 'unknown', 'empty_soon'].includes(parsed.intent)) {
     matches = await findMatches({ ...carrier, equipment: parsed.equipment || carrier.equipment }, { origin, destination, equipment: parsed.equipment });
   }
   const shape = async (m) => ({
@@ -742,7 +893,8 @@ async function preview(carrier, text) {
       origin: origin ? placeLabel(origin) : null,
       destination: destination ? destination.label : null,
       equipment: parsed.equipment || carrier.equipment || null,
-      choice: parsed.choice
+      choice: parsed.choice,
+      home_days: parsed.homeDays && parsed.homeDays.length ? formatHomeDays(parsed.homeDays) : null
     },
     matches: await Promise.all(matches.matches.map(shape)),
     others: await Promise.all(matches.others.map(shape)),
@@ -793,6 +945,10 @@ module.exports = {
   markBooked,
   releaseOffer,
   sendLoadsNow,
+  offerEmptySoon,
+  sendEmptySoonNow,
+  sendDueEmptySoonOffers,
+  destinationForHomeTime,
   optOutPhone,
   preview,
   listOffers,

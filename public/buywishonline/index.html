@@ -3,12 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-PD9DZS54');</script>
+  <!-- End Google Tag Manager -->
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8Q973SH30G"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-8Q973SH30G');
+  </script>
   <link rel="icon" href="/buywishonline/favicon.ico" sizes="32x32">
   <link rel="icon" href="/buywishonline/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/buywishonline/apple-touch-icon.png">
   <title>BuyWishOnline™ — Premium Global Shopping | Smart Tech, Home & Lifestyle</title>
-  <meta name="description" content="BuyWishOnline is the luxury shop from Shipping Wish LLC. Every piece is chosen because Zendrop can ship it to the USA, Canada, and the United Kingdom, with USA delivery quoted at 14 days or faster.">
-  <meta name="keywords" content="BuyWishOnline, luxury dropshipping, USA shipping, Canada shipping, UK shipping, Zendrop, Shipping Wish LLC">
+  <meta name="description" content="BuyWishOnline is the shop from Shipping Wish LLC. Curated products with delivery to the USA, Canada, and the United Kingdom.">
+  <meta name="keywords" content="BuyWishOnline, USA shipping, Canada shipping, UK shipping, Shipping Wish LLC">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://www.buywishonline.com/">
 
@@ -35,23 +50,14 @@
     "url": "https://www.buywishonline.com",
     "logo": "https://www.buywishonline.com/logo.png",
     "description": "Premium global e-commerce store operated by Shipping Wish LLC with fast express delivery across the USA, UK, Canada, and Europe.",
-    "parentOrganization": {
-      "@type": "Organization",
-      "name": "Shipping Wish LLC",
-      "url": "https://www.shippingwish.com",
       "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "19266 Coastal Hwy",
-        "addressLocality": "Rehoboth Beach",
-        "addressRegion": "DE",
-        "postalCode": "19971",
-        "addressCountry": "US"
-      }
+      "@type": "PostalAddress",
+      "streetAddress": "19266 Coastal Hwy",
+      "addressLocality": "Rehoboth Beach",
+      "addressRegion": "DE",
+      "postalCode": "19971",
+      "addressCountry": "US"
     },
-    "sameAs": [
-      "https://www.shippingwish.com",
-      "https://www.facebook.com/shippingwish0"
-    ],
     "contactPoint": {
       "@type": "ContactPoint",
       "contactType": "customer service",
@@ -135,18 +141,6 @@
     .topbar-track span { display: inline-flex; align-items: center; gap: 8px; }
     .topbar-track span::before { content: '★'; color: var(--gold); }
     @keyframes ticker { 0% { transform: translateY(-50%) translateX(0); } 100% { transform: translateY(-50%) translateX(-50%); } }
-    .topbar-cta {
-      position: absolute;
-      right: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--gold);
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      display: none;
-    }
-    @media (min-width: 768px) { .topbar-cta { display: block; } }
-
     /* ===== NAVBAR ===== */
     .navbar {
       background: var(--surface);
@@ -237,6 +231,7 @@
     .search-bar {
       display: flex;
       align-items: center;
+      margin: 0;
       background: #f3f4f6;
       border: 1.5px solid transparent;
       border-radius: 10px;
@@ -451,35 +446,49 @@
     .cat-strip-inner {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 0 24px;
+      padding: 12px 16px 10px;
       display: flex;
-      align-items: center;
-      gap: 2px;
+      align-items: flex-start;
+      gap: 4px;
       overflow-x: auto;
       scrollbar-width: none;
     }
     .cat-strip-inner::-webkit-scrollbar { display: none; }
     .cat-chip {
       display: flex;
+      flex-direction: column;
       flex-shrink: 0;
       align-items: center;
       gap: 6px;
-      padding: 10px 16px;
-      font-size: 13px;
-      font-weight: 600;
+      min-width: 76px;
+      padding: 6px 8px 8px;
+      font-size: 11px;
+      font-weight: 700;
       color: #4b5563;
-      border-bottom: 2.5px solid transparent;
+      border: none;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: color 0.15s;
       white-space: nowrap;
       border-radius: 0;
       background: none;
-      border-left: none;
-      border-right: none;
-      border-top: none;
+      text-align: center;
     }
-    .cat-chip:hover, .cat-chip.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .cat-chip .cat-emoji { font-size: 16px; }
+    .cat-chip:hover, .cat-chip.active { color: var(--accent); }
+    .cat-chip .cat-emoji {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: #eef2f7;
+      border: 2px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+    }
+    .cat-chip:hover .cat-emoji, .cat-chip.active .cat-emoji {
+      border-color: var(--accent);
+      background: #fff5f7;
+    }
 
     /* ===== HERO ===== */
     .hero {
@@ -878,18 +887,41 @@
     .btn-add-cart:hover { background: var(--accent); transform: translateY(-1px); }
 
     .collection-banner {
-      max-width: 1280px;
-      margin: 8px auto 0;
-      padding: 8px 24px 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+      color: #fff;
+      margin: 0 0 8px;
+      padding: 42px 24px 34px;
     }
-    .collection-banner h1 { font-size: 34px; letter-spacing: -0.03em; line-height: 1.1; }
-    .collection-banner p { color: var(--text-muted); max-width: 640px; }
+    .collection-banner-inner { max-width: 1280px; margin: 0 auto; }
+    .collection-kicker {
+      margin: 0 0 8px;
+      color: #f5a623;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .collection-banner h1 {
+      margin: 0 0 8px;
+      color: #fff;
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    .collection-banner p { margin: 0; color: rgba(255,255,255,0.82); font-size: 16px; max-width: 640px; }
+    .collection-banner .collection-kicker { color: #f5a623; font-size: 12px; letter-spacing: 0.14em; }
     body.is-collection .hero,
+    body.is-collection .home-categories,
     body.is-collection .cat-showcase,
-    body.is-collection .trust-bar { display: none; }
+    body.is-collection .trust-bar,
+    body.is-collection .new-arrivals-section,
+    body.is-collection #catalogSection .section-head { display: none; }
+    body.is-searching #catalogSection .section-head { display: flex; }
+    body.is-collection #catalogSection { padding-top: 28px; }
     @media (max-width: 640px) {
-      .collection-banner { padding: 4px 16px 0; }
-      .collection-banner h1 { font-size: 28px; }
+      .collection-banner { padding: 28px 16px 24px; }
+      .collection-banner h1 { font-size: 30px; }
       .hero-actions .btn-primary, .hero-actions .btn-outline-white { width: 100%; justify-content: center; }
       .section { padding-left: 16px; padding-right: 16px; }
       .products-grid {
@@ -929,24 +961,38 @@
     /* ===== CATEGORY SHOWCASE ===== */
     .cat-showcase {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 14px;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 18px 8px;
     }
     .cat-showcase-item {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px 12px;
+      background: transparent;
+      border: none;
+      padding: 0;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: transform 0.15s;
     }
-    .cat-showcase-item:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(233,69,96,0.12); transform: translateY(-3px); }
-    .cat-showcase-icon { font-size: 32px; margin-bottom: 8px; }
-    .cat-showcase-name { font-size: 13px; font-weight: 700; color: var(--text); }
-    .cat-showcase-count { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-    @media (max-width: 900px) { .cat-showcase { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 500px) { .cat-showcase { grid-template-columns: repeat(2, 1fr); } }
+    .cat-showcase-item:hover { transform: translateY(-2px); }
+    .cat-showcase-icon {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 8px;
+      border-radius: 50%;
+      background: #eef2f7;
+      border: 2px solid #e6e8ee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+    }
+    .cat-showcase-item:hover .cat-showcase-icon { border-color: var(--accent); background: #fff5f7; }
+    .cat-showcase-name { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    @media (max-width: 1100px) { .cat-showcase { grid-template-columns: repeat(6, 1fr); } }
+    @media (max-width: 900px) {
+      .cat-showcase { grid-template-columns: repeat(4, 1fr); }
+      .cat-showcase-icon { width: 72px; height: 72px; font-size: 28px; }
+    }
+    @media (max-width: 500px) { .cat-showcase { grid-template-columns: repeat(3, 1fr); } }
 
     /* ===== PROMO BANNERS ===== */
     .promo-grid {
@@ -985,6 +1031,19 @@
       transition: all 0.2s;
     }
     .btn-promo:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(233,69,96,0.35); }
+    a.btn-promo { text-decoration: none; }
+    .deal-bundles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 18px; }
+    .deal-card { display: flex; gap: 14px; background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 14px; align-items: center; }
+    .deal-photos { display: flex; gap: 8px; }
+    .deal-photos img { width: 72px; height: 72px; object-fit: cover; border-radius: 12px; background: #f3f4f6; }
+    .deal-kicker { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+    .deal-card h3 { margin: 4px 0; font-size: 16px; }
+    .deal-card p { margin: 0 0 8px; color: var(--text-muted); font-size: 13px; }
+    .deal-price { display: flex; gap: 8px; align-items: baseline; margin-bottom: 8px; }
+    .deal-price strong { font-size: 18px; }
+    .deal-price span { color: var(--text-muted); text-decoration: line-through; }
+    .deal-card button { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px 12px; font-weight: 700; }
+    @media (max-width: 700px) { .deal-bundles { grid-template-columns: 1fr; } }
     .btn-promo.light { background: var(--primary); }
     @media (max-width: 640px) { .promo-grid { grid-template-columns: 1fr; } }
 
@@ -1062,6 +1121,30 @@
     .qty-ctrl button { background: #f8f9fa; border: none; width: 36px; height: 36px; font-size: 18px; font-weight: 700; color: var(--text); transition: background 0.15s; }
     .qty-ctrl button:hover { background: #f0f0f0; }
     .qty-ctrl span { width: 40px; text-align: center; font-size: 14px; font-weight: 700; }
+    .detail-share { display: flex; flex-direction: column; gap: 6px; }
+    .detail-share-label { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+    .detail-share-row { display: flex; gap: 8px; }
+    .detail-share-row input {
+      flex: 1;
+      min-width: 0;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text);
+      background: #f8f9fa;
+    }
+    .btn-share {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .btn-share:hover { background: #0f3460; }
     .detail-actions { display: flex; flex-direction: column; gap: 10px; }
     .btn-add-detail {
       background: var(--accent);
@@ -1495,7 +1578,7 @@
       margin: 0 auto;
       padding: 60px 24px 40px;
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr;
+      grid-template-columns: 2fr 1fr 1fr;
       gap: 40px;
     }
     .footer-brand .logo-text { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 12px; display: block; }
@@ -1663,6 +1746,10 @@
   </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PD9DZS54"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 
 <!-- Loading Bar -->
 <div class="loading-bar" id="loadingBar" style="width:0;opacity:0;"></div>
@@ -1684,7 +1771,6 @@
     <span>Orders ship from the warehouse</span>
     <span>Shop Now, Pay Later — Available at Checkout</span>
   </div>
-  <span class="topbar-cta">⚡ NEW ARRIVALS →</span>
 </div>
 
 <!-- Navbar -->
@@ -1700,19 +1786,21 @@
 
     <div class="nav-cats" role="menubar">
       <a class="nav-cat-btn" data-dept="all" href="/collections/all">All Products</a>
-      <a class="nav-cat-btn" data-dept="tech" href="/collections/tech">Tech & Gadgets</a>
-      <a class="nav-cat-btn" data-dept="home" href="/collections/home">Home & Living</a>
+      <a class="nav-cat-btn" data-dept="tech-gadgets" href="/collections/tech-gadgets">Tech & Gadgets</a>
+      <a class="nav-cat-btn" data-dept="home-living" href="/collections/home-living">Home & Living</a>
+      <a class="nav-cat-btn" data-dept="fashion" href="/collections/fashion">Fashion</a>
       <a class="nav-cat-btn" data-dept="fitness" href="/collections/fitness">Fitness & Outdoors</a>
       <a class="nav-cat-btn" data-dept="beauty" href="/collections/beauty">Beauty & Wellness</a>
+      <a class="nav-cat-btn" data-dept="deals" href="/collections/deals">Deals</a>
       <button class="nav-cat-btn" onclick="openTrackModal()">Track Order</button>
       <a class="nav-cat-btn" href="/account">Account</a>
     </div>
 
     <div class="nav-right">
-      <div class="search-bar" role="search">
+      <form class="search-bar" role="search" onsubmit="return submitSearch(event, 'searchInput')">
         <input type="search" placeholder="Search products…" id="searchInput" aria-label="Search products" oninput="handleSearch(this.value)">
-        <button aria-label="Search">🔍</button>
-      </div>
+        <button type="submit" aria-label="Search">🔍</button>
+      </form>
 
       <div class="currency-badge" onclick="cycleCurrency()" title="Change currency" role="button" aria-label="Change currency">
         <span class="flag" id="currencyFlag">🇺🇸</span>
@@ -1743,15 +1831,19 @@
   </div>
   <div class="mobile-nav-body">
     <div class="mobile-nav-section-title">Shop by Category</div>
+    <div id="mobileDeptLinks">
+    <a class="mobile-nav-link" data-dept="deals" href="/collections/deals">🏷️ Deals</a>
     <a class="mobile-nav-link" data-dept="all" href="/collections/all">🛍️ All Products</a>
-    <a class="mobile-nav-link" data-dept="tech" href="/collections/tech">💻 Tech & Gadgets</a>
-    <a class="mobile-nav-link" data-dept="home" href="/collections/home">🏠 Home & Living</a>
-    <a class="mobile-nav-link" data-dept="fitness" href="/collections/fitness">🏃 Fitness & Outdoors</a>
+    <a class="mobile-nav-link" data-dept="tech-gadgets" href="/collections/tech-gadgets">💻 Tech & Gadgets</a>
+    <a class="mobile-nav-link" data-dept="home-living" href="/collections/home-living">🏠 Home & Living</a>
+    <a class="mobile-nav-link" data-dept="fashion" href="/collections/fashion">👗 Fashion</a>
     <a class="mobile-nav-link" data-dept="beauty" href="/collections/beauty">✨ Beauty & Wellness</a>
-    <a class="mobile-nav-link" data-dept="kitchen" href="/collections/kitchen">🍳 Kitchen & Cooking</a>
+    <a class="mobile-nav-link" data-dept="fitness" href="/collections/fitness">🏃 Fitness & Outdoors</a>
     <a class="mobile-nav-link" data-dept="pets" href="/collections/pets">🐾 Pet Supplies</a>
-    <a class="mobile-nav-link" data-dept="travel" href="/collections/travel">🧳 Travel & Bags</a>
-    <a class="mobile-nav-link" data-dept="kids" href="/collections/kids">🧒 Kids & Toys</a>
+    <a class="mobile-nav-link" data-dept="kids-baby" href="/collections/kids-baby">🧸 Kids & Baby</a>
+    <a class="mobile-nav-link" data-dept="travel" href="/collections/travel">🧳 Travel</a>
+    <a class="mobile-nav-link" data-dept="arts" href="/collections/arts">🎨 Arts & Crafts</a>
+    </div>
     <div class="mobile-nav-divider"></div>
     <div class="mobile-nav-section-title">Customer Care</div>
     <a class="mobile-nav-link" href="/account" onclick="closeMobileNav();">Account &amp; Orders</a>
@@ -1766,26 +1858,43 @@
 
 <!-- Mobile Search Bar Strip -->
 <div class="mobile-search-strip">
-  <div class="search-bar" role="search">
-    <input type="search" placeholder="Search 1,200+ products..." id="mobileSearchInput" aria-label="Search products" oninput="handleSearch(this.value)">
-    <button aria-label="Search" onclick="handleSearch(document.getElementById('mobileSearchInput').value)">🔍</button>
-  </div>
+  <form class="search-bar" role="search" onsubmit="return submitSearch(event, 'mobileSearchInput')">
+    <input type="search" placeholder="Search products..." id="mobileSearchInput" aria-label="Search products" oninput="handleSearch(this.value)">
+    <button type="submit" aria-label="Search">🔍</button>
+  </form>
 </div>
 
 <!-- Category Strip -->
 <div class="cat-strip">
-  <div class="cat-strip-inner">
-    <a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji">🛍️</span> All</a>
-    <a class="cat-chip" data-dept="tech" href="/collections/tech"><span class="cat-emoji">💻</span> Tech</a>
-    <a class="cat-chip" data-dept="home" href="/collections/home"><span class="cat-emoji">🏠</span> Home</a>
-    <a class="cat-chip" data-dept="fitness" href="/collections/fitness"><span class="cat-emoji">🏃</span> Fitness</a>
-    <a class="cat-chip" data-dept="beauty" href="/collections/beauty"><span class="cat-emoji">✨</span> Beauty</a>
-    <a class="cat-chip" data-dept="kitchen" href="/collections/kitchen"><span class="cat-emoji">🍳</span> Kitchen</a>
-    <a class="cat-chip" data-dept="pets" href="/collections/pets"><span class="cat-emoji">🐾</span> Pets</a>
-    <a class="cat-chip" data-dept="travel" href="/collections/travel"><span class="cat-emoji">🧳</span> Travel</a>
-    <a class="cat-chip" data-dept="kids" href="/collections/kids"><span class="cat-emoji">🧒</span> Kids</a>
+  <div class="cat-strip-inner" id="catStripInner">
+    <a class="cat-chip" data-dept="deals" href="/collections/deals"><span class="cat-emoji">🏷️</span>Deals</a>
+    <a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji">🛍️</span>All</a>
+    <a class="cat-chip" data-dept="tech-gadgets" href="/collections/tech-gadgets"><span class="cat-emoji">💻</span>Tech & Gadgets</a>
+    <a class="cat-chip" data-dept="home-living" href="/collections/home-living"><span class="cat-emoji">🏠</span>Home & Living</a>
+    <a class="cat-chip" data-dept="fashion" href="/collections/fashion"><span class="cat-emoji">👗</span>Fashion</a>
+    <a class="cat-chip" data-dept="beauty" href="/collections/beauty"><span class="cat-emoji">✨</span>Beauty</a>
+    <a class="cat-chip" data-dept="fitness" href="/collections/fitness"><span class="cat-emoji">🏃</span>Fitness</a>
+    <a class="cat-chip" data-dept="pets" href="/collections/pets"><span class="cat-emoji">🐾</span>Pets</a>
+    <a class="cat-chip" data-dept="kids-baby" href="/collections/kids-baby"><span class="cat-emoji">🧸</span>Kids & Baby</a>
+    <a class="cat-chip" data-dept="travel" href="/collections/travel"><span class="cat-emoji">🧳</span>Travel</a>
+    <a class="cat-chip" data-dept="arts" href="/collections/arts"><span class="cat-emoji">🎨</span>Arts</a>
   </div>
 </div>
+<script>
+(function () {
+  var boot = window.BUYWISH_COLLECTION;
+  if (!boot) return;
+  var children = boot.hub && boot.children && boot.children.length ? boot.children : (boot.group && boot.group.children);
+  if (!children || !children.length) return;
+  var strip = document.getElementById('catStripInner');
+  if (!strip) return;
+  strip.innerHTML = children.map(function (dept) {
+    var slug = String(dept.slug || '').replace(/[^a-z0-9-]/gi, '');
+    var title = String(dept.title || '').replace(/[&<>]/g, '');
+    return '<a class="cat-chip" data-dept="' + slug + '" href="/collections/' + slug + '"><span class="cat-emoji">' + (dept.icon || '🛍️') + '</span>' + title + '</a>';
+  }).join('');
+})();
+</script>
 
 <!-- Hero Section -->
 <section class="hero" aria-label="Featured promotions">
@@ -1795,7 +1904,7 @@
       Premium Products,<br>
       <span class="accent-word">Delivered Worldwide</span>
     </h1>
-    <p class="hero-sub">Thousands of curated, top-rated products — shipped fast to USA, UK, Canada & Europe. Satisfaction guaranteed on every order.</p>
+    <p class="hero-sub">Curated products, shipped to the USA, UK, Canada, and Europe. Satisfaction guaranteed on every order.</p>
     <div class="hero-actions">
       <button class="btn-primary" onclick="document.getElementById('catalogSection').scrollIntoView({behavior:'smooth'})">
         Shop Now →
@@ -1806,7 +1915,7 @@
     </div>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-num" id="statProducts">1,200+</div>
+        <div class="hero-stat-num" id="statProducts">New</div>
         <div class="hero-stat-label">Products</div>
       </div>
       <div class="hero-stat">
@@ -1824,7 +1933,7 @@
     </div>
   </div>
   <div class="hero-side">
-    <a class="hero-side-card" href="/collections/tech">
+    <a class="hero-side-card" href="/collections/tech-gadgets">
       <div class="hero-side-icon">💻</div>
       <div>
         <div class="hero-side-label">Trending</div>
@@ -1833,7 +1942,7 @@
       </div>
       <div class="hero-side-badge">HOT</div>
     </a>
-    <a class="hero-side-card" href="/collections/home">
+    <a class="hero-side-card" href="/collections/home-living">
       <div class="hero-side-icon">🏠</div>
       <div>
         <div class="hero-side-label">Popular</div>
@@ -1896,62 +2005,45 @@
 </div>
 
 <!-- Category Showcase -->
-<section class="section" aria-label="Shop by category">
+<section class="section home-categories" aria-label="Shop by category">
   <div class="section-head">
     <div>
       <div class="section-title">Shop by Category</div>
-      <div class="section-sub">Explore our curated collections</div>
+      <div class="section-sub">Choose a collection</div>
     </div>
   </div>
-  <div class="cat-showcase">
-    <a class="cat-showcase-item" href="/collections/tech">
-      <div class="cat-showcase-icon">💻</div>
-      <div class="cat-showcase-name">Tech & Gadgets</div>
-      <div class="cat-showcase-count">240+ products</div>
-    </a>
-    <a class="cat-showcase-item" href="/collections/home">
-      <div class="cat-showcase-icon">🏠</div>
-      <div class="cat-showcase-name">Home & Living</div>
-      <div class="cat-showcase-count">380+ products</div>
-    </a>
-    <a class="cat-showcase-item" href="/collections/fitness">
-      <div class="cat-showcase-icon">🏃</div>
-      <div class="cat-showcase-name">Fitness</div>
-      <div class="cat-showcase-count">180+ products</div>
-    </a>
-    <a class="cat-showcase-item" href="/collections/beauty">
-      <div class="cat-showcase-icon">✨</div>
-      <div class="cat-showcase-name">Beauty</div>
-      <div class="cat-showcase-count">210+ products</div>
-    </a>
-    <a class="cat-showcase-item" href="/collections/kitchen">
-      <div class="cat-showcase-icon">🍳</div>
-      <div class="cat-showcase-name">Kitchen</div>
-      <div class="cat-showcase-count">150+ products</div>
-    </a>
-    <a class="cat-showcase-item" href="/collections/pets">
-      <div class="cat-showcase-icon">🐾</div>
-      <div class="cat-showcase-name">Pets</div>
-      <div class="cat-showcase-count">120+ products</div>
-    </a>
+  <div class="cat-showcase" id="catShowcase">
+    <a class="cat-showcase-item" href="/collections/deals"><div class="cat-showcase-icon">🏷️</div><div class="cat-showcase-name">Deals</div></a>
+    <a class="cat-showcase-item" href="/collections/tech-gadgets"><div class="cat-showcase-icon">💻</div><div class="cat-showcase-name">Tech & Gadgets</div></a>
+    <a class="cat-showcase-item" href="/collections/home-living"><div class="cat-showcase-icon">🏠</div><div class="cat-showcase-name">Home & Living</div></a>
+    <a class="cat-showcase-item" href="/collections/fashion"><div class="cat-showcase-icon">👗</div><div class="cat-showcase-name">Fashion</div></a>
+    <a class="cat-showcase-item" href="/collections/beauty"><div class="cat-showcase-icon">✨</div><div class="cat-showcase-name">Beauty & Wellness</div></a>
+    <a class="cat-showcase-item" href="/collections/fitness"><div class="cat-showcase-icon">🏃</div><div class="cat-showcase-name">Fitness & Outdoors</div></a>
+    <a class="cat-showcase-item" href="/collections/pets"><div class="cat-showcase-icon">🐾</div><div class="cat-showcase-name">Pet Supplies</div></a>
+    <a class="cat-showcase-item" href="/collections/kids-baby"><div class="cat-showcase-icon">🧸</div><div class="cat-showcase-name">Kids & Baby</div></a>
+    <a class="cat-showcase-item" href="/collections/travel"><div class="cat-showcase-icon">🧳</div><div class="cat-showcase-name">Travel</div></a>
+    <a class="cat-showcase-item" href="/collections/arts"><div class="cat-showcase-icon">🎨</div><div class="cat-showcase-name">Arts & Crafts</div></a>
   </div>
 </section>
 
 <div class="collection-banner" id="collectionBanner" hidden>
-  <p>BuyWishOnline</p>
-  <h1 id="collectionHeading">All Products</h1>
-  <p id="collectionCopy">Live products from the Zendrop catalog.</p>
+  <div class="collection-banner-inner">
+    <p class="collection-kicker">BuyWishOnline</p>
+    <h1 id="collectionHeading">All Products</h1>
+    <p id="collectionCopy">The full BuyWishOnline shop, in one place.</p>
+  </div>
 </div>
 
 <!-- Featured Products -->
 <section class="section" id="catalogSection" aria-label="Featured products">
   <div class="section-head">
     <div>
-      <div class="section-title" id="catalogTitle">🔥 Trending Now</div>
-      <div class="section-sub" id="catalogSub">Hand-picked bestsellers — updated daily</div>
+      <div class="section-title" id="catalogTitle">🔥 Most Selling</div>
+      <div class="section-sub" id="catalogSub">Trending products customers buy most</div>
     </div>
     <a class="view-all" href="/collections/all">View All →</a>
   </div>
+  <div class="deal-bundles" id="dealBundles" hidden></div>
   <div class="products-grid" id="productsGrid">
     <!-- Skeleton loaders -->
     <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton-body"><div class="skeleton skeleton-line w60"></div><div class="skeleton skeleton-line w80"></div><div class="skeleton skeleton-line w40"></div><div class="skeleton skeleton-btn"></div></div></div>
@@ -1968,9 +2060,9 @@
       <span class="promo-emoji">⚡</span>
       <div>
         <div class="promo-eyebrow">Limited Offer</div>
-        <div class="promo-title" style="color:#fff;">Flash Sale — Up to 60% Off</div>
-        <div class="promo-sub" style="color:#94a3b8;">Top-rated tech & home essentials</div>
-        <button class="btn-promo" onclick="filterCategory('all')">Shop Sale →</button>
+        <div class="promo-title" style="color:#fff;">Deals</div>
+        <div class="promo-sub" style="color:#94a3b8;">Two-product offers and real price drops</div>
+        <a class="btn-promo" href="/collections/deals">Shop Deals →</a>
       </div>
     </div>
     <div class="promo-card rose">
@@ -1986,13 +2078,13 @@
 </section>
 
 <!-- More Products -->
-<section class="section" aria-label="More products">
+<section class="section new-arrivals-section" aria-label="More products">
   <div class="section-head">
     <div>
-      <div class="section-title">🆕 New Arrivals</div>
-      <div class="section-sub">Just landed — fresh products this week</div>
+      <div class="section-title">🛍️ All Products</div>
+      <div class="section-sub">The rest of the shop</div>
     </div>
-    <a class="view-all" href="javascript:void(0)" onclick="filterCategory('all')">View All →</a>
+    <a class="view-all" href="/collections/all">View All →</a>
   </div>
   <div class="products-grid" id="newArrivalsGrid">
     <div class="skeleton-card"><div class="skeleton skeleton-img"></div><div class="skeleton-body"><div class="skeleton skeleton-line w60"></div><div class="skeleton skeleton-line w80"></div><div class="skeleton skeleton-line w40"></div><div class="skeleton skeleton-btn"></div></div></div>
@@ -2077,8 +2169,9 @@
       <div class="footer-col-title">Shop</div>
       <ul class="footer-links">
         <li><a href="/collections/all">All Products</a></li>
-        <li><a href="/collections/tech">Tech & Gadgets</a></li>
-        <li><a href="/collections/home">Home & Living</a></li>
+        <li><a href="/collections/tech-gadgets">Tech & Gadgets</a></li>
+        <li><a href="/collections/home-living">Home & Living</a></li>
+        <li><a href="/collections/fashion">Fashion</a></li>
         <li><a href="/collections/fitness">Fitness & Outdoors</a></li>
         <li><a href="/collections/beauty">Beauty & Wellness</a></li>
         <li><a href="/collections/kitchen">Kitchen</a></li>
@@ -2093,16 +2186,6 @@
         <li><a href="/contact">Contact Support Desk</a></li>
         <li><a href="/returns">Returns & Refunds</a></li>
         <li><a href="/shipping">Shipping Policy</a></li>
-      </ul>
-    </div>
-    <div>
-      <div class="footer-col-title">Enterprise</div>
-      <ul class="footer-links">
-        <li><a href="/about">About Shipping Wish LLC</a></li>
-        <li><a href="https://www.shippingwish.com" target="_blank" rel="noopener">Shipping Wish Corporate</a></li>
-        <li><a href="https://www.loadsnexus.com" target="_blank" rel="noopener">LoadsNexus Freight Network</a></li>
-        <li><a href="https://www.nyclimowish.com" target="_blank" rel="noopener">NYC Limo Wish Chauffeur</a></li>
-        <li><a href="/sitemap.xml">Sitemap</a></li>
       </ul>
     </div>
   </div>
@@ -2168,6 +2251,13 @@
       <div class="detail-info">
         <div class="detail-brand" id="detailBrand">Category</div>
         <h2 class="detail-name" id="detailName">Product Name</h2>
+        <div class="detail-share">
+          <span class="detail-share-label">Share this product</span>
+          <div class="detail-share-row">
+            <input id="detailShareUrl" type="text" readonly value="" aria-label="Product link">
+            <button type="button" class="btn-share" onclick="copyProductLink()">Copy link</button>
+          </div>
+        </div>
         <div class="detail-rating">
           <div class="stars" id="detailStars"></div>
           <span class="rating-count" id="detailRatingCount">(0 reviews)</span>
@@ -2349,6 +2439,7 @@
 <!-- Toast Notifications -->
 <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
+<script src="/tracking.js"></script>
 <script>
 // ============================================================
 // CURRENCY DETECTION & CONVERSION
@@ -2472,7 +2563,7 @@ function renderProductCard(p) {
       </div>
       <div class="product-body">
         <div class="product-cat" itemprop="category">${p.category || 'Featured'}</div>
-        <h3 class="product-name" itemprop="name"><a href="/products/${encodeURIComponent(p.handle || p.id)}" onclick="event.stopPropagation()">${escHtml(p.title)}</a></h3>
+        <h3 class="product-name" itemprop="name"><a href="${productSharePath(p)}" onclick="event.stopPropagation()">${escHtml(p.title)}</a></h3>
         <div class="product-rating">
           ${rating && reviewCount ? `<div class="stars">${renderStars(rating)}</div><span class="rating-count">(${reviewCount.toLocaleString()})</span>` : `<span class="rating-count">No reviews yet</span>`}
         </div>
@@ -2490,11 +2581,81 @@ function renderProductCard(p) {
   `;
 }
 
+function renderDealBundles(bundles) {
+  const wrap = document.getElementById('dealBundles');
+  if (!wrap) return;
+  const list = Array.isArray(bundles) ? bundles : [];
+  window.buywishDeals = list;
+  if (!list.length) {
+    wrap.hidden = true;
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.hidden = false;
+  wrap.innerHTML = list.map((deal) => {
+    const pair = Array.isArray(deal.products) ? deal.products : [];
+    const photos = pair.map((item) => {
+      const src = /^https?:\/\//i.test(String(item.image || '')) ? item.image : '';
+      return src ? `<img src="${escHtml(src)}" alt="${escHtml(item.title)}">` : '';
+    }).join('');
+    const names = pair.map((item) => escHtml(item.title)).join(' + ');
+    const together = Number(deal.compare_price) > Number(deal.bundle_price);
+    return `<article class="deal-card">
+      <div class="deal-photos">${photos}</div>
+      <div>
+        <div class="deal-kicker">Two-product offer</div>
+        <h3>${escHtml(deal.title)}</h3>
+        <p>${names}</p>
+        <div class="deal-price">
+          <strong>${formatPrice(deal.bundle_price)}</strong>
+          ${together ? `<span>${formatPrice(deal.compare_price)}</span>` : ''}
+        </div>
+        <button type="button" onclick="addDealToCart(${Number(deal.id)})">Add both to cart</button>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+function addDealToCart(id) {
+  const deal = (window.buywishDeals || []).find((item) => Number(item.id) === Number(id));
+  if (!deal) return;
+  const existing = cart.find((item) => item.deal_id === deal.id);
+  if (existing) existing.qty = Math.min(10, existing.qty + 1);
+  else {
+    cart.push({
+      id: 'deal-' + deal.id,
+      deal_id: deal.id,
+      title: deal.title,
+      retail_price: deal.bundle_price,
+      images: (deal.products || []).map((item) => item.image).filter(Boolean),
+      qty: 1
+    });
+  }
+  updateCartUI();
+  showToast('🛒', `${String(deal.title).substring(0, 30)} added to cart`);
+}
+
 function renderProducts() {
   const grid = document.getElementById('productsGrid');
-  const toShow = filteredProducts.slice(0, 48);
+  const homePreview = !window.BUYWISH_COLLECTION && !currentSearch.trim();
+  const toShow = homePreview ? filteredProducts.slice(0, 8) : filteredProducts.slice(0, 96);
   if (!toShow.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);font-size:15px;">Products are loading from Zendrop. If this stays empty, refresh the page.</div>';
+    const bundles = document.querySelectorAll('#dealBundles .deal-card').length;
+    if (bundles) {
+      grid.innerHTML = '';
+      return;
+    }
+    const term = currentSearch.trim();
+    const note = term
+      ? `No products found for “${escHtml(term)}”. Try another word.`
+      : (window.BUYWISH_COLLECTION && window.BUYWISH_COLLECTION.hub
+        ? 'Choose a category above to see its products.'
+        : (window.BUYWISH_COLLECTION && window.BUYWISH_COLLECTION.category === 'deals'
+        ? 'No price drops yet. Pair two products from the shop desk to put an offer here.'
+        : (window.BUYWISH_COLLECTION
+        ? 'This collection is being stocked. Please check another category or refresh in a moment.'
+        : 'Products are loading. If this stays empty, refresh the page.')));
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);font-size:15px;">${note}</div>`;
     return;
   }
   grid.innerHTML = toShow.map(renderProductCard).join('');
@@ -2502,8 +2663,9 @@ function renderProducts() {
 
 function renderNewArrivals() {
   const grid = document.getElementById('newArrivalsGrid');
-  if (!allProducts.length) return;
-  const toShow = [...allProducts].reverse().slice(0, 4);
+  if (!grid || window.BUYWISH_COLLECTION || !allProducts.length) return;
+  const toShow = allProducts.slice(8, 32);
+  if (!toShow.length) return;
   grid.innerHTML = toShow.map(renderProductCard).join('');
 }
 
@@ -2520,14 +2682,169 @@ function applyFilters() {
   renderProducts();
 }
 
+function productSharePath(p) {
+  if (!p) return '/collections/all';
+  const handle = p.handle || (p.id ? ('p-' + String(p.id).replace(/^p-/i, '')) : '');
+  return handle ? '/products/' + encodeURIComponent(handle) : '/collections/all';
+}
+
+function productShareUrl(p) {
+  const path = productSharePath(p);
+  const host = /buywishonline\.com$/i.test(location.hostname) ? 'https://www.buywishonline.com' : location.origin;
+  return host + path;
+}
+
+let detailHistoryPushed = false;
+
 function filterCategory(cat) {
-  const slugs = { all: 'all', Tech: 'tech', Home: 'home', Fitness: 'fitness', Beauty: 'beauty', Kitchen: 'kitchen', Pets: 'pets', Travel: 'travel', Kids: 'kids' };
+  const slugs = { all: 'all', Tech: 'tech', Phone: 'phone', Home: 'home', Fitness: 'fitness', Beauty: 'beauty', Kitchen: 'kitchen', Jewelry: 'jewelry', Women: 'women', Men: 'men', Shoes: 'shoes', Bags: 'bags', Pets: 'pets', Travel: 'travel', Kids: 'kids', Baby: 'baby', Arts: 'arts' };
   window.location.href = '/collections/' + (slugs[cat] || String(cat || 'all').toLowerCase());
 }
 
+function activeCollectionChildren() {
+  const boot = window.BUYWISH_COLLECTION;
+  if (!boot) return null;
+  if (boot.hub && Array.isArray(boot.children) && boot.children.length) return boot.children;
+  if (boot.group && Array.isArray(boot.group.children) && boot.group.children.length) return boot.group.children;
+  return null;
+}
+
+function renderChildStrip(children) {
+  const strip = document.getElementById('catStripInner');
+  if (!strip || !children || !children.length) return;
+  strip.innerHTML = children.map((dept) => (
+    `<a class="cat-chip" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}"><span class="cat-emoji">${dept.icon || '🛍️'}</span>${escHtml(dept.title)}</a>`
+  )).join('');
+  applyCollectionChrome();
+}
+
+function renderDepartmentMenus(collections) {
+  const nested = activeCollectionChildren();
+  if (nested) {
+    renderChildStrip(nested);
+    return;
+  }
+  const list = Array.isArray(collections) ? collections : [];
+  if (!list.length) return;
+  const strip = document.getElementById('catStripInner');
+  const showcase = document.getElementById('catShowcase');
+  const mobile = document.getElementById('mobileDeptLinks');
+  if (strip) {
+    strip.innerHTML = `<a class="cat-chip" data-dept="deals" href="/collections/deals"><span class="cat-emoji">🏷️</span>Deals</a><a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji">🛍️</span>All</a>` + list.map((dept) => (
+      `<a class="cat-chip" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}"><span class="cat-emoji">${dept.icon || '🛍️'}</span>${escHtml(dept.title)}</a>`
+    )).join('');
+  }
+  if (showcase) {
+    showcase.innerHTML = `<a class="cat-showcase-item" href="/collections/deals"><div class="cat-showcase-icon">🏷️</div><div class="cat-showcase-name">Deals</div></a>` + list.map((dept) => (
+      `<a class="cat-showcase-item" href="/collections/${encodeURIComponent(dept.slug)}"><div class="cat-showcase-icon">${dept.icon || '🛍️'}</div><div class="cat-showcase-name">${escHtml(dept.title)}</div></a>`
+    )).join('');
+  }
+  if (mobile) {
+    mobile.innerHTML = `<a class="mobile-nav-link" data-dept="deals" href="/collections/deals">🏷️ Deals</a><a class="mobile-nav-link" data-dept="all" href="/collections/all">🛍️ All Products</a>` + list.map((dept) => (
+      `<a class="mobile-nav-link" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}">${dept.icon || '🛍️'} ${escHtml(dept.title)}</a>`
+    )).join('');
+  }
+  applyCollectionChrome();
+}
+
+async function loadDepartments() {
+  if (activeCollectionChildren()) {
+    renderChildStrip(activeCollectionChildren());
+    return;
+  }
+  try {
+    const res = await fetch('/api/buywish/departments', { signal: AbortSignal.timeout(8000) });
+    const data = await res.json();
+    if (data.ok && data.collections && data.collections.length) renderDepartmentMenus(data.collections);
+  } catch (e) {}
+}
+
+let searchTimer = null;
+let searchSeq = 0;
+
+function productMatchesTerm(product, term) {
+  const tokens = String(term || '').toLowerCase().split(/\s+/).filter(token => token.length >= 2);
+  if (!tokens.length) return true;
+  const hay = `${product.title || ''} ${product.description || ''} ${product.category || ''}`.toLowerCase();
+  return tokens.every(token => hay.includes(token));
+}
+
+function syncSearchInputs(value, sourceId) {
+  ['searchInput', 'mobileSearchInput'].forEach((id) => {
+    if (id === sourceId) return;
+    const input = document.getElementById(id);
+    if (input && input.value !== value) input.value = value;
+  });
+}
+
+function showSearchHeading(term) {
+  document.body.classList.toggle('is-searching', Boolean(term));
+  const title = document.getElementById('catalogTitle');
+  const sub = document.getElementById('catalogSub');
+  if (!term) return;
+  if (title) title.textContent = 'Search results';
+  if (sub) sub.textContent = `Products matching “${term}”`;
+}
+
 function handleSearch(q) {
-  currentSearch = q;
+  const value = String(q || '');
+  currentSearch = value;
+  const active = document.activeElement && document.activeElement.id;
+  syncSearchInputs(value, active || '');
+  const term = value.trim();
+  if (!term) {
+    searchSeq += 1;
+    document.body.classList.remove('is-searching');
+    filteredProducts = allProducts;
+    renderProducts();
+    return;
+  }
+  showSearchHeading(term);
   applyFilters();
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => runCatalogSearch(term), 350);
+}
+
+function submitSearch(event, inputId) {
+  if (event) event.preventDefault();
+  const input = document.getElementById(inputId);
+  const value = input ? input.value : '';
+  currentSearch = value;
+  syncSearchInputs(value, inputId);
+  clearTimeout(searchTimer);
+  runCatalogSearch(value.trim());
+  return false;
+}
+
+async function runCatalogSearch(term) {
+  const seq = ++searchSeq;
+  if (!term || term.length < 2) {
+    document.body.classList.remove('is-searching');
+    filteredProducts = allProducts.filter(product => productMatchesTerm(product, term));
+    renderProducts();
+    return;
+  }
+  showSearchHeading(term);
+  showLoading();
+  const localMatches = allProducts.filter(product => productMatchesTerm(product, term));
+  try {
+    const res = await fetch(`/api/buywish/products?limit=48&source=live&search=${encodeURIComponent(term)}`, { signal: AbortSignal.timeout(12000) });
+    const data = await res.json();
+    if (seq !== searchSeq || currentSearch.trim() !== term) return;
+    const remote = (data.ok && data.products) ? data.products : [];
+    const byId = new Map();
+    remote.concat(localMatches).forEach((product) => {
+      if (product && product.id != null) byId.set(String(product.id), product);
+    });
+    filteredProducts = [...byId.values()];
+  } catch (e) {
+    if (seq !== searchSeq) return;
+    filteredProducts = localMatches;
+  }
+  renderProducts();
+  const catalog = document.getElementById('catalogSection');
+  if (catalog) catalog.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  hideLoading();
 }
 
 // ============================================================
@@ -2536,10 +2853,21 @@ function handleSearch(q) {
 let currentProductTitle = '';
 let activeReviewRating = 5;
 
-function openDetail(productId) {
-  const p = allProducts.find(x => x.id === productId);
+async function openDetail(productId) {
+  let p = allProducts.find(x => String(x.id) === String(productId) || String(x.handle) === String(productId) || String(x.handle) === ('p-' + productId));
+  if (!p) {
+    try {
+      const lookup = String(productId).replace(/^p-/i, '');
+      const res = await fetch('/api/buywish/products/' + encodeURIComponent(lookup));
+      const data = await res.json();
+      if (data.ok && data.product) {
+        p = data.product;
+        allProducts.push(p);
+      }
+    } catch (e) {}
+  }
   if (!p) return;
-  currentProductId = productId;
+  currentProductId = p.id;
   currentProductTitle = p.title || 'BuyWishOnline Product';
   currentQty = 1;
   document.getElementById('qtyDisplay').textContent = '1';
@@ -2549,6 +2877,13 @@ function openDetail(productId) {
   document.getElementById('detailMainImg').alt = p.title;
   document.getElementById('detailBrand').textContent = p.category || 'Featured';
   document.getElementById('detailName').textContent = p.title;
+  const shareInput = document.getElementById('detailShareUrl');
+  if (shareInput) shareInput.value = productShareUrl(p);
+  const sharePath = productSharePath(p);
+  if (sharePath && location.pathname !== sharePath) {
+    history.pushState({ buywishDetail: true, productId: p.id }, '', sharePath);
+    detailHistoryPushed = true;
+  }
 
   // Stars
   const rating = Number.isFinite(Number(p.rating)) && Number(p.rating) > 0 ? Number(p.rating) : null;
@@ -2571,6 +2906,7 @@ function openDetail(productId) {
   }
 
   document.getElementById('detailDesc').textContent = p.description || '';
+  if (window.bwoTrack) window.bwoTrack('ViewContent', p);
   const featuresEl = document.getElementById('detailFeatures');
   featuresEl.innerHTML = (p.features || []).map(f => `<li>${f}</li>`).join('');
 
@@ -2596,9 +2932,39 @@ function switchImg(src, el) {
   el.classList.add('active');
 }
 
-function closeDetail() {
+function closeDetail(fromPop) {
   document.getElementById('detailOverlay').classList.remove('active');
   document.body.style.overflow = '';
+  if (fromPop) return;
+  if (detailHistoryPushed) {
+    detailHistoryPushed = false;
+    history.back();
+    return;
+  }
+  if (/^\/products\//.test(location.pathname)) {
+    const slugs = { Tech: 'tech', Home: 'home', Fitness: 'fitness', Beauty: 'beauty', Kitchen: 'kitchen', Pets: 'pets', Travel: 'travel', Kids: 'kids' };
+    const dept = window.BUYWISH_PRODUCT && slugs[window.BUYWISH_PRODUCT.category];
+    window.location.href = dept ? ('/collections/' + dept) : '/';
+  }
+}
+
+async function copyProductLink() {
+  const input = document.getElementById('detailShareUrl');
+  const url = input ? input.value : '';
+  if (!url) return;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(url);
+    else {
+      input.focus();
+      input.select();
+      document.execCommand('copy');
+    }
+    showToast('🔗', 'Product link copied');
+  } catch (e) {
+    input.focus();
+    input.select();
+    showToast('🔗', 'Link selected — copy it to share');
+  }
 }
 
 // Mobile Navigation Drawer Toggle
@@ -2886,6 +3252,7 @@ function addToCart(product, qty = 1) {
     cart.push({ ...product, qty });
   }
   updateCartUI();
+  if (window.bwoTrack) window.bwoTrack('AddToCart', product);
   showToast('🛒', `${product.title.substring(0, 30)}... added to cart!`);
 }
 
@@ -3007,7 +3374,9 @@ async function processCheckout() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(customerToken ? { Authorization: 'Bearer ' + customerToken } : {}) },
       body: JSON.stringify({
-        items: cart.map(i => ({ product_id: i.zendrop_id || i.id, quantity: i.qty })),
+        items: cart.map(i => i.deal_id
+          ? { deal_id: i.deal_id, quantity: i.qty }
+          : { product_id: i.zendrop_id || i.id, quantity: i.qty }),
         customer: { name: fname + ' ' + lname, email, phone: document.getElementById('co_phone').value.trim(), address },
         currency: currentCurrency.code
       })
@@ -3062,7 +3431,7 @@ async function trackOrder() {
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;text-transform:uppercase;">${o.fulfillment_status}</span>
           </div>
           <div style="font-size:13px;color:var(--text-muted);">Carrier Tracking: <strong style="color:var(--text);">${o.supplier_tracking_number || 'Preparing for dispatch'}</strong></div>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Shipping via: <strong style="color:var(--text);">${o.supplier || 'Express Courier'}</strong></div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Shipping via: <strong style="color:var(--text);">${(o.supplier && !/zendrop/i.test(o.supplier)) ? o.supplier : 'Express Courier'}</strong></div>
         </div>`;
     } else {
       resultEl.innerHTML = `<div style="background:#fef2f2;border-radius:12px;padding:16px;color:#dc2626;font-size:13.5px;font-weight:600;">${data.error || 'Order not found. Please check your order number.'}</div>`;
@@ -3111,26 +3480,63 @@ function applyCollectionChrome() {
   const title = document.getElementById('catalogTitle');
   const sub = document.getElementById('catalogSub');
   if (heading) heading.textContent = dept.title || 'Products';
-  if (title) title.textContent = dept.title || 'Products';
-  const blurb = dept.category === 'all'
-    ? 'Every product on this page is loaded from the Zendrop catalog.'
-    : 'These products are loaded from Zendrop for this category.';
+  const blurb = dept.blurb || (dept.category === 'all'
+    ? 'The full BuyWishOnline shop, in one place.'
+    : 'Shop this collection. Ships to the USA, Canada, and the UK.');
   if (copy) copy.textContent = blurb;
-  if (sub) sub.textContent = blurb;
+  if (title) title.textContent = 'Trending Now';
+  if (sub) sub.textContent = 'Hand-picked bestsellers — updated daily';
   document.querySelectorAll('[data-dept]').forEach((el) => {
     el.classList.toggle('active', el.getAttribute('data-dept') === dept.slug);
   });
 }
 
+function rememberCatalog(cacheKey, products, bundles) {
+  try {
+    sessionStorage.setItem(cacheKey, JSON.stringify({ at: Date.now(), products, bundles: bundles || [] }));
+  } catch (err) {}
+}
+
+function readCatalogCache(cacheKey) {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
+    if (!saved || !Array.isArray(saved.products) || !saved.products.length) return null;
+    if (Date.now() - saved.at > 3 * 60 * 1000) return null;
+    return saved;
+  } catch (err) {
+    return null;
+  }
+}
+
 async function loadProducts() {
   showLoading();
   const dept = window.BUYWISH_COLLECTION;
+  if (dept && dept.hub) {
+    allProducts = [];
+    filteredProducts = [];
+    renderDealBundles([]);
+    renderProducts();
+    hideLoading();
+    return;
+  }
   const categoryQuery = dept && dept.category && dept.category !== 'all'
     ? `&category=${encodeURIComponent(dept.category)}`
     : '';
+  const cacheKey = 'bwo-live:' + (dept ? dept.category : 'home');
+  const cached = readCatalogCache(cacheKey);
+  if (cached) {
+    allProducts = cached.products;
+    filteredProducts = allProducts;
+    renderDealBundles(cached.bundles || []);
+    renderNewArrivals();
+    renderProducts();
+    hideLoading();
+    return;
+  }
   try {
-    const res = await fetch(`/api/buywish/products?limit=48&source=live${categoryQuery}`, { signal: AbortSignal.timeout(14000) });
+    const res = await fetch(`/api/buywish/products?limit=48&source=live${categoryQuery}`, { signal: AbortSignal.timeout(12000) });
     const data = await res.json();
+    renderDealBundles(data.bundles || []);
     if (data.ok && data.products && data.products.length) {
       allProducts = data.products.map(p => ({
         ...p,
@@ -3141,18 +3547,23 @@ async function loadProducts() {
         features: p.features || [],
         delivery: p.delivery || null
       }));
+      rememberCatalog(cacheKey, allProducts, data.bundles || []);
     } else {
       allProducts = [];
     }
   } catch (e) {
     allProducts = [];
+    renderDealBundles([]);
   }
   filteredProducts = allProducts;
   const stat = document.getElementById('statProducts');
-  if (stat && allProducts.length) stat.textContent = String(allProducts.length) + '+';
-  renderProducts();
+  if (stat && allProducts.length && !currentSearch.trim()) stat.textContent = String(allProducts.length) + '+';
   renderNewArrivals();
-  hideLoading();
+  if (currentSearch.trim()) runCatalogSearch(currentSearch.trim());
+  else {
+    renderProducts();
+    hideLoading();
+  }
 }
 
 // ============================================================
@@ -3170,8 +3581,27 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   applyCollectionChrome();
+  loadDepartments();
   detectCurrency();
+  const startupParams = new URLSearchParams(window.location.search);
+  if (startupParams.get('q')) {
+    currentSearch = startupParams.get('q');
+    const searchInput = document.getElementById('searchInput');
+    const mobileSearch = document.getElementById('mobileSearchInput');
+    if (searchInput) searchInput.value = currentSearch;
+    if (mobileSearch) mobileSearch.value = currentSearch;
+  }
   loadProducts();
+  if (window.BUYWISH_PRODUCT && window.BUYWISH_PRODUCT.id) openDetail(window.BUYWISH_PRODUCT.id);
+  window.addEventListener('popstate', () => {
+    if (/^\/products\//.test(location.pathname)) {
+      const match = location.pathname.match(/\/products\/(?:p-)?(\d+)/i);
+      if (match) openDetail(match[1]);
+      return;
+    }
+    detailHistoryPushed = false;
+    closeDetail(true);
+  });
   loadHomeReviews();
 
   // URL params
@@ -3192,6 +3622,9 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
           if (data.ok && data.paid) {
             const taxInfo = data.tax_amount > 0 ? ` (Includes Tax: ${data.currency} ${data.tax_amount.toFixed(2)})` : '';
+            const trackPaid = () => { if (window.bwoTrackPurchase) window.bwoTrackPurchase(orderSuccess, data.amount_total, data.currency); };
+            if (window.bwoTrackingReady) window.bwoTrackingReady.then(trackPaid);
+            else trackPaid();
             showToast('✅', `Payment Confirmed! Order #${orderSuccess} placed${taxInfo}.`);
           } else {
             showToast('✅', `Order #${orderSuccess} confirmed! Tracking details emailed.`);
@@ -3213,12 +3646,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (params.get('cat')) {
     filterCategory(params.get('cat'));
-  }
-  if (params.get('q')) {
-    const q = params.get('q');
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) searchInput.value = q;
-    handleSearch(q);
   }
   const productParam = params.get('product');
   if (productParam) {

@@ -330,6 +330,23 @@
               </div>
             </div>
 
+            <h4 style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--color-amber-400);">ShippingWish.com tracking</h4>
+            <p style="font-size:12px;color:var(--text-muted);margin:-4px 0 12px;">Google Tag Manager and Google Analytics are on the public Shipping Wish site. If you later add this same G- ID as a tag inside GTM, remove it from one place so visits are not counted twice. Facebook Pixel stays empty until you paste an Events Manager ID. LoadsNexus, NYC Limo Wish, and BuyWish stay separate.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+              <div class="form-group">
+                <label class="form-label">Google Tag Manager ID</label>
+                <input class="form-input" id="set-gtm-container-id" type="text" placeholder="GTM-55MF65H2" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Google Analytics Measurement ID</label>
+                <input class="form-input" id="set-ga-measurement-id" type="text" placeholder="G-LW66Y70PFE" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Facebook Pixel ID (optional)</label>
+                <input class="form-input" id="set-facebook-pixel-id" type="text" inputmode="numeric" placeholder="From Events Manager" autocomplete="off">
+              </div>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-lg">💾 Save Website CMS Settings</button>
           </form>
         </div>
@@ -686,6 +703,9 @@
         if (s.twitter_url) document.getElementById('set-twitter-url').value = s.twitter_url;
         if (s.instagram_url) document.getElementById('set-instagram-url').value = s.instagram_url;
         if (s.youtube_url) document.getElementById('set-youtube-url').value = s.youtube_url;
+        document.getElementById('set-gtm-container-id').value = s.gtm_container_id || 'GTM-55MF65H2';
+        document.getElementById('set-ga-measurement-id').value = s.ga_measurement_id || 'G-LW66Y70PFE';
+        document.getElementById('set-facebook-pixel-id').value = s.facebook_pixel_id || '';
       }
     } catch (e) {}
   }
@@ -703,6 +723,9 @@
       twitter_url: document.getElementById('set-twitter-url').value,
       instagram_url: document.getElementById('set-instagram-url').value,
       youtube_url: document.getElementById('set-youtube-url').value,
+      gtm_container_id: document.getElementById('set-gtm-container-id').value,
+      ga_measurement_id: document.getElementById('set-ga-measurement-id').value,
+      facebook_pixel_id: document.getElementById('set-facebook-pixel-id').value,
     };
 
     try {
@@ -713,6 +736,7 @@
         body: JSON.stringify(payload)
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save settings.');
       alert('✅ Website settings saved successfully!');
     } catch (err) {
       alert('⚠️ Error saving settings: ' + err.message);

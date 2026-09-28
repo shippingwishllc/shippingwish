@@ -842,9 +842,15 @@
           </div>
         </div>
 
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="min_rpm">Target Minimum Rate Per Mile (RPM) <span class="opt">(Optional)</span></label>
-          <input type="text" id="min_rpm" name="min_rpm" class="form-control" placeholder="e.g. $2.50/mile (we always push for maximum market rate)">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="min_rpm">Target Minimum Rate Per Mile (RPM) <span class="opt">(Optional)</span></label>
+            <input type="text" id="min_rpm" name="min_rpm" class="form-control" placeholder="e.g. $2.50/mile (we always push for maximum market rate)">
+          </div>
+          <div class="form-group">
+            <label for="home_days">Home time days <span class="opt">(Optional)</span></label>
+            <input type="text" id="home_days" name="home_days" class="form-control" placeholder="e.g. FRI, SAT" style="text-transform:uppercase;">
+          </div>
         </div>
 
         <div class="wizard-actions">
@@ -1015,7 +1021,7 @@
 
 <footer class="footer" role="contentinfo"></footer>
 
-<script src="/js/site-chrome.js?v=13"></script>
+<script src="/js/site-chrome.js?v=14"></script>
 <script>
   let currentStep = 1;
   let sigMode = 'draw';
