@@ -53,7 +53,7 @@ const TOP_BROKERS = {
     daysToPay: 23,
     bondStatus: 'BMC-84 $75,000 Active Surety Bond (Liberty Mutual)',
     factoringStatus: 'APPROVED (Unconditional Factoring Approval across Triumph, Apex, RTS)',
-    aboutBroker: 'Echo Global Logistics is a premier tech-enabled freight brokerage and 3PL with 50,000+ carrier partners. Highly rated for reliable payments, transparent paperwork processing, and dedicated account reps. Excellent credit profile with standard 21-day payment cycle.'
+    aboutBroker: 'Echo Global Logistics is a freight brokerage and 3PL. Highly rated for reliable payments, transparent paperwork processing, and dedicated account reps. Excellent credit profile with standard 21-day payment cycle.'
   },
   '561386': {
     companyName: 'COYOTE LOGISTICS, LLC',
