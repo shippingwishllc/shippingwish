@@ -15,6 +15,7 @@ const { zendropCall, zendropListTools } = require('../utils/zendrop-client');
 const {
   TARGET_COUNTRIES,
   WINNING_SEARCHES,
+  departmentByQuery,
   normalizeProduct,
   summarizeLane,
   scoreProduct,
@@ -183,12 +184,53 @@ async function listSyncedProducts({ category, search, limit, page }) {
   };
 }
 
+async function fetchDepartmentProducts(department, { search, limit, page }) {
+  const byId = new Map();
+  const queries = search && String(search).trim()
+    ? [String(search).trim()]
+    : department.searches;
+  await Promise.all(queries.map(async (q) => {
+    try {
+      const data = await zendropCall('get_catalog_products', { search: q, limit: 16 }, { timeoutMs: 8000 });
+      (data.products || []).forEach((product) => {
+        const normalized = normalizeProduct(product);
+        if (!normalized.id || byId.has(String(normalized.id))) return;
+        normalized.category = department.key;
+        byId.set(String(normalized.id), normalized);
+      });
+    } catch (err) {
+      // One Zendrop search can fail without emptying the department page.
+    }
+  }));
+  const products = [...byId.values()];
+  const perPage = Math.min(Math.max(parseInt(limit, 10) || 24, 1), 48);
+  const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+  const offset = (pageNum - 1) * perPage;
+  return {
+    products: products.slice(offset, offset + perPage),
+    total: products.length,
+    page: pageNum,
+    per_page: perPage
+  };
+}
+
 // ============================================================
 // GET /api/buywish/products — Live Zendrop Catalog
 // ============================================================
 router.get('/products', async (req, res) => {
   try {
     const { category, search, limit = 24, page = 1, sort = 'trending', source } = req.query;
+    const department = departmentByQuery(category);
+    if (department) {
+      const deptKey = `dept_${department.key}_${search || ''}_${page}_${limit}`;
+      const deptCached = getCache(deptKey);
+      if (deptCached) return res.json({ ok: true, ...deptCached, source: 'cache' });
+      const found = await fetchDepartmentProducts(department, { search, limit, page });
+      if (found.products.length) {
+        setCache(deptKey, found, 10 * 60 * 1000);
+        return res.json({ ok: true, ...found, source: 'zendrop', category: department.title });
+      }
+    }
     if (source !== 'live') {
       try {
         await ensureBuyWishSchema();

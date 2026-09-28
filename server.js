@@ -11,7 +11,7 @@ const { purgeExpiredTrash } = require('./utils/trash');
 const { webhookHandler } = require('./routes/billing');
 const { handleBuyWishWebhook } = require('./routes/buywish');
 const pool = require('./db');
-const { storeProductFromRow } = require('./utils/buywish-catalog');
+const { storeProductFromRow, departmentBySlug, STORE_DEPARTMENTS } = require('./utils/buywish-catalog');
 const { renderProductPage, renderCollectionPage, renderSitemap } = require('./utils/buywish-pages');
 const { handleStripeWebhook: handleNYCLimoStripeWebhook } = require('./routes/nyclimo');
 const { requireAuth } = require('./middleware/auth');
@@ -169,16 +169,22 @@ async function sendBuyWishProduct(res, key) {
   }
 }
 
-async function sendBuyWishCollection(res, slug) {
-  const category = BUY_WISH_COLLECTIONS[String(slug || '').toLowerCase()];
-  if (!category) return res.status(404).type('html').send(renderCollectionPage('Collection', []));
+function sendBuyWishCollection(res, slug) {
+  const department = String(slug || '').toLowerCase() === 'all'
+    ? { key: 'all', title: 'All Products', slug: 'all' }
+    : departmentBySlug(slug);
+  if (!department) return res.status(404).type('html').send(renderCollectionPage('Collection', []));
   try {
-    const products = await loadBuyWishProducts('lower(category) = lower($1)', [category]);
+    const indexPath = path.join(__dirname, 'public', 'buywishonline', 'index.html');
+    let html = fs.readFileSync(indexPath, 'utf8');
+    const boot = JSON.stringify({ category: department.key, title: department.title, slug: department.slug }).replace(/</g, '\\u003c');
+    html = html.replace('<head>', `<head>\n  <script>window.BUYWISH_COLLECTION=${boot};</script>`);
+    html = html.replace(/<title>[^<]*<\/title>/, `<title>${department.title} | BuyWishOnline</title>`);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=300');
-    return res.send(renderCollectionPage(category, products));
+    res.setHeader('Cache-Control', 'public, max-age=120');
+    return res.send(html);
   } catch (err) {
-    return res.status(503).type('html').send('The collection is temporarily unavailable.');
+    return res.status(500).type('html').send('The collection page is temporarily unavailable.');
   }
 }
 
@@ -188,7 +194,13 @@ async function sendBuyWishSitemap(res) {
     { loc: 'https://www.buywishonline.com/about', changefreq: 'monthly', priority: '0.4' },
     { loc: 'https://www.buywishonline.com/contact', changefreq: 'monthly', priority: '0.4' },
     { loc: 'https://www.buywishonline.com/privacy-policy', changefreq: 'yearly', priority: '0.2' },
-    { loc: 'https://www.buywishonline.com/terms', changefreq: 'yearly', priority: '0.2' }
+    { loc: 'https://www.buywishonline.com/terms', changefreq: 'yearly', priority: '0.2' },
+    { loc: 'https://www.buywishonline.com/collections/all', changefreq: 'daily', priority: '0.9' },
+    ...Object.values(STORE_DEPARTMENTS).map((dept) => ({
+      loc: `https://www.buywishonline.com/collections/${dept.slug}`,
+      changefreq: 'daily',
+      priority: '0.8'
+    }))
   ];
   try {
     const { rows } = await pool.query(
