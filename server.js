@@ -9,7 +9,7 @@ const { buildTemplate, COMPANY } = require('./utils/email-templates');
 const { ensureGrowthSchema } = require('./utils/ensure-growth-schema');
 const { purgeExpiredTrash } = require('./utils/trash');
 const { webhookHandler } = require('./routes/billing');
-const { handleBuyWishWebhook, loadLiveProductByKey } = require('./routes/buywish');
+const { handleBuyWishWebhook, loadLiveProductByKey, lookupCustomCategory, productIsHidden } = require('./routes/buywish');
 const pool = require('./db');
 const { storeProductFromRow, departmentBySlug, STORE_DEPARTMENTS, productHandle } = require('./utils/buywish-catalog');
 const { renderProductPage, renderCollectionPage, renderSitemap, injectProductIntoStorefront } = require('./utils/buywish-pages');
@@ -136,14 +136,7 @@ app.use((req, res, next) => {
 });
 
 const BUY_WISH_COLLECTIONS = {
-  tech: 'Tech',
-  home: 'Home',
-  fitness: 'Fitness',
-  beauty: 'Beauty',
-  kitchen: 'Kitchen',
-  pets: 'Pets',
-  travel: 'Travel',
-  kids: 'Kids',
+  ...Object.fromEntries(Object.entries(STORE_DEPARTMENTS).map(([key, dept]) => [dept.slug, key])),
   featured: 'Featured'
 };
 
@@ -172,6 +165,8 @@ async function sendBuyWishProduct(res, key) {
     }
   }
   if (!product) return res.status(404).type('html').send(renderCollectionPage('Product', []));
+  const hiddenId = product.zendrop_id || product.id;
+  if (await productIsHidden(hiddenId)) return res.status(404).type('html').send(renderCollectionPage('Product', []));
   try {
     const indexPath = path.join(__dirname, 'public', 'buywishonline', 'index.html');
     const html = injectProductIntoStorefront(fs.readFileSync(indexPath, 'utf8'), {
@@ -187,10 +182,17 @@ async function sendBuyWishProduct(res, key) {
   }
 }
 
-function sendBuyWishCollection(res, slug) {
-  const department = String(slug || '').toLowerCase() === 'all'
+async function sendBuyWishCollection(res, slug) {
+  let department = String(slug || '').toLowerCase() === 'all'
     ? { key: 'all', title: 'All Products', slug: 'all', blurb: 'The full BuyWishOnline shop, in one place.' }
     : departmentBySlug(slug);
+  if (!department) {
+    try {
+      department = await lookupCustomCategory(slug);
+    } catch (err) {
+      department = null;
+    }
+  }
   if (!department) return res.status(404).type('html').send(renderCollectionPage('Collection', []));
   try {
     const indexPath = path.join(__dirname, 'public', 'buywishonline', 'index.html');
@@ -202,7 +204,8 @@ function sendBuyWishCollection(res, slug) {
       blurb: department.blurb || ''
     }).replace(/</g, '\\u003c');
     html = html.replace('<head>', `<head>\n  <script>window.BUYWISH_COLLECTION=${boot};</script>`);
-    html = html.replace(/<title>[^<]*<\/title>/, `<title>${department.title} | BuyWishOnline</title>`);
+    const safeTitle = String(department.title || 'Products').replace(/[<>&]/g, '');
+    html = html.replace(/<title>[^<]*<\/title>/, `<title>${safeTitle} | BuyWishOnline</title>`);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=120');
     return res.send(html);
@@ -232,6 +235,19 @@ async function sendBuyWishSitemap(res) {
        ORDER BY winning_score DESC LIMIT 500`
     );
     const seen = new Set();
+    try {
+      const customCategories = await pool.query(
+        `SELECT slug FROM buywish_categories WHERE is_active = true ORDER BY sort_order ASC, title ASC`
+      );
+      customCategories.rows.forEach((row) => {
+        const slug = String(row.slug || '').toLowerCase();
+        if (!slug || seen.has(slug)) return;
+        seen.add(slug);
+        urls.push({ loc: `https://www.buywishonline.com/collections/${slug}`, changefreq: 'daily', priority: '0.8' });
+      });
+    } catch (err) {
+      // Built-in collections stay in the sitemap when custom categories are unavailable.
+    }
     rows.forEach((row) => {
       const slug = String(row.category || 'featured').toLowerCase();
       if (BUY_WISH_COLLECTIONS[slug] && !seen.has(slug)) {

@@ -443,35 +443,49 @@
     .cat-strip-inner {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 0 24px;
+      padding: 12px 16px 10px;
       display: flex;
-      align-items: center;
-      gap: 2px;
+      align-items: flex-start;
+      gap: 4px;
       overflow-x: auto;
       scrollbar-width: none;
     }
     .cat-strip-inner::-webkit-scrollbar { display: none; }
     .cat-chip {
       display: flex;
+      flex-direction: column;
       flex-shrink: 0;
       align-items: center;
       gap: 6px;
-      padding: 10px 16px;
-      font-size: 13px;
-      font-weight: 600;
+      min-width: 76px;
+      padding: 6px 8px 8px;
+      font-size: 11px;
+      font-weight: 700;
       color: #4b5563;
-      border-bottom: 2.5px solid transparent;
+      border: none;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: color 0.15s;
       white-space: nowrap;
       border-radius: 0;
       background: none;
-      border-left: none;
-      border-right: none;
-      border-top: none;
+      text-align: center;
     }
-    .cat-chip:hover, .cat-chip.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .cat-chip .cat-emoji { font-size: 16px; }
+    .cat-chip:hover, .cat-chip.active { color: var(--accent); }
+    .cat-chip .cat-emoji {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: #eef2f7;
+      border: 2px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+    }
+    .cat-chip:hover .cat-emoji, .cat-chip.active .cat-emoji {
+      border-color: var(--accent);
+      background: #fff5f7;
+    }
 
     /* ===== HERO ===== */
     .hero {
@@ -944,24 +958,38 @@
     /* ===== CATEGORY SHOWCASE ===== */
     .cat-showcase {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 14px;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 18px 8px;
     }
     .cat-showcase-item {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px 12px;
+      background: transparent;
+      border: none;
+      padding: 0;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: transform 0.15s;
     }
-    .cat-showcase-item:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(233,69,96,0.12); transform: translateY(-3px); }
-    .cat-showcase-icon { font-size: 32px; margin-bottom: 8px; }
-    .cat-showcase-name { font-size: 13px; font-weight: 700; color: var(--text); }
-    .cat-showcase-count { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-    @media (max-width: 900px) { .cat-showcase { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 500px) { .cat-showcase { grid-template-columns: repeat(2, 1fr); } }
+    .cat-showcase-item:hover { transform: translateY(-2px); }
+    .cat-showcase-icon {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 8px;
+      border-radius: 50%;
+      background: #eef2f7;
+      border: 2px solid #e6e8ee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+    }
+    .cat-showcase-item:hover .cat-showcase-icon { border-color: var(--accent); background: #fff5f7; }
+    .cat-showcase-name { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    @media (max-width: 1100px) { .cat-showcase { grid-template-columns: repeat(6, 1fr); } }
+    @media (max-width: 900px) {
+      .cat-showcase { grid-template-columns: repeat(4, 1fr); }
+      .cat-showcase-icon { width: 72px; height: 72px; font-size: 28px; }
+    }
+    @media (max-width: 500px) { .cat-showcase { grid-template-columns: repeat(3, 1fr); } }
 
     /* ===== PROMO BANNERS ===== */
     .promo-grid {
@@ -1782,15 +1810,25 @@
   </div>
   <div class="mobile-nav-body">
     <div class="mobile-nav-section-title">Shop by Category</div>
+    <div id="mobileDeptLinks">
     <a class="mobile-nav-link" data-dept="all" href="/collections/all">🛍️ All Products</a>
     <a class="mobile-nav-link" data-dept="tech" href="/collections/tech">💻 Tech & Gadgets</a>
+    <a class="mobile-nav-link" data-dept="phone" href="/collections/phone">📱 Phone Accessories</a>
     <a class="mobile-nav-link" data-dept="home" href="/collections/home">🏠 Home & Living</a>
+    <a class="mobile-nav-link" data-dept="kitchen" href="/collections/kitchen">🍳 Kitchen & Cooking</a>
     <a class="mobile-nav-link" data-dept="fitness" href="/collections/fitness">🏃 Fitness & Outdoors</a>
     <a class="mobile-nav-link" data-dept="beauty" href="/collections/beauty">✨ Beauty & Wellness</a>
-    <a class="mobile-nav-link" data-dept="kitchen" href="/collections/kitchen">🍳 Kitchen & Cooking</a>
+    <a class="mobile-nav-link" data-dept="jewelry" href="/collections/jewelry">💍 Jewelry & Watches</a>
+    <a class="mobile-nav-link" data-dept="women" href="/collections/women">👗 Women's Clothing</a>
+    <a class="mobile-nav-link" data-dept="men" href="/collections/men">👔 Men's Clothing</a>
+    <a class="mobile-nav-link" data-dept="shoes" href="/collections/shoes">👟 Shoes</a>
+    <a class="mobile-nav-link" data-dept="bags" href="/collections/bags">👜 Bags & Accessories</a>
+    <a class="mobile-nav-link" data-dept="travel" href="/collections/travel">🧳 Travel Essentials</a>
     <a class="mobile-nav-link" data-dept="pets" href="/collections/pets">🐾 Pet Supplies</a>
-    <a class="mobile-nav-link" data-dept="travel" href="/collections/travel">🧳 Travel & Bags</a>
-    <a class="mobile-nav-link" data-dept="kids" href="/collections/kids">🧒 Kids & Toys</a>
+    <a class="mobile-nav-link" data-dept="kids" href="/collections/kids">🧸 Kids & Toys</a>
+    <a class="mobile-nav-link" data-dept="baby" href="/collections/baby">🍼 Baby & Kids Clothing</a>
+    <a class="mobile-nav-link" data-dept="arts" href="/collections/arts">🎨 Arts & Crafts</a>
+    </div>
     <div class="mobile-nav-divider"></div>
     <div class="mobile-nav-section-title">Customer Care</div>
     <a class="mobile-nav-link" href="/account" onclick="closeMobileNav();">Account &amp; Orders</a>
@@ -1813,16 +1851,24 @@
 
 <!-- Category Strip -->
 <div class="cat-strip">
-  <div class="cat-strip-inner">
-    <a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji">🛍️</span> All</a>
-    <a class="cat-chip" data-dept="tech" href="/collections/tech"><span class="cat-emoji">💻</span> Tech</a>
-    <a class="cat-chip" data-dept="home" href="/collections/home"><span class="cat-emoji">🏠</span> Home</a>
-    <a class="cat-chip" data-dept="fitness" href="/collections/fitness"><span class="cat-emoji">🏃</span> Fitness</a>
-    <a class="cat-chip" data-dept="beauty" href="/collections/beauty"><span class="cat-emoji">✨</span> Beauty</a>
-    <a class="cat-chip" data-dept="kitchen" href="/collections/kitchen"><span class="cat-emoji">🍳</span> Kitchen</a>
-    <a class="cat-chip" data-dept="pets" href="/collections/pets"><span class="cat-emoji">🐾</span> Pets</a>
-    <a class="cat-chip" data-dept="travel" href="/collections/travel"><span class="cat-emoji">🧳</span> Travel</a>
-    <a class="cat-chip" data-dept="kids" href="/collections/kids"><span class="cat-emoji">🧒</span> Kids</a>
+  <div class="cat-strip-inner" id="catStripInner">
+    <a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji">🛍️</span>All</a>
+    <a class="cat-chip" data-dept="tech" href="/collections/tech"><span class="cat-emoji">💻</span>Tech</a>
+    <a class="cat-chip" data-dept="phone" href="/collections/phone"><span class="cat-emoji">📱</span>Phone</a>
+    <a class="cat-chip" data-dept="home" href="/collections/home"><span class="cat-emoji">🏠</span>Home</a>
+    <a class="cat-chip" data-dept="kitchen" href="/collections/kitchen"><span class="cat-emoji">🍳</span>Kitchen</a>
+    <a class="cat-chip" data-dept="fitness" href="/collections/fitness"><span class="cat-emoji">🏃</span>Fitness</a>
+    <a class="cat-chip" data-dept="beauty" href="/collections/beauty"><span class="cat-emoji">✨</span>Beauty</a>
+    <a class="cat-chip" data-dept="jewelry" href="/collections/jewelry"><span class="cat-emoji">💍</span>Jewelry</a>
+    <a class="cat-chip" data-dept="women" href="/collections/women"><span class="cat-emoji">👗</span>Women</a>
+    <a class="cat-chip" data-dept="men" href="/collections/men"><span class="cat-emoji">👔</span>Men</a>
+    <a class="cat-chip" data-dept="shoes" href="/collections/shoes"><span class="cat-emoji">👟</span>Shoes</a>
+    <a class="cat-chip" data-dept="bags" href="/collections/bags"><span class="cat-emoji">👜</span>Bags</a>
+    <a class="cat-chip" data-dept="travel" href="/collections/travel"><span class="cat-emoji">🧳</span>Travel</a>
+    <a class="cat-chip" data-dept="pets" href="/collections/pets"><span class="cat-emoji">🐾</span>Pets</a>
+    <a class="cat-chip" data-dept="kids" href="/collections/kids"><span class="cat-emoji">🧸</span>Kids</a>
+    <a class="cat-chip" data-dept="baby" href="/collections/baby"><span class="cat-emoji">🍼</span>Baby</a>
+    <a class="cat-chip" data-dept="arts" href="/collections/arts"><span class="cat-emoji">🎨</span>Arts</a>
   </div>
 </div>
 
@@ -1939,40 +1985,26 @@
   <div class="section-head">
     <div>
       <div class="section-title">Shop by Category</div>
-      <div class="section-sub">Explore our curated collections</div>
+      <div class="section-sub">Choose a collection</div>
     </div>
   </div>
-  <div class="cat-showcase">
-    <a class="cat-showcase-item" href="/collections/tech">
-      <div class="cat-showcase-icon">💻</div>
-      <div class="cat-showcase-name">Tech & Gadgets</div>
-      <div class="cat-showcase-count">Shop the collection</div>
-    </a>
-    <a class="cat-showcase-item" href="/collections/home">
-      <div class="cat-showcase-icon">🏠</div>
-      <div class="cat-showcase-name">Home & Living</div>
-      <div class="cat-showcase-count">Shop the collection</div>
-    </a>
-    <a class="cat-showcase-item" href="/collections/fitness">
-      <div class="cat-showcase-icon">🏃</div>
-      <div class="cat-showcase-name">Fitness</div>
-      <div class="cat-showcase-count">Shop the collection</div>
-    </a>
-    <a class="cat-showcase-item" href="/collections/beauty">
-      <div class="cat-showcase-icon">✨</div>
-      <div class="cat-showcase-name">Beauty</div>
-      <div class="cat-showcase-count">Shop the collection</div>
-    </a>
-    <a class="cat-showcase-item" href="/collections/kitchen">
-      <div class="cat-showcase-icon">🍳</div>
-      <div class="cat-showcase-name">Kitchen</div>
-      <div class="cat-showcase-count">Shop the collection</div>
-    </a>
-    <a class="cat-showcase-item" href="/collections/pets">
-      <div class="cat-showcase-icon">🐾</div>
-      <div class="cat-showcase-name">Pets</div>
-      <div class="cat-showcase-count">Shop the collection</div>
-    </a>
+  <div class="cat-showcase" id="catShowcase">
+    <a class="cat-showcase-item" href="/collections/tech"><div class="cat-showcase-icon">💻</div><div class="cat-showcase-name">Tech & Gadgets</div></a>
+    <a class="cat-showcase-item" href="/collections/phone"><div class="cat-showcase-icon">📱</div><div class="cat-showcase-name">Phone Accessories</div></a>
+    <a class="cat-showcase-item" href="/collections/home"><div class="cat-showcase-icon">🏠</div><div class="cat-showcase-name">Home & Living</div></a>
+    <a class="cat-showcase-item" href="/collections/kitchen"><div class="cat-showcase-icon">🍳</div><div class="cat-showcase-name">Kitchen & Cooking</div></a>
+    <a class="cat-showcase-item" href="/collections/fitness"><div class="cat-showcase-icon">🏃</div><div class="cat-showcase-name">Fitness & Outdoors</div></a>
+    <a class="cat-showcase-item" href="/collections/beauty"><div class="cat-showcase-icon">✨</div><div class="cat-showcase-name">Beauty & Wellness</div></a>
+    <a class="cat-showcase-item" href="/collections/jewelry"><div class="cat-showcase-icon">💍</div><div class="cat-showcase-name">Jewelry & Watches</div></a>
+    <a class="cat-showcase-item" href="/collections/women"><div class="cat-showcase-icon">👗</div><div class="cat-showcase-name">Women's Clothing</div></a>
+    <a class="cat-showcase-item" href="/collections/men"><div class="cat-showcase-icon">👔</div><div class="cat-showcase-name">Men's Clothing</div></a>
+    <a class="cat-showcase-item" href="/collections/shoes"><div class="cat-showcase-icon">👟</div><div class="cat-showcase-name">Shoes</div></a>
+    <a class="cat-showcase-item" href="/collections/bags"><div class="cat-showcase-icon">👜</div><div class="cat-showcase-name">Bags & Accessories</div></a>
+    <a class="cat-showcase-item" href="/collections/travel"><div class="cat-showcase-icon">🧳</div><div class="cat-showcase-name">Travel Essentials</div></a>
+    <a class="cat-showcase-item" href="/collections/pets"><div class="cat-showcase-icon">🐾</div><div class="cat-showcase-name">Pet Supplies</div></a>
+    <a class="cat-showcase-item" href="/collections/kids"><div class="cat-showcase-icon">🧸</div><div class="cat-showcase-name">Kids & Toys</div></a>
+    <a class="cat-showcase-item" href="/collections/baby"><div class="cat-showcase-icon">🍼</div><div class="cat-showcase-name">Baby & Kids Clothing</div></a>
+    <a class="cat-showcase-item" href="/collections/arts"><div class="cat-showcase-icon">🎨</div><div class="cat-showcase-name">Arts & Crafts</div></a>
   </div>
 </section>
 
@@ -2579,8 +2611,40 @@ function productShareUrl(p) {
 let detailHistoryPushed = false;
 
 function filterCategory(cat) {
-  const slugs = { all: 'all', Tech: 'tech', Home: 'home', Fitness: 'fitness', Beauty: 'beauty', Kitchen: 'kitchen', Pets: 'pets', Travel: 'travel', Kids: 'kids' };
+  const slugs = { all: 'all', Tech: 'tech', Phone: 'phone', Home: 'home', Fitness: 'fitness', Beauty: 'beauty', Kitchen: 'kitchen', Jewelry: 'jewelry', Women: 'women', Men: 'men', Shoes: 'shoes', Bags: 'bags', Pets: 'pets', Travel: 'travel', Kids: 'kids', Baby: 'baby', Arts: 'arts' };
   window.location.href = '/collections/' + (slugs[cat] || String(cat || 'all').toLowerCase());
+}
+
+function renderDepartmentMenus(departments) {
+  const list = Array.isArray(departments) ? departments : [];
+  if (!list.length) return;
+  const strip = document.getElementById('catStripInner');
+  const showcase = document.getElementById('catShowcase');
+  const mobile = document.getElementById('mobileDeptLinks');
+  if (strip) {
+    strip.innerHTML = `<a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji">🛍️</span>All</a>` + list.map((dept) => (
+      `<a class="cat-chip" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}"><span class="cat-emoji">${dept.icon || '🛍️'}</span>${escHtml(dept.short || dept.title)}</a>`
+    )).join('');
+  }
+  if (showcase) {
+    showcase.innerHTML = list.map((dept) => (
+      `<a class="cat-showcase-item" href="/collections/${encodeURIComponent(dept.slug)}"><div class="cat-showcase-icon">${dept.icon || '🛍️'}</div><div class="cat-showcase-name">${escHtml(dept.title)}</div></a>`
+    )).join('');
+  }
+  if (mobile) {
+    mobile.innerHTML = `<a class="mobile-nav-link" data-dept="all" href="/collections/all">🛍️ All Products</a>` + list.map((dept) => (
+      `<a class="mobile-nav-link" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}">${dept.icon || '🛍️'} ${escHtml(dept.title)}</a>`
+    )).join('');
+  }
+  applyCollectionChrome();
+}
+
+async function loadDepartments() {
+  try {
+    const res = await fetch('/api/buywish/departments', { signal: AbortSignal.timeout(8000) });
+    const data = await res.json();
+    if (data.ok && data.departments && data.departments.length) renderDepartmentMenus(data.departments);
+  } catch (e) {}
 }
 
 let searchTimer = null;
@@ -3362,6 +3426,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   applyCollectionChrome();
+  loadDepartments();
   detectCurrency();
   const startupParams = new URLSearchParams(window.location.search);
   if (startupParams.get('q')) {

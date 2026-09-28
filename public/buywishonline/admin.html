@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Order desk | BuyWishOnline</title>
+  <title>Shop desk | BuyWishOnline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
@@ -19,7 +19,9 @@
     .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     button, .btn { background: var(--ink); color: #fff; border: 0; padding: 12px 16px; cursor: pointer; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; }
     button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
-    input { border: 1px solid var(--line); background: var(--paper); padding: 12px; min-width: 220px; }
+    input, select, textarea { border: 1px solid var(--line); background: var(--paper); padding: 12px; min-width: 180px; font: inherit; }
+    h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 32px; margin: 0 0 8px; }
+    .thumb { width: 48px; height: 48px; object-fit: cover; background: #f3efe8; }
     .card { background: var(--paper); border: 1px solid var(--line); padding: 16px; margin-top: 16px; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -34,7 +36,7 @@
 <header>
   <div>
     <div class="muted">BuyWishOnline · Shipping Wish LLC</div>
-    <h1>Order desk</h1>
+    <h1>Shop desk</h1>
   </div>
   <a href="/">Back to the shop</a>
 </header>
@@ -63,6 +65,34 @@
       <p class="muted">Sync keeps a product only when Zendrop quotes shipping to the USA, Canada, and the United Kingdom, and the fastest USA lane is 14 days or fewer. Run it again until the batch is finished. Paid orders are sent to Zendrop only when Zendrop publishes an order-creation tool for this token. Otherwise the order stays here with the customer’s address so it can be placed in the Zendrop dashboard and linked.</p>
       <p id="syncResult"></p>
     </div>
+    <div class="card" id="catalogDesk">
+      <h2>Catalog</h2>
+      <p class="muted">Create a category, add a product by its numeric supplier ID, move a product into another category, or remove it from the shop. Built-in categories stay in place. A removed product stays hidden until you add that same ID again.</p>
+      <form id="categoryForm" class="row">
+        <input id="categoryTitle" placeholder="New category name" required maxlength="80">
+        <input id="categoryBlurb" placeholder="Short description" maxlength="180">
+        <input id="categoryIcon" placeholder="Icon" maxlength="8">
+        <button type="submit">Create category</button>
+      </form>
+      <form id="addProductForm" class="row" style="margin-top:12px;">
+        <input id="addProductId" inputmode="numeric" placeholder="Product ID" required>
+        <select id="addProductCategory" aria-label="Category for the new product"></select>
+        <button type="submit">Add product</button>
+      </form>
+      <div class="row" style="margin-top:12px;">
+        <select id="deskCategory" aria-label="Category to review"></select>
+        <button id="loadDeskProductsBtn" class="ghost" type="button">Show products</button>
+        <span id="catalogAction" class="muted"></span>
+      </div>
+      <div style="overflow:auto;">
+        <table>
+          <thead>
+            <tr><th></th><th>Product</th><th>Price</th><th>Category</th><th></th></tr>
+          </thead>
+          <tbody id="catalogProducts"></tbody>
+        </table>
+      </div>
+    </div>
     <div class="card" style="overflow:auto;">
       <table>
         <thead>
@@ -82,12 +112,91 @@
     const token = sessionStorage.getItem(tokenKey);
     return token ? { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
   };
+  let deskDepartments = [];
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function safeImg(url) {
+    return /^https?:\/\//i.test(String(url || '')) ? String(url) : '';
+  }
+  function categoryOptions(selected) {
+    return deskDepartments.map((dept) => {
+      const picked = dept.slug === selected || dept.key === selected ? ' selected' : '';
+      return `<option value="${esc(dept.slug)}"${picked}>${esc(dept.title)}</option>`;
+    }).join('');
+  }
   function showDesk() {
     document.getElementById('gate').style.display = 'none';
     document.getElementById('desk').style.display = 'block';
     loadCatalog();
+    loadDeskCategories();
     loadOrders();
   }
+  async function loadDeskCategories() {
+    const res = await fetch('/api/buywish/departments');
+    const data = await res.json();
+    deskDepartments = data.departments || [];
+    const current = document.getElementById('deskCategory').value;
+    document.getElementById('addProductCategory').innerHTML = categoryOptions(document.getElementById('addProductCategory').value || (deskDepartments[0] && deskDepartments[0].slug));
+    document.getElementById('deskCategory').innerHTML = categoryOptions(current || (deskDepartments[0] && deskDepartments[0].slug));
+    loadDeskProducts();
+  }
+  async function loadDeskProducts() {
+    const slug = document.getElementById('deskCategory').value;
+    const dept = deskDepartments.find((item) => item.slug === slug);
+    const category = dept ? dept.key : slug;
+    const status = document.getElementById('catalogAction');
+    status.textContent = 'Loading products…';
+    const res = await fetch('/api/buywish/products?limit=48&source=live&category=' + encodeURIComponent(category));
+    const data = await res.json();
+    const products = data.products || [];
+    status.textContent = products.length ? `${products.length} products in this category` : 'No products in this category yet.';
+    document.getElementById('catalogProducts').innerHTML = products.map((product) => {
+      const id = String(product.zendrop_id || product.id || '').replace(/\D/g, '');
+      const img = safeImg((product.images && product.images[0]) || product.image_url);
+      return `<tr>
+        <td>${img ? `<img class="thumb" alt="" src="${esc(img)}">` : ''}</td>
+        <td><strong>${esc(product.title)}</strong><div class="muted">ID ${esc(id)}</div></td>
+        <td>${esc(product.retail_price)}</td>
+        <td><select data-product="${esc(id)}">${categoryOptions(slug)}</select></td>
+        <td>
+          <button type="button" onclick="saveProductCategory('${id}')">Save category</button>
+          <button class="ghost" type="button" onclick="hideProduct('${id}')">Delete</button>
+        </td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5">No products in this category yet. Add one with its product ID.</td></tr>';
+  }
+  async function saveProductCategory(id) {
+    if (!/^\d+$/.test(String(id))) return;
+    const select = document.querySelector(`select[data-product="${id}"]`);
+    const res = await fetch('/api/buywish/admin/products/' + id, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ category: select ? select.value : '' })
+    });
+    const data = await res.json();
+    document.getElementById('catalogAction').textContent = data.error || 'Category saved.';
+    if (res.ok) loadDeskProducts();
+    if (res.status === 401 || res.status === 403) {
+      sessionStorage.removeItem(tokenKey);
+      document.getElementById('desk').style.display = 'none';
+      document.getElementById('gate').style.display = 'block';
+    }
+  }
+  async function hideProduct(id) {
+    if (!/^\d+$/.test(String(id))) return;
+    if (!window.confirm('Remove this product from the shop?')) return;
+    const res = await fetch('/api/buywish/admin/products/' + id, { method: 'DELETE', headers: authHeaders() });
+    const data = await res.json();
+    document.getElementById('catalogAction').textContent = data.error || 'Product removed from the shop.';
+    if (res.ok) loadDeskProducts();
+  }
+  window.saveProductCategory = saveProductCategory;
+  window.hideProduct = hideProduct;
   async function loadCatalog() {
     const res = await fetch('/api/buywish/admin/catalog', { headers: authHeaders() });
     const data = await res.json();
@@ -171,6 +280,43 @@
     loadCatalog();
   };
   document.getElementById('refreshBtn').onclick = loadOrders;
+  document.getElementById('loadDeskProductsBtn').onclick = loadDeskProducts;
+  document.getElementById('categoryForm').onsubmit = async (event) => {
+    event.preventDefault();
+    const res = await fetch('/api/buywish/admin/categories', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        title: categoryTitle.value,
+        blurb: categoryBlurb.value,
+        icon: categoryIcon.value
+      })
+    });
+    const data = await res.json();
+    document.getElementById('catalogAction').textContent = data.error || 'Category created.';
+    if (res.ok) {
+      event.target.reset();
+      loadDeskCategories();
+    }
+  };
+  document.getElementById('addProductForm').onsubmit = async (event) => {
+    event.preventDefault();
+    const res = await fetch('/api/buywish/admin/products', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        zendrop_id: addProductId.value,
+        category: addProductCategory.value
+      })
+    });
+    const data = await res.json();
+    document.getElementById('catalogAction').textContent = data.error || 'Product added.';
+    if (res.ok) {
+      addProductId.value = '';
+      document.getElementById('deskCategory').value = addProductCategory.value;
+      loadDeskProducts();
+    }
+  };
   document.getElementById('loginForm').onsubmit = async (event) => {
     event.preventDefault();
     document.getElementById('loginError').textContent = '';

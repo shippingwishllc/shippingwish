@@ -28,7 +28,13 @@ const {
   qualifiesForStore,
   deliveryLabel,
   productHandle,
-  storeProductFromRow
+  storeProductFromRow,
+  slugifyCategory,
+  validCategorySlug,
+  cleanIcon,
+  publicDepartments,
+  applyCatalogEdits,
+  departmentBySlug
 } = require('../utils/buywish-catalog');
 const { selectOrderTool, buildOrderArguments, extractOrderId } = require('../utils/buywish-fulfillment');
 const buyWishAdmin = [requireAuth, requireRole('admin')];
@@ -45,6 +51,9 @@ function getCache(key) {
 }
 function setCache(key, data, ttlMs) {
   cache[key] = { data, expires: Date.now() + ttlMs };
+}
+function clearCatalogCache() {
+  Object.keys(cache).forEach((key) => delete cache[key]);
 }
 
 let buyWishSchemaReady = false;
@@ -117,6 +126,22 @@ async function ensureBuyWishSchema() {
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS customer_id INTEGER;
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS zendrop_sync_status TEXT;
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS zendrop_sync_detail TEXT;
+
+    CREATE TABLE IF NOT EXISTS buywish_categories (
+      slug TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      blurb TEXT,
+      icon TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 100,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS buywish_product_overrides (
+      zendrop_id TEXT PRIMARY KEY,
+      category_slug TEXT,
+      is_hidden BOOLEAN NOT NULL DEFAULT false,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
   `);
   buyWishSchemaReady = true;
 }
@@ -267,7 +292,8 @@ async function fetchDepartmentProducts(department, { search, limit, page }) {
   ]);
   const categoryProducts = categoryBatches.flat().concat(idProducts);
   const trusted = categoryFilterIsTrusted(categoryProducts, baseline);
-  categoryProducts.forEach((product) => rememberDepartmentProduct(byId, product, department.key, searchText, trusted));
+  const allowUnsorted = trusted && !department.strict;
+  categoryProducts.forEach((product) => rememberDepartmentProduct(byId, product, department.key, searchText, allowUnsorted));
   searchBatches.forEach((products) => {
     products.forEach((product) => rememberDepartmentProduct(byId, product, department.key, searchText, false));
   });
@@ -335,6 +361,136 @@ async function searchLiveProducts(query, { limit, page }) {
   };
 }
 
+async function fetchMixedCatalog() {
+  const jobs = [
+    fetchCatalogSlice('get_catalog_trending_products', { limit: 80 }),
+    fetchCatalogSlice('get_catalog_trending_products', { limit: 40, page: 2 }),
+    fetchCatalogSlice('get_catalog_products', { limit: 48 }),
+    fetchCatalogSlice('get_catalog_products', { limit: 48, page: 2 }),
+    fetchCatalogSlice('get_catalog_products', { limit: 48, page: 3 })
+  ];
+  const batches = await Promise.all(jobs);
+  const byId = new Map();
+  batches.flat().forEach((raw) => {
+    const product = normalizeProduct(raw);
+    if (!product.id || byId.has(String(product.id))) return;
+    byId.set(String(product.id), product);
+  });
+  const products = [...byId.values()].slice(0, 96);
+  return { products, total: products.length, page: 1, per_page: 96 };
+}
+
+async function withCatalogEdits(products, categoryFilter, options = {}) {
+  try {
+    await ensureBuyWishSchema();
+    const [overrides, saved] = await Promise.all([
+      pool.query('SELECT zendrop_id, category_slug, is_hidden FROM buywish_product_overrides'),
+      options.includeSaved
+        ? pool.query(`SELECT * FROM ecommerce_products WHERE is_active = true AND zendrop_id IS NOT NULL ORDER BY winning_score DESC, updated_at DESC LIMIT 96`)
+        : Promise.resolve({ rows: [] })
+    ]);
+    return applyCatalogEdits(products, {
+      overrides: overrides.rows,
+      saved: saved.rows.map(storeProductFromRow)
+    }, categoryFilter, { includeSaved: Boolean(options.includeSaved) }).slice(0, 96);
+  } catch (err) {
+    return applyCatalogEdits(products, { overrides: [], saved: [] }, categoryFilter, { includeSaved: false }).slice(0, 96);
+  }
+}
+
+async function lookupCustomCategory(slug) {
+  const clean = String(slug || '').trim().toLowerCase();
+  if (!validCategorySlug(clean) || departmentBySlug(clean)) return null;
+  await ensureBuyWishSchema();
+  const { rows } = await pool.query(
+    `SELECT slug, title, blurb, icon FROM buywish_categories WHERE slug = $1 AND is_active = true`,
+    [clean]
+  );
+  if (!rows[0]) return null;
+  return {
+    key: rows[0].slug,
+    title: rows[0].title,
+    slug: rows[0].slug,
+    blurb: rows[0].blurb || 'Shop this collection. Orders ship to the USA, Canada, and the United Kingdom.',
+    icon: cleanIcon(rows[0].icon) || '🛍️'
+  };
+}
+
+async function productIsHidden(zendropId) {
+  const id = String(zendropId || '').replace(/^p-/i, '');
+  if (!/^\d+$/.test(id)) return false;
+  try {
+    await ensureBuyWishSchema();
+    const { rows } = await pool.query(
+      'SELECT is_hidden FROM buywish_product_overrides WHERE zendrop_id = $1',
+      [id]
+    );
+    return Boolean(rows[0] && rows[0].is_hidden);
+  } catch (err) {
+    return false;
+  }
+}
+
+function parseZendropId(value) {
+  const id = String(value || '').trim().replace(/^p-/i, '');
+  return /^\d{1,12}$/.test(id) ? id : null;
+}
+
+async function resolveCategoryChoice(value) {
+  const dept = departmentByQuery(value) || departmentBySlug(value);
+  if (dept) return { slug: dept.slug, key: dept.key, title: dept.title };
+  const custom = await lookupCustomCategory(value);
+  if (!custom) return null;
+  return { slug: custom.slug, key: custom.slug, title: custom.title };
+}
+
+async function upsertStoreProduct(product) {
+  const handle = productHandle(product.zendrop_id || product.id);
+  if (!handle) return;
+  const retail = Number(product.retail_price) || 0;
+  const cost = Number(product.supplier_cost) || 0;
+  const margin = retail > 0 ? Number((((retail - cost) / retail) * 100).toFixed(2)) : null;
+  await pool.query(`
+    INSERT INTO ecommerce_products (
+      title, handle, description, category, retail_price, supplier_cost, estimated_margin,
+      trend_score, source, image_url, is_active, zendrop_id, compare_price, images, features,
+      badge, ships_to, delivery_label, winning_score, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'Zendrop',$9,true,$10,$11,$12::jsonb,$13::jsonb,$14,$15::jsonb,$16,$17,now())
+    ON CONFLICT (zendrop_id) DO UPDATE SET
+      title = EXCLUDED.title,
+      description = EXCLUDED.description,
+      category = EXCLUDED.category,
+      retail_price = EXCLUDED.retail_price,
+      supplier_cost = EXCLUDED.supplier_cost,
+      estimated_margin = EXCLUDED.estimated_margin,
+      image_url = EXCLUDED.image_url,
+      is_active = true,
+      compare_price = EXCLUDED.compare_price,
+      images = EXCLUDED.images,
+      features = EXCLUDED.features,
+      badge = EXCLUDED.badge,
+      updated_at = now()
+  `, [
+    String(product.title || 'Product').slice(0, 240),
+    handle,
+    product.description || '',
+    product.category || 'Featured',
+    retail,
+    cost,
+    margin,
+    0,
+    product.image_url,
+    String(product.zendrop_id || product.id),
+    product.compare_price ? Number(product.compare_price) : null,
+    JSON.stringify(product.images || []),
+    JSON.stringify(product.features || []),
+    product.badge || 'new',
+    JSON.stringify(product.ships_to || []),
+    product.delivery || null,
+    0
+  ]);
+}
+
 // ============================================================
 // GET /api/buywish/products — Live Zendrop Catalog
 // ============================================================
@@ -344,22 +500,47 @@ router.get('/products', async (req, res) => {
     const queryText = search && String(search).trim();
     if (queryText && queryText.length >= 2) {
       const searchKey = `searchlive_${queryText.toLowerCase()}_${page}_${limit}`;
-      const searchCached = getCache(searchKey);
-      if (searchCached) return res.json({ ok: true, ...searchCached, source: 'cache' });
-      const found = await searchLiveProducts(queryText, { limit, page });
-      setCache(searchKey, found, 5 * 60 * 1000);
-      return res.json({ ok: true, ...found, source: 'search' });
+      let found = getCache(searchKey);
+      if (!found) {
+        found = await searchLiveProducts(queryText, { limit, page });
+        setCache(searchKey, found, 5 * 60 * 1000);
+      }
+      const products = await withCatalogEdits(found.products, null, { includeSaved: false });
+      return res.json({ ok: true, ...found, products, total: products.length, source: 'search' });
     }
     const department = departmentByQuery(category);
     if (department) {
       const deptKey = `dept_${department.key}_${search || ''}_${page}_${limit}`;
-      const deptCached = getCache(deptKey);
-      if (deptCached) return res.json({ ok: true, ...deptCached, source: 'cache' });
-      const found = await fetchDepartmentProducts(department, { search, limit, page });
-      if (found.products.length) {
-        setCache(deptKey, found, 10 * 60 * 1000);
-        return res.json({ ok: true, ...found, source: 'zendrop', category: department.title });
+      let found = getCache(deptKey);
+      if (!found) {
+        found = await fetchDepartmentProducts(department, { search, limit, page });
+        if (found.products.length) setCache(deptKey, found, 10 * 60 * 1000);
       }
+      const products = await withCatalogEdits(found.products, department.key, { includeSaved: !search });
+      return res.json({
+        ok: true,
+        products,
+        total: products.length,
+        page: found.page,
+        per_page: found.per_page,
+        source: 'zendrop',
+        category: department.title
+      });
+    }
+    if (category && String(category).toLowerCase() !== 'all') {
+      const custom = await lookupCustomCategory(category).catch(() => null);
+      const products = custom
+        ? await withCatalogEdits([], custom.key, { includeSaved: true })
+        : [];
+      return res.json({
+        ok: true,
+        products,
+        total: products.length,
+        page: 1,
+        per_page: products.length,
+        source: 'catalog',
+        category: custom ? custom.title : String(category)
+      });
     }
     if (source !== 'live') {
       try {
@@ -369,64 +550,28 @@ router.get('/products', async (req, res) => {
         );
         if (stocked.rows[0] && stocked.rows[0].total > 0) {
           const synced = await listSyncedProducts({ category, search, limit, page });
-          return res.json({ ok: true, ...synced, source: 'catalog' });
+          const products = await withCatalogEdits(synced.products, category, { includeSaved: false });
+          return res.json({ ok: true, ...synced, products, total: products.length, source: 'catalog' });
         }
       } catch (dbErr) {
         console.error('[BUYWISH CATALOG READ]:', dbErr.message);
       }
     }
-    const cacheKey = `products_${category || 'all'}_${search || ''}_${page}_${sort}`;
-    const cached = getCache(cacheKey);
-    if (cached) return res.json({ ok: true, products: cached.products, total: cached.total, page: cached.page, per_page: cached.per_page, source: 'cache' });
-
-    let products = [];
-
-    // Fetch from Zendrop
-    if (sort === 'trending' || !sort) {
-      // Get trending products
-      const trendingData = await zendropCall('get_catalog_trending_products', { limit: 80 });
-      if (trendingData && trendingData.products) {
-        products = trendingData.products.map(normalizeProduct);
-      }
+    const cacheKey = `mixed_${page}_${limit}_${sort}`;
+    let mixed = getCache(cacheKey);
+    if (!mixed) {
+      mixed = await fetchMixedCatalog();
+      if (mixed.products.length) setCache(cacheKey, mixed, 10 * 60 * 1000);
     }
-
-    // Also get "my products" (user's imported products)
-    try {
-      const myProducts = await zendropCall('get_my_products', { limit: 50 });
-      if (myProducts && myProducts.products && myProducts.products.length > 0) {
-        const normalized = myProducts.products.map(p => normalizeProduct({ ...p, is_trending: false }));
-        // Merge, dedup by id
-        const existingIds = new Set(products.map(p => p.id));
-        normalized.forEach(p => { if (!existingIds.has(p.id)) products.push(p); });
-      }
-    } catch (e) {
-      // My products is optional
-    }
-
-    // Filter by category
-    if (category && category !== 'all') {
-      products = products.filter(p => p.category.toLowerCase() === category.toLowerCase());
-    }
-
-    // Filter by search
-    if (search && search.trim()) {
-      const q = search.trim().toLowerCase();
-      products = products.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q)
-      );
-    }
-
-    // Pagination
-    const perPage = Math.min(parseInt(limit, 10) || 24, 96);
-    const offset = (parseInt(page, 10) - 1) * perPage;
-    const total = products.length;
-    const paginated = products.slice(offset, offset + perPage);
-
-    const payload = { products: paginated, total, page: parseInt(page, 10), per_page: perPage };
-    setCache(cacheKey, payload, 15 * 60 * 1000); // 15 min cache
-    res.json({ ok: true, ...payload, source: 'zendrop' });
+    const products = await withCatalogEdits(mixed.products, null, { includeSaved: true });
+    res.json({
+      ok: true,
+      products,
+      total: products.length,
+      page: 1,
+      per_page: products.length,
+      source: 'zendrop'
+    });
   } catch (err) {
     console.error('[BUYWISH PRODUCTS ERROR]:', err.message);
     // Fallback: try database
@@ -460,6 +605,20 @@ router.get('/products/trending', async (req, res) => {
 // ============================================================
 // GET /api/buywish/products/categories — Available Categories
 // ============================================================
+router.get('/departments', async (req, res) => {
+  let custom = [];
+  try {
+    await ensureBuyWishSchema();
+    const { rows } = await pool.query(
+      `SELECT slug, title, blurb, icon, is_active FROM buywish_categories WHERE is_active = true ORDER BY sort_order ASC, title ASC`
+    );
+    custom = rows;
+  } catch (err) {
+    custom = [];
+  }
+  res.json({ ok: true, departments: publicDepartments(custom) });
+});
+
 router.get('/products/categories', async (req, res) => {
   try {
     await ensureBuyWishSchema();
@@ -490,6 +649,7 @@ router.get('/products/categories', async (req, res) => {
 router.get('/products/:id', async (req, res) => {
   const productId = parseInt(req.params.id, 10);
   if (!productId) return res.status(400).json({ error: 'Invalid product ID.' });
+  if (await productIsHidden(productId)) return res.status(404).json({ error: 'Product not found.' });
 
   try {
     try {
@@ -966,7 +1126,7 @@ router.post('/admin/catalog/sync', ...buyWishAdmin, async (req, res) => {
         usa_days: profile.fastestDays
       });
     });
-    Object.keys(cache).forEach((key) => delete cache[key]);
+    clearCatalogCache();
     res.json({
       ok: true,
       checked: slice.length,
@@ -983,6 +1143,139 @@ router.post('/admin/catalog/sync', ...buyWishAdmin, async (req, res) => {
     res.status(500).json({ error: err.message || 'Catalog sync failed.' });
   } finally {
     catalogSyncing = false;
+  }
+});
+
+router.post('/admin/categories', ...buyWishAdmin, async (req, res) => {
+  const title = String((req.body && req.body.title) || '').trim().slice(0, 80);
+  const slug = slugifyCategory((req.body && req.body.slug) || title);
+  const blurb = String((req.body && req.body.blurb) || '').trim().slice(0, 180);
+  const icon = cleanIcon(req.body && req.body.icon) || '🛍️';
+  if (title.length < 2) return res.status(400).json({ error: 'Enter a category name.' });
+  if (!validCategorySlug(slug)) return res.status(400).json({ error: 'Use a shorter category name with letters and numbers.' });
+  if (departmentBySlug(slug)) return res.status(409).json({ error: 'That category is already on the shop.' });
+  try {
+    await ensureBuyWishSchema();
+    const created = await pool.query(
+      `INSERT INTO buywish_categories (slug, title, blurb, icon)
+       VALUES ($1, $2, $3, $4)
+       RETURNING slug, title, blurb, icon`,
+      [slug, title, blurb || null, icon]
+    );
+    clearCatalogCache();
+    res.json({ ok: true, category: created.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'That category already exists.' });
+    res.status(500).json({ error: 'Could not create the category.' });
+  }
+});
+
+router.delete('/admin/categories/:slug', ...buyWishAdmin, async (req, res) => {
+  const slug = String(req.params.slug || '').toLowerCase();
+  if (departmentBySlug(slug)) return res.status(400).json({ error: 'Built-in categories stay on the shop.' });
+  if (!validCategorySlug(slug)) return res.status(400).json({ error: 'Unknown category.' });
+  try {
+    await ensureBuyWishSchema();
+    const updated = await pool.query(
+      `UPDATE buywish_categories SET is_active = false WHERE slug = $1 AND is_active = true RETURNING slug`,
+      [slug]
+    );
+    if (!updated.rows.length) return res.status(404).json({ error: 'Category not found.' });
+    clearCatalogCache();
+    res.json({ ok: true, slug });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not remove the category.' });
+  }
+});
+
+async function saveProductCategory(id, categoryValue) {
+  const chosen = await resolveCategoryChoice(categoryValue);
+  if (!chosen) {
+    const error = new Error('Choose a category that exists on the shop.');
+    error.status = 400;
+    throw error;
+  }
+  await ensureBuyWishSchema();
+  let product = null;
+  try {
+    product = await loadLiveProductByKey(id);
+  } catch (err) {
+    product = null;
+  }
+  if (product && product.id) {
+    product.category = chosen.key;
+    await upsertStoreProduct(product);
+    try {
+      await zendropCall('import_my_product', { product_id: Number(id) }, { timeoutMs: 8000 });
+    } catch (err) {
+      // The shop can still sell the product if the supplier import is unavailable.
+    }
+  } else {
+    const existing = await pool.query('SELECT id FROM ecommerce_products WHERE zendrop_id = $1', [id]);
+    if (!existing.rows.length) {
+      const error = new Error('That product was not found.');
+      error.status = 404;
+      throw error;
+    }
+    await pool.query(
+      `UPDATE ecommerce_products SET category = $1, is_active = true, updated_at = now() WHERE zendrop_id = $2`,
+      [chosen.key, id]
+    );
+  }
+  await pool.query(
+    `INSERT INTO buywish_product_overrides (zendrop_id, category_slug, is_hidden, updated_at)
+     VALUES ($1, $2, false, now())
+     ON CONFLICT (zendrop_id) DO UPDATE SET
+       category_slug = EXCLUDED.category_slug,
+       is_hidden = false,
+       updated_at = now()`,
+    [id, chosen.slug]
+  );
+  clearCatalogCache();
+  return chosen;
+}
+
+router.post('/admin/products', ...buyWishAdmin, async (req, res) => {
+  const id = parseZendropId(req.body && (req.body.zendrop_id || req.body.product_id));
+  if (!id) return res.status(400).json({ error: 'Enter the numeric product ID.' });
+  try {
+    const chosen = await saveProductCategory(id, req.body && (req.body.category || req.body.category_slug));
+    res.json({ ok: true, zendrop_id: id, category: chosen.key, slug: chosen.slug });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Could not add the product.' });
+  }
+});
+
+router.patch('/admin/products/:id', ...buyWishAdmin, async (req, res) => {
+  const id = parseZendropId(req.params.id);
+  if (!id) return res.status(400).json({ error: 'Enter the numeric product ID.' });
+  try {
+    const chosen = await saveProductCategory(id, req.body && (req.body.category || req.body.category_slug));
+    res.json({ ok: true, zendrop_id: id, category: chosen.key, slug: chosen.slug });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Could not change the category.' });
+  }
+});
+
+router.delete('/admin/products/:id', ...buyWishAdmin, async (req, res) => {
+  const id = parseZendropId(req.params.id);
+  if (!id) return res.status(400).json({ error: 'Enter the numeric product ID.' });
+  try {
+    await ensureBuyWishSchema();
+    await pool.query(
+      `INSERT INTO buywish_product_overrides (zendrop_id, is_hidden, updated_at)
+       VALUES ($1, true, now())
+       ON CONFLICT (zendrop_id) DO UPDATE SET is_hidden = true, updated_at = now()`,
+      [id]
+    );
+    await pool.query(
+      `UPDATE ecommerce_products SET is_active = false, updated_at = now() WHERE zendrop_id = $1`,
+      [id]
+    );
+    clearCatalogCache();
+    res.json({ ok: true, zendrop_id: id, hidden: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not remove the product.' });
   }
 });
 
@@ -1649,4 +1942,6 @@ module.exports = router;
 module.exports.handleBuyWishWebhook = handleBuyWishWebhook;
 module.exports.applyCheckoutEvent = applyCheckoutEvent;
 module.exports.loadLiveProductByKey = loadLiveProductByKey;
+module.exports.lookupCustomCategory = lookupCustomCategory;
+module.exports.productIsHidden = productIsHidden;
 

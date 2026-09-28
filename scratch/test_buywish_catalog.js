@@ -13,7 +13,12 @@ const {
   deliveryLabel,
   productHandle,
   normalizeProduct,
-  inferCategory
+  inferCategory,
+  slugifyCategory,
+  validCategorySlug,
+  publicDepartments,
+  applyCatalogEdits,
+  STORE_DEPARTMENTS
 } = require('../utils/buywish-catalog');
 const {
   isOrderCreateTool,
@@ -68,7 +73,41 @@ assert.strictEqual(inferCategory('Kemei Rechargeable Electric Hair Clipper'), 'B
 assert.strictEqual(inferCategory('DIY Wooden Mechanical Owl Clock Model for Home Decor'), 'Home');
 assert.strictEqual(inferCategory('Foam Barbell Shoulder Pads for Weightlifting'), 'Fitness');
 assert.strictEqual(inferCategory('Paw Patrol Shampoo 8 oz Bottle'), 'Pets');
-assert.strictEqual(inferCategory('Men’s Premium Sunset Chaser Tank Top'), 'Featured');
+assert.strictEqual(inferCategory('Men’s Premium Sunset Chaser Tank Top'), 'Men');
+assert.strictEqual(inferCategory("Women's Floral Dress"), 'Women');
+assert.notStrictEqual(classifyProduct({ title: "Women's Floral Dress" }).key, 'Men');
+assert.strictEqual(inferCategory('Clear phone case'), 'Phone');
+assert.strictEqual(inferCategory('Gold necklace'), 'Jewelry');
+assert.strictEqual(inferCategory('Running shoes'), 'Shoes');
+assert.strictEqual(inferCategory('Baby onesie'), 'Baby');
+assert.strictEqual(inferCategory('Kids puzzle'), 'Kids');
+assert.strictEqual(inferCategory('Acrylic paint set'), 'Arts');
+assert.strictEqual(inferCategory('Canvas backpack'), 'Bags');
+assert.strictEqual(inferCategory('Packing cubes'), 'Travel');
+assert.strictEqual(inferCategory('Wooden dresser'), 'Featured');
+assert.strictEqual(departmentBySlug('jewelry').title, 'Jewelry & Watches');
+assert.strictEqual(departmentBySlug('women').strict, true);
+assert.strictEqual(slugifyCategory('Summer Picks!'), 'summer-picks');
+assert.strictEqual(validCategorySlug('summer-picks'), true);
+assert.strictEqual(validCategorySlug('no'), true);
+assert.strictEqual(validCategorySlug('a'), false);
+const departments = publicDepartments([{ slug: 'summer-picks', title: 'Summer Picks', icon: '☀️', is_active: true }, { slug: 'tech', title: 'Duplicate', is_active: true }]);
+assert.strictEqual(departments.filter((dept) => dept.slug === 'tech').length, 1);
+assert.strictEqual(departments.some((dept) => dept.slug === 'summer-picks'), true);
+assert.strictEqual(departments.length, Object.keys(STORE_DEPARTMENTS).length + 1);
+const edited = applyCatalogEdits(
+  [{ id: 1, zendrop_id: '1', title: 'A', category: 'Tech' }, { id: 2, zendrop_id: '2', title: 'B', category: 'Home' }],
+  {
+    overrides: [
+      { zendrop_id: '1', category_slug: 'home', is_hidden: false },
+      { zendrop_id: '2', is_hidden: true }
+    ],
+    saved: [{ id: 3, zendrop_id: '3', title: 'C', category: 'Home' }]
+  },
+  'Home',
+  { includeSaved: true }
+);
+assert.deepStrictEqual(edited.map((product) => product.title).sort(), ['A', 'C']);
 assert.strictEqual(classifyProduct({ title: 'Wireless earbuds', supplier_category: 'Apparel & Accessories' }).key, 'Tech');
 assert.strictEqual(classifyProduct({ title: 'Plain cotton tee', supplier_category: 'Apparel & Accessories' }), null);
 const tech = classifyProduct({ title: 'Bluetooth speaker' });
