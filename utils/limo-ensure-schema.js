@@ -212,6 +212,12 @@ async function ensureSchema() {
     } catch (err) { console.warn('[VEHICLES]', err.message); }
   }
 
+  try {
+    await require('./limo-review-accounts').seedReviewAccounts();
+  } catch (err) {
+    console.warn('[SEED] NYC Limo review accounts skipped:', err.message);
+  }
+
   // Never create a publicly guessable administrator account during app startup.
   // Provision the first admin through a controlled database operation.
   if (!process.env.NYCLIMO_ADMIN_EMAIL || !process.env.NYCLIMO_ADMIN_PASSWORD) {
