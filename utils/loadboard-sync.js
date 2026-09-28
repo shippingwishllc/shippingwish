@@ -105,6 +105,7 @@ async function createBoardSchema() {
     CREATE INDEX IF NOT EXISTS ai_dispatch_offers_load_idx ON ai_dispatch_offers (load_id, status);
     ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS broker_authority JSONB;
     ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS ratecon JSONB;
+    ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS reload_plan JSONB;
     CREATE TABLE IF NOT EXISTS ai_dispatch_messages (
       id SERIAL PRIMARY KEY,
       carrier_id INTEGER NOT NULL REFERENCES ai_dispatch_carriers(id) ON DELETE CASCADE,
@@ -218,7 +219,7 @@ async function upsertApiLoads(source, loads) {
       );
     } else if (!load.covered) {
       const loadNumber = `LN-API-${source.id}-${String(load.externalId).replace(/[^a-zA-Z0-9]/g, '').slice(0, 18)}`;
-      await pool.query(
+      const ins = await pool.query(
         `INSERT INTO loads (
            load_number, status, rate, pickup_location, delivery_location,
            pickup_date, delivery_date, equipment_type, weight, commodity,
@@ -226,7 +227,7 @@ async function upsertApiLoads(source, loads) {
            source_type, source_id, external_id, created_at, updated_at
          ) VALUES (
            $1, 'new', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'api', $16, $17, now(), now()
-         )`,
+         ) RETURNING *`,
         [
           loadNumber, load.rate, load.origin, load.destination,
           load.pickupDate || null, load.deliveryDate || null, load.equipment, load.weight, load.commodity,
@@ -234,6 +235,9 @@ async function upsertApiLoads(source, loads) {
           load.brokerName, load.brokerMc, contact, load.miles, rpm, source.id, load.externalId
         ]
       );
+      try { require('./dispatch-brain').fanoutPostedLoad(ins.rows[0]); } catch (err) {
+        console.warn('[dispatch] API fanout failed:', err.message);
+      }
     }
   }
   await pool.query(

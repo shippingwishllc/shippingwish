@@ -1677,6 +1677,7 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
     try {
       broadcastLoadboardEvent('load_posted', postedLoad);
       dispatchLaneAlerts(postedLoad);
+      require('../utils/dispatch-brain').fanoutPostedLoad(postedLoad);
     } catch (e) {
       console.warn('Real-time broadcast/alerts warning:', e.message);
     }
@@ -2483,6 +2484,7 @@ router.post('/ai-ingest', optionalAuth, async (req, res) => {
       for (const l of savedLoads) {
         broadcastLoadboardEvent('load_posted', l);
         dispatchLaneAlerts(l);
+        require('../utils/dispatch-brain').fanoutPostedLoad(l);
       }
     } catch (e) {
       console.warn('AI Ingest real-time broadcast warning:', e.message);
