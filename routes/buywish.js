@@ -6,61 +6,25 @@
 
 const express = require('express');
 const router = express.Router();
-const https = require('https');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const pool = require('../db');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requireRole, JWT_SECRET, extractToken } = require('../middleware/auth');
+const { zendropCall, zendropListTools } = require('../utils/zendrop-client');
+const {
+  TARGET_COUNTRIES,
+  WINNING_SEARCHES,
+  normalizeProduct,
+  summarizeLane,
+  scoreProduct,
+  qualifiesForStore,
+  deliveryLabel,
+  productHandle,
+  storeProductFromRow
+} = require('../utils/buywish-catalog');
+const { selectOrderTool, buildOrderArguments, extractOrderId } = require('../utils/buywish-fulfillment');
 const buyWishAdmin = [requireAuth, requireRole('admin')];
-
-// ============================================================
-// ZENDROP API CLIENT
-// ============================================================
-const ZENDROP_TOKEN = process.env.ZENDROP_API_KEY;
-
-function zendropCall(toolName, args = {}) {
-  if (!ZENDROP_TOKEN) return Promise.reject(new Error('Zendrop is not configured. Set ZENDROP_API_KEY.'));
-  return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      jsonrpc: '2.0',
-      id: Date.now(),
-      method: 'tools/call',
-      params: { name: toolName, arguments: args }
-    });
-    const options = {
-      hostname: 'app.zendrop.com',
-      port: 443,
-      path: '/mcp/v1',
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${ZENDROP_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body)
-      }
-    };
-    const req = https.request(options, res => {
-      let d = '';
-      res.on('data', c => d += c);
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(d);
-          if (parsed.error) return reject(new Error(parsed.error.message || 'Zendrop API error'));
-          // MCP returns content array with text
-          const content = parsed.result && parsed.result.content;
-          if (content && content[0] && content[0].text) {
-            resolve(JSON.parse(content[0].text));
-          } else {
-            resolve(parsed.result || {});
-          }
-        } catch (e) {
-          reject(new Error('Invalid Zendrop response'));
-        }
-      });
-    });
-    req.on('error', reject);
-    req.setTimeout(12000, () => { req.destroy(); reject(new Error('Zendrop API timeout')); });
-    req.write(body);
-    req.end();
-  });
-}
 
 // ============================================================
 // IN-MEMORY CACHE (15 minutes for catalog, 5 min for trending)
@@ -76,76 +40,146 @@ function setCache(key, data, ttlMs) {
   cache[key] = { data, expires: Date.now() + ttlMs };
 }
 
-// ============================================================
-// NORMALISE Zendrop product → BuyWishOnline product schema
-// ============================================================
-function normalizeProduct(p) {
-  // Extract images array
-  const images = [];
-  if (p.image) images.push(p.image);
-  if (p.images && Array.isArray(p.images)) {
-    p.images.forEach(img => {
-      const url = typeof img === 'string' ? img : (img.url || img.src);
-      if (url && !images.includes(url)) images.push(url);
-    });
+let buyWishSchemaReady = false;
+async function ensureBuyWishSchema() {
+  if (buyWishSchemaReady) return;
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ecommerce_orders (
+      id SERIAL PRIMARY KEY,
+      order_number TEXT NOT NULL UNIQUE,
+      customer_name TEXT NOT NULL,
+      customer_email TEXT NOT NULL,
+      customer_phone TEXT,
+      shipping_address TEXT,
+      shipping_city TEXT,
+      shipping_state TEXT,
+      items JSONB NOT NULL DEFAULT '[]',
+      total_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+      subtotal_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+      tax_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'USD',
+      supplier TEXT NOT NULL DEFAULT 'Zendrop',
+      zendrop_order_id TEXT,
+      supplier_tracking_number TEXT,
+      stripe_session_id TEXT,
+      stripe_payment_intent TEXT,
+      fulfillment_status TEXT NOT NULL DEFAULT 'awaiting_payment',
+      payment_status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS ecommerce_products (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      handle TEXT NOT NULL UNIQUE,
+      description TEXT,
+      category TEXT,
+      retail_price NUMERIC(10,2) NOT NULL,
+      supplier_cost NUMERIC(10,2) NOT NULL DEFAULT 0,
+      estimated_margin NUMERIC(5,2),
+      trend_score INTEGER DEFAULT 0,
+      source TEXT DEFAULT 'Zendrop',
+      image_url TEXT,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    ALTER TABLE ecommerce_products ADD COLUMN IF NOT EXISTS zendrop_id TEXT;
+    ALTER TABLE ecommerce_products ADD COLUMN IF NOT EXISTS compare_price NUMERIC(10,2);
+    ALTER TABLE ecommerce_products ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]';
+    ALTER TABLE ecommerce_products ADD COLUMN IF NOT EXISTS features JSONB NOT NULL DEFAULT '[]';
+    ALTER TABLE ecommerce_products ADD COLUMN IF NOT EXISTS badge TEXT;
+    ALTER TABLE ecommerce_products ADD COLUMN IF NOT EXISTS ships_to JSONB NOT NULL DEFAULT '[]';
+    ALTER TABLE ecommerce_products ADD COLUMN IF NOT EXISTS delivery_label TEXT;
+    ALTER TABLE ecommerce_products ADD COLUMN IF NOT EXISTS winning_score INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE ecommerce_products ADD COLUMN IF NOT EXISTS import_status TEXT;
+    ALTER TABLE ecommerce_products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_ecom_products_zendrop_id ON ecommerce_products (zendrop_id);
+
+    CREATE TABLE IF NOT EXISTS buywish_customers (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      phone TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS shipping_country TEXT;
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS shipping_postal TEXT;
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS shipping_line2 TEXT;
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS customer_id INTEGER;
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS zendrop_sync_status TEXT;
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS zendrop_sync_detail TEXT;
+  `);
+  buyWishSchemaReady = true;
+}
+
+function signCustomer(customer) {
+  return jwt.sign(
+    { id: customer.id, email: customer.email, role: 'buywish_customer', typ: 'buywish' },
+    JWT_SECRET,
+    { expiresIn: '30d' }
+  );
+}
+
+function readCustomer(req) {
+  const token = extractToken(req) || (req.cookies && req.cookies.bwo_token);
+  if (!token || !JWT_SECRET) return null;
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    if (payload.typ !== 'buywish' || payload.role !== 'buywish_customer') return null;
+    return payload;
+  } catch (e) {
+    return null;
   }
+}
 
-  // Strip HTML from description
-  const rawDesc = p.description || '';
-  const cleanDesc = rawDesc.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().substring(0, 400);
+function requireCustomer(req, res, next) {
+  const customer = readCustomer(req);
+  if (!customer) return res.status(401).json({ error: 'Sign in to view your BuyWish account.' });
+  req.customer = customer;
+  next();
+}
 
-  // Get price
-  const retailPrice = parseFloat(p.price || p.retail_price || 0) || 0;
-  const suppliedComparePrice = parseFloat(p.compare_at_price || p.compare_price || 0);
-  const comparePrice = Number.isFinite(suppliedComparePrice) && suppliedComparePrice > retailPrice ? suppliedComparePrice.toFixed(2) : null;
+const accountHits = new Map();
+function accountRateLimit(req, res, next) {
+  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim() || 'local';
+  const now = Date.now();
+  const hits = (accountHits.get(ip) || []).filter((t) => now - t < 10 * 60 * 1000);
+  if (hits.length >= 20) return res.status(429).json({ error: 'Too many account attempts. Please wait a few minutes.' });
+  hits.push(now);
+  accountHits.set(ip, hits);
+  next();
+}
 
-  // Extract features from description bullet points
-  const features = [];
-  const bulletMatches = rawDesc.match(/<li[^>]*>(.*?)<\/li>/gi) || [];
-  bulletMatches.slice(0, 5).forEach(m => {
-    const text = m.replace(/<[^>]*>/g, '').trim();
-    if (text && text.length < 100) features.push(text);
-  });
-
-  // Category mapping
-  let category = 'Featured';
-  const name = (p.name || p.title || '').toLowerCase();
-  const cats = {
-    'Tech': ['electronic', 'phone', 'laptop', 'gadget', 'usb', 'wireless', 'bluetooth', 'camera', 'speaker', 'headphone', 'charger', 'smart', 'tech', 'led', 'light', 'watch', 'tracker'],
-    'Home': ['home', 'house', 'room', 'kitchen', 'bed', 'decor', 'organiz', 'storage', 'curtain', 'pillow', 'lamp', 'vacuum', 'clean', 'mop', 'air'],
-    'Fitness': ['fitness', 'exercise', 'gym', 'sport', 'yoga', 'weight', 'muscle', 'protein', 'resistance', 'band', 'run', 'pedometer', 'health'],
-    'Beauty': ['beauty', 'skin', 'face', 'hair', 'nail', 'makeup', 'cream', 'serum', 'mask', 'lip', 'eye', 'glow', 'moistur', 'cleanser', 'lash'],
-    'Kitchen': ['kitchen', 'cook', 'food', 'chef', 'knife', 'pot', 'pan', 'coffee', 'blender', 'grinder', 'bottle', 'cup', 'mug', 'plate', 'bake'],
-    'Pets': ['pet', 'dog', 'cat', 'animal', 'paw', 'collar', 'leash', 'grooming', 'treat', 'toy'],
-    'Travel': ['travel', 'luggage', 'bag', 'backpack', 'passport', 'pillow', 'packing', 'suitcase']
-  };
-  for (const [cat, keywords] of Object.entries(cats)) {
-    if (keywords.some(kw => name.includes(kw))) { category = cat; break; }
+async function listSyncedProducts({ category, search, limit, page }) {
+  await ensureBuyWishSchema();
+  const perPage = Math.min(Math.max(parseInt(limit, 10) || 24, 1), 48);
+  const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+  const offset = (pageNum - 1) * perPage;
+  const params = [];
+  const where = ['is_active = true', 'zendrop_id IS NOT NULL'];
+  if (category && category !== 'all') {
+    params.push(category);
+    where.push(`lower(category) = lower($${params.length})`);
   }
-
-  // Badge
-  let badge = 'new';
-  if (p.is_trending || p.trending) badge = 'hot';
-  else if (comparePrice) badge = 'sale';
-
+  if (search && String(search).trim()) {
+    params.push(`%${String(search).trim()}%`);
+    where.push(`(title ILIKE $${params.length} OR description ILIKE $${params.length} OR category ILIKE $${params.length})`);
+  }
+  const whereSql = where.join(' AND ');
+  const totalRes = await pool.query(`SELECT count(*)::int AS total FROM ecommerce_products WHERE ${whereSql}`, params);
+  const rows = await pool.query(
+    `SELECT * FROM ecommerce_products WHERE ${whereSql}
+     ORDER BY winning_score DESC, trend_score DESC, updated_at DESC
+     LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, perPage, offset]
+  );
   return {
-    id: p.id,
-    zendrop_id: p.id,
-    title: p.name || p.title || 'Premium Product',
-    category,
-    retail_price: retailPrice.toFixed(2),
-    compare_price: comparePrice,
-    description: cleanDesc,
-    features,
-    images: images.slice(0, 4),
-    image_url: images[0] || null,
-    badge,
-    rating: Number.isFinite(Number(p.rating || p.review_rating)) ? Number(p.rating || p.review_rating) : null,
-    reviews: Number.isFinite(Number(p.review_count || p.reviews)) ? Number(p.review_count || p.reviews) : 0,
-    delivery: p.estimated_delivery || p.delivery_estimate || null,
-    ships_to: Array.isArray(p.ships_to) ? p.ships_to : [],
-    product_url: p.product_url || null,
-    in_stock: typeof p.in_stock === 'boolean' ? p.in_stock : (Number.isFinite(Number(p.inventory_quantity)) ? Number(p.inventory_quantity) > 0 : null)
+    products: rows.rows.map(storeProductFromRow),
+    total: totalRes.rows[0] ? totalRes.rows[0].total : 0,
+    page: pageNum,
+    per_page: perPage
   };
 }
 
@@ -154,10 +188,24 @@ function normalizeProduct(p) {
 // ============================================================
 router.get('/products', async (req, res) => {
   try {
-    const { category, search, limit = 24, page = 1, sort = 'trending' } = req.query;
+    const { category, search, limit = 24, page = 1, sort = 'trending', source } = req.query;
+    if (source !== 'live') {
+      try {
+        await ensureBuyWishSchema();
+        const stocked = await pool.query(
+          `SELECT count(*)::int AS total FROM ecommerce_products WHERE is_active = true AND zendrop_id IS NOT NULL`
+        );
+        if (stocked.rows[0] && stocked.rows[0].total > 0) {
+          const synced = await listSyncedProducts({ category, search, limit, page });
+          return res.json({ ok: true, ...synced, source: 'catalog' });
+        }
+      } catch (dbErr) {
+        console.error('[BUYWISH CATALOG READ]:', dbErr.message);
+      }
+    }
     const cacheKey = `products_${category || 'all'}_${search || ''}_${page}_${sort}`;
     const cached = getCache(cacheKey);
-    if (cached) return res.json({ ok: true, products: cached, source: 'cache' });
+    if (cached) return res.json({ ok: true, products: cached.products, total: cached.total, page: cached.page, per_page: cached.per_page, source: 'cache' });
 
     let products = [];
 
@@ -204,8 +252,9 @@ router.get('/products', async (req, res) => {
     const total = products.length;
     const paginated = products.slice(offset, offset + perPage);
 
-    setCache(cacheKey, paginated, 15 * 60 * 1000); // 15 min cache
-    res.json({ ok: true, products: paginated, total, page: parseInt(page, 10), per_page: perPage, source: 'zendrop' });
+    const payload = { products: paginated, total, page: parseInt(page, 10), per_page: perPage };
+    setCache(cacheKey, payload, 15 * 60 * 1000); // 15 min cache
+    res.json({ ok: true, ...payload, source: 'zendrop' });
   } catch (err) {
     console.error('[BUYWISH PRODUCTS ERROR]:', err.message);
     // Fallback: try database
@@ -241,6 +290,15 @@ router.get('/products/trending', async (req, res) => {
 // ============================================================
 router.get('/products/categories', async (req, res) => {
   try {
+    await ensureBuyWishSchema();
+    const synced = await pool.query(`
+      SELECT category AS name, count(*)::int AS count
+      FROM ecommerce_products
+      WHERE is_active = true AND zendrop_id IS NOT NULL
+      GROUP BY category
+      ORDER BY count DESC, category ASC
+    `);
+    if (synced.rows.length) return res.json({ ok: true, categories: synced.rows, source: 'catalog' });
     const cached = getCache('categories');
     if (cached) return res.json({ ok: true, categories: cached });
 
@@ -262,6 +320,16 @@ router.get('/products/:id', async (req, res) => {
   if (!productId) return res.status(400).json({ error: 'Invalid product ID.' });
 
   try {
+    try {
+      await ensureBuyWishSchema();
+      const found = await pool.query(
+        `SELECT * FROM ecommerce_products WHERE zendrop_id = $1 AND is_active = true LIMIT 1`,
+        [String(productId)]
+      );
+      if (found.rows.length) return res.json({ ok: true, product: storeProductFromRow(found.rows[0]), source: 'catalog' });
+    } catch (dbErr) {
+      // Live Zendrop remains the fallback when the catalog table is unavailable.
+    }
     const cacheKey = `product_${productId}`;
     const cached = getCache(cacheKey);
     if (cached) return res.json({ ok: true, product: cached });
@@ -289,7 +357,7 @@ router.post('/shipping/estimate', async (req, res) => {
     });
     res.json({ ok: true, estimate: data });
   } catch (err) {
-    res.json({ ok: true, estimate: { free_shipping: true, delivery_days: '7–14' } });
+    res.status(502).json({ ok: false, error: 'Shipping estimate is unavailable right now.' });
   }
 });
 
@@ -386,6 +454,7 @@ function getStripe() {
 // ============================================================
 router.post('/checkout', async (req, res) => {
   const { items, customer, currency = 'USD' } = req.body || {};
+  const signedIn = readCustomer(req);
   if (!Array.isArray(items) || items.length < 1 || items.length > 20 || !customer || !customer.email) {
     return res.status(400).json({ error: 'A valid cart and customer email are required.' });
   }
@@ -427,7 +496,8 @@ router.post('/checkout', async (req, res) => {
       });
     }
 
-    const orderNumber = 'BWO-' + require('crypto').randomBytes(6).toString('hex').toUpperCase();
+    await ensureBuyWishSchema();
+    const orderNumber = 'BWO-' + crypto.randomBytes(6).toString('hex').toUpperCase();
     const subtotalDollars = (subtotalCents / 100).toFixed(2);
     const addrParts = String(customer.address || '').split(',');
     const city = addrParts[1]?.trim() || customer.city || 'Unknown';
@@ -437,9 +507,9 @@ router.post('/checkout', async (req, res) => {
     await pool.query(`
       INSERT INTO ecommerce_orders (
         order_number, customer_name, customer_email, customer_phone,
-        shipping_address, shipping_city, shipping_state, items, total_amount, subtotal_amount,
-        supplier, supplier_tracking_number, fulfillment_status, payment_status, currency
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'Zendrop',NULL,'awaiting_payment','pending',$11)
+        shipping_address, shipping_city, shipping_state, shipping_country, items, total_amount, subtotal_amount,
+        supplier, supplier_tracking_number, fulfillment_status, payment_status, currency, customer_id, zendrop_sync_status
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'Zendrop',NULL,'awaiting_payment','pending',$12,$13,'not_sent')
     `, [
       orderNumber,
       String(customer.name || 'Valued Customer').slice(0, 160),
@@ -447,8 +517,10 @@ router.post('/checkout', async (req, res) => {
       String(customer.phone || '').slice(0, 40) || null,
       String(customer.address || '').slice(0, 500) || null,
       city, state,
+      String(customer.country || 'US').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || 'US',
       JSON.stringify(trustedItems),
-      subtotalDollars, subtotalDollars, curUpper
+      subtotalDollars, subtotalDollars, curUpper,
+      signedIn ? signedIn.id : null
     ]);
 
     const baseUrl = 'https://www.buywishonline.com';
@@ -460,7 +532,7 @@ router.post('/checkout', async (req, res) => {
       cancel_url: `${baseUrl}/?canceled=1`,
       metadata: { order_number: orderNumber, source: 'buywishonline' },
       shipping_address_collection: {
-        allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'IE', 'AT', 'CH', 'SE', 'NO', 'DK', 'NZ']
+        allowed_countries: ['US', 'CA', 'GB']
       },
       billing_address_collection: 'auto',
       phone_number_collection: { enabled: true },
@@ -517,10 +589,11 @@ router.get('/verify-session', async (req, res) => {
     const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
 
     if (isPaid && orderNum) {
+      await ensureBuyWishSchema();
       await pool.query(`
         UPDATE ecommerce_orders
         SET payment_status = 'paid',
-            fulfillment_status = 'payment_confirmed_pending_supplier',
+            fulfillment_status = CASE WHEN zendrop_order_id IS NULL THEN 'payment_confirmed_pending_supplier' ELSE fulfillment_status END,
             stripe_session_id = $1,
             stripe_payment_intent = $2,
             tax_amount = $3,
@@ -529,6 +602,8 @@ router.get('/verify-session', async (req, res) => {
             updated_at = NOW()
         WHERE upper(order_number) = upper($6) AND stripe_session_id = $1
       `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNum]);
+      await saveStripeShipping(session);
+      await pushPaidOrderToZendrop(orderNum);
     }
 
     res.json({
@@ -556,17 +631,23 @@ router.get('/verify-session', async (req, res) => {
 // ============================================================
 router.get('/admin/orders', ...buyWishAdmin, async (req, res) => {
   try {
+    await ensureBuyWishSchema();
+    const scope = req.query.scope === 'all' ? 'all' : 'queue';
+    const where = scope === 'all'
+      ? 'TRUE'
+      : `payment_status = 'paid' AND zendrop_order_id IS NULL`;
     const { rows } = await pool.query(
       `SELECT order_number, customer_name, customer_email, customer_phone,
-              shipping_address, shipping_city, shipping_state, items,
-              total_amount, currency, payment_status, fulfillment_status,
-              zendrop_order_id, supplier_tracking_number, created_at, updated_at
+              shipping_address, shipping_city, shipping_state, shipping_postal, shipping_country,
+              items, total_amount, subtotal_amount, tax_amount, currency, payment_status, fulfillment_status,
+              zendrop_order_id, zendrop_sync_status, zendrop_sync_detail, supplier_tracking_number,
+              created_at, updated_at
        FROM ecommerce_orders
-       WHERE payment_status = 'paid' AND zendrop_order_id IS NULL
-       ORDER BY created_at ASC
-       LIMIT 100`
+       WHERE ${where}
+       ORDER BY created_at DESC
+       LIMIT 200`
     );
-    res.json({ ok: true, orders: rows });
+    res.json({ ok: true, orders: rows, scope });
   } catch (err) {
     console.error('[BUYWISH ADMIN ORDERS ERROR]:', err.message);
     res.status(500).json({ error: 'Could not load supplier handoff queue.' });
@@ -661,6 +742,155 @@ router.patch('/admin/orders/:order_number/supplier', ...buyWishAdmin, async (req
     if (client) client.release();
   }
 });
+router.post('/admin/orders/:order_number/push', ...buyWishAdmin, async (req, res) => {
+  try {
+    const result = await pushPaidOrderToZendrop(req.params.order_number);
+    if (!result.ok && !result.manual) return res.status(409).json(result);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Could not send this order to Zendrop.' });
+  }
+});
+
+router.get('/admin/catalog', ...buyWishAdmin, async (req, res) => {
+  try {
+    await ensureBuyWishSchema();
+    const { rows } = await pool.query(`
+      SELECT category, count(*)::int AS products
+      FROM ecommerce_products
+      WHERE is_active = true AND zendrop_id IS NOT NULL
+      GROUP BY category
+      ORDER BY products DESC, category ASC
+    `);
+    const total = rows.reduce((sum, row) => sum + row.products, 0);
+    res.json({ ok: true, total, categories: rows, countries: TARGET_COUNTRIES });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load the synced catalog.' });
+  }
+});
+
+router.post('/admin/catalog/sync', ...buyWishAdmin, async (req, res) => {
+  if (catalogSyncing) return res.status(409).json({ error: 'A catalog sync is already running.' });
+  catalogSyncing = true;
+  try {
+    await ensureBuyWishSchema();
+    const offset = Math.max(parseInt(req.body && req.body.offset, 10) || 0, 0);
+    const limit = Math.min(Math.max(parseInt(req.body && req.body.limit, 10) || 8, 1), 12);
+    const candidates = await gatherCandidates();
+    const slice = candidates.slice(offset, offset + limit);
+    const qualified = [];
+    let skipped = 0;
+    await mapPool(slice, 3, async (product) => {
+      const profile = await shippingProfile(product.id);
+      if (!qualifiesForStore(profile)) {
+        skipped += 1;
+        return;
+      }
+      await upsertQualified(product, profile);
+      qualified.push({
+        id: product.id,
+        title: product.title,
+        category: product.category,
+        usa_days: profile.fastestDays
+      });
+    });
+    Object.keys(cache).forEach((key) => delete cache[key]);
+    res.json({
+      ok: true,
+      checked: slice.length,
+      qualified: qualified.length,
+      skipped,
+      products: qualified,
+      next_offset: offset + slice.length,
+      total_candidates: candidates.length,
+      done: offset + slice.length >= candidates.length,
+      rule: 'Kept only when Zendrop quotes USA, Canada, and UK shipping and the fastest USA lane is 14 days or fewer.'
+    });
+  } catch (err) {
+    console.error('[BUYWISH CATALOG SYNC]:', err.message);
+    res.status(500).json({ error: err.message || 'Catalog sync failed.' });
+  } finally {
+    catalogSyncing = false;
+  }
+});
+
+router.post('/account/register', accountRateLimit, async (req, res) => {
+  const name = String(req.body?.name || '').trim();
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const password = String(req.body?.password || '');
+  const phone = String(req.body?.phone || '').trim();
+  if (name.length < 2 || name.length > 80) return res.status(400).json({ error: 'Enter your name.' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Enter a valid email.' });
+  if (password.length < 8 || password.length > 200) return res.status(400).json({ error: 'Use a password of at least 8 characters.' });
+  try {
+    await ensureBuyWishSchema();
+    const passwordHash = await bcrypt.hash(password, 10);
+    const created = await pool.query(
+      `INSERT INTO buywish_customers (name, email, password_hash, phone)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, name, email, phone`,
+      [name, email, passwordHash, phone.slice(0, 40) || null]
+    );
+    const customer = created.rows[0];
+    const token = signCustomer(customer);
+    res.cookie('bwo_token', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+    res.json({ ok: true, token, customer });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'An account with that email already exists. Sign in instead.' });
+    res.status(500).json({ error: 'Could not create the account.' });
+  }
+});
+
+router.post('/account/login', accountRateLimit, async (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const password = String(req.body?.password || '');
+  if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
+  try {
+    await ensureBuyWishSchema();
+    const found = await pool.query(`SELECT id, name, email, phone, password_hash FROM buywish_customers WHERE email = $1`, [email]);
+    const customer = found.rows[0];
+    const valid = customer && await bcrypt.compare(password, customer.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Invalid email or password.' });
+    const token = signCustomer(customer);
+    res.cookie('bwo_token', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 30 * 24 * 60 * 60 * 1000, path: '/' });
+    res.json({ ok: true, token, customer: { id: customer.id, name: customer.name, email: customer.email, phone: customer.phone } });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not sign in.' });
+  }
+});
+
+router.get('/account/me', requireCustomer, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT id, name, email, phone, created_at FROM buywish_customers WHERE id = $1`, [req.customer.id]);
+    if (!rows.length) return res.status(401).json({ error: 'Sign in to view your BuyWish account.' });
+    res.json({ ok: true, customer: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load the account.' });
+  }
+});
+
+router.get('/account/orders', requireCustomer, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT order_number, items, total_amount, currency, payment_status, fulfillment_status,
+              supplier_tracking_number, shipping_city, shipping_country, created_at
+       FROM ecommerce_orders
+       WHERE customer_id = $1 OR lower(customer_email) = lower($2)
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [req.customer.id, req.customer.email]
+    );
+    res.json({ ok: true, orders: rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load orders.' });
+  }
+});
+
+router.post('/account/logout', (req, res) => {
+  res.clearCookie('bwo_token', { path: '/' });
+  res.json({ ok: true });
+});
+
 // ============================================================
 // POST /api/buywish/import-product — Import Product to My Store
 // ============================================================
@@ -949,6 +1179,242 @@ router.post('/reviews/:id/helpful', async (req, res) => {
 // ============================================================
 // Stripe Webhook Handler for BuyWishOnline
 // ============================================================
+function stripeShipping(session) {
+  const ship = session.shipping_details || (session.collected_information && session.collected_information.shipping_details) || {};
+  const addr = ship.address || {};
+  return {
+    name: ship.name || (session.customer_details && session.customer_details.name) || null,
+    phone: (session.customer_details && session.customer_details.phone) || null,
+    line1: [addr.line1, addr.line2].filter(Boolean).join(', '),
+    city: addr.city || null,
+    state: addr.state || null,
+    postal: addr.postal_code || null,
+    country: addr.country || null
+  };
+}
+
+async function saveStripeShipping(session) {
+  const orderNumber = session.metadata && session.metadata.order_number;
+  if (!orderNumber) return;
+  const ship = stripeShipping(session);
+  await pool.query(`
+    UPDATE ecommerce_orders SET
+      customer_name = COALESCE($2, customer_name),
+      customer_phone = COALESCE($3, customer_phone),
+      shipping_address = COALESCE(NULLIF($4, ''), shipping_address),
+      shipping_city = COALESCE(NULLIF($5, ''), shipping_city),
+      shipping_state = COALESCE(NULLIF($6, ''), shipping_state),
+      shipping_postal = COALESCE(NULLIF($7, ''), shipping_postal),
+      shipping_country = COALESCE(NULLIF($8, ''), shipping_country),
+      updated_at = NOW()
+    WHERE upper(order_number) = upper($1)
+  `, [orderNumber, ship.name, ship.phone, ship.line1, ship.city, ship.state, ship.postal, ship.country]);
+}
+
+let catalogSyncing = false;
+
+async function mapPool(items, limit, worker) {
+  const queue = items.slice();
+  const runners = Array.from({ length: Math.min(limit, queue.length) }, async () => {
+    while (queue.length) {
+      const item = queue.shift();
+      await worker(item);
+    }
+  });
+  await Promise.all(runners);
+}
+
+async function shippingProfile(productId) {
+  const lanes = {};
+  await Promise.all(TARGET_COUNTRIES.map(async (country) => {
+    try {
+      const data = await zendropCall('get_catalog_shipping_estimate', {
+        product_id: Number(productId),
+        country_code: country,
+        quantity: 1
+      }, { timeoutMs: 8000 });
+      lanes[country] = summarizeLane(data);
+    } catch (err) {
+      lanes[country] = { ships: false, fastestDays: null };
+    }
+  }));
+  return {
+    lanes,
+    shipsAll: TARGET_COUNTRIES.every((country) => lanes[country] && lanes[country].ships),
+    fastestDays: lanes.US ? lanes.US.fastestDays : null
+  };
+}
+
+async function gatherCandidates() {
+  const byId = new Map();
+  const trending = await zendropCall('get_catalog_trending_products', { limit: 30 }, { timeoutMs: 8000 });
+  (trending.products || []).forEach((product) => {
+    const normalized = normalizeProduct({ ...product, is_trending: true });
+    if (normalized.id) byId.set(String(normalized.id), normalized);
+  });
+  for (const search of WINNING_SEARCHES) {
+    try {
+      const data = await zendropCall('get_catalog_products', { search: search.q, limit: 8 }, { timeoutMs: 8000 });
+      (data.products || []).forEach((product) => {
+        const normalized = normalizeProduct({ ...product, category: product.category || search.category });
+        if (normalized.id && !byId.has(String(normalized.id))) byId.set(String(normalized.id), normalized);
+      });
+    } catch (err) {
+      // One search failing should not discard the rest of the edit.
+    }
+  }
+  return [...byId.values()];
+}
+
+async function upsertQualified(product, profile) {
+  const handle = productHandle(product.id);
+  if (!handle) return;
+  const score = scoreProduct({
+    trending: product.is_trending || product.badge === 'hot',
+    shipsAll: profile.shipsAll,
+    fastestDays: profile.fastestDays,
+    inStock: product.in_stock,
+    comparePrice: product.compare_price,
+    retailPrice: product.retail_price
+  });
+  const retail = Number(product.retail_price) || 0;
+  const cost = Number(product.supplier_cost) || 0;
+  const margin = retail > 0 ? Number((((retail - cost) / retail) * 100).toFixed(2)) : null;
+  await pool.query(`
+    INSERT INTO ecommerce_products (
+      title, handle, description, category, retail_price, supplier_cost, estimated_margin,
+      trend_score, source, image_url, is_active, zendrop_id, compare_price, images, features,
+      badge, ships_to, delivery_label, winning_score, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'Zendrop',$9,true,$10,$11,$12::jsonb,$13::jsonb,$14,$15::jsonb,$16,$17,now())
+    ON CONFLICT (zendrop_id) DO UPDATE SET
+      title = EXCLUDED.title,
+      description = EXCLUDED.description,
+      category = EXCLUDED.category,
+      retail_price = EXCLUDED.retail_price,
+      supplier_cost = EXCLUDED.supplier_cost,
+      estimated_margin = EXCLUDED.estimated_margin,
+      trend_score = EXCLUDED.trend_score,
+      image_url = EXCLUDED.image_url,
+      is_active = true,
+      compare_price = EXCLUDED.compare_price,
+      images = EXCLUDED.images,
+      features = EXCLUDED.features,
+      badge = EXCLUDED.badge,
+      ships_to = EXCLUDED.ships_to,
+      delivery_label = EXCLUDED.delivery_label,
+      winning_score = EXCLUDED.winning_score,
+      updated_at = now()
+  `, [
+    String(product.title || 'Premium Product').slice(0, 240),
+    handle,
+    product.description || '',
+    product.category || 'Featured',
+    retail,
+    cost,
+    margin,
+    score,
+    product.image_url,
+    String(product.id),
+    product.compare_price ? Number(product.compare_price) : null,
+    JSON.stringify(product.images || []),
+    JSON.stringify(product.features || []),
+    score >= 70 ? 'best' : (product.badge || 'new'),
+    JSON.stringify(TARGET_COUNTRIES),
+    deliveryLabel(profile),
+    score
+  ]);
+  try {
+    await zendropCall('import_my_product', { product_id: Number(product.id) }, { timeoutMs: 8000 });
+    await pool.query(`UPDATE ecommerce_products SET import_status = 'imported' WHERE zendrop_id = $1`, [String(product.id)]);
+  } catch (err) {
+    await pool.query(
+      `UPDATE ecommerce_products SET import_status = $2 WHERE zendrop_id = $1`,
+      [String(product.id), String(err.message || 'import failed').slice(0, 180)]
+    );
+  }
+}
+
+async function pushPaidOrderToZendrop(orderNumber) {
+  await ensureBuyWishSchema();
+  const { rows } = await pool.query(
+    `SELECT * FROM ecommerce_orders WHERE upper(order_number) = upper($1)`,
+    [orderNumber]
+  );
+  const order = rows[0];
+  if (!order) return { ok: false, error: 'Order not found.' };
+  if (order.payment_status !== 'paid') return { ok: false, error: 'Only paid orders are sent to Zendrop.' };
+  if (order.zendrop_order_id) {
+    return { ok: true, already_linked: true, zendrop_order_id: order.zendrop_order_id };
+  }
+  const updatedAt = order.updated_at ? new Date(order.updated_at).getTime() : 0;
+  if (order.zendrop_sync_status === 'sending' && Date.now() - updatedAt < 120000) {
+    return { ok: false, error: 'A Zendrop send is already in progress for this order.' };
+  }
+  await pool.query(
+    `UPDATE ecommerce_orders SET zendrop_sync_status = 'sending', updated_at = NOW() WHERE id = $1 AND zendrop_order_id IS NULL`,
+    [order.id]
+  );
+
+  let tools;
+  try {
+    tools = await zendropListTools({ timeoutMs: 8000 });
+  } catch (err) {
+    await pool.query(
+      `UPDATE ecommerce_orders SET zendrop_sync_status = 'failed', zendrop_sync_detail = $2, updated_at = NOW() WHERE id = $1`,
+      [order.id, String(err.message || 'Zendrop tools unavailable').slice(0, 240)]
+    );
+    return { ok: false, error: 'Could not read Zendrop tools.' };
+  }
+
+  const tool = selectOrderTool(tools);
+  if (!tool) {
+    const detail = 'Paid on BuyWish. Zendrop did not publish a custom-store order tool, so place this order in the Zendrop dashboard and paste its order ID here.';
+    await pool.query(
+      `UPDATE ecommerce_orders SET zendrop_sync_status = 'manual_required', zendrop_sync_detail = $2, updated_at = NOW() WHERE id = $1`,
+      [order.id, detail]
+    );
+    return { ok: false, manual: true, error: detail };
+  }
+
+  const items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
+  const built = buildOrderArguments(tool, { ...order, items });
+  if (!built.ok) {
+    await pool.query(
+      `UPDATE ecommerce_orders SET zendrop_sync_status = 'manual_required', zendrop_sync_detail = $2, updated_at = NOW() WHERE id = $1`,
+      [order.id, built.error]
+    );
+    return built;
+  }
+
+  try {
+    const result = await zendropCall(built.toolName, built.args, { timeoutMs: 10000 });
+    const zendropOrderId = extractOrderId(result);
+    if (!zendropOrderId) {
+      const detail = 'Zendrop answered without an order id. Confirm the order in Zendrop before linking an ID.';
+      await pool.query(
+        `UPDATE ecommerce_orders SET zendrop_sync_status = 'manual_required', zendrop_sync_detail = $2, updated_at = NOW() WHERE id = $1`,
+        [order.id, detail]
+      );
+      return { ok: false, manual: true, error: detail };
+    }
+    const saved = await pool.query(`
+      UPDATE ecommerce_orders
+      SET zendrop_order_id = $2, supplier = 'Zendrop', fulfillment_status = 'supplier_order_placed',
+          zendrop_sync_status = 'sent', zendrop_sync_detail = $3, updated_at = NOW()
+      WHERE id = $1 AND zendrop_order_id IS NULL
+      RETURNING zendrop_order_id
+    `, [order.id, zendropOrderId, `Sent with ${built.toolName}`]);
+    if (!saved.rows.length) return { ok: true, already_linked: true };
+    return { ok: true, zendrop_order_id: zendropOrderId, tool: built.toolName };
+  } catch (err) {
+    await pool.query(
+      `UPDATE ecommerce_orders SET zendrop_sync_status = 'failed', zendrop_sync_detail = $2, updated_at = NOW() WHERE id = $1`,
+      [order.id, String(err.message || 'Zendrop send failed').slice(0, 240)]
+    );
+    return { ok: false, error: err.message || 'Zendrop send failed.' };
+  }
+}
+
 async function applyCheckoutEvent(event) {
   if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) return;
   const session = event.data && event.data.object;
@@ -960,10 +1426,11 @@ async function applyCheckoutEvent(event) {
   const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
 
   if (orderNumber && session.payment_status === 'paid') {
+    await ensureBuyWishSchema();
     await pool.query(`
       UPDATE ecommerce_orders
       SET payment_status = 'paid',
-          fulfillment_status = 'payment_confirmed_pending_supplier',
+          fulfillment_status = CASE WHEN zendrop_order_id IS NULL THEN 'payment_confirmed_pending_supplier' ELSE fulfillment_status END,
           stripe_session_id = $1,
           stripe_payment_intent = $2,
           tax_amount = $3,
@@ -972,8 +1439,9 @@ async function applyCheckoutEvent(event) {
           updated_at = NOW()
       WHERE upper(order_number) = upper($6)
     `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNumber]);
-
-    console.log(`[BUYWISH ORDER PAID VIA WEBHOOK]: Order ${orderNumber} paid ($${totalAmount}, Tax: $${taxAmount})`);
+    await saveStripeShipping(session);
+    const pushed = await pushPaidOrderToZendrop(orderNumber);
+    console.log(`[BUYWISH ORDER PAID]: Order ${orderNumber} paid ($${totalAmount}). Zendrop: ${pushed.ok ? 'sent' : (pushed.manual ? 'manual' : 'pending')}`);
   }
 }
 

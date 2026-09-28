@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, follow">
+  <title>Account | BuyWishOnline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --ink:#14120f; --ivory:#f6f1e8; --paper:#fffdf8; --line:#eadfce; --muted:#6f675e; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Outfit, sans-serif; background: var(--ivory); color: var(--ink); }
+    header, main { max-width: 880px; margin: 0 auto; padding: 28px 20px; }
+    h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 48px; margin: 0 0 8px; }
+    a { color: inherit; }
+    input, button { font: inherit; }
+    form, .card { background: var(--paper); border: 1px solid var(--line); padding: 18px; margin-top: 16px; }
+    label { display: block; margin: 10px 0; }
+    input { width: 100%; border: 1px solid var(--line); padding: 12px; background: #fff; }
+    button { background: var(--ink); color: #fff; border: 0; padding: 12px 16px; cursor: pointer; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; }
+    .muted { color: var(--muted); }
+    .error { color: #8c3a2f; }
+    .tabs { display: flex; gap: 8px; }
+    .tabs button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    #account { display: none; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="muted"><a href="/">BuyWishOnline</a></div>
+  <h1>Your account</h1>
+  <p class="muted">Sign in to see orders placed with this email, then track them through to delivery.</p>
+</header>
+<main>
+  <section id="auth">
+    <div class="tabs">
+      <button type="button" id="showLogin">Sign in</button>
+      <button type="button" id="showRegister" class="ghost">Create account</button>
+    </div>
+    <form id="loginForm">
+      <label>Email<input id="loginEmail" type="email" required></label>
+      <label>Password<input id="loginPassword" type="password" required></label>
+      <button type="submit">Sign in</button>
+      <p id="loginError" class="error"></p>
+    </form>
+    <form id="registerForm" style="display:none">
+      <label>Name<input id="regName" required></label>
+      <label>Email<input id="regEmail" type="email" required></label>
+      <label>Phone<input id="regPhone"></label>
+      <label>Password<input id="regPassword" type="password" minlength="8" required></label>
+      <button type="submit">Create account</button>
+      <p id="regError" class="error"></p>
+    </form>
+  </section>
+  <section id="account">
+    <p id="hello"></p>
+    <button type="button" id="logoutBtn">Sign out</button>
+    <div id="orders"></div>
+    <form id="trackForm">
+      <label>Track an order number<input id="trackNumber" placeholder="BWO-..." required></label>
+      <button type="submit">Track</button>
+      <div id="trackResult"></div>
+    </form>
+  </section>
+</main>
+<script>
+  const tokenKey = 'bwo_customer_token';
+  const headers = () => {
+    const token = localStorage.getItem(tokenKey);
+    return { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) };
+  };
+  function showAccount() {
+    document.getElementById('auth').style.display = 'none';
+    document.getElementById('account').style.display = 'block';
+    loadMe();
+  }
+  async function loadMe() {
+    const res = await fetch('/api/buywish/account/me', { headers: headers() });
+    if (!res.ok) { localStorage.removeItem(tokenKey); location.reload(); return; }
+    const data = await res.json();
+    document.getElementById('hello').textContent = `${data.customer.name} · ${data.customer.email}`;
+    const ordersRes = await fetch('/api/buywish/account/orders', { headers: headers() });
+    const orders = await ordersRes.json();
+    document.getElementById('orders').innerHTML = (orders.orders || []).map(order => `
+      <article class="card">
+        <strong>${order.order_number}</strong>
+        <div class="muted">${order.payment_status} · ${order.fulfillment_status}</div>
+        <div>${order.currency || 'USD'} ${order.total_amount}</div>
+        ${order.supplier_tracking_number ? `<div>Tracking ${order.supplier_tracking_number}</div>` : ''}
+      </article>
+    `).join('') || '<p class="muted">No orders for this account yet.</p>';
+  }
+  document.getElementById('showLogin').onclick = () => {
+    loginForm.style.display = 'block';
+    registerForm.style.display = 'none';
+  };
+  document.getElementById('showRegister').onclick = () => {
+    loginForm.style.display = 'none';
+    registerForm.style.display = 'block';
+  };
+  loginForm.onsubmit = async (event) => {
+    event.preventDefault();
+    loginError.textContent = '';
+    const res = await fetch('/api/buywish/account/login', {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({ email: loginEmail.value, password: loginPassword.value })
+    });
+    const data = await res.json();
+    if (!res.ok) { loginError.textContent = data.error || 'Could not sign in.'; return; }
+    localStorage.setItem(tokenKey, data.token);
+    showAccount();
+  };
+  registerForm.onsubmit = async (event) => {
+    event.preventDefault();
+    regError.textContent = '';
+    const res = await fetch('/api/buywish/account/register', {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({ name: regName.value, email: regEmail.value, phone: regPhone.value, password: regPassword.value })
+    });
+    const data = await res.json();
+    if (!res.ok) { regError.textContent = data.error || 'Could not create the account.'; return; }
+    localStorage.setItem(tokenKey, data.token);
+    showAccount();
+  };
+  logoutBtn.onclick = async () => {
+    await fetch('/api/buywish/account/logout', { method: 'POST', headers: headers() });
+    localStorage.removeItem(tokenKey);
+    location.reload();
+  };
+  trackForm.onsubmit = async (event) => {
+    event.preventDefault();
+    const res = await fetch('/api/buywish/orders/track/' + encodeURIComponent(trackNumber.value.trim()));
+    const data = await res.json();
+    trackResult.innerHTML = res.ok
+      ? `<p><strong>${data.order.order_number}</strong> · ${data.order.fulfillment_status}${data.order.supplier_tracking_number ? ' · ' + data.order.supplier_tracking_number : ''}</p>`
+      : `<p class="error">${data.error || 'Order not found.'}</p>`;
+  };
+  if (localStorage.getItem(tokenKey)) showAccount();
+</script>
+</body>
+</html>

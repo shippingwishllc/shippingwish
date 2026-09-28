@@ -25,6 +25,7 @@ Each application is configured to run directly with **Expo Go** on Android and i
 | **2. LoadNexus Carrier** | `mobile/loadnexus-carrier` | Motor Carriers & Dispatchers | 50-state load search, rate per mile (RPM), post truck capacity, anti-double brokering guard, 1-click inquire broker, broker credit scores (DTP, A+ rating, $75k bond). |
 | **3. Shipping Wish TMS** | `mobile/shippingwish-tms` | Fleet Owners & Dispatchers | Active fleet dispatches, live driver GPS telematics, document vault (RateCon, POD, BOL), invoices & factoring revenue tracker. |
 | **4. LoadNexus Broker** | `mobile/loadnexus-broker` | Freight Brokers & Shippers | Post spot freight with anti-double brokering guarantee, search available carrier capacity, live brokered freight tracking, carrier MC/DOT safety vetting. |
+| **5. BuyWishOnline** | `mobile/buywish-shop` | Shoppers | Category catalog, account sign-in, order history, and order tracking for buywishonline.com. |
 
 ---
 

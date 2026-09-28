@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "BuyWishOnline",
+    "slug": "buywishonline",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": { "backgroundColor": "#14120f" },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shippingwish.buywish"
+    },
+    "android": {
+      "package": "com.shippingwish.buywish",
+      "adaptiveIcon": { "backgroundColor": "#14120f" }
+    }
+  }
+}
