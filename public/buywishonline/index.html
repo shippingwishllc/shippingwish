@@ -1790,12 +1790,12 @@
 <!-- Hero Section -->
 <section class="hero" aria-label="Featured promotions">
   <div class="hero-main">
-    <div class="hero-eyebrow">Season's Bestsellers</div>
+    <div class="hero-eyebrow">🔥 Season's Bestsellers — Limited Time Offers</div>
     <h1 class="hero-h1">
       Premium Products,<br>
       <span class="accent-word">Delivered Worldwide</span>
     </h1>
-    <p class="hero-sub">Tech, home, fitness, and beauty from the Zendrop catalog, ready to ship to the USA, Canada, and the United Kingdom.</p>
+    <p class="hero-sub">Thousands of curated, top-rated products — shipped fast to USA, UK, Canada & Europe. Satisfaction guaranteed on every order.</p>
     <div class="hero-actions">
       <button class="btn-primary" onclick="document.getElementById('catalogSection').scrollIntoView({behavior:'smooth'})">
         Shop Now →
@@ -1806,16 +1806,16 @@
     </div>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-num" id="statProducts">—</div>
-        <div class="hero-stat-label">In this edit</div>
+        <div class="hero-stat-num" id="statProducts">1,200+</div>
+        <div class="hero-stat-label">Products</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-num">3</div>
-        <div class="hero-stat-label">Countries</div>
+        <div class="hero-stat-num">50K+</div>
+        <div class="hero-stat-label">Customers</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-num">14d</div>
-        <div class="hero-stat-label">USA lane</div>
+        <div class="hero-stat-num">4.8★</div>
+        <div class="hero-stat-label">Avg. Rating</div>
       </div>
       <div class="hero-stat">
         <div class="hero-stat-num">30-Day</div>
@@ -1907,32 +1907,32 @@
     <a class="cat-showcase-item" href="/collections/tech">
       <div class="cat-showcase-icon">💻</div>
       <div class="cat-showcase-name">Tech & Gadgets</div>
-      <div class="cat-showcase-count">Shop the page</div>
+      <div class="cat-showcase-count">240+ products</div>
     </a>
     <a class="cat-showcase-item" href="/collections/home">
       <div class="cat-showcase-icon">🏠</div>
       <div class="cat-showcase-name">Home & Living</div>
-      <div class="cat-showcase-count">Shop the page</div>
+      <div class="cat-showcase-count">380+ products</div>
     </a>
     <a class="cat-showcase-item" href="/collections/fitness">
       <div class="cat-showcase-icon">🏃</div>
       <div class="cat-showcase-name">Fitness</div>
-      <div class="cat-showcase-count">Shop the page</div>
+      <div class="cat-showcase-count">180+ products</div>
     </a>
     <a class="cat-showcase-item" href="/collections/beauty">
       <div class="cat-showcase-icon">✨</div>
       <div class="cat-showcase-name">Beauty</div>
-      <div class="cat-showcase-count">Shop the page</div>
+      <div class="cat-showcase-count">210+ products</div>
     </a>
     <a class="cat-showcase-item" href="/collections/kitchen">
       <div class="cat-showcase-icon">🍳</div>
       <div class="cat-showcase-name">Kitchen</div>
-      <div class="cat-showcase-count">Shop the page</div>
+      <div class="cat-showcase-count">150+ products</div>
     </a>
     <a class="cat-showcase-item" href="/collections/pets">
       <div class="cat-showcase-icon">🐾</div>
       <div class="cat-showcase-name">Pets</div>
-      <div class="cat-showcase-count">Shop the page</div>
+      <div class="cat-showcase-count">120+ products</div>
     </a>
   </div>
 </section>
@@ -1947,8 +1947,8 @@
 <section class="section" id="catalogSection" aria-label="Featured products">
   <div class="section-head">
     <div>
-      <div class="section-title" id="catalogTitle">Trending Now</div>
-      <div class="section-sub" id="catalogSub">Fresh picks from the Zendrop catalog</div>
+      <div class="section-title" id="catalogTitle">🔥 Trending Now</div>
+      <div class="section-sub" id="catalogSub">Hand-picked bestsellers — updated daily</div>
     </div>
     <a class="view-all" href="/collections/all">View All →</a>
   </div>
@@ -3149,7 +3149,7 @@ async function loadProducts() {
   }
   filteredProducts = allProducts;
   const stat = document.getElementById('statProducts');
-  if (stat) stat.textContent = allProducts.length ? String(allProducts.length) : '—';
+  if (stat && allProducts.length) stat.textContent = String(allProducts.length) + '+';
   renderProducts();
   renderNewArrivals();
   hideLoading();

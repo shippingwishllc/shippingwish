@@ -35,11 +35,10 @@ export const CarrierGuide: React.FC = () => {
             Built for U.S. carriers
           </div>
           <h2 className="text-3xl sm:text-4xl font-display font-black text-[#0b1f3a] tracking-tight">
-            A named manager for owner-operators and small fleets in the United States.
+            A named manager for owner-operators and small fleets.
           </h2>
           <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed">
-            Shipping Wish LLC is a U.S. fleet operations desk in Rehoboth Beach, Delaware. We work for motor carriers that run in the Lower 48.
-            You keep the broker’s freight pay. We charge a flat weekly plan and include the TMS. This page is the short version of how that works.
+            U.S. desk in Rehoboth Beach, Delaware. You keep the broker’s freight pay. Flat weekly plan. TMS included.
           </p>
         </div>
 

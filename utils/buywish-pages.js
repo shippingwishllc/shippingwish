@@ -18,15 +18,15 @@ function money(value) {
 }
 
 const SHELL_CSS = `
-  :root { --ink:#14120f; --ivory:#f7f3ec; --gold:#9c7b4a; --paper:#fffdf8; --muted:#6f675e; }
+  :root { --ink:#1a1a2e; --ivory:#f7f7f9; --gold:#e94560; --paper:#ffffff; --muted:#6b7280; }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:Outfit,sans-serif; background:var(--ivory); color:var(--ink); }
+  body { margin:0; font-family:Inter,sans-serif; background:var(--ivory); color:var(--ink); }
   a { color:inherit; }
   header, main, footer { max-width:1080px; margin:0 auto; padding:24px; }
   header { display:flex; justify-content:space-between; align-items:center; }
-  .brand { font-family:"Cormorant Garamond",serif; font-size:28px; letter-spacing:.04em; text-decoration:none; }
+  .brand { font-size:22px; font-weight:800; letter-spacing:-0.03em; text-decoration:none; }
   nav a { margin-left:18px; text-decoration:none; font-size:14px; letter-spacing:.08em; text-transform:uppercase; }
-  h1 { font-family:"Cormorant Garamond",serif; font-weight:500; font-size:48px; line-height:1.05; margin:12px 0; }
+  h1 { font-weight:900; font-size:40px; line-height:1.1; margin:12px 0; letter-spacing:-0.03em; }
   .muted { color:var(--muted); }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:18px; }
   .card { background:var(--paper); border:1px solid #eadfce; text-decoration:none; display:block; }
@@ -57,7 +57,7 @@ function head({ title, description, canonical, image, jsonLd, robots }) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>${SHELL_CSS}</style>
   ${jsonLd ? `<script type="application/ld+json">${jsonLd}</script>` : ''}
 </head>
