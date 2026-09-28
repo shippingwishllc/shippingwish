@@ -73,6 +73,7 @@ async function createBoardSchema() {
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS min_rpm NUMERIC(6,2);
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS max_deadhead INTEGER NOT NULL DEFAULT 150;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS home_state TEXT;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS sms_lang TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS avoid_states TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS last_location TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS off_until TIMESTAMPTZ;

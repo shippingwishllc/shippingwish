@@ -17,8 +17,10 @@ function maskKey(value) {
 }
 
 function morningText(carrier) {
-  const where = carrier.empty_zip ? ` Last empty ZIP on file: ${carrier.empty_zip}.` : '';
-  return `Shipping Wish: Good morning ${carrier.contact_name || carrier.company_name}. Reply with the ZIP you are empty in and where you want to go. Example: 75201 to Atlanta.${where}`;
+  const lang = carrier.sms_lang === 'es' ? 'es' : 'en';
+  const { t } = require('../utils/dispatch-i18n');
+  const where = carrier.empty_zip ? t(lang, 'morning_zip', { zip: carrier.empty_zip }) : '';
+  return t(lang, 'morning', { name: carrier.contact_name || carrier.company_name, where });
 }
 
 router.get('/sources', ...staff, async (req, res) => {

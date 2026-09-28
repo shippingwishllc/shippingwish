@@ -9,6 +9,7 @@ const {
 const { checkBrokerAuthority, cachedBlockedKeys, keyFor, summarize: summarizeAuthority } = require('./broker-authority');
 const ops = require('./dispatch-ops');
 const neg = require('./dispatch-negotiate');
+const i18n = require('./dispatch-i18n');
 
 const OFFER_TTL_HOURS = 3;
 const MAX_OUTBOUND_PER_DAY = 12;
@@ -89,7 +90,7 @@ function citiesIn(text) {
 function parseDestination(text, carrier) {
   const raw = String(text || '').trim();
   if (!raw) return null;
-  if (/\b(any ?where|any|all 48|open)\b/i.test(raw)) return { any: true, states: [], label: 'anywhere' };
+  if (/\b(any ?where|any|all 48|open|donde sea|cualquier(?:\s+lado)?)\b/i.test(raw)) return { any: true, states: [], label: 'anywhere' };
   const states = [];
   let point = null;
   if (/\bhome\b/i.test(raw) && carrier && carrier.home_state) states.push(carrier.home_state);
@@ -109,7 +110,7 @@ function parseDestination(text, carrier) {
 }
 
 function parseOrigin(text) {
-  const raw = String(text || '').replace(/\b(empty|i am|i'm|im|in|at|near|around|out of|from|currently)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+  const raw = String(text || '').replace(/\b(empty|i am|i'm|im|in|en|at|near|around|out of|from|currently|vacio|vacío|estoy|ando)\b/gi, ' ').replace(/\s+/g, ' ').trim();
   if (!raw) return null;
   const zip = raw.match(/\b(\d{5})\b/);
   if (zip) return { zip: zip[1] };
@@ -128,28 +129,29 @@ function parseCarrierText(text, carrier = {}) {
   const body = String(text || '').trim();
   const lower = body.toLowerCase();
   const out = { intent: 'unknown', origin: null, destination: null, equipment: equipmentKind(body), choice: null };
-  const pick = lower.match(/^(?:yes|y|book|take|want|ok)?\s*#?\s*([1-3])\s*[.!]?$/);
+  const folded = i18n.fold(body);
+  const pick = lower.match(/^(?:yes|y|book|take|want|ok|si|sí)?\s*#?\s*([1-3])\s*[.!]?$/);
   if (pick) return { ...out, intent: 'book', choice: Number(pick[1]) };
-  if (/^(no|nope|none|pass|more|other|others|next|not those|something else)\b/.test(lower)) return { ...out, intent: 'more' };
-  if (/\b(off today|day off|home time|not working|no loads today|taking (a|the) day|resting|on break|done for (the )?day)\b/.test(lower)) {
+  if (/^(no|nope|none|pass|more|other|others|next|not those|something else|mas|otros|siguientes)\b/.test(folded)) return { ...out, intent: 'more' };
+  if (/\b(off today|day off|home time|not working|no loads today|taking (a|the) day|resting|on break|done for (the )?day|hoy no|no trabajo|dia libre|descanso hoy|no cargas hoy)\b/.test(folded)) {
     return { ...out, intent: 'off' };
   }
   const negotiate = neg.parseNegotiateText(body);
   if (negotiate) return { ...out, intent: 'negotiate', choice: negotiate.choice, ask: negotiate.ask, unit: negotiate.unit };
-  if (/^(help|\?|what|how)\b/.test(lower) && !/\d{5}/.test(lower)) return { ...out, intent: 'question' };
-  if (/^(reload|next load|unloaded|delivered|empty now)\b/.test(lower)) {
+  if (/^(help|\?|what|how|ayuda)\b/.test(folded) && !/\d{5}/.test(lower)) return { ...out, intent: 'question' };
+  if (/^(reload|next load|unloaded|delivered|empty now|recarga|siguiente carga|descargado|entregado|vacio ahora|ya vacio)\b/.test(folded)) {
     out.intent = 'reload';
-    out.origin = parseOrigin(body.replace(/^(reload|next load|unloaded|i'?m delivered|delivered|empty now)\b/i, ' '));
+    out.origin = parseOrigin(body.replace(/^(reload|next load|unloaded|i'?m delivered|delivered|empty now|recarga|siguiente carga|descargado|entregado|vacio ahora|ya vacio|vacío ahora)\b/i, ' '));
     return out;
   }
 
-  const destLead = body.match(/^(?:i\s+)?(?:want to go to|want to go|wanna go to|wanna go|going to|heading to|headed to|looking for|wants|want|prefer|going|heading|to)\s+(.+)$/i);
+  const destLead = body.match(/^(?:i\s+)?(?:want to go to|want to go|wanna go to|wanna go|going to|heading to|headed to|looking for|wants|want|prefer|going|heading|quiero ir a|quiero ir|quiero|voy para|voy a|rumbo a|buscando|to)\s+(.+)$/i);
   if (destLead) {
     out.destination = parseDestination(destLead[1], carrier);
     if (out.destination) out.intent = 'loads';
     return out;
   }
-  const split = body.split(/\s+(?:going to|heading to|headed to|want to go to|want to go|wanna go to|wanna go|looking for|wants|want|prefer|to|going|heading)\s+|\s*(?:->|→)\s*/i);
+  const split = body.split(/\s+(?:going to|heading to|headed to|want to go to|want to go|wanna go to|wanna go|looking for|wants|want|prefer|to|going|heading|quiero ir a|quiero ir|voy para|rumbo a|buscando|quiero)\s+|\s*(?:->|→)\s*/i);
   const left = split[0];
   const right = split.slice(1).join(' ');
   out.origin = parseOrigin(left);
@@ -392,29 +394,30 @@ async function saveOffers(carrier, list, originLabel) {
   return saved;
 }
 
-function whyNone(reasons) {
-  if (reasons.too_far) return ' Nothing within your empty-mile limit right now.';
-  if (reasons.below_min_rpm) return ' Some loads were below your minimum rate per mile.';
-  if (reasons.equipment) return ' Loads nearby need different equipment.';
+function whyNone(reasons, lang) {
+  if (reasons.too_far) return i18n.t(lang, 'why_too_far');
+  if (reasons.below_min_rpm) return i18n.t(lang, 'why_min_rpm');
+  if (reasons.equipment) return i18n.t(lang, 'why_equipment');
   return '';
 }
 
 async function offerLoads(carrier, { origin, destination, equipment, excludeLoadIds = [] }) {
+  const lang = langOfCarrier(carrier);
   const result = await findMatches(carrier, { origin, destination, equipment, excludeLoadIds });
   const originLabel = placeLabel(origin) || carrier.last_location || carrier.empty_zip || '';
   const destLabel = destination && !destination.any ? destination.label : '';
   if (!result.originPt) {
-    return { reply: 'Shipping Wish: Send the ZIP or city you are empty in, and where you want to go. Example: 75201 to Atlanta.', offers: [], reasons: result.reasons };
+    return { reply: i18n.t(lang, 'need_zip'), offers: [], reasons: result.reasons };
   }
   let list = result.matches;
-  let header = `Shipping Wish loads near ${originLabel}${destLabel ? ` → ${destLabel}` : ''}:`;
+  let header = i18n.t(lang, 'loads_header', { origin: originLabel, dest: destLabel ? ` → ${destLabel}` : '' });
   if (!list.length && result.others.length) {
     list = result.others;
-    header = `Nothing to ${destLabel} right now. Closest other loads near ${originLabel}:`;
+    header = i18n.t(lang, 'loads_other_header', { dest: destLabel, origin: originLabel });
   }
   if (!list.length) {
     return {
-      reply: `Shipping Wish: No posted loads fit near ${originLabel}${destLabel ? ` to ${destLabel}` : ''} yet.${whyNone(result.reasons)} We will check again when you text a new ZIP, or reply ANY for all directions.`,
+      reply: i18n.t(lang, 'loads_none', { origin: originLabel, dest: destLabel ? (lang === 'es' ? ` a ${destLabel}` : ` to ${destLabel}`) : '', why: whyNone(result.reasons, lang) }),
       offers: [],
       reasons: result.reasons
     };
@@ -423,8 +426,12 @@ async function offerLoads(carrier, { origin, destination, equipment, excludeLoad
   const lines = list.map((m, i) => offerLine(i + 1, m));
   const slots = list.map((_, i) => i + 1);
   const choices = slots.length > 1 ? `${slots.slice(0, -1).join(', ')} or ${slots[slots.length - 1]}` : '1';
-  const reply = `${header}\n${lines.join('\n')}\nReply ${choices} to request one, or MORE. Rates are the broker's posted rate; ~ means estimated miles.`;
+  const reply = `${header}\n${lines.join('\n')}\n${i18n.t(lang, 'loads_footer', { choices })}`;
   return { reply, offers, matches: list, reasons: result.reasons };
+}
+
+function langOfCarrier(carrier) {
+  return (carrier && carrier.sms_lang) === 'es' ? 'es' : 'en';
 }
 
 function compactReloadPlan(result, originLabel) {
@@ -563,7 +570,7 @@ async function notifyMatchingCarriers(load, { limit = PROACTIVE_MAX_TEXTS } = {}
     }
     const originLabel = placeLabel(item.origin);
     await saveOffers(item.carrier, [item.match], originLabel);
-    const text = `Shipping Wish: new load near ${originLabel}:\n${offerLine(1, item.match)}\nReply 1 to request it, MORE, or OFF TODAY.`;
+    const text = i18n.t(langOfCarrier(item.carrier), 'proactive', { origin: originLabel, line: offerLine(1, item.match) });
     const sms = await textCarrier(item.carrier, text, 'proactive_match');
     if (sms === 'sent' || sms === 'logged') sent++;
     details.push({ carrier_id: item.carrier.id, sms, load_number: load.load_number });
@@ -786,21 +793,16 @@ async function sendFollowUpAsk(carrier, offer, load, ask) {
 }
 
 async function handleNegotiate(carrier, parsed) {
+  const lang = langOfCarrier(carrier);
   const live = await latestLiveOffer(carrier.id, parsed.choice || null);
   const offered = live.filter((o) => o.status === 'offered');
   const requested = live.filter((o) => o.status === 'requested');
   if (!parsed.choice && offered.length > 1 && !requested.length) {
-    return {
-      reply: 'Shipping Wish: Which load? Reply 1 NEED 2600 (use the posted rate plus the dollar you need).',
-      action: 'negotiate_which'
-    };
+    return { reply: i18n.t(lang, 'negotiate_which'), action: 'negotiate_which' };
   }
   const offer = requested[0] || offered[0];
   if (!offer || !offer.load) {
-    return {
-      reply: 'Shipping Wish: No open load is on the table. Text the ZIP you are empty in to get loads first.',
-      action: 'negotiate_none'
-    };
+    return { reply: i18n.t(lang, 'negotiate_none'), action: 'negotiate_none' };
   }
   const load = offer.load;
   const posted = Number(load.rate) || 0;
@@ -811,7 +813,8 @@ async function handleNegotiate(carrier, parsed) {
     loaded: offer.loaded_miles,
     deadhead: offer.deadhead_miles,
     estimated: offer.miles_estimated,
-    minRpm: carrier.min_rpm
+    minRpm: carrier.min_rpm,
+    lang
   });
   if (!guarded.ok) {
     if (guarded.code === 'over_cap') {
@@ -825,10 +828,7 @@ async function handleNegotiate(carrier, parsed) {
   }
   const existing = offer.negotiation || {};
   if (existing.emailed_at && !existing.broker_offer && Number(existing.driver_ask) === guarded.flat) {
-    return {
-      reply: `Shipping Wish: We already asked ${money(guarded.flat)} on ${load.load_number}. Waiting on the broker.`,
-      action: 'negotiate_waiting'
-    };
+    return { reply: i18n.t(lang, 'negotiate_waiting', { ask: money(guarded.flat), load: load.load_number }), action: 'negotiate_waiting' };
   }
   if (existing.emailed_at && !existing.broker_offer && Number(existing.driver_ask) !== guarded.flat) {
     await notify(
@@ -836,43 +836,38 @@ async function handleNegotiate(carrier, parsed) {
       `First ask ${money(existing.driver_ask)}, now ${money(guarded.flat)}. A dispatcher should handle the next email.`,
       'warning'
     );
-    return {
-      reply: `Shipping Wish: We already emailed one rate on ${load.load_number}. A dispatcher will take the next ask.`,
-      action: 'negotiate_one_email'
-    };
+    return { reply: i18n.t(lang, 'negotiate_one_email', { load: load.load_number }), action: 'negotiate_one_email' };
   }
   if (offer.status === 'requested') {
     try {
       const sent = await sendFollowUpAsk(carrier, offer, load, guarded.flat);
       if (!sent.sent) {
         await notify(`Call the broker on ${load.load_number}`, `${carrier.company_name} needs ${money(guarded.flat)}.`, 'warning');
-        return { reply: `Shipping Wish: A dispatcher will ask for ${money(guarded.flat)} on ${load.load_number}.`, action: 'negotiate_staff' };
+        return { reply: i18n.t(lang, 'negotiate_staff', { ask: money(guarded.flat), load: load.load_number }), action: 'negotiate_staff' };
       }
     } catch (err) {
-      return { reply: `Shipping Wish: A dispatcher will ask for ${money(guarded.flat)} on ${load.load_number}.`, action: 'negotiate_staff' };
+      return { reply: i18n.t(lang, 'negotiate_staff', { ask: money(guarded.flat), load: load.load_number }), action: 'negotiate_staff' };
     }
     return {
-      reply: `Shipping Wish: Asking ${money(guarded.flat)} on ${load.load_number} (posted ${money(posted)}). Do not roll until we text BOOKED.`,
+      reply: i18n.t(lang, 'negotiate_asked_short', { ask: money(guarded.flat), load: load.load_number, posted: money(posted) }),
       action: 'negotiate_asked'
     };
   }
   const result = await requestBooking(carrier, offer, { askRate: guarded.flat });
   if (result.taken) {
-    return { reply: `Load ${result.load ? result.load.load_number : ''} was just taken. Text your ZIP for more.`, action: 'book_taken' };
+    return { reply: i18n.t(lang, 'book_taken', { load: result.load ? result.load.load_number : '' }), action: 'book_taken' };
   }
   if (result.blocked) {
-    return {
-      reply: `Shipping Wish: We won't request ${result.load.load_number}. That broker did not pass our FMCSA authority check. Text your ZIP for other loads.`,
-      action: 'book_blocked'
-    };
+    return { reply: i18n.t(lang, 'book_blocked', { load: result.load.load_number }), action: 'book_blocked' };
   }
   return {
-    reply: `Shipping Wish: Asking ${money(guarded.flat)} on ${result.load.load_number} (posted ${money(posted)}). Do not roll until we text BOOKED with the rate confirmation.`,
+    reply: i18n.t(lang, 'negotiate_asked', { ask: money(guarded.flat), load: result.load.load_number, posted: money(posted) }),
     action: 'negotiate_asked'
   };
 }
 
 async function acceptBrokerCounter(carrier, offer) {
+  const lang = langOfCarrier(carrier);
   const load = offer.load || {};
   const rate = Number((offer.negotiation || {}).broker_offer);
   if (!rate) return null;
@@ -887,7 +882,7 @@ async function acceptBrokerCounter(carrier, offer) {
     'success'
   );
   return {
-    reply: `Shipping Wish: Noted, ${money(rate)} on ${load.load_number || 'that load'}. Do not roll until we text BOOKED with the rate confirmation.`,
+    reply: i18n.t(lang, 'negotiate_accepted', { rate: money(rate), load: load.load_number || 'that load' }),
     action: 'negotiate_accepted'
   };
 }
@@ -910,6 +905,7 @@ async function finishDeliveredLoad(offer, carrier, intent) {
 }
 
 async function handleBookedInbound(carrier, offer, body, parsed, media) {
+  const lang = langOfCarrier(carrier);
   const transit = ops.parseTransitText(body);
   const wantsReload = parsed.intent === 'reload';
   const photos = Array.isArray(media) ? media.filter((m) => m && m.url) : [];
@@ -926,25 +922,35 @@ async function handleBookedInbound(carrier, offer, body, parsed, media) {
 
   if (transit && transit.intent !== 'pod') {
     const result = await ops.persistTransit(offer, transit.intent);
-    let reply = ops.transitReply(transit.intent, offer.load, result.status);
-    if (pods.saved.length) reply += ' POD photo saved.';
-    if (pods.errors.length) reply += ' One photo did not save. Send it again.';
+    let reply = ops.transitReply(transit.intent, offer.load, result.status, lang);
+    if (pods.saved.length) reply += i18n.t(lang, 'pod_saved_extra');
+    if (pods.errors.length) reply += i18n.t(lang, 'pod_one_fail');
     return { reply, action: transit.intent, pods };
   }
 
   if (photos.length) {
     const result = await ops.persistTransit(offer, 'pod');
-    let reply = ops.transitReply('pod', offer.load, result.status);
-    if (pods.errors.length && !pods.saved.length) reply = 'Shipping Wish: Could not save that photo. Send the POD picture again.';
-    else if (pods.errors.length) reply += ' One photo did not save. Send it again.';
+    let reply = ops.transitReply('pod', offer.load, result.status, lang);
+    if (pods.errors.length && !pods.saved.length) reply = i18n.t(lang, 'pod_fail');
+    else if (pods.errors.length) reply += i18n.t(lang, 'pod_one_fail');
     return { reply, action: 'pod', pods };
   }
 
   if (transit && transit.intent === 'pod') {
     const result = await ops.persistTransit(offer, 'pod');
-    return { reply: ops.transitReply('pod', offer.load, result.status), action: 'pod', pods };
+    return { reply: ops.transitReply('pod', offer.load, result.status, lang), action: 'pod', pods };
   }
   return null;
+}
+
+async function rememberLang(carrier, text) {
+  const detected = i18n.detectLang(text);
+  if (!detected) return langOfCarrier(carrier);
+  if (carrier.sms_lang !== detected) {
+    await pool.query('UPDATE ai_dispatch_carriers SET sms_lang = $2 WHERE id = $1', [carrier.id, detected]);
+    carrier.sms_lang = detected;
+  }
+  return detected;
 }
 
 // Handles a text from a carrier on the AI dispatch desk. Returns null when the phone isn't a
@@ -954,6 +960,8 @@ async function handleCarrierSms(fromPhone, body, extras = {}) {
   const carrier = await findCarrierByPhone(fromPhone);
   if (!carrier) return null;
   const media = Array.isArray(extras.media) ? extras.media : [];
+  await rememberLang(carrier, body);
+  const lang = langOfCarrier(carrier);
   const booked = await ops.currentBookedOffer(carrier.id);
   const transit = booked ? ops.parseTransitText(body) : null;
   const parsed = await understand(body, carrier);
@@ -972,14 +980,14 @@ async function handleCarrierSms(fromPhone, body, extras = {}) {
 
   if (await outboundToday(carrier.id) >= MAX_OUTBOUND_PER_DAY) {
     await notify(`Dispatch desk: ${carrier.company_name} needs a person`, String(body).slice(0, 160), 'warning');
-    const reply = 'Shipping Wish: A dispatcher will text you shortly.';
+    const reply = i18n.t(lang, 'handoff');
     await logMessage(carrier.id, 'outbound', reply, 'handoff');
     return { carrier, parsed, reply, action: 'handoff' };
   }
 
   const liveOffers = await latestLiveOffer(carrier.id, null);
   const pendingCounter = liveOffers.find((o) => neg.awaitingDriverCounter(o));
-  if (pendingCounter && parsed.intent !== 'negotiate' && /^(yes|y|ok|take it|book it)\b/i.test(String(body).trim())) {
+  if (pendingCounter && parsed.intent !== 'negotiate' && /^(yes|y|ok|take it|book it|si|sí)\b/i.test(String(body).trim())) {
     const accepted = await acceptBrokerCounter(carrier, pendingCounter);
     if (accepted) {
       await logMessage(carrier.id, 'outbound', accepted.reply, accepted.action);
@@ -1004,46 +1012,50 @@ async function handleCarrierSms(fromPhone, body, extras = {}) {
       const origin = await latestOrigin(carrier);
       const fresh = origin ? await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier) }) : null;
       reply = fresh && fresh.offers.length
-        ? `That list expired.\n${fresh.reply}`
-        : 'Shipping Wish: That list expired. Text the ZIP you are empty in to get fresh loads.';
+        ? `${i18n.t(lang, 'book_expired_lead')}\n${fresh.reply}`
+        : i18n.t(lang, 'book_expired');
       action = 'book_expired';
     } else {
       const result = await requestBooking(carrier, offer);
       if (result.taken) {
         const origin = await latestOrigin(carrier);
         const fresh = origin ? await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier), excludeLoadIds: [offer.load_id] }) : null;
-        reply = `Load ${result.load ? result.load.load_number : ''} was just taken.` + (fresh && fresh.offers.length ? `\n${fresh.reply}` : ' Text your ZIP for more.');
+        reply = i18n.t(lang, 'book_taken', { load: result.load ? result.load.load_number : '' }) + (fresh && fresh.offers.length ? `\n${fresh.reply}` : i18n.t(lang, 'zip_more_short'));
         action = 'book_taken';
       } else if (result.blocked) {
         const origin = await latestOrigin(carrier);
         const fresh = origin ? await offerLoads(carrier, { origin, destination: parseDestination(carrier.prefer_destination, carrier), excludeLoadIds: [...await shownLoadIds(carrier.id), offer.load_id] }) : null;
-        reply = `Shipping Wish: We won't request ${result.load.load_number}. That broker did not pass our FMCSA authority check.` + (fresh && fresh.offers.length ? `\n${fresh.reply}` : ' Text your ZIP for other loads.');
+        reply = i18n.t(lang, 'book_blocked_more', { load: result.load.load_number }) + (fresh && fresh.offers.length ? `\n${fresh.reply}` : i18n.t(lang, 'zip_more'));
         action = 'book_blocked';
       } else {
-        reply = `Shipping Wish: Requesting ${result.load.load_number} (${result.load.pickup_location} → ${result.load.delivery_location}, ${money(result.load.rate)}) from the broker now. Do not roll until we text BOOKED with the rate confirmation.`;
+        reply = i18n.t(lang, 'book_requested', {
+          load: result.load.load_number,
+          lane: `${result.load.pickup_location} → ${result.load.delivery_location}`,
+          rate: money(result.load.rate)
+        });
         action = 'book_requested';
       }
     }
   } else if (parsed.intent === 'more') {
     const origin = await latestOrigin(carrier);
     if (!origin) {
-      reply = 'Shipping Wish: Text the ZIP you are empty in and where you want to go. Example: 75201 to Atlanta.';
+      reply = i18n.t(lang, 'more_need_zip');
     } else {
       const res = await offerLoads(carrier, {
         origin,
         destination: parseDestination(carrier.prefer_destination, carrier),
         excludeLoadIds: await shownLoadIds(carrier.id)
       });
-      reply = res.offers.length ? res.reply : `Shipping Wish: No other loads near ${placeLabel(origin)} right now. Reply ANY for all directions, or text a new ZIP later.`;
+      reply = res.offers.length ? res.reply : i18n.t(lang, 'more_none', { origin: placeLabel(origin) });
     }
   } else if (parsed.intent === 'off') {
     await pool.query(`UPDATE ai_dispatch_carriers SET off_until = now() + interval '20 hours' WHERE id = $1`, [carrier.id]);
     await pool.query(`UPDATE ai_dispatch_offers SET status = 'expired', updated_at = now() WHERE carrier_id = $1 AND status = 'offered'`, [carrier.id]);
-    reply = 'Shipping Wish: Got it, no loads today. We will check in on the next workday morning.';
+    reply = i18n.t(lang, 'off');
   } else if (parsed.intent === 'reload') {
     const origin = parsed.origin || await lastBookedDelivery(carrier) || await latestOrigin(carrier);
     if (!origin) {
-      reply = 'Shipping Wish: Text the ZIP or city you are empty in for the next load. Example: empty Dallas TX.';
+      reply = i18n.t(lang, 'reload_need_zip');
     } else {
       await pool.query(
         `UPDATE ai_dispatch_carriers
@@ -1057,7 +1069,7 @@ async function handleCarrierSms(fromPhone, body, extras = {}) {
       );
       reply = res.offers.length
         ? res.reply
-        : `Shipping Wish: No posted loads fit near ${placeLabel(origin)} yet.${whyNone(res.reasons || {})} Text a new ZIP later.`;
+        : i18n.t(lang, 'reload_none', { origin: placeLabel(origin), why: whyNone(res.reasons || {}, lang) });
     }
   } else if (parsed.intent === 'loads') {
     const origin = parsed.origin || await latestOrigin(carrier);
@@ -1075,13 +1087,13 @@ async function handleCarrierSms(fromPhone, body, extras = {}) {
         parsed.destination ? parsed.destination.label : null, parsed.equipment]
     );
     if (!origin) {
-      reply = `Shipping Wish: Noted${destination ? ` ${destination.label}` : ''}. What ZIP or city are you empty in?`;
+      reply = i18n.t(lang, 'noted_dest', { dest: destination ? ` ${destination.label}` : '' });
     } else {
       const res = await offerLoads({ ...carrier, equipment: parsed.equipment || carrier.equipment }, { origin, destination, equipment: parsed.equipment });
       reply = res.reply;
     }
   } else {
-    reply = 'Shipping Wish dispatch: text the ZIP or city you are empty in and where you want to go (example: 75201 to Atlanta). Reply 1-3 to request a load we sent, NEED 2600 to ask the broker for a higher rate we will not invent, MORE for others, RELOAD when empty at delivery, or OFF TODAY. On a booked load reply ARRIVED SHIPPER, LOADED, WAITING, ARRIVED RECEIVER, or DELIVERED, and photo the POD. A dispatcher reads every message.';
+    reply = i18n.t(lang, 'help');
     await notify(`Dispatch desk message: ${carrier.company_name}`, String(body).slice(0, 160), 'info');
   }
 
@@ -1159,11 +1171,17 @@ async function markBooked(offerId, staffNote, { force = false } = {}) {
     const plan = await planReload(offer.carrier, deliveryOrigin, { excludeLoadIds: [load.id], bookedOfferId: offer.id });
     const n = (plan.matches || []).length;
     reloadHint = n
-      ? ` When empty in ${placeLabel(deliveryOrigin)}, reply RELOAD for ${n} next load${n === 1 ? '' : 's'} from there.`
-      : ` When empty in ${placeLabel(deliveryOrigin)}, reply RELOAD and we will look again.`;
+      ? i18n.t(langOfCarrier(offer.carrier), 'reload_hint', { city: placeLabel(deliveryOrigin), n, s: n === 1 ? '' : 's' })
+      : i18n.t(langOfCarrier(offer.carrier), 'reload_hint_none', { city: placeLabel(deliveryOrigin) });
   }
   const bookedRate = neg.expectedRate(offer, load) || load.rate;
-  const text = `Shipping Wish: BOOKED ${load.load_number}. ${load.pickup_location} → ${load.delivery_location}, pickup ${shortDate(load.pickup_date)}, ${money(bookedRate)}. The rate confirmation and pickup details follow.${reloadHint} Reply ARRIVED SHIPPER, LOADED, WAITING, ARRIVED RECEIVER, or DELIVERED. Photo the POD when you unload.`;
+  const text = i18n.t(langOfCarrier(offer.carrier), 'booked', {
+    load: load.load_number,
+    lane: `${load.pickup_location} → ${load.delivery_location}`,
+    date: shortDate(load.pickup_date),
+    rate: money(bookedRate),
+    reload: reloadHint
+  });
   const sms = await textCarrier(offer.carrier, text, 'booked');
   return { offer: { ...offer, status: 'booked', transit: bookedOps.transit, detention: bookedOps.detention }, sms, reload_plan: deliveryOrigin ? true : false };
 }
@@ -1176,16 +1194,17 @@ async function releaseOffer(offerId, reason) {
   if (offer.status === 'booked') throw new Error('This load is already booked.');
   await pool.query(`UPDATE ai_dispatch_offers SET status = 'declined', note = $2, updated_at = now() WHERE id = $1`, [offer.id, String(reason || 'released').slice(0, 200)]);
   const carrier = offer.carrier;
+  const lang = langOfCarrier(carrier);
   const origin = await latestOrigin(carrier);
   const loadNumber = offer.load ? offer.load.load_number : 'That load';
-  let text = `Shipping Wish: ${loadNumber} is no longer available.`;
+  let text = i18n.t(lang, 'released', { load: loadNumber });
   if (origin) {
     const res = await offerLoads(carrier, {
       origin,
       destination: parseDestination(carrier.prefer_destination, carrier),
       excludeLoadIds: [...await shownLoadIds(carrier.id), offer.load_id]
     });
-    text += res.offers.length ? `\n${res.reply}` : ' Text your ZIP again for fresh loads.';
+    text += res.offers.length ? `\n${res.reply}` : i18n.t(lang, 'released_zip');
   }
   let sms = 'held_for_hours';
   if (carrier.sms_consent && isWithinTcpaHours(carrier.phone).allowed) sms = await textCarrier(carrier, text, 'released');
@@ -1261,7 +1280,11 @@ async function handleBrokerBookingReply({ fromEmail, subject, bodyText, resendId
       `UPDATE ai_dispatch_offers SET negotiation = $2::jsonb, updated_at = now() WHERE id = $1`,
       [offer.id, JSON.stringify(negotiation)]
     );
-    const text = `Shipping Wish: Broker came back at ${money(counter)} on ${loadNumber} (posted ${money(posted)}). Reply YES to take ${money(counter)}, or NEED a higher dollar amount.`;
+    const text = i18n.t(langOfCarrier(offer.carrier), 'broker_counter', {
+      rate: money(counter),
+      load: loadNumber,
+      posted: money(posted)
+    });
     let sms = 'held_for_hours';
     if (offer.carrier.sms_consent && isWithinTcpaHours(offer.carrier.phone).allowed) {
       sms = await textCarrier(offer.carrier, text, 'broker_counter');
@@ -1381,6 +1404,7 @@ async function runCheckCalls() {
 module.exports = {
   parseCarrierText,
   parseTransitText: ops.parseTransitText,
+  detectLang: i18n.detectLang,
   parseNegotiateText: neg.parseNegotiateText,
   parseBrokerRate: neg.parseBrokerRate,
   guardAsk: neg.guardAsk,
