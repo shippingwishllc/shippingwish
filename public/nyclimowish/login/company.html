@@ -17,7 +17,7 @@
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign in | NYC Limo Wish</title>
+  <title>Company sign in | NYC Limo Wish</title>
   <meta name="robots" content="noindex">
   <link rel="icon" href="/nyclimowish/favicon.ico" sizes="32x32">
   <link rel="icon" href="/nyclimowish/favicon.svg" type="image/svg+xml">
@@ -28,31 +28,30 @@
 <div class="limo-auth">
   <aside class="limo-auth-brand">
     <a href="/" class="limo-logo">NYC <span>LIMO</span> WISH</a>
-    <h1>Sign in to your ride.</h1>
-    <p>Customers and drivers use this page. Shipping Wish accounts stay on shippingwish.com.</p>
+    <h1>Base and dispatch sign in.</h1>
+    <p>This page is only for a licensed base or the NYC Limo Wish desk. Customers and drivers sign in on the main login.</p>
     <ul>
-      <li>Customers track and rebook rides</li>
-      <li>Drivers open assigned trips</li>
+      <li>Operators accept rides for their base</li>
+      <li>Staff run the limo dispatch desk</li>
     </ul>
   </aside>
   <main class="limo-auth-panel">
     <div class="limo-auth-card">
-      <h2>Sign in</h2>
-      <p class="limo-auth-lead">Email and password. That is all.</p>
-      <div class="limo-auth-tabs" role="tablist" aria-label="Account type">
-        <button type="button" class="limo-auth-tab active" data-portal="customer" role="tab" aria-selected="true">Customer</button>
-        <button type="button" class="limo-auth-tab" data-portal="driver" role="tab" aria-selected="false">Driver</button>
+      <h2>Company sign in</h2>
+      <p class="limo-auth-lead">Choose the desk this login belongs to.</p>
+      <div class="limo-auth-tabs" role="tablist" aria-label="Company account">
+        <button type="button" class="limo-auth-tab active" data-portal="operator" role="tab" aria-selected="true">Operator</button>
+        <button type="button" class="limo-auth-tab" data-portal="staff" role="tab" aria-selected="false">Staff</button>
       </div>
-      <p class="limo-auth-note" id="portal-note">Rides, receipts, and tracking.</p>
+      <p class="limo-auth-note" id="portal-note">Accept or decline rides for your base.</p>
       <div id="alert" class="limo-auth-alert" role="alert"></div>
       <form id="login-form">
         <div class="limo-field"><label>Email</label><input class="limo-input" type="email" id="email" autocomplete="username" required style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
         <div class="limo-field"><label>Password</label><input class="limo-input" type="password" id="password" autocomplete="current-password" required style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
         <button type="submit" class="limo-btn limo-btn-dark limo-btn-block" id="submit">Sign in</button>
       </form>
-      <p class="limo-auth-foot" id="customer-extra">No account? <a href="/signup">Create a customer account</a></p>
-      <p class="limo-auth-foot" id="issued-note" hidden>Driver logins are issued by NYC Limo Wish.</p>
-      <p class="limo-auth-foot"><a href="/login/company">Licensed base or dispatch desk</a></p>
+      <p class="limo-auth-foot">These logins are issued by NYC Limo Wish.</p>
+      <p class="limo-auth-foot"><a href="/login">Customer or driver sign in</a></p>
       <a class="limo-auth-home" href="/">← Back to NYC Limo Wish</a>
     </div>
   </main>
@@ -60,8 +59,8 @@
 <script>
 (function () {
   const PORTALS = {
-    customer: { roles: ['customer'], home: '/passenger', note: 'Rides, receipts, and tracking.' },
-    driver: { roles: ['driver'], home: '/driver', note: 'Trips assigned to you.' }
+    operator: { roles: ['partner_dispatcher'], home: '/partner', note: 'Accept or decline rides for your base.' },
+    staff: { roles: ['admin', 'dispatcher'], home: '/erp', note: 'NYC Limo Wish dispatch desk.' }
   };
   const ROLE_HOME = {
     customer: '/passenger',
@@ -71,7 +70,7 @@
     dispatcher: '/erp'
   };
   const params = new URLSearchParams(window.location.search);
-  let selected = 'customer';
+  let selected = 'operator';
 
   function safeNext(value) {
     if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\') || value.includes('://')) return '';
@@ -89,15 +88,13 @@
   }
 
   function selectPortal(key) {
-    selected = PORTALS[key] ? key : 'customer';
+    selected = PORTALS[key] ? key : 'operator';
     document.querySelectorAll('.limo-auth-tab').forEach((tab) => {
       const on = tab.dataset.portal === selected;
       tab.classList.toggle('active', on);
       tab.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     document.getElementById('portal-note').textContent = PORTALS[selected].note;
-    document.getElementById('customer-extra').hidden = selected !== 'customer';
-    document.getElementById('issued-note').hidden = selected === 'customer';
     showAlert('');
   }
 
@@ -106,12 +103,8 @@
   });
 
   const redirect = safeNext(params.get('redirect'));
-  if (redirect.startsWith('/partner') || redirect.startsWith('/erp')) {
-    window.location.replace('/login/company' + window.location.search);
-    return;
-  }
-  if (redirect.startsWith('/driver')) selectPortal('driver');
-  else selectPortal('customer');
+  if (redirect.startsWith('/erp')) selectPortal('staff');
+  else selectPortal('operator');
 
   document.getElementById('login-form').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -133,10 +126,9 @@
       if (!res.ok) throw new Error(data.error || 'Login failed');
       const role = data.user && data.user.role;
       const actual = portalForRole(role);
-      const home = ROLE_HOME[role] || '/passenger';
-      if (actual && actual !== selected) {
-        showAlert('This email opens the ' + actual + ' sign-in.');
-        selectPortal(actual);
+      const home = ROLE_HOME[role] || '/login';
+      if (!actual) {
+        showAlert('This email uses the customer and driver sign-in.');
       }
       const next = redirect && (redirect === home || redirect.startsWith(home + '/')) ? redirect : home;
       window.location.href = next;

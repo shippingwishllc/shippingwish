@@ -655,7 +655,7 @@ body.limo-menu-open { overflow: hidden; }
 .limo-auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
 .limo-auth-tab { border: 1px solid #e6e6e6; background: #fafafa; color: #333; border-radius: 12px; padding: 10px 8px; font: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
 .limo-auth-tab.active { background: #111; color: var(--limo-gold); border-color: #111; }
-.limo-auth-note { font-size: 0.85rem; color: #555; min-height: 2.6em; margin-bottom: 12px; }
+.limo-auth-note { font-size: 0.85rem; color: #555; min-height: 1.4em; margin-bottom: 12px; }
 .limo-auth-alert { display: none; padding: 12px; border-radius: 8px; margin-bottom: 14px; background: #fee; color: #9b1c1c; font-size: 0.85rem; }
 .limo-auth-alert.show { display: block; }
 .limo-auth-foot { text-align: center; margin-top: 16px; font-size: 0.85rem; color: #666; }
@@ -666,4 +666,34 @@ body.limo-menu-open { overflow: hidden; }
   .limo-auth-brand h1 { font-size: 2.2rem; margin-top: 16px; }
   .limo-auth-brand ul { display: none; }
   .limo-auth-panel { padding: 22px 18px 36px; align-items: flex-start; }
+}
+
+/* Customer account signup */
+.limo-join { min-height: 100vh; display: grid; grid-template-columns: 0.92fr 1.08fr; background: #050505; color: #fff; }
+.limo-join-photo { position: relative; min-height: 100vh; overflow: hidden; background: #111 url('/images/hero-chauffeur.jpg') center 30% / cover no-repeat; }
+.limo-join-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0.05), rgba(0,0,0,0.45)); }
+.limo-join-panel { display: flex; align-items: center; justify-content: center; padding: 36px 28px 48px; }
+.limo-join-card { width: min(560px, 100%); }
+.limo-join-card .limo-logo { display: inline-block; margin-bottom: 22px; font-size: 1.35rem; }
+.limo-join-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.limo-join-grid .wide { grid-column: 1 / -1; }
+.limo-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+.limo-join .limo-input { background: #fff; color: #111; border: 1px solid #e4e4e4; border-radius: 8px; padding: 14px 16px; }
+.limo-join .limo-input::placeholder { color: #9a9a9a; }
+.limo-join-phone { display: grid; grid-template-columns: 108px 1fr; gap: 8px; }
+.limo-join-phone select { background: #fff; color: #111; border: 1px solid #e4e4e4; border-radius: 8px; padding: 0 8px; font: inherit; }
+.limo-join-pass { position: relative; }
+.limo-join-pass .limo-input { padding-right: 64px; }
+.limo-join-show { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: #666; font: inherit; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+.limo-join-check { display: flex; align-items: center; gap: 8px; margin: 14px 0; font-size: 0.85rem; color: #ddd; }
+.limo-join-check input { width: 16px; height: 16px; accent-color: var(--limo-gold); }
+.limo-join-alert { display: none; padding: 12px; border-radius: 8px; margin-bottom: 12px; background: #3a1515; color: #ffd0d0; font-size: 0.85rem; }
+.limo-join-alert.show { display: block; }
+.limo-join .limo-btn-gold { margin-top: 6px; letter-spacing: 0.12em; background: #c9a227; color: #0a0a0a; appearance: none; -webkit-appearance: none; }
+.limo-join-foot { text-align: center; margin-top: 16px; font-size: 0.88rem; color: #bbb; }
+.limo-join-honey { position: absolute; left: -9999px; height: 0; overflow: hidden; }
+@media (max-width: 860px) {
+  .limo-join { grid-template-columns: 1fr; }
+  .limo-join-photo { min-height: 220px; }
+  .limo-join-grid, .limo-join-phone { grid-template-columns: 1fr; }
 }

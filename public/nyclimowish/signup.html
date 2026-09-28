@@ -1,50 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+  (function () {
+    var host = location.hostname.toLowerCase();
+    var limoHost = host === 'nyclimowish.com' || host === 'www.nyclimowish.com' || host.endsWith('.nyclimowish.com') || host === 'localhost' || host === '127.0.0.1';
+    if (!limoHost) return;
+    var path = location.pathname;
+    if (path !== '/nyclimowish' && path.indexOf('/nyclimowish/') !== 0) return;
+    var next = path.replace(/^\/nyclimowish/, '') || '/';
+    next = next.replace(/\.html$/, '');
+    if (next.endsWith('/index')) next = next.slice(0, -6) || '/';
+    if (next.length > 1 && next.endsWith('/')) next = next.slice(0, -1);
+    history.replaceState(null, '', next + location.search + location.hash);
+  })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Account | NYC Limo Wish</title>
+  <title>Create account | NYC Limo Wish</title>
+  <meta name="robots" content="noindex">
   <link rel="icon" href="/nyclimowish/favicon.ico" sizes="32x32">
   <link rel="icon" href="/nyclimowish/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/nyclimowish/apple-touch-icon.png">
   <link rel="stylesheet" href="/css/limo.css">
 </head>
-<body class="limo-light" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
-  <div class="limo-widget" style="max-width:420px;width:100%;background:#fff;border-color:#eee;color:#000;">
-    <h1 style="text-align:center;font-size:1.5rem;font-weight:800;margin-bottom:8px;">Create a customer account</h1>
-    <p style="text-align:center;color:#666;font-size:0.9rem;margin-bottom:24px;">This is only for NYC Limo Wish passengers. Driver, operator, and staff logins are issued separately. Shipping Wish accounts are not used here.</p>
-    <div id="alert" style="display:none;padding:12px;border-radius:8px;margin-bottom:16px;background:#fee;color:#c00;font-size:0.85rem;"></div>
-    <form id="signup-form">
-      <div class="limo-field"><label>Name</label><input class="limo-input" type="text" id="name" required style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
-      <div class="limo-field"><label>Email</label><input class="limo-input" type="email" id="email" required style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
-      <div class="limo-field"><label>Phone</label><input class="limo-input" type="tel" id="phone" style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
-      <div class="limo-field"><label>Password</label><input class="limo-input" type="password" id="password" minlength="8" required style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
-      <button type="submit" class="limo-btn limo-btn-dark limo-btn-block">Create account</button>
-    </form>
-    <p style="text-align:center;margin-top:16px;font-size:0.85rem;color:#666;">Already registered? <a href="/login">Log in</a></p>
-  </div>
+<body class="limo limo-join">
+  <aside class="limo-join-photo" role="img" aria-label="Chauffeur holding the door of a black car"></aside>
+  <main class="limo-join-panel">
+    <div class="limo-join-card">
+      <a href="/" class="limo-logo">NYC <span>LIMO</span> WISH</a>
+      <div id="alert" class="limo-join-alert" role="alert"></div>
+      <form id="signup-form">
+        <div class="limo-join-grid">
+          <div>
+            <label class="limo-sr" for="first-name">First name</label>
+            <input class="limo-input" id="first-name" autocomplete="given-name" placeholder="First Name" required>
+          </div>
+          <div>
+            <label class="limo-sr" for="last-name">Last name</label>
+            <input class="limo-input" id="last-name" autocomplete="family-name" placeholder="Last Name" required>
+          </div>
+          <div class="wide">
+            <label class="limo-sr" for="email">Email address</label>
+            <input class="limo-input" id="email" type="email" autocomplete="email" placeholder="Email Address" required>
+          </div>
+          <div class="wide limo-join-phone">
+            <label class="limo-sr" for="phone-code">Country code</label>
+            <select id="phone-code" aria-label="Country code">
+              <option value="+1" selected>US +1</option>
+              <option value="+44">UK +44</option>
+              <option value="+971">UAE +971</option>
+              <option value="+92">PK +92</option>
+            </select>
+            <label class="limo-sr" for="phone">Phone number</label>
+            <input class="limo-input" id="phone" type="tel" autocomplete="tel-national" placeholder="Phone Number">
+          </div>
+          <div class="limo-join-pass">
+            <label class="limo-sr" for="password">Password</label>
+            <input class="limo-input" id="password" type="password" autocomplete="new-password" minlength="8" placeholder="Password" required>
+            <button type="button" class="limo-join-show" data-target="password">Show</button>
+          </div>
+          <div class="limo-join-pass">
+            <label class="limo-sr" for="confirm">Confirm password</label>
+            <input class="limo-input" id="confirm" type="password" autocomplete="new-password" minlength="8" placeholder="Confirm Password" required>
+            <button type="button" class="limo-join-show" data-target="confirm">Show</button>
+          </div>
+          <div>
+            <label class="limo-sr" for="company">Company name</label>
+            <input class="limo-input" id="company" autocomplete="organization" placeholder="Company Name (Optional)">
+          </div>
+          <div>
+            <label class="limo-sr" for="designation">Designation</label>
+            <input class="limo-input" id="designation" autocomplete="organization-title" placeholder="Designation (Optional)">
+          </div>
+        </div>
+        <label class="limo-join-check"><input type="checkbox" id="newsletter"> I want ride updates and offers</label>
+        <div class="limo-join-honey" aria-hidden="true">
+          <label for="website">Website</label>
+          <input id="website" tabindex="-1" autocomplete="off">
+        </div>
+        <button type="submit" class="limo-btn limo-btn-gold limo-btn-block" id="submit">Sign up</button>
+      </form>
+      <p class="limo-join-foot">I already have an account. <a href="/login">Log in now</a></p>
+    </div>
+  </main>
   <script>
-    document.getElementById('signup-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const res = await fetch('/api/nyclimo/signup', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: document.getElementById('name').value,
-          email: document.getElementById('email').value,
-          phone: document.getElementById('phone').value,
-          password: document.getElementById('password').value
-        })
+  (function () {
+    function showAlert(message) {
+      const el = document.getElementById('alert');
+      el.textContent = message || '';
+      el.classList.toggle('show', Boolean(message));
+    }
+
+    document.querySelectorAll('.limo-join-show').forEach((button) => {
+      button.addEventListener('click', () => {
+        const input = document.getElementById(button.dataset.target);
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        button.textContent = show ? 'Hide' : 'Show';
       });
-      const data = await res.json();
-      if (!res.ok) {
-        const el = document.getElementById('alert');
-        el.textContent = data.error || 'Could not create the account';
-        el.style.display = 'block';
+    });
+
+    document.getElementById('signup-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const password = document.getElementById('password').value;
+      const confirm = document.getElementById('confirm').value;
+      if (password !== confirm) {
+        showAlert('Password and confirm password must match.');
         return;
       }
-      window.location.href = '/passenger';
+      const button = document.getElementById('submit');
+      button.disabled = true;
+      button.textContent = 'Creating account...';
+      showAlert('');
+      const phoneLocal = document.getElementById('phone').value.trim();
+      const phone = phoneLocal ? document.getElementById('phone-code').value + ' ' + phoneLocal : '';
+      try {
+        const res = await fetch('/api/nyclimo/signup', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName: document.getElementById('first-name').value,
+            lastName: document.getElementById('last-name').value,
+            email: document.getElementById('email').value,
+            phone: phone,
+            password: password,
+            company: document.getElementById('company').value,
+            designation: document.getElementById('designation').value,
+            newsletter: document.getElementById('newsletter').checked,
+            website: document.getElementById('website').value
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Could not create the account');
+        window.location.href = '/passenger';
+      } catch (err) {
+        showAlert(err.message || 'Could not create the account');
+        button.disabled = false;
+        button.textContent = 'Sign up';
+      }
     });
+  })();
   </script>
 </body>
 </html>

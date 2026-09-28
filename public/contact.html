@@ -5,7 +5,14 @@
   (function () {
     var host = location.hostname.toLowerCase();
     if (host === 'nyclimowish.com' || host === 'www.nyclimowish.com' || host.endsWith('.nyclimowish.com')) {
-      location.replace('/nyclimowish/contact.html' + location.search);
+      fetch('/nyclimowish/contact.html' + location.search).then(function (res) {
+        return res.ok ? res.text() : '';
+      }).then(function (html) {
+        if (!html) return;
+        document.open();
+        document.write(html);
+        document.close();
+      });
     }
   })();
   </script>
