@@ -781,11 +781,23 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
     } catch {
       // column may not exist yet
     }
-  } else {
+  }
+
+  let outreach = null;
+  try {
+    outreach = await require('../utils/outreach-engine').handleInboundReply({
+      fromEmail: from,
+      subject: subjectFinal,
+      bodyText: bodyTextFinal || htmlToPlain(bodyHtmlFinal)
+    });
+  } catch (err) {
+    console.warn('[OUTREACH] inbound reply:', err.message);
+  }
+  if (!leadId && !outreach) {
     await notifyAdmins(`Unmatched inbound email from ${from}`, (subject || '').slice(0, 140), 'warning', '/inbox.html');
   }
 
-  return { ok: true, inbound: ins.rows[0], lead_id: leadId };
+  return { ok: true, inbound: ins.rows[0], lead_id: leadId, outreach };
 }
 
 function pickAddress(value) {
@@ -856,6 +868,7 @@ router.get('/unsubscribe', async (req, res) => {
       `INSERT INTO unsubscribes (email) VALUES ($1) ON CONFLICT (email) DO NOTHING`,
       [email]
     );
+    await require('../utils/outreach-engine').recordUnsubscribe(email).catch(() => {});
     res.json({ ok: true, email, message: 'You have been unsubscribed.' });
   } catch (err) {
     res.status(500).json({ error: 'Could not unsubscribe' });
@@ -871,6 +884,7 @@ router.post('/unsubscribe', async (req, res) => {
       `INSERT INTO unsubscribes (email, reason) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING`,
       [email, req.body.reason || 'one-click']
     );
+    await require('../utils/outreach-engine').recordUnsubscribe(email).catch(() => {});
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Could not unsubscribe' });
