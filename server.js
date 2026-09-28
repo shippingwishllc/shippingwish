@@ -189,13 +189,18 @@ async function sendBuyWishProduct(res, key) {
 
 function sendBuyWishCollection(res, slug) {
   const department = String(slug || '').toLowerCase() === 'all'
-    ? { key: 'all', title: 'All Products', slug: 'all' }
+    ? { key: 'all', title: 'All Products', slug: 'all', blurb: 'The full BuyWishOnline shop, in one place.' }
     : departmentBySlug(slug);
   if (!department) return res.status(404).type('html').send(renderCollectionPage('Collection', []));
   try {
     const indexPath = path.join(__dirname, 'public', 'buywishonline', 'index.html');
     let html = fs.readFileSync(indexPath, 'utf8');
-    const boot = JSON.stringify({ category: department.key, title: department.title, slug: department.slug }).replace(/</g, '\\u003c');
+    const boot = JSON.stringify({
+      category: department.key,
+      title: department.title,
+      slug: department.slug,
+      blurb: department.blurb || ''
+    }).replace(/</g, '\\u003c');
     html = html.replace('<head>', `<head>\n  <script>window.BUYWISH_COLLECTION=${boot};</script>`);
     html = html.replace(/<title>[^<]*<\/title>/, `<title>${department.title} | BuyWishOnline</title>`);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');

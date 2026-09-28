@@ -31,14 +31,14 @@ const DEPARTMENT_ZENDROP_CATEGORIES = {
 };
 
 const STORE_DEPARTMENTS = {
-  Tech: { slug: 'tech', title: 'Tech & Gadgets', searches: ['wireless earbuds', 'phone stand', 'bluetooth speaker'] },
-  Home: { slug: 'home', title: 'Home & Living', searches: ['home organizer', 'led lamp', 'throw blanket'] },
-  Fitness: { slug: 'fitness', title: 'Fitness & Outdoors', searches: ['resistance bands', 'yoga mat', 'fitness tracker'] },
-  Beauty: { slug: 'beauty', title: 'Beauty & Wellness', searches: ['skincare tool', 'makeup brush', 'hair tool'] },
-  Kitchen: { slug: 'kitchen', title: 'Kitchen & Cooking', searches: ['kitchen gadget', 'coffee accessories', 'food container'] },
-  Pets: { slug: 'pets', title: 'Pet Supplies', searches: ['pet grooming', 'dog toy', 'cat bed'] },
-  Travel: { slug: 'travel', title: 'Travel & Bags', searches: ['packing cubes', 'travel pillow', 'toiletry bag'] },
-  Kids: { slug: 'kids', title: 'Kids & Toys', searches: ['kids toy', 'baby gift', 'building blocks'] }
+  Tech: { slug: 'tech', title: 'Tech & Gadgets', blurb: 'Headphones, chargers, and everyday gadgets.', searches: ['wireless earbuds', 'phone stand', 'bluetooth speaker', 'usb charger'] },
+  Home: { slug: 'home', title: 'Home & Living', blurb: 'Decor, lighting, and comfort for every room.', searches: ['home organizer', 'led lamp', 'throw blanket', 'wall decor'] },
+  Fitness: { slug: 'fitness', title: 'Fitness & Outdoors', blurb: 'Gear for training, yoga, and time outside.', searches: ['resistance bands', 'yoga mat', 'fitness tracker', 'dumbbell'] },
+  Beauty: { slug: 'beauty', title: 'Beauty & Wellness', blurb: 'Skin, hair, and daily self-care.', searches: ['skincare tool', 'makeup brush', 'hair tool', 'face serum'] },
+  Kitchen: { slug: 'kitchen', title: 'Kitchen & Cooking', blurb: 'Tools for cooking, coffee, and the table.', searches: ['kitchen gadget', 'coffee accessories', 'food container', 'cookware'] },
+  Pets: { slug: 'pets', title: 'Pet Supplies', blurb: 'Care and play for dogs and cats.', searches: ['pet grooming', 'dog toy', 'cat bed', 'dog leash'] },
+  Travel: { slug: 'travel', title: 'Travel & Bags', blurb: 'Bags and essentials for the trip.', searches: ['packing cubes', 'travel pillow', 'toiletry bag', 'backpack'] },
+  Kids: { slug: 'kids', title: 'Kids & Toys', blurb: 'Toys and small gifts for little ones.', searches: ['kids toy', 'baby gift', 'building blocks', 'puzzle'] }
 };
 
 const WINNING_SEARCHES = Object.entries(STORE_DEPARTMENTS).flatMap(([category, dept]) => (
@@ -300,6 +300,22 @@ function productHandle(zendropId) {
   return id ? `p-${id}` : null;
 }
 
+function categoryFilterIsTrusted(categoryProducts, baselineProducts) {
+  const baseline = new Set((baselineProducts || []).map((product) => String(product && (product.id || product.zendrop_id) || '')));
+  const seen = new Set();
+  let unique = 0;
+  let overlap = 0;
+  (categoryProducts || []).forEach((product) => {
+    const id = String(product && (product.id || product.zendrop_id) || '');
+    if (!id || seen.has(id)) return;
+    seen.add(id);
+    unique += 1;
+    if (baseline.has(id)) overlap += 1;
+  });
+  if (unique < 8) return false;
+  return overlap / unique < 0.45;
+}
+
 function productSharePath(product) {
   if (!product) return null;
   const handle = product.handle || productHandle(product.zendrop_id || product.id);
@@ -346,6 +362,7 @@ module.exports = {
   classifyProduct,
   flattenCategories,
   categoriesForDepartment,
+  categoryFilterIsTrusted,
   normalizeProduct,
   productSharePath,
   summarizeLane,

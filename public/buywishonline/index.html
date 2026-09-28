@@ -7,8 +7,8 @@
   <link rel="icon" href="/buywishonline/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/buywishonline/apple-touch-icon.png">
   <title>BuyWishOnline™ — Premium Global Shopping | Smart Tech, Home & Lifestyle</title>
-  <meta name="description" content="BuyWishOnline is the luxury shop from Shipping Wish LLC. Every piece is chosen because Zendrop can ship it to the USA, Canada, and the United Kingdom, with USA delivery quoted at 14 days or faster.">
-  <meta name="keywords" content="BuyWishOnline, luxury dropshipping, USA shipping, Canada shipping, UK shipping, Zendrop, Shipping Wish LLC">
+  <meta name="description" content="BuyWishOnline is the shop from Shipping Wish LLC. Curated products with delivery to the USA, Canada, and the United Kingdom.">
+  <meta name="keywords" content="BuyWishOnline, USA shipping, Canada shipping, UK shipping, Shipping Wish LLC">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://www.buywishonline.com/">
 
@@ -878,19 +878,40 @@
     .btn-add-cart:hover { background: var(--accent); transform: translateY(-1px); }
 
     .collection-banner {
-      max-width: 1280px;
-      margin: 8px auto 0;
-      padding: 8px 24px 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+      color: #fff;
+      margin: 0 0 8px;
+      padding: 42px 24px 34px;
     }
-    .collection-banner h1 { font-size: 34px; letter-spacing: -0.03em; line-height: 1.1; }
-    .collection-banner p { color: var(--text-muted); max-width: 640px; }
+    .collection-banner-inner { max-width: 1280px; margin: 0 auto; }
+    .collection-kicker {
+      margin: 0 0 8px;
+      color: #f5a623;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .collection-banner h1 {
+      margin: 0 0 8px;
+      color: #fff;
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    .collection-banner p { margin: 0; color: rgba(255,255,255,0.82); font-size: 16px; max-width: 640px; }
+    .collection-banner .collection-kicker { color: #f5a623; font-size: 12px; letter-spacing: 0.14em; }
     body.is-collection .hero,
+    body.is-collection .home-categories,
     body.is-collection .cat-showcase,
     body.is-collection .trust-bar,
-    body.is-collection .new-arrivals-section { display: none; }
+    body.is-collection .new-arrivals-section,
+    body.is-collection #catalogSection .section-head { display: none; }
+    body.is-collection #catalogSection { padding-top: 28px; }
     @media (max-width: 640px) {
-      .collection-banner { padding: 4px 16px 0; }
-      .collection-banner h1 { font-size: 28px; }
+      .collection-banner { padding: 28px 16px 24px; }
+      .collection-banner h1 { font-size: 30px; }
       .hero-actions .btn-primary, .hero-actions .btn-outline-white { width: 100%; justify-content: center; }
       .section { padding-left: 16px; padding-right: 16px; }
       .products-grid {
@@ -1792,7 +1813,7 @@
 <!-- Mobile Search Bar Strip -->
 <div class="mobile-search-strip">
   <div class="search-bar" role="search">
-    <input type="search" placeholder="Search 1,200+ products..." id="mobileSearchInput" aria-label="Search products" oninput="handleSearch(this.value)">
+    <input type="search" placeholder="Search products..." id="mobileSearchInput" aria-label="Search products" oninput="handleSearch(this.value)">
     <button aria-label="Search" onclick="handleSearch(document.getElementById('mobileSearchInput').value)">🔍</button>
   </div>
 </div>
@@ -1820,7 +1841,7 @@
       Premium Products,<br>
       <span class="accent-word">Delivered Worldwide</span>
     </h1>
-    <p class="hero-sub">Thousands of curated, top-rated products — shipped fast to USA, UK, Canada & Europe. Satisfaction guaranteed on every order.</p>
+    <p class="hero-sub">Curated products, shipped to the USA, UK, Canada, and Europe. Satisfaction guaranteed on every order.</p>
     <div class="hero-actions">
       <button class="btn-primary" onclick="document.getElementById('catalogSection').scrollIntoView({behavior:'smooth'})">
         Shop Now →
@@ -1831,7 +1852,7 @@
     </div>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-num" id="statProducts">1,200+</div>
+        <div class="hero-stat-num" id="statProducts">New</div>
         <div class="hero-stat-label">Products</div>
       </div>
       <div class="hero-stat">
@@ -1921,7 +1942,7 @@
 </div>
 
 <!-- Category Showcase -->
-<section class="section" aria-label="Shop by category">
+<section class="section home-categories" aria-label="Shop by category">
   <div class="section-head">
     <div>
       <div class="section-title">Shop by Category</div>
@@ -1932,40 +1953,42 @@
     <a class="cat-showcase-item" href="/collections/tech">
       <div class="cat-showcase-icon">💻</div>
       <div class="cat-showcase-name">Tech & Gadgets</div>
-      <div class="cat-showcase-count">240+ products</div>
+      <div class="cat-showcase-count">Shop the collection</div>
     </a>
     <a class="cat-showcase-item" href="/collections/home">
       <div class="cat-showcase-icon">🏠</div>
       <div class="cat-showcase-name">Home & Living</div>
-      <div class="cat-showcase-count">380+ products</div>
+      <div class="cat-showcase-count">Shop the collection</div>
     </a>
     <a class="cat-showcase-item" href="/collections/fitness">
       <div class="cat-showcase-icon">🏃</div>
       <div class="cat-showcase-name">Fitness</div>
-      <div class="cat-showcase-count">180+ products</div>
+      <div class="cat-showcase-count">Shop the collection</div>
     </a>
     <a class="cat-showcase-item" href="/collections/beauty">
       <div class="cat-showcase-icon">✨</div>
       <div class="cat-showcase-name">Beauty</div>
-      <div class="cat-showcase-count">210+ products</div>
+      <div class="cat-showcase-count">Shop the collection</div>
     </a>
     <a class="cat-showcase-item" href="/collections/kitchen">
       <div class="cat-showcase-icon">🍳</div>
       <div class="cat-showcase-name">Kitchen</div>
-      <div class="cat-showcase-count">150+ products</div>
+      <div class="cat-showcase-count">Shop the collection</div>
     </a>
     <a class="cat-showcase-item" href="/collections/pets">
       <div class="cat-showcase-icon">🐾</div>
       <div class="cat-showcase-name">Pets</div>
-      <div class="cat-showcase-count">120+ products</div>
+      <div class="cat-showcase-count">Shop the collection</div>
     </a>
   </div>
 </section>
 
 <div class="collection-banner" id="collectionBanner" hidden>
-  <p>BuyWishOnline</p>
-  <h1 id="collectionHeading">All Products</h1>
-  <p id="collectionCopy">Live products from the Zendrop catalog.</p>
+  <div class="collection-banner-inner">
+    <p class="collection-kicker">BuyWishOnline</p>
+    <h1 id="collectionHeading">All Products</h1>
+    <p id="collectionCopy">The full BuyWishOnline shop, in one place.</p>
+  </div>
 </div>
 
 <!-- Featured Products -->
@@ -2524,11 +2547,11 @@ function renderProductCard(p) {
 
 function renderProducts() {
   const grid = document.getElementById('productsGrid');
-  const toShow = filteredProducts.slice(0, 48);
+  const toShow = filteredProducts.slice(0, 96);
   if (!toShow.length) {
     const note = window.BUYWISH_COLLECTION
-      ? 'No products matched this category yet. Each department only shows its own Zendrop products.'
-      : 'Products are loading from Zendrop. If this stays empty, refresh the page.';
+      ? 'This collection is being stocked. Please check another category or refresh in a moment.'
+      : 'Products are loading. If this stays empty, refresh the page.';
     grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);font-size:15px;">${note}</div>`;
     return;
   }
@@ -3159,7 +3182,7 @@ async function trackOrder() {
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;text-transform:uppercase;">${o.fulfillment_status}</span>
           </div>
           <div style="font-size:13px;color:var(--text-muted);">Carrier Tracking: <strong style="color:var(--text);">${o.supplier_tracking_number || 'Preparing for dispatch'}</strong></div>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Shipping via: <strong style="color:var(--text);">${o.supplier || 'Express Courier'}</strong></div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Shipping via: <strong style="color:var(--text);">${(o.supplier && !/zendrop/i.test(o.supplier)) ? o.supplier : 'Express Courier'}</strong></div>
         </div>`;
     } else {
       resultEl.innerHTML = `<div style="background:#fef2f2;border-radius:12px;padding:16px;color:#dc2626;font-size:13.5px;font-weight:600;">${data.error || 'Order not found. Please check your order number.'}</div>`;
@@ -3208,12 +3231,12 @@ function applyCollectionChrome() {
   const title = document.getElementById('catalogTitle');
   const sub = document.getElementById('catalogSub');
   if (heading) heading.textContent = dept.title || 'Products';
-  if (title) title.textContent = dept.title || 'Products';
-  const blurb = dept.category === 'all'
-    ? 'Every product on this page is loaded from the Zendrop catalog.'
-    : 'These products are loaded from Zendrop for this category.';
+  const blurb = dept.blurb || (dept.category === 'all'
+    ? 'The full BuyWishOnline shop, in one place.'
+    : 'Shop this collection. Ships to the USA, Canada, and the UK.');
   if (copy) copy.textContent = blurb;
-  if (sub) sub.textContent = blurb;
+  if (title) title.textContent = 'Trending Now';
+  if (sub) sub.textContent = 'Hand-picked bestsellers — updated daily';
   document.querySelectorAll('[data-dept]').forEach((el) => {
     el.classList.toggle('active', el.getAttribute('data-dept') === dept.slug);
   });
@@ -3226,7 +3249,7 @@ async function loadProducts() {
     ? `&category=${encodeURIComponent(dept.category)}`
     : '';
   try {
-    const res = await fetch(`/api/buywish/products?limit=48&source=live${categoryQuery}`, { signal: AbortSignal.timeout(14000) });
+    const res = await fetch(`/api/buywish/products?limit=96&source=live${categoryQuery}`, { signal: AbortSignal.timeout(20000) });
     const data = await res.json();
     if (data.ok && data.products && data.products.length) {
       allProducts = data.products.map(p => ({
