@@ -118,7 +118,10 @@ function injectProductIntoStorefront(html, product) {
   page = page.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${esc(shareUrl)}">`);
   page = page.replace(/<meta property="og:type" content="website">/, '<meta property="og:type" content="product">');
   if (image) page = page.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${esc(image)}">`);
-  page = page.replace('</head>', `<script type="application/ld+json">${jsonLd}</script>\n</head>`);
+  const price = money(product.retail_price);
+  const retailerId = String(product.zendrop_id || product.id || handle);
+  const availability = product.in_stock === false ? 'out of stock' : 'in stock';
+  page = page.replace('</head>', `  <meta property="product:retailer_item_id" content="${esc(retailerId)}">\n  <meta property="product:price:amount" content="${esc(price)}">\n  <meta property="product:price:currency" content="USD">\n  <meta property="product:availability" content="${availability}">\n<script type="application/ld+json">${jsonLd}</script>\n</head>`);
   return page;
 }
 
