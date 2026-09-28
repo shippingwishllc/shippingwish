@@ -639,3 +639,31 @@ body.limo-menu-open { overflow: hidden; }
 }
 .limo-svc-stats strong { display: block; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--limo-gold); margin-bottom: 6px; }
 .limo-svc-stats span { color: var(--limo-white); font-size: 0.95rem; font-weight: 600; }
+
+/* NYC Limo Wish sign-in. Separate from the Shipping Wish carrier portal. */
+.limo-auth { min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr; background: var(--limo-black); color: var(--limo-white); }
+.limo-auth-brand { padding: 48px 56px; display: flex; flex-direction: column; justify-content: center; background:
+  radial-gradient(ellipse 70% 50% at 20% 10%, rgba(201,162,39,0.16), transparent 60%), var(--limo-black); }
+.limo-auth-brand h1 { font-family: var(--font-serif); font-size: clamp(2.4rem, 4vw, 3.6rem); font-weight: 600; line-height: 1.05; margin: 28px 0 16px; }
+.limo-auth-brand p { color: var(--limo-gray-light); max-width: 460px; margin-bottom: 24px; }
+.limo-auth-brand ul { list-style: none; display: grid; gap: 10px; color: var(--limo-gray-light); font-size: 0.95rem; }
+.limo-auth-brand li::before { content: '◆ '; color: var(--limo-gold); }
+.limo-auth-panel { background: #fff; color: var(--limo-black); display: flex; align-items: center; justify-content: center; padding: 40px 28px; }
+.limo-auth-card { width: min(440px, 100%); }
+.limo-auth-card h2 { font-size: 1.7rem; font-weight: 800; margin-bottom: 6px; }
+.limo-auth-lead { color: #666; margin-bottom: 18px; }
+.limo-auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.limo-auth-tab { border: 1px solid #e6e6e6; background: #fafafa; color: #333; border-radius: 12px; padding: 10px 8px; font: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+.limo-auth-tab.active { background: #111; color: var(--limo-gold); border-color: #111; }
+.limo-auth-note { font-size: 0.85rem; color: #555; min-height: 2.6em; margin-bottom: 12px; }
+.limo-auth-alert { display: none; padding: 12px; border-radius: 8px; margin-bottom: 14px; background: #fee; color: #9b1c1c; font-size: 0.85rem; }
+.limo-auth-alert.show { display: block; }
+.limo-auth-foot { text-align: center; margin-top: 16px; font-size: 0.85rem; color: #666; }
+.limo-auth-home { display: inline-block; margin-top: 22px; color: #888; font-size: 0.85rem; }
+@media (max-width: 860px) {
+  .limo-auth { grid-template-columns: 1fr; }
+  .limo-auth-brand { padding: 28px 22px 10px; }
+  .limo-auth-brand h1 { font-size: 2.2rem; margin-top: 16px; }
+  .limo-auth-brand ul { display: none; }
+  .limo-auth-panel { padding: 22px 18px 36px; align-items: flex-start; }
+}

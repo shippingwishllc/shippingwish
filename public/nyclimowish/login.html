@@ -3,44 +3,131 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login | NYC Limo Wish</title>
+  <title>Sign in | NYC Limo Wish</title>
+  <meta name="robots" content="noindex">
   <link rel="icon" href="/nyclimowish/favicon.ico" sizes="32x32">
   <link rel="icon" href="/nyclimowish/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/nyclimowish/apple-touch-icon.png">
   <link rel="stylesheet" href="/css/limo.css">
 </head>
-<body class="limo-light" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
-  <div class="limo-widget" style="max-width:420px;width:100%;background:#fff;border-color:#eee;color:#000;">
-    <h1 style="text-align:center;font-size:1.5rem;font-weight:800;margin-bottom:8px;">Login</h1>
-    <p style="text-align:center;color:#666;font-size:0.9rem;margin-bottom:24px;">Book and manage your premium rides</p>
-    <div id="alert" style="display:none;padding:12px;border-radius:8px;margin-bottom:16px;background:#fee;color:#c00;font-size:0.85rem;"></div>
-    <form id="login-form">
-      <div class="limo-field"><label>Email</label><input class="limo-input" type="email" id="email" required style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
-      <div class="limo-field"><label>Password</label><input class="limo-input" type="password" id="password" required style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
-      <button type="submit" class="limo-btn limo-btn-dark limo-btn-block">Login</button>
-    </form>
-    <p style="text-align:center;margin-top:16px;font-size:0.85rem;color:#666;">No account? <a href="/signup">Create one</a></p>
-  </div>
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const res = await fetch('/api/nyclimo/login', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        const el = document.getElementById('alert');
-        el.textContent = data.error || 'Login failed';
-        el.style.display = 'block';
-        return;
-      }
-      const role = data.user.role;
-      const home = role === 'admin' || role === 'dispatcher' ? '/erp' : (role === 'partner_dispatcher' ? '/partner' : (role === 'driver' ? '/driver' : '/passenger'));
-      window.location.href = params.get('redirect') || home;
+<body class="limo">
+<div class="limo-auth">
+  <aside class="limo-auth-brand">
+    <a href="/" class="limo-logo">NYC <span>LIMO</span> WISH</a>
+    <h1>Your ride account lives here.</h1>
+    <p>Customers, drivers, licensed operators, and NYC Limo Wish dispatch each sign in on this page. Shipping Wish accounts stay on shippingwish.com.</p>
+    <ul>
+      <li>Customers track and rebook rides</li>
+      <li>Drivers open assigned trips</li>
+      <li>Operators accept rides for their base</li>
+      <li>Staff run the limo dispatch desk</li>
+    </ul>
+  </aside>
+  <main class="limo-auth-panel">
+    <div class="limo-auth-card">
+      <h2>Sign in</h2>
+      <p class="limo-auth-lead">Choose the NYC Limo Wish portal for this account.</p>
+      <div class="limo-auth-tabs" role="tablist" aria-label="Account type">
+        <button type="button" class="limo-auth-tab active" data-portal="customer" role="tab" aria-selected="true">Customer</button>
+        <button type="button" class="limo-auth-tab" data-portal="driver" role="tab" aria-selected="false">Driver</button>
+        <button type="button" class="limo-auth-tab" data-portal="operator" role="tab" aria-selected="false">Operator</button>
+        <button type="button" class="limo-auth-tab" data-portal="staff" role="tab" aria-selected="false">Staff</button>
+      </div>
+      <p class="limo-auth-note" id="portal-note">Booked rides, receipts, and trip tracking.</p>
+      <div id="alert" class="limo-auth-alert" role="alert"></div>
+      <form id="login-form">
+        <div class="limo-field"><label>Email</label><input class="limo-input" type="email" id="email" autocomplete="username" required style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+        <div class="limo-field"><label>Password</label><input class="limo-input" type="password" id="password" autocomplete="current-password" required style="background:#f9f9f9;color:#000;border-color:#ddd;padding-left:16px;"></div>
+        <button type="submit" class="limo-btn limo-btn-dark limo-btn-block" id="submit">Sign in</button>
+      </form>
+      <p class="limo-auth-foot" id="customer-extra">No account? <a href="/signup">Create a customer account</a></p>
+      <p class="limo-auth-foot" id="issued-note" hidden>Driver, operator, and staff logins are issued by NYC Limo Wish.</p>
+      <a class="limo-auth-home" href="/">← Back to NYC Limo Wish</a>
+    </div>
+  </main>
+</div>
+<script>
+(function () {
+  const PORTALS = {
+    customer: { roles: ['customer'], home: '/passenger', note: 'Booked rides, receipts, and trip tracking.' },
+    driver: { roles: ['driver'], home: '/driver', note: 'Trips assigned to you as a NYC Limo Wish driver.' },
+    operator: { roles: ['partner_dispatcher'], home: '/partner', note: 'Licensed bases accept or decline ride offers here.' },
+    staff: { roles: ['admin', 'dispatcher'], home: '/erp', note: 'Dispatch desk for NYC Limo Wish. Shipping Wish staff do not use this login.' }
+  };
+  const params = new URLSearchParams(window.location.search);
+  let selected = 'customer';
+
+  function safeNext(value) {
+    if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\') || value.includes('://')) return '';
+    return value;
+  }
+
+  function portalForRole(role) {
+    return Object.keys(PORTALS).find((key) => PORTALS[key].roles.includes(role)) || 'customer';
+  }
+
+  function showAlert(message) {
+    const el = document.getElementById('alert');
+    el.textContent = message || '';
+    el.classList.toggle('show', Boolean(message));
+  }
+
+  function selectPortal(key) {
+    selected = PORTALS[key] ? key : 'customer';
+    document.querySelectorAll('.limo-auth-tab').forEach((tab) => {
+      const on = tab.dataset.portal === selected;
+      tab.classList.toggle('active', on);
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
     });
-  </script>
+    document.getElementById('portal-note').textContent = PORTALS[selected].note;
+    document.getElementById('customer-extra').hidden = selected !== 'customer';
+    document.getElementById('issued-note').hidden = selected === 'customer';
+    showAlert('');
+  }
+
+  document.querySelectorAll('.limo-auth-tab').forEach((tab) => {
+    tab.addEventListener('click', () => selectPortal(tab.dataset.portal));
+  });
+
+  const redirect = safeNext(params.get('redirect'));
+  if (redirect.startsWith('/driver')) selectPortal('driver');
+  else if (redirect.startsWith('/partner')) selectPortal('operator');
+  else if (redirect.startsWith('/erp')) selectPortal('staff');
+  else selectPortal('customer');
+
+  document.getElementById('login-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = document.getElementById('submit');
+    button.disabled = true;
+    button.textContent = 'Signing in...';
+    showAlert('');
+    try {
+      const res = await fetch('/api/nyclimo/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+      const actual = portalForRole(data.user && data.user.role);
+      const home = PORTALS[actual].home;
+      if (actual !== selected) {
+        showAlert('This email opens the ' + actual + ' portal.');
+        selectPortal(actual);
+      }
+      const next = redirect && (redirect === home || redirect.startsWith(home + '/')) ? redirect : home;
+      window.location.href = next;
+    } catch (err) {
+      showAlert(err.message || 'Login failed');
+      button.disabled = false;
+      button.textContent = 'Sign in';
+    }
+  });
+})();
+</script>
 </body>
 </html>
