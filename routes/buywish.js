@@ -16,6 +16,10 @@ const {
   TARGET_COUNTRIES,
   WINNING_SEARCHES,
   departmentByQuery,
+  classifyProduct,
+  flattenCategories,
+  categoriesForDepartment,
+  DEPARTMENT_ZENDROP_CATEGORIES,
   normalizeProduct,
   summarizeLane,
   scoreProduct,
@@ -184,24 +188,75 @@ async function listSyncedProducts({ category, search, limit, page }) {
   };
 }
 
+async function loadZendropCategories() {
+  const cached = getCache('zendrop_category_flat');
+  if (cached) return cached;
+  try {
+    const data = await zendropCall('get_catalog_categories', {}, { timeoutMs: 8000 });
+    const flat = flattenCategories(data);
+    if (flat.length) setCache('zendrop_category_flat', flat, 60 * 60 * 1000);
+    return flat;
+  } catch (err) {
+    return [];
+  }
+}
+
+async function fetchCatalogSlice(tool, args) {
+  try {
+    const data = await zendropCall(tool, args, { timeoutMs: 6000 });
+    return (data && data.products) || [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function rememberDepartmentProduct(byId, raw, departmentKey, searchText) {
+  const normalized = normalizeProduct(raw);
+  if (!normalized.id || byId.has(String(normalized.id))) return;
+  const classified = classifyProduct(normalized);
+  if (!classified || classified.key !== departmentKey) return;
+  if (searchText) {
+    const hay = `${normalized.title} ${normalized.description}`.toLowerCase();
+    if (!hay.includes(searchText)) return;
+  }
+  normalized.category = departmentKey;
+  byId.set(String(normalized.id), normalized);
+}
+
 async function fetchDepartmentProducts(department, { search, limit, page }) {
   const byId = new Map();
-  const queries = search && String(search).trim()
-    ? [String(search).trim()]
-    : department.searches;
-  await Promise.all(queries.map(async (q) => {
-    try {
-      const data = await zendropCall('get_catalog_products', { search: q, limit: 16 }, { timeoutMs: 8000 });
-      (data.products || []).forEach((product) => {
-        const normalized = normalizeProduct(product);
-        if (!normalized.id || byId.has(String(normalized.id))) return;
-        normalized.category = department.key;
-        byId.set(String(normalized.id), normalized);
-      });
-    } catch (err) {
-      // One Zendrop search can fail without emptying the department page.
-    }
+  const searchText = search && String(search).trim() ? String(search).trim().toLowerCase() : '';
+  const labels = DEPARTMENT_ZENDROP_CATEGORIES[department.key] || [];
+  const jobs = [];
+
+  labels.slice(0, 3).forEach((label) => {
+    jobs.push(fetchCatalogSlice('get_catalog_trending_products', { limit: 24, filters: { category: label } }));
+    jobs.push(fetchCatalogSlice('get_catalog_products', { limit: 24, filters: { category: label } }));
+    jobs.push(fetchCatalogSlice('get_catalog_products', { limit: 24, category: label }));
+  });
+  const queries = searchText ? [searchText] : department.searches;
+  queries.forEach((q) => {
+    const args = { limit: 16, search: q };
+    if (labels[0]) args.filters = { category: labels[0] };
+    jobs.push(fetchCatalogSlice('get_catalog_products', args));
+  });
+  jobs.push(Promise.race([
+    loadZendropCategories(),
+    new Promise((resolve) => setTimeout(() => resolve([]), 2500))
+  ]).then(async (flat) => {
+    const idJobs = categoriesForDepartment(flat, department.key).slice(0, 3).map((cat) => {
+      const categoryId = Number(cat.id);
+      if (!Number.isFinite(categoryId)) return Promise.resolve([]);
+      return fetchCatalogSlice('get_catalog_products', { limit: 24, category_id: categoryId });
+    });
+    return (await Promise.all(idJobs)).flat();
   }));
+
+  const batches = await Promise.all(jobs);
+  batches.forEach((products) => {
+    products.forEach((product) => rememberDepartmentProduct(byId, product, department.key, searchText));
+  });
+
   const products = [...byId.values()];
   const perPage = Math.min(Math.max(parseInt(limit, 10) || 24, 1), 48);
   const pageNum = Math.max(parseInt(page, 10) || 1, 1);
@@ -212,6 +267,24 @@ async function fetchDepartmentProducts(department, { search, limit, page }) {
     page: pageNum,
     per_page: perPage
   };
+}
+
+function parseProductKey(key) {
+  const raw = String(key || '').trim();
+  const prefixed = raw.match(/^p-(\d+)$/i);
+  if (prefixed) return prefixed[1];
+  if (/^\d+$/.test(raw)) return raw;
+  return null;
+}
+
+async function loadLiveProductByKey(key) {
+  const id = parseProductKey(key);
+  if (!id) return null;
+  const data = await zendropCall('get_catalog_product', { product_id: Number(id) }, { timeoutMs: 8000 });
+  const raw = data && data.product && (data.product.id || data.product.name) ? data.product : data;
+  const product = raw && (raw.id || raw.name) ? normalizeProduct(raw) : null;
+  if (!product || !product.id) return null;
+  return product;
 }
 
 // ============================================================
@@ -1518,4 +1591,5 @@ router.handleBuyWishWebhook = handleBuyWishWebhook;
 module.exports = router;
 module.exports.handleBuyWishWebhook = handleBuyWishWebhook;
 module.exports.applyCheckoutEvent = applyCheckoutEvent;
+module.exports.loadLiveProductByKey = loadLiveProductByKey;
 

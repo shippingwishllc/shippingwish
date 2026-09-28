@@ -80,6 +80,48 @@ function foot() {
 </body></html>`;
 }
 
+function injectProductIntoStorefront(html, product) {
+  const handle = product.handle || `p-${product.zendrop_id || product.id}`;
+  const shareUrl = `https://www.buywishonline.com/products/${handle}`;
+  const description = String(product.description || `${product.title} from BuyWishOnline.`).replace(/\s+/g, ' ').slice(0, 160);
+  const image = product.image_url || (product.images && product.images[0]) || '';
+  const boot = JSON.stringify({
+    id: product.id,
+    handle,
+    title: product.title,
+    category: product.category,
+    shareUrl
+  }).replace(/</g, '\\u003c');
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: product.description || product.title,
+    image: image || undefined,
+    sku: String(product.zendrop_id || handle),
+    brand: { '@type': 'Brand', name: 'BuyWishOnline' },
+    offers: {
+      '@type': 'Offer',
+      url: shareUrl,
+      priceCurrency: 'USD',
+      price: product.retail_price,
+      availability: product.in_stock === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock'
+    }
+  }).replace(/</g, '\\u003c');
+  let page = String(html || '');
+  page = page.replace('<head>', `<head>\n  <script>window.BUYWISH_PRODUCT=${boot};</script>`);
+  page = page.replace(/<title>[^<]*<\/title>/, `<title>${esc(product.title)} | BuyWishOnline</title>`);
+  page = page.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(description)}">`);
+  page = page.replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${esc(shareUrl)}">`);
+  page = page.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${esc(product.title)}">`);
+  page = page.replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${esc(description)}">`);
+  page = page.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${esc(shareUrl)}">`);
+  page = page.replace(/<meta property="og:type" content="website">/, '<meta property="og:type" content="product">');
+  if (image) page = page.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${esc(image)}">`);
+  page = page.replace('</head>', `<script type="application/ld+json">${jsonLd}</script>\n</head>`);
+  return page;
+}
+
 function renderProductPage(product) {
   const canonical = `https://www.buywishonline.com/products/${product.handle}`;
   const description = (product.description || `${product.title} from BuyWishOnline.`).slice(0, 160);
@@ -119,6 +161,7 @@ function renderProductPage(product) {
       <p>${esc(product.delivery || 'Shipping time is confirmed for USA, Canada, and the United Kingdom before this piece is stocked.')}</p>
       <p>${esc(product.description || '')}</p>
       ${(product.features || []).length ? `<ul>${product.features.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+      <p>Share this product: <a href="${esc(canonical)}">${esc(canonical)}</a></p>
       <p><a class="btn" href="/?product=${encodeURIComponent(product.id)}">Add to bag</a></p>
     </div>
   </div>
@@ -161,4 +204,4 @@ ${body}
 </urlset>`;
 }
 
-module.exports = { esc, renderProductPage, renderCollectionPage, renderSitemap };
+module.exports = { esc, renderProductPage, renderCollectionPage, renderSitemap, injectProductIntoStorefront };
