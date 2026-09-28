@@ -361,6 +361,7 @@ router.all('/twilio-inbound', async (req, res) => {
 
     if (isStopKeyword(body)) {
       await addSmsOptOut(from, 'STOP');
+      await require('../utils/dispatch-brain').optOutPhone(from).catch((e) => console.warn('[AI DISPATCH] opt-out:', e.message));
       disposition = 'opt_out';
       reply = stopConfirmReply();
     } else if (isStartKeyword(body)) {
@@ -379,9 +380,19 @@ router.all('/twilio-inbound', async (req, res) => {
       disposition = 'help';
       reply = helpReply();
     } else {
+      let deskResult = null;
+      try {
+        deskResult = await require('../utils/dispatch-brain').handleCarrierSms(from, body);
+      } catch (err) {
+        console.warn('[AI DISPATCH] inbound SMS:', err.message);
+      }
+      if (deskResult) {
+        reply = deskResult.reply;
+        disposition = 'ai_dispatch';
+      }
       const textBody = String(body).trim();
-      const yesMatch = textBody.match(/^(yes|ok|accept)\s*(\d+)?$/i);
-      let offerApproved = null;
+      const yesMatch = !deskResult && textBody.match(/^(yes|ok|accept)\s*(\d+)?$/i);
+      let offerApproved = deskResult ? true : null;
 
       if (yesMatch) {
         const offerId = yesMatch[2] ? parseInt(yesMatch[2], 10) : null;

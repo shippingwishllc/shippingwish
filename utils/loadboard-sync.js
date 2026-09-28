@@ -27,7 +27,18 @@ function isPrivateIp(host) {
   return a === 10 || a === 127 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31) || (a === 169 && b === 254) || a === 0;
 }
 
-async function ensureBoardSchema() {
+let boardSchemaPromise = null;
+function ensureBoardSchema() {
+  if (!boardSchemaPromise) {
+    boardSchemaPromise = createBoardSchema().catch((err) => {
+      boardSchemaPromise = null;
+      throw err;
+    });
+  }
+  return boardSchemaPromise;
+}
+
+async function createBoardSchema() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS loadboard_api_sources (
       id SERIAL PRIMARY KEY,
@@ -57,10 +68,55 @@ async function ensureBoardSchema() {
     );
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS sms_consent BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS sms_consent_at TIMESTAMPTZ;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS mc_number TEXT;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS dot_number TEXT;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS min_rpm NUMERIC(6,2);
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS max_deadhead INTEGER NOT NULL DEFAULT 150;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS home_state TEXT;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS avoid_states TEXT;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS last_location TEXT;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS off_until TIMESTAMPTZ;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS last_inbound_at TIMESTAMPTZ;
     ALTER TABLE loads ADD COLUMN IF NOT EXISTS source_type TEXT;
     ALTER TABLE loads ADD COLUMN IF NOT EXISTS source_id INTEGER;
     ALTER TABLE loads ADD COLUMN IF NOT EXISTS external_id TEXT;
+    CREATE TABLE IF NOT EXISTS ai_dispatch_offers (
+      id SERIAL PRIMARY KEY,
+      carrier_id INTEGER NOT NULL REFERENCES ai_dispatch_carriers(id) ON DELETE CASCADE,
+      load_id INTEGER NOT NULL,
+      batch TEXT NOT NULL,
+      slot INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'offered',
+      origin_label TEXT,
+      deadhead_miles INTEGER,
+      loaded_miles INTEGER,
+      miles_estimated BOOLEAN NOT NULL DEFAULT FALSE,
+      all_in_rpm NUMERIC(6,2),
+      score NUMERIC(10,2),
+      broker_email TEXT,
+      broker_reply TEXT,
+      note TEXT,
+      expires_at TIMESTAMPTZ NOT NULL,
+      requested_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS ai_dispatch_offers_carrier_idx ON ai_dispatch_offers (carrier_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS ai_dispatch_offers_load_idx ON ai_dispatch_offers (load_id, status);
+    CREATE TABLE IF NOT EXISTS ai_dispatch_messages (
+      id SERIAL PRIMARY KEY,
+      carrier_id INTEGER NOT NULL REFERENCES ai_dispatch_carriers(id) ON DELETE CASCADE,
+      direction TEXT NOT NULL,
+      body TEXT NOT NULL,
+      intent TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS ai_dispatch_messages_carrier_idx ON ai_dispatch_messages (carrier_id, created_at DESC);
   `);
+  // ADD VALUE can't share a transaction with other statements, so each runs on its own.
+  for (const value of ['covered', 'expired']) {
+    await pool.query(`ALTER TYPE load_status ADD VALUE IF NOT EXISTS '${value}'`).catch(() => {});
+  }
 }
 
 function recognizedLoads(payload) {
