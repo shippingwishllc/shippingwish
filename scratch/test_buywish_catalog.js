@@ -1,5 +1,9 @@
 const assert = require('assert');
 const {
+  classifyProduct,
+  flattenCategories,
+  categoriesForDepartment,
+  productSharePath,
   departmentBySlug,
   summarizeLane,
   scoreProduct,
@@ -15,7 +19,7 @@ const {
   buildOrderArguments,
   extractOrderId
 } = require('../utils/buywish-fulfillment');
-const { renderProductPage, renderSitemap } = require('../utils/buywish-pages');
+const { renderProductPage, renderSitemap, injectProductIntoStorefront } = require('../utils/buywish-pages');
 
 const fastLane = summarizeLane({
   shipping_estimates: [{ type: 'Express', cost: 4.5, estimated_days: 6 }]
@@ -53,8 +57,25 @@ const product = normalizeProduct({
   is_trending: true
 });
 assert.strictEqual(product.category, 'Tech');
+assert.strictEqual(product.handle, 'p-42');
+assert.strictEqual(product.product_url, 'https://www.buywishonline.com/products/p-42');
+assert.strictEqual(productSharePath(product), '/products/p-42');
 assert.strictEqual(product.features[0], 'Charging case');
 assert.strictEqual(inferCategory('Dog collar'), 'Pets');
+assert.strictEqual(inferCategory('Kemei Rechargeable Electric Hair Clipper'), 'Beauty');
+assert.strictEqual(inferCategory('DIY Wooden Mechanical Owl Clock Model for Home Decor'), 'Home');
+assert.strictEqual(inferCategory('Foam Barbell Shoulder Pads for Weightlifting'), 'Fitness');
+assert.strictEqual(inferCategory('Paw Patrol Shampoo 8 oz Bottle'), 'Pets');
+assert.strictEqual(inferCategory('Men’s Premium Sunset Chaser Tank Top'), 'Featured');
+assert.strictEqual(classifyProduct({ title: 'Wireless earbuds', supplier_category: 'Apparel & Accessories' }).key, 'Tech');
+assert.strictEqual(classifyProduct({ title: 'Plain cotton tee', supplier_category: 'Apparel & Accessories' }), null);
+const tech = classifyProduct({ title: 'Bluetooth speaker' });
+const home = classifyProduct({ title: 'Throw blanket for the living room' });
+assert.notStrictEqual(tech.key, home.key);
+const flat = flattenCategories({
+  categories: [{ id: 7, name: 'Electronics', children: [{ id: 70, name: 'Audio' }] }, { id: 13, name: 'Home & Garden' }]
+});
+assert.strictEqual(categoriesForDepartment(flat, 'Tech')[0].name, 'Electronics');
 assert.strictEqual(productHandle(42), 'p-42');
 assert.strictEqual(departmentBySlug('tech').title, 'Tech & Gadgets');
 assert.strictEqual(departmentBySlug('nope'), null);
@@ -130,9 +151,19 @@ const html = renderProductPage({
 });
 assert.ok(html.includes('Earbuds &lt;gold&gt;'));
 assert.ok(html.includes('https://www.buywishonline.com/products/p-42'));
+assert.ok(html.includes('Share this product'));
 assert.ok(!html.includes('<gold>'));
 
 const xml = renderSitemap([{ loc: 'https://www.buywishonline.com/', priority: '1.0' }]);
 assert.ok(xml.includes('<loc>https://www.buywishonline.com/</loc>'));
+
+const storefront = injectProductIntoStorefront(
+  '<html><head><title>Old</title><meta name="description" content="old"><link rel="canonical" href="https://www.buywishonline.com/"><meta property="og:type" content="website"><meta property="og:url" content="https://www.buywishonline.com/"></head><body></body></html>',
+  { id: 42, handle: 'p-42', title: 'Earbuds', description: 'Quiet', retail_price: '19.00', category: 'Tech', image_url: 'https://example.com/a.jpg' }
+);
+assert.ok(storefront.includes('window.BUYWISH_PRODUCT='));
+assert.ok(storefront.includes('https://www.buywishonline.com/products/p-42'));
+assert.ok(storefront.includes('detailShareUrl') === false);
+assert.ok(storefront.includes('"shareUrl":"https://www.buywishonline.com/products/p-42"'));
 
 console.log('buywish catalog tests passed');

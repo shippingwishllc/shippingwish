@@ -9,10 +9,10 @@ const { buildTemplate, COMPANY } = require('./utils/email-templates');
 const { ensureGrowthSchema } = require('./utils/ensure-growth-schema');
 const { purgeExpiredTrash } = require('./utils/trash');
 const { webhookHandler } = require('./routes/billing');
-const { handleBuyWishWebhook } = require('./routes/buywish');
+const { handleBuyWishWebhook, loadLiveProductByKey } = require('./routes/buywish');
 const pool = require('./db');
-const { storeProductFromRow, departmentBySlug, STORE_DEPARTMENTS } = require('./utils/buywish-catalog');
-const { renderProductPage, renderCollectionPage, renderSitemap } = require('./utils/buywish-pages');
+const { storeProductFromRow, departmentBySlug, STORE_DEPARTMENTS, productHandle } = require('./utils/buywish-catalog');
+const { renderProductPage, renderCollectionPage, renderSitemap, injectProductIntoStorefront } = require('./utils/buywish-pages');
 const { handleStripeWebhook: handleNYCLimoStripeWebhook } = require('./routes/nyclimo');
 const { requireAuth } = require('./middleware/auth');
 const { requireCarrierSubscription } = require('./middleware/subscription');
@@ -157,15 +157,33 @@ async function loadBuyWishProducts(whereSql, params) {
 }
 
 async function sendBuyWishProduct(res, key) {
+  let product = null;
   try {
-    const rows = await loadBuyWishProducts('(handle = $1 OR zendrop_id = $1)', [key]);
-    const product = rows[0];
-    if (!product) return res.status(404).type('html').send(renderCollectionPage('Product', []));
+    const rows = await loadBuyWishProducts('(handle = $1 OR zendrop_id = $1 OR handle = $2)', [String(key), productHandle(String(key).replace(/^p-/i, ''))]);
+    product = rows[0] || null;
+  } catch (err) {
+    product = null;
+  }
+  if (!product) {
+    try {
+      product = await loadLiveProductByKey(key);
+    } catch (err) {
+      return res.status(503).type('html').send('The product catalog is temporarily unavailable.');
+    }
+  }
+  if (!product) return res.status(404).type('html').send(renderCollectionPage('Product', []));
+  try {
+    const indexPath = path.join(__dirname, 'public', 'buywishonline', 'index.html');
+    const html = injectProductIntoStorefront(fs.readFileSync(indexPath, 'utf8'), {
+      ...product,
+      handle: product.handle || productHandle(product.zendrop_id || product.id)
+    });
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=300');
-    return res.send(renderProductPage(product));
+    return res.send(html);
   } catch (err) {
-    return res.status(503).type('html').send('The product catalog is temporarily unavailable.');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(renderProductPage(product));
   }
 }
 

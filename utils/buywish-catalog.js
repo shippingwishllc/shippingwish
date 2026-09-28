@@ -8,14 +8,26 @@ const TARGET_COUNTRIES = ['US', 'CA', 'GB'];
 const FAST_USA_DAYS = 14;
 
 const CATEGORY_KEYWORDS = {
-  Tech: ['electronic', 'phone', 'laptop', 'gadget', 'usb', 'wireless', 'bluetooth', 'camera', 'speaker', 'headphone', 'charger', 'smart', 'tech', 'led', 'light', 'watch', 'tracker', 'earbud'],
-  Home: ['home', 'house', 'room', 'decor', 'organiz', 'storage', 'curtain', 'pillow', 'lamp', 'vacuum', 'clean', 'mop', 'air', 'candle'],
-  Fitness: ['fitness', 'exercise', 'gym', 'sport', 'yoga', 'weight', 'muscle', 'protein', 'resistance', 'band', 'run', 'pedometer', 'health'],
-  Beauty: ['beauty', 'skin', 'face', 'hair', 'nail', 'makeup', 'cream', 'serum', 'mask', 'lip', 'eye', 'glow', 'moistur', 'cleanser', 'lash'],
-  Kitchen: ['kitchen', 'cook', 'food', 'chef', 'knife', 'pot', 'pan', 'coffee', 'blender', 'grinder', 'bottle', 'cup', 'mug', 'plate', 'bake'],
-  Pets: ['pet', 'dog', 'cat', 'animal', 'paw', 'collar', 'leash', 'grooming', 'treat'],
-  Travel: ['travel', 'luggage', 'bag', 'backpack', 'passport', 'packing', 'suitcase'],
-  Kids: ['kid', 'kids', 'child', 'baby', 'toy', 'toddler']
+  Tech: ['electronic', 'phone', 'laptop', 'gadget', 'usb', 'wireless', 'bluetooth', 'camera', 'speaker', 'headphone', 'charger', 'smart', 'tech', 'led', 'light', 'watch', 'tracker', 'earbud', 'computer', 'tablet'],
+  Home: ['home', 'house', 'decor', 'organiz', 'storage', 'curtain', 'pillow', 'lamp', 'vacuum', 'clean', 'mop', 'candle', 'blanket', 'bedding'],
+  Fitness: ['fitness', 'exercise', 'gym', 'sport', 'yoga', 'weight', 'muscle', 'protein', 'resistance', 'band', 'pedometer', 'dumbbell', 'barbell', 'workout'],
+  Beauty: ['beauty', 'skin', 'face', 'hair', 'nail', 'makeup', 'cream', 'serum', 'mask', 'lip', 'lash', 'glow', 'moistur', 'cleanser', 'skincare', 'cosmetic'],
+  Kitchen: ['kitchen', 'cook', 'food', 'chef', 'knife', 'coffee', 'blender', 'grinder', 'plate', 'bake', 'cookware', 'utensil'],
+  Pets: ['pet', 'dog', 'cat', 'animal', 'paw', 'collar', 'leash', 'grooming', 'puppy', 'kitten'],
+  Travel: ['travel', 'luggage', 'bag', 'backpack', 'passport', 'packing', 'suitcase', 'toiletry'],
+  Kids: ['kid', 'child', 'baby', 'toy', 'toddler', 'puzzle', 'newborn']
+};
+
+// Official Zendrop catalog names. These are filters, not store labels.
+const DEPARTMENT_ZENDROP_CATEGORIES = {
+  Tech: ['Electronics', 'Audio', 'Computers', 'Electronics Accessories', 'Cameras & Optics', 'Cameras'],
+  Home: ['Home & Garden', 'Decor', 'Lighting', 'Linens & Bedding', 'Household Appliances', 'Furniture'],
+  Fitness: ['Sporting Goods', 'Fitness & General Exercise Equipment', 'Outdoor Recreation', 'Athletics'],
+  Beauty: ['Health & Beauty', 'Personal Care', 'Health Care'],
+  Kitchen: ['Kitchen & Dining'],
+  Pets: ['Animals & Pet Supplies', 'Pet Supplies'],
+  Travel: ['Luggage & Bags', 'Backpacks', 'Suitcases'],
+  Kids: ['Toys & Games', 'Baby & Toddler', 'Toys']
 };
 
 const STORE_DEPARTMENTS = {
@@ -50,19 +62,95 @@ function departmentByQuery(value) {
   return key ? { key, ...STORE_DEPARTMENTS[key] } : null;
 }
 
-function inferCategory(name, supplied) {
-  const given = String(supplied || '').trim();
-  if (given && !/^uncategor/i.test(given)) {
-    const lower = given.toLowerCase();
-    for (const cat of Object.keys(CATEGORY_KEYWORDS)) {
-      if (lower.includes(cat.toLowerCase())) return cat;
+function categoryName(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') return value.name || value.title || value.label || value.category_name || '';
+  return String(value);
+}
+
+function keywordScore(text, keywords) {
+  const hay = String(text || '').toLowerCase();
+  let score = 0;
+  keywords.forEach((kw) => {
+    const needle = String(kw || '').toLowerCase();
+    if (!needle) return;
+    const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Match at the start of a word so "air" does not hit "hair" and "sport" does not hit "transport".
+    if (new RegExp(`(?:^|[^a-z0-9])${escaped}`).test(hay)) score += needle.length;
+  });
+  return score;
+}
+
+function flattenCategories(payload) {
+  const out = [];
+  const seen = new Set();
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
     }
-  }
-  const hay = String(name || '').toLowerCase();
-  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    if (keywords.some((kw) => hay.includes(kw))) return cat;
-  }
-  return given || 'Featured';
+    const name = node.name || node.title || node.label || node.category_name;
+    const id = node.id != null ? node.id : node.category_id;
+    if (name && id != null) {
+      const key = String(id);
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push({ id, name: String(name) });
+      }
+    }
+    ['children', 'subcategories', 'categories', 'items'].forEach((key) => {
+      if (Array.isArray(node[key])) visit(node[key]);
+    });
+  };
+  if (payload && Array.isArray(payload.categories)) visit(payload.categories);
+  else visit(payload);
+  return out;
+}
+
+function categoriesForDepartment(flat, departmentKey) {
+  const hints = DEPARTMENT_ZENDROP_CATEGORIES[departmentKey] || [];
+  return (flat || [])
+    .map((cat) => {
+      const name = String(cat.name || '').toLowerCase();
+      const exact = hints.find((hint) => name === hint.toLowerCase());
+      const partial = hints.find((hint) => name.includes(hint.toLowerCase()));
+      if (!exact && !partial) return null;
+      return { id: cat.id, name: cat.name, rank: exact ? 0 : 1 };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 4);
+}
+
+function classifyProduct(product) {
+  const supplied = String((product && (product.supplier_category || product.category || product.category_name)) || '');
+  const suppliedLower = supplied.toLowerCase();
+  const text = `${(product && product.title) || ''} ${(product && product.description) || ''}`;
+  let best = null;
+  let bestScore = 0;
+  Object.keys(CATEGORY_KEYWORDS).forEach((key) => {
+    let score = keywordScore(text, CATEGORY_KEYWORDS[key]);
+    const hints = DEPARTMENT_ZENDROP_CATEGORIES[key] || [];
+    if (supplied && !/^uncategor/i.test(supplied) && hints.some((hint) => suppliedLower.includes(hint.toLowerCase()))) {
+      score += 12;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = key;
+    }
+  });
+  return bestScore > 0 ? { key: best, score: bestScore } : null;
+}
+
+function inferCategory(name, supplied) {
+  const found = classifyProduct({
+    title: name,
+    supplier_category: supplied && !/^uncategor/i.test(String(supplied)) ? supplied : ''
+  });
+  if (found) return found.key;
+  return 'Featured';
 }
 
 function stripHtml(value) {
@@ -100,12 +188,17 @@ function normalizeProduct(p) {
   else if (comparePrice) badge = 'sale';
 
   const supplierCost = parseFloat(p.cost || p.supplier_cost || p.base_price || 0);
+  const supplierCategory = categoryName(p.category || p.category_name || p.category_title);
+  const classified = classifyProduct({ title, description: cleanDesc, supplier_category: supplierCategory });
+  const handle = productHandle(p.id);
 
   return {
     id: p.id,
     zendrop_id: p.id,
+    handle,
     title,
-    category: inferCategory(title, p.category || p.category_name),
+    category: classified ? classified.key : 'Featured',
+    supplier_category: supplierCategory,
     retail_price: retailPrice.toFixed(2),
     compare_price: comparePrice,
     supplier_cost: Number.isFinite(supplierCost) && supplierCost > 0 ? supplierCost : 0,
@@ -118,7 +211,7 @@ function normalizeProduct(p) {
     reviews: Number.isFinite(Number(p.review_count || p.reviews)) ? Number(p.review_count || p.reviews) : 0,
     delivery: p.estimated_delivery || p.delivery_estimate || null,
     ships_to: Array.isArray(p.ships_to) ? p.ships_to : [],
-    product_url: p.product_url || null,
+    product_url: handle ? `https://www.buywishonline.com/products/${handle}` : (p.product_url || null),
     in_stock: typeof p.in_stock === 'boolean'
       ? p.in_stock
       : (Number.isFinite(Number(p.inventory_quantity)) ? Number(p.inventory_quantity) > 0 : null),
@@ -207,6 +300,12 @@ function productHandle(zendropId) {
   return id ? `p-${id}` : null;
 }
 
+function productSharePath(product) {
+  if (!product) return null;
+  const handle = product.handle || productHandle(product.zendrop_id || product.id);
+  return handle ? `/products/${handle}` : null;
+}
+
 function storeProductFromRow(row) {
   const images = Array.isArray(row.images) ? row.images : (row.image_url ? [row.image_url] : []);
   const features = Array.isArray(row.features) ? row.features : [];
@@ -242,8 +341,13 @@ module.exports = {
   WINNING_SEARCHES,
   departmentBySlug,
   departmentByQuery,
+  DEPARTMENT_ZENDROP_CATEGORIES,
   inferCategory,
+  classifyProduct,
+  flattenCategories,
+  categoriesForDepartment,
   normalizeProduct,
+  productSharePath,
   summarizeLane,
   scoreProduct,
   qualifiesForStore,

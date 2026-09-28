@@ -886,7 +886,8 @@
     .collection-banner p { color: var(--text-muted); max-width: 640px; }
     body.is-collection .hero,
     body.is-collection .cat-showcase,
-    body.is-collection .trust-bar { display: none; }
+    body.is-collection .trust-bar,
+    body.is-collection .new-arrivals-section { display: none; }
     @media (max-width: 640px) {
       .collection-banner { padding: 4px 16px 0; }
       .collection-banner h1 { font-size: 28px; }
@@ -1062,6 +1063,30 @@
     .qty-ctrl button { background: #f8f9fa; border: none; width: 36px; height: 36px; font-size: 18px; font-weight: 700; color: var(--text); transition: background 0.15s; }
     .qty-ctrl button:hover { background: #f0f0f0; }
     .qty-ctrl span { width: 40px; text-align: center; font-size: 14px; font-weight: 700; }
+    .detail-share { display: flex; flex-direction: column; gap: 6px; }
+    .detail-share-label { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+    .detail-share-row { display: flex; gap: 8px; }
+    .detail-share-row input {
+      flex: 1;
+      min-width: 0;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text);
+      background: #f8f9fa;
+    }
+    .btn-share {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .btn-share:hover { background: #0f3460; }
     .detail-actions { display: flex; flex-direction: column; gap: 10px; }
     .btn-add-detail {
       background: var(--accent);
@@ -1986,7 +2011,7 @@
 </section>
 
 <!-- More Products -->
-<section class="section" aria-label="More products">
+<section class="section new-arrivals-section" aria-label="More products">
   <div class="section-head">
     <div>
       <div class="section-title">🆕 New Arrivals</div>
@@ -2168,6 +2193,13 @@
       <div class="detail-info">
         <div class="detail-brand" id="detailBrand">Category</div>
         <h2 class="detail-name" id="detailName">Product Name</h2>
+        <div class="detail-share">
+          <span class="detail-share-label">Share this product</span>
+          <div class="detail-share-row">
+            <input id="detailShareUrl" type="text" readonly value="" aria-label="Product link">
+            <button type="button" class="btn-share" onclick="copyProductLink()">Copy link</button>
+          </div>
+        </div>
         <div class="detail-rating">
           <div class="stars" id="detailStars"></div>
           <span class="rating-count" id="detailRatingCount">(0 reviews)</span>
@@ -2472,7 +2504,7 @@ function renderProductCard(p) {
       </div>
       <div class="product-body">
         <div class="product-cat" itemprop="category">${p.category || 'Featured'}</div>
-        <h3 class="product-name" itemprop="name"><a href="/products/${encodeURIComponent(p.handle || p.id)}" onclick="event.stopPropagation()">${escHtml(p.title)}</a></h3>
+        <h3 class="product-name" itemprop="name"><a href="${productSharePath(p)}" onclick="event.stopPropagation()">${escHtml(p.title)}</a></h3>
         <div class="product-rating">
           ${rating && reviewCount ? `<div class="stars">${renderStars(rating)}</div><span class="rating-count">(${reviewCount.toLocaleString()})</span>` : `<span class="rating-count">No reviews yet</span>`}
         </div>
@@ -2494,7 +2526,10 @@ function renderProducts() {
   const grid = document.getElementById('productsGrid');
   const toShow = filteredProducts.slice(0, 48);
   if (!toShow.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);font-size:15px;">Products are loading from Zendrop. If this stays empty, refresh the page.</div>';
+    const note = window.BUYWISH_COLLECTION
+      ? 'No products matched this category yet. Each department only shows its own Zendrop products.'
+      : 'Products are loading from Zendrop. If this stays empty, refresh the page.';
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);font-size:15px;">${note}</div>`;
     return;
   }
   grid.innerHTML = toShow.map(renderProductCard).join('');
@@ -2520,6 +2555,20 @@ function applyFilters() {
   renderProducts();
 }
 
+function productSharePath(p) {
+  if (!p) return '/collections/all';
+  const handle = p.handle || (p.id ? ('p-' + String(p.id).replace(/^p-/i, '')) : '');
+  return handle ? '/products/' + encodeURIComponent(handle) : '/collections/all';
+}
+
+function productShareUrl(p) {
+  const path = productSharePath(p);
+  const host = /buywishonline\.com$/i.test(location.hostname) ? 'https://www.buywishonline.com' : location.origin;
+  return host + path;
+}
+
+let detailHistoryPushed = false;
+
 function filterCategory(cat) {
   const slugs = { all: 'all', Tech: 'tech', Home: 'home', Fitness: 'fitness', Beauty: 'beauty', Kitchen: 'kitchen', Pets: 'pets', Travel: 'travel', Kids: 'kids' };
   window.location.href = '/collections/' + (slugs[cat] || String(cat || 'all').toLowerCase());
@@ -2536,10 +2585,21 @@ function handleSearch(q) {
 let currentProductTitle = '';
 let activeReviewRating = 5;
 
-function openDetail(productId) {
-  const p = allProducts.find(x => x.id === productId);
+async function openDetail(productId) {
+  let p = allProducts.find(x => String(x.id) === String(productId) || String(x.handle) === String(productId) || String(x.handle) === ('p-' + productId));
+  if (!p) {
+    try {
+      const lookup = String(productId).replace(/^p-/i, '');
+      const res = await fetch('/api/buywish/products/' + encodeURIComponent(lookup));
+      const data = await res.json();
+      if (data.ok && data.product) {
+        p = data.product;
+        allProducts.push(p);
+      }
+    } catch (e) {}
+  }
   if (!p) return;
-  currentProductId = productId;
+  currentProductId = p.id;
   currentProductTitle = p.title || 'BuyWishOnline Product';
   currentQty = 1;
   document.getElementById('qtyDisplay').textContent = '1';
@@ -2549,6 +2609,13 @@ function openDetail(productId) {
   document.getElementById('detailMainImg').alt = p.title;
   document.getElementById('detailBrand').textContent = p.category || 'Featured';
   document.getElementById('detailName').textContent = p.title;
+  const shareInput = document.getElementById('detailShareUrl');
+  if (shareInput) shareInput.value = productShareUrl(p);
+  const sharePath = productSharePath(p);
+  if (sharePath && location.pathname !== sharePath) {
+    history.pushState({ buywishDetail: true, productId: p.id }, '', sharePath);
+    detailHistoryPushed = true;
+  }
 
   // Stars
   const rating = Number.isFinite(Number(p.rating)) && Number(p.rating) > 0 ? Number(p.rating) : null;
@@ -2596,9 +2663,39 @@ function switchImg(src, el) {
   el.classList.add('active');
 }
 
-function closeDetail() {
+function closeDetail(fromPop) {
   document.getElementById('detailOverlay').classList.remove('active');
   document.body.style.overflow = '';
+  if (fromPop) return;
+  if (detailHistoryPushed) {
+    detailHistoryPushed = false;
+    history.back();
+    return;
+  }
+  if (/^\/products\//.test(location.pathname)) {
+    const slugs = { Tech: 'tech', Home: 'home', Fitness: 'fitness', Beauty: 'beauty', Kitchen: 'kitchen', Pets: 'pets', Travel: 'travel', Kids: 'kids' };
+    const dept = window.BUYWISH_PRODUCT && slugs[window.BUYWISH_PRODUCT.category];
+    window.location.href = dept ? ('/collections/' + dept) : '/';
+  }
+}
+
+async function copyProductLink() {
+  const input = document.getElementById('detailShareUrl');
+  const url = input ? input.value : '';
+  if (!url) return;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(url);
+    else {
+      input.focus();
+      input.select();
+      document.execCommand('copy');
+    }
+    showToast('🔗', 'Product link copied');
+  } catch (e) {
+    input.focus();
+    input.select();
+    showToast('🔗', 'Link selected — copy it to share');
+  }
 }
 
 // Mobile Navigation Drawer Toggle
@@ -3172,6 +3269,16 @@ document.addEventListener('DOMContentLoaded', () => {
   applyCollectionChrome();
   detectCurrency();
   loadProducts();
+  if (window.BUYWISH_PRODUCT && window.BUYWISH_PRODUCT.id) openDetail(window.BUYWISH_PRODUCT.id);
+  window.addEventListener('popstate', () => {
+    if (/^\/products\//.test(location.pathname)) {
+      const match = location.pathname.match(/\/products\/(?:p-)?(\d+)/i);
+      if (match) openDetail(match[1]);
+      return;
+    }
+    detailHistoryPushed = false;
+    closeDetail(true);
+  });
   loadHomeReviews();
 
   // URL params
