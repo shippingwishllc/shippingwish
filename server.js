@@ -10,6 +10,9 @@ const { ensureGrowthSchema } = require('./utils/ensure-growth-schema');
 const { purgeExpiredTrash } = require('./utils/trash');
 const { webhookHandler } = require('./routes/billing');
 const { handleBuyWishWebhook } = require('./routes/buywish');
+const pool = require('./db');
+const { storeProductFromRow } = require('./utils/buywish-catalog');
+const { renderProductPage, renderCollectionPage, renderSitemap } = require('./utils/buywish-pages');
 const { handleStripeWebhook: handleNYCLimoStripeWebhook } = require('./routes/nyclimo');
 const { requireAuth } = require('./middleware/auth');
 const { requireCarrierSubscription } = require('./middleware/subscription');
@@ -131,6 +134,89 @@ app.use((req, res, next) => {
   if (p.endsWith('.html')) return res.redirect(301, p.slice(0, -5) + requestQuery(req));
   next();
 });
+
+const BUY_WISH_COLLECTIONS = {
+  tech: 'Tech',
+  home: 'Home',
+  fitness: 'Fitness',
+  beauty: 'Beauty',
+  kitchen: 'Kitchen',
+  pets: 'Pets',
+  travel: 'Travel',
+  kids: 'Kids',
+  featured: 'Featured'
+};
+
+async function loadBuyWishProducts(whereSql, params) {
+  const { rows } = await pool.query(
+    `SELECT * FROM ecommerce_products WHERE is_active = true AND zendrop_id IS NOT NULL AND ${whereSql}
+     ORDER BY winning_score DESC, title ASC LIMIT 48`,
+    params
+  );
+  return rows.map(storeProductFromRow);
+}
+
+async function sendBuyWishProduct(res, key) {
+  try {
+    const rows = await loadBuyWishProducts('(handle = $1 OR zendrop_id = $1)', [key]);
+    const product = rows[0];
+    if (!product) return res.status(404).type('html').send(renderCollectionPage('Product', []));
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.send(renderProductPage(product));
+  } catch (err) {
+    return res.status(503).type('html').send('The product catalog is temporarily unavailable.');
+  }
+}
+
+async function sendBuyWishCollection(res, slug) {
+  const category = BUY_WISH_COLLECTIONS[String(slug || '').toLowerCase()];
+  if (!category) return res.status(404).type('html').send(renderCollectionPage('Collection', []));
+  try {
+    const products = await loadBuyWishProducts('lower(category) = lower($1)', [category]);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.send(renderCollectionPage(category, products));
+  } catch (err) {
+    return res.status(503).type('html').send('The collection is temporarily unavailable.');
+  }
+}
+
+async function sendBuyWishSitemap(res) {
+  const urls = [
+    { loc: 'https://www.buywishonline.com/', changefreq: 'daily', priority: '1.0' },
+    { loc: 'https://www.buywishonline.com/about', changefreq: 'monthly', priority: '0.4' },
+    { loc: 'https://www.buywishonline.com/contact', changefreq: 'monthly', priority: '0.4' },
+    { loc: 'https://www.buywishonline.com/privacy-policy', changefreq: 'yearly', priority: '0.2' },
+    { loc: 'https://www.buywishonline.com/terms', changefreq: 'yearly', priority: '0.2' }
+  ];
+  try {
+    const { rows } = await pool.query(
+      `SELECT handle, category, updated_at FROM ecommerce_products
+       WHERE is_active = true AND zendrop_id IS NOT NULL
+       ORDER BY winning_score DESC LIMIT 500`
+    );
+    const seen = new Set();
+    rows.forEach((row) => {
+      const slug = String(row.category || 'featured').toLowerCase();
+      if (BUY_WISH_COLLECTIONS[slug] && !seen.has(slug)) {
+        seen.add(slug);
+        urls.push({ loc: `https://www.buywishonline.com/collections/${slug}`, changefreq: 'daily', priority: '0.8' });
+      }
+      urls.push({
+        loc: `https://www.buywishonline.com/products/${row.handle}`,
+        lastmod: row.updated_at ? new Date(row.updated_at).toISOString().slice(0, 10) : undefined,
+        changefreq: 'weekly',
+        priority: '0.7'
+      });
+    });
+  } catch (err) {
+    // Core pages still ship when the catalog database is unavailable.
+  }
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=600');
+  return res.send(renderSitemap(urls));
+}
 
 // Host-based routing for 4 Brands: LoadsNexus, NYC Limo Wish, BuyWishOnline, ShippingWish
 app.use((req, res, next) => {
@@ -273,8 +359,25 @@ app.use((req, res, next) => {
     if (cleanP === '/about' || cleanP === '/about-us' || cleanP === '/about.html') {
       return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'about.html'));
     }
+    if (cleanP === '/account' || cleanP === '/account.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'account.html'));
+    }
+    if (cleanP === '/admin' || cleanP === '/orders' || cleanP === '/admin.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'buywishonline', 'admin.html'));
+    }
+    if (cleanP === '/sitemap.xml') {
+      return sendBuyWishSitemap(res);
+    }
+    const productMatch = cleanP.match(/^\/products\/([^/]+)$/);
+    if (productMatch) {
+      return sendBuyWishProduct(res, decodeURIComponent(productMatch[1]));
+    }
+    const collectionMatch = cleanP.match(/^\/collections\/([^/]+)$/);
+    if (collectionMatch) {
+      return sendBuyWishCollection(res, decodeURIComponent(collectionMatch[1]));
+    }
 
-    // Static files (sitemap.xml, robots.txt, images, etc.)
+    // Static files (robots.txt, images, etc.)
     const filePath = path.join(__dirname, 'public', 'buywishonline', cleanP);
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       return res.sendFile(filePath);

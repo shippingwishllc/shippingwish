@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Order desk | BuyWishOnline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --ink:#14120f; --ivory:#f6f1e8; --paper:#fffdf8; --line:#eadfce; --gold:#9c7b4a; --muted:#6f675e; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Outfit, sans-serif; background: var(--ivory); color: var(--ink); }
+    header, main { max-width: 1180px; margin: 0 auto; padding: 28px 20px; }
+    header { display: flex; justify-content: space-between; align-items: end; gap: 16px; }
+    h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 46px; margin: 0; }
+    a { color: inherit; }
+    button, input { font: inherit; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button, .btn { background: var(--ink); color: #fff; border: 0; padding: 12px 16px; cursor: pointer; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; }
+    button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    input { border: 1px solid var(--line); background: var(--paper); padding: 12px; min-width: 220px; }
+    .card { background: var(--paper); border: 1px solid var(--line); padding: 16px; margin-top: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .muted { color: var(--muted); }
+    .pill { display: inline-block; border: 1px solid var(--line); padding: 2px 8px; font-size: 12px; }
+    #gate, #desk { display: none; }
+    .error { color: #8c3a2f; }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="muted">BuyWishOnline · Shipping Wish LLC</div>
+    <h1>Order desk</h1>
+  </div>
+  <a href="/">Back to the shop</a>
+</header>
+<main>
+  <section id="gate" class="card">
+    <p>Sign in with a BuyWish admin account. The same sign-in used for Shipping Wish admin applies, including the email code when two-factor authentication is on.</p>
+    <form id="loginForm" class="row">
+      <input id="email" type="email" placeholder="Email" required>
+      <input id="password" type="password" placeholder="Password" required>
+      <button type="submit">Sign in</button>
+    </form>
+    <form id="otpForm" class="row" style="display:none;margin-top:12px;">
+      <input id="otp" inputmode="numeric" placeholder="6-digit code" required>
+      <button type="submit">Confirm code</button>
+    </form>
+    <p id="loginError" class="error"></p>
+  </section>
+
+  <section id="desk">
+    <div class="card">
+      <div class="row">
+        <button id="syncBtn" type="button">Sync winning products</button>
+        <button id="refreshBtn" class="ghost" type="button">Refresh orders</button>
+        <span id="catalogStatus" class="muted"></span>
+      </div>
+      <p class="muted">Sync keeps a product only when Zendrop quotes shipping to the USA, Canada, and the United Kingdom, and the fastest USA lane is 14 days or fewer. Run it again until the batch is finished. Paid orders are sent to Zendrop only when Zendrop publishes an order-creation tool for this token. Otherwise the order stays here with the customer’s address so it can be placed in the Zendrop dashboard and linked.</p>
+      <p id="syncResult"></p>
+    </div>
+    <div class="card" style="overflow:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Order</th><th>Customer</th><th>Ship to</th><th>Items</th><th>Payment</th><th>Zendrop</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="orders"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script>
+  const tokenKey = 'bwo_admin_token';
+  let tempToken = '';
+  const authHeaders = () => {
+    const token = sessionStorage.getItem(tokenKey);
+    return token ? { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+  };
+  function showDesk() {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('desk').style.display = 'block';
+    loadCatalog();
+    loadOrders();
+  }
+  async function loadCatalog() {
+    const res = await fetch('/api/buywish/admin/catalog', { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) return;
+    const cats = (data.categories || []).map(c => `${c.category}: ${c.products}`).join(' · ');
+    document.getElementById('catalogStatus').textContent = `${data.total || 0} synced` + (cats ? ` · ${cats}` : '');
+  }
+  function itemText(items) {
+    const list = Array.isArray(items) ? items : [];
+    return list.map(item => `${item.quantity || 1} × ${item.title || item.product_id}`).join(', ');
+  }
+  async function loadOrders() {
+    const res = await fetch('/api/buywish/admin/orders?scope=all', { headers: authHeaders() });
+    if (res.status === 401 || res.status === 403) {
+      sessionStorage.removeItem(tokenKey);
+      document.getElementById('desk').style.display = 'none';
+      document.getElementById('gate').style.display = 'block';
+      return;
+    }
+    const data = await res.json();
+    const body = document.getElementById('orders');
+    body.innerHTML = (data.orders || []).map(order => {
+      const ship = [order.shipping_address, order.shipping_city, order.shipping_state, order.shipping_postal, order.shipping_country].filter(Boolean).join(', ');
+      const zendrop = order.zendrop_order_id
+        ? `<span class="pill">Linked ${order.zendrop_order_id}</span>`
+        : `<span class="pill">${order.zendrop_sync_status || 'not sent'}</span><div class="muted">${order.zendrop_sync_detail || ''}</div>`;
+      return `<tr>
+        <td><strong>${order.order_number}</strong><div class="muted">${new Date(order.created_at).toLocaleString()}</div></td>
+        <td>${order.customer_name}<div class="muted">${order.customer_email}</div></td>
+        <td>${ship || '—'}</td>
+        <td>${itemText(order.items)}<div class="muted">${order.currency || 'USD'} ${order.total_amount}</div></td>
+        <td>${order.payment_status}<div class="muted">${order.fulfillment_status}</div></td>
+        <td>${zendrop}</td>
+        <td>
+          ${order.payment_status === 'paid' && !order.zendrop_order_id ? `<button type="button" onclick="pushOrder('${order.order_number}')">Send to Zendrop</button>` : ''}
+          ${order.payment_status === 'paid' && !order.zendrop_order_id ? `<form onsubmit="return linkOrder(event, '${order.order_number}')" class="row" style="margin-top:8px"><input name="zid" placeholder="Zendrop order ID"><button class="ghost" type="submit">Link</button></form>` : ''}
+        </td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="7">No orders yet.</td></tr>';
+  }
+  async function pushOrder(orderNumber) {
+    const res = await fetch('/api/buywish/admin/orders/' + encodeURIComponent(orderNumber) + '/push', { method: 'POST', headers: authHeaders() });
+    const data = await res.json();
+    alert(data.error || (data.zendrop_order_id ? 'Zendrop order ' + data.zendrop_order_id : 'Checked Zendrop.'));
+    loadOrders();
+  }
+  async function linkOrder(event, orderNumber) {
+    event.preventDefault();
+    const zendrop_order_id = new FormData(event.target).get('zid');
+    const res = await fetch('/api/buywish/admin/orders/' + encodeURIComponent(orderNumber) + '/supplier', {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ zendrop_order_id })
+    });
+    const data = await res.json();
+    if (!res.ok) alert(data.error || 'Could not link the order.');
+    loadOrders();
+    return false;
+  }
+  document.getElementById('syncBtn').onclick = async () => {
+    const button = document.getElementById('syncBtn');
+    button.disabled = true;
+    let offset = 0;
+    let done = false;
+    const notes = [];
+    while (!done && offset < 200) {
+      const res = await fetch('/api/buywish/admin/catalog/sync', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ offset, limit: 8 })
+      });
+      const data = await res.json();
+      if (!res.ok) { notes.push(data.error || 'Sync failed'); break; }
+      notes.push(`Checked ${data.checked}, kept ${data.qualified}, skipped ${data.skipped}.`);
+      done = data.done || data.checked === 0;
+      offset = data.next_offset || offset + 8;
+      if (!done) await new Promise(r => setTimeout(r, 400));
+    }
+    document.getElementById('syncResult').textContent = notes.join(' ');
+    button.disabled = false;
+    loadCatalog();
+  };
+  document.getElementById('refreshBtn').onclick = loadOrders;
+  document.getElementById('loginForm').onsubmit = async (event) => {
+    event.preventDefault();
+    document.getElementById('loginError').textContent = '';
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, password: password.value })
+    });
+    const data = await res.json();
+    if (data.requires_2fa) {
+      tempToken = data.temp_token;
+      document.getElementById('otpForm').style.display = 'flex';
+      document.getElementById('loginError').textContent = data.message || 'Enter the code from your email.';
+      return;
+    }
+    if (!res.ok || !data.token) {
+      document.getElementById('loginError').textContent = data.error || 'Could not sign in.';
+      return;
+    }
+    sessionStorage.setItem(tokenKey, data.token);
+    showDesk();
+  };
+  document.getElementById('otpForm').onsubmit = async (event) => {
+    event.preventDefault();
+    const res = await fetch('/api/auth/2fa/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ temp_token: tempToken, otp: otp.value })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.token) {
+      document.getElementById('loginError').textContent = data.error || 'That code was not accepted.';
+      return;
+    }
+    sessionStorage.setItem(tokenKey, data.token);
+    showDesk();
+  };
+  if (sessionStorage.getItem(tokenKey)) showDesk();
+  else document.getElementById('gate').style.display = 'block';
+</script>
+</body>
+</html>

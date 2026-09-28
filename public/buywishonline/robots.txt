@@ -3,6 +3,8 @@ Allow: /
 
 Sitemap: https://www.buywishonline.com/sitemap.xml
 
-# Disallow admin and API paths
+# Disallow admin, account, and API paths
 Disallow: /api/
-Disallow: /api/buywish/checkout
+Disallow: /admin
+Disallow: /orders
+Disallow: /account

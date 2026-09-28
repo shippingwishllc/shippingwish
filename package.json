@@ -9,6 +9,7 @@
     "mobile:carrier": "npm --prefix mobile/loadnexus-carrier start",
     "mobile:tms": "npm --prefix mobile/shippingwish-tms start",
     "mobile:broker": "npm --prefix mobile/loadnexus-broker start",
+    "mobile:buywish": "npm --prefix mobile/buywish-shop start",
     "mobile:driver:tunnel": "npm --prefix mobile/driver-app start -- --tunnel",
     "mobile:carrier:tunnel": "npm --prefix mobile/loadnexus-carrier start -- --tunnel",
     "mobile:tms:tunnel": "npm --prefix mobile/shippingwish-tms start -- --tunnel",

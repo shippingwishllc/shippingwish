@@ -7,8 +7,8 @@
   <link rel="icon" href="/buywishonline/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/buywishonline/apple-touch-icon.png">
   <title>BuyWishOnline™ — Premium Global Shopping | Smart Tech, Home & Lifestyle</title>
-  <meta name="description" content="Shop premium curated products at BuyWishOnline. Fast shipping to USA, UK, Canada & Europe. Thousands of top-rated products with 30-day money-back guarantee.">
-  <meta name="keywords" content="buywishonline, online shopping, premium products, smart tech, home essentials, fast shipping USA UK Canada Europe">
+  <meta name="description" content="BuyWishOnline is the luxury shop from Shipping Wish LLC. Every piece is chosen because Zendrop can ship it to the USA, Canada, and the United Kingdom, with USA delivery quoted at 14 days or faster.">
+  <meta name="keywords" content="BuyWishOnline, luxury dropshipping, USA shipping, Canada shipping, UK shipping, Zendrop, Shipping Wish LLC">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://www.buywishonline.com/">
 
@@ -73,7 +73,7 @@
       "@type": "SearchAction",
       "target": {
         "@type": "EntryPoint",
-        "urlTemplate": "https://www.buywishonline.com/search?q={search_term_string}"
+        "urlTemplate": "https://www.buywishonline.com/?q={search_term_string}"
       },
       "query-input": "required name=search_term_string"
     }
@@ -82,29 +82,30 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --primary: #1a1a2e;
-      --accent: #e94560;
-      --accent2: #f5a623;
-      --gold: #d4af37;
-      --surface: #ffffff;
-      --bg: #f7f7f9;
-      --text: #1a1a2e;
-      --text-muted: #6b7280;
-      --border: #e5e7eb;
-      --success: #059669;
-      --nav-h: 68px;
+      --primary: #14120f;
+      --accent: #9c7b4a;
+      --accent2: #c4a574;
+      --gold: #c4a574;
+      --surface: #fffdf8;
+      --bg: #f6f1e8;
+      --text: #14120f;
+      --text-muted: #6f675e;
+      --border: #eadfce;
+      --success: #3d5c4a;
+      --nav-h: 72px;
       --topbar-h: 36px;
-      --radius: 12px;
-      --shadow: 0 4px 24px rgba(0,0,0,0.07);
-      --shadow-hover: 0 12px 40px rgba(0,0,0,0.13);
+      --radius: 2px;
+      --shadow: 0 10px 30px rgba(20,18,15,0.06);
+      --shadow-hover: 0 18px 40px rgba(20,18,15,0.12);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; overflow-x: clip; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+    h1, h2, h3, .logo-text, .hero-h1, .section-title { font-family: 'Cormorant Garamond', serif; font-weight: 500; }
     a { text-decoration: none; color: inherit; }
     img { max-width: 100%; display: block; }
     button { cursor: pointer; font-family: inherit; }
@@ -174,7 +175,7 @@
     .brand-logo .logo-icon {
       width: 38px;
       height: 38px;
-      background: linear-gradient(135deg, var(--accent) 0%, #a8063d 100%);
+      background: linear-gradient(145deg, #14120f 0%, #3a3126 100%);
       border-radius: 10px;
       display: flex;
       align-items: center;
@@ -213,6 +214,8 @@
     .nav-cat-btn {
       background: none;
       border: none;
+      text-decoration: none;
+      font-family: inherit;
       padding: 8px 14px;
       border-radius: 8px;
       font-size: 13.5px;
@@ -488,7 +491,7 @@
       gap: 20px;
     }
     .hero-main {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background: linear-gradient(160deg, #14120f 0%, #2a241c 55%, #3d3428 100%);
       border-radius: 20px;
       padding: 52px 52px;
       position: relative;
@@ -503,7 +506,7 @@
       position: absolute;
       top: -60px; right: -60px;
       width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(233,69,96,0.25) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(196,165,116,0.28) 0%, transparent 70%);
       pointer-events: none;
     }
     .hero-main::after {
@@ -518,9 +521,9 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(233,69,96,0.15);
-      border: 1px solid rgba(233,69,96,0.3);
-      color: #ff7a8a;
+      background: rgba(196,165,116,0.12);
+      border: 1px solid rgba(196,165,116,0.4);
+      color: #e6d3b1;
       padding: 6px 14px;
       border-radius: 999px;
       font-size: 12px;
@@ -570,7 +573,7 @@
       gap: 8px;
       transition: all 0.2s;
     }
-    .btn-primary:hover { background: #c73652; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(233,69,96,0.4); }
+    .btn-primary:hover { background: #2a241c; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(20,18,15,0.25); }
     .btn-outline-white {
       background: transparent;
       color: #fff;
@@ -1688,6 +1691,7 @@
       <button class="nav-cat-btn" onclick="filterCategory('Fitness')">Fitness & Outdoors</button>
       <button class="nav-cat-btn" onclick="filterCategory('Beauty')">Beauty & Wellness</button>
       <button class="nav-cat-btn" onclick="openTrackModal()">Track Order</button>
+      <a class="nav-cat-btn" href="/account">Account</a>
     </div>
 
     <div class="nav-right">
@@ -1736,6 +1740,7 @@
     <button class="mobile-nav-link" onclick="filterCategory('Kids'); closeMobileNav();">🧒 Kids & Toys</button>
     <div class="mobile-nav-divider"></div>
     <div class="mobile-nav-section-title">Customer Care</div>
+    <a class="mobile-nav-link" href="/account" onclick="closeMobileNav();">Account &amp; Orders</a>
     <button class="mobile-nav-link" onclick="openTrackModal(); closeMobileNav();">📦 Track My Order</button>
     <a class="mobile-nav-link" href="/contact">💬 24/7 Customer Support Desk</a>
     <a class="mobile-nav-link" href="tel:+18005803101">📞 Toll-Free: +1 (800) 580-3101</a>
@@ -1771,12 +1776,12 @@
 <!-- Hero Section -->
 <section class="hero" aria-label="Featured promotions">
   <div class="hero-main">
-    <div class="hero-eyebrow">🔥 Season's Bestsellers — Limited Time Offers</div>
+    <div class="hero-eyebrow">The USA · Canada · United Kingdom Edit</div>
     <h1 class="hero-h1">
-      Premium Products,<br>
-      <span class="accent-word">Delivered Worldwide</span>
+      Objects with a<br>
+      <span class="accent-word">quiet kind of luxury</span>
     </h1>
-    <p class="hero-sub">Thousands of curated, top-rated products — shipped fast to USA, UK, Canada & Europe. Satisfaction guaranteed on every order.</p>
+    <p class="hero-sub">Each piece is stocked only when Zendrop can ship it to the USA, Canada, and the United Kingdom, and the fastest USA lane is quoted at 14 days or fewer.</p>
     <div class="hero-actions">
       <button class="btn-primary" onclick="document.getElementById('catalogSection').scrollIntoView({behavior:'smooth'})">
         Shop Now →
@@ -1787,16 +1792,16 @@
     </div>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-num" id="statProducts">1,200+</div>
-        <div class="hero-stat-label">Products</div>
+        <div class="hero-stat-num" id="statProducts">—</div>
+        <div class="hero-stat-label">In this edit</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-num">50K+</div>
-        <div class="hero-stat-label">Customers</div>
+        <div class="hero-stat-num">3</div>
+        <div class="hero-stat-label">Countries</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-num">4.8★</div>
-        <div class="hero-stat-label">Avg. Rating</div>
+        <div class="hero-stat-num">14d</div>
+        <div class="hero-stat-label">USA lane</div>
       </div>
       <div class="hero-stat">
         <div class="hero-stat-num">30-Day</div>
@@ -1888,32 +1893,32 @@
     <div class="cat-showcase-item" onclick="filterCategory('Tech')">
       <div class="cat-showcase-icon">💻</div>
       <div class="cat-showcase-name">Tech & Gadgets</div>
-      <div class="cat-showcase-count">240+ products</div>
+      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
     </div>
     <div class="cat-showcase-item" onclick="filterCategory('Home')">
       <div class="cat-showcase-icon">🏠</div>
       <div class="cat-showcase-name">Home & Living</div>
-      <div class="cat-showcase-count">380+ products</div>
+      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
     </div>
     <div class="cat-showcase-item" onclick="filterCategory('Fitness')">
       <div class="cat-showcase-icon">🏃</div>
       <div class="cat-showcase-name">Fitness</div>
-      <div class="cat-showcase-count">180+ products</div>
+      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
     </div>
     <div class="cat-showcase-item" onclick="filterCategory('Beauty')">
       <div class="cat-showcase-icon">✨</div>
       <div class="cat-showcase-name">Beauty</div>
-      <div class="cat-showcase-count">210+ products</div>
+      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
     </div>
     <div class="cat-showcase-item" onclick="filterCategory('Kitchen')">
       <div class="cat-showcase-icon">🍳</div>
       <div class="cat-showcase-name">Kitchen</div>
-      <div class="cat-showcase-count">150+ products</div>
+      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
     </div>
     <div class="cat-showcase-item" onclick="filterCategory('Pets')">
       <div class="cat-showcase-icon">🐾</div>
       <div class="cat-showcase-name">Pets</div>
-      <div class="cat-showcase-count">120+ products</div>
+      <div class="cat-showcase-count">Fast USA, Canada, UK</div>
     </div>
   </div>
 </section>
@@ -1922,8 +1927,8 @@
 <section class="section" id="catalogSection" aria-label="Featured products">
   <div class="section-head">
     <div>
-      <div class="section-title">🔥 Trending Now</div>
-      <div class="section-sub">Hand-picked bestsellers — updated daily</div>
+      <div class="section-title">The winning edit</div>
+      <div class="section-sub">Trending Zendrop pieces that clear the USA, Canada, and UK shipping rule</div>
     </div>
     <a class="view-all" href="javascript:void(0)" onclick="filterCategory('all')">View All →</a>
   </div>
@@ -2419,6 +2424,14 @@ function renderStars(rating) {
   return html;
 }
 
+function escHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function renderProductCard(p) {
   const img = p.images ? p.images[0] : (p.image_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80');
   const priceStr = formatPrice(p.retail_price);
@@ -2432,14 +2445,14 @@ function renderProductCard(p) {
   return `
     <article class="product-card" onclick="openDetail(${p.id})" itemscope itemtype="https://schema.org/Product">
       <div class="product-img-wrap">
-        <img src="${img}" alt="${p.title}" loading="lazy" itemprop="image">
+        <img src="${escHtml(img)}" alt="${escHtml(p.title)}" loading="lazy" itemprop="image">
         <div class="product-badge ${badge}">${badgeMap[badge] || 'NEW'}</div>
         <button class="wishlist-btn" onclick="event.stopPropagation();addWishlist(${p.id})" aria-label="Add to wishlist">♡</button>
         <button class="quick-view-btn" onclick="event.stopPropagation();openDetail(${p.id})">Quick View →</button>
       </div>
       <div class="product-body">
         <div class="product-cat" itemprop="category">${p.category || 'Featured'}</div>
-        <h3 class="product-name" itemprop="name">${p.title}</h3>
+        <h3 class="product-name" itemprop="name"><a href="/products/${encodeURIComponent(p.handle || p.id)}" onclick="event.stopPropagation()">${escHtml(p.title)}</a></h3>
         <div class="product-rating">
           ${rating && reviewCount ? `<div class="stars">${renderStars(rating)}</div><span class="rating-count">(${reviewCount.toLocaleString()})</span>` : `<span class="rating-count">No reviews yet</span>`}
         </div>
@@ -2448,21 +2461,18 @@ function renderProductCard(p) {
           <span class="price-main" itemprop="price" content="${p.retail_price}">${priceStr}</span>
           ${hasDiscount ? `<span class="price-original">${formatPrice(p.compare_price)}</span><span class="price-save">Save ${savePct}%</span>` : ''}
         </div>
-        <div class="shipping-badge">✅ Free express shipping</div>
+        <div class="shipping-badge">${escHtml(p.delivery || 'Ships to USA, Canada & UK')}</div>
         <button class="btn-add-cart" onclick="event.stopPropagation();quickAddToCart(${p.id})">
           🛒 Add to Cart
         </button>
       </div>
-      <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"Product","name":"${p.title.replace(/"/g, '&quot;')}","image":"${img}","description":"${(p.description||'').replace(/"/g,'&quot;')}","brand":{"@type":"Brand","name":"BuyWishOnline"},"offers":{"@type":"Offer","priceCurrency":"USD","price":"${p.retail_price}","availability":"https://schema.org/InStock","url":"https://www.buywishonline.com/products/${p.id}"}}
-      <\/script>
     </article>
   `;
 }
 
 function renderProducts() {
   const grid = document.getElementById('productsGrid');
-  const toShow = filteredProducts.slice(0, 8);
+  const toShow = filteredProducts.slice(0, 48);
   if (!toShow.length) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);font-size:15px;">No products found for this category. Try a different filter.</div>';
     return;
@@ -2977,9 +2987,10 @@ async function processCheckout() {
   btn.textContent = 'Processing…';
 
   try {
+    const customerToken = localStorage.getItem('bwo_customer_token');
     const res = await fetch('/api/buywish/checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(customerToken ? { Authorization: 'Bearer ' + customerToken } : {}) },
       body: JSON.stringify({
         items: cart.map(i => ({ product_id: i.zendrop_id || i.id, quantity: i.qty })),
         customer: { name: fname + ' ' + lname, email, phone: document.getElementById('co_phone').value.trim(), address },
@@ -3077,7 +3088,7 @@ function hideLoading() {
 async function loadProducts() {
   showLoading();
   try {
-    const res = await fetch('/api/buywish/products', { signal: AbortSignal.timeout(6000) });
+    const res = await fetch('/api/buywish/products?limit=48&sort=winning', { signal: AbortSignal.timeout(8000) });
     const data = await res.json();
     if (data.ok && data.products && data.products.length) {
       allProducts = data.products.map(p => ({
@@ -3096,7 +3107,7 @@ async function loadProducts() {
     allProducts = [];
   }
   filteredProducts = allProducts;
-  document.getElementById('statProducts').textContent = allProducts.length + '+';
+  document.getElementById('statProducts').textContent = allProducts.length ? String(allProducts.length) : '—';
   renderProducts();
   renderNewArrivals();
   hideLoading();
@@ -3159,6 +3170,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (params.get('cat')) {
     filterCategory(params.get('cat'));
+  }
+  if (params.get('q')) {
+    const q = params.get('q');
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.value = q;
+    handleSearch(q);
+  }
+  const productParam = params.get('product');
+  if (productParam) {
+    const openWhenReady = () => {
+      const match = allProducts.find(p => String(p.id) === String(productParam) || String(p.handle) === String(productParam));
+      if (match) openDetail(match.id);
+    };
+    setTimeout(openWhenReady, 400);
   }
 
   // Keyboard close

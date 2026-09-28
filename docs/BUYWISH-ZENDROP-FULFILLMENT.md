@@ -1,15 +1,28 @@
-# BuyWishOnline: Zendrop order handoff and tracking
+# BuyWishOnline: catalog edit, order desk, and Zendrop handoff
 
-This runbook describes the current custom-store flow in the ShippingWish monorepo. BuyWishOnline is the customer storefront; Zendrop remains the supplier. Do not describe this version as automatic Zendrop order submission.
+BuyWishOnline is the customer storefront. Zendrop remains the supplier. The shop currently sells to the USA, Canada, and the United Kingdom.
 
-## Current order lifecycle
+## Catalog
 
-1. **Customer checkout** — The API rechecks each product against Zendrop catalog data, calculates the amount server-side, creates a local order as `awaiting_payment`, then creates a Stripe Checkout Session.
-2. **Payment confirmation** — Only the verified BuyWish Stripe webhook marks the order paid and changes fulfillment to `payment_confirmed_pending_supplier`. Checkout return-page data is not proof of payment.
-3. **Supplier queue** — An authenticated admin-role user loads `GET /api/buywish/admin/orders`. It lists paid store orders with no linked Zendrop order ID.
-4. **Place the supplier order** — Until Zendrop provides a documented custom-store order-create API contract, an authorized operator signs into Zendrop directly, finds the imported catalog product/variant, and checks quantity, customer shipping details, shipping method, and supplier charge before submitting. Confirm the order exists in Zendrop and record its real Zendrop order ID.
-5. **Link once** — Submit that ID through `PATCH /api/buywish/admin/orders/:order_number/supplier`. The API accepts paid orders only, is idempotent for the same ID, refuses to overwrite a different linked ID, and refuses to attach one Zendrop ID to multiple local orders. A link changes fulfillment to `supplier_order_placed`.
-6. **Customer tracking** — `GET /api/buywish/orders/track/:order_number` can retrieve Zendrop tracking events when an ID is linked. The public response omits the internal Zendrop order ID. Tracking lookup is best-effort; a temporary Zendrop failure does not erase the local order.
+An admin runs **Sync winning products** on `/admin`. Each batch asks Zendrop for trending products and a fixed set of category searches, then requests a shipping estimate for the USA, Canada, and the United Kingdom. A product is saved and imported into the Zendrop “my products” list only when all three countries have a quoted method and the fastest USA lane is 14 days or fewer. Products that fail that check are skipped. Nothing is invented when Zendrop does not return a quote.
+
+The public catalog at `GET /api/buywish/products` serves that saved edit. If the edit is empty, the storefront falls back to the live Zendrop trending call.
+
+## Orders
+
+1. **Customer checkout** — The API rechecks each product, calculates the amount server-side, creates a local order as `awaiting_payment`, and opens Stripe Checkout. Stripe collects a shipping address in the USA, Canada, or the United Kingdom.
+2. **Payment confirmation** — The signed BuyWish Stripe webhook marks the order paid. The return page also verifies the Stripe session on the server. A browser query string alone is not proof of payment.
+3. **Zendrop send** — After payment, the server calls Zendrop `tools/list`. If that response includes a real order-creation tool whose required fields the paid order can fill, the order is sent once and the returned Zendrop order ID is saved. That is what makes the order appear in the Zendrop dashboard. If Zendrop does not publish such a tool, or the tool cannot accept the order, the order stays on the BuyWish order desk at `/admin` with status `manual_required`.
+4. **Manual link** — Place the order in Zendrop, then paste the real Zendrop order ID on the desk. The link is paid-only, idempotent for the same ID, and cannot attach one Zendrop ID to two store orders.
+5. **Customer tracking** — Signed-in customers see their orders at `/account` and in the BuyWishOnline mobile app. `GET /api/buywish/orders/track/:order_number` reads Zendrop tracking events when an ID is linked. The public response omits the internal Zendrop order ID.
+
+## Will a website order show in Zendrop by itself?
+
+Only after step 3 succeeds. Zendrop’s public MCP docs describe order fulfillment, but they do not publish the custom-store create-order schema. This app discovers the tool at runtime and refuses to guess a tool name. Until a token with `orders:write` advertises a matching tool, an operator still places the order in Zendrop and links the ID. A linked ID is what ties the store order to the Zendrop dashboard order.
+
+## Order desk
+
+`GET /api/buywish/admin/orders?scope=all` lists every store order. `scope=queue` (the default) still lists paid orders with no Zendrop ID. `POST /api/buywish/admin/orders/:order_number/push` retries the discovered Zendrop send. `PATCH /api/buywish/admin/orders/:order_number/supplier` links a real Zendrop order ID. The link accepts paid orders only, is idempotent for the same ID, refuses to overwrite a different linked ID, and refuses to attach one Zendrop ID to multiple local orders.
 
 ## Operator safeguards
 
@@ -21,9 +34,13 @@ This runbook describes the current custom-store flow in the ShippingWish monorep
 - The prior token-like credential committed in repository history must be treated as exposed. Revoke it at Zendrop; configure a new least-privilege secret in Vercel as `ZENDROP_API_KEY`. Never put the value in code, logs, issues, screenshots, or chat.
 - Restrict product import, supplier queue, order linking, billing, and account-management routes to authorized BuyWish admins. Do not grant those permissions to partner/driver/customer accounts.
 
-## Requirements before enabling automated supplier submission
+## Automated supplier submission
 
-Zendrop’s public MCP material does not define the exact create-order request for a custom-owned storefront. Do not guess the tool name, schema, or fulfillment/payment semantics. Before implementing auto-submit, obtain the Zendrop Direct API contract and sandbox procedure, then specify and verify:
+The server discovers order tools with `tools/list` and submits only when a tool name matches an order-creation action and every required schema field can be filled from the paid order. The store order number is sent as the idempotency key when the schema has that field. A response without an order ID does not mark the order as placed.
+
+Still confirm with Zendrop before relying on this in production:
+
+
 
 - whether Zendrop accepts external store order IDs and supports an idempotency key;
 - product/variant identifier, quantity, currency, destination, shipping method, and required customer fields;
@@ -32,7 +49,7 @@ Zendrop’s public MCP material does not define the exact create-order request f
 - order status and tracking lookup/webhook fields and polling limits;
 - token scopes, rotation/revocation, rate limits, and sandbox/test account support.
 
-Automation should use a durable queue/outbox keyed by the local order number, persist request/response IDs without customer secrets, and only advance to supplier-placed after Zendrop confirms acceptance. Retries must be idempotent and customer notices must reflect the actual supplier state.
+The order desk is the queue. Status moves to `supplier_order_placed` only after Zendrop returns an order ID or an operator links one. Retries refuse to replace an existing ID. Customer notices should describe the local fulfillment status, not an assumed shipment.
 
 ## Configuration and deployment
 
