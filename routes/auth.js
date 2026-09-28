@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
 const { requireAuth, requireRole, requireSuperAdmin, optionalAuth, extractToken, JWT_SECRET, setAuthCookie, clearAuthCookie } = require('../middleware/auth');
-const { sendBrandedEmail } = require('../utils/mailer');
+const { sendBrandedEmail, getBrandSender } = require('../utils/mailer');
 const { COMPANY, APP_URL, escapeHtml, buildTemplate } = require('../utils/email-templates');
 const { getCarrierAccess, TRIAL_DAYS, isCarrierRole } = require('../middleware/subscription');
 const { verifyTotp, generateBase32Secret, getOtpAuthUrl } = require('../utils/totp');
@@ -188,7 +188,8 @@ async function createPortalSignupLead(user, meta) {
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
-const NOREPLY_FROM = process.env.MAIL_FROM_NOREPLY || 'Shipping Wish LLC <noreply@shippingwish.com>';
+const NOREPLY_FROM = process.env.MAIL_FROM_NOREPLY || getBrandSender('shippingwish', 'noreply');
+const LN_AUTH_FROM = getBrandSender('loadsnexus', 'auth');
 
 function generateOtp() {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -361,7 +362,8 @@ router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
          <p><strong>${escapeHtml(pending.name)}</strong><br>${escapeHtml(pending.company_name || '')}<br>${escapeHtml(emailNorm)}</p>
          <p>${TRIAL_DAYS}-day portal trial until ${trialEnds.toISOString().slice(0, 10)}. Stripe weekly plan still required after trial unless they subscribe early.</p>`;
     Promise.all(ops.map((to) => sendBrandedEmail({
-      to, subject, html, text: subject, emailType: 'internal_lead', templateKey: 'internal_signup', transactional: true
+      to, subject, html, text: subject, emailType: 'internal_lead', templateKey: 'internal_signup', transactional: true,
+      from: getBrandSender('shippingwish', 'operations')
     }))).catch((err) => console.error('Signup notify:', err.message));
 
     const access = isBroker ? { allowed: true, is_broker: true, full_access: true } : await getCarrierAccess(user.id, user.email);
@@ -447,7 +449,7 @@ router.post(['/auth/forgot-password/send-otp', '/forgot-password/send-otp'], rat
 
     await sendBrandedEmail({
       to: emailNorm,
-      from: NOREPLY_FROM,
+      from: LN_AUTH_FROM,
       subject: `Your LoadsNexus Password Reset Code: ${otp}`,
       html: emailHtml,
       text: `Your LoadsNexus Password Reset Code is: ${otp}. Valid for 10 minutes.`,
@@ -670,7 +672,7 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
       const loginTime = new Date().toUTCString();
       sendBrandedEmail({
         to: user.email,
-        from: NOREPLY_FROM,
+        from: (user.role && String(user.role).includes('broker')) ? LN_AUTH_FROM : NOREPLY_FROM,
         subject: `Security Alert: New Sign-in to your LoadsNexus Account`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">

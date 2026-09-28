@@ -269,7 +269,7 @@ router.post('/drivers/:id/invite', requireAuth, async (req, res) => {
 
     const crypto = require('crypto');
     const bcrypt = require('bcryptjs');
-    const { sendBrandedEmail } = require('../utils/mailer');
+    const { sendBrandedEmail, getBrandSender } = require('../utils/mailer');
     const { COMPANY, APP_URL } = require('../utils/email-templates');
 
     let userRow = (await pool.query('SELECT * FROM users WHERE lower(email) = $1', [email])).rows[0];
@@ -304,7 +304,8 @@ router.post('/drivers/:id/invite', requireAuth, async (req, res) => {
       text: `Driver app: ${loginUrl}  Email: ${email}${tempPassword ? ' Password: ' + tempPassword : ''}`,
       emailType: 'driver_invite',
       templateKey: 'driver_invite',
-      transactional: true
+      transactional: true,
+      from: getBrandSender('shippingwish', 'operations')
     });
 
     res.json({

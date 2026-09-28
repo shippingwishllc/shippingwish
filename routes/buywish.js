@@ -960,7 +960,7 @@ async function applyCheckoutEvent(event) {
   const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
 
   if (orderNumber && session.payment_status === 'paid') {
-    await pool.query(`
+    const updated = await pool.query(`
       UPDATE ecommerce_orders
       SET payment_status = 'paid',
           fulfillment_status = 'payment_confirmed_pending_supplier',
@@ -971,9 +971,40 @@ async function applyCheckoutEvent(event) {
           subtotal_amount = $5,
           updated_at = NOW()
       WHERE upper(order_number) = upper($6)
+      RETURNING order_number, customer_name, customer_email, total_amount, currency
     `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNumber]);
 
+    const paid = updated.rows[0];
     console.log(`[BUYWISH ORDER PAID VIA WEBHOOK]: Order ${orderNumber} paid ($${totalAmount}, Tax: $${taxAmount})`);
+    if (paid) {
+      const { sendBrandMail, replyAddress } = require('../utils/mailer');
+      const money = `$${Number(paid.total_amount || totalAmount).toFixed(2)} ${paid.currency || 'USD'}`;
+      if (paid.customer_email) {
+        await sendBrandMail('buywishonline', 'orders', {
+          to: paid.customer_email,
+          replyTo: replyAddress('buywishonline', 'support'),
+          subject: `Order received — ${paid.order_number}`,
+          html: `<p>Hi ${String(paid.customer_name || 'there').replace(/</g, '')},</p>
+            <p>We received payment for order <strong>${paid.order_number}</strong> (${money}).</p>
+            <p>Your order is confirmed. We will email tracking from this same orders mailbox once the supplier ships it.</p>
+            <p>Questions: <a href="mailto:support@buywishonline.com">support@buywishonline.com</a></p>`,
+          text: `We received payment for order ${paid.order_number} (${money}). Tracking will follow from orders@buywishonline.com. Support: support@buywishonline.com`,
+          transactional: true,
+          emailType: 'buywish_order_paid'
+        }).catch((err) => console.warn('[BUYWISH ORDER EMAIL]:', err.message));
+      }
+      const staffTo = process.env.BUYWISH_ALERTS_EMAIL || process.env.OPERATIONS_EMAIL || replyAddress('buywishonline', 'alerts');
+      await sendBrandMail('buywishonline', 'alerts', {
+        to: staffTo,
+        subject: `Paid order ${paid.order_number}`,
+        html: `<p>BuyWishOnline order <strong>${paid.order_number}</strong> is paid (${money}).</p>
+          <p>Customer: ${String(paid.customer_name || '').replace(/</g, '')} · ${String(paid.customer_email || '').replace(/</g, '')}</p>
+          <p>Fulfillment stays pending until the supplier ships. No tracking number is invented here.</p>`,
+        text: `Paid order ${paid.order_number} (${money}) for ${paid.customer_email || 'no email'}.`,
+        transactional: true,
+        emailType: 'buywish_order_alert'
+      }).catch((err) => console.warn('[BUYWISH ALERT EMAIL]:', err.message));
+    }
   }
 }
 
