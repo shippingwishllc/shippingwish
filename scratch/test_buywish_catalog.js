@@ -3,6 +3,8 @@ const {
   classifyProduct,
   flattenCategories,
   categoriesForDepartment,
+  productMatchesQuery,
+  categoryFilterIsTrusted,
   productSharePath,
   departmentBySlug,
   summarizeLane,
@@ -19,7 +21,7 @@ const {
   buildOrderArguments,
   extractOrderId
 } = require('../utils/buywish-fulfillment');
-const { renderProductPage, renderSitemap, injectProductIntoStorefront } = require('../utils/buywish-pages');
+const { renderProductPage, renderCollectionPage, renderSitemap, injectProductIntoStorefront } = require('../utils/buywish-pages');
 
 const fastLane = summarizeLane({
   shipping_estimates: [{ type: 'Express', cost: 4.5, estimated_days: 6 }]
@@ -78,6 +80,15 @@ const flat = flattenCategories({
 assert.strictEqual(categoriesForDepartment(flat, 'Tech')[0].name, 'Electronics');
 assert.strictEqual(productHandle(42), 'p-42');
 assert.strictEqual(departmentBySlug('tech').title, 'Tech & Gadgets');
+assert.ok(!departmentBySlug('beauty').blurb.toLowerCase().includes('zendrop'));
+const sameAsTrending = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
+const distinct = Array.from({ length: 10 }, (_, i) => ({ id: i + 100 }));
+assert.strictEqual(categoryFilterIsTrusted(sameAsTrending, sameAsTrending), false);
+assert.strictEqual(categoryFilterIsTrusted(distinct, sameAsTrending), true);
+assert.strictEqual(categoryFilterIsTrusted(distinct.slice(0, 4), []), false);
+assert.strictEqual(productMatchesQuery({ title: 'Wireless Earbuds', description: '' }, 'earbud'), true);
+assert.strictEqual(productMatchesQuery({ title: 'Blue Yoga Mat', description: 'for exercise' }, 'yoga mat'), true);
+assert.strictEqual(productMatchesQuery({ title: 'Throw Blanket', description: 'home decor' }, 'earbuds'), false);
 assert.strictEqual(departmentBySlug('nope'), null);
 
 assert.strictEqual(isOrderCreateTool({ name: 'get_orders' }), false);
@@ -152,6 +163,10 @@ const html = renderProductPage({
 assert.ok(html.includes('Earbuds &lt;gold&gt;'));
 assert.ok(html.includes('https://www.buywishonline.com/products/p-42'));
 assert.ok(html.includes('Share this product'));
+assert.ok(!html.toLowerCase().includes('zendrop'));
+const collectionPage = renderCollectionPage('Beauty & Wellness', []);
+assert.ok(collectionPage.includes('Beauty &amp; Wellness'));
+assert.ok(!collectionPage.toLowerCase().includes('zendrop'));
 assert.ok(!html.includes('<gold>'));
 
 const xml = renderSitemap([{ loc: 'https://www.buywishonline.com/', priority: '1.0' }]);

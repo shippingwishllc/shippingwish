@@ -74,7 +74,7 @@ function head({ title, description, canonical, image, jsonLd, robots }) {
 
 function foot() {
   return `<footer class="muted">
-  <p>BuyWishOnline is operated by Shipping Wish LLC. Orders for the USA, Canada, and the United Kingdom are fulfilled through Zendrop after payment.</p>
+  <p>BuyWishOnline is operated by Shipping Wish LLC. Orders ship to the USA, Canada, and the United Kingdom after payment.</p>
   <p><a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/privacy-policy">Privacy</a> · <a href="/terms">Terms</a></p>
 </footer>
 </body></html>`;
@@ -173,7 +173,7 @@ function renderCollectionPage(category, products) {
   const slug = String(category || 'featured').toLowerCase();
   const canonical = `https://www.buywishonline.com/collections/${encodeURIComponent(slug)}`;
   const title = `${category} | BuyWishOnline`;
-  const description = `Shop ${category} pieces that Zendrop can ship to the USA, Canada, and the United Kingdom.`;
+  const description = `Shop ${category} at BuyWishOnline. Delivery to the USA, Canada, and the United Kingdom.`;
   const cards = products.map((p) => {
     const img = p.image_url || (p.images && p.images[0]) || '';
     return `<a class="card" href="/products/${esc(p.handle)}">
@@ -190,7 +190,7 @@ function renderCollectionPage(category, products) {
 <main>
   <p class="muted">Collection</p>
   <h1>${esc(category)}</h1>
-  <p>Pieces in this edit have a Zendrop shipping quote for the USA, Canada, and the United Kingdom, with USA delivery quoted at 14 days or faster.</p>
+  <p>Shop this collection. Orders ship to the USA, Canada, and the United Kingdom.</p>
   <div class="grid">${cards || '<p>This collection is being stocked. Check back after the next catalog sync.</p>'}</div>
 </main>
 ${foot()}`;

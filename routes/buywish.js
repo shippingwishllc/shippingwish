@@ -19,6 +19,8 @@ const {
   classifyProduct,
   flattenCategories,
   categoriesForDepartment,
+  productMatchesQuery,
+  categoryFilterIsTrusted,
   DEPARTMENT_ZENDROP_CATEGORIES,
   normalizeProduct,
   summarizeLane,
@@ -159,7 +161,7 @@ function accountRateLimit(req, res, next) {
 
 async function listSyncedProducts({ category, search, limit, page }) {
   await ensureBuyWishSchema();
-  const perPage = Math.min(Math.max(parseInt(limit, 10) || 24, 1), 48);
+  const perPage = Math.min(Math.max(parseInt(limit, 10) || 24, 1), 96);
   const pageNum = Math.max(parseInt(page, 10) || 1, 1);
   const offset = (pageNum - 1) * perPage;
   const params = [];
@@ -210,11 +212,12 @@ async function fetchCatalogSlice(tool, args) {
   }
 }
 
-function rememberDepartmentProduct(byId, raw, departmentKey, searchText) {
+function rememberDepartmentProduct(byId, raw, departmentKey, searchText, allowUnsorted) {
   const normalized = normalizeProduct(raw);
   if (!normalized.id || byId.has(String(normalized.id))) return;
   const classified = classifyProduct(normalized);
-  if (!classified || classified.key !== departmentKey) return;
+  if (classified && classified.key !== departmentKey) return;
+  if (!classified && !allowUnsorted) return;
   if (searchText) {
     const hay = `${normalized.title} ${normalized.description}`.toLowerCase();
     if (!hay.includes(searchText)) return;
@@ -227,38 +230,50 @@ async function fetchDepartmentProducts(department, { search, limit, page }) {
   const byId = new Map();
   const searchText = search && String(search).trim() ? String(search).trim().toLowerCase() : '';
   const labels = DEPARTMENT_ZENDROP_CATEGORIES[department.key] || [];
-  const jobs = [];
+  const categoryJobs = [];
 
   labels.slice(0, 3).forEach((label) => {
-    jobs.push(fetchCatalogSlice('get_catalog_trending_products', { limit: 24, filters: { category: label } }));
-    jobs.push(fetchCatalogSlice('get_catalog_products', { limit: 24, filters: { category: label } }));
-    jobs.push(fetchCatalogSlice('get_catalog_products', { limit: 24, category: label }));
+    categoryJobs.push(fetchCatalogSlice('get_catalog_products', { limit: 48, category: label }));
+    categoryJobs.push(fetchCatalogSlice('get_catalog_products', { limit: 48, page: 2, category: label }));
+    categoryJobs.push(fetchCatalogSlice('get_catalog_trending_products', { limit: 48, filters: { category: label } }));
+    categoryJobs.push(fetchCatalogSlice('get_catalog_products', { limit: 48, filters: { category: label } }));
   });
-  const queries = searchText ? [searchText] : department.searches;
-  queries.forEach((q) => {
-    const args = { limit: 16, search: q };
+  const queries = searchText ? [searchText] : department.searches.slice(0, 4);
+  const searchJobs = queries.map((q) => {
+    const args = { limit: 24, search: q };
     if (labels[0]) args.filters = { category: labels[0] };
-    jobs.push(fetchCatalogSlice('get_catalog_products', args));
+    return fetchCatalogSlice('get_catalog_products', args);
   });
-  jobs.push(Promise.race([
+  const idJob = Promise.race([
     loadZendropCategories(),
     new Promise((resolve) => setTimeout(() => resolve([]), 2500))
   ]).then(async (flat) => {
-    const idJobs = categoriesForDepartment(flat, department.key).slice(0, 3).map((cat) => {
+    const idJobs = categoriesForDepartment(flat, department.key).slice(0, 3).flatMap((cat) => {
       const categoryId = Number(cat.id);
-      if (!Number.isFinite(categoryId)) return Promise.resolve([]);
-      return fetchCatalogSlice('get_catalog_products', { limit: 24, category_id: categoryId });
+      if (!Number.isFinite(categoryId)) return [];
+      return [
+        fetchCatalogSlice('get_catalog_products', { limit: 48, category_id: categoryId }),
+        fetchCatalogSlice('get_catalog_products', { limit: 48, page: 2, category_id: categoryId })
+      ];
     });
     return (await Promise.all(idJobs)).flat();
-  }));
+  });
 
-  const batches = await Promise.all(jobs);
-  batches.forEach((products) => {
-    products.forEach((product) => rememberDepartmentProduct(byId, product, department.key, searchText));
+  const [baseline, categoryBatches, searchBatches, idProducts] = await Promise.all([
+    fetchCatalogSlice('get_catalog_trending_products', { limit: 40 }),
+    Promise.all(categoryJobs),
+    Promise.all(searchJobs),
+    idJob
+  ]);
+  const categoryProducts = categoryBatches.flat().concat(idProducts);
+  const trusted = categoryFilterIsTrusted(categoryProducts, baseline);
+  categoryProducts.forEach((product) => rememberDepartmentProduct(byId, product, department.key, searchText, trusted));
+  searchBatches.forEach((products) => {
+    products.forEach((product) => rememberDepartmentProduct(byId, product, department.key, searchText, false));
   });
 
   const products = [...byId.values()];
-  const perPage = Math.min(Math.max(parseInt(limit, 10) || 24, 1), 48);
+  const perPage = Math.min(Math.max(parseInt(limit, 10) || 48, 1), 96);
   const pageNum = Math.max(parseInt(page, 10) || 1, 1);
   const offset = (pageNum - 1) * perPage;
   return {
@@ -287,12 +302,54 @@ async function loadLiveProductByKey(key) {
   return product;
 }
 
+async function searchLiveProducts(query, { limit, page }) {
+  const q = String(query || '').trim();
+  const classified = classifyProduct({ title: q });
+  const jobs = [
+    fetchCatalogSlice('get_catalog_products', { search: q, limit: 48 }),
+    fetchCatalogSlice('get_catalog_products', { search: q, limit: 48, page: 2 }),
+    fetchCatalogSlice('get_catalog_trending_products', { limit: 40, filters: { category: q } }),
+    fetchCatalogSlice('get_catalog_trending_products', { limit: 40 })
+  ];
+  (DEPARTMENT_ZENDROP_CATEGORIES[classified && classified.key] || []).slice(0, 2).forEach((label) => {
+    jobs.push(fetchCatalogSlice('get_catalog_products', { limit: 48, category: label }));
+    jobs.push(fetchCatalogSlice('get_catalog_trending_products', { limit: 40, filters: { category: label } }));
+  });
+  const batches = await Promise.all(jobs);
+  const byId = new Map();
+  batches.flat().forEach((raw) => {
+    const product = normalizeProduct(raw);
+    if (!product.id || byId.has(String(product.id))) return;
+    if (!productMatchesQuery(product, q)) return;
+    byId.set(String(product.id), product);
+  });
+  const products = [...byId.values()];
+  const perPage = Math.min(Math.max(parseInt(limit, 10) || 24, 1), 48);
+  const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+  const offset = (pageNum - 1) * perPage;
+  return {
+    products: products.slice(offset, offset + perPage),
+    total: products.length,
+    page: pageNum,
+    per_page: perPage
+  };
+}
+
 // ============================================================
 // GET /api/buywish/products — Live Zendrop Catalog
 // ============================================================
 router.get('/products', async (req, res) => {
   try {
     const { category, search, limit = 24, page = 1, sort = 'trending', source } = req.query;
+    const queryText = search && String(search).trim();
+    if (queryText && queryText.length >= 2) {
+      const searchKey = `searchlive_${queryText.toLowerCase()}_${page}_${limit}`;
+      const searchCached = getCache(searchKey);
+      if (searchCached) return res.json({ ok: true, ...searchCached, source: 'cache' });
+      const found = await searchLiveProducts(queryText, { limit, page });
+      setCache(searchKey, found, 5 * 60 * 1000);
+      return res.json({ ok: true, ...found, source: 'search' });
+    }
     const department = departmentByQuery(category);
     if (department) {
       const deptKey = `dept_${department.key}_${search || ''}_${page}_${limit}`;
@@ -327,7 +384,7 @@ router.get('/products', async (req, res) => {
     // Fetch from Zendrop
     if (sort === 'trending' || !sort) {
       // Get trending products
-      const trendingData = await zendropCall('get_catalog_trending_products', { limit: 50 });
+      const trendingData = await zendropCall('get_catalog_trending_products', { limit: 80 });
       if (trendingData && trendingData.products) {
         products = trendingData.products.map(normalizeProduct);
       }
@@ -362,7 +419,7 @@ router.get('/products', async (req, res) => {
     }
 
     // Pagination
-    const perPage = Math.min(parseInt(limit, 10) || 24, 48);
+    const perPage = Math.min(parseInt(limit, 10) || 24, 96);
     const offset = (parseInt(page, 10) - 1) * perPage;
     const total = products.length;
     const paginated = products.slice(offset, offset + perPage);
