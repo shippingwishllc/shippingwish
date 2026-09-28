@@ -451,13 +451,19 @@ async function lastBookedDelivery(carrier) {
   return rows[0] ? parseOrigin(rows[0].delivery_location) : null;
 }
 
+async function reloadDestination(carrier, parsed) {
+  if (parsed && parsed.destination) return parsed.destination;
+  if (carrier.home_state) return parseDestination(carrier.home_state, carrier);
+  return { any: true, states: [], label: 'anywhere' };
+}
+
 async function planReload(carrier, fromPlace, { excludeLoadIds = [], bookedOfferId = null, limit = 3 } = {}) {
   await ensureBoardSchema();
   const origin = fromPlace && (fromPlace.city || fromPlace.zip || fromPlace.state)
     ? fromPlace
     : parseOrigin(fromPlace);
   if (!origin) return { from: null, matches: [], others: [], reasons: { no_origin: 1 } };
-  const dest = parseDestination(carrier.prefer_destination, carrier);
+  const dest = await reloadDestination(carrier);
   const result = await findMatches(carrier, { origin, destination: dest, excludeLoadIds, limit });
   const plan = compactReloadPlan(result, placeLabel(origin));
   if (bookedOfferId) {
@@ -761,7 +767,7 @@ async function handleCarrierSms(fromPhone, body) {
       );
       const res = await offerLoads(
         { ...carrier, last_location: placeLabel(origin) },
-        { origin, destination: parseDestination(carrier.prefer_destination, carrier), excludeLoadIds: await shownLoadIds(carrier.id) }
+        { origin, destination: await reloadDestination(carrier, parsed), excludeLoadIds: await shownLoadIds(carrier.id) }
       );
       reply = res.offers.length
         ? res.reply
