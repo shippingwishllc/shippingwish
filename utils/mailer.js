@@ -1,40 +1,55 @@
 const { Resend } = require('resend');
 const pool = require('../db');
 const { COMPANY, unsubscribeUrl } = require('./email-templates');
+const {
+  getBrandSender,
+  replyAddress,
+  addressOf,
+  brandFromAddress,
+  inboxFromOptions,
+  resolveKnownFrom,
+  isKnownMailbox,
+  LOADSNEXUS,
+  SHIPPINGWISH
+} = require('./brand-senders');
 
-let resendClient = null;
-let resendLoadsNexusClient = null;
+const resendByKey = new Map();
 
-function getResend(fromAddress) {
-  const fromStr = String(fromAddress || '').toLowerCase();
-  const isLoadsNexus = fromStr.includes('loadsnexus.com');
-
-  if (isLoadsNexus && process.env.RESEND_LOADSNEXUS_API_KEY) {
-    if (!resendLoadsNexusClient) resendLoadsNexusClient = new Resend(process.env.RESEND_LOADSNEXUS_API_KEY);
-    return resendLoadsNexusClient;
-  }
-
-  const key = process.env.RESEND_API_KEY || process.env.RESEND_LOADSNEXUS_API_KEY;
-  if (!key) return null;
-  if (!resendClient) resendClient = new Resend(key);
-  return resendClient;
+function envKeyForBrand(brand) {
+  if (brand === 'loadsnexus') return process.env.RESEND_LOADSNEXUS_API_KEY || process.env.RESEND_API_KEY;
+  if (brand === 'nyclimowish') return process.env.RESEND_NYCLIMOWISH_API_KEY || process.env.RESEND_API_KEY;
+  if (brand === 'buywishonline') return process.env.RESEND_BUYWISHONLINE_API_KEY || process.env.RESEND_API_KEY;
+  return process.env.RESEND_API_KEY || process.env.RESEND_LOADSNEXUS_API_KEY;
 }
 
-const LOADSNEXUS_SENDERS = {
-  alerts: 'LoadsNexus Alerts <alerts@loadsnexus.com>',
-  billing: 'LoadsNexus Billing <billing@loadsnexus.com>',
-  support: 'LoadsNexus Support <support@loadsnexus.com>',
-  deals: 'LoadsNexus Deals <deals@loadsnexus.com>',
-  auth: 'LoadsNexus Security <auth@loadsnexus.com>',
-  dispatch: 'LoadsNexus Dispatch <dispatch@loadsnexus.com>'
-};
+function hasResendKey() {
+  return Boolean(
+    process.env.RESEND_API_KEY ||
+    process.env.RESEND_LOADSNEXUS_API_KEY ||
+    process.env.RESEND_NYCLIMOWISH_API_KEY ||
+    process.env.RESEND_BUYWISHONLINE_API_KEY
+  );
+}
+
+function getResend(fromAddress) {
+  const key = envKeyForBrand(brandFromAddress(fromAddress));
+  if (!key) return null;
+  let client = resendByKey.get(key);
+  if (!client) {
+    client = new Resend(key);
+    resendByKey.set(key, client);
+  }
+  return client;
+}
+
+const LOADSNEXUS_SENDERS = LOADSNEXUS;
 
 function getLoadsNexusSender(mailbox = 'support') {
-  return LOADSNEXUS_SENDERS[mailbox] || LOADSNEXUS_SENDERS.support;
+  return getBrandSender('loadsnexus', mailbox);
 }
 
 function mailFrom() {
-  return process.env.MAIL_FROM || `Shipping Wish LLC <${COMPANY.email}>`;
+  return process.env.MAIL_FROM || getBrandSender('shippingwish', 'info');
 }
 
 function replyToAddress(leadId) {
@@ -82,9 +97,10 @@ async function sendBrandedEmail({
     return { skipped: true, reason: 'unsubscribed', id: null };
   }
 
-  const from = fromOverride || (isTx
-    ? (process.env.MAIL_FROM_TRANSACTIONAL || process.env.MAIL_FROM_NOREPLY || mailFrom())
+  const rawFrom = fromOverride || (isTx
+    ? (process.env.MAIL_FROM_TRANSACTIONAL || getBrandSender('shippingwish', 'noreply') || mailFrom())
     : mailFrom());
+  const from = String(rawFrom).includes('<') ? rawFrom : (resolveKnownFrom(rawFrom) || rawFrom);
   const resend = getResend(from);
   const replyTo = replyToOverride || replyToAddress(leadId);
   const headers = isTx
@@ -296,8 +312,24 @@ function formatReplyFromAddress(toEmail) {
   return `${name} <${addr}>`;
 }
 
-async function sendEmail({ to, subject, html, text, from }) {
-  return sendBrandedEmail({ to, subject, html, text, from: from || mailFrom() });
+async function sendEmail({ to, subject, html, text, from, replyTo, transactional }) {
+  return sendBrandedEmail({
+    to,
+    subject,
+    html,
+    text,
+    from: from || mailFrom(),
+    replyTo,
+    transactional: transactional !== false
+  });
+}
+
+async function sendBrandMail(brand, mailbox, opts = {}) {
+  return sendBrandedEmail({
+    ...opts,
+    from: opts.from || getBrandSender(brand, mailbox),
+    replyTo: opts.replyTo || replyAddress(brand, mailbox)
+  });
 }
 
 module.exports = {
@@ -307,11 +339,20 @@ module.exports = {
   isUnsubscribed,
   sendBrandedEmail,
   sendEmail,
+  sendBrandMail,
   fetchReceivedEmail,
   fetchReceivedAttachments,
   formatReplyFromAddress,
   receivingApiKey,
   normalizeEmail,
   getLoadsNexusSender,
-  LOADSNEXUS_SENDERS
+  getBrandSender,
+  replyAddress,
+  addressOf,
+  inboxFromOptions,
+  resolveKnownFrom,
+  isKnownMailbox,
+  hasResendKey,
+  LOADSNEXUS_SENDERS,
+  SHIPPINGWISH
 };

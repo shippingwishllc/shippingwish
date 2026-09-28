@@ -130,7 +130,8 @@ async function requestBrokerBooking(db, offer, { via } = {}) {
       html: `<div style="font-family:Arial,sans-serif;font-size:14px;white-space:pre-wrap">${escaped}</div>`,
       emailType: 'broker_booking_request',
       transactional: true,
-      replyTo: ops
+      from: require('./brand-senders').getBrandSender('shippingwish', 'dispatch'),
+      replyTo: ops || require('./brand-senders').replyAddress('shippingwish', 'dispatch')
     });
   } catch (err) {
     await db.query(`UPDATE load_offers SET broker_negotiation_status = 'needs_staff' WHERE id = $1`, [offer.id]);

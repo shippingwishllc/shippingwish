@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
 const { requireAuth, requireRole, JWT_SECRET, setAuthCookie } = require('../middleware/auth');
-const { sendBrandedEmail } = require('../utils/mailer');
+const { sendBrandedEmail, getBrandSender } = require('../utils/mailer');
 const { buildTemplate, COMPANY, APP_URL, escapeHtml } = require('../utils/email-templates');
 
 const TRIAL_DAYS = parseInt(process.env.STRIPE_TRIAL_DAYS || '7', 10);
@@ -143,7 +143,9 @@ async function notifyStaff({ subject, html, text }) {
         html,
         text,
         emailType: 'internal_lead',
-        templateKey: 'internal_checkout'
+        templateKey: 'internal_checkout',
+        from: getBrandSender('shippingwish', 'operations'),
+        transactional: true
       });
     } catch (err) {
       console.error('Staff notify:', err.message);
@@ -902,7 +904,9 @@ async function handleLoadBoardCheckoutRequest(req, res) {
             <p>You can now search all 50-state freight lanes and see direct broker contact info unmasked.</p>
           </div>
         `,
-        text: `Welcome to Shipping Wish AI Load Board!\nYour pass is active. Login at ${APP_URL}/login using ${cleanEmail}. Tools: ${APP_URL}/load-booking and ${APP_URL}/brokers`
+        text: `Welcome to Shipping Wish AI Load Board!\nYour pass is active. Login at ${APP_URL}/login using ${cleanEmail}. Tools: ${APP_URL}/load-booking and ${APP_URL}/brokers`,
+        from: getBrandSender('shippingwish', 'billing'),
+        transactional: true
       });
     } catch (_) { /* non-fatal email */ }
 
@@ -1323,7 +1327,9 @@ router.post('/weekly-link', requireAuth, requireRole('dispatcher', 'admin', 'sup
         leadId: lead_id,
         sentBy: req.user.id,
         emailType: 'onboarding',
-        templateKey: 'onboarding'
+        templateKey: 'onboarding',
+        from: getBrandSender('shippingwish', 'operations'),
+        transactional: true
       });
       if (lead_id) {
         await pool.query(
@@ -1469,7 +1475,9 @@ async function handleStripeEvent(event) {
                 <p>Direct broker phone numbers, live freight, and credit scores are unmasked.</p>
               </div>
             `,
-            text: `Welcome to Shipping Wish AI Load Board!\nYour pass is active. Login at ${APP_URL}/login using ${email}. Tools: ${APP_URL}/load-booking and ${APP_URL}/brokers`
+            text: `Welcome to Shipping Wish AI Load Board!\nYour pass is active. Login at ${APP_URL}/login using ${email}. Tools: ${APP_URL}/load-booking and ${APP_URL}/brokers`,
+            from: getBrandSender('shippingwish', 'billing'),
+            transactional: true
           });
         }
         await notifyStaff({
@@ -1522,7 +1530,8 @@ async function handleStripeEvent(event) {
           leadId,
           emailType: 'trial_welcome',
           templateKey: 'trial_welcome',
-          transactional: true
+          transactional: true,
+          from: getBrandSender('shippingwish', 'operations')
         });
       } catch (err) {
         console.error('trial welcome email:', err.message);
@@ -1648,7 +1657,10 @@ async function handleStripeEvent(event) {
               <p style="font-size:12px;color:#64748b;">If you need assistance, contact our billing desk at billing@loadsnexus.com or call +1 (800) 580-3101.</p>
             </div>
           `,
-          text: `Your subscription payment of ${amountDue} failed. Please pay your invoice or update your card at ${hostedInvoiceUrl} to avoid service disruption.`
+          text: `Your subscription payment of ${amountDue} failed. Please pay your invoice or update your card at ${hostedInvoiceUrl} to avoid service disruption.`,
+          from: getBrandSender('loadsnexus', 'billing'),
+          transactional: true,
+          emailType: 'ln_payment_failed'
         });
       } catch (err) {
         console.error('[Billing Webhook] Payment failed customer email notice error:', err.message);
@@ -1699,7 +1711,10 @@ async function handleStripeEvent(event) {
               <p style="font-size:12px;color:#64748b;">Once verified, your subscription and Load Board access will continue uninterrupted without needing to re-enter your card details.</p>
             </div>
           `,
-          text: `Action Required: Your bank requires 3D Secure verification for your ${amountDue} subscription renewal. Please verify here: ${hostedInvoiceUrl}`
+          text: `Action Required: Your bank requires 3D Secure verification for your ${amountDue} subscription renewal. Please verify here: ${hostedInvoiceUrl}`,
+          from: getBrandSender('loadsnexus', 'billing'),
+          transactional: true,
+          emailType: 'ln_payment_3ds'
         });
       } catch (err) {
         console.error('[Billing Webhook] 3DS payment_action_required email notice error:', err.message);
