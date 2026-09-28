@@ -272,4 +272,22 @@ assert.strictEqual(cleanGoogleTagId('aw-123456789'), 'AW-123456789');
 assert.strictEqual(cleanGoogleTagId('pixel'), null);
 assert.strictEqual(cleanGoogleTagId(''), '');
 
+const fs = require('fs');
+const path = require('path');
+const gtmId = 'GTM-PD9DZS54';
+['index.html', 'about.html', 'contact.html', 'terms.html', 'privacy-policy.html', 'account.html'].forEach((name) => {
+  const html = fs.readFileSync(path.join(__dirname, '../public/buywishonline', name), 'utf8');
+  const head = html.slice(0, html.indexOf('</head>'));
+  const body = html.slice(html.indexOf('<body>'), html.indexOf('<body>') + 600);
+  assert.ok(head.includes("'" + gtmId + "'"), name + ' head snippet');
+  assert.ok(head.includes('https://www.googletagmanager.com/gtm.js?id='), name + ' gtm.js');
+  assert.ok(body.includes('https://www.googletagmanager.com/ns.html?id=' + gtmId), name + ' noscript');
+  assert.strictEqual(html.split(gtmId).length - 1, 2, name + ' appears twice');
+});
+const adminHtml = fs.readFileSync(path.join(__dirname, '../public/buywishonline/admin.html'), 'utf8');
+assert.ok(!adminHtml.includes('googletagmanager.com/gtm.js'));
+const shell = renderCollectionPage('Shop', []);
+assert.ok(shell.includes("'" + gtmId + "'"));
+assert.ok(shell.includes('ns.html?id=' + gtmId));
+
 console.log('buywish catalog tests passed');
