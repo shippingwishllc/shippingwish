@@ -17,8 +17,7 @@ export default function middleware(request) {
   if (!dest) return pass();
 
   url.pathname = dest;
-  if (typeof Response.rewrite === 'function') return Response.rewrite(url);
   return new Response(null, {
-    headers: { 'x-middleware-rewrite': url.pathname + url.search }
+    headers: { 'x-middleware-rewrite': url.toString() }
   });
 }

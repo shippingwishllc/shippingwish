@@ -168,6 +168,9 @@ CREATE TABLE IF NOT EXISTS limo_commission_ledger (
 );
 
 ALTER TABLE limo_users ADD COLUMN IF NOT EXISTS partner_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
+ALTER TABLE limo_users ADD COLUMN IF NOT EXISTS company_name TEXT;
+ALTER TABLE limo_users ADD COLUMN IF NOT EXISTS designation TEXT;
+ALTER TABLE limo_users ADD COLUMN IF NOT EXISTS newsletter BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS operator_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
 ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS referral_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
 ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS accepted_offer_id INTEGER REFERENCES limo_partner_offers(id) ON DELETE SET NULL;

@@ -410,6 +410,9 @@ app.use((req, res, next) => {
     if (cleanP === '/login' || cleanP === '/login.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'login.html'));
     }
+    if (cleanP === '/login/company' || cleanP === '/login/company.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'login', 'company.html'));
+    }
     if (cleanP === '/signup' || cleanP === '/signup.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'signup.html'));
     }

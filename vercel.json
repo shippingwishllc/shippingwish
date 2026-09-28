@@ -118,6 +118,11 @@
       "destination": "/api"
     },
     {
+      "source": "/login/company",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/login/company.html"
+    },
+    {
       "source": "/signup",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
       "destination": "/api"

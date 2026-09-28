@@ -38,15 +38,25 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/signup', async (req, res) => {
-  const { name, email, password, phone } = req.body || {};
+  const body = req.body || {};
+  if (String(body.website || '').trim()) return res.status(400).json({ error: 'Could not create the account.' });
+  const firstName = String(body.firstName || '').trim().slice(0, 80);
+  const lastName = String(body.lastName || '').trim().slice(0, 80);
+  const name = String(body.name || [firstName, lastName].filter(Boolean).join(' ')).trim().slice(0, 160);
+  const email = String(body.email || '').trim().slice(0, 160);
+  const password = String(body.password || '');
+  const phone = String(body.phone || '').trim().slice(0, 40);
+  const company = String(body.company || '').trim().slice(0, 120);
+  const designation = String(body.designation || '').trim().slice(0, 80);
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, password required.' });
-  if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
   try {
     await ensureSchema();
     const hash = await bcrypt.hash(password, 10);
     const { rows } = await pool.query(
-      `INSERT INTO limo_users (name, email, password_hash, role, phone) VALUES ($1,$2,$3,'customer',$4) RETURNING id, name, email, role`,
-      [name, email, hash, phone || null]
+      `INSERT INTO limo_users (name, email, password_hash, role, phone, company_name, designation, newsletter)
+       VALUES ($1,$2,$3,'customer',$4,$5,$6,$7) RETURNING id, name, email, role`,
+      [name, email, hash, phone || null, company || null, designation || null, Boolean(body.newsletter)]
     );
     res.cookie('nlw_token', signLimoToken(rows[0]), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 86400 * 1000 });
     res.json({ ok: true, user: rows[0] });

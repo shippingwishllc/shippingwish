@@ -19,6 +19,20 @@
     gtag('config', 'G-ZGYN8GXWLQ');
   </script>
 
+  <script>
+  (function () {
+    var host = location.hostname.toLowerCase();
+    var limoHost = host === 'nyclimowish.com' || host === 'www.nyclimowish.com' || host.endsWith('.nyclimowish.com') || host === 'localhost' || host === '127.0.0.1';
+    if (!limoHost) return;
+    var path = location.pathname;
+    if (path !== '/nyclimowish' && path.indexOf('/nyclimowish/') !== 0) return;
+    var next = path.replace(/^\/nyclimowish/, '') || '/';
+    next = next.replace(/\.html$/, '');
+    if (next.endsWith('/index')) next = next.slice(0, -6) || '/';
+    if (next.length > 1 && next.endsWith('/')) next = next.slice(0, -1);
+    history.replaceState(null, '', next + location.search + location.hash);
+  })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contact Us | NYC Limo Wish</title>
