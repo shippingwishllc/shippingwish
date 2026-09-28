@@ -262,5 +262,14 @@ assert.ok(!feedXml.includes('<b>'));
 const feedCsv = renderMetaCatalogCsv(feedItems);
 assert.ok(feedCsv.startsWith('id,title,'));
 assert.ok(feedCsv.includes('"Lamp & Light"'));
+const { cleanMetaPixelId, cleanGoogleTagId } = require('../utils/buywish-tracking');
+assert.strictEqual(cleanMetaPixelId('123456789012345'), '123456789012345');
+assert.strictEqual(cleanMetaPixelId('abc'), null);
+assert.strictEqual(cleanMetaPixelId(''), '');
+assert.strictEqual(cleanGoogleTagId('g-ab12cd'), 'G-AB12CD');
+assert.strictEqual(cleanGoogleTagId('GTM-ABCD'), 'GTM-ABCD');
+assert.strictEqual(cleanGoogleTagId('aw-123456789'), 'AW-123456789');
+assert.strictEqual(cleanGoogleTagId('pixel'), null);
+assert.strictEqual(cleanGoogleTagId(''), '');
 
 console.log('buywish catalog tests passed');

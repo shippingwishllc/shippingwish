@@ -2420,6 +2420,7 @@
 <!-- Toast Notifications -->
 <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
+<script src="/tracking.js"></script>
 <script>
 // ============================================================
 // CURRENCY DETECTION & CONVERSION
@@ -2886,6 +2887,7 @@ async function openDetail(productId) {
   }
 
   document.getElementById('detailDesc').textContent = p.description || '';
+  if (window.bwoTrack) window.bwoTrack('ViewContent', p);
   const featuresEl = document.getElementById('detailFeatures');
   featuresEl.innerHTML = (p.features || []).map(f => `<li>${f}</li>`).join('');
 
@@ -3231,6 +3233,7 @@ function addToCart(product, qty = 1) {
     cart.push({ ...product, qty });
   }
   updateCartUI();
+  if (window.bwoTrack) window.bwoTrack('AddToCart', product);
   showToast('🛒', `${product.title.substring(0, 30)}... added to cart!`);
 }
 
@@ -3600,6 +3603,9 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
           if (data.ok && data.paid) {
             const taxInfo = data.tax_amount > 0 ? ` (Includes Tax: ${data.currency} ${data.tax_amount.toFixed(2)})` : '';
+            const trackPaid = () => { if (window.bwoTrackPurchase) window.bwoTrackPurchase(orderSuccess, data.amount_total, data.currency); };
+            if (window.bwoTrackingReady) window.bwoTrackingReady.then(trackPaid);
+            else trackPaid();
             showToast('✅', `Payment Confirmed! Order #${orderSuccess} placed${taxInfo}.`);
           } else {
             showToast('✅', `Order #${orderSuccess} confirmed! Tracking details emailed.`);
