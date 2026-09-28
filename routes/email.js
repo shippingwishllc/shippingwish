@@ -5,7 +5,7 @@ const path = require('path');
 const multer = require('multer');
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
-const { sendBrandedEmail, isUnsubscribed, fetchReceivedEmail, fetchReceivedAttachments, formatReplyFromAddress, getResend, normalizeEmail } = require('../utils/mailer');
+const { sendBrandedEmail, isUnsubscribed, fetchReceivedEmail, fetchReceivedAttachments, formatReplyFromAddress, getResend, normalizeEmail, getBrandSender, inboxFromOptions, resolveKnownFrom } = require('../utils/mailer');
 const { buildTemplate, verifyUnsubscribeToken, COMPANY } = require('../utils/email-templates');
 const { notifyAdmins, createNotification } = require('../utils/notifications');
 const { isValidEmail, emailValidationError } = require('../utils/email-valid');
@@ -185,7 +185,7 @@ async function handleSendOutreach(req, res) {
       }
     }
 
-    const fromSender = from_address || process.env.MAIL_FROM || 'Shipping Wish Operations <operations@shippingwish.com>';
+    const fromSender = resolveKnownFrom(from_address) || getBrandSender('shippingwish', 'operations');
 
     const sendRes = await sendBrandedEmail({
       to: toAddress,
@@ -269,7 +269,7 @@ router.post('/send-with-attachments', requireAuth, staffEmailOnly, emailUpload.a
     const subject = String(req.body.subject || '').trim() || 'Shipping Wish LLC — Dispatch Operations';
     const message = String(req.body.message || req.body.body || '').trim();
     const leadId = req.body.lead_id ? parseInt(req.body.lead_id, 10) : null;
-    const fromSender = req.body.from || process.env.MAIL_FROM || 'Shipping Wish Operations <operations@shippingwish.com>';
+    const fromSender = resolveKnownFrom(req.body.from) || getBrandSender('shippingwish', 'operations');
 
     const attachments = (req.files || []).map(f => ({
       filename: f.originalname,
@@ -330,6 +330,10 @@ router.get('/logs', requireAuth, staffEmailOnly, async (req, res) => {
     console.error('Error fetching email logs:', err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+router.get('/from-options', requireAuth, staffEmailOnly, (_req, res) => {
+  res.json({ from: inboxFromOptions() });
 });
 
 // GET /api/email/inbox — inbound replies and outbound sent emails for admin / sales

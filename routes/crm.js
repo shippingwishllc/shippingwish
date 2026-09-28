@@ -298,7 +298,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       if (send_email && leadItem.raw_email) {
         ops.push((async () => {
           try {
-            const { sendBrandedEmail } = require('../utils/mailer');
+            const { sendBrandedEmail, getBrandSender } = require('../utils/mailer');
             await Promise.race([
               sendBrandedEmail({
                 to: leadItem.raw_email,
@@ -307,7 +307,8 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
                 html: leadItem.email_html,
                 leadId: leadItem.id,
                 sentBy: req.user ? req.user.id : null,
-                emailType: 'ai_prospecting'
+                emailType: 'ai_prospecting',
+                from: getBrandSender('shippingwish', 'info')
               }),
               new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 2500))
             ]);

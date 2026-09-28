@@ -25,16 +25,16 @@ function parseNegotiateText(text) {
   const choiceMatch = lower.match(/\b(?:load\s*)?#?\s*([1-3])\b/);
   const choice = choiceMatch ? Number(choiceMatch[1]) : null;
 
-  const rpm = body.match(/(?:need|ask|want|looking for|can you (?:get|do)|get me)\s*\$?\s*(\d(?:\.\d{1,2})?)\s*(?:\/\s*mi|per\s*mile|a\s*mile|rpm)\b/i)
-    || (/\b(need|ask|too cheap|too low|lowball|rate)\b/i.test(lower)
-      ? body.match(/\$?\s*(\d(?:\.\d{1,2})?)\s*(?:\/\s*mi|per\s*mile|a\s*mile|rpm)\b/i)
+  const rpm = body.match(/(?:need|ask|want|looking for|can you (?:get|do)|get me|necesito|pido|quiero)\s*\$?\s*(\d(?:\.\d{1,2})?)\s*(?:\/\s*mi|per\s*mile|a\s*mile|rpm|por\s*milla)\b/i)
+    || (/\b(need|ask|too cheap|too low|lowball|rate|necesito|barato)\b/i.test(lower)
+      ? body.match(/\$?\s*(\d(?:\.\d{1,2})?)\s*(?:\/\s*mi|per\s*mile|a\s*mile|rpm|por\s*milla)\b/i)
       : null);
   if (rpm) {
     const n = Number(rpm[1]);
     if (n >= 1 && n <= 12) return { intent: 'negotiate', choice, ask: n, unit: 'rpm' };
   }
 
-  const tagged = body.match(/(?:need|ask|want|looking for|can you (?:get|do)|get me|for)\s*\$?\s*([\d,]+(?:\.\d{1,2})?)/i);
+  const tagged = body.match(/(?:need|ask|want|looking for|can you (?:get|do)|get me|necesito|pido|quiero|for)\s*\$?\s*([\d,]+(?:\.\d{1,2})?)/i);
   const dollar = body.match(/\$\s*([\d,]+(?:\.\d{1,2})?)/);
   const raw = tagged ? tagged[1] : (dollar ? dollar[1] : null);
   if (raw && !looksLikeZip(raw)) {
@@ -44,7 +44,7 @@ function parseNegotiateText(text) {
     }
   }
 
-  if (/\b(too cheap|too low|low ?ball|rate is low|that'?s low|cheap)\b/i.test(lower)) {
+  if (/\b(too cheap|too low|low ?ball|rate is low|that'?s low|cheap|muy barato|esta barato|está barato|muy bajo)\b/i.test(lower)) {
     return { intent: 'negotiate', choice, ask: null, unit: null };
   }
   return null;
@@ -64,27 +64,28 @@ function toFlat(ask, unit, loaded, deadhead) {
   return Math.round(Number(ask) * miles);
 }
 
-function guardAsk({ posted, ask, unit, loaded, deadhead, estimated, minRpm }) {
+function guardAsk({ posted, ask, unit, loaded, deadhead, estimated, minRpm, lang }) {
+  const { t } = require('./dispatch-i18n');
   const postedRate = Number(posted) || 0;
   if (!postedRate) {
-    return { ok: false, code: 'no_posted', message: 'That load has no posted rate, so a dispatcher has to call the broker.' };
+    return { ok: false, code: 'no_posted', message: t(lang, 'guard_no_posted') };
   }
   if (ask == null) {
-    return { ok: false, code: 'need_number', message: `Posted is ${money(postedRate)}. What rate do you need? Example: NEED ${Math.round(postedRate + 100)}` };
+    return { ok: false, code: 'need_number', message: t(lang, 'guard_need_number', { posted: money(postedRate), example: Math.round(postedRate + 100) }) };
   }
   const flat = toFlat(ask, unit, loaded, deadhead);
   if (flat == null && unit === 'rpm') {
-    return { ok: false, code: 'need_flat', message: 'Tell us the dollar amount you need on this load. Example: NEED 2600' };
+    return { ok: false, code: 'need_flat', message: t(lang, 'guard_need_flat') };
   }
   if (flat == null || flat < MIN_FLAT || flat > MAX_FLAT) {
-    return { ok: false, code: 'need_number', message: `What rate do you need? Example: NEED ${Math.round(postedRate + 100)}` };
+    return { ok: false, code: 'need_number', message: t(lang, 'guard_need_number', { posted: money(postedRate), example: Math.round(postedRate + 100) }) };
   }
   if (flat <= postedRate) {
     return {
       ok: false,
       code: 'not_higher',
       flat,
-      message: `Posted is already ${money(postedRate)}. Reply 1-3 to take it at that rate, or NEED a higher dollar amount.`
+      message: t(lang, 'guard_not_higher', { posted: money(postedRate) })
     };
   }
   const cap = askCap(postedRate);
@@ -94,7 +95,7 @@ function guardAsk({ posted, ask, unit, loaded, deadhead, estimated, minRpm }) {
       code: 'over_cap',
       flat,
       cap,
-      message: `We can ask the broker up to ${money(cap)} without a dispatcher (${money(postedRate)} posted). A person will look at ${money(flat)}.`
+      message: t(lang, 'guard_over_cap', { cap: money(cap), posted: money(postedRate), ask: money(flat) })
     };
   }
   const miles = (Number(loaded) || 0) + (Number(deadhead) || 0);
@@ -104,7 +105,7 @@ function guardAsk({ posted, ask, unit, loaded, deadhead, estimated, minRpm }) {
       ok: false,
       code: 'below_min',
       flat,
-      message: `That is below your minimum $${Number(minRpm).toFixed(2)}/mi all-in.`
+      message: t(lang, 'guard_below_min', { min: Number(minRpm).toFixed(2) })
     };
   }
   return { ok: true, flat, cap, allIn, estimated: Boolean(estimated) };

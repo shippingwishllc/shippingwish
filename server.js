@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const { sendBrandedEmail } = require('./utils/mailer');
+const { sendBrandedEmail, getBrandSender } = require('./utils/mailer');
 const { buildTemplate, COMPANY } = require('./utils/email-templates');
 const { ensureGrowthSchema } = require('./utils/ensure-growth-schema');
 const { purgeExpiredTrash } = require('./utils/trash');
@@ -489,7 +489,8 @@ app.post('/api/contact', async (req, res) => {
         text: `${safeName} / ${safeCompany} / ${phone} / ${email} / ${serviceType || ''} / ${message || ''}`,
         emailType: 'internal_lead',
         templateKey: 'internal_lead',
-        transactional: true
+        transactional: true,
+        from: getBrandSender('shippingwish', 'operations')
       });
     }
 
@@ -502,7 +503,8 @@ app.post('/api/contact', async (req, res) => {
         text: ack.text,
         emailType: 'contact_ack',
         templateKey: 'contact_ack',
-        transactional: true
+        transactional: true,
+        from: getBrandSender('shippingwish', 'support')
       });
     }
 

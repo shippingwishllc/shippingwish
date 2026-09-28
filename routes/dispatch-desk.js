@@ -17,8 +17,10 @@ function maskKey(value) {
 }
 
 function morningText(carrier) {
-  const where = carrier.empty_zip ? ` Last empty ZIP on file: ${carrier.empty_zip}.` : '';
-  return `Shipping Wish: Good morning ${carrier.contact_name || carrier.company_name}. Reply with the ZIP you are empty in and where you want to go. Example: 75201 to Atlanta.${where}`;
+  const lang = carrier.sms_lang === 'es' ? 'es' : 'en';
+  const { t } = require('../utils/dispatch-i18n');
+  const where = carrier.empty_zip ? t(lang, 'morning_zip', { zip: carrier.empty_zip }) : '';
+  return t(lang, 'morning', { name: carrier.contact_name || carrier.company_name, where });
 }
 
 router.get('/sources', ...staff, async (req, res) => {
@@ -228,6 +230,14 @@ router.get('/offers', ...staff, async (req, res) => {
   }
 });
 
+router.get('/metrics', ...staff, async (req, res) => {
+  try {
+    res.json({ ok: true, metrics: await require('../utils/dispatch-metrics').deskMetrics() });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load desk activity counts.' });
+  }
+});
+
 router.post('/offers/:id/booked', ...staff, async (req, res) => {
   try {
     const result = await brain.markBooked(req.params.id, String(req.body.note || '').slice(0, 200), { force: req.body.force === true });
@@ -277,6 +287,10 @@ async function deliverMorning(carrier) {
         disposition: smsStatus,
         is_read: true
       }).catch(() => {});
+      await pool.query(
+        'INSERT INTO ai_dispatch_messages (carrier_id, direction, body, intent) VALUES ($1,$2,$3,$4)',
+        [carrier.id, 'outbound', text, 'morning']
+      ).catch(() => {});
     }
   } catch (err) {
     smsStatus = 'error';
