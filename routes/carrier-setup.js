@@ -59,6 +59,7 @@ async function ensureOnboardingTable() {
         preferred_lanes TEXT,
         excluded_states TEXT,
         min_rpm TEXT,
+        home_days TEXT,
         mc_cert_path TEXT,
         coi_path TEXT,
         w9_path TEXT,
@@ -73,6 +74,7 @@ async function ensureOnboardingTable() {
       CREATE INDEX IF NOT EXISTS idx_onboarding_mc ON onboarding_submissions(mc_number);
       CREATE INDEX IF NOT EXISTS idx_onboarding_email ON onboarding_submissions(email);
     `);
+    await pool.query(`ALTER TABLE onboarding_submissions ADD COLUMN IF NOT EXISTS home_days TEXT`);
   } catch (err) {
     console.warn('[ONBOARDING_TABLE_WARN]', err.message);
   }
@@ -146,6 +148,7 @@ router.post('/submit', uploadFields, async (req, res) => {
     const preferredLanes = String(body.preferred_lanes || '').trim();
     const excludedStates = String(body.excluded_states || '').trim();
     const minRpm = String(body.min_rpm || '').trim();
+    const homeDays = String(body.home_days || '').trim();
 
     const signerName = String(body.signer_name || ownerName).trim();
     const signerTitle = String(body.signer_title || title).trim();
@@ -222,7 +225,7 @@ DBA: ${dba || 'N/A'}
 Signer: ${signerName} (${signerTitle})
 Equipment: ${equipmentTypes} | Trucks: ${numTrucks} | Drivers: ${numDrivers} | Max Payload: ${maxPayload}
 ELD: ${eldProvider || 'N/A'} | Factoring: ${factoringCompany || 'None / QuickPay'}
-Target Lanes: ${preferredLanes || 'All 48 states'} | Excluded: ${excludedStates || 'None'} | Min RPM: ${minRpm ? '$' + minRpm : 'Market best'}
+Target Lanes: ${preferredLanes || 'All 48 states'} | Excluded: ${excludedStates || 'None'} | Min RPM: ${minRpm ? '$' + minRpm : 'Market best'} | Home days: ${homeDays || 'not set'}
 Documents Uploaded:
 - MC Certificate: ${mcCertFile ? mcCertFile.originalname : 'Pending'}
 - Insurance COI: ${coiFile ? coiFile.originalname : 'Pending'}
@@ -311,12 +314,12 @@ IP Address: ${ipAddress}
          email, billing_email, phy_address, phy_city, phy_state, phy_zip,
          mc_number, dot_number, equipment_types, num_trucks, num_drivers,
          max_payload, eld_provider, factoring_company, preferred_lanes,
-         excluded_states, min_rpm, mc_cert_path, coi_path, w9_path, noa_path,
+         excluded_states, min_rpm, home_days, mc_cert_path, coi_path, w9_path, noa_path,
          signature_path, signature_type, signer_name, signer_title, ip_address
        ) VALUES (
          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
          $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,
-         $29, $30, $31, $32, $33
+         $29, $30, $31, $32, $33, $34
        )`,
       [
         leadId,
@@ -343,6 +346,7 @@ IP Address: ${ipAddress}
         preferredLanes || null,
         excludedStates || null,
         minRpm || null,
+        homeDays || null,
         mcCertPath,
         coiPath,
         w9Path,
