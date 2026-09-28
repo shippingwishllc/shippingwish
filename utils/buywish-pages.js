@@ -45,6 +45,13 @@ function head({ title, description, canonical, image, jsonLd, robots }) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-PD9DZS54');</script>
+  <!-- End Google Tag Manager -->
   <title>${esc(title)}</title>
   <meta name="description" content="${esc(description)}">
   <meta name="robots" content="${esc(robots || 'index, follow')}">
@@ -62,6 +69,10 @@ function head({ title, description, canonical, image, jsonLd, robots }) {
   ${jsonLd ? `<script type="application/ld+json">${jsonLd}</script>` : ''}
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PD9DZS54"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 <header>
   <a class="brand" href="/">BuyWishOnline</a>
   <nav>

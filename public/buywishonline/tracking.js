@@ -33,8 +33,22 @@
     queue('track', 'PageView');
   }
 
+  function gtmPresent(id) {
+    const nodes = document.getElementsByTagName('script');
+    for (let i = 0; i < nodes.length; i++) {
+      const src = nodes[i].src || '';
+      if (src.indexOf('googletagmanager.com/gtm.js') !== -1 && src.indexOf(id) !== -1) return true;
+    }
+    return false;
+  }
+
   function installGoogle(id) {
-    if (window.bwoGoogleInstalled || !id) return;
+    if (!id) return;
+    if (id.indexOf('GTM-') === 0 && gtmPresent(id)) {
+      window.bwoGoogleInstalled = window.bwoGoogleInstalled || id;
+      return;
+    }
+    if (window.bwoGoogleInstalled) return;
     window.bwoGoogleInstalled = id;
     if (id.indexOf('GTM-') === 0) {
       window.dataLayer = window.dataLayer || [];
