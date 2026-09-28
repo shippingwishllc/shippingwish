@@ -69,7 +69,7 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({ onSearch, onOpenPost
 
         <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-3 py-1.5 rounded-full">
           <span className="w-2 h-2 rounded-full bg-emerald-500 radar-pulse-dot"></span>
-          <span>4,850+ Live Verified Loads</span>
+          <span>Live posted loads</span>
         </div>
       </div>
 

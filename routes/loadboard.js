@@ -477,7 +477,9 @@ router.get('/search', optionalAuth, async (req, res) => {
          ORDER BY created_at DESC
          LIMIT 40`
       );
-      if (dbRes.rows && dbRes.rows.length) {
+    const { cachedBlockedKeys, keyFor } = require('../utils/broker-authority');
+    const blocked = await cachedBlockedKeys().catch(() => new Set());
+    if (dbRes.rows && dbRes.rows.length) {
         liveDbLoads = dbRes.rows.map(r => {
           let bName = r.broker_name || 'Broker details unavailable';
           let bMc = r.broker_mc || '';
@@ -509,8 +511,8 @@ router.get('/search', optionalAuth, async (req, res) => {
           const miles = Number(r.miles) || 0;
           const rate = Number(r.rate) || 0;
           const rpm = Number(r.rpm) || (miles > 0 ? (rate / miles).toFixed(2) : null);
-          const pDate = r.pickup_date ? new Date(r.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Immediate';
-          const dDate = r.delivery_date ? new Date(r.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Next Day';
+          const pDate = r.pickup_date ? new Date(r.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Date open';
+          const dDate = r.delivery_date ? new Date(r.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
           const isCovered = (r.status === 'covered');
 
           return {
@@ -519,25 +521,24 @@ router.get('/search', optionalAuth, async (req, res) => {
             destination: r.delivery_location,
             miles,
             rate,
-            rpm: String(rpm),
-            equipment_type: r.equipment_type || '53ft Dry Van',
+            rpm: rpm != null ? String(rpm) : '',
+            equipment_type: r.equipment_type || 'Equipment not listed',
             weight: r.weight ? `${Number(r.weight).toLocaleString()} lbs` : 'Not listed',
-            commodity: r.commodity || 'General Freight',
+            commodity: r.commodity || 'Not listed',
             pickup_date: pDate,
             delivery_date: dDate,
-            dho: 10,
-            dhd: 15,
             broker_name: bName,
             broker_mc: bMc,
             broker_phone: bPhone,
             broker_email: bEmail,
             credit_score: null,
             days_to_pay: null,
-            bond_status: 'Not verified',
-            fraud_risk: 'Not assessed',
+            bond_status: null,
+            fraud_risk: null,
+            broker_fmcsa: (keyFor({ mc: bMc }) && blocked.has(keyFor({ mc: bMc }))) ? 'block' : null,
             verified_broker: false,
             is_live_broker_post: true,
-            posted_age: 'Just now',
+            posted_age: postedAge(r.created_at),
             status: r.status || 'new',
             is_covered: isCovered,
             covered_at: isCovered ? new Date(r.updated_at).getTime() : null
@@ -1579,10 +1580,13 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
     const userRes = await pool.query('SELECT id, role, company_name, mc_number, phone, email FROM users WHERE id = $1', [req.user.id]);
     const u = userRes.rows[0] || {};
 
-    const bName = brokerName || u.company_name || 'Verified Freight Broker';
-    const mc = brokerMc || u.mc_number || 'MC-VERIFIED';
-    const phone = contactPhone || u.phone || '+1 (800) 580-3101';
-    const email = contactEmail || u.email || 'dispatch@loadsnexus.com';
+    const bName = brokerName || u.company_name || null;
+    const mc = brokerMc || u.mc_number || '';
+    const phone = contactPhone || u.phone || '';
+    const email = contactEmail || u.email || '';
+    if (!bName) {
+      return res.status(400).json({ error: 'The broker company name is required.' });
+    }
 
     // Shield 2: FMCSA MC Format & Sanity
     const cleanMc = String(mc).replace(/[^0-9]/g, '');
@@ -1603,18 +1607,37 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
     }
 
     const numRate = Number(rate);
-    const milesNum = Number(miles) > 0 ? Number(miles) : 650;
-    const rpm = (numRate / milesNum).toFixed(2);
-    const rpmVal = parseFloat(rpm);
+    let milesNum = Number(miles) > 0 ? Number(miles) : 0;
+    let milesEstimated = false;
+    if (!milesNum) {
+      const { geocode, roadMiles } = require('../utils/geo');
+      const [from, to] = await Promise.all([geocode(origin).catch(() => null), geocode(destination).catch(() => null)]);
+      const estimate = from && to ? roadMiles(from, to) : null;
+      if (estimate) { milesNum = estimate; milesEstimated = true; }
+    }
+    const rpm = milesNum ? (numRate / milesNum).toFixed(2) : null;
+    const rpmVal = rpm ? parseFloat(rpm) : null;
 
     if (numRate < 150) {
       return res.status(400).json({ error: 'Load rate must be at least $150 USD.' });
     }
-    if (rpmVal < 1.00) {
+    if (rpmVal != null && !milesEstimated && rpmVal < 1.00) {
       return res.status(400).json({ error: `Rate per mile ($${rpm}/mi) is too low. US spot market minimum threshold is $1.00/mile.` });
     }
-    if (rpmVal > 8.50 && numRate > 5000) {
+    if (rpmVal != null && !milesEstimated && rpmVal > 8.50 && numRate > 5000) {
       return res.status(400).json({ error: `Rate per mile ($${rpm}/mi) exceeds reasonable spot market limits ($8.50/mi). To prevent ghost freight, please verify rate or contact LoadsNexus compliance.` });
+    }
+
+    // Shield 4: FMCSA authority. A failed check stops the post; an unreachable FMCSA doesn't.
+    const { checkBrokerAuthority, summarize } = require('../utils/broker-authority');
+    const authority = await checkBrokerAuthority({ mc: cleanMc, contactEmail: email, contactPhone: phone })
+      .catch(() => ({ verdict: 'unknown', flags: [] }));
+    if (authority.verdict === 'block') {
+      return res.status(400).json({
+        error: `This MC did not pass the FMCSA check, so the load was not posted. ${summarize(authority)}`,
+        code: 'FMCSA_CHECK_FAILED',
+        flags: authority.flags
+      });
     }
 
     // Shield 3b: Equipment Physics Sanity Check
@@ -1644,8 +1667,9 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
         loadNumber, numRate, origin, destination,
         pickupDate || new Date(), deliveryDate || null,
         norm.equipment_type, norm.weight, commodity || 'General Freight',
-        `Posted by Verified Broker: ${bName} (${mc}). Phone: ${phone}. Email: ${email}. Anti-Double Brokering Guard: VERIFIED. ${notes || ''}`,
-        bName, mc, `${phone} | ${email}`, milesNum, Number(rpm)
+        [`Posted by ${bName}${mc ? ` (${mc})` : ''}. Phone: ${phone}.${email ? ` Email: ${email}.` : ''}`,
+          `FMCSA check: ${summarize(authority)}`, milesEstimated ? `Miles estimated at ${milesNum}.` : null, notes || null].filter(Boolean).join(' '),
+        bName, mc || null, [phone, email].filter(Boolean).join(' | '), milesNum, rpm ? Number(rpm) : 0
       ]
     );
 
@@ -1661,9 +1685,11 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
       ok: true,
       load: postedLoad,
       rpm,
-      anti_double_brokering_status: 'VERIFIED_ACTIVE',
-      fmcsa_authority_status: 'ACTIVE_BMC84_VERIFIED',
-      message: `Load #${loadNumber} verified & published live to LoadsNexus successfully!`
+      miles_estimated: milesEstimated,
+      fmcsa_check: { verdict: authority.verdict, flags: authority.flags || [] },
+      message: authority.verdict === 'ok'
+        ? `Load #${loadNumber} is live on LoadsNexus. FMCSA broker authority is active.`
+        : `Load #${loadNumber} is live on LoadsNexus. ${summarize(authority)}`
     });
   } catch (err) {
     console.error('Broker post-load error:', err);
@@ -1712,34 +1738,26 @@ router.get('/broker/my-loads', optionalAuth, async (req, res) => {
 async function ensureBrokersScoringColumns() {
   try {
     await pool.query(`
-      ALTER TABLE brokers ADD COLUMN IF NOT EXISTS days_to_pay INTEGER DEFAULT 21;
-      ALTER TABLE brokers ADD COLUMN IF NOT EXISTS bond_status TEXT DEFAULT 'ACTIVE ($75,000 BMC-84)';
-      ALTER TABLE brokers ADD COLUMN IF NOT EXISTS fraud_risk TEXT DEFAULT 'LOW';
+      ALTER TABLE brokers ADD COLUMN IF NOT EXISTS days_to_pay INTEGER;
+      ALTER TABLE brokers ADD COLUMN IF NOT EXISTS bond_status TEXT;
+      ALTER TABLE brokers ADD COLUMN IF NOT EXISTS fraud_risk TEXT;
+      ALTER TABLE brokers ALTER COLUMN days_to_pay DROP DEFAULT;
+      ALTER TABLE brokers ALTER COLUMN bond_status DROP DEFAULT;
+      ALTER TABLE brokers ALTER COLUMN fraud_risk DROP DEFAULT;
     `);
-
-    const countRes = await pool.query('SELECT COUNT(*) as count FROM brokers');
-    if (parseInt(countRes.rows[0]?.count, 10) === 0) {
-      const benchmarkBrokers = [
-        ['C.H. Robinson', 'MC-110034', '+1 (800) 326-9477', 'dispatch@chrobinson.com', 'A+', 18, 'ACTIVE ($75,000 BMC-84)', 'LOW'],
-        ['TQL (Total Quality Logistics)', 'MC-325492', '+1 (800) 580-3101', 'loadbooking@tql.com', 'A+', 21, 'ACTIVE ($75,000 BMC-84)', 'LOW'],
-        ['Echo Global Logistics', 'MC-525992', '+1 (800) 354-7993', 'booking@echoglobal.com', 'A', 24, 'ACTIVE ($75,000 BMC-84)', 'LOW'],
-        ['Coyote Logistics', 'MC-561398', '+1 (877) 626-9683', 'rates@coyote.com', 'A', 28, 'ACTIVE ($75,000 BMC-84)', 'LOW'],
-        ['Arrive Logistics', 'MC-787123', '+1 (888) 995-7600', 'carrierdesk@arrivelogistics.com', 'A', 22, 'ACTIVE ($75,000 BMC-84)', 'LOW'],
-        ['RXO Freight', 'MC-892110', '+1 (800) 359-9350', 'rates@rxo.com', 'A+', 19, 'ACTIVE ($75,000 BMC-84)', 'LOW'],
-        ['Landstar Ranger', 'MC-166960', '+1 (800) 872-9474', 'dispatch@landstar.com', 'A+', 20, 'ACTIVE ($75,000 BMC-84)', 'LOW'],
-        ['J.B. Hunt Transport', 'MC-135797', '+1 (800) 452-4868', 'truckload@jbhunt.com', 'A+', 25, 'ACTIVE ($75,000 BMC-84)', 'LOW']
-      ];
-
-      for (const [name, mc, phone, email, rating, dtp, bond, fraud] of benchmarkBrokers) {
-        await pool.query(`
-          INSERT INTO brokers (company_name, mc_number, phone, email, credit_rating, days_to_pay, bond_status, fraud_risk, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-        `, [name, mc, phone, email, rating, dtp, bond, fraud]);
-      }
-    }
   } catch (e) {
     console.error('ensureBrokersScoringColumns error:', e);
   }
+}
+
+function postedAge(createdAt) {
+  if (!createdAt) return '';
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000));
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 // ==========================================
@@ -1837,7 +1855,7 @@ async function dispatchLaneAlerts(load) {
             const { sendTwilioSms } = require('./voip');
             const cleanPhone = String(alert.contact_phone).replace(/[^0-9]/g, '');
             if (cleanPhone.length >= 10) {
-              const smsText = `[LoadsNexus™ Alert] New Freight: ${load.pickup_location || load.origin} -> ${load.delivery_location || load.destination} paying $${Number(load.rate).toLocaleString()} ($${load.rpm}/mi). Call Broker: ${load.broker_phone || '+1 (800) 580-3101'}`;
+              const smsText = `[LoadsNexus Alert] New freight: ${load.pickup_location || load.origin} -> ${load.delivery_location || load.destination} paying $${Number(load.rate).toLocaleString()}${load.rpm ? ` ($${load.rpm}/mi)` : ''}.${load.broker_phone ? ` Call broker: ${load.broker_phone}` : ''}`;
               sendTwilioSms(cleanPhone, smsText).catch(e => console.warn('Twilio alert err:', e.message));
             }
           } catch (e) {
@@ -1864,17 +1882,17 @@ async function dispatchLaneAlerts(load) {
                     ${escapeHtml(load.pickup_location || load.origin)} &rarr; ${escapeHtml(load.delivery_location || load.destination)}
                   </div>
                   <div style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
-                    Equipment: <strong>${escapeHtml(load.equipment_type || "53' Dry Van")}</strong> &middot; Miles: <strong>${load.miles || 'N/A'}</strong> &middot; Weight: <strong>${load.weight || '42,000 lbs'}</strong>
+                    Equipment: <strong>${escapeHtml(load.equipment_type || 'as posted')}</strong> &middot; Miles: <strong>${load.miles || 'n/a'}</strong> &middot; Weight: <strong>${load.weight || 'not listed'}</strong>
                   </div>
                   <div style="font-size: 26px; font-weight: 900; color: #1d4ed8;">
                     $${Number(load.rate).toLocaleString()} <span style="font-size: 14px; color: #64748b; font-weight: 600;">($${load.rpm}/mi)</span>
                   </div>
                 </div>
                 <div style="margin-bottom: 24px; font-size: 13px; color: #334155; line-height: 1.6;">
-                  <strong>Verified Broker:</strong> ${escapeHtml(load.broker_name || 'LoadsNexus™ Verified Broker')}<br>
-                  <strong>Broker MC#:</strong> ${escapeHtml(load.broker_mc || 'MC-VERIFIED')}<br>
-                  <strong>Direct Dispatch Phone:</strong> <a href="tel:${escapeHtml(load.broker_phone || '+18005803101')}" style="color: #2563eb; font-weight: bold;">${escapeHtml(load.broker_phone || '+1 (800) 580-3101')}</a><br>
-                  <strong>Broker Email:</strong> ${escapeHtml(load.broker_email || 'dispatch@loadsnexus.com')}
+                  <strong>Broker:</strong> ${escapeHtml(load.broker_name || 'Not listed')}<br>
+                  <strong>Broker MC#:</strong> ${escapeHtml(load.broker_mc || 'Not listed')}<br>
+                  <strong>Dispatch phone:</strong> ${load.broker_phone ? `<a href="tel:${escapeHtml(load.broker_phone)}" style="color: #2563eb; font-weight: bold;">${escapeHtml(load.broker_phone)}</a>` : 'Not listed'}<br>
+                  <strong>Broker email:</strong> ${escapeHtml(load.broker_email || 'Not listed')}
                 </div>
                 <div style="text-align: center;">
                   <a href="https://www.loadsnexus.com" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 28px; font-weight: bold; border-radius: 8px; font-size: 14px;">View Live Board &rarr;</a>
@@ -2005,7 +2023,6 @@ router.get('/stats/live', optionalAuth, async (req, res) => {
         active_loads: activeLoads,
         available_trucks: availableTrucks,
         monitored_brokers: monitoredBrokers,
-        anti_double_brokering_protected: '100%',
         avg_rate_per_mile: avgRpm != null ? `$${avgRpm}` : '—'
       }
     });
@@ -2025,35 +2042,19 @@ router.get('/brokers/scores', optionalAuth, async (req, res) => {
       ORDER BY id ASC LIMIT 50
     `);
 
-    const enriched = (brokersRes.rows.length ? brokersRes.rows : [
-      { id: 1, company_name: 'C.H. Robinson', mc_number: 'MC-110034', credit_rating: 'A+', days_to_pay: 18, bond_status: 'ACTIVE ($75,000 BMC-84)', fraud_risk: 'LOW' },
-      { id: 2, company_name: 'TQL (Total Quality Logistics)', mc_number: 'MC-325492', credit_rating: 'A+', days_to_pay: 21, bond_status: 'ACTIVE ($75,000 BMC-84)', fraud_risk: 'LOW' },
-      { id: 3, company_name: 'Echo Global Logistics', mc_number: 'MC-525992', credit_rating: 'A', days_to_pay: 24, bond_status: 'ACTIVE ($75,000 BMC-84)', fraud_risk: 'LOW' },
-      { id: 4, company_name: 'Coyote Logistics', mc_number: 'MC-561398', credit_rating: 'A', days_to_pay: 28, bond_status: 'ACTIVE ($75,000 BMC-84)', fraud_risk: 'LOW' },
-      { id: 5, company_name: 'Arrive Logistics', mc_number: 'MC-787123', credit_rating: 'A', days_to_pay: 22, bond_status: 'ACTIVE ($75,000 BMC-84)', fraud_risk: 'LOW' },
-      { id: 6, company_name: 'RXO Freight', mc_number: 'MC-892110', credit_rating: 'A+', days_to_pay: 19, bond_status: 'ACTIVE ($75,000 BMC-84)', fraud_risk: 'LOW' },
-      { id: 7, company_name: 'Landstar Ranger', mc_number: 'MC-166960', credit_rating: 'A+', days_to_pay: 20, bond_status: 'ACTIVE ($75,000 BMC-84)', fraud_risk: 'LOW' },
-      { id: 8, company_name: 'J.B. Hunt Transport', mc_number: 'MC-135797', credit_rating: 'A+', days_to_pay: 25, bond_status: 'ACTIVE ($75,000 BMC-84)', fraud_risk: 'LOW' }
-    ]).map((b, idx) => {
-      const dtpValues = [18, 21, 24, 28, 22, 19, 20, 25];
-      const creditScores = [98, 96, 94, 95, 93, 97, 99, 98];
-      const dtp = b.days_to_pay || dtpValues[idx % dtpValues.length];
-      const score = creditScores[idx % creditScores.length];
-
-      return {
-        id: b.id,
-        company_name: b.company_name,
-        mc_number: b.mc_number,
-        phone: b.phone || '+1 (800) 555-0199',
-        email: b.email || 'freight@brokerage.com',
-        credit_rating: b.credit_rating || 'A',
-        credit_score: score,
-        days_to_pay: `${dtp} days`,
-        bond_status: b.bond_status || 'ACTIVE ($75,000 BMC-84)',
-        double_brokering_risk: b.fraud_risk || 'LOW (Verified)',
-        fmcsa_status: 'ACTIVE_AUTHORIZED'
-      };
-    });
+    const enriched = brokersRes.rows.map((b) => ({
+      id: b.id,
+      company_name: b.company_name,
+      mc_number: b.mc_number,
+      phone: b.phone || '',
+      email: b.email || '',
+      credit_rating: b.credit_rating || null,
+      credit_score: null,
+      days_to_pay: b.days_to_pay != null ? `${b.days_to_pay} days` : null,
+      bond_status: b.bond_status || null,
+      double_brokering_risk: b.fraud_risk || null,
+      fmcsa_status: null
+    }));
 
     res.json({ ok: true, brokers: enriched });
   } catch (err) {
@@ -2184,18 +2185,18 @@ router.get('/loads/:id/ratecon-pdf', optionalAuth, async (req, res) => {
     const destination = q.destination || dbLoad?.delivery_location || 'Dallas, TX';
     const equipment = q.equipment || dbLoad?.equipment_type || "53' Dry Van";
     const rate = Number(q.rate || dbLoad?.rate || 2850);
-    const miles = Number(q.miles || dbLoad?.miles || 925);
-    const rpm = q.rpm || dbLoad?.rpm || (rate / (miles || 1)).toFixed(2);
-    const weight = q.weight || (dbLoad?.weight ? `${Number(dbLoad.weight).toLocaleString()} lbs` : '42,000 lbs');
-    const commodity = q.commodity || dbLoad?.commodity || 'General Freight';
-    const pickupDate = q.pickup_date || (dbLoad?.pickup_date ? new Date(dbLoad.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Scheduled Today');
-    const deliveryDate = q.delivery_date || (dbLoad?.delivery_date ? new Date(dbLoad.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Scheduled Direct Transit');
+    const miles = Number(q.miles || dbLoad?.miles || 0);
+    const rpm = q.rpm || dbLoad?.rpm || (miles ? (rate / miles).toFixed(2) : '');
+    const weight = q.weight || (dbLoad?.weight ? `${Number(dbLoad.weight).toLocaleString()} lbs` : '');
+    const commodity = q.commodity || dbLoad?.commodity || '';
+    const pickupDate = q.pickup_date || (dbLoad?.pickup_date ? new Date(dbLoad.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+    const deliveryDate = q.delivery_date || (dbLoad?.delivery_date ? new Date(dbLoad.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
 
     // Broker info
-    const brokerName = q.broker || dbLoad?.broker_name || 'LoadsNexus™ Verified Brokerage';
-    const brokerMc = q.mc || dbLoad?.broker_mc || 'MC-981240';
-    let brokerPhone = q.phone || '+1 (800) 580-3101';
-    let brokerEmail = q.email || 'dispatch@loadsnexus.com';
+    const brokerName = q.broker || dbLoad?.broker_name || '';
+    const brokerMc = q.mc || dbLoad?.broker_mc || '';
+    let brokerPhone = q.phone || '';
+    let brokerEmail = q.email || '';
     if (dbLoad?.broker_contact) {
       const parts = dbLoad.broker_contact.split('|');
       if (parts.length >= 2) {
@@ -2385,8 +2386,8 @@ router.post('/loads/:id/inquiry-reply', optionalAuth, async (req, res) => {
   }
 
   const senderEmail = (req.user && req.user.email) || 'dispatch@loadsnexus.com';
-  const brokerName = broker_name || (req.user && (req.user.company_name || req.user.name)) || 'LoadsNexus Verified Broker';
-  const brokerPhone = broker_phone || (req.user && req.user.phone) || '+1 (800) 580-3101';
+  const brokerName = broker_name || (req.user && (req.user.company_name || req.user.name)) || 'Broker';
+  const brokerPhone = broker_phone || (req.user && req.user.phone) || '';
   const emailSubj = subject || `Rate Confirmation & Tender Details: ${pickup || 'Origin'} to ${delivery || 'Destination'} (Load #${loadId})`;
 
   try {
@@ -2442,18 +2443,34 @@ ${escapeHtml(message || 'Please review the load details above. Reply to this ema
 
 // POST /api/loadboard/ai-ingest — Ingest raw broker sheets/emails using OpenAI or heuristic parser
 router.post('/ai-ingest', optionalAuth, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Sign in as a broker to publish loads.', code: 'AUTH_REQUIRED', loginUrl: '/login?role=broker' });
+  }
+  if (!['broker', 'admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Only broker and staff accounts can publish loads.', code: 'BROKER_ROLE_REQUIRED' });
+  }
   const { rawText, brokerName, brokerMc, brokerPhone, brokerEmail } = req.body;
   if (!rawText || !rawText.trim()) {
     return res.status(400).json({ error: 'Raw freight text is required to parse.' });
   }
 
   try {
+    const userRes = await pool.query('SELECT company_name, mc_number, phone, email FROM users WHERE id = $1', [req.user.id]);
+    const u = userRes.rows[0] || {};
     const defaultBroker = {
-      name: brokerName || 'Verified Freight Broker',
-      mc: brokerMc || 'MC-VERIFIED',
-      phone: brokerPhone || '+1 (800) 580-3101',
-      email: brokerEmail || 'dispatch@loadsnexus.com'
+      name: brokerName || (req.user.role === 'broker' ? u.company_name : null) || null,
+      mc: brokerMc || (req.user.role === 'broker' ? u.mc_number : null) || null,
+      phone: brokerPhone || (req.user.role === 'broker' ? u.phone : null) || null,
+      email: brokerEmail || (req.user.role === 'broker' ? u.email : null) || null
     };
+    if (defaultBroker.mc) {
+      const { checkBrokerAuthority, summarize } = require('../utils/broker-authority');
+      const authority = await checkBrokerAuthority({ mc: defaultBroker.mc, contactEmail: defaultBroker.email, contactPhone: defaultBroker.phone })
+        .catch(() => ({ verdict: 'unknown', flags: [] }));
+      if (authority.verdict === 'block') {
+        return res.status(400).json({ error: `This MC did not pass the FMCSA check, so nothing was published. ${summarize(authority)}`, code: 'FMCSA_CHECK_FAILED' });
+      }
+    }
 
     const parsedLoads = await parseFreightWithAI(rawText, defaultBroker);
     if (!parsedLoads || parsedLoads.length === 0) {
@@ -2475,7 +2492,7 @@ router.post('/ai-ingest', optionalAuth, async (req, res) => {
       ok: true,
       count: savedLoads.length,
       loads: savedLoads,
-      message: `Successfully extracted and published ${savedLoads.length} live verified loads to LoadsNexus!`
+      message: `Published ${savedLoads.length} load${savedLoads.length === 1 ? '' : 's'} to LoadsNexus. Fields the text didn't state were left blank.`
     });
   } catch (err) {
     console.error('AI Ingest error:', err);

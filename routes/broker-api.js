@@ -167,10 +167,10 @@ router.post('/v1/loads', authenticateApiKey, async (req, res) => {
     });
   }
 
-  const milesNum = Number(miles) > 0 ? Number(miles) : 650;
-  const rpm = (numRate / milesNum).toFixed(2);
+  const milesNum = Number(miles) > 0 ? Number(miles) : 0;
+  const rpm = milesNum ? (numRate / milesNum).toFixed(2) : 0;
   const broker = req.brokerUser;
-  const norm = normalizeEquipmentAndWeight(equipment || "53' Dry Van", weight || '42,000 lbs');
+  const norm = normalizeEquipmentAndWeight(equipment || "53' Dry Van", weight);
 
   const loadNumber = 'SW-' + Math.floor(100000 + Math.random() * 900000);
 
@@ -184,9 +184,9 @@ router.post('/v1/loads', authenticateApiKey, async (req, res) => {
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS external_ref TEXT;
     `).catch(() => {});
 
-    const bName = broker.company_name || broker.user_name || 'Verified Freight Brokerage';
-    const mc = broker.mc_number || 'MC-VERIFIED';
-    const contact = `${broker.phone || '+1 (800) 580-3101'} | ${broker.user_email}`;
+    const bName = broker.company_name || broker.user_name || null;
+    const mc = broker.mc_number || null;
+    const contact = [broker.phone, broker.user_email].filter(Boolean).join(' | ') || null;
 
     const ins = await pool.query(
       `INSERT INTO loads (
@@ -197,9 +197,9 @@ router.post('/v1/loads', authenticateApiKey, async (req, res) => {
       RETURNING id, load_number, status, rate, pickup_location, delivery_location, pickup_date, equipment_type, weight, miles, rpm, created_at`,
       [
         loadNumber, numRate, origin, destination,
-        pickup_date || new Date(), delivery_date || null,
-        norm.equipment_type, norm.weight, commodity || 'General Freight',
-        `API Ingest from ${bName} (${mc}). Notes: ${notes || 'Immediate dispatch'}`,
+        pickup_date || null, delivery_date || null,
+        norm.equipment_type, norm.weight, commodity || null,
+        `API ingest from ${bName || 'broker'}${mc ? ` (${mc})` : ''}.${notes ? ` Notes: ${notes}` : ''}`,
         bName, mc, contact, milesNum, Number(rpm)
       ]
     );

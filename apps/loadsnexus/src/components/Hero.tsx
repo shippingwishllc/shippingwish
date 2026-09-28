@@ -18,7 +18,7 @@ export const Hero: React.FC<HeroProps> = ({
         <div className="text-center max-w-3xl mx-auto mb-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-extrabold uppercase tracking-wider mb-5">
             <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-            <span>NEXT-GEN AI FREIGHT NETWORK · TRUSTED BY 50,000+ TRUCKERS</span>
+            <span>NEXT-GEN AI FREIGHT NETWORK</span>
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-extrabold text-slate-900 tracking-tight leading-[1.12]">
@@ -29,7 +29,7 @@ export const Hero: React.FC<HeroProps> = ({
           </h1>
 
           <p className="mt-5 text-base md:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            The intelligent freight exchange built for modern trucking. Access verified spot freight, real broker credit scores (Days-To-Pay), zero double-brokering, and lane rate intelligence.
+            The intelligent freight exchange built for modern trucking. Search posted spot freight, check FMCSA authority, and match lanes — without invented load counts or credit scores.
           </p>
         </div>
 
@@ -56,12 +56,12 @@ export const Hero: React.FC<HeroProps> = ({
                 Keep Your Trucks Moving at Maximum RPM
               </h2>
               <p className="text-sm text-slate-600 mb-5 leading-relaxed">
-                Direct access to high-paying broker freight. See Days-To-Pay scores before booking and keep 100% of your earnings.
+                Direct access to posted broker freight. Check FMCSA authority and any Days-To-Pay we actually have on file.
               </p>
 
               <ul className="space-y-2.5 text-xs text-slate-700 font-medium mb-6">
                 <li className="flex items-center gap-2">
-                  <span className="text-emerald-600 font-bold">✔</span> Real broker Days-To-Pay credit scores &amp; bond checks
+                  <span className="text-emerald-600 font-bold">✔</span> FMCSA authority and bond checks from public records
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-600 font-bold">✔</span> AI lane matching: eliminate empty deadhead miles

@@ -1,59 +1,46 @@
 const pool = require('../db');
 
-/**
- * Equipment type normalization & physics validator
- */
+const MAX_PAYLOAD = {
+  "26' Box Truck": 10000,
+  'Cargo Van / Sprinter': 3500,
+  "53' Reefer": 45000,
+  '48ft Flatbed': 48000,
+  '53ft Step Deck': 48000,
+  '40ft Hotshot': 16500,
+  "53' Dry Van": 45000
+};
+
+// Maps free-text equipment to our labels. Weight is only ever what the broker gave; a missing or
+// impossible weight comes back as null (with weightIssue set) instead of a made-up number.
 function normalizeEquipmentAndWeight(equipStr, weightInput, lengthInput) {
   const str = String(equipStr || '').toLowerCase();
   let equipment_type = "53' Dry Van";
   let length = lengthInput || '53 ft';
-  let weight = parseInt(String(weightInput || '').replace(/[^0-9]/g, ''), 10) || 0;
+  const given = parseInt(String(weightInput || '').replace(/[^0-9]/g, ''), 10) || 0;
 
   if (str.includes('box') || str.includes('straight') || str.includes('26')) {
     equipment_type = "26' Box Truck";
     length = '26 ft';
-    // Strict physics: 26ft straight truck payload NEVER exceeds 10,000 lbs
-    if (weight <= 0 || weight > 10000) {
-      weight = Math.floor(Math.random() * 5500) + 4200; // 4,200 - 9,700 lbs
-    }
   } else if (str.includes('van') && (str.includes('cargo') || str.includes('sprinter'))) {
     equipment_type = 'Cargo Van / Sprinter';
     length = '14 ft';
-    // Sprinter / cargo van payload max 3,500 lbs
-    if (weight <= 0 || weight > 3500) {
-      weight = Math.floor(Math.random() * 1500) + 1600; // 1,600 - 3,100 lbs
-    }
   } else if (str.includes('reefer') || str.includes('refrigerat') || str.includes('temp') || str.includes('frozen')) {
     equipment_type = "53' Reefer";
     length = '53 ft';
-    if (weight <= 0 || weight > 43500) {
-      weight = Math.floor(Math.random() * 8000) + 33000;
-    }
   } else if (str.includes('flat') || str.includes('step') || str.includes('deck')) {
     equipment_type = str.includes('step') ? '53ft Step Deck' : '48ft Flatbed';
     length = str.includes('step') ? '53 ft' : '48 ft';
-    if (weight <= 0 || weight > 48000) {
-      weight = Math.floor(Math.random() * 6000) + 40000;
-    }
   } else if (str.includes('hotshot') || str.includes('hot shot')) {
     equipment_type = '40ft Hotshot';
     length = '40 ft';
-    if (weight <= 0 || weight > 16500) {
-      weight = Math.floor(Math.random() * 6000) + 9500;
-    }
   } else if (str.includes('power') || str.includes('tow')) {
-    equipment_type = 'Power Only';
-    length = 'Tractor Only';
-    weight = 0;
-  } else {
-    equipment_type = "53' Dry Van";
-    length = '53 ft';
-    if (weight <= 0 || weight > 44500) {
-      weight = Math.floor(Math.random() * 8000) + 34000;
-    }
+    return { equipment_type: 'Power Only', length: 'Tractor Only', weight: null, weightIssue: null };
   }
 
-  return { equipment_type, length, weight };
+  const max = MAX_PAYLOAD[equipment_type];
+  if (!given) return { equipment_type, length, weight: null, weightIssue: 'missing' };
+  if (max && given > max) return { equipment_type, length, weight: null, weightIssue: `stated ${given} lbs is over the ${max} lbs limit for ${equipment_type}` };
+  return { equipment_type, length, weight: given, weightIssue: null };
 }
 
 /**
@@ -82,9 +69,9 @@ function heuristicFallbackParse(rawText, defaultBroker = {}) {
       const origin = cities[0];
       const destination = cities[1];
       const rateMatch = line.match(rateRegex);
-      const rate = rateMatch ? parseInt((rateMatch[1] || rateMatch[2]).replace(/,/g, ''), 10) : Math.floor(Math.random() * 1400) + 1800;
+      const rate = rateMatch ? parseInt((rateMatch[1] || rateMatch[2]).replace(/,/g, ''), 10) : 0;
       const milesMatch = line.match(milesRegex);
-      const miles = milesMatch ? parseInt(milesMatch[1], 10) : Math.floor(rate / 3.10);
+      const miles = milesMatch ? parseInt(milesMatch[1], 10) : 0;
       const equipMatch = line.match(equipRegex);
       const rawEquip = equipMatch ? equipMatch[1] : (line.toLowerCase().includes('box') ? 'box truck' : "53' Dry Van");
       const weightMatch = line.match(weightRegex);
@@ -99,14 +86,14 @@ function heuristicFallbackParse(rawText, defaultBroker = {}) {
         weight: norm.weight,
         rate,
         miles,
-        rpm: miles > 0 ? (rate / miles).toFixed(2) : '3.10',
-        commodity: 'General Freight / Palletized Cargo',
-        pickup_date: new Date().toISOString().slice(0, 10),
-        broker_name: defaultBroker.name || 'Verified Freight Broker',
-        broker_mc: defaultBroker.mc || 'MC-892104',
-        broker_phone: defaultBroker.phone || '+1 (800) 580-3101',
-        broker_email: defaultBroker.email || 'dispatch@loadsnexus.com',
-        notes: `AI Heuristic Ingestion. Origin: ${origin} to ${destination}. Verified Capacity.`
+        rpm: miles > 0 && rate > 0 ? (rate / miles).toFixed(2) : null,
+        commodity: null,
+        pickup_date: null,
+        broker_name: defaultBroker.name || null,
+        broker_mc: defaultBroker.mc || null,
+        broker_phone: defaultBroker.phone || null,
+        broker_email: defaultBroker.email || null,
+        notes: norm.weightIssue && norm.weightIssue !== 'missing' ? `Weight not saved: ${norm.weightIssue}.` : null
       });
     }
   }
@@ -137,19 +124,9 @@ Parse the following unstructured broker email / load list text into an array of 
 MANDATORY PHYSICAL & FREIGHT RULES:
 1. Origin and Destination MUST be "City, 2-letter-State" (e.g. "Dallas, TX", "Chicago, IL").
 2. Equipment Types allowed: "53' Dry Van", "53' Reefer", "48ft Flatbed", "53ft Step Deck", "26' Box Truck", "Cargo Van / Sprinter", "40ft Hotshot", "Power Only".
-3. STRICT EQUIPMENT WEIGHT LIMITS (PHYSICS):
-   - "26' Box Truck": Maximum payload is 9,800 lbs. If weight in text is missing or says >10,000 lbs, you MUST cap or fix it between 4,500 and 9,500 lbs!
-   - "Cargo Van / Sprinter": Max payload 3,500 lbs.
-   - "40ft Hotshot": Max payload 16,500 lbs.
-   - "53' Dry Van": 34,000 - 44,500 lbs.
-   - "53' Reefer": 32,000 - 43,000 lbs.
-   - "48ft Flatbed": 40,000 - 48,000 lbs.
-4. Calculate realistic miles (US highway distance) if not stated, and calculate rpm = rate / miles.
-5. Extract broker name, MC number, phone number, and email if present in the text, otherwise use:
-   broker_name: "${defaultBroker.name || 'Verified Freight Broker'}",
-   broker_mc: "${defaultBroker.mc || 'MC-VERIFIED'}",
-   broker_phone: "${defaultBroker.phone || '+1 (800) 580-3101'}",
-   broker_email: "${defaultBroker.email || 'dispatch@loadsnexus.com'}"
+3. Only copy values that are written in the text. Never guess, estimate, or "fix" a weight, rate, miles, date, or commodity. Use null for anything not stated.
+4. rpm = rate / miles only when both are stated; otherwise null.
+5. Extract broker name, MC number, phone number, and email if present in the text, otherwise use null.
 
 Output format MUST be valid JSON matching this schema:
 {
@@ -209,18 +186,22 @@ ${rawText.slice(0, 8000)}`;
     // Run final sanity check on physics
     return loadsArray.map(l => {
       const norm = normalizeEquipmentAndWeight(l.equipment_type, l.weight);
-      const miles = parseInt(l.miles, 10) || 600;
-      const rate = parseInt(l.rate, 10) || 2000;
-      const rpm = miles > 0 ? (rate / miles).toFixed(2) : '3.00';
+      const miles = parseInt(l.miles, 10) || 0;
+      const rate = parseInt(l.rate, 10) || 0;
+      const rpm = miles > 0 && rate > 0 ? (rate / miles).toFixed(2) : null;
 
       return {
         ...l,
+        broker_name: l.broker_name || defaultBroker.name || null,
+        broker_mc: l.broker_mc || defaultBroker.mc || null,
+        broker_phone: l.broker_phone || defaultBroker.phone || null,
+        broker_email: l.broker_email || defaultBroker.email || null,
         equipment_type: norm.equipment_type,
         weight: norm.weight,
         miles,
         rate,
         rpm,
-        pickup_date: l.pickup_date || new Date().toISOString().slice(0, 10)
+        pickup_date: l.pickup_date || null
       };
     });
   } catch (err) {
@@ -235,10 +216,20 @@ ${rawText.slice(0, 8000)}`;
 async function saveLoadsToDatabase(loadsArray) {
   if (!loadsArray || !loadsArray.length) return [];
 
+  const { geocode, roadMiles } = require('./geo');
   const saved = [];
   for (const l of loadsArray) {
     const loadNumber = 'SW-AI-' + Math.floor(100000 + Math.random() * 900000);
-    const rpmNum = parseFloat(l.rpm || (l.rate / (l.miles || 1))).toFixed(2);
+    const rate = parseInt(l.rate, 10) || 0;
+    let miles = parseInt(l.miles, 10) || 0;
+    let milesNote = null;
+    if (!miles) {
+      const [from, to] = await Promise.all([geocode(l.origin).catch(() => null), geocode(l.destination).catch(() => null)]);
+      const estimate = from && to ? roadMiles(from, to) : null;
+      if (estimate) { miles = estimate; milesNote = `Miles estimated at ${estimate} (not stated by the broker).`; }
+    }
+    const rpm = miles && rate ? Number((rate / miles).toFixed(2)) : 0;
+    const contact = [l.broker_phone, l.broker_email].filter(Boolean).join(' | ') || null;
 
     try {
       const ins = await pool.query(
@@ -250,20 +241,20 @@ async function saveLoadsToDatabase(loadsArray) {
         RETURNING *`,
         [
           loadNumber,
-          parseInt(l.rate, 10) || 2200,
+          rate,
           l.origin,
           l.destination,
-          l.pickup_date || new Date(),
+          l.pickup_date || null,
           l.delivery_date || null,
           l.equipment_type,
-          parseInt(l.weight, 10) || 40000,
-          l.commodity || 'General Freight',
-          l.notes || `AI Ingested Freight. Contact: ${l.broker_phone || ''} | ${l.broker_email || ''}`,
-          l.broker_name || 'Verified Freight Broker',
-          l.broker_mc || 'MC-VERIFIED',
-          `${l.broker_phone || '+1 (800) 580-3101'} | ${l.broker_email || 'dispatch@loadsnexus.com'}`,
-          parseInt(l.miles, 10) || 650,
-          parseFloat(rpmNum)
+          parseInt(l.weight, 10) || null,
+          l.commodity || null,
+          [l.notes, milesNote].filter(Boolean).join(' ') || null,
+          l.broker_name || null,
+          l.broker_mc || null,
+          contact,
+          miles,
+          rpm
         ]
       );
       saved.push(ins.rows[0]);

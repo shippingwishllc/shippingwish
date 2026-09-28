@@ -21,6 +21,8 @@ export interface FreightLoad {
   days_to_pay?: string | number;
   credit_score?: string;
   bond_status?: string;
+  broker_fmcsa?: 'ok' | 'caution' | 'block' | 'unknown' | null;
+  posted_age?: string;
   is_live_broker_post?: boolean;
   status?: 'active' | 'covered' | 'new' | string;
   is_covered?: boolean;

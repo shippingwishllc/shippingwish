@@ -10,22 +10,22 @@ function generateRateConfirmationPDF(data, outputStream) {
   const doc = new PDFDocument({ margin: 36, size: 'LETTER' });
   doc.pipe(outputStream);
 
-  const loadNumber = String(data.loadNumber || data.id || `LN-${Math.floor(100000 + Math.random() * 900000)}`);
+  const loadNumber = String(data.loadNumber || data.id || 'UNNUMBERED');
   const dateIssued = data.dateIssued || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   
-  // Broker details
-  const brokerName = data.brokerName || 'LoadsNexus™ Verified Brokerage';
-  const brokerMc = data.brokerMc || 'MC-981240';
-  const brokerPhone = data.brokerPhone || '+1 (800) 580-3101';
-  const brokerEmail = data.brokerEmail || 'dispatch@loadsnexus.com';
-  const brokerBond = data.brokerBond || 'ACTIVE ($75,000 BMC-84 Verified)';
+  // Broker details — only what was passed in. Missing values stay blank rather than invented.
+  const brokerName = data.brokerName || 'Not listed';
+  const brokerMc = data.brokerMc || 'Not listed';
+  const brokerPhone = data.brokerPhone || 'Not listed';
+  const brokerEmail = data.brokerEmail || 'Not listed';
+  const brokerBond = data.brokerBond || 'Not confirmed';
   
   // Carrier details
-  const carrierName = data.carrierName || 'Authorized Motor Carrier Partner';
-  const carrierMc = data.carrierMc || 'MC-ON-FILE';
+  const carrierName = data.carrierName || 'Not listed';
+  const carrierMc = data.carrierMc || 'Not listed';
   const carrierDot = data.carrierDot || '';
-  const carrierPhone = data.carrierPhone || '+1 (800) 555-0199';
-  const carrierEmail = data.carrierEmail || 'dispatch@carrier.com';
+  const carrierPhone = data.carrierPhone || 'Not listed';
+  const carrierEmail = data.carrierEmail || 'Not listed';
 
   // Freight & Route details
   const origin = data.origin || data.pickupLocation || 'Chicago, IL';

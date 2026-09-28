@@ -140,7 +140,11 @@
     if (opts.body) opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
     const res = await fetch(path, opts);
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Request failed');
+    if (!res.ok) {
+      const err = new Error(data.error || 'Request failed');
+      err.code = data.code;
+      throw err;
+    }
     return data;
   }
   async function guard() {
@@ -239,6 +243,21 @@
       ).join('') : 'No texts with the AI dispatcher yet.') + '</div>';
   }
   const OFFER_LABELS = { requested: 'driver picked it — waiting on broker', offered: 'sent to driver', booked: 'booked', declined: 'fell through', expired: 'expired' };
+  function authorityLine(a) {
+    if (!a || !a.verdict) return '';
+    const colors = { ok: '#15803d', caution: '#b45309', unknown: '#b45309', block: '#b91c1c' };
+    const lead = { ok: 'FMCSA: authority active', caution: 'FMCSA: check this broker', unknown: 'FMCSA: not reachable', block: 'FMCSA: failed' }[a.verdict] || a.verdict;
+    const flags = (a.flags || []).filter((f) => f.level !== 'info').map((f) => f.text).join(' ');
+    const name = a.legalName ? ' (' + a.legalName + (a.registeredOn ? ', since ' + a.registeredOn : '') + ')' : '';
+    const link = a.saferUrl ? ' <a href="' + esc(a.saferUrl) + '" target="_blank" rel="noopener">SAFER</a>' : '';
+    return '<br><span style="color:' + colors[a.verdict] + ';font-weight:600;">' + esc(lead + name) + '</span>' + (flags ? ' ' + esc(flags) : '') + link;
+  }
+  function rateconLine(r) {
+    if (!r || !r.status || r.status === 'none') return '';
+    if (r.status === 'match') return '<br><span style="color:#15803d;font-weight:600;">Rate con matches</span> ' + esc((r.checks || []).join(' '));
+    if (r.status === 'mismatch') return '<br><span style="color:#b91c1c;font-weight:600;">Rate con mismatch</span> ' + esc((r.issues || []).join(' '));
+    return '<br><span style="color:#b45309;font-weight:600;">Rate con unreadable</span> Open the email and check it by hand.';
+  }
   async function loadOffers() {
     const box = document.getElementById('offers-list');
     const data = await api('/api/dispatch-desk/offers');
@@ -256,7 +275,8 @@
         '<br><span style="color:#64748b;">' + esc((o.pickup_location || '') + ' → ' + (o.delivery_location || '')) + ' · $' + esc(Math.round(o.rate || 0).toLocaleString()) +
         ' · ' + approx + esc(o.loaded_miles) + ' mi · ' + approx + '$' + esc(Number(o.all_in_rpm || 0).toFixed(2)) + '/mi all-in · ' + approx + esc(o.deadhead_miles) + ' empty' +
         '<br>Broker: ' + esc([o.broker_name, o.broker_contact].filter(Boolean).join(' · ') || 'not listed') +
-        (o.note ? '<br>' + esc(o.note) : '') + (o.broker_reply ? '<br>Broker reply: ' + esc(o.broker_reply.slice(0, 200)) : '') + '</span>' +
+        (o.note ? '<br>' + esc(o.note) : '') + (o.broker_reply ? '<br>Broker reply: ' + esc(o.broker_reply.slice(0, 200)) : '') +
+        authorityLine(o.broker_authority) + rateconLine(o.ratecon) + '</span>' +
         actions + '</div>';
     }).join('');
   }
@@ -443,7 +463,14 @@
         try {
           if (booked) {
             if (!confirm('Only press Booked after the broker sent the rate confirmation. Text the driver BOOKED now?')) return;
-            const data = await api('/api/dispatch-desk/offers/' + booked + '/booked', { method: 'POST', body: '{}' });
+            let data;
+            try {
+              data = await api('/api/dispatch-desk/offers/' + booked + '/booked', { method: 'POST', body: '{}' });
+            } catch (err) {
+              if (err.code !== 'RATECON_MISMATCH') throw err;
+              if (!confirm(err.message + '\n\nBook it anyway? Only do this if the broker sent a corrected rate confirmation.')) return;
+              data = await api('/api/dispatch-desk/offers/' + booked + '/booked', { method: 'POST', body: JSON.stringify({ force: true }) });
+            }
             msg.textContent = 'Booked. Driver text: ' + data.sms + '.';
           } else {
             if (!confirm('Release this load and send the driver the next best loads?')) return;

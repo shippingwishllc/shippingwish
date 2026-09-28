@@ -26,121 +26,10 @@ import { AiSupportChat } from './components/AiSupportChat';
 import { ToastContainer, type ToastItem } from './components/ToastContainer';
 import { FreightCockpit } from './components/FreightCockpit';
 
-const INITIAL_FALLBACK_LOADS: FreightLoad[] = [
-  {
-    id: 'SW-2601',
-    origin: 'Chicago, IL',
-    destination: 'Dallas, TX',
-    miles: 925,
-    rate: 2850,
-    rpm: 3.08,
-    equipment_type: "53' Dry Van",
-    weight: '42,000 lbs',
-    commodity: 'General Freight / CPG',
-    pickup_date: 'Today',
-    broker_name: 'Apex Logistics Freight LLC',
-    broker_mc: 'MC-981240',
-    broker_phone: '+1 (800) 580-3101',
-    broker_email: 'dispatch@apexlogistics.com',
-    days_to_pay: '18 days',
-    credit_score: 'A+ (98)',
-  },
-  {
-    id: 'SW-2602',
-    origin: 'Atlanta, GA',
-    destination: 'Miami, FL',
-    miles: 660,
-    rate: 2450,
-    rpm: 3.71,
-    equipment_type: "53' Reefer",
-    weight: '38,500 lbs',
-    commodity: 'Fresh Produce / Chilled',
-    pickup_date: 'Today',
-    broker_name: 'Sunbelt Trans Logistics',
-    broker_mc: 'MC-847291',
-    broker_phone: '+1 (800) 441-2900',
-    broker_email: 'loads@sunbeltfreight.com',
-    days_to_pay: '16 days',
-    credit_score: 'A (95)',
-  },
-  {
-    id: 'SW-2603',
-    origin: 'Los Angeles, CA',
-    destination: 'Phoenix, AZ',
-    miles: 375,
-    rate: 1450,
-    rpm: 3.86,
-    equipment_type: 'Flatbed',
-    weight: '44,000 lbs',
-    commodity: 'Structural Steel Coils',
-    pickup_date: 'Tomorrow',
-    broker_name: 'Pacific Freight Exchange',
-    broker_mc: 'MC-729104',
-    broker_phone: '+1 (888) 920-4100',
-    broker_email: 'dispatch@pacificfreight.com',
-    days_to_pay: '21 days',
-    credit_score: 'A+ (97)',
-  },
-  {
-    id: 'SW-2604',
-    origin: 'Philadelphia, PA',
-    destination: 'Charlotte, NC',
-    miles: 480,
-    rate: 1720,
-    rpm: 3.58,
-    equipment_type: "53' Dry Van",
-    weight: '34,000 lbs',
-    commodity: 'Retail Goods / High Value',
-    pickup_date: 'Today',
-    broker_name: 'Keystone Logistics 3PL',
-    broker_mc: 'MC-610294',
-    broker_phone: '+1 (800) 332-9011',
-    broker_email: 'freight@keystonelogistics.com',
-    days_to_pay: '19 days',
-    credit_score: 'A (94)',
-  },
-  {
-    id: 'SW-2605',
-    origin: 'Houston, TX',
-    destination: 'Nashville, TN',
-    miles: 780,
-    rate: 2550,
-    rpm: 3.27,
-    equipment_type: "53' Dry Van",
-    weight: '41,000 lbs',
-    commodity: 'Industrial Parts',
-    pickup_date: 'Today',
-    broker_name: 'Lone Star Freight Express',
-    broker_mc: 'MC-509122',
-    broker_phone: '+1 (800) 771-3044',
-    broker_email: 'ops@lonestarfreight.com',
-    days_to_pay: '17 days',
-    credit_score: 'A+ (99)',
-  },
-  {
-    id: 'SW-2606',
-    origin: 'Columbus, OH',
-    destination: 'Atlanta, GA',
-    miles: 560,
-    rate: 1950,
-    rpm: 3.48,
-    equipment_type: "53' Reefer",
-    weight: '40,000 lbs',
-    commodity: 'Dairy & Beverages',
-    pickup_date: 'Tomorrow',
-    broker_name: 'Midwest Carrier Solutions',
-    broker_mc: 'MC-418290',
-    broker_phone: '+1 (800) 662-8119',
-    broker_email: 'dispatch@midwestcs.com',
-    days_to_pay: '20 days',
-    credit_score: 'A (93)',
-  },
-];
-
 export const App: React.FC = () => {
   const [user, setUser] = useState<UserSession | null>(null);
   const [viewMode, setViewMode] = useState<'cockpit' | 'website'>('cockpit');
-  const [loads, setLoads] = useState<FreightLoad[]>(INITIAL_FALLBACK_LOADS);
+  const [loads, setLoads] = useState<FreightLoad[]>([]);
   const [isLoadingLoads, setIsLoadingLoads] = useState(false);
   const [isLiveStreaming, setIsLiveStreaming] = useState(true);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
@@ -234,10 +123,8 @@ export const App: React.FC = () => {
       const res = await fetch(`/api/loadboard/search?${params.toString()}`, { credentials: 'include' });
       const data = await res.json();
 
-      if (res.ok && data.loads && data.loads.length > 0) {
+      if (res.ok && data.loads) {
         setLoads(data.loads);
-      } else if (!searchParams.origin && !searchParams.destination) {
-        setLoads(INITIAL_FALLBACK_LOADS);
       } else {
         setLoads([]);
       }
@@ -345,25 +232,23 @@ export const App: React.FC = () => {
           const raw = JSON.parse(e.data);
           if (raw) {
             const newLoad: FreightLoad = {
-              id: raw.load_number || `SW-${raw.id || Math.floor(1000 + Math.random() * 9000)}`,
+              id: raw.load_number || (raw.id != null ? `SW-${raw.id}` : ''),
               origin: raw.pickup_location || raw.origin,
               destination: raw.delivery_location || raw.destination,
               equipment_type: raw.equipment_type || raw.equipment,
-              rate: Number(raw.rate),
-              miles: Number(raw.miles) || 650,
-              rpm: raw.rpm ? Number(raw.rpm) : 3.15,
+              rate: Number(raw.rate) || 0,
+              miles: Number(raw.miles) || 0,
+              rpm: raw.rpm ? Number(raw.rpm) : (Number(raw.rate) && Number(raw.miles) ? Number((Number(raw.rate) / Number(raw.miles)).toFixed(2)) : 0),
               weight:
                 typeof raw.weight === 'number'
                   ? `${raw.weight.toLocaleString()} lbs`
-                  : raw.weight || '42,000 lbs',
-              commodity: raw.commodity || 'General Freight',
-              pickup_date: raw.pickup_date ? String(raw.pickup_date).slice(0, 10) : 'Today',
-              broker_name: raw.broker_name || 'LoadsNexus™ Verified Brokerage',
-              broker_mc: raw.broker_mc || 'MC-VERIFIED',
-              broker_phone: raw.broker_phone || '+1 (800) 580-3101',
-              broker_email: raw.broker_email || 'dispatch@loadsnexus.com',
-              days_to_pay: '21 days',
-              credit_score: 'A+ (Verified)',
+                  : raw.weight || '',
+              commodity: raw.commodity || '',
+              pickup_date: raw.pickup_date ? String(raw.pickup_date).slice(0, 10) : '',
+              broker_name: raw.broker_name || '',
+              broker_mc: raw.broker_mc || '',
+              broker_phone: raw.broker_phone || '',
+              broker_email: raw.broker_email || '',
               is_live_broker_post: true,
             };
             setLoads((prev) => {
@@ -569,7 +454,7 @@ export const App: React.FC = () => {
             />
 
             {/* Corridor Rates Ticker */}
-            <CorridorTicker />
+            <CorridorTicker loads={loads} />
 
             {/* DAT One Style Live Board */}
             <LiveLoadBoard

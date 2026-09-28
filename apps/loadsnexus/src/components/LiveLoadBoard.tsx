@@ -206,7 +206,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
               <div className="flex items-center gap-2 mt-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 radar-pulse-dot"></span>
                 <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  4,850+ Live Verified Loads
+                  {loads.length ? `${loads.length} posted load${loads.length === 1 ? '' : 's'}` : 'No posted loads yet'}
                 </span>
                 <span className="text-xs text-slate-500 hidden sm:inline">
                   · {lastRefreshedAt ? `Auto-synced ${lastRefreshedAt.toLocaleTimeString()}` : 'Updated live in real-time'}
@@ -429,17 +429,18 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 ) : (
                   visibleLoads.map((load, index) => {
                     const id = load.id || load.load_number || `SW-${2600 + index}`;
-                    const origin = load.origin || load.pickup_location || 'Chicago, IL';
-                    const dest = load.destination || load.delivery_location || 'Dallas, TX';
-                    const miles = load.miles ? `${load.miles} mi` : '650 mi';
-                    const rpmVal = parseFloat(String(load.rpm || 3.10));
+                    const origin = load.origin || load.pickup_location || '—';
+                    const dest = load.destination || load.delivery_location || '—';
+                    const miles = load.miles ? `${load.miles} mi` : 'Miles n/a';
+                    const rpmVal = Number(load.rpm) || 0;
+                    const rpmText = rpmVal ? `$${rpmVal.toFixed(2)}/mi` : 'RPM n/a';
                     const isHighRpm = rpmVal >= 3.30;
-                    const rateFormatted = load.rate ? `$${Number(load.rate).toLocaleString()}` : '$2,450';
+                    const rateFormatted = load.rate ? `$${Number(load.rate).toLocaleString()}` : 'Rate n/a';
                     const equip = load.equipment_type || load.equipment || "53' Dry Van";
-                    const weight = load.weight ? (typeof load.weight === 'number' ? `${load.weight.toLocaleString()} lbs` : load.weight) : '42,000 lbs';
-                    const puDate = load.pickup_date || 'Today';
-                    const bName = load.broker_name || 'Verified Freight Broker';
-                    const dtp = load.days_to_pay || '18 days';
+                    const weight = load.weight ? (typeof load.weight === 'number' ? `${load.weight.toLocaleString()} lbs` : load.weight) : 'Weight n/a';
+                    const puDate = load.pickup_date || 'Date open';
+                    const bName = load.broker_name || 'Broker not named';
+                    const dtp = load.days_to_pay ? `${load.days_to_pay} DTP` : 'DTP unknown';
                     const isLive = load.is_live_broker_post;
 
                     const isAlertMatched = isMatchAlert(load);
@@ -475,10 +476,8 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                               <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">
                                 ⚡ LIVE BROKER
                               </span>
-                            ) : index === 0 ? (
-                              'Just now'
                             ) : (
-                              `${index * 4 + 2}m ago`
+                              load.posted_age || ''
                             )}
                           </div>
                         </td>
@@ -516,7 +515,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                                   : 'bg-blue-50 text-blue-700'
                               }`}
                             >
-                              ${rpmVal.toFixed(2)} / mi
+                              {rpmText}
                             </span>
                           </div>
                         </td>
@@ -544,10 +543,10 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                           <div className="font-bold text-slate-900 truncate max-w-[150px]">{bName}</div>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[10px] font-extrabold px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">
-                              {dtp} DTP
+                              {dtp}
                             </span>
                             <span className="text-[10px] font-bold px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded">
-                              Bond Active
+                              {load.broker_fmcsa === 'ok' ? 'FMCSA active' : load.broker_fmcsa === 'block' ? 'FMCSA failed' : 'FMCSA not checked'}
                             </span>
                           </div>
                         </td>
@@ -562,7 +561,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                             ) : (
                               <>
                                 <a
-                                  href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 2850}&miles=${load.miles || 650}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
+                                  href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 0}&miles=${load.miles || 0}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   title="Download Official Rate Confirmation PDF"
@@ -605,10 +604,10 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                     🔒
                   </div>
                   <h3 className="text-xl sm:text-2xl font-display font-extrabold text-slate-900 tracking-tight">
-                    Unlock 4,850+ Live Loads &amp; Direct Contacts
+                    Unlock posted loads &amp; direct contacts
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
-                    Direct broker dispatch phone numbers, MC verification, Days-To-Pay credit scores, and instant 1-click RateCon booking are locked. Join 50,000+ carriers on LoadsNexus™.
+                    Direct broker dispatch phone numbers and FMCSA checks are locked for guests. Subscribe to see contacts on posted loads.
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
@@ -654,17 +653,18 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
             ) : (
               visibleLoads.map((load, index) => {
                 const id = load.id || load.load_number || `SW-${2600 + index}`;
-                const origin = load.origin || load.pickup_location || 'Chicago, IL';
-                const dest = load.destination || load.delivery_location || 'Dallas, TX';
-                const miles = load.miles ? `${load.miles} mi` : '650 mi';
-                const rpmVal = parseFloat(String(load.rpm || 3.10));
+                const origin = load.origin || load.pickup_location || '—';
+                const dest = load.destination || load.delivery_location || '—';
+                const miles = load.miles ? `${load.miles} mi` : 'Miles n/a';
+                const rpmVal = Number(load.rpm) || 0;
+                const rpmText = rpmVal ? `$${rpmVal.toFixed(2)}/mi` : 'RPM n/a';
                 const isHighRpm = rpmVal >= 3.30;
-                const rateFormatted = load.rate ? `$${Number(load.rate).toLocaleString()}` : '$2,450';
+                const rateFormatted = load.rate ? `$${Number(load.rate).toLocaleString()}` : 'Rate n/a';
                 const equip = load.equipment_type || load.equipment || "53' Dry Van";
-                const weight = load.weight ? (typeof load.weight === 'number' ? `${load.weight.toLocaleString()} lbs` : load.weight) : '42,000 lbs';
-                const puDate = load.pickup_date || 'Today';
-                const bName = load.broker_name || 'Verified Freight Broker';
-                const dtp = load.days_to_pay || '18 days';
+                const weight = load.weight ? (typeof load.weight === 'number' ? `${load.weight.toLocaleString()} lbs` : load.weight) : 'Weight n/a';
+                const puDate = load.pickup_date || 'Date open';
+                const bName = load.broker_name || 'Broker not named';
+                const dtp = load.days_to_pay ? `${load.days_to_pay} DTP` : 'DTP unknown';
                 const isCovered = Boolean(coveredMap[id]);
                 const isRowBlurred = !isSubscriber && index >= 3;
 
@@ -689,7 +689,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                           </span>
                         ) : (
                           <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
-                            {index === 0 ? 'Just now' : `${index * 4 + 2}m ago`}
+                            {load.posted_age || 'Posted'}
                           </span>
                         )}
                       </div>
@@ -709,7 +709,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                         <span>{miles}</span>
                         <span>·</span>
                         <span className={`px-1.5 py-0.2 rounded text-[10px] ${isHighRpm ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
-                          ${rpmVal.toFixed(2)}/mi
+                          {rpmText}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
@@ -727,7 +727,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                       <div className="text-right">
                         <div className="text-xs font-bold text-slate-800 truncate max-w-[130px]">{bName}</div>
                         <span className="inline-block text-[10px] font-extrabold px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded mt-0.5">
-                          {dtp} DTP
+                          {dtp}
                         </span>
                       </div>
                     </div>
@@ -743,7 +743,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                           ⚡ Book Load
                         </button>
                         <a
-                          href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 2850}&miles=${load.miles || 650}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
+                          href={`/api/loadboard/loads/${encodeURIComponent(id)}/ratecon-pdf?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&rate=${load.rate || 0}&miles=${load.miles || 0}&rpm=${rpmVal}&equipment=${encodeURIComponent(equip)}&broker=${encodeURIComponent(bName)}&mc=${encodeURIComponent(load.broker_mc || '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 transition-all text-center"
@@ -765,7 +765,7 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                     🔒
                   </div>
                   <h4 className="text-sm font-extrabold text-slate-900">
-                    Unlock 4,850+ Live Loads
+                    Unlock posted loads &amp; Direct Contacts
                   </h4>
                   <p className="text-[11px] text-slate-600 mt-1 mb-3.5 leading-relaxed">
                     Direct broker phone numbers and 1-click RateCon booking are locked.
@@ -802,14 +802,14 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
               ) : (
                 <div className="flex items-center gap-3">
                   <span className="font-semibold text-slate-600">
-                    Showing 3 live preview loads of 4,850+ active spot loads
+                    Showing {Math.min(3, visibleLoads.length)} preview load{Math.min(3, visibleLoads.length) === 1 ? '' : 's'} of {loads.length} posted
                   </span>
                   <button
                     type="button"
                     onClick={onOpenCarrierCheckout}
                     className="text-blue-600 font-bold hover:underline"
                   >
-                    Unlock All 4,850+ Loads ($19/mo) →
+                    Unlock posted loads ($19/mo) →
                   </button>
                 </div>
               )}

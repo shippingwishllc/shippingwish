@@ -189,6 +189,8 @@ async function ensureGrowthSchema() {
     await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS target_min_rpm NUMERIC(6,2) DEFAULT 2.80');
     await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS initial_bid_rate NUMERIC(10,2)');
     await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS final_agreed_rate NUMERIC(10,2)');
+    await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS ratecon JSONB');
+    await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS broker_reply TEXT');
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS ai_load_negotiations (

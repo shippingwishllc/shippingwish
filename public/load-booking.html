@@ -2380,12 +2380,12 @@
       destination: document.getElementById('pl-destination').value.trim(),
       equipment: document.getElementById('pl-equipment').value,
       rate: Number(document.getElementById('pl-rate').value),
-      miles: Number(document.getElementById('pl-miles').value) || 650,
-      weight: Number(document.getElementById('pl-weight').value) || 42000,
-      commodity: document.getElementById('pl-commodity').value.trim() || 'General Freight',
-      pickupDate: document.getElementById('pl-pickup-date').value || new Date().toISOString().slice(0, 10),
+      miles: Number(document.getElementById('pl-miles').value) || 0,
+      weight: Number(document.getElementById('pl-weight').value) || 0,
+      commodity: document.getElementById('pl-commodity').value.trim(),
+      pickupDate: document.getElementById('pl-pickup-date').value || '',
       brokerName: document.getElementById('pl-broker-name').value.trim(),
-      brokerMc: document.getElementById('pl-broker-mc').value.trim() || 'MC-VERIFIED',
+      brokerMc: document.getElementById('pl-broker-mc').value.trim(),
       contactPhone: document.getElementById('pl-broker-phone').value.trim(),
       contactEmail: document.getElementById('pl-broker-email').value.trim(),
       notes: document.getElementById('pl-notes').value.trim()
@@ -3770,6 +3770,10 @@ ${p.contactName} | ${p.carrierCompany} (MC# ${p.carrierMc})`;
         if (o.status === 'booked') statusBadge = '<span class="badge badge-booked">Booked & Confirmed</span>';
         if (['requested', 'bidding'].includes(o.broker_negotiation_status)) statusBadge = '<span class="badge badge-assigned">Waiting on broker</span>';
         if (o.broker_negotiation_status === 'needs_staff') statusBadge = '<span class="badge badge-error">Dispatcher follow-up</span>';
+        if (o.broker_negotiation_status === 'blocked') statusBadge = '<span class="badge badge-error">Broker failed FMCSA check</span>';
+        if (o.broker_negotiation_status === 'confirmed') statusBadge = '<span class="badge badge-paid">Broker confirmed · rate con matches</span>';
+        if (o.broker_negotiation_status === 'ratecon_mismatch') statusBadge = '<span class="badge badge-error">Rate con mismatch</span>';
+        if (o.broker_negotiation_status === 'confirmed_no_ratecon') statusBadge = '<span class="badge badge-assigned">Broker confirmed · need rate con</span>';
 
         return `
           <tr>
@@ -3814,6 +3818,10 @@ ${p.contactName} | ${p.carrierCompany} (MC# ${p.carrierMc})`;
           if (o.status === 'booked') statusBadge = '<span class="badge badge-booked">Booked</span>';
           if (['requested', 'bidding'].includes(o.broker_negotiation_status)) statusBadge = '<span class="badge badge-assigned">Waiting on broker</span>';
           if (o.broker_negotiation_status === 'needs_staff') statusBadge = '<span class="badge badge-error">Dispatcher follow-up</span>';
+        if (o.broker_negotiation_status === 'blocked') statusBadge = '<span class="badge badge-error">Broker failed FMCSA check</span>';
+        if (o.broker_negotiation_status === 'confirmed') statusBadge = '<span class="badge badge-paid">Broker confirmed · rate con matches</span>';
+        if (o.broker_negotiation_status === 'ratecon_mismatch') statusBadge = '<span class="badge badge-error">Rate con mismatch</span>';
+        if (o.broker_negotiation_status === 'confirmed_no_ratecon') statusBadge = '<span class="badge badge-assigned">Broker confirmed · need rate con</span>';
 
           return `
             <div class="mobile-load-card">

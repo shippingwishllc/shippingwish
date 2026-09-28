@@ -784,12 +784,16 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
   }
 
   let booking = null;
+  const bookingReply = {
+    fromEmail: from,
+    subject: subjectFinal,
+    bodyText: bodyTextFinal || htmlToPlain(bodyHtmlFinal),
+    resendId: payload.resendId || resendId || null,
+    attachments: payload.attachments || attachments || []
+  };
   try {
-    booking = await require('../utils/dispatch-brain').handleBrokerBookingReply({
-      fromEmail: from,
-      subject: subjectFinal,
-      bodyText: bodyTextFinal || htmlToPlain(bodyHtmlFinal)
-    });
+    booking = await require('../utils/dispatch-brain').handleBrokerBookingReply(bookingReply)
+      || await require('../utils/broker-booking-request').handleOfferReply(bookingReply);
   } catch (err) {
     console.warn('[AI DISPATCH] broker reply:', err.message);
   }
