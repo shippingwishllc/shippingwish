@@ -55,6 +55,10 @@ test('CRM page has census-style select, pager, and one-press Vapi', () => {
   assert.match(html, /Compose &amp; send/);
   assert.match(html, /cd-hero/);
   assert.match(html, /Campaign started/);
+  assert.match(html, /id="campaign-inline-status"/);
+  assert.match(html, /setCampaignStatus/);
+  assert.match(html, /cd-toast \{ display:none; position:fixed/);
+  assert.match(html, /Imported \$\{data\.imported\} — run next/);
   assert.doesNotMatch(html, /strong style="color:#fff;"/);
   assert.doesNotMatch(html, /marketing\.css/);
 });

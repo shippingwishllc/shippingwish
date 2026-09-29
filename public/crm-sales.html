@@ -40,8 +40,12 @@
     .cd-sub { font-size:11px; color:var(--text-muted); }
     .cd-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .cd-bulk { display:flex; gap:8px; flex-wrap:wrap; align-items:center; background:#f8fafc; border:1px solid var(--border-default); border-radius:12px; padding:10px 12px; margin-bottom:12px; }
-    .cd-toast { display:none; margin-top:10px; padding:10px 12px; border-radius:10px; font-size:12px; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+    .cd-toast { display:none; position:fixed; top:16px; right:16px; z-index:5000; margin:0; padding:12px 14px; border-radius:10px; font-size:13px; font-weight:700; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; box-shadow:0 10px 30px rgba(15,23,42,.18); max-width:min(420px, calc(100vw - 32px)); }
     .cd-toast.is-err { background:#fef2f2; color:#991b1b; border-color:#fecaca; }
+    .campaign-inline-status { display:none; margin-top:12px; padding:10px 12px; border-radius:10px; font-size:12px; line-height:1.45; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+    .campaign-inline-status.is-busy { background:#fffbeb; color:#92400e; border-color:#fde68a; }
+    .campaign-inline-status.is-err { background:#fef2f2; color:#991b1b; border-color:#fecaca; }
+    .campaign-inline-status strong { display:block; font-size:13px; margin-bottom:4px; }
     .cd-modal { display:none; position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:80; align-items:center; justify-content:center; padding:16px; }
     .cd-modal.is-open { display:flex; }
     .cd-modal .box { background:#fff; border-radius:16px; padding:20px; width:min(520px,100%); box-shadow:0 20px 50px rgba(15,23,42,.2); }
@@ -199,7 +203,8 @@
           <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-vapi"> Vapi AI call (consent only)</label>
           <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-followup" checked> Follow-up emails day 3 and 7</label>
           <label class="cd-consent" style="margin-top:10px;"><input type="checkbox" id="ai-bot-consent"> They already agreed (form, YES, or signed up). Required for SMS / Vapi.</label>
-          <button type="button" class="btn btn-primary" id="btn-run-ai-bot" onclick="runAiProspectingCampaign()" style="width:100%;margin-top:14px;font-weight:800;padding:12px;">Run campaign</button>
+          <button type="button" class="btn btn-primary" id="btn-run-ai-bot" style="width:100%;margin-top:14px;font-weight:800;padding:12px;">Run campaign</button>
+          <div id="campaign-inline-status" class="campaign-inline-status" role="status" aria-live="polite"></div>
         </section>
         <section class="cd-card" style="grid-column:span 12;display:none;" id="ai-bot-results">
           <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:6px;" id="ai-bot-status-header">Campaign progress</div>
@@ -520,6 +525,11 @@
     }
     const hero = document.getElementById('btn-hero-campaign');
     if (hero) hero.addEventListener('click', () => runAiProspectingCampaign());
+    const runBtn = document.getElementById('btn-run-ai-bot');
+    if (runBtn) runBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      runAiProspectingCampaign();
+    });
     const tbody = document.getElementById('leads-tbody');
     if (tbody) {
       tbody.addEventListener('click', (e) => {
@@ -758,6 +768,18 @@
     el.textContent = text;
     el.classList.toggle('is-err', !!isErr);
     el.style.display = 'block';
+    clearTimeout(showToast._hide);
+    showToast._hide = setTimeout(() => { el.style.display = 'none'; }, 8000);
+  }
+
+  function setCampaignStatus(html, mode) {
+    const el = document.getElementById('campaign-inline-status');
+    if (!el) return;
+    el.style.display = 'block';
+    el.classList.remove('is-busy', 'is-err');
+    if (mode === 'busy') el.classList.add('is-busy');
+    if (mode === 'err') el.classList.add('is-err');
+    el.innerHTML = html;
   }
 
   function filteredLeads() {
@@ -905,7 +927,10 @@
     });
   }
 
+  let campaignInFlight = false;
+
   async function runAiProspectingCampaign() {
+    if (campaignInFlight) return;
     const btn = document.getElementById('btn-run-ai-bot');
     const resultsBox = document.getElementById('ai-bot-results');
     const header = document.getElementById('ai-bot-status-header');
@@ -932,19 +957,27 @@
       return;
     }
 
+    campaignInFlight = true;
     btn.disabled = true;
     btn.textContent = 'Searching census…';
 
+    const scanLine = `Scanning ${selectedStates.join(', ')} for ${selectedEq.join(', ') || 'dry_van'}…`;
+    setCampaignStatus('<strong>Campaign started</strong>' + escapeHtml(scanLine), 'busy');
     resultsBox.style.display = 'block';
-    resultsBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     header.textContent = 'Campaign in progress';
     header.style.color = '#0f172a';
-    summary.textContent = `Scanning ${selectedStates.join(', ')} for ${selectedEq.join(', ') || 'dry_van'}…`;
+    summary.textContent = scanLine;
     list.innerHTML = '';
     if (typeof showToast === 'function') showToast('Campaign started — scanning FMCSA census…');
+    btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
+    const finishBtn = (label) => {
+      btn.disabled = false;
+      btn.textContent = label || 'Run campaign';
+      campaignInFlight = false;
+    };
 
     try {
       const res = await fetch('/api/crm/ai-prospect-campaign', {
@@ -965,31 +998,36 @@
       });
 
       clearTimeout(timeoutId);
-      btn.disabled = false;
-      btn.textContent = 'Run campaign';
 
       let data = {};
       try {
         data = await res.json();
       } catch (_) {
-        header.textContent = 'Campaign did not finish';
-        header.style.color = '#991b1b';
-        summary.textContent = res.status === 504 || res.status === 502
+        const msg = res.status === 504 || res.status === 502
           ? 'Census timed out. Click Run campaign again — Next batch skips companies already in this CRM.'
           : 'Server returned a non-JSON error. Try a smaller batch (5) or fewer states.';
-        if (typeof showToast === 'function') showToast(summary.textContent, true);
+        header.textContent = 'Campaign did not finish';
+        header.style.color = '#991b1b';
+        summary.textContent = msg;
+        setCampaignStatus('<strong>Campaign did not finish</strong>' + escapeHtml(msg), 'err');
+        if (typeof showToast === 'function') showToast(msg, true);
+        finishBtn('Run campaign');
         return;
       }
 
       if (!res.ok) {
+        const msg = data.error || 'Server error running campaign';
         header.textContent = 'Campaign failed';
         header.style.color = '#991b1b';
-        summary.textContent = data.error || 'Server error running campaign';
-        if (typeof showToast === 'function') showToast(summary.textContent, true);
+        summary.textContent = msg;
+        setCampaignStatus('<strong>Campaign failed</strong>' + escapeHtml(msg), 'err');
+        if (typeof showToast === 'function') showToast(msg, true);
+        finishBtn('Run campaign');
         return;
       }
 
       header.style.color = '#0f172a';
+      const namePreview = (data.leads || []).slice(0, 3).map((l) => escapeHtml(l.company_name)).filter(Boolean).join(', ');
       if (data.imported === 0) {
         header.textContent = `No new carriers this batch (${data.skipped_duplicates || 0} already in CRM)`;
         summary.innerHTML = `
@@ -998,7 +1036,12 @@
           <strong>Filtered:</strong> ${data.filtered_out || 0}<br>
           <span style="color:var(--text-muted);">Click Run campaign again for the next census page, or pick more states. Email needs an address on the FMCSA row.</span>
         `;
+        setCampaignStatus(
+          `<strong>No new carriers this batch</strong>Already in CRM: ${data.skipped_duplicates || 0}. Click again for the next census page.`,
+          'err'
+        );
         if (typeof showToast === 'function') showToast('No new carriers this batch. Run again for the next page.');
+        finishBtn('Run next batch');
       } else {
         header.textContent = `Campaign finished — ${data.imported} imported, ${data.emails_sent || 0} emailed`;
         const skipNote = (data.skipped_outreach || []).slice(0, 3).map((s) => s.reason).join(' · ');
@@ -1006,7 +1049,13 @@
           Scanned ${data.processed} · imported ${data.imported} · emails ${data.emails_sent} · SMS ${data.sms_sent} · Vapi ${data.vapi_sent || 0} · follow-ups ${data.followups ? 'on' : 'off'} · skipped dupes ${data.skipped_duplicates} · filtered ${data.filtered_out}
           ${skipNote ? '<div style="margin-top:6px;color:#b45309;">Skip: ' + escapeHtml(skipNote) + '</div>' : ''}
         `;
+        setCampaignStatus(
+          `<strong>Imported ${data.imported} · emailed ${data.emails_sent || 0}</strong>` +
+          (namePreview ? namePreview + ((data.leads || []).length > 3 ? '…' : '') : 'Names are listed in the results card below.'),
+          'ok'
+        );
         if (typeof showToast === 'function') showToast(`Imported ${data.imported}. Emails ${data.emails_sent || 0}.`);
+        finishBtn(`Imported ${data.imported} — run next`);
       }
 
       const leads = data.leads || [];
@@ -1036,14 +1085,14 @@
       }
     } catch (err) {
       clearTimeout(timeoutId);
-      btn.disabled = false;
-      btn.textContent = 'Run campaign';
       header.textContent = 'Campaign interrupted';
       header.style.color = '#991b1b';
       summary.textContent = err.name === 'AbortError' 
         ? 'Request timed out. Some leads may already be in the table below — run again for the next page.'
         : err.message;
+      setCampaignStatus('<strong>Campaign interrupted</strong>' + escapeHtml(summary.textContent), 'err');
       if (typeof showToast === 'function') showToast(summary.textContent, true);
+      finishBtn('Run campaign');
       if (typeof loadLeads === 'function') loadLeads();
     }
   }
