@@ -170,6 +170,7 @@ async function ensureBuyWishSchema() {
     );
   `);
   buyWishSchemaReady = true;
+  queuePendingConfirmations();
 }
 
 function signCustomer(customer) {
@@ -2261,6 +2262,38 @@ async function pushPaidOrderToZendrop(orderNumber) {
   }
 }
 
+function buywishMailFrom() {
+  if (process.env.BUYWISH_MAIL_FROM) return process.env.BUYWISH_MAIL_FROM;
+  const fallback = process.env.MAIL_FROM_TRANSACTIONAL || process.env.MAIL_FROM_NOREPLY || process.env.MAIL_FROM || '';
+  const match = String(fallback).match(/<([^>]+)>/);
+  const email = (match ? match[1] : String(fallback)).trim();
+  if (!/^[^@\s]+@[^@\s]+$/.test(email)) return undefined;
+  return `BuyWishOnline <${email}>`;
+}
+
+let confirmationBackfillStarted = false;
+function queuePendingConfirmations() {
+  if (confirmationBackfillStarted) return;
+  confirmationBackfillStarted = true;
+  sendPendingOrderConfirmations().catch((err) => {
+    confirmationBackfillStarted = false;
+    console.error('[BUYWISH ORDER CONFIRM BACKFILL]:', err.message);
+  });
+}
+
+async function sendPendingOrderConfirmations() {
+  const { rows } = await pool.query(`
+    SELECT order_number FROM ecommerce_orders
+    WHERE payment_status = 'paid' AND confirmation_sent_at IS NULL
+    ORDER BY created_at DESC
+    LIMIT 8
+  `);
+  for (const row of rows) {
+    const sent = await sendOrderConfirmation(row.order_number);
+    if (!sent) confirmationBackfillStarted = false;
+  }
+}
+
 async function sendOrderConfirmation(orderNumber) {
   const claimed = await pool.query(`
     UPDATE ecommerce_orders
@@ -2271,7 +2304,7 @@ async function sendOrderConfirmation(orderNumber) {
     RETURNING *
   `, [orderNumber]);
   const order = claimed.rows[0];
-  if (!order) return;
+  if (!order) return false;
   let emailed = false;
   try {
     const message = orderConfirmationEmail(order);
@@ -2283,8 +2316,7 @@ async function sendOrderConfirmation(orderNumber) {
       transactional: true,
       templateKey: 'buywish_order',
       emailType: 'buywish_order',
-      from: process.env.BUYWISH_MAIL_FROM || undefined,
-      replyTo: 'support@buywishonline.com'
+      from: buywishMailFrom()
     });
     emailed = true;
   } catch (err) {
@@ -2304,7 +2336,9 @@ async function sendOrderConfirmation(orderNumber) {
   }
   if (!emailed) {
     await pool.query(`UPDATE ecommerce_orders SET confirmation_sent_at = NULL WHERE id = $1`, [order.id]);
+    return false;
   }
+  return true;
 }
 
 async function applyCheckoutEvent(event) {
