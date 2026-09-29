@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visibility partners — MacroPoint / FourKites / Trucker Tools</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/design-system.css?v=7">
+  <style>
+    .cd-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+    .cd-card { background:var(--bg-card); border:1px solid var(--border-default); border-radius:16px; padding:18px 20px; }
+    .cd-card h3 { margin:0 0 4px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-help { margin:0 0 12px; font-size:12px; color:var(--text-secondary); line-height:1.45; }
+    .cd-hero { grid-column:span 12; background:linear-gradient(120deg,#0f172a 0%,#1e3a5f 55%,#4c1d95 100%); color:#fff; border:0; }
+    .cd-hero h2 { margin:0 0 6px; font-size:22px; font-weight:800; }
+    .cd-hero p { margin:0; max-width:760px; font-size:13px; line-height:1.5; color:#ddd6fe; }
+    .prov-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .prov { appearance:none; border:1.5px solid var(--border-default); background:#fff; border-radius:12px; padding:14px 12px; text-align:left; cursor:pointer; font:inherit; }
+    .prov strong { display:block; font-size:14px; font-weight:800; }
+    .prov span { display:block; font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.4; }
+    .prov.is-on { border-color:#0f172a; background:#0f172a; }
+    .prov.is-on strong, .prov.is-on span { color:#fff; }
+    .cd-toggle { display:flex; align-items:flex-start; gap:10px; font-size:13px; line-height:1.4; }
+    .cd-toggle input { width:18px; height:18px; accent-color:#0f172a; margin-top:2px; }
+    .cd-compact td, .cd-compact th { padding:8px 10px; font-size:12px; }
+    @media (max-width:980px) { .cd-grid { grid-template-columns:1fr; } .cd-hero, .cd-card { grid-column:auto !important; } .prov-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Visibility partners</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Official MacroPoint, FourKites, and Trucker Tools APIs. We do not scrape them.</p>
+      </div>
+      <div class="live-status"><span class="live-dot"></span> Partner credentials only</div>
+    </header>
+    <main class="app-content">
+      <div class="cd-grid">
+        <section class="cd-card cd-hero">
+          <div>
+            <div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#fbbf24;margin-bottom:8px;">HOW BROKERS GET TRACKING ON THEIR NETWORK</div>
+            <h2>Connect their official API. Push real GPS after the driver Accepts.</h2>
+            <p>Brokers ask for MacroPoint / FourKites / Trucker Tools because those networks already sit in the shipper’s TMS. The legal path is: get partner credentials from that company, save them here, send tracking on the load, driver taps Accept, we POST coordinates to their documented endpoint. Phone GPS is still not an ELD.</p>
+          </div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 5;">
+          <h3>1. Pick the network</h3>
+          <p class="cd-help" id="prov-help">Credentials come from that partner’s onboarding team, not from scraping a login page.</p>
+          <div class="prov-grid" id="prov-grid"></div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 7;">
+          <h3>2. Paste official credentials</h3>
+          <p class="cd-help">Never type a website password into git or chat. Keys are encrypted at rest.</p>
+          <div id="fields"></div>
+          <label class="cd-toggle" style="margin:12px 0;">
+            <input type="checkbox" id="consent">
+            <span>These credentials were issued to us by this partner (or their carrier ops / activations / integrations desk). Shipping Wish may POST load GPS to their official API. This is not a scrape and not an FMCSA ELD listing.</span>
+          </label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" id="btn-save">Save connection</button>
+            <a class="btn btn-secondary" href="/broker-desk">Broker send tracking</a>
+          </div>
+          <p class="cd-help" id="vis-msg" style="margin:10px 0 0;"></p>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 12;">
+          <h3>Connected partners</h3>
+          <p class="cd-help">A saved connection does nothing until you check that partner on a load when you send tracking.</p>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2 cd-compact">
+              <thead><tr><th>Partner</th><th>Status</th><th>Last push</th><th></th></tr></thead>
+              <tbody id="conn-body"><tr><td colspan="4">None yet.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 12;">
+          <h3>Recent pushes</h3>
+          <p class="cd-help">Empty until a driver Accepts and the phone sends GPS, or you run a test with real coordinates.</p>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2 cd-compact">
+              <thead><tr><th>When</th><th>Partner</th><th>OK</th><th>HTTP / error</th></tr></thead>
+              <tbody id="log-body"><tr><td colspan="4">None yet.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/app-shell.js"></script>
+<script>
+(function () {
+  const FALLBACK = [
+    { key: 'fourkites', name: 'FourKites', docs: 'https://fourkites.my.site.com/publicKB/s/tms-locations-api-integration', pushUrl: 'https://tracking-api.fourkites.com/api/v1/tracking/dispatcher_updates', support: 'support@fourkites.com', note: 'Dispatcher Updates API. Basic or Nonce from FourKites carrier ops.' },
+    { key: 'macropoint', name: 'Descartes MacroPoint', docs: 'https://carrierdocs.macropoint.com/', pushUrl: 'https://macropoint-lite.com/api/1.0/tms/data/location', support: 'MPActivations@descartes.com', note: 'TMS Location Update XML. HTTP Basic from activations.' },
+    { key: 'truckertools', name: 'Trucker Tools', docs: 'https://info.truckertools.com/tms-integration', support: 'integrations@truckertools.com', eldSetup: 'eldsetup@truckertools.com', note: 'Paste the HTTPS URL from integrations@truckertools.com. The endpoint is not public.' }
+  ];
+  let partners = FALLBACK.slice();
+  let selected = 'fourkites';
+  function api(path, opts) {
+    return fetch(path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, opts || {}));
+  }
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+  function setMsg(t, bad) {
+    const el = document.getElementById('vis-msg');
+    el.textContent = t;
+    el.style.color = bad ? '#b91c1c' : '#166534';
+  }
+  function spec() { return partners.find((p) => p.key === selected) || { key: selected }; }
+  function renderProv() {
+    document.getElementById('prov-grid').innerHTML = partners.map((p) =>
+      '<button type="button" class="prov' + (p.key === selected ? ' is-on' : '') + '" data-key="' + p.key + '"><strong>' + esc(p.name) + '</strong><span>' + esc(p.note) + '</span></button>'
+    ).join('');
+    const p = spec();
+    document.getElementById('prov-help').innerHTML = 'Docs: <a href="' + esc(p.docs) + '" target="_blank" rel="noopener">' + esc(p.docs) + '</a>' +
+      (p.support ? ' · ' + esc(p.support) : '') + (p.eldSetup ? ' · ELD setup ' + esc(p.eldSetup) : '');
+    const box = document.getElementById('fields');
+    if (selected === 'fourkites') {
+      box.innerHTML =
+        '<p class="cd-help">POST ' + esc(p.pushUrl) + ' — Basic or Nonce from FourKites carrier ops.</p>' +
+        '<div class="cd-grid" style="grid-template-columns:1fr 1fr;gap:10px;">' +
+        '<div><label class="form-label">Basic username</label><input class="form-input" id="username" autocomplete="off"></div>' +
+        '<div><label class="form-label">Basic password</label><input class="form-input" id="password" type="password" autocomplete="off"></div>' +
+        '<div><label class="form-label">Nonce client id</label><input class="form-input" id="client_id" autocomplete="off"></div>' +
+        '<div><label class="form-label">Nonce secret</label><input class="form-input" id="secret" type="password" autocomplete="off"></div>' +
+        '<div><label class="form-label">Default shipper ID</label><input class="form-input" id="default_shipper" placeholder="FourKites external shipper ID"></div>' +
+        '<div><label class="form-label">SCAC</label><input class="form-input" id="default_scac"></div></div>';
+    } else if (selected === 'macropoint') {
+      box.innerHTML =
+        '<p class="cd-help">POST ' + esc(p.pushUrl) + ' XML Location Update. HTTP Basic from MPActivations@descartes.com.</p>' +
+        '<div class="cd-grid" style="grid-template-columns:1fr 1fr;gap:10px;">' +
+        '<div><label class="form-label">Basic username</label><input class="form-input" id="username" autocomplete="off"></div>' +
+        '<div><label class="form-label">Basic password</label><input class="form-input" id="password" type="password" autocomplete="off"></div>' +
+        '<div><label class="form-label">Default MPID</label><input class="form-input" id="default_mpid" placeholder="Requestor MPID"></div>' +
+        '<div><label class="form-label">Account label</label><input class="form-input" id="account_label" placeholder="Optional"></div></div>';
+    } else {
+      box.innerHTML =
+        '<p class="cd-help">Email integrations@truckertools.com or eldsetup@truckertools.com. Paste the HTTPS URL and API key they issue. The URL is not public.</p>' +
+        '<div class="cd-grid" style="grid-template-columns:1fr 1fr;gap:10px;">' +
+        '<div style="grid-column:span 2;"><label class="form-label">HTTPS API URL from Trucker Tools</label><input class="form-input" id="push_url" placeholder="https://…"></div>' +
+        '<div><label class="form-label">API key</label><input class="form-input" id="api_key" type="password" autocomplete="off"></div>' +
+        '<div><label class="form-label">Account ID</label><input class="form-input" id="account_id"></div>' +
+        '<div><label class="form-label">Partner ID</label><input class="form-input" id="partner_id"></div>' +
+        '<div><label class="form-label">Account label</label><input class="form-input" id="account_label"></div></div>';
+    }
+  }
+  function val(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+  async function loadDesk() {
+    const res = await api('/api/visibility/desk');
+    if (res.status === 401) { location.href = '/login'; return; }
+    const json = await res.json();
+    partners = json.partners && json.partners.length ? json.partners : FALLBACK;
+    renderProv();
+    const cb = document.getElementById('conn-body');
+    const conns = json.connections || [];
+    cb.innerHTML = conns.length ? conns.map((c) =>
+      '<tr><td>' + esc(c.partner) + '</td><td>' + esc(c.status) + (c.last_error ? '<div style="color:#b91c1c;font-size:11px;">' + esc(c.last_error) + '</div>' : '') +
+      '</td><td>' + esc(c.last_push_at ? new Date(c.last_push_at).toLocaleString() : 'Never') +
+      '</td><td><button type="button" class="btn btn-light btn-sm" data-off="' + c.id + '">Disconnect</button></td></tr>'
+    ).join('') : '<tr><td colspan="4">None yet.</td></tr>';
+    const lb = document.getElementById('log-body');
+    const log = json.log || [];
+    lb.innerHTML = log.length ? log.map((r) =>
+      '<tr><td>' + esc(r.created_at ? new Date(r.created_at).toLocaleString() : '') + '</td><td>' + esc(r.partner) +
+      '</td><td>' + (r.ok ? 'Yes' : 'No') + '</td><td>' + esc(r.http_status || r.error || '—') + '</td></tr>'
+    ).join('') : '<tr><td colspan="4">None yet.</td></tr>';
+  }
+  document.getElementById('prov-grid').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-key]');
+    if (!btn) return;
+    selected = btn.getAttribute('data-key');
+    renderProv();
+  });
+  document.getElementById('btn-save').addEventListener('click', async () => {
+    if (!document.getElementById('consent').checked) return setMsg('Check the partner-credentials box first.', true);
+    const res = await api('/api/visibility/connect', {
+      method: 'POST',
+      body: JSON.stringify({
+        partner: selected,
+        consent: true,
+        username: val('username'),
+        password: val('password'),
+        api_key: val('api_key'),
+        client_id: val('client_id'),
+        secret: val('secret'),
+        default_shipper: val('default_shipper'),
+        default_scac: val('default_scac'),
+        default_mpid: val('default_mpid'),
+        push_url: val('push_url'),
+        account_id: val('account_id'),
+        partner_id: val('partner_id'),
+        account_label: val('account_label')
+      })
+    });
+    const json = await res.json();
+    if (!res.ok) return setMsg(json.error || 'Save failed.', true);
+    setMsg(json.next || 'Connected.');
+    await loadDesk();
+  });
+  document.getElementById('conn-body').addEventListener('click', async (e) => {
+    const off = e.target.closest('[data-off]');
+    if (!off) return;
+    const res = await api('/api/visibility/connections/' + off.getAttribute('data-off') + '/disconnect', { method: 'POST', body: '{}' });
+    if (!res.ok) return setMsg('Could not disconnect.', true);
+    setMsg('Disconnected.');
+    await loadDesk();
+  });
+  renderProv();
+  loadDesk().catch(() => {
+    partners = FALLBACK.slice();
+    renderProv();
+    setMsg('Could not load saved connections. Partner forms below still work once you sign in.', true);
+  });
+})();
+</script>
+</body>
+</html>

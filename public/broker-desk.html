@@ -40,7 +40,7 @@
           <div>
             <div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#fbbf24;margin-bottom:8px;">THE METHOD BROKERS ALREADY USE</div>
             <h2>Send tracking. Driver accepts. GPS starts.</h2>
-            <p>When a broker says “I sent tracking, tell the driver to accept,” they mean a phone GPS share (MacroPoint / FourKites style) — not an ELD plug. LoadsNexus does the same on your booked loads: SMS or in-app link, driver taps Accept, you get a live map. We do not scrape MacroPoint.</p>
+            <p>When a broker says “I sent tracking, tell the driver to accept,” they mean a phone GPS share (MacroPoint / FourKites style) — not an ELD plug. LoadsNexus does the same on your booked loads: SMS or in-app link, driver taps Accept, you get a live map. Optional: push that GPS to connected MacroPoint, FourKites, or Trucker Tools using their official APIs. We do not scrape them.</p>
           </div>
         </section>
         <article class="cd-card cd-kpi"><div class="l">Your loads</div><div class="n" id="kpi-loads">0</div></article>
@@ -49,7 +49,18 @@
 
         <section class="cd-card" style="grid-column:span 12;">
           <h3>Booked loads</h3>
-          <p class="cd-help">Pick a load, confirm the driver phone, send tracking. Copy the broker map link after send.</p>
+          <p class="cd-help">Pick a load, confirm the driver phone, send tracking. Copy the broker map link after send. Optional partner push needs credentials on <a href="/visibility-desk">Visibility partners</a>.</p>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;margin:0 0 12px;font-size:13px;">
+            <label><input type="checkbox" id="vp-fourkites"> FourKites</label>
+            <label><input type="checkbox" id="vp-macropoint"> MacroPoint</label>
+            <label><input type="checkbox" id="vp-truckertools"> Trucker Tools</label>
+          </div>
+          <div class="cd-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px;">
+            <div><label class="form-label" for="vp-shipper">Shipper ID / MPID</label><input class="form-input" id="vp-shipper" placeholder="Partner shipper or MPID"></div>
+            <div><label class="form-label" for="vp-bol">BOL / load ref</label><input class="form-input" id="vp-bol" placeholder="Bill of lading"></div>
+            <div><label class="form-label" for="vp-scac">SCAC</label><input class="form-input" id="vp-scac"></div>
+            <div><label class="form-label" for="vp-truck">Truck #</label><input class="form-input" id="vp-truck"></div>
+          </div>
           <div class="tms-table-wrapper">
             <table class="tms-table-v2 cd-compact">
               <thead><tr><th>Load</th><th>Lane</th><th>Driver</th><th>Phone</th><th></th></tr></thead>
@@ -62,8 +73,8 @@
           <p class="cd-help" id="desk-msg">Empty until you send one.</p>
           <div class="tms-table-wrapper">
             <table class="tms-table-v2 cd-compact">
-              <thead><tr><th>Load</th><th>Status</th><th>GPS</th><th>SMS</th><th></th></tr></thead>
-              <tbody id="share-body"><tr><td colspan="5">None yet.</td></tr></tbody>
+              <thead><tr><th>Load</th><th>Status</th><th>GPS</th><th>SMS</th><th>Partners</th><th></th></tr></thead>
+              <tbody id="share-body"><tr><td colspan="6">None yet.</td></tr></tbody>
             </table>
           </div>
         </section>
@@ -112,12 +123,13 @@
 
     const sb = document.getElementById('share-body');
     if (!shares.length) {
-      sb.innerHTML = '<tr><td colspan="5">None yet.</td></tr>';
+      sb.innerHTML = '<tr><td colspan="6">None yet.</td></tr>';
     } else {
       sb.innerHTML = shares.map((s) =>
         '<tr><td>' + esc(s.load_number || s.load_id) + '<div style="font-size:11px;color:var(--text-muted);">' + esc((s.pickup || '') + ' → ' + (s.delivery || '')) +
         '</div></td><td>' + esc(s.status) + '</td><td>' + (s.gps_lat != null ? esc(s.gps_lat.toFixed(4) + ', ' + s.gps_lon.toFixed(4)) : 'Waiting') +
         '</td><td>' + (s.sms_sent_at ? 'SMS sent' : esc(s.sms_skip_reason || '—')) +
+        '</td><td>' + esc((s.visibility_partners || []).join(', ') || '—') +
         '</td><td style="white-space:nowrap;">' +
         (s.view_url ? '<a class="btn btn-secondary btn-sm" target="_blank" href="' + esc(s.view_url) + '">Map</a> ' : '') +
         (s.accept_url ? '<button type="button" class="btn btn-light btn-sm" data-copy="' + esc(s.accept_url) + '">Copy driver link</button>' : '') +
@@ -131,9 +143,24 @@
     if (!btn) return;
     const id = btn.getAttribute('data-send');
     const phone = (document.querySelector('[data-phone="' + id + '"]') || {}).value;
+    const partners = [];
+    if (document.getElementById('vp-fourkites').checked) partners.push('fourkites');
+    if (document.getElementById('vp-macropoint').checked) partners.push('macropoint');
+    if (document.getElementById('vp-truckertools').checked) partners.push('truckertools');
+    const shipper = (document.getElementById('vp-shipper') || {}).value;
     const res = await api('/api/track-share/send', {
       method: 'POST',
-      body: JSON.stringify({ load_id: id, driver_phone: phone, send_sms: true })
+      body: JSON.stringify({
+        load_id: id,
+        driver_phone: phone,
+        send_sms: true,
+        visibility_partners: partners,
+        shipper: shipper,
+        macropoint_mpid: shipper,
+        billOfLading: (document.getElementById('vp-bol') || {}).value,
+        scac: (document.getElementById('vp-scac') || {}).value,
+        truckNumber: (document.getElementById('vp-truck') || {}).value
+      })
     });
     const json = await res.json();
     if (!res.ok) return setMsg(json.error || 'Send failed.', true);

@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '28';
+  const SIDEBAR_VERSION = '30';
   // #endregion
 
   function clearRoleCache() {
@@ -89,10 +89,13 @@
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
     { key: 'eld', href: '/eld-desk', icon: '📡', label: 'ELD Desk' },
+    { key: 'eldreg', href: '/eld-register', icon: '📋', label: 'FMCSA ELD pack' },
+    { key: 'vis', href: '/visibility-desk', icon: '🛰️', label: 'Visibility partners' },
     { key: 'track', href: '/broker-desk', icon: '📍', label: 'Load tracking' },
     { section: 'Sales & Staff' },
     { key: 'crm', href: '/crm-sales', icon: '📈', label: 'Sales CRM & Leads' },
     { key: 'census', href: '/census-desk', icon: '🗂️', label: 'Census Desk' },
+    { key: 'broker-mkt', href: '/broker-marketing', icon: '📣', label: 'Broker Marketing' },
     { key: 'voice-calls', href: '/voice-calls', icon: '📞', label: 'AI Calls & Audio' },
     { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Replies' },
     { key: 'sms-inbox', href: '/sms-inbox', icon: '📱', label: 'SMS Replies' },
@@ -115,6 +118,8 @@
     { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Bidding' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Trucks & drivers' },
     { key: 'eld', href: '/eld-desk', icon: '📡', label: 'ELD connect' },
+    { key: 'eldreg', href: '/eld-register', icon: '📋', label: 'FMCSA ELD pack' },
+    { key: 'vis', href: '/visibility-desk', icon: '🛰️', label: 'Visibility partners' },
     { key: 'track', href: '/broker-desk', icon: '📍', label: 'Send tracking' },
     { key: 'planning', href: '/load-planning', icon: '📅', label: 'Empty truck / next load' },
     { key: 'documents', href: '/documents', icon: '📄', label: 'Documents' },
@@ -130,6 +135,7 @@
     { section: 'LoadsNexus broker' },
     { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Post & book loads' },
     { key: 'track', href: '/broker-desk', icon: '📍', label: 'Send tracking' },
+    { key: 'vis', href: '/visibility-desk', icon: '🛰️', label: 'Visibility partners' },
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker credit check' }
   ];
 
@@ -156,9 +162,12 @@
     'brokers.html': 'brokers',
     'fleet.html': 'fleet',
     'eld-desk.html': 'eld',
+    'eld-register.html': 'eldreg',
+    'visibility-desk.html': 'vis',
     'broker-desk.html': 'track',
     'crm-sales.html': 'crm',
     'census-desk.html': 'census',
+    'broker-marketing.html': 'broker-mkt',
     'sales-dashboard.html': 'crm',
     'inbox.html': 'inbox',
     'voice-calls.html': 'voice-calls',
@@ -525,7 +534,7 @@
     try {
       if (sessionStorage.getItem('sw_sidebar_ver') !== SIDEBAR_VERSION) return true;
     } catch (_) { /* ignore */ }
-    return !aside.querySelector('a.sidebar-nav-link[href="/broker-desk"]');
+    return !aside.querySelector('a.sidebar-nav-link[href="/broker-marketing"]');
   }
 
   function mountSidebarContent(aside) {
@@ -871,7 +880,7 @@
         if (CURRENT_ROLE === 'carrier' || CURRENT_ROLE === 'carrier_admin') {
           const p = pageName();
           if (p === 'dashboard.html') window.location.replace('/carrier-overview');
-          if (p === 'crm-sales.html' || p === 'census-desk.html' || p === 'staff-management.html' || p === 'admin-dashboard.html' || p === 'dispatcher-dashboard.html') {
+          if (p === 'crm-sales.html' || p === 'census-desk.html' || p === 'broker-marketing.html' || p === 'staff-management.html' || p === 'admin-dashboard.html' || p === 'dispatcher-dashboard.html') {
             window.location.replace('/carrier-overview');
           }
         }

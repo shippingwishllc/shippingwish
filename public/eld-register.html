@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FMCSA ELD registration — Shipping Wish</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/design-system.css?v=7">
+  <style>
+    .cd-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+    .cd-card { background:var(--bg-card); border:1px solid var(--border-default); border-radius:16px; padding:18px 20px; }
+    .cd-card h3 { margin:0 0 4px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-help { margin:0 0 12px; font-size:12px; color:var(--text-secondary); line-height:1.45; }
+    .cd-hero { grid-column:span 12; background:linear-gradient(120deg,#0f172a 0%,#1e3a5f 58%,#0f766e 100%); color:#fff; border:0; }
+    .cd-hero h2 { margin:0 0 6px; font-size:22px; font-weight:800; }
+    .cd-hero p { margin:0; max-width:760px; font-size:13px; line-height:1.5; color:#ccfbf1; }
+    .cd-kpi { grid-column:span 4; }
+    .cd-kpi .n { font-size:22px; font-weight:800; }
+    .cd-kpi .l { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+    .step { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border-default); }
+    .step:last-child { border-bottom:0; }
+    .dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; background:#e2e8f0; color:#334155; }
+    .dot.on { background:#0f766e; color:#fff; }
+    .cd-toggle { display:flex; align-items:flex-start; gap:10px; font-size:13px; line-height:1.4; margin:8px 0; }
+    .cd-toggle input { width:18px; height:18px; accent-color:#0f172a; margin-top:2px; }
+    pre.rods { max-height:280px; overflow:auto; background:#0f172a; color:#e2e8f0; padding:12px; border-radius:10px; font-size:11px; white-space:pre-wrap; }
+    @media (max-width:980px) { .cd-grid { grid-template-columns:1fr; } .cd-hero, .cd-kpi, .cd-card { grid-column:auto !important; } }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">FMCSA ELD registration</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Self-cert packet + Appendix A RODS. Public shippingwish.com theme is unchanged.</p>
+      </div>
+      <div class="live-status"><span class="live-dot"></span> Not listed until FMCSA publishes</div>
+    </header>
+    <main class="app-content">
+      <div class="cd-grid">
+        <section class="cd-card cd-hero">
+          <div>
+            <div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#fbbf24;margin-bottom:8px;">HOW LISTING ACTUALLY WORKS</div>
+            <h2>Build the software packet. Register on FMCSA’s portal. Do not fake a listing ID.</h2>
+            <p>An ELD must read the vehicle ECM (49 CFR 395 Appendix A). SW Track phone GPS is the broker Accept method — not an ELD. When the hardware is ready, generate the RODS file here, run FMCSA’s File Validator, self-certify, then submit at eld.fmcsa.dot.gov/provider. Paste the listing ID only after they publish it.</p>
+          </div>
+        </section>
+        <article class="cd-card cd-kpi"><div class="l">Status</div><div class="n" id="kpi-status">Draft</div></article>
+        <article class="cd-card cd-kpi"><div class="l">Ready to submit</div><div class="n" id="kpi-ready">No</div></article>
+        <article class="cd-card cd-kpi"><div class="l">Listing ID</div><div class="n" id="kpi-id" style="font-size:16px;">—</div></article>
+
+        <section class="cd-card" style="grid-column:span 5;">
+          <h3>Checklist</h3>
+          <p class="cd-help" id="check-help">Complete each step with real data. Blank means not done.</p>
+          <div id="steps"></div>
+          <p class="cd-help" style="margin-top:12px;">
+            <a href="https://eld.fmcsa.dot.gov/provider" target="_blank" rel="noopener">ELD Provider Portal</a> ·
+            <a href="https://eld.fmcsa.dot.gov/" target="_blank" rel="noopener">Registered ELD list</a> ·
+            <a href="https://www.fmcsa.dot.gov/hours-service/elds/your-device-compliant" target="_blank" rel="noopener">Is the device compliant?</a>
+          </p>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 7;">
+          <h3>Registration packet</h3>
+          <p class="cd-help">USDOT and company name from your login when present. ECM must be a real engine connection (J1939 / J1708 / OBD-II), not a phone.</p>
+          <div class="cd-grid" style="grid-template-columns:1fr 1fr;gap:10px;">
+            <div><label class="form-label" for="legal_name">Legal company name</label><input class="form-input" id="legal_name"></div>
+            <div><label class="form-label" for="usdot">USDOT</label><input class="form-input" id="usdot"></div>
+            <div><label class="form-label" for="mc_number">MC / MX</label><input class="form-input" id="mc_number"></div>
+            <div><label class="form-label" for="device_model">Device model</label><input class="form-input" id="device_model" placeholder="e.g. SW ELD 1"></div>
+            <div><label class="form-label" for="software_version">Software version</label><input class="form-input" id="software_version" placeholder="e.g. 1.0.0"></div>
+            <div>
+              <label class="form-label" for="ecm_method">ECM method</label>
+              <select class="form-input" id="ecm_method">
+                <option value="">Not connected yet</option>
+                <option value="j1939">J1939</option>
+                <option value="j1708">J1708</option>
+                <option value="obdii">OBD-II</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="transfer_option">Transfer option</label>
+              <select class="form-input" id="transfer_option">
+                <option value="">Pick one complete pair</option>
+                <option value="telematics">Telematics (web services + email)</option>
+                <option value="local">Local (USB 2.0 + Bluetooth)</option>
+              </select>
+            </div>
+            <div><label class="form-label" for="fmcsa_transfer_email">FMCSA transfer email (from Provider Portal)</label><input class="form-input" id="fmcsa_transfer_email" placeholder="Paste official address only"></div>
+            <div style="grid-column:span 2;"><label class="form-label" for="fmcsa_listing_id">FMCSA listing ID (blank until they publish it)</label><input class="form-input" id="fmcsa_listing_id" placeholder="Leave empty until listed"></div>
+          </div>
+          <label class="cd-toggle"><input type="checkbox" id="ecm_connected"><span>This product has a working ECM connection. I understand phone GPS / SW Track is not an ELD and cannot be registered as one.</span></label>
+          <label class="cd-toggle"><input type="checkbox" id="file_validator_checked"><span>I ran this RODS file through FMCSA’s File Validator myself. Shipping Wish does not mark the validator as passed.</span></label>
+          <label class="cd-toggle"><input type="checkbox" id="self_cert_statement"><span>I self-certify that the ECM device + this software meet 49 CFR 395 Appendix A, and I will register it at the FMCSA ELD Provider Portal.</span></label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+            <button type="button" class="btn btn-primary" id="btn-save">Save packet</button>
+            <a class="btn btn-secondary" href="/eld-desk">ELD connect (Motive / Samsara / Geotab)</a>
+          </div>
+          <p class="cd-help" id="reg-msg" style="margin:10px 0 0;"></p>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 12;">
+          <h3>Appendix A RODS export</h3>
+          <p class="cd-help">Comma-delimited output from saved duty events only. Empty events stay empty. Download this, upload it to the File Validator, then email it only to the official FMCSA transfer address from the portal.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <button type="button" class="btn btn-primary" id="btn-rods">Generate RODS</button>
+            <a class="btn btn-secondary" href="/api/eld-register/rods.csv" id="btn-csv">Download CSV</a>
+            <button type="button" class="btn btn-light" id="btn-email">Email to FMCSA transfer address</button>
+          </div>
+          <pre class="rods" id="rods-out">Generate to preview. No invented miles or GPS.</pre>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/app-shell.js"></script>
+<script>
+(function () {
+  function api(path, opts) {
+    return fetch(path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, opts || {}));
+  }
+  function $(id) { return document.getElementById(id); }
+  function setMsg(t, bad) {
+    const el = $('reg-msg');
+    el.textContent = t;
+    el.style.color = bad ? '#b91c1c' : '#166534';
+  }
+  function fill(p) {
+    ['legal_name','usdot','mc_number','device_model','software_version','ecm_method','transfer_option','fmcsa_transfer_email','fmcsa_listing_id'].forEach((k) => {
+      if ($(k)) $(k).value = p[k] || '';
+    });
+    $('ecm_connected').checked = !!p.ecm_connected;
+    $('file_validator_checked').checked = !!p.file_validator_checked;
+    $('self_cert_statement').checked = !!p.self_cert_statement;
+  }
+  function body() {
+    return {
+      legal_name: $('legal_name').value,
+      usdot: $('usdot').value,
+      mc_number: $('mc_number').value,
+      device_model: $('device_model').value,
+      software_version: $('software_version').value,
+      ecm_method: $('ecm_method').value,
+      transfer_option: $('transfer_option').value,
+      fmcsa_transfer_email: $('fmcsa_transfer_email').value,
+      fmcsa_listing_id: $('fmcsa_listing_id').value,
+      ecm_connected: $('ecm_connected').checked,
+      file_validator_checked: $('file_validator_checked').checked,
+      self_cert_statement: $('self_cert_statement').checked
+    };
+  }
+  function renderCheck(c) {
+    $('kpi-status').textContent = c.listed ? 'Listed' : (c.ready_to_submit ? 'Ready' : 'Draft');
+    $('kpi-ready').textContent = c.ready_to_submit ? 'Yes' : 'No';
+    $('kpi-id').textContent = c.listing_id || '—';
+    $('check-help').textContent = c.label;
+    $('steps').innerHTML = (c.steps || []).map((s) =>
+      '<div class="step"><div class="dot' + (s.done ? ' on' : '') + '">' + (s.done ? '✓' : '') + '</div><div><strong>' + s.title + '</strong><div class="cd-help" style="margin:2px 0 0;">' + s.detail + '</div></div></div>'
+    ).join('');
+  }
+  async function loadDesk() {
+    const res = await api('/api/eld-register/desk');
+    if (res.status === 401) { location.href = '/login'; return; }
+    const json = await res.json();
+    fill(json.packet || {});
+    renderCheck(json.checklist || { steps: [] });
+  }
+  $('btn-save').addEventListener('click', async () => {
+    const res = await api('/api/eld-register/packet', { method: 'POST', body: JSON.stringify(body()) });
+    const json = await res.json();
+    if (!res.ok) return setMsg(json.error || 'Save failed.', true);
+    renderCheck(json.checklist);
+    setMsg('Packet saved. Still not listed until FMCSA publishes an ID.');
+  });
+  $('btn-rods').addEventListener('click', async () => {
+    const res = await api('/api/eld-register/rods');
+    const json = await res.json();
+    if (!res.ok) return setMsg(json.error || 'RODS failed.', true);
+    $('rods-out').textContent = json.body || '';
+    if (json.checklist) renderCheck(json.checklist);
+    setMsg(json.note + ' Events: ' + json.event_count + '.');
+  });
+  $('btn-email').addEventListener('click', async () => {
+    const res = await api('/api/eld-register/transfer-email', {
+      method: 'POST',
+      body: JSON.stringify({ to: $('fmcsa_transfer_email').value })
+    });
+    const json = await res.json();
+    if (!res.ok) return setMsg(json.error || 'Email failed.', true);
+    setMsg('RODS emailed to ' + json.sent_to + '.');
+  });
+  loadDesk().catch(() => setMsg('Could not load registration desk.', true));
+})();
+</script>
+</body>
+</html>

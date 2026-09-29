@@ -553,6 +553,7 @@ app.use('/api/loadboard', require('./routes/loadboard'));
 app.use('/api/dispatch-desk', require('./routes/dispatch-desk'));
 app.use('/api/outreach', require('./routes/outreach'));
 app.use('/api/census-desk', require('./routes/census-desk'));
+app.use('/api/broker-marketing', require('./routes/broker-marketing'));
 app.use('/api/loadboard/matches', require('./routes/loadboard-matchmaking')); // Smart Freight & Capacity Matchmaking Engine
 app.use('/api/crm', require('./routes/crm'));             // CRM Carrier Leads, Dispositions & Daily Tasks
 app.use('/api/email', require('./routes/email'));         // 1-Click branded outreach, inbound replies, unsubscribe
@@ -582,6 +583,8 @@ app.use('/api/detention', require('./routes/detention-billing'));   // Automated
 app.use('/api/coi', require('./routes/coi-generator'));             // Instant On-Demand ACORD 25 Certificate of Insurance Desk
 app.use('/api/eld', require('./routes/eld-compliance'));            // Staff software logbook & HOS clocks (not a certified ELD device)
 app.use('/api/eld-connect', require('./routes/eld-connect'));       // Carrier-consent Motive / Samsara / Geotab official API connect
+app.use('/api/eld-register', require('./routes/eld-registration')); // FMCSA ELD self-cert packet + Appendix A RODS (not listed until FMCSA publishes)
+app.use('/api/visibility', require('./routes/visibility'));         // Official MacroPoint / FourKites / Trucker Tools location-provider connect + GPS push
 app.use('/api/track-share', require('./routes/track-share'));       // Driver Accept GPS share for a load (MacroPoint-style, own phones)
 app.use('/api/ifta-tax', require('./routes/ifta-tax'));            // Automated IFTA Fuel Tax Engine, State Mileage Breakdown & Filing PDFs
 app.use('/api/dvir', require('./routes/dvir-safety'));                // FMCSA 49 CFR Part 396 Driver Vehicle Inspection Report (DVIR) & Defect Sign-off

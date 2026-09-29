@@ -141,8 +141,12 @@
         <section class="cd-card" style="grid-column:span 5;">
           <h3>Software logbook + SW Track</h3>
           <p class="cd-help">If the carrier has no ELD API yet, drivers set duty status on the driver app with phone GPS. Brokers send tracking; the driver taps Accept. That is phone GPS share — not a registered ELD.</p>
-          <p class="cd-help">Building our own FMCSA-registered ELD hardware is a separate product (device + self-registration). We do not sell a fake certified ELD. We can sell <strong>SW Track</strong> (GPS + logbook + connect Motive/Samsara/Geotab) as a monthly add-on.</p>
-          <a class="btn btn-primary btn-sm" href="/checkout?plan=sw_track">SW Track checkout</a>
+          <p class="cd-help">Building our own FMCSA-registered ELD is ECM hardware + self-cert + listing at eld.fmcsa.dot.gov/provider. The software packet (RODS file, transfer, checklist) is on FMCSA ELD pack. We do not sell a fake certified ELD. SW Track is phone GPS + logbook + official ELD APIs + optional partner visibility push.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a class="btn btn-primary btn-sm" href="/checkout?plan=sw_track">SW Track checkout</a>
+            <a class="btn btn-secondary btn-sm" href="/eld-register">FMCSA ELD packet</a>
+            <a class="btn btn-secondary btn-sm" href="/visibility-desk">MacroPoint / FourKites / TT</a>
+          </div>
           <div id="logbook-clocks" class="eld-empty" style="margin-top:12px;">Driver app: Off / Sleeper / Driving / On duty. Broker desk: Send tracking.</div>
         </section>
 

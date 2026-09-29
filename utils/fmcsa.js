@@ -779,5 +779,6 @@ module.exports = {
   enrichOne,
   digits,
   cargoFromCensus,
-  equipmentFromCensus
+  equipmentFromCensus,
+  censusQuery
 };

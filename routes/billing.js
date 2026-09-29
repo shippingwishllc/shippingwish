@@ -127,6 +127,7 @@ const PLANS = {
       'Broker live map link for that load only',
       'Software HOS logbook on the driver app',
       'Connect the carrier’s existing Motive / Samsara / Geotab',
+      'Push GPS to connected MacroPoint / FourKites / Trucker Tools (official partner APIs)',
       'Not sold as registered ELD hardware'
     ]
   }

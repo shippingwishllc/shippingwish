@@ -120,6 +120,61 @@ function firstName(ownerName, companyName) {
   return companyName || 'there';
 }
 
+function brokerCapacityEmail({ ownerName, companyName, recipientEmail }) {
+  const name = firstName(ownerName, companyName);
+  const company = companyName || 'your brokerage';
+  const heading = `Capacity for loads you post — ${company}`;
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">Hello ${escapeHtml(name)},</p>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      I am writing from <strong>Shipping Wish LLC</strong>, a motor carrier.
+      When you post freight we can cover, a named operations manager books our trucks onto that load after the owner approves.
+    </p>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      We haul as the carrier. We do not take a cut of your broker margin, and we do not co-broker the load.
+      After booking, tracking is available through SW Track or the partner APIs you already use
+      (MacroPoint, FourKites, Trucker Tools) when those accounts exist.
+    </p>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">If ${escapeHtml(company)} wants a lane covered, reply with:</p>
+    <ol style="margin:0 0 14px;padding-left:20px;font-size:16px;line-height:1.7;">
+      <li>Origin, destination, and equipment</li>
+      <li>Pickup window</li>
+      <li>Your preferred contact for booking</li>
+    </ol>
+    <p style="margin:0 0 14px;font-size:16px;line-height:1.7;">
+      Or call ${escapeHtml(COMPANY.phone)}. If you already have this covered, you can ignore this note.
+    </p>
+    <p style="margin:0;font-size:16px;line-height:1.7;">Respectfully,<br>
+    Operations Desk<br>${escapeHtml(COMPANY.name)}</p>
+  `;
+  const text = `Hello ${name},
+
+I am writing from Shipping Wish LLC, a motor carrier. When you post freight we can cover, a named operations manager books our trucks onto that load after the owner approves.
+
+We haul as the carrier. We do not take a cut of your broker margin. After booking, tracking is available through SW Track or partner APIs you already use when those accounts exist.
+
+If ${company} wants a lane covered, reply with origin, destination, equipment, and pickup window — or call ${COMPANY.phone}.
+
+Shipping Wish LLC
+${COMPANY.address}
+${COMPANY.phone} · ${COMPANY.operationsEmail}
+
+Unsubscribe: ${unsubscribeUrl(recipientEmail)}`;
+
+  return {
+    subject: `Capacity for loads you post — ${company}`,
+    html: wrapCorporateEmail({
+      preheader: 'Shipping Wish LLC can cover freight you post when our trucks match. Owner-approved. Tracking after booking.',
+      heading,
+      bodyHtml,
+      ctaLabel: 'Reply to this email',
+      ctaUrl: `mailto:${COMPANY.operationsEmail}?subject=${encodeURIComponent('Re: ' + company)}`,
+      recipientEmail
+    }),
+    text
+  };
+}
+
 function dedicatedManagerEmail({ ownerName, companyName, recipientEmail }) {
   const name = firstName(ownerName, companyName);
   const company = companyName || 'your fleet';
@@ -430,6 +485,8 @@ function buildTemplate(templateKey, vars) {
     case 'trial_welcome':
     case 'subscription_started':
       return trialWelcomeEmail(vars);
+    case 'broker_capacity':
+      return brokerCapacityEmail(vars);
     case 'dedicated_manager':
     case 'outreach':
     default:
@@ -438,6 +495,10 @@ function buildTemplate(templateKey, vars) {
 }
 
 const SMS_TEMPLATES = {
+  broker_capacity: ({ companyName }) => {
+    const name = (companyName && String(companyName).trim()) || 'there';
+    return `Hi ${name}: Shipping Wish LLC can cover loads you post when our trucks match. Reply YES for the desk, STOP to opt out. ${COMPANY.phone}`;
+  },
   dedicated_manager: ({ companyName }) => {
     const name = (companyName && String(companyName).trim()) || 'there';
     return `Hi, ${name}: Tired of chasing loads? Get a dedicated ops manager who books freight for you 24/7 - you keep 100% of the pay, no cut. First week $0. Check us out: shippingwish.com or call ${COMPANY.phone}.`;
@@ -464,6 +525,7 @@ module.exports = {
   buildTemplate,
   SMS_TEMPLATES,
   dedicatedManagerEmail,
+  brokerCapacityEmail,
   followUpEmail,
   onboardingEmail,
   trialWelcomeEmail,
