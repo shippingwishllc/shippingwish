@@ -39,6 +39,7 @@
       --radius: 14px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { max-width: 100%; overflow-x: hidden; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; -webkit-font-smoothing: antialiased; }
     a { text-decoration: none; color: inherit; }
 
@@ -90,8 +91,18 @@
       letter-spacing: 0.03em;
       margin-top: 1px;
     }
-    .nav-links { display: flex; align-items: center; gap: 20px; font-size: 14px; font-weight: 600; color: #475569; }
+    .nav-links { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 12px 20px; font-size: 14px; font-weight: 600; color: #475569; }
     .nav-links a:hover { color: var(--accent); }
+    @media (max-width: 720px) {
+      .nav-wrap { flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 16px; }
+      .brand-logo { min-width: 0; }
+      .brand-logo .logo-text { font-size: 17px; }
+      .nav-links { width: 100%; justify-content: flex-start; gap: 8px 14px; font-size: 13px; }
+      .btn-home { padding: 7px 12px; }
+      .legal-hero { padding: 32px 16px; }
+      .legal-hero h1 { font-size: 28px; }
+      .legal-hero p { font-size: 14px; max-width: 100%; }
+    }
     .btn-home {
       background: var(--primary);
       color: #fff !important;
@@ -134,7 +145,11 @@
       padding: 48px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.04);
     }
-    @media (max-width: 640px) { .legal-container { padding: 24px; margin-top: 16px; } }
+    @media (max-width: 640px) {
+      .legal-container { margin: 16px 12px 40px; padding: 20px 16px; }
+      .callout-box { padding: 14px; }
+      .legal-container, .callout-box, p, li, h2 { overflow-wrap: anywhere; }
+    }
 
     .callout-box {
       background: #eff6ff;
