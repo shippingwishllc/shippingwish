@@ -1,6 +1,13 @@
 const FMCSA_HOST = 'mobile.fmcsa.dot.gov';
 const SAFER_HOST = 'safer.fmcsa.dot.gov';
 const { sanitizeEmail } = require('./email-valid');
+const {
+  cargoLabelsFromRow,
+  primaryEquipmentLabel,
+  equipmentFromRow,
+  buildCensusWhere,
+  normalizeEquipmentKeys
+} = require('./fmcsa-equipment');
 
 async function httpsRequest(url, timeoutMs = 8000) {
   const ctrl = new AbortController();
@@ -242,13 +249,14 @@ function normalizeCarrier(raw, extras = {}) {
     phy_city: phyCity,
     phy_state: phyState,
     phy_zip: String(phyZip || ''),
-    equipment_type: cargo || extras.equipment_type || op || '53ft Dry Van',
+    equipment_type: cargo || extras.equipment_type || op || '',
     num_trucks: trucks ? parseInt(trucks, 10) || 1 : 1,
     num_drivers: drivers ? parseInt(drivers, 10) || null : null,
     safety_rating: basics.safetyRating || basics.rating || extras.safety_rating || '',
     authority_status: extras.authority_status || authority.commonAuthorityStatus || authority.brokerAuthorityStatus || extras.usdot_status || '',
     usdot_status: extras.usdot_status || src.allowToOperate || src.statusCode || '',
     insurance_onfile: !!(authority.bipdInsuranceOnFile || authority.cargoInsuranceOnFile),
+    cargo_carried: extras.cargo_carried || '',
     state: phyState,
     already_in_crm: false,
     source: extras.source || 'FMCSA QC API'
@@ -412,21 +420,11 @@ function formatPhone(value) {
 }
 
 function cargoFromCensus(row) {
-  const map = {
-    crgo_genfreight: 'General Freight',
-    crgo_produce: 'Produce',
-    crgo_coldfood: 'Refrigerated Food',
-    crgo_beverages: 'Beverages',
-    crgo_meat: 'Meat',
-    crgo_logs: 'Logs',
-    crgo_building: 'Building Materials',
-    crgo_drybulk: 'Dry Bulk'
-  };
-  return Object.entries(map)
-    .filter(([key]) => row[key] === 'X' || row[key] === 'Y')
-    .map(([, label]) => label)
-    .slice(0, 4)
-    .join(', ');
+  return equipmentFromCensus(row) || cargoLabelsFromRow(row).slice(0, 6).join(', ');
+}
+
+function equipmentFromCensus(row) {
+  return equipmentFromRow(row).join(', ') || primaryEquipmentLabel(row);
 }
 
 function soqlLike(name) {
@@ -459,7 +457,8 @@ function censusToCarrier(row) {
     num_drivers: row.total_drivers || null,
     usdot_status: row.status_code === 'A' ? 'ACTIVE' : (row.status_code || ''),
     authority_status: row.classdef || row.docket1_status_code || '',
-    equipment_type: cargoFromCensus(row) || '53ft Dry Van'
+    equipment_type: equipmentFromCensus(row),
+    cargo_carried: cargoLabelsFromRow(row).join(', ')
   });
 }
 
@@ -468,14 +467,30 @@ async function censusQuery(params) {
   Object.entries(params).forEach(([key, value]) => {
     if (value != null && value !== '') u.searchParams.set(key, String(value));
   });
-  const { status, body } = await httpsRequest(u.toString(), 12000);
-  if (status >= 400) {
-    const err = new Error(`Census HTTP ${status}`);
-    err.status = status;
+  const headers = {
+    Accept: 'application/json, text/html;q=0.8',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like GECKO) Chrome/122.0.0.0 Safari/537.36'
+  };
+  if (process.env.SOCRATA_APP_TOKEN) headers['X-App-Token'] = process.env.SOCRATA_APP_TOKEN;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const resp = await fetch(u.toString(), { signal: ctrl.signal, headers });
+    const body = await resp.text();
+    if (resp.status >= 400) {
+      const err = new Error(`Census HTTP ${resp.status}`);
+      err.status = resp.status;
+      err.body = body.slice(0, 240);
+      throw err;
+    }
+    const data = JSON.parse(body || '[]');
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    if (err && err.name === 'AbortError') throw new Error('FMCSA census timeout');
     throw err;
+  } finally {
+    clearTimeout(timer);
   }
-  const data = JSON.parse(body || '[]');
-  return Array.isArray(data) ? data : [];
 }
 
 async function searchCensusRows(classified, options = {}) {
@@ -581,6 +596,33 @@ async function searchCensus(classified, attempts, options = {}) {
   return carriers;
 }
 
+async function searchCensusFiltered(filters = {}, attempts) {
+  const where = buildCensusWhere(filters);
+  if (!where) {
+    const err = new Error('Add at least one census filter (state, equipment, or active for-hire).');
+    err.status = 400;
+    throw err;
+  }
+  const limit = Math.min(75, Math.max(1, Number(filters.limit) || 40));
+  const offset = Math.max(0, Number(filters.offset) || 0);
+  const label = `census/filter/${where.slice(0, 80)}`;
+  const rows = await censusQuery({
+    $where: where,
+    $order: 'power_units DESC',
+    $limit: String(limit),
+    $offset: String(offset)
+  });
+  if (attempts) attempts.push({ path: label, status: 200, result: rows.length ? `hit ${rows.length}` : 'empty' });
+  return {
+    where,
+    count: rows.length,
+    offset,
+    limit,
+    carriers: rows.map(censusToCarrier).filter((c) => c && c.company_name),
+    rows
+  };
+}
+
 async function lookupCensusRow(query) {
   const classified = classifyQuery(query);
   const { rows } = await searchCensusRows(classified);
@@ -600,8 +642,36 @@ async function searchFmcsa(query, options = {}) {
   const classified = classifyQuery(query, options.mode);
   const attempts = [];
   const keyPresent = !!apiKey();
+  const equipmentKeys = normalizeEquipmentKeys(options.equipment);
 
   try {
+    if (equipmentKeys.length || options.minUnits || options.maxUnits || options.hasEmail) {
+      const filtered = await searchCensusFiltered({
+        state: classified.type === 'state' ? classified.value : options.state,
+        equipment: equipmentKeys,
+        minUnits: options.minUnits,
+        maxUnits: options.maxUnits,
+        hasEmail: options.hasEmail,
+        hasPhone: options.hasPhone,
+        activeOnly: options.activeOnly,
+        forHire: options.forHire,
+        authorizedHire: options.authorizedHire,
+        excludePassengers: options.excludePassengers,
+        exclusive: options.exclusive,
+        limit: options.limit,
+        offset: options.offset
+      }, attempts);
+      if (filtered.carriers.length) {
+        return {
+          source: 'FMCSA Census',
+          query: classified,
+          keyPresent,
+          attempts,
+          carriers: filtered.carriers,
+          filterWhere: filtered.where
+        };
+      }
+    }
     const censusHits = await searchCensus(classified, attempts, options);
     if (censusHits.length) {
       return {
@@ -703,8 +773,11 @@ async function searchFmcsa(query, options = {}) {
 module.exports = {
   classifyQuery,
   searchFmcsa,
+  searchCensusFiltered,
   lookupCensusRow,
   normalizeCarrier,
   enrichOne,
-  digits
+  digits,
+  cargoFromCensus,
+  equipmentFromCensus
 };

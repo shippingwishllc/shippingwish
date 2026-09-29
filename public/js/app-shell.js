@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '25';
+  const SIDEBAR_VERSION = '26';
   // #endregion
 
   function clearRoleCache() {
@@ -90,6 +90,7 @@
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
     { section: 'Sales & Staff' },
     { key: 'crm', href: '/crm-sales', icon: '📈', label: 'Sales CRM & Leads' },
+    { key: 'census', href: '/census-desk', icon: '🗂️', label: 'Census Desk' },
     { key: 'voice-calls', href: '/voice-calls', icon: '📞', label: 'AI Calls & Audio' },
     { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Replies' },
     { key: 'sms-inbox', href: '/sms-inbox', icon: '📱', label: 'SMS Replies' },
@@ -144,6 +145,7 @@
     'brokers.html': 'brokers',
     'fleet.html': 'fleet',
     'crm-sales.html': 'crm',
+    'census-desk.html': 'census',
     'sales-dashboard.html': 'crm',
     'inbox.html': 'inbox',
     'voice-calls.html': 'voice-calls',
@@ -508,7 +510,7 @@
     try {
       if (sessionStorage.getItem('sw_sidebar_ver') !== SIDEBAR_VERSION) return true;
     } catch (_) { /* ignore */ }
-    return !aside.querySelector('a.sidebar-nav-link[href="/sms-inbox"]');
+    return !aside.querySelector('a.sidebar-nav-link[href="/census-desk"]');
   }
 
   function mountSidebarContent(aside) {
@@ -854,7 +856,7 @@
         if (CURRENT_ROLE === 'carrier' || CURRENT_ROLE === 'carrier_admin') {
           const p = pageName();
           if (p === 'dashboard.html') window.location.replace('/carrier-overview');
-          if (p === 'crm-sales.html' || p === 'staff-management.html' || p === 'admin-dashboard.html' || p === 'dispatcher-dashboard.html') {
+          if (p === 'crm-sales.html' || p === 'census-desk.html' || p === 'staff-management.html' || p === 'admin-dashboard.html' || p === 'dispatcher-dashboard.html') {
             window.location.replace('/carrier-overview');
           }
         }

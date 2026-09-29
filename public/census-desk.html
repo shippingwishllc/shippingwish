@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Census Desk — FMCSA Equipment Search | Shipping Wish</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/design-system.css?v=7">
+  <style>
+    .cd-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+    .cd-card { background:var(--bg-card); border:1px solid var(--border-default); border-radius:14px; padding:16px 18px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+    .cd-card h3 { margin:0 0 4px; font-size:13px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-help { margin:0 0 12px; font-size:12px; color:var(--text-secondary); line-height:1.45; }
+    .eq-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .eq-chip { appearance:none; border:1.5px solid var(--border-default); background:#fff; border-radius:10px; padding:10px 12px; text-align:left; cursor:pointer; font:inherit; }
+    .eq-chip strong { display:block; font-size:13px; font-weight:800; color:var(--text-primary); }
+    .eq-chip span { display:block; font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .eq-chip.is-on { border-color:#1e3a5f; background:#0f172a; }
+    .eq-chip.is-on strong, .eq-chip.is-on span { color:#fff; }
+    .eq-chip.is-on span { color:#cbd5e1; }
+    .cd-row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+    .cd-field { flex:1; min-width:120px; }
+    .cd-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--border-subtle); font-size:13px; }
+    .cd-toggle:last-child { border-bottom:0; }
+    .cd-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .dir-item { display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--border-subtle); cursor:pointer; }
+    .dir-item:hover { color:var(--color-navy-700); }
+    .dir-item.is-on { background:#f8fafc; margin:0 -8px; padding:10px 8px; border-radius:8px; }
+    @media (max-width: 980px) { .cd-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Census Desk</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Official FMCSA Company Census. Dry Van = general freight. Reefer = refrigerated food / meat / produce. Save a search as a directory, then email that list.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="live-status"><span class="live-dot"></span> Census live</div>
+        <div id="notif-container"></div>
+      </div>
+    </header>
+    <main class="app-content">
+      <div class="cd-grid">
+        <section class="cd-card" style="grid-column:span 4;">
+          <h3>Directory name</h3>
+          <p class="cd-help">Each search you save becomes its own file — TX Reefer 1–10, FL Dry Van, etc.</p>
+          <label class="form-label" for="cd-name">Name</label>
+          <input class="form-input" id="cd-name" placeholder="TX-Reefer-Small-Fleet" maxlength="80">
+          <label class="form-label" for="cd-state" style="margin-top:12px;">State</label>
+          <select class="form-select" id="cd-state"></select>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 5;">
+          <h3>Equipment</h3>
+          <p class="cd-help">Pick one or more. Census cargo flags are queried directly — Reefer does not return dry vans.</p>
+          <div class="eq-grid" id="eq-grid"></div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 3;">
+          <h3>Fleet &amp; filters</h3>
+          <p class="cd-help">Power units from the census file.</p>
+          <div class="cd-row">
+            <div class="cd-field">
+              <label class="form-label" for="cd-min">Min trucks</label>
+              <input class="form-input" id="cd-min" type="number" min="1" max="500" value="1">
+            </div>
+            <div class="cd-field">
+              <label class="form-label" for="cd-max">Max trucks</label>
+              <input class="form-input" id="cd-max" type="number" min="1" max="500" value="20">
+            </div>
+          </div>
+          <label class="cd-toggle"><span>Active USDOT only</span><input type="checkbox" id="cd-active" checked></label>
+          <label class="cd-toggle"><span>For-hire (carship C)</span><input type="checkbox" id="cd-hire" checked></label>
+          <label class="cd-toggle"><span>Skip passenger ops</span><input type="checkbox" id="cd-pass" checked></label>
+          <label class="cd-toggle"><span>Email on file</span><input type="checkbox" id="cd-email"></label>
+          <label class="cd-toggle"><span>Keep Dry Van exclusive (no reefers mixed in)</span><input type="checkbox" id="cd-exclusive" checked></label>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 8;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+            <div>
+              <h3 style="margin:0;">Search results</h3>
+              <p class="cd-help" id="cd-result-meta" style="margin:4px 0 0;">Pick equipment, then run census.</p>
+            </div>
+            <div class="cd-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-search">Run census</button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-save">Save to directory</button>
+            </div>
+          </div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Company</th>
+                  <th>MC / DOT</th>
+                  <th>Equipment</th>
+                  <th>Units</th>
+                  <th>State</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                </tr>
+              </thead>
+              <tbody id="cd-results">
+                <tr><td colspan="8" style="text-align:center;padding:28px;color:var(--text-muted);">No search yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 4;">
+          <h3>Saved directories</h3>
+          <p class="cd-help">Open a file to email, download CSV, or push into CRM. SMS only if that phone already consented on our desk.</p>
+          <div id="cd-dirs"><p style="font-size:13px;color:var(--text-muted);">Loading directories…</p></div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 12;display:none;" id="cd-open">
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+            <div>
+              <h3 style="margin:0;" id="cd-open-title">Directory</h3>
+              <p class="cd-help" id="cd-open-meta" style="margin:4px 0 0;"></p>
+            </div>
+            <div class="cd-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-csv">Download CSV</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-crm">Import to CRM</button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-email">Email selected</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-sms">SMS (consent only)</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-delete">Delete</button>
+            </div>
+          </div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Company</th>
+                  <th>Equipment</th>
+                  <th>State</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="cd-members"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<script>
+(function () {
+  const STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
+  const EQUIPMENT = [
+    { key: 'dry_van', label: 'Dry Van', hint: 'General freight' },
+    { key: 'reefer', label: 'Reefer', hint: 'Cold food, meat, produce' },
+    { key: 'flatbed', label: 'Flatbed', hint: 'Building / machinery' },
+    { key: 'hopper', label: 'Hopper / Dry Bulk', hint: 'Grain, bulk' },
+    { key: 'tanker', label: 'Tanker', hint: 'Liquid / chemicals' },
+    { key: 'auto', label: 'Auto Hauler', hint: 'Motor vehicles' },
+    { key: 'intermodal', label: 'Intermodal', hint: 'Containers' }
+  ];
+  let selectedEq = ['dry_van'];
+  let lastCarriers = [];
+  let openId = null;
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function api(path, opts) {
+    return fetch(path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, opts || {}));
+  }
+  function selectedIds(tbodyId) {
+    return Array.from(document.querySelectorAll('#' + tbodyId + ' input[type=checkbox]:checked')).map((el) => Number(el.value)).filter(Boolean);
+  }
+  function filters() {
+    return {
+      name: document.getElementById('cd-name').value.trim(),
+      equipment: selectedEq,
+      state: document.getElementById('cd-state').value,
+      minUnits: document.getElementById('cd-min').value,
+      maxUnits: document.getElementById('cd-max').value,
+      activeOnly: document.getElementById('cd-active').checked,
+      forHire: document.getElementById('cd-hire').checked,
+      excludePassengers: document.getElementById('cd-pass').checked,
+      hasEmail: document.getElementById('cd-email').checked,
+      exclusive: document.getElementById('cd-exclusive').checked
+    };
+  }
+
+  function renderChips() {
+    document.getElementById('eq-grid').innerHTML = EQUIPMENT.map((eq) =>
+      `<button type="button" class="eq-chip${selectedEq.includes(eq.key) ? ' is-on' : ''}" data-eq="${eq.key}"><strong>${eq.label}</strong><span>${eq.hint}</span></button>`
+    ).join('');
+  }
+
+  function renderResults(carriers) {
+    const body = document.getElementById('cd-results');
+    if (!carriers.length) {
+      body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--text-muted);">No census rows for this equipment / state.</td></tr>';
+      return;
+    }
+    body.innerHTML = carriers.map((c, i) => `<tr>
+      <td><input type="checkbox" value="${i}" checked></td>
+      <td><strong>${escapeHtml(c.company_name)}</strong><div style="font-size:11px;color:var(--text-muted);">${escapeHtml(c.owner_name || '')}</div></td>
+      <td>${escapeHtml(c.mc_number || '—')}<div style="font-size:11px;color:var(--text-muted);">DOT ${escapeHtml(c.dot_number || '')}</div></td>
+      <td>${escapeHtml(c.equipment_type || '—')}<div style="font-size:11px;color:var(--text-muted);">${escapeHtml(c.cargo_carried || '')}</div></td>
+      <td>${escapeHtml(c.num_trucks || '')}</td>
+      <td>${escapeHtml(c.phy_state || c.state || '')}</td>
+      <td>${escapeHtml(c.email || '—')}</td>
+      <td>${escapeHtml(c.phone || '—')}</td>
+    </tr>`).join('');
+  }
+
+  async function runSearch() {
+    const f = filters();
+    if (!f.equipment.length && !f.state) return alert('Pick Dry Van, Reefer, or another equipment type — or a state.');
+    const meta = document.getElementById('cd-result-meta');
+    meta.textContent = 'Querying FMCSA Company Census…';
+    const qs = new URLSearchParams();
+    f.equipment.forEach((eq) => qs.append('equipment', eq));
+    if (f.state) qs.set('state', f.state);
+    qs.set('minUnits', f.minUnits);
+    qs.set('maxUnits', f.maxUnits);
+    qs.set('activeOnly', f.activeOnly);
+    qs.set('forHire', f.forHire);
+    qs.set('excludePassengers', f.excludePassengers);
+    qs.set('hasEmail', f.hasEmail);
+    qs.set('exclusive', f.exclusive);
+    qs.set('limit', '50');
+    const res = await api('/api/census-desk/search?' + qs.toString());
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      meta.textContent = data.error || 'Search failed.';
+      lastCarriers = [];
+      renderResults([]);
+      return;
+    }
+    lastCarriers = data.carriers || [];
+    meta.textContent = lastCarriers.length + ' carriers · ' + (f.equipment.join(', ') || 'any equipment') + (f.state ? ' · ' + f.state : '') + ' · public census, not a score.';
+    renderResults(lastCarriers);
+  }
+
+  async function saveDirectory() {
+    const f = filters();
+    const checked = Array.from(document.querySelectorAll('#cd-results input[type=checkbox]:checked')).map((el) => lastCarriers[Number(el.value)]).filter(Boolean);
+    if (!checked.length) return alert('Run a search and keep at least one row checked.');
+    if (!f.name) {
+      const eq = f.equipment[0] || 'mixed';
+      f.name = (f.state || 'US') + '-' + eq + '-' + new Date().toISOString().slice(0, 10);
+      document.getElementById('cd-name').value = f.name;
+    }
+    const res = await api('/api/census-desk/directories', {
+      method: 'POST',
+      body: JSON.stringify(Object.assign({}, f, { carriers: checked }))
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.error || 'Could not save directory.');
+    alert('Saved ' + data.added + ' carriers into “' + (data.directory && data.directory.name) + '”.');
+    await loadDirs();
+    if (data.directory) openDirectory(data.directory.id);
+  }
+
+  async function loadDirs() {
+    const box = document.getElementById('cd-dirs');
+    const res = await api('/api/census-desk/directories');
+    const data = await res.json().catch(() => ({}));
+    const rows = data.directories || [];
+    if (!rows.length) {
+      box.innerHTML = '<p style="font-size:13px;color:var(--text-muted);">No directories yet. Run a Reefer or Dry Van search and save it.</p>';
+      return;
+    }
+    box.innerHTML = rows.map((d) => `<div class="dir-item${Number(d.id) === Number(openId) ? ' is-on' : ''}" data-id="${d.id}">
+      <div><strong>${escapeHtml(d.name)}</strong><div style="font-size:11px;color:var(--text-muted);">${escapeHtml((d.equipment || []).join(', ') || 'mixed')} · ${escapeHtml(d.state || 'US')}</div></div>
+      <div style="font-size:12px;font-weight:800;">${d.member_count} · ${d.with_email} email</div>
+    </div>`).join('');
+  }
+
+  async function openDirectory(id) {
+    openId = id;
+    const res = await api('/api/census-desk/directories/' + id);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.error || 'Could not open directory.');
+    document.getElementById('cd-open').style.display = 'block';
+    document.getElementById('cd-open-title').textContent = data.directory.name;
+    document.getElementById('cd-open-meta').textContent = (data.members || []).length + ' carriers in this file.';
+    document.getElementById('cd-members').innerHTML = (data.members || []).map((m) => `<tr>
+      <td><input type="checkbox" value="${m.id}" checked></td>
+      <td><strong>${escapeHtml(m.company_name)}</strong><div style="font-size:11px;color:var(--text-muted);">${escapeHtml(m.mc_number || '')} · DOT ${escapeHtml(m.dot_number || '')}</div></td>
+      <td>${escapeHtml(m.equipment_type || '—')}</td>
+      <td>${escapeHtml(m.state || '')}</td>
+      <td>${escapeHtml(m.email || '—')}</td>
+      <td>${escapeHtml(m.phone || '—')}</td>
+      <td>${m.email_sent_at ? 'emailed' : ''}${m.sms_sent_at ? ' · sms' : ''}${m.sms_blocked_reason === 'no_consent' ? ' · email only' : ''}</td>
+    </tr>`).join('');
+    await loadDirs();
+    document.getElementById('cd-open').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function postMembers(path, extra) {
+    if (!openId) return alert('Open a directory first.');
+    const res = await api('/api/census-desk/directories/' + openId + '/' + path, {
+      method: 'POST',
+      body: JSON.stringify(Object.assign({ member_ids: selectedIds('cd-members') }, extra || {}))
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.error || 'Request failed.');
+    const skip = (data.skipped || []).length;
+    alert((data.note ? data.note + '\n\n' : '') + 'Sent: ' + (data.sent || data.imported || 0) + (skip ? (' · skipped: ' + skip) : '') + (data.remaining ? (' · remaining: ' + data.remaining) : ''));
+    openDirectory(openId);
+  }
+
+  document.getElementById('eq-grid').addEventListener('click', (e) => {
+    const btn = e.target.closest('.eq-chip');
+    if (!btn) return;
+    const key = btn.getAttribute('data-eq');
+    if (selectedEq.includes(key)) selectedEq = selectedEq.filter((k) => k !== key);
+    else selectedEq.push(key);
+    renderChips();
+  });
+  document.getElementById('cd-dirs').addEventListener('click', (e) => {
+    const row = e.target.closest('.dir-item');
+    if (row) openDirectory(row.getAttribute('data-id'));
+  });
+  document.getElementById('btn-search').addEventListener('click', () => runSearch().catch((err) => alert(err.message)));
+  document.getElementById('btn-save').addEventListener('click', () => saveDirectory().catch((err) => alert(err.message)));
+  document.getElementById('btn-csv').addEventListener('click', () => {
+    if (!openId) return alert('Open a directory first.');
+    window.location = '/api/census-desk/directories/' + openId + '.csv';
+  });
+  document.getElementById('btn-crm').addEventListener('click', () => postMembers('import-crm'));
+  document.getElementById('btn-email').addEventListener('click', () => postMembers('email'));
+  document.getElementById('btn-sms').addEventListener('click', () => postMembers('sms'));
+  document.getElementById('btn-delete').addEventListener('click', async () => {
+    if (!openId || !confirm('Delete this directory?')) return;
+    await api('/api/census-desk/directories/' + openId, { method: 'DELETE' });
+    openId = null;
+    document.getElementById('cd-open').style.display = 'none';
+    loadDirs();
+  });
+
+  const stateSel = document.getElementById('cd-state');
+  stateSel.innerHTML = '<option value="">All states</option>' + STATES.map((s) => `<option value="${s}">${s}</option>`).join('');
+  stateSel.value = 'TX';
+  renderChips();
+  loadDirs().catch(() => {
+    document.getElementById('cd-dirs').innerHTML = '<p style="font-size:13px;color:var(--text-muted);">Sign in as staff to load directories.</p>';
+  });
+})();
+</script>
+<script src="/js/app-shell.js?v=26"></script>
+</body>
+</html>
