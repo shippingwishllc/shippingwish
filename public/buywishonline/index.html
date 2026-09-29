@@ -153,11 +153,13 @@
     .nav-wrap {
       width: 100%;
       margin: 0 auto;
-      padding: 0 20px;
-      height: var(--nav-h);
+      padding: 10px 20px 8px;
+      min-height: var(--nav-h);
+      height: auto;
       display: flex;
       align-items: center;
-      gap: 14px;
+      flex-wrap: wrap;
+      gap: 8px 14px;
       min-width: 0;
     }
     .brand-logo {
@@ -202,10 +204,12 @@
     .nav-cats {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 2px;
-      flex: 1 1 auto;
+      flex: 1 0 100%;
+      order: 3;
       min-width: 0;
-      overflow: hidden;
+      overflow: visible;
     }
     .nav-cat-btn {
       background: none;
@@ -329,11 +333,11 @@
       transition: background 0.2s;
     }
     .mobile-menu-btn:hover { background: #e5e7eb; }
-    @media (max-width: 1180px) {
+    @media (max-width: 900px) {
       .nav-cats { display: none; }
       .search-bar { width: min(280px, 42vw); }
       .mobile-menu-btn { display: flex; }
-      .nav-wrap { gap: 14px; padding: 0 16px; }
+      .nav-wrap { height: var(--nav-h); flex-wrap: nowrap; gap: 14px; padding: 0 16px; }
     }
     @media (max-width: 640px) {
       .search-bar { display: none; }
@@ -2449,28 +2453,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <script src="/tracking.js"></script>
 <script>
-function fitHeaderNav() {
-  const cats = document.querySelector('.nav-cats');
-  const menu = document.querySelector('.mobile-menu-btn');
-  const right = document.querySelector('.nav-right');
-  if (!cats || !menu || !right) return;
-  if (window.innerWidth <= 1180) {
-    cats.style.display = '';
-    menu.style.display = '';
-    return;
-  }
-  cats.style.display = 'flex';
-  menu.style.display = 'none';
-  const last = cats.lastElementChild;
-  if (last && last.getBoundingClientRect().right > right.getBoundingClientRect().left - 8) {
-    cats.style.display = 'none';
-    menu.style.display = 'flex';
-  }
-}
-fitHeaderNav();
-window.addEventListener('resize', fitHeaderNav);
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeaderNav);
-
 // ============================================================
 // CURRENCY DETECTION & CONVERSION
 // ============================================================
