@@ -564,7 +564,8 @@
         const message = document.getElementById('crm-send-message').value;
         const consent = document.getElementById('crm-send-consent').checked;
         document.getElementById('crm-send-modal').classList.remove('is-open');
-        await bulkSend(channel, selectedLeadIds(), { consent_confirmed: consent, custom_message: message });
+        await bulkSend(channel, pendingSendIds && pendingSendIds.length ? pendingSendIds : selectedLeadIds(), { consent_confirmed: consent, custom_message: message });
+        pendingSendIds = null;
       });
     }
   });
@@ -736,6 +737,7 @@
   let selectedEq = ['dry_van'];
   let crmPage = 1;
   const PAGE_SIZE = 10;
+  let pendingSendIds = null;
 
   function renderEqChips() {
     const grid = document.getElementById('crm-eq-grid');
@@ -1462,7 +1464,8 @@
   function openSendModal(channel, ids) {
     const modal = document.getElementById('crm-send-modal');
     if (channel) document.getElementById('crm-send-channel').value = channel;
-    const n = (ids && ids.length) || selectedLeadIds().length;
+    pendingSendIds = ids && ids.length ? ids.slice() : selectedLeadIds();
+    const n = pendingSendIds.length;
     document.getElementById('crm-send-meta').textContent = n + ' selected. Email is one press. SMS and Vapi need the consent box.';
     modal.classList.add('is-open');
   }
