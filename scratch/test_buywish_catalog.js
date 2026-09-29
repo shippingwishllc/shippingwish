@@ -346,6 +346,14 @@ const gtmId = 'GTM-PD9DZS54';
 });
 const adminHtml = fs.readFileSync(path.join(__dirname, '../public/buywishonline/admin.html'), 'utf8');
 assert.ok(!adminHtml.includes('googletagmanager.com/gtm.js'));
+['home', 'orders', 'products', 'customers', 'growth', 'discounts', 'content', 'markets', 'finance', 'analytics', 'store', 'apps', 'settings'].forEach((panel) => {
+  assert.strictEqual(adminHtml.split('data-panel="' + panel + '"').length - 1, 1, panel);
+  assert.ok(adminHtml.includes('id="panel-' + panel + '"'), panel + ' panel');
+});
+assert.ok(adminHtml.includes('>Home</button>'));
+assert.ok(adminHtml.includes('>Online Store</button>'));
+assert.ok(adminHtml.includes('id="openSearch"'));
+assert.ok(adminHtml.includes('/api/buywish/admin/overview'));
 const shell = renderCollectionPage('Shop', []);
 assert.ok(shell.includes("'" + gtmId + "'"));
 assert.ok(shell.includes('ns.html?id=' + gtmId));

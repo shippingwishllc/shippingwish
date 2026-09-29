@@ -4,155 +4,391 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Shop desk | BuyWishOnline</title>
+  <title>BuyWish admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --ink:#14120f; --ivory:#f6f1e8; --paper:#fffdf8; --line:#eadfce; --gold:#9c7b4a; --muted:#6f675e; }
+    :root { --ink:#1a1a1a; --bg:#f1f1f1; --paper:#fff; --line:#e3e3e3; --muted:#616161; --nav:#1a1a1a; --nav-2:#2a2a2a; --nav-on:#3d3d3d; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Outfit, sans-serif; background: var(--ivory); color: var(--ink); }
-    header, main { max-width: 1180px; margin: 0 auto; padding: 28px 20px; }
-    header { display: flex; justify-content: space-between; align-items: end; gap: 16px; }
-    h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 46px; margin: 0; }
+    body { margin: 0; font-family: Inter, sans-serif; background: var(--bg); color: var(--ink); }
     a { color: inherit; }
-    button, input { font: inherit; }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    button, .btn { background: var(--ink); color: #fff; border: 0; padding: 12px 16px; cursor: pointer; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; }
-    button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
-    input, select, textarea { border: 1px solid var(--line); background: var(--paper); padding: 12px; min-width: 180px; font: inherit; }
-    h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 32px; margin: 0 0 8px; }
-    .thumb { width: 48px; height: 48px; object-fit: cover; background: #f3efe8; }
-    .card { background: var(--paper); border: 1px solid var(--line); padding: 16px; margin-top: 16px; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-    th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-    .muted { color: var(--muted); }
-    .pill { display: inline-block; border: 1px solid var(--line); padding: 2px 8px; font-size: 12px; }
+    button, input, select, textarea { font: inherit; }
+    h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: -0.02em; }
+    h2 { font-size: 14px; margin: 0 0 6px; font-weight: 650; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    button, .btn { background: var(--ink); color: #fff; border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    button.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+    button.nav-btn, button.search-btn { display: flex; width: 100%; align-items: center; gap: 10px; text-align: left; background: transparent; color: #e8e8e8; border-radius: 8px; padding: 7px 10px; font-weight: 550; font-size: 13.5px; }
+    button.nav-btn svg, button.search-btn svg { width: 18px; height: 18px; flex: 0 0 18px; }
+    button.nav-btn.active { background: var(--nav-on); color: #fff; }
+    button.nav-btn:hover, button.search-btn:hover { background: var(--nav-2); }
+    button.search-btn kbd { margin-left: auto; border: 1px solid #4a4a4a; border-radius: 6px; padding: 1px 6px; font-size: 11px; color: #cfcfcf; font-family: inherit; }
+    input, select, textarea { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px 10px; min-width: 140px; color: var(--ink); }
+    .thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; background: #f3f3f3; }
+    .card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-top: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th, td { text-align: left; padding: 11px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 12px; font-weight: 550; color: var(--muted); }
+    .muted { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .pill { display: inline-block; border-radius: 999px; background: #f1f1f1; padding: 2px 8px; font-size: 12px; font-weight: 650; }
+    .pill.on { background: #e8f6ee; color: #0d6b3a; }
+    .pill.off { background: #f6f0e8; color: #8a5a12; }
     #gate, #desk { display: none; }
-    .error { color: #8c3a2f; }
+    #gate { min-height: 100vh; place-items: center; padding: 24px; background: #f1f1f1; }
+    .login-card { width: min(420px, 100%); background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px; box-shadow: 0 16px 40px rgba(0,0,0,.06); }
+    .mark { width: 32px; height: 32px; border-radius: 8px; background: #fff; color: #1a1a1a; display: grid; place-items: center; font-weight: 750; flex: 0 0 32px; }
+    .login-card .mark { width: 42px; height: 42px; background: #1a1a1a; color: #fff; margin-bottom: 14px; }
+    #loginForm { display: grid; gap: 10px; margin-top: 16px; }
+    #otpForm { display: none; flex-direction: column; gap: 10px; margin-top: 12px; }
+    #loginForm input, #otpForm input { width: 100%; min-width: 0; }
+    .error { color: #9f1239; font-size: 13px; }
+    .app { display: flex; min-height: 100vh; }
+    .side { width: 240px; flex: 0 0 240px; background: var(--nav); color: #fff; padding: 12px 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .store-switch { display: flex; gap: 10px; align-items: center; padding: 6px 8px 10px; }
+    .store-switch strong { display: block; font-size: 13.5px; font-weight: 650; }
+    .store-switch em { display: block; color: #b5b5b5; font-size: 11.5px; font-style: normal; }
+    .side nav { display: grid; gap: 2px; }
+    .nav-label { margin: 14px 10px 4px; color: #9c9c9c; font-size: 12px; font-weight: 600; }
+    .side-foot { margin-top: auto; padding-top: 8px; }
+    .workspace { flex: 1; min-width: 0; padding: 20px 22px 40px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .stat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    .stat b { display: block; font-size: 22px; margin-top: 6px; letter-spacing: -0.03em; }
+    .stat span { color: var(--muted); font-size: 13px; }
+    .panel { display: none; }
+    .panel.on { display: block; }
+    .table-wrap { overflow: auto; }
+    .split { display: grid; grid-template-columns: 1.4fr .8fr; gap: 12px; }
+    .page-link { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .page-link a { font-weight: 650; text-decoration: none; }
+    .bar { height: 8px; background: #eee; border-radius: 99px; overflow: hidden; flex: 1; }
+    .bar i { display: block; height: 100%; background: #1a1a1a; }
+    .bar-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 13px; }
+    .bar-row span { width: 92px; color: var(--muted); }
+    .apps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .app-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    #command { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: start; justify-content: center; padding: 12vh 16px 16px; z-index: 30; }
+    #command.on { display: flex; }
+    .command-box { width: min(560px, 100%); background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,.28); }
+    #commandInput { width: 100%; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 14px 16px; outline: none; min-width: 0; }
+    #commandList { max-height: 360px; overflow: auto; padding: 6px; }
+    button.command-item { display: block; width: 100%; text-align: left; background: #fff; color: #1a1a1a; border-radius: 8px; padding: 10px 12px; font-weight: 550; }
+    button.command-item.on, button.command-item:hover { background: #f3f3f3; }
+    @media (max-width: 980px) {
+      .split, .apps, .stats { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 800px) {
+      .app { flex-direction: column; }
+      .side { width: 100%; flex-basis: auto; }
+      .side nav { display: flex; overflow: auto; gap: 4px; }
+      .nav-label { display: none; }
+      .side-foot { margin-top: 0; }
+      button.nav-btn, button.search-btn { width: auto; white-space: nowrap; }
+      .stats, .split, .apps { grid-template-columns: 1fr; }
+      .workspace { padding: 14px; }
+    }
   </style>
 </head>
 <body>
-<header>
-  <div>
-    <div class="muted">BuyWishOnline · Shipping Wish LLC</div>
-    <h1>Shop desk</h1>
-  </div>
-  <a href="/">Back to the shop</a>
-</header>
-<main>
-  <section id="gate" class="card">
-    <p>Sign in with a BuyWish admin account. The same sign-in used for Shipping Wish admin applies, including the email code when two-factor authentication is on.</p>
-    <form id="loginForm" class="row">
-      <input id="email" type="email" placeholder="Email" required>
-      <input id="password" type="password" placeholder="Password" required>
-      <button type="submit">Sign in</button>
-    </form>
-    <form id="otpForm" class="row" style="display:none;margin-top:12px;">
-      <input id="otp" inputmode="numeric" placeholder="6-digit code" required>
-      <button type="submit">Confirm code</button>
-    </form>
-    <p id="loginError" class="error"></p>
+  <section id="gate">
+    <div class="login-card">
+      <div class="mark">B</div>
+      <h1>BuyWishOnline</h1>
+      <p class="muted">Shop admin. Same sign-in, including the email code when it is on.</p>
+      <form id="loginForm">
+        <input id="email" type="email" placeholder="Email" required>
+        <input id="password" type="password" placeholder="Password" required>
+        <button type="submit">Sign in</button>
+      </form>
+      <form id="otpForm">
+        <input id="otp" inputmode="numeric" placeholder="6-digit code" required>
+        <button type="submit">Confirm code</button>
+      </form>
+      <p id="loginError" class="error"></p>
+    </div>
   </section>
 
   <section id="desk">
-    <div class="card">
-      <div class="row">
-        <button id="syncBtn" type="button">Sync winning products</button>
-        <button id="refreshBtn" class="ghost" type="button">Refresh orders</button>
-        <span id="catalogStatus" class="muted"></span>
+    <div class="app">
+      <aside class="side">
+        <div class="store-switch">
+          <div class="mark">B</div>
+          <div><strong>BuyWishOnline</strong><em>buywishonline.com</em></div>
+        </div>
+        <button class="search-btn" id="openSearch" type="button">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M13.2 13.2 17 17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span>Search</span><kbd>Ctrl K</kbd>
+        </button>
+        <nav>
+          <button class="nav-btn active" type="button" data-panel="home"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 8.2 10 3.2l6.5 5V16a1 1 0 0 1-1 1H12v-4.2H8V17H4.5a1 1 0 0 1-1-1V8.2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Home</button>
+          <button class="nav-btn" type="button" data-panel="orders"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5.5h12l-1 10H5L4 5.5Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 5.5a2.5 2.5 0 0 1 5 0" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Orders</button>
+          <button class="nav-btn" type="button" data-panel="products"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7.2 10 4l6 3.2v6.2L10 16.5 4 13.4V7.2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4 7.2 10 10.4 16 7.2M10 10.4V16.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Products</button>
+          <button class="nav-btn" type="button" data-panel="customers"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="7" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 15.5c.6-2.2 2.4-3.3 5-3.3s4.4 1.1 5 3.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Customers</button>
+          <button class="nav-btn" type="button" data-panel="growth"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 14.5 8.2 9.8l2.6 2.4L16 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.2 6.5H16V10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Growth</button>
+          <button class="nav-btn" type="button" data-panel="discounts"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10.8 4.2 16 9.4a1.2 1.2 0 0 1 0 1.7l-4.9 4.9a1.2 1.2 0 0 1-1.7 0L4 10.8V4.2h6.8Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>Discounts</button>
+          <button class="nav-btn" type="button" data-panel="content"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 4.5h7.2L15 7.3V15.5H5v-11Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 4.6V7.5H15M7.2 10.2h5.6M7.2 13h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Content</button>
+          <button class="nav-btn" type="button" data-panel="markets"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h12M10 3.8c1.6 1.8 2.4 3.8 2.4 6.2S11.6 14.4 10 16.2C8.4 14.4 7.6 12.4 7.6 10S8.4 5.6 10 3.8Z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>Markets</button>
+          <button class="nav-btn" type="button" data-panel="finance"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="5" width="13" height="10" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 8.2h13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Finance</button>
+          <button class="nav-btn" type="button" data-panel="analytics"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 15.5V10M8.5 15.5V6.5M13 15.5V8.5M16.5 15.5V4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Analytics</button>
+          <p class="nav-label">Sales channels</p>
+          <button class="nav-btn" type="button" data-panel="store"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 8.2 5 4.5h10l1.5 3.7V15.5H3.5V8.2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M3.5 8.2h13M8 15.5v-4h4v4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Online Store</button>
+          <button class="nav-btn" type="button" data-panel="apps"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="3.5" width="5.2" height="5.2" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="11.3" y="3.5" width="5.2" height="5.2" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="3.5" y="11.3" width="5.2" height="5.2" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="11.3" y="11.3" width="5.2" height="5.2" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Apps</button>
+          <button class="nav-btn" type="button" data-panel="settings"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 3.4v1.6M10 15v1.6M3.4 10h1.6M15 10h1.6M5.2 5.2l1.1 1.1M13.7 13.7l1.1 1.1M14.8 5.2l-1.1 1.1M6.3 13.7l-1.1 1.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Settings</button>
+        </nav>
+        <div class="side-foot">
+          <button class="nav-btn" id="adminLogout" type="button">Sign out</button>
+        </div>
+      </aside>
+      <div class="workspace">
+        <section class="panel on" id="panel-home">
+          <div class="topbar">
+            <h1>Home</h1>
+            <button id="homeRefresh" class="ghost" type="button">Refresh</button>
+          </div>
+          <p class="muted">BuyWishOnline · orders placed on this shop</p>
+          <div class="stats" style="margin-top:12px;">
+            <div class="stat"><span>Orders</span><b id="homeOrdersCount">0</b></div>
+            <div class="stat"><span>Paid sales</span><b id="homeRevenue">$0.00</b></div>
+            <div class="stat"><span>Products</span><b id="homeProducts">0</b></div>
+            <div class="stat"><span>Customers</span><b id="homeCustomers">0</b></div>
+          </div>
+          <div class="split">
+            <div class="card table-wrap">
+              <div class="row" style="justify-content:space-between;">
+                <h2>Recent orders</h2>
+                <button class="ghost" type="button" data-jump="orders">View all</button>
+              </div>
+              <table>
+                <thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th></tr></thead>
+                <tbody id="homeOrders"></tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h2>Today</h2>
+              <div class="stats" style="grid-template-columns:1fr 1fr;">
+                <div class="stat"><span>New orders</span><b id="homeToday">0</b></div>
+                <div class="stat"><span>Waiting to pay</span><b id="homeUnpaid">0</b></div>
+                <div class="stat"><span>Paid, not in Zendrop</span><b id="homeQueue">0</b></div>
+                <div class="stat"><span>Linked in Zendrop</span><b id="homeLinked">0</b></div>
+              </div>
+              <p id="homeSetup" class="muted" style="margin-top:12px;"></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-orders">
+          <div class="topbar">
+            <h1>Orders</h1>
+            <button id="refreshBtn" class="ghost" type="button">Refresh</button>
+          </div>
+          <div class="stats" style="margin-top:12px;">
+            <div class="stat"><span>All</span><b id="statTotal">0</b></div>
+            <div class="stat"><span>Paid, not in Zendrop</span><b id="statPaid">0</b></div>
+            <div class="stat"><span>Waiting for payment</span><b id="statPending">0</b></div>
+            <div class="stat"><span>Linked in Zendrop</span><b id="statLinked">0</b></div>
+          </div>
+          <div class="card table-wrap">
+            <input id="orderSearch" placeholder="Search orders" aria-label="Search orders">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order</th><th>Customer</th><th>Ship to</th><th>Items</th><th>Payment</th><th>Zendrop</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="orders"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-products">
+          <div class="topbar">
+            <h1>Products</h1>
+            <span id="catalogStatus" class="muted"></span>
+          </div>
+          <div class="card">
+            <div class="row">
+              <button id="syncBtn" type="button">Sync winning products</button>
+            </div>
+            <p class="muted">Sync keeps a product only when Zendrop quotes shipping to the USA, Canada, and the United Kingdom, and the fastest USA lane is 14 days or fewer. Run it again until the batch is finished. Paid orders are sent to Zendrop only when Zendrop publishes an order-creation tool for this token. Otherwise the order stays here with the customer’s address so it can be placed in the Zendrop dashboard and linked.</p>
+            <p id="syncResult"></p>
+          </div>
+          <div class="card" id="catalogDesk">
+            <h2>Catalog</h2>
+            <p class="muted">Create a category, add a product by its numeric supplier ID, move a product into another category, or remove it from the shop. Built-in categories stay in place. A removed product stays hidden until you add that same ID again.</p>
+            <form id="categoryForm" class="row">
+              <input id="categoryTitle" placeholder="New category name" required maxlength="80">
+              <input id="categoryBlurb" placeholder="Short description" maxlength="180">
+              <input id="categoryIcon" placeholder="Icon" maxlength="8">
+              <button type="submit">Create category</button>
+            </form>
+            <form id="addProductForm" class="row" style="margin-top:12px;">
+              <input id="addProductId" inputmode="numeric" placeholder="Product ID" required>
+              <select id="addProductCategory" aria-label="Category for the new product"></select>
+              <button type="submit">Add product</button>
+            </form>
+            <div class="row" style="margin-top:12px;">
+              <select id="deskCategory" aria-label="Category to review"></select>
+              <button id="loadDeskProductsBtn" class="ghost" type="button">Show products</button>
+              <span id="catalogAction" class="muted"></span>
+            </div>
+            <div style="overflow:auto;">
+              <table>
+                <thead>
+                  <tr><th></th><th>Product</th><th>Price</th><th>Category</th><th></th></tr>
+                </thead>
+                <tbody id="catalogProducts"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-customers">
+          <div class="topbar"><h1>Customers</h1><span id="customerCount" class="muted"></span></div>
+          <div class="card table-wrap">
+            <table>
+              <thead><tr><th>Customer</th><th>Contact</th><th>Orders</th><th>Paid</th><th>Last order</th></tr></thead>
+              <tbody id="customerRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-growth">
+          <div class="topbar"><h1>Growth</h1></div>
+          <p class="muted">Ads, social, and the Facebook catalog. Google Tag Manager GTM-PD9DZS54 and Analytics G-8Q973SH30G are already on the shop.</p>
+          <div class="card">
+            <h2>Meta Pixel and Google tag</h2>
+            <p class="muted">Paste a Meta Pixel ID here when you have one. The Google box is only for an extra Ads (AW-) ID.</p>
+            <form id="trackingForm" class="row">
+              <input id="metaPixelId" inputmode="numeric" placeholder="Meta Pixel ID" maxlength="20">
+              <input id="googleTagId" placeholder="G- / AW- / GTM-" maxlength="24">
+              <button type="submit">Save tracking</button>
+              <span id="trackingStatus" class="muted"></span>
+            </form>
+          </div>
+          <div class="card">
+            <h2>Social links</h2>
+            <p class="muted">Paste the full https address. The footer icon opens that page. Leave a box empty to hide that icon.</p>
+            <form id="socialForm" class="row">
+              <input id="socialFacebook" type="url" placeholder="Facebook https://www.facebook.com/..." maxlength="300">
+              <input id="socialInstagram" type="url" placeholder="Instagram https://www.instagram.com/..." maxlength="300">
+              <input id="socialTiktok" type="url" placeholder="TikTok https://www.tiktok.com/@..." maxlength="300">
+              <input id="socialX" type="url" placeholder="X https://x.com/..." maxlength="300">
+              <button type="submit">Save social links</button>
+              <span id="socialStatus" class="muted"></span>
+            </form>
+          </div>
+          <div class="card">
+            <h2>Facebook and Instagram catalog</h2>
+            <p class="muted">The shop file is <a href="https://www.buywishonline.com/feeds/meta-catalog.csv">buywishonline.com/feeds/meta-catalog.csv</a>. Disconnect the old Shopify catalog in Commerce Manager, then schedule this file once a day. Customers still pay on BuyWishOnline.</p>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-discounts">
+          <div class="topbar"><h1>Discounts</h1></div>
+          <div class="card" id="dealsDesk">
+            <h2>Margin and two-product offers</h2>
+            <p class="muted">If the supplier price is only what you pay, the shop adds your margin before the customer sees it. If the supplier already lists a higher selling price, that price stays. A two-product offer must stay above supplier cost and below the two selling prices added together.</p>
+            <form id="marginForm" class="row">
+              <input id="marginPercent" inputmode="numeric" min="0" max="80" placeholder="Margin %" required>
+              <button type="submit">Save margin</button>
+              <span id="marginStatus" class="muted"></span>
+            </form>
+            <form id="dealForm" class="row" style="margin-top:12px;">
+              <input id="dealTitle" placeholder="Offer name" required maxlength="80">
+              <input id="dealProductA" inputmode="numeric" placeholder="First product ID" required>
+              <input id="dealProductB" inputmode="numeric" placeholder="Second product ID" required>
+              <input id="dealPrice" inputmode="decimal" placeholder="Offer price" required>
+              <button type="submit">Create offer</button>
+            </form>
+            <div style="overflow:auto;">
+              <table>
+                <thead><tr><th>Offer</th><th>Price</th><th></th></tr></thead>
+                <tbody id="dealRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-content">
+          <div class="topbar"><h1>Content</h1></div>
+          <p class="muted">Pages on the online store.</p>
+          <div class="card">
+            <div class="page-link"><div><a href="/">Home</a><div class="muted">Shop, categories, and checkout</div></div><a href="/">View</a></div>
+            <div class="page-link"><div><a href="/about">About</a><div class="muted">Shipping Wish LLC</div></div><a href="/about">View</a></div>
+            <div class="page-link"><div><a href="/contact">Contact</a><div class="muted">Customer help</div></div><a href="/contact">View</a></div>
+            <div class="page-link"><div><a href="/privacy-policy">Privacy</a><div class="muted">Privacy policy</div></div><a href="/privacy-policy">View</a></div>
+            <div class="page-link"><div><a href="/terms">Terms</a><div class="muted">Terms of sale</div></div><a href="/terms">View</a></div>
+            <div class="page-link"><div><a href="/account">Customer account</a><div class="muted">Sign in, orders, saved addresses</div></div><a href="/account">View</a></div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-markets">
+          <div class="topbar"><h1>Markets</h1></div>
+          <p class="muted">The shop sells and ships to these countries. Counts come from orders placed here.</p>
+          <div class="stats" id="marketCards" style="margin-top:12px;"></div>
+        </section>
+
+        <section class="panel" id="panel-finance">
+          <div class="topbar"><h1>Finance</h1></div>
+          <p class="muted">Money taken on BuyWishOnline. Supplier product cost stays in the Zendrop account.</p>
+          <div class="stats" id="financeCards" style="margin-top:12px;"></div>
+        </section>
+
+        <section class="panel" id="panel-analytics">
+          <div class="topbar"><h1>Analytics</h1></div>
+          <p class="muted">Orders on this shop for the last 14 days. Site visits are in Google Analytics, measurement ID G-8Q973SH30G.</p>
+          <div class="card" id="analyticsDays"></div>
+          <div class="card" id="analyticsCountries"></div>
+        </section>
+
+        <section class="panel" id="panel-store">
+          <div class="topbar">
+            <h1>Online Store</h1>
+            <a class="btn" href="/">View shop</a>
+          </div>
+          <div class="card">
+            <h2>buywishonline.com</h2>
+            <p class="muted">Customers browse, pay with Stripe, and get a confirmation after the payment is marked paid. The order is saved in this admin even when Zendrop’s order list is still empty.</p>
+            <p class="muted" id="storeCatalog"></p>
+            <p class="muted">Facebook and Instagram shop from <a href="https://www.buywishonline.com/feeds/meta-catalog.csv">buywishonline.com/feeds/meta-catalog.csv</a>.</p>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-apps">
+          <div class="topbar"><h1>Apps</h1></div>
+          <p class="muted">Connections for this shop. A missing key means that part is not set on the server.</p>
+          <div class="apps" id="appsGrid" style="margin-top:12px;"></div>
+        </section>
+
+        <section class="panel" id="panel-settings">
+          <div class="topbar"><h1>Settings</h1></div>
+          <div class="card">
+            <h2>Store</h2>
+            <p>BuyWishOnline</p>
+            <p class="muted">Domain buywishonline.com · Currency USD · Markets United States, Canada, United Kingdom</p>
+            <p class="muted">Pixel, social links, and the catalog file are under Growth. Offers are under Discounts.</p>
+          </div>
+          <div class="card">
+            <h2>Checkout and messages</h2>
+            <p class="muted" id="settingsApps"></p>
+          </div>
+        </section>
       </div>
-      <p class="muted">Sync keeps a product only when Zendrop quotes shipping to the USA, Canada, and the United Kingdom, and the fastest USA lane is 14 days or fewer. Run it again until the batch is finished. Paid orders are sent to Zendrop only when Zendrop publishes an order-creation tool for this token. Otherwise the order stays here with the customer’s address so it can be placed in the Zendrop dashboard and linked.</p>
-      <p id="syncResult"></p>
-      <p class="muted">Facebook and Instagram shop from this file, not from Shopify: <a href="https://www.buywishonline.com/feeds/meta-catalog.csv">buywishonline.com/feeds/meta-catalog.csv</a>. Disconnect the old Shopify catalog in Commerce Manager, then schedule this file once a day. Customers still pay on BuyWishOnline.</p>
-    </div>
-    <div class="card">
-      <h2>Meta Pixel and Google tag</h2>
-      <p class="muted">Google Tag Manager GTM-PD9DZS54 and Analytics G-8Q973SH30G are already on the shop. Paste a Meta Pixel ID here when you have one. The Google box is only for an extra Ads (AW-) ID.</p>
-      <form id="trackingForm" class="row">
-        <input id="metaPixelId" inputmode="numeric" placeholder="Meta Pixel ID" maxlength="20">
-        <input id="googleTagId" placeholder="G- / AW- / GTM-" maxlength="24">
-        <button type="submit">Save tracking</button>
-        <span id="trackingStatus" class="muted"></span>
-      </form>
-    </div>
-    <div class="card">
-      <h2>Social links</h2>
-      <p class="muted">Paste the full https address. The footer icon opens that page. Leave a box empty to hide that icon.</p>
-      <form id="socialForm" class="row">
-        <input id="socialFacebook" type="url" placeholder="Facebook https://www.facebook.com/..." maxlength="300">
-        <input id="socialInstagram" type="url" placeholder="Instagram https://www.instagram.com/..." maxlength="300">
-        <input id="socialTiktok" type="url" placeholder="TikTok https://www.tiktok.com/@..." maxlength="300">
-        <input id="socialX" type="url" placeholder="X https://x.com/..." maxlength="300">
-        <button type="submit">Save social links</button>
-        <span id="socialStatus" class="muted"></span>
-      </form>
-    </div>
-    <div class="card" id="catalogDesk">
-      <h2>Catalog</h2>
-      <p class="muted">Create a category, add a product by its numeric supplier ID, move a product into another category, or remove it from the shop. Built-in categories stay in place. A removed product stays hidden until you add that same ID again.</p>
-      <form id="categoryForm" class="row">
-        <input id="categoryTitle" placeholder="New category name" required maxlength="80">
-        <input id="categoryBlurb" placeholder="Short description" maxlength="180">
-        <input id="categoryIcon" placeholder="Icon" maxlength="8">
-        <button type="submit">Create category</button>
-      </form>
-      <form id="addProductForm" class="row" style="margin-top:12px;">
-        <input id="addProductId" inputmode="numeric" placeholder="Product ID" required>
-        <select id="addProductCategory" aria-label="Category for the new product"></select>
-        <button type="submit">Add product</button>
-      </form>
-      <div class="row" style="margin-top:12px;">
-        <select id="deskCategory" aria-label="Category to review"></select>
-        <button id="loadDeskProductsBtn" class="ghost" type="button">Show products</button>
-        <span id="catalogAction" class="muted"></span>
-      </div>
-      <div style="overflow:auto;">
-        <table>
-          <thead>
-            <tr><th></th><th>Product</th><th>Price</th><th>Category</th><th></th></tr>
-          </thead>
-          <tbody id="catalogProducts"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="card" id="dealsDesk">
-      <h2>Deals and margin</h2>
-      <p class="muted">If the supplier price is only what you pay, the shop adds your margin before the customer sees it. If the supplier already lists a higher selling price, that price stays. A two-product offer must stay above supplier cost and below the two selling prices added together.</p>
-      <form id="marginForm" class="row">
-        <input id="marginPercent" inputmode="numeric" min="0" max="80" placeholder="Margin %" required>
-        <button type="submit">Save margin</button>
-        <span id="marginStatus" class="muted"></span>
-      </form>
-      <form id="dealForm" class="row" style="margin-top:12px;">
-        <input id="dealTitle" placeholder="Offer name" required maxlength="80">
-        <input id="dealProductA" inputmode="numeric" placeholder="First product ID" required>
-        <input id="dealProductB" inputmode="numeric" placeholder="Second product ID" required>
-        <input id="dealPrice" inputmode="decimal" placeholder="Offer price" required>
-        <button type="submit">Create offer</button>
-      </form>
-      <div style="overflow:auto;">
-        <table>
-          <thead><tr><th>Offer</th><th>Price</th><th></th></tr></thead>
-          <tbody id="dealRows"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="card" style="overflow:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Order</th><th>Customer</th><th>Ship to</th><th>Items</th><th>Payment</th><th>Zendrop</th><th></th>
-          </tr>
-        </thead>
-        <tbody id="orders"></tbody>
-      </table>
     </div>
   </section>
-</main>
+
+  <div id="command" role="dialog" aria-label="Search">
+    <div class="command-box">
+      <input id="commandInput" placeholder="Search orders and pages" autocomplete="off">
+      <div id="commandList"></div>
+    </div>
+  </div>
 <script>
   const tokenKey = 'bwo_admin_token';
   let tempToken = '';
+  let shopOrders = [];
+  let shopOverview = null;
   const authHeaders = () => {
     const token = sessionStorage.getItem(tokenKey);
     return token ? { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
@@ -165,6 +401,10 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
+  function money(value) {
+    const amount = Number(value || 0);
+    return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  }
   function safeImg(url) {
     return /^https?:\/\//i.test(String(url || '')) ? String(url) : '';
   }
@@ -174,9 +414,19 @@
       return `<option value="${esc(dept.slug)}"${picked}>${esc(dept.title)}</option>`;
     }).join('');
   }
+  function showPanel(name) {
+    document.querySelectorAll('.panel').forEach((panel) => panel.classList.toggle('on', panel.id === 'panel-' + name));
+    document.querySelectorAll('.nav-btn[data-panel]').forEach((button) => button.classList.toggle('active', button.dataset.panel === name));
+  }
+  function signedOut() {
+    sessionStorage.removeItem(tokenKey);
+    document.getElementById('desk').style.display = 'none';
+    document.getElementById('gate').style.display = 'grid';
+  }
   function showDesk() {
     document.getElementById('gate').style.display = 'none';
     document.getElementById('desk').style.display = 'block';
+    showPanel('home');
     loadCatalog();
     loadDeskCategories();
     loadMargin();
@@ -184,6 +434,7 @@
     loadSocial();
     loadDeals();
     loadOrders();
+    loadOverview();
   }
   async function loadSocial() {
     const res = await fetch('/api/buywish/admin/settings', { headers: authHeaders() });
@@ -273,11 +524,7 @@
     const data = await res.json();
     document.getElementById('catalogAction').textContent = data.error || 'Category saved.';
     if (res.ok) loadDeskProducts();
-    if (res.status === 401 || res.status === 403) {
-      sessionStorage.removeItem(tokenKey);
-      document.getElementById('desk').style.display = 'none';
-      document.getElementById('gate').style.display = 'block';
-    }
+    if (res.status === 401 || res.status === 403) signedOut();
   }
   async function hideProduct(id) {
     if (!/^\d+$/.test(String(id))) return;
@@ -294,54 +541,156 @@
     const data = await res.json();
     if (!res.ok) return;
     const cats = (data.categories || []).map(c => `${c.category}: ${c.products}`).join(' · ');
-    document.getElementById('catalogStatus').textContent = `${data.total || 0} synced` + (cats ? ` · ${cats}` : '');
+    const label = `${data.total || 0} synced` + (cats ? ` · ${cats}` : '');
+    document.getElementById('catalogStatus').textContent = label;
+    document.getElementById('storeCatalog').textContent = label;
   }
-  function esc(value) {
-    return String(value == null ? '' : value)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  function plainStatus(value) {
+    const labels = {
+      paid: 'Paid',
+      pending: 'Waiting for payment',
+      awaiting_payment: 'Waiting for payment',
+      payment_confirmed_pending_supplier: 'Preparing',
+      supplier_order_placed: 'Sent to supplier',
+      shipped: 'Shipped',
+      delivered: 'Delivered',
+      manual_required: 'Place in Zendrop',
+      not_sent: 'Not sent',
+      failed: 'Send failed',
+      sending: 'Sending'
+    };
+    return labels[value] || value || '';
   }
   function itemText(items) {
     const list = Array.isArray(items) ? items : [];
     return list.map(item => `${item.quantity || 1} × ${esc(item.title || item.product_id)}`).join(', ');
   }
+  function paintHomeOrders() {
+    const rows = shopOrders.slice(0, 6);
+    document.getElementById('homeOrders').innerHTML = rows.map((order) => `<tr>
+      <td><strong>${esc(order.order_number)}</strong><div class="muted">${new Date(order.created_at).toLocaleString()}</div></td>
+      <td>${esc(order.customer_name)}<div class="muted">${esc(order.customer_email)}</div></td>
+      <td>${esc(order.currency || 'USD')} ${esc(order.total_amount)}</td>
+      <td>${esc(plainStatus(order.payment_status))}</td>
+    </tr>`).join('') || '<tr><td colspan="4">No orders yet. An order appears here after Place Order saves it.</td></tr>';
+  }
   async function loadOrders() {
     const res = await fetch('/api/buywish/admin/orders?scope=all', { headers: authHeaders() });
     if (res.status === 401 || res.status === 403) {
-      sessionStorage.removeItem(tokenKey);
-      document.getElementById('desk').style.display = 'none';
-      document.getElementById('gate').style.display = 'block';
+      signedOut();
       return;
     }
     const data = await res.json();
-    const body = document.getElementById('orders');
-    body.innerHTML = (data.orders || []).map(order => {
+    if (!res.ok) return;
+    shopOrders = data.orders || [];
+    document.getElementById('statTotal').textContent = String(shopOrders.length);
+    document.getElementById('statPaid').textContent = String(shopOrders.filter((order) => order.payment_status === 'paid' && !order.zendrop_order_id).length);
+    document.getElementById('statPending').textContent = String(shopOrders.filter((order) => order.payment_status !== 'paid').length);
+    document.getElementById('statLinked').textContent = String(shopOrders.filter((order) => order.zendrop_order_id).length);
+    paintOrderTable();
+    paintHomeOrders();
+  }
+  function paintOrderTable() {
+    const query = (document.getElementById('orderSearch').value || '').trim().toLowerCase();
+    const orders = query ? shopOrders.filter((order) => [order.order_number, order.customer_name, order.customer_email, order.shipping_city, order.shipping_country].join(' ').toLowerCase().includes(query)) : shopOrders;
+    document.getElementById('orders').innerHTML = orders.map(order => {
       const ship = [order.shipping_address, order.shipping_city, order.shipping_state, order.shipping_postal, order.shipping_country].filter(Boolean).join(', ');
       const note = order.customer_note ? `<div class="muted">Note: ${esc(order.customer_note)}</div>` : '';
       const zendrop = order.zendrop_order_id
-        ? `<span class="pill">Linked ${order.zendrop_order_id}</span>`
-        : `<span class="pill">${order.zendrop_sync_status || 'not sent'}</span><div class="muted">${order.zendrop_sync_detail || ''}</div>`;
+        ? `<span class="pill">Linked ${esc(order.zendrop_order_id)}</span>`
+        : `<span class="pill">${esc(plainStatus(order.zendrop_sync_status || 'not_sent'))}</span><div class="muted">${esc(order.zendrop_sync_detail || '')}</div>`;
       return `<tr>
-        <td><strong>${order.order_number}</strong><div class="muted">${new Date(order.created_at).toLocaleString()}</div></td>
+        <td><strong>${esc(order.order_number)}</strong><div class="muted">${new Date(order.created_at).toLocaleString()}</div></td>
         <td>${esc(order.customer_name)}<div class="muted">${esc(order.customer_email)}</div>${order.customer_phone ? `<div class="muted">${esc(order.customer_phone)}</div>` : ''}</td>
         <td>${esc(ship) || '—'}${note}</td>
-        <td>${itemText(order.items)}<div class="muted">${order.currency || 'USD'} ${order.total_amount}</div></td>
-        <td>${order.payment_status}<div class="muted">${order.fulfillment_status}</div></td>
+        <td>${itemText(order.items)}<div class="muted">${esc(order.currency || 'USD')} ${esc(order.total_amount)}</div></td>
+        <td>${esc(plainStatus(order.payment_status))}<div class="muted">${esc(plainStatus(order.fulfillment_status))}</div></td>
         <td>${zendrop}</td>
         <td>
-          ${order.payment_status === 'paid' && !order.zendrop_order_id ? `<button type="button" onclick="pushOrder('${order.order_number}')">Send to Zendrop</button>` : ''}
-          ${order.payment_status === 'paid' && !order.zendrop_order_id ? `<form onsubmit="return linkOrder(event, '${order.order_number}')" class="row" style="margin-top:8px"><input name="zid" placeholder="Zendrop order ID"><button class="ghost" type="submit">Link</button></form>` : ''}
+          ${order.payment_status === 'paid' && !order.zendrop_order_id ? `<button type="button" onclick="pushOrder('${esc(order.order_number)}')">Send to Zendrop</button>` : ''}
+          ${order.payment_status === 'paid' && !order.zendrop_order_id ? `<form onsubmit="return linkOrder(event, '${esc(order.order_number)}')" class="row" style="margin-top:8px"><input name="zid" placeholder="Zendrop order ID"><button class="ghost" type="submit">Link</button></form>` : ''}
         </td>
       </tr>`;
     }).join('') || '<tr><td colspan="7">No orders yet.</td></tr>';
+  }
+  function paintOverview() {
+    const totals = (shopOverview && shopOverview.totals) || {};
+    document.getElementById('homeOrdersCount').textContent = String(totals.orders || 0);
+    document.getElementById('homeRevenue').textContent = money(totals.paid_total);
+    document.getElementById('homeProducts').textContent = String((shopOverview && shopOverview.products) || 0);
+    document.getElementById('homeCustomers').textContent = String(totals.customers || 0);
+    document.getElementById('homeToday').textContent = String(totals.today || 0);
+    document.getElementById('homeUnpaid').textContent = String(totals.unpaid || 0);
+    document.getElementById('homeQueue').textContent = String(totals.queue || 0);
+    document.getElementById('homeLinked').textContent = String(totals.linked || 0);
+    const accounts = (shopOverview && shopOverview.accounts) || 0;
+    document.getElementById('homeSetup').textContent = accounts
+      ? `${accounts} customer account${accounts === 1 ? '' : 's'} can sign in and see past orders.`
+      : 'Customer accounts appear after someone creates one at checkout.';
+    const people = (shopOverview && shopOverview.customers) || [];
+    document.getElementById('customerCount').textContent = people.length ? `${people.length} with an order` : '';
+    document.getElementById('customerRows').innerHTML = people.map((person) => `<tr>
+      <td><strong>${esc(person.name || 'Customer')}</strong></td>
+      <td>${esc(person.email)}${person.phone ? `<div class="muted">${esc(person.phone)}</div>` : ''}</td>
+      <td>${esc(person.orders)}</td>
+      <td>${money(person.spent)}</td>
+      <td>${person.last_order ? new Date(person.last_order).toLocaleString() : ''}</td>
+    </tr>`).join('') || '<tr><td colspan="5">No customers yet. A row appears after an order is saved.</td></tr>';
+    const names = { US: 'United States', CA: 'Canada', GB: 'United Kingdom' };
+    const byCountry = {};
+    ((shopOverview && shopOverview.countries) || []).forEach((row) => { byCountry[String(row.country || '').toUpperCase()] = row; });
+    names.UNKNOWN = 'Other';
+    const marketKeys = ['US', 'CA', 'GB'].concat(Object.keys(byCountry).filter((key) => !['US', 'CA', 'GB'].includes(key)));
+    document.getElementById('marketCards').innerHTML = marketKeys.map((key) => {
+      const row = byCountry[key] || { orders: 0, paid_total: 0 };
+      return `<div class="stat"><span>${esc(names[key] || key)}</span><b>${esc(row.orders)}</b><span>${money(row.paid_total)} paid</span></div>`;
+    }).join('');
+    document.getElementById('financeCards').innerHTML = [
+      ['Paid sales', money(totals.paid_total)],
+      ['Tax on paid orders', money(totals.tax_total)],
+      ['Unpaid checkouts', money(totals.unpaid_total)],
+      ['Paid orders', String(totals.paid || 0)]
+    ].map(([label, value]) => `<div class="stat"><span>${esc(label)}</span><b>${esc(value)}</b></div>`).join('');
+    const days = (shopOverview && shopOverview.days) || [];
+    const maxDay = days.reduce((max, row) => Math.max(max, Number(row.orders) || 0), 0) || 1;
+    document.getElementById('analyticsDays').innerHTML = `<h2>Orders by day</h2>` + (days.map((row) => {
+      const width = Math.round(((Number(row.orders) || 0) / maxDay) * 100);
+      return `<div class="bar-row"><span>${esc(row.day)}</span><div class="bar"><i style="width:${width}%"></i></div><b>${esc(row.orders)}</b></div>`;
+    }).join('') || '<p class="muted">No orders in the last 14 days.</p>');
+    const countries = (shopOverview && shopOverview.countries) || [];
+    document.getElementById('analyticsCountries').innerHTML = `<h2>Orders by country</h2>` + (countries.map((row) => `<div class="page-link"><strong>${esc(names[String(row.country || '').toUpperCase()] || row.country)}</strong><span>${esc(row.orders)} · ${money(row.paid_total)} paid</span></div>`).join('') || '<p class="muted">No orders yet.</p>');
+    const apps = (shopOverview && shopOverview.apps) || {};
+    const appList = [
+      ['zendrop', 'Zendrop', 'Catalog and supplier orders'],
+      ['stripe', 'Stripe', 'Card checkout'],
+      ['resend', 'Resend', 'Order email'],
+      ['twilio', 'Twilio', 'Order SMS'],
+      ['maps', 'Address lookup', 'Street suggestions'],
+      ['mail_from', 'Email sender', 'From address for shop mail']
+    ];
+    document.getElementById('appsGrid').innerHTML = appList.map(([key, title, detail]) => {
+      const on = Boolean(apps[key]);
+      return `<div class="app-card"><div class="row" style="justify-content:space-between;"><strong>${esc(title)}</strong><span class="pill ${on ? 'on' : 'off'}">${on ? 'Connected' : 'Not connected'}</span></div><p class="muted">${esc(detail)}</p></div>`;
+    }).join('');
+    document.getElementById('settingsApps').textContent = `Stripe ${apps.stripe ? 'is connected' : 'is not connected'}. Email ${apps.resend ? 'is connected' : 'is not connected'}. SMS ${apps.twilio ? 'is connected' : 'is not connected'}.`;
+  }
+  async function loadOverview() {
+    const res = await fetch('/api/buywish/admin/overview', { headers: authHeaders() });
+    if (res.status === 401 || res.status === 403) {
+      signedOut();
+      return;
+    }
+    const data = await res.json();
+    if (!res.ok) return;
+    shopOverview = data;
+    paintOverview();
   }
   async function pushOrder(orderNumber) {
     const res = await fetch('/api/buywish/admin/orders/' + encodeURIComponent(orderNumber) + '/push', { method: 'POST', headers: authHeaders() });
     const data = await res.json();
     alert(data.error || (data.zendrop_order_id ? 'Zendrop order ' + data.zendrop_order_id : 'Checked Zendrop.'));
     loadOrders();
+    loadOverview();
   }
   async function linkOrder(event, orderNumber) {
     event.preventDefault();
@@ -354,8 +703,11 @@
     const data = await res.json();
     if (!res.ok) alert(data.error || 'Could not link the order.');
     loadOrders();
+    loadOverview();
     return false;
   }
+  window.pushOrder = pushOrder;
+  window.linkOrder = linkOrder;
   document.getElementById('syncBtn').onclick = async () => {
     const button = document.getElementById('syncBtn');
     button.disabled = true;
@@ -378,8 +730,11 @@
     document.getElementById('syncResult').textContent = notes.join(' ');
     button.disabled = false;
     loadCatalog();
+    loadOverview();
   };
-  document.getElementById('refreshBtn').onclick = loadOrders;
+  document.getElementById('refreshBtn').onclick = () => { loadOrders(); loadOverview(); };
+  document.getElementById('homeRefresh').onclick = () => { loadOrders(); loadOverview(); };
+  document.getElementById('orderSearch').oninput = () => paintOrderTable();
   document.getElementById('loadDeskProductsBtn').onclick = loadDeskProducts;
   document.getElementById('socialForm').onsubmit = async (event) => {
     event.preventDefault();
@@ -511,8 +866,77 @@
     sessionStorage.setItem(tokenKey, data.token);
     showDesk();
   };
+  document.querySelectorAll('.nav-btn[data-panel]').forEach((button) => {
+    button.onclick = () => showPanel(button.dataset.panel);
+  });
+  document.querySelectorAll('[data-jump]').forEach((button) => {
+    button.onclick = () => showPanel(button.dataset.jump);
+  });
+  document.getElementById('adminLogout').onclick = () => {
+    sessionStorage.removeItem(tokenKey);
+    location.reload();
+  };
+  let commandMatches = [];
+  function commandChoices(query) {
+    const q = query.trim().toLowerCase();
+    const pages = [...document.querySelectorAll('.nav-btn[data-panel]')].map((button) => ({
+      label: button.textContent.replace(/\s+/g, ' ').trim(),
+      panel: button.dataset.panel,
+      hint: 'Page'
+    }));
+    const orders = shopOrders.slice(0, 40).map((order) => ({
+      label: `${order.order_number} · ${order.customer_name || ''}`,
+      panel: 'orders',
+      hint: order.customer_email || 'Order'
+    }));
+    return pages.concat(orders).filter((item) => !q || (item.label + ' ' + item.hint).toLowerCase().includes(q)).slice(0, 12);
+  }
+  function paintCommand() {
+    commandMatches = commandChoices(document.getElementById('commandInput').value);
+    document.getElementById('commandList').innerHTML = commandMatches.map((item, index) => `<button class="command-item${index === 0 ? ' on' : ''}" type="button" data-index="${index}">${esc(item.label)}<div class="muted">${esc(item.hint)}</div></button>`).join('') || '<p class="muted" style="padding:12px;">Nothing matches.</p>';
+    document.querySelectorAll('.command-item').forEach((button) => {
+      button.onclick = () => openCommandMatch(Number(button.dataset.index));
+    });
+  }
+  function openCommand() {
+    if (getComputedStyle(document.getElementById('desk')).display === 'none') return;
+    document.getElementById('command').classList.add('on');
+    const input = document.getElementById('commandInput');
+    input.value = '';
+    paintCommand();
+    input.focus();
+  }
+  function closeCommand() {
+    document.getElementById('command').classList.remove('on');
+  }
+  function openCommandMatch(index) {
+    const item = commandMatches[index];
+    if (!item) return;
+    closeCommand();
+    showPanel(item.panel);
+    if (item.panel === 'orders' && item.label.startsWith('BWO-')) {
+      document.getElementById('orderSearch').value = item.label.split(' · ')[0];
+      loadOrders();
+    }
+  }
+  document.getElementById('openSearch').onclick = openCommand;
+  document.getElementById('commandInput').oninput = paintCommand;
+  document.getElementById('commandInput').onkeydown = (event) => {
+    if (event.key === 'Enter') openCommandMatch(0);
+    if (event.key === 'Escape') closeCommand();
+  };
+  document.getElementById('command').onclick = (event) => {
+    if (event.target.id === 'command') closeCommand();
+  };
+  document.addEventListener('keydown', (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      if (document.getElementById('command').classList.contains('on')) closeCommand();
+      else openCommand();
+    } else if (event.key === 'Escape') closeCommand();
+  });
   if (sessionStorage.getItem(tokenKey)) showDesk();
-  else document.getElementById('gate').style.display = 'block';
+  else document.getElementById('gate').style.display = 'grid';
 </script>
 </body>
 </html>
