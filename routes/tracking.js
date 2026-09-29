@@ -217,10 +217,10 @@ router.get('/live-fleet', requireAuth, async (req, res) => {
         COALESCE(u.company_name, 'Fleet Carrier') as company,
         t.latitude,
         t.longitude,
-        COALESCE(t.speed, 62.5) as speed,
-        COALESCE(t.heading, 90.0) as heading,
-        COALESCE(t.location_name, 'In Transit') as location_name,
-        COALESCE(t.status, 'in_transit') as status,
+        t.speed,
+        t.heading,
+        t.location_name,
+        t.status,
         t.ping_time,
         l.id as load_id,
         l.load_number,
@@ -229,67 +229,40 @@ router.get('/live-fleet', requireAuth, async (req, res) => {
       FROM tracking_events t
       JOIN users u ON u.id = t.driver_id
       LEFT JOIN loads l ON l.id = t.load_id
+      WHERE t.latitude IS NOT NULL AND t.longitude IS NOT NULL
       ORDER BY t.driver_id, t.ping_time DESC
       LIMIT 50
     `);
 
-    let fleet = liveDrivers.rows || [];
+    let fleet = (liveDrivers.rows || []).filter((row) => row.latitude != null && row.longitude != null);
 
-    // Fallback simulation seeds if no live devices have pinged yet
-    if (fleet.length === 0) {
-      fleet = [
-        {
-          driver_id: 101,
-          driver_name: 'Marcus Vance (Unit #402)',
-          phone: '(312) 555-0144',
-          company: 'Apex Hauling Logistics LLC',
-          latitude: 41.8781,
-          longitude: -87.6298,
-          speed: 64.2,
-          heading: 142.0,
-          location_name: 'Chicago, IL (I-65 Southbound)',
-          status: 'in_transit',
-          load_number: 'SW-9042',
-          pickup_location: 'Chicago, IL',
-          delivery_location: 'Atlanta, GA',
-          ping_time: new Date().toISOString()
-        },
-        {
-          driver_id: 102,
-          driver_name: 'David Rodriguez (Unit #118)',
-          phone: '(214) 555-0199',
-          company: 'Lone Star Freight LLC',
-          latitude: 32.7767,
-          longitude: -96.7970,
-          speed: 58.0,
-          heading: 85.0,
-          location_name: 'Dallas, TX (I-20 Eastbound)',
-          status: 'loading',
-          load_number: 'SW-9104',
-          pickup_location: 'Dallas, TX',
-          delivery_location: 'Savannah, GA',
-          ping_time: new Date().toISOString()
-        },
-        {
-          driver_id: 103,
-          driver_name: 'Sergei Miller (Unit #305)',
-          phone: '(717) 555-0122',
-          company: 'Keystone Express Inc',
-          latitude: 40.0379,
-          longitude: -76.3055,
-          speed: 61.5,
-          heading: 260.0,
-          location_name: 'Lancaster, PA (PA Turnpike)',
-          status: 'in_transit',
-          load_number: 'SW-8987',
-          pickup_location: 'Harrisburg, PA',
-          delivery_location: 'Columbus, OH',
-          ping_time: new Date().toISOString()
-        }
-      ];
-    }
+    try {
+      const eld = await pool.query(`
+        SELECT v.name as driver_name, v.unit_number, v.gps_lat as latitude, v.gps_lon as longitude,
+               v.speed, v.heading, v.location_name, v.located_at as ping_time, c.provider, c.account_label as company
+        FROM eld_vehicles v
+        JOIN eld_connections c ON c.id = v.connection_id
+        WHERE v.gps_lat IS NOT NULL AND v.gps_lon IS NOT NULL
+        ORDER BY v.updated_at DESC
+        LIMIT 50
+      `);
+      eld.rows.forEach((row) => {
+        fleet.push({
+          driver_name: row.driver_name,
+          company: row.company,
+          latitude: row.latitude,
+          longitude: row.longitude,
+          speed: row.speed,
+          heading: row.heading,
+          location_name: row.location_name,
+          status: 'eld',
+          ping_time: row.ping_time,
+          source: row.provider
+        });
+      });
+    } catch (_) { /* eld tables may not exist yet */ }
 
-    res.json({ ok: true, count: fleet.length, fleet });
+    res.json({ ok: true, count: fleet.length, fleet, note: 'Only real GPS pings. Empty until a driver pings or an ELD is connected.' });
   } catch (err) {
     console.error('Live fleet telematics error:', err);
     res.status(500).json({ error: 'Could not fetch live fleet telematics.' });

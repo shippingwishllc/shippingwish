@@ -98,6 +98,11 @@ app.post('/api/nyclimo/stripe-webhook', express.raw({ type: 'application/json' }
 app.post('/api/outreach/resend-events', express.raw({ type: 'application/json' }), (req, res) =>
   require('./routes/outreach').resendEventsHandler(req, res)
 );
+app.post(
+  '/api/eld-connect/webhooks/:provider/:connectionId',
+  express.raw({ type: '*/*', limit: '256kb' }),
+  (req, res) => require('./routes/eld-connect').webhookHandler(req, res)
+);
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -575,7 +580,8 @@ app.use('/api/rates', require('./routes/rate-benchmark'));          // Spot Mark
 app.use('/api/bids', require('./routes/load-bids'));                // Instant Book-It-Now & Counter-Offer Bidding Engine
 app.use('/api/detention', require('./routes/detention-billing'));   // Automated GPS Detention Clock & Accessorial Invoicing
 app.use('/api/coi', require('./routes/coi-generator'));             // Instant On-Demand ACORD 25 Certificate of Insurance Desk
-app.use('/api/eld', require('./routes/eld-compliance'));            // FMCSA 49 CFR Part 395 ELD Electronic Logbook & HOS Clocks
+app.use('/api/eld', require('./routes/eld-compliance'));            // Staff software logbook & HOS clocks (not a certified ELD device)
+app.use('/api/eld-connect', require('./routes/eld-connect'));       // Carrier-consent Motive / Samsara / Geotab official API connect
 app.use('/api/ifta-tax', require('./routes/ifta-tax'));            // Automated IFTA Fuel Tax Engine, State Mileage Breakdown & Filing PDFs
 app.use('/api/dvir', require('./routes/dvir-safety'));                // FMCSA 49 CFR Part 396 Driver Vehicle Inspection Report (DVIR) & Defect Sign-off
 app.use('/api/dq', require('./routes/driver-qualification'));        // FMCSA 49 CFR Part 391 Driver Qualification (DQ) Compliance Vault

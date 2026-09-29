@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '26';
+  const SIDEBAR_VERSION = '27';
   // #endregion
 
   function clearRoleCache() {
@@ -88,6 +88,7 @@
     { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Match' },
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
+    { key: 'eld', href: '/eld-desk', icon: '📡', label: 'ELD Desk' },
     { section: 'Sales & Staff' },
     { key: 'crm', href: '/crm-sales', icon: '📈', label: 'Sales CRM & Leads' },
     { key: 'census', href: '/census-desk', icon: '🗂️', label: 'Census Desk' },
@@ -112,6 +113,7 @@
     { key: 'home', href: '/carrier-overview', icon: '📊', label: 'Fleet home' },
     { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Bidding' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Trucks & drivers' },
+    { key: 'eld', href: '/eld-desk', icon: '📡', label: 'ELD connect' },
     { key: 'planning', href: '/load-planning', icon: '📅', label: 'Empty truck / next load' },
     { key: 'documents', href: '/documents', icon: '📄', label: 'Documents' },
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker credit check' },
@@ -144,6 +146,7 @@
     'load-booking.html': 'loadboard',
     'brokers.html': 'brokers',
     'fleet.html': 'fleet',
+    'eld-desk.html': 'eld',
     'crm-sales.html': 'crm',
     'census-desk.html': 'census',
     'sales-dashboard.html': 'crm',
@@ -510,7 +513,7 @@
     try {
       if (sessionStorage.getItem('sw_sidebar_ver') !== SIDEBAR_VERSION) return true;
     } catch (_) { /* ignore */ }
-    return !aside.querySelector('a.sidebar-nav-link[href="/census-desk"]');
+    return !aside.querySelector('a.sidebar-nav-link[href="/eld-desk"]');
   }
 
   function mountSidebarContent(aside) {
