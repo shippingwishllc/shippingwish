@@ -129,18 +129,18 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label required" for="userName">Full Name</label>
-            <input type="text" id="userName" class="form-input" required placeholder="e.g. Sarah Smith">
+            <input type="text" id="userName" class="form-input" required placeholder="e.g. Full name">
           </div>
           <div class="form-group">
             <label class="form-label required" for="userEmail">Email Address</label>
-            <input type="email" id="userEmail" class="form-input" required placeholder="sarah@shippingwish.com">
+            <input type="email" id="userEmail" class="form-input" required placeholder="name@shippingwish.com">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label class="form-label required" for="userPassword">Password</label>
-            <input type="password" id="userPassword" class="form-input" required placeholder="••••••••">
+            <input type="password" id="userPassword" class="form-input" required minlength="8" autocomplete="new-password" placeholder="••••••••">
           </div>
           <div class="form-group">
             <label class="form-label required" for="userRole">Assigned Role</label>
@@ -175,102 +175,179 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="edit-user-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>Edit staff user</h2>
+      <button type="button" onclick="closeModal('edit-user-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="edit-user-form">
+        <input type="hidden" id="editUserId">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label required" for="editUserName">Full Name</label>
+            <input type="text" id="editUserName" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editUserEmail">Email</label>
+            <input type="email" id="editUserEmail" class="form-input" readonly>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label required" for="editUserRole">Role</label>
+            <select id="editUserRole" class="form-select">
+              <option value="dispatcher">Dispatcher</option>
+              <option value="sales_rep">Sales Representative</option>
+              <option value="admin">Admin</option>
+              <option value="super_admin">Super Admin</option>
+              <option value="carrier">Carrier Client</option>
+              <option value="driver">Driver</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editUserPhone">Phone</label>
+            <input type="text" id="editUserPhone" class="form-input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editUserCompany">Company</label>
+          <input type="text" id="editUserCompany" class="form-input">
+        </div>
+        <p id="edit-user-alert" class="form-alert" style="display:none;margin-top:12px;"></p>
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeModal('edit-user-modal')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="password-user-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>Set new password</h2>
+      <button type="button" onclick="closeModal('password-user-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="password-user-form">
+        <input type="hidden" id="passwordUserId">
+        <p class="cd-help" id="password-user-who" style="margin:0 0 12px;font-size:13px;color:var(--text-secondary);"></p>
+        <div class="form-group">
+          <label class="form-label required" for="passwordUserNew">New password</label>
+          <input type="password" id="passwordUserNew" class="form-input" required minlength="8" autocomplete="new-password">
+        </div>
+        <p id="password-user-alert" class="form-alert" style="display:none;margin-top:12px;"></p>
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeModal('password-user-modal')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script src="/js/notifications-bell.js"></script>
 <script>
   let usersData = [];
   let currentRoleFilter = 'all';
   let IS_ADMIN = false;
-  let IS_ADMIN = false;
 
   document.addEventListener('DOMContentLoaded', async () => {
-    await checkAuth();
+    const signedIn = await checkAuth();
+    if (!signedIn) return;
     await fetchUsers();
+    const addForm = document.getElementById('add-user-form');
+    if (addForm) addForm.addEventListener('submit', submitAddUser);
+    const editForm = document.getElementById('edit-user-form');
+    if (editForm) editForm.addEventListener('submit', submitEditUser);
+    const pwForm = document.getElementById('password-user-form');
+    if (pwForm) pwForm.addEventListener('submit', submitPasswordUser);
   });
 
   async function checkAuth() {
     try {
       const res = await fetch('/api/me', { credentials: 'include' });
-      if (!res.ok) { window.location.href = '/login'; return; }
+      if (!res.ok) { window.location.href = '/login'; return false; }
       const data = await res.json();
       const user = data.user || data;
-      
-      if (!user || !user.role) { window.location.href = '/login'; return; }
+      if (!user || !user.role) { window.location.href = '/login'; return false; }
       const role = (user.role || '').toLowerCase();
-      IS_ADMIN = role === 'admin' || role === 'super_admin';
-      const isAuthorized = ['admin', 'super_admin', 'superadmin', 'dispatcher', 'sales_rep'].includes(role) || (user.email && user.email.toLowerCase().includes('admin'));
-      
-      if (!isAuthorized) {
+      IS_ADMIN = role === 'admin' || role === 'super_admin' || role === 'superadmin';
+      if (!IS_ADMIN) {
         alert('Access Restricted. Only Admins can access Company Staff Management.');
         window.location.href = '/admin-dashboard';
-        return;
+        return false;
       }
-      
-      const disp = document.getElementById('current-user-name');
-      if (disp) disp.textContent = `${user.name || user.email} (${user.role.toUpperCase()})`;
+      return true;
     } catch (err) {
       console.error(err);
+      showTableMessage('Could not verify your session.');
+      return false;
     }
+  }
+
+  function showTableMessage(text) {
+    const tbody = document.getElementById('users-tbody');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">${escapeHtml(text)}</td></tr>`;
   }
 
   async function fetchUsers() {
     try {
       const res = await fetch('/api/users', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        usersData = (data.users || []).map(u => ({
-          id: u.id,
-          name: u.name || 'N/A',
-          email: u.email,
-          role: u.role || 'user',
-          company: u.company_name || 'Shipping Wish LLC',
-          phone: u.phone || 'N/A',
-          mcNumber: u.mc_number || 'N/A',
-          dotNumber: u.dot_number || 'N/A',
-          isSuspended: u.is_suspended || false,
-          created: (u.created_at || '').split('T')[0] || '2026-08-20'
-        }));
-      } else {
-        renderMockUsers();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showTableMessage(data.error || 'Could not load company staff.');
+        usersData = [];
+        updateKPIs();
+        return;
       }
+      usersData = (data.users || []).map(u => ({
+        id: u.id,
+        name: u.name || 'N/A',
+        email: u.email,
+        role: u.role || 'user',
+        company: u.company_name || '—',
+        phone: u.phone || '—',
+        mcNumber: u.mc_number || '—',
+        dotNumber: u.dot_number || '—',
+        isSuspended: !!u.is_suspended,
+        created: (u.created_at || '').split('T')[0] || '—'
+      }));
     } catch (e) {
-      renderMockUsers();
+      showTableMessage('Could not load company staff.');
+      usersData = [];
     }
     updateKPIs();
     renderUsersTable();
   }
 
-  function renderMockUsers() {
-    usersData = [
-      { id: 1, name: 'Super Admin', email: 'admin@shippingwish.com', role: 'super_admin', company: 'Shipping Wish LLC', phone: '+1 800 555 0199', mcNumber: 'N/A', dotNumber: 'N/A', isSuspended: false, created: '2026-08-01' },
-      { id: 2, name: 'Sarah Smith', email: 'sarah@shippingwish.com', role: 'sales_rep', company: 'Shipping Wish Sales', phone: '+1 917 555 0192', mcNumber: 'N/A', dotNumber: 'N/A', isSuspended: false, created: '2026-08-05' },
-      { id: 3, name: 'David Miller', email: 'david@shippingwish.com', role: 'dispatcher', company: 'Shipping Wish Operations', phone: '+1 312 555 0184', mcNumber: 'N/A', dotNumber: 'N/A', isSuspended: false, created: '2026-08-10' }
-    ];
+  function updateKPIs() {
+    const staff = usersData.filter(u => ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(u.role));
+    document.getElementById('kpi-total-staff').textContent = staff.length;
+    document.getElementById('kpi-active-dispatchers').textContent = usersData.filter(u => u.role === 'dispatcher' && !u.isSuspended).length;
+    document.getElementById('kpi-active-sales').textContent = usersData.filter(u => u.role === 'sales_rep' && !u.isSuspended).length;
+    document.getElementById('kpi-total-carriers').textContent = usersData.filter(u => ['carrier', 'driver'].includes(u.role)).length;
   }
 
-  function updateKPIs() {
-    const total = usersData.length;
-    const dispatchers = usersData.filter(u => u.role === 'dispatcher').length;
-    const sales = usersData.filter(u => u.role === 'sales_rep').length;
-    const carriers = usersData.filter(u => ['carrier', 'driver'].includes(u.role)).length;
-
-    document.getElementById('kpi-total-staff').textContent = total;
-    document.getElementById('kpi-active-dispatchers').textContent = dispatchers;
-    document.getElementById('kpi-active-sales').textContent = sales;
-    document.getElementById('kpi-total-carriers').textContent = carriers;
+  function roleMatchesFilter(role) {
+    if (currentRoleFilter === 'all') return true;
+    if (currentRoleFilter === 'admin') return role === 'admin' || role === 'super_admin';
+    return role === currentRoleFilter;
   }
 
   function renderUsersTable() {
     const tbody = document.getElementById('users-tbody');
     const search = (document.getElementById('search-users').value || '').toLowerCase();
-
     const filtered = usersData.filter(u => {
-      const matchRole = currentRoleFilter === 'all' || u.role === currentRoleFilter;
+      const matchRole = roleMatchesFilter(u.role);
       const matchSearch = !search ||
-        u.name.toLowerCase().includes(search) ||
-        u.email.toLowerCase().includes(search) ||
-        u.role.toLowerCase().includes(search) ||
-        u.company.toLowerCase().includes(search);
-
+        String(u.name).toLowerCase().includes(search) ||
+        String(u.email).toLowerCase().includes(search) ||
+        String(u.role).toLowerCase().includes(search) ||
+        String(u.company).toLowerCase().includes(search);
       return matchRole && matchSearch;
     });
 
@@ -282,20 +359,35 @@
     tbody.innerHTML = filtered.map(u => `
       <tr>
         <td><strong style="color:var(--text-primary);">${escapeHtml(u.name)}</strong><br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(u.email)}</span></td>
-        <td><span class="badge ${getRoleBadge(u.role)}">${escapeHtml(u.role.toUpperCase())}</span></td>
+        <td><span class="badge ${getRoleBadge(u.role)}">${escapeHtml(String(u.role).replace('_', ' ').toUpperCase())}</span></td>
         <td>${escapeHtml(u.company)}<br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(u.phone)}</span></td>
         <td>${escapeHtml(u.mcNumber)}</td>
         <td><span class="badge ${u.isSuspended ? 'badge-new' : 'badge-paid'}">${u.isSuspended ? 'Suspended' : 'Active'}</span></td>
         <td>${escapeHtml(u.created)}</td>
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            ${IS_ADMIN ? `<button class="btn btn-light btn-sm" onclick="toggleSuspend(${u.id})">${u.isSuspended ? 'Unsuspend' : 'Suspend'}</button>
-            <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteUser(${u.id})">Move to trash</button>` : '<span style="font-size:11px;color:var(--text-muted);">Admin only</span>'}
+            ${IS_ADMIN ? `
+              <button type="button" class="btn btn-light btn-sm" data-act="edit" data-id="${u.id}">Edit</button>
+              <button type="button" class="btn btn-light btn-sm" data-act="password" data-id="${u.id}">Password</button>
+              <button type="button" class="btn btn-light btn-sm" data-act="suspend" data-id="${u.id}">${u.isSuspended ? 'Unsuspend' : 'Suspend'}</button>
+              <button type="button" class="btn btn-light btn-sm" style="color:var(--color-red-500);" data-act="delete" data-id="${u.id}">Move to trash</button>
+            ` : '<span style="font-size:11px;color:var(--text-muted);">Admin only</span>'}
           </div>
         </td>
       </tr>
     `).join('');
   }
+
+  document.getElementById('users-tbody').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const id = Number(btn.getAttribute('data-id'));
+    const act = btn.getAttribute('data-act');
+    if (act === 'edit') openEditUser(id);
+    else if (act === 'password') openPasswordUser(id);
+    else if (act === 'suspend') toggleSuspend(id);
+    else if (act === 'delete') deleteUser(id);
+  });
 
   function getRoleBadge(role) {
     if (['admin', 'super_admin'].includes(role)) return 'badge-amber';
@@ -309,7 +401,7 @@
     document.querySelectorAll('.filter-role-btn').forEach(el => {
       el.className = 'btn btn-sm btn-secondary filter-role-btn';
     });
-    btn.className = 'btn btn-sm btn-primary filter-role-btn';
+    if (btn) btn.className = 'btn btn-sm btn-primary filter-role-btn';
     renderUsersTable();
   }
 
@@ -331,18 +423,57 @@
     if (el) { el.style.display = 'none'; el.classList.remove('open'); }
   }
 
+  function findUser(id) {
+    return usersData.find(u => Number(u.id) === Number(id));
+  }
+
+  function openEditUser(id) {
+    const u = findUser(id);
+    if (!u) return;
+    document.getElementById('editUserId').value = u.id;
+    document.getElementById('editUserName').value = u.name === 'N/A' ? '' : u.name;
+    document.getElementById('editUserEmail').value = u.email || '';
+    document.getElementById('editUserRole').value = u.role;
+    document.getElementById('editUserPhone').value = u.phone === '—' ? '' : u.phone;
+    document.getElementById('editUserCompany').value = u.company === '—' ? '' : u.company;
+    const alertEl = document.getElementById('edit-user-alert');
+    if (alertEl) { alertEl.style.display = 'none'; alertEl.textContent = ''; }
+    openModal('edit-user-modal');
+  }
+
+  function openPasswordUser(id) {
+    const u = findUser(id);
+    if (!u) return;
+    document.getElementById('passwordUserId').value = u.id;
+    document.getElementById('passwordUserNew').value = '';
+    document.getElementById('password-user-who').textContent = 'Set a new password for ' + u.name + ' (' + u.email + ').';
+    const alertEl = document.getElementById('password-user-alert');
+    if (alertEl) { alertEl.style.display = 'none'; alertEl.textContent = ''; }
+    openModal('password-user-modal');
+  }
+
   async function toggleSuspend(id) {
-    await fetch(`/api/users/${id}/toggle-suspend`, { method: 'PATCH', credentials: 'include' });
+    const res = await fetch('/api/users/' + id + '/toggle-suspend', { method: 'PATCH', credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not update status.');
+      return;
+    }
     fetchUsers();
   }
 
   async function deleteUser(id) {
-    if (!confirm('Move this account to Trash? Only admins can restore from the Trash page.')) return;
-    await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (!confirm('Move this account to Trash? Restore from Trash within 30 days.')) return;
+    const res = await fetch('/api/users/' + id, { method: 'DELETE', credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not move to Trash.');
+      return;
+    }
     fetchUsers();
   }
 
-  document.getElementById('add-user-form').addEventListener('submit', async (e) => {
+  async function submitAddUser(e) {
     e.preventDefault();
     const payload = {
       name: document.getElementById('userName').value,
@@ -352,37 +483,80 @@
       company_name: document.getElementById('userCompany').value,
       phone: document.getElementById('userPhone').value
     };
-
     const res = await fetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(payload)
     });
-    if (res.ok) {
-      closeModal('add-user-modal');
-      e.target.reset();
-      fetchUsers();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not create user.');
+      return;
     }
-  });
+    closeModal('add-user-modal');
+    e.target.reset();
+    fetchUsers();
+  }
+
+  async function submitEditUser(e) {
+    e.preventDefault();
+    const id = document.getElementById('editUserId').value;
+    const payload = {
+      name: document.getElementById('editUserName').value,
+      role: document.getElementById('editUserRole').value,
+      phone: document.getElementById('editUserPhone').value,
+      company_name: document.getElementById('editUserCompany').value
+    };
+    const res = await fetch('/api/users/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    const alertEl = document.getElementById('edit-user-alert');
+    if (!res.ok) {
+      if (alertEl) { alertEl.style.display = 'block'; alertEl.textContent = data.error || 'Could not save.'; }
+      return;
+    }
+    closeModal('edit-user-modal');
+    fetchUsers();
+  }
+
+  async function submitPasswordUser(e) {
+    e.preventDefault();
+    const id = document.getElementById('passwordUserId').value;
+    const password = document.getElementById('passwordUserNew').value;
+    const res = await fetch('/api/users/' + id + '/password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json().catch(() => ({}));
+    const alertEl = document.getElementById('password-user-alert');
+    if (!res.ok) {
+      if (alertEl) { alertEl.style.display = 'block'; alertEl.textContent = data.error || 'Could not set password.'; }
+      return;
+    }
+    closeModal('password-user-modal');
+    document.getElementById('passwordUserNew').value = '';
+    alert(data.message || 'Password updated.');
+  }
 
   function escapeHtml(str) {
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  async function logout() {
-    try {
-      try { sessionStorage.clear(); } catch (_) {}
-      try { localStorage.clear(); } catch (_) {}
-      document.cookie = 'sw_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      document.cookie = 'sw_token=; Path=/; Domain=.shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      document.cookie = 'sw_token=; Path=/; Domain=shippingwish.com; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-      window.location.replace('/login?logged_out=1');
-    } catch (e) {
-      window.location.replace('/login?logged_out=1');
-    }
-  }
+  window.openAddUserModal = openAddUserModal;
+  window.closeModal = closeModal;
+  window.filterByRole = filterByRole;
+  window.searchUsersTable = searchUsersTable;
+  window.toggleSuspend = toggleSuspend;
+  window.deleteUser = deleteUser;
+  window.openEditUser = openEditUser;
+  window.openPasswordUser = openPasswordUser;
 </script>
 
 <script src="/js/app-shell.js?v=20"></script>
