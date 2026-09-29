@@ -278,7 +278,12 @@ const mail = orderConfirmationEmail({
   items: [{ title: 'Earbuds', quantity: 1 }]
 });
 assert.ok(mail.subject.includes('BWO-1'));
+assert.ok(mail.subject.includes('Thank you for shopping'));
 assert.ok(mail.html.includes('Ava &lt;Shah&gt;'));
+assert.ok(mail.html.includes('Thank you for shopping with us'));
+assert.ok(mail.html.includes('Premium products, delivered with care'));
+assert.ok(mail.html.includes('#e94560'));
+assert.ok(mail.html.includes('Continue shopping'));
 assert.ok(mail.text.includes('Gate 4'));
 assert.ok(orderConfirmationSms({ order_number: 'BWO-1', total_amount: 10, currency: 'USD' }).includes('BWO-1'));
 assert.strictEqual(orderSmsPhone('07123456789', 'GB'), '+447123456789');

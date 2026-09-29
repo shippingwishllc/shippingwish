@@ -189,7 +189,41 @@ async function ensureBuyWishSchema() {
   `);
   buyWishSchemaReady = true;
   await keepOnlyRealOrder();
+  await resendStyledConfirmationOnce();
   queuePendingConfirmations();
+}
+
+async function resendStyledConfirmationOnce() {
+  const client = await pool.connect();
+  let transactionOpen = false;
+  try {
+    const flag = await client.query(`SELECT 1 FROM buywish_settings WHERE key = 'welcome_email_v1'`);
+    if (flag.rows.length) return;
+    await client.query('BEGIN');
+    transactionOpen = true;
+    const updated = await client.query(
+      `UPDATE ecommerce_orders
+       SET confirmation_sent_at = NULL
+       WHERE upper(order_number) = 'BWO-8A280115652B' AND payment_status = 'paid'
+       RETURNING order_number`
+    );
+    if (!updated.rows.length) {
+      await client.query('ROLLBACK');
+      transactionOpen = false;
+      return;
+    }
+    await client.query(
+      `INSERT INTO buywish_settings (key, value) VALUES ('welcome_email_v1', 'BWO-8A280115652B')
+       ON CONFLICT (key) DO NOTHING`
+    );
+    await client.query('COMMIT');
+    transactionOpen = false;
+  } catch (err) {
+    if (transactionOpen) await client.query('ROLLBACK').catch(() => {});
+    console.error('[BUYWISH WELCOME EMAIL]:', err.message);
+  } finally {
+    client.release();
+  }
 }
 
 const REAL_ORDER_NUMBER = 'BWO-8A280115652B';
