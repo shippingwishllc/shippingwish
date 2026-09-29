@@ -11,25 +11,44 @@
   <link rel="stylesheet" href="/css/design-system.css?v=7">
   <style>
     .cd-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
-    .cd-card { background:var(--bg-card); border:1px solid var(--border-default); border-radius:14px; padding:16px 18px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
-    .cd-card h3 { margin:0 0 4px; font-size:13px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-card { background:var(--bg-card); border:1px solid var(--border-default); border-radius:16px; padding:18px 20px; box-shadow:0 1px 2px rgba(15,23,42,.05); }
+    .cd-card h3 { margin:0 0 4px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
     .cd-help { margin:0 0 12px; font-size:12px; color:var(--text-secondary); line-height:1.45; }
+    .cd-hero { grid-column:span 12; display:flex; justify-content:space-between; gap:20px; align-items:center; flex-wrap:wrap; background:linear-gradient(120deg,#0f172a 0%,#1e3a5f 58%,#1d4ed8 100%); color:#fff; border:0; }
+    .cd-hero h2 { margin:0 0 6px; font-size:22px; font-weight:800; letter-spacing:-.02em; }
+    .cd-hero p { margin:0; max-width:640px; font-size:13px; line-height:1.5; color:#cbd5e1; }
+    .cd-kpi { padding:16px 18px; }
+    .cd-kpi .n { font-size:28px; font-weight:800; letter-spacing:-.03em; color:var(--text-primary); }
+    .cd-kpi .l { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-kpi .s { margin-top:6px; font-size:12px; color:var(--text-secondary); }
     .eq-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-    .eq-chip { appearance:none; border:1.5px solid var(--border-default); background:#fff; border-radius:10px; padding:10px 12px; text-align:left; cursor:pointer; font:inherit; }
+    .eq-chip { appearance:none; border:1.5px solid var(--border-default); background:#fff; border-radius:12px; padding:12px 12px; text-align:left; cursor:pointer; font:inherit; transition:border-color .15s, background .15s, transform .15s; }
+    .eq-chip:hover { transform:translateY(-1px); border-color:#94a3b8; }
     .eq-chip strong { display:block; font-size:13px; font-weight:800; color:var(--text-primary); }
     .eq-chip span { display:block; font-size:11px; color:var(--text-muted); margin-top:2px; }
-    .eq-chip.is-on { border-color:#1e3a5f; background:#0f172a; }
+    .eq-chip.is-on { border-color:#0f172a; background:#0f172a; }
     .eq-chip.is-on strong, .eq-chip.is-on span { color:#fff; }
     .eq-chip.is-on span { color:#cbd5e1; }
     .cd-row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
-    .cd-field { flex:1; min-width:120px; }
-    .cd-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--border-subtle); font-size:13px; }
+    .cd-field { flex:1; min-width:110px; }
+    .cd-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--border-subtle); font-size:13px; }
     .cd-toggle:last-child { border-bottom:0; }
+    .cd-toggle input { width:18px; height:18px; accent-color:#0f172a; }
     .cd-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
-    .dir-item { display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--border-subtle); cursor:pointer; }
-    .dir-item:hover { color:var(--color-navy-700); }
-    .dir-item.is-on { background:#f8fafc; margin:0 -8px; padding:10px 8px; border-radius:8px; }
-    @media (max-width: 980px) { .cd-grid { grid-template-columns:1fr; } }
+    .cd-launch { width:100%; margin-top:12px; font-weight:800; padding:12px 16px; }
+    .chart-wrap { height:220px; }
+    .chart-wrap svg { width:100%; height:100%; display:block; }
+    .mix-row { display:flex; align-items:center; gap:8px; margin:6px 0; font-size:12px; }
+    .mix-row b { min-width:88px; font-size:11px; }
+    .mix-bar { flex:1; height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden; }
+    .mix-bar i { display:block; height:100%; background:linear-gradient(90deg,#1e3a5f,#f59e0b); border-radius:99px; }
+    .dir-table td, .dir-table th { font-size:12px; }
+    .dir-item-btn { cursor:pointer; }
+    .dir-item-btn:hover td { background:#f8fafc; }
+    @media (max-width: 980px) {
+      .cd-grid { grid-template-columns:1fr; }
+      .cd-hero, .cd-card { grid-column:auto !important; }
+    }
   </style>
 </head>
 <body class="app-body">
@@ -40,7 +59,7 @@
     <header class="app-header">
       <div>
         <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Census Desk</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Official FMCSA Company Census. Dry Van = general freight. Reefer = refrigerated food / meat / produce. Save a search as a directory, then email that list.</p>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Staff-only FMCSA search. Public shippingwish.com theme is unchanged.</p>
       </div>
       <div style="display:flex;align-items:center;gap:12px;">
         <div class="live-status"><span class="live-dot"></span> Census live</div>
@@ -49,9 +68,50 @@
     </header>
     <main class="app-content">
       <div class="cd-grid">
+        <section class="cd-card cd-hero">
+          <div>
+            <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fbbf24;margin-bottom:8px;">FMCSA Company Census</div>
+            <h2>Find active carriers by equipment.</h2>
+            <p>Dry Van is general freight. Reefer is refrigerated food, meat, and produce. Save the list as a directory, then email it. Counts below are from lists you saved — not invented harvest totals.</p>
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-search-hero" style="background:#f59e0b;color:#0f172a;font-weight:800;padding:12px 18px;border:0;">Run census</button>
+        </section>
+
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Directories</div>
+          <div class="n" id="kpi-dirs">0</div>
+          <div class="s">Named lists you saved</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Carriers saved</div>
+          <div class="n" id="kpi-members">0</div>
+          <div class="s">Rows in those directories</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Emails on file</div>
+          <div class="n" id="kpi-emails">0</div>
+          <div class="s">Ready for CAN-SPAM email</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">This search</div>
+          <div class="n" id="kpi-search">0</div>
+          <div class="s" id="kpi-search-note">Run census to fill the chart</div>
+        </article>
+
+        <section class="cd-card" style="grid-column:span 8;">
+          <h3>Search mix</h3>
+          <p class="cd-help" id="cd-chart-meta">Chart plots the last census pull on this screen. Empty until you run a search.</p>
+          <div class="chart-wrap" id="cd-chart"></div>
+        </section>
+        <section class="cd-card" style="grid-column:span 4;">
+          <h3>Equipment in this pull</h3>
+          <p class="cd-help">Primary census label per carrier.</p>
+          <div id="cd-mix"><p style="font-size:13px;color:var(--text-muted);">No search yet.</p></div>
+        </section>
+
         <section class="cd-card" style="grid-column:span 4;">
           <h3>Directory name</h3>
-          <p class="cd-help">Each search you save becomes its own file — TX Reefer 1–10, FL Dry Van, etc.</p>
+          <p class="cd-help">Each saved search is its own file — TX Reefer, FL Dry Van, etc.</p>
           <label class="form-label" for="cd-name">Name</label>
           <input class="form-input" id="cd-name" placeholder="TX-Reefer-Small-Fleet" maxlength="80">
           <label class="form-label" for="cd-state" style="margin-top:12px;">State</label>
@@ -59,8 +119,8 @@
         </section>
 
         <section class="cd-card" style="grid-column:span 5;">
-          <h3>Equipment</h3>
-          <p class="cd-help">Pick one or more. Census cargo flags are queried directly — Reefer does not return dry vans.</p>
+          <h3>Equipment matrix</h3>
+          <p class="cd-help">Pick one or more. Reefer does not return dry vans.</p>
           <div class="eq-grid" id="eq-grid"></div>
         </section>
 
@@ -81,17 +141,17 @@
           <label class="cd-toggle"><span>For-hire (carship C)</span><input type="checkbox" id="cd-hire" checked></label>
           <label class="cd-toggle"><span>Skip passenger ops</span><input type="checkbox" id="cd-pass" checked></label>
           <label class="cd-toggle"><span>Email on file</span><input type="checkbox" id="cd-email"></label>
-          <label class="cd-toggle"><span>Keep Dry Van exclusive (no reefers mixed in)</span><input type="checkbox" id="cd-exclusive" checked></label>
+          <label class="cd-toggle"><span>Keep Dry Van exclusive</span><input type="checkbox" id="cd-exclusive" checked></label>
+          <button type="button" class="btn btn-primary cd-launch" id="btn-search">Run census</button>
         </section>
 
-        <section class="cd-card" style="grid-column:span 8;">
+        <section class="cd-card" style="grid-column:span 12;">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
             <div>
               <h3 style="margin:0;">Search results</h3>
               <p class="cd-help" id="cd-result-meta" style="margin:4px 0 0;">Pick equipment, then run census.</p>
             </div>
             <div class="cd-actions">
-              <button type="button" class="btn btn-secondary btn-sm" id="btn-search">Run census</button>
               <button type="button" class="btn btn-primary btn-sm" id="btn-save">Save to directory</button>
             </div>
           </div>
@@ -116,10 +176,26 @@
           </div>
         </section>
 
-        <section class="cd-card" style="grid-column:span 4;">
+        <section class="cd-card" style="grid-column:span 12;">
           <h3>Saved directories</h3>
           <p class="cd-help">Open a file to email, download CSV, or push into CRM. SMS only if that phone already consented on our desk.</p>
-          <div id="cd-dirs"><p style="font-size:13px;color:var(--text-muted);">Loading directories…</p></div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2 dir-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Equipment</th>
+                  <th>State</th>
+                  <th>Carriers</th>
+                  <th>Emails</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="cd-dirs">
+                <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);">Loading directories…</td></tr>
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section class="cd-card" style="grid-column:span 12;display:none;" id="cd-open">
@@ -203,8 +279,52 @@
     ).join('');
   }
 
+  function equipmentMix(carriers) {
+    const counts = {};
+    for (const c of carriers) {
+      const first = String(c.equipment_type || 'Unknown').split(',')[0].trim() || 'Unknown';
+      counts[first] = (counts[first] || 0) + 1;
+    }
+    return counts;
+  }
+
+  function renderChart(carriers) {
+    const el = document.getElementById('cd-chart');
+    const meta = document.getElementById('cd-chart-meta');
+    const mixEl = document.getElementById('cd-mix');
+    document.getElementById('kpi-search').textContent = String(carriers.length);
+    if (!carriers.length) {
+      meta.textContent = 'Chart plots the last census pull on this screen. Empty until you run a search.';
+      document.getElementById('kpi-search-note').textContent = 'Run census to fill the chart';
+      el.innerHTML = '<svg viewBox="0 0 640 220" role="img" aria-label="Empty census chart"><rect width="640" height="220" fill="#f8fafc"/><path d="M24 180 H616" stroke="#e2e8f0" /><path d="M24 40 L120 120 L220 90 L320 140 L420 70 L520 110 L616 95" fill="none" stroke="#cbd5e1" stroke-width="3" stroke-dasharray="6 8"/><text x="320" y="118" text-anchor="middle" fill="#94a3b8" font-size="14" font-family="Inter,sans-serif">No search yet</text></svg>';
+      mixEl.innerHTML = '<p style="font-size:13px;color:var(--text-muted);">No search yet.</p>';
+      return;
+    }
+    const units = carriers.map((c) => Number(c.num_trucks) || 1);
+    const max = Math.max.apply(null, units.concat([1]));
+    const w = 640;
+    const h = 220;
+    const step = (w - 48) / Math.max(units.length - 1, 1);
+    const pts = units.map((u, i) => {
+      const x = 24 + i * step;
+      const y = 200 - (u / max) * 150;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    const area = '24,200 ' + pts + ' ' + (24 + (units.length - 1) * step).toFixed(1) + ',200';
+    el.innerHTML = '<svg viewBox="0 0 640 220" role="img" aria-label="Power units in this search"><defs><linearGradient id="cdFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1d4ed8" stop-opacity=".28"/><stop offset="100%" stop-color="#1d4ed8" stop-opacity="0"/></linearGradient></defs><rect width="640" height="220" fill="#f8fafc"/><polyline points="' + area + '" fill="url(#cdFill)" stroke="none"/><polyline points="' + pts + '" fill="none" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    meta.textContent = carriers.length + ' carriers in this pull. Line is power units on each row, largest first is not required — order is census return order.';
+    document.getElementById('kpi-search-note').textContent = 'Rows in the table below';
+    const mix = equipmentMix(carriers);
+    const total = carriers.length;
+    mixEl.innerHTML = Object.keys(mix).map((label) => {
+      const pct = Math.round((mix[label] / total) * 100);
+      return '<div class="mix-row"><b>' + escapeHtml(label) + '</b><div class="mix-bar"><i style="width:' + pct + '%"></i></div><span>' + mix[label] + '</span></div>';
+    }).join('');
+  }
+
   function renderResults(carriers) {
     const body = document.getElementById('cd-results');
+    renderChart(carriers);
     if (!carriers.length) {
       body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--text-muted);">No census rows for this equipment / state.</td></tr>';
       return;
@@ -270,19 +390,33 @@
     if (data.directory) openDirectory(data.directory.id);
   }
 
+  function setKpis(rows) {
+    const dirs = rows.length;
+    const members = rows.reduce((n, d) => n + Number(d.member_count || 0), 0);
+    const emails = rows.reduce((n, d) => n + Number(d.with_email || 0), 0);
+    document.getElementById('kpi-dirs').textContent = String(dirs);
+    document.getElementById('kpi-members').textContent = String(members);
+    document.getElementById('kpi-emails').textContent = String(emails);
+  }
+
   async function loadDirs() {
     const box = document.getElementById('cd-dirs');
     const res = await api('/api/census-desk/directories');
     const data = await res.json().catch(() => ({}));
     const rows = data.directories || [];
+    setKpis(rows);
     if (!rows.length) {
-      box.innerHTML = '<p style="font-size:13px;color:var(--text-muted);">No directories yet. Run a Reefer or Dry Van search and save it.</p>';
+      box.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);">No directories yet. Run a Reefer or Dry Van search and save it.</td></tr>';
       return;
     }
-    box.innerHTML = rows.map((d) => `<div class="dir-item${Number(d.id) === Number(openId) ? ' is-on' : ''}" data-id="${d.id}">
-      <div><strong>${escapeHtml(d.name)}</strong><div style="font-size:11px;color:var(--text-muted);">${escapeHtml((d.equipment || []).join(', ') || 'mixed')} · ${escapeHtml(d.state || 'US')}</div></div>
-      <div style="font-size:12px;font-weight:800;">${d.member_count} · ${d.with_email} email</div>
-    </div>`).join('');
+    box.innerHTML = rows.map((d) => `<tr class="dir-item-btn${Number(d.id) === Number(openId) ? ' is-on' : ''}" data-id="${d.id}">
+      <td><strong>${escapeHtml(d.name)}</strong></td>
+      <td>${escapeHtml((d.equipment || []).join(', ') || 'mixed')}</td>
+      <td>${escapeHtml(d.state || 'US')}</td>
+      <td>${d.member_count}</td>
+      <td>${d.with_email}</td>
+      <td>Open</td>
+    </tr>`).join('');
   }
 
   async function openDirectory(id) {
@@ -328,10 +462,11 @@
     renderChips();
   });
   document.getElementById('cd-dirs').addEventListener('click', (e) => {
-    const row = e.target.closest('.dir-item');
+    const row = e.target.closest('[data-id]');
     if (row) openDirectory(row.getAttribute('data-id'));
   });
   document.getElementById('btn-search').addEventListener('click', () => runSearch().catch((err) => alert(err.message)));
+  document.getElementById('btn-search-hero').addEventListener('click', () => runSearch().catch((err) => alert(err.message)));
   document.getElementById('btn-save').addEventListener('click', () => saveDirectory().catch((err) => alert(err.message)));
   document.getElementById('btn-csv').addEventListener('click', () => {
     if (!openId) return alert('Open a directory first.');
@@ -352,8 +487,9 @@
   stateSel.innerHTML = '<option value="">All states</option>' + STATES.map((s) => `<option value="${s}">${s}</option>`).join('');
   stateSel.value = 'TX';
   renderChips();
+  renderChart([]);
   loadDirs().catch(() => {
-    document.getElementById('cd-dirs').innerHTML = '<p style="font-size:13px;color:var(--text-muted);">Sign in as staff to load directories.</p>';
+    document.getElementById('cd-dirs').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);">Sign in as staff to load directories.</td></tr>';
   });
 })();
 </script>
