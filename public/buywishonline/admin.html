@@ -6,87 +6,135 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Shop desk | BuyWishOnline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --ink:#14120f; --ivory:#f6f1e8; --paper:#fffdf8; --line:#eadfce; --gold:#9c7b4a; --muted:#6f675e; }
+    :root { --ink:#1a1a2e; --bg:#f4f5f7; --paper:#fff; --line:#e5e7eb; --muted:#6b7280; --accent:#e94560; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Outfit, sans-serif; background: var(--ivory); color: var(--ink); }
-    header, main { max-width: 1180px; margin: 0 auto; padding: 28px 20px; }
-    header { display: flex; justify-content: space-between; align-items: end; gap: 16px; }
-    h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 46px; margin: 0; }
+    body { margin: 0; font-family: Inter, sans-serif; background: var(--bg); color: var(--ink); }
     a { color: inherit; }
-    button, input { font: inherit; }
+    button, input, select, textarea { font: inherit; }
+    h1 { font-size: 22px; margin: 0; font-weight: 700; }
+    h2 { font-size: 16px; margin: 0 0 6px; font-weight: 700; }
     .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    button, .btn { background: var(--ink); color: #fff; border: 0; padding: 12px 16px; cursor: pointer; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; }
-    button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
-    input, select, textarea { border: 1px solid var(--line); background: var(--paper); padding: 12px; min-width: 180px; font: inherit; }
-    h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 32px; margin: 0 0 8px; }
-    .thumb { width: 48px; height: 48px; object-fit: cover; background: #f3efe8; }
-    .card { background: var(--paper); border: 1px solid var(--line); padding: 16px; margin-top: 16px; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    button, .btn { background: var(--ink); color: #fff; border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: 650; }
+    button.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+    button.nav-btn { display: flex; width: 100%; text-align: left; background: transparent; color: #d6d6e4; border-radius: 8px; padding: 10px 12px; font-weight: 600; }
+    button.nav-btn.active { background: var(--accent); color: #fff; }
+    input, select, textarea { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 10px 12px; min-width: 160px; }
+    .thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; background: #f3f4f6; }
+    .card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-top: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
     th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-    th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-    .muted { color: var(--muted); }
-    .pill { display: inline-block; border: 1px solid var(--line); padding: 2px 8px; font-size: 12px; }
+    th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    .muted { color: var(--muted); font-size: 13px; }
+    .pill { display: inline-block; border-radius: 999px; background: #f3f4f6; padding: 2px 8px; font-size: 12px; font-weight: 650; }
     #gate, #desk { display: none; }
-    .error { color: #8c3a2f; }
+    #gate { min-height: 100vh; place-items: center; padding: 24px; }
+    .login-card { width: min(420px, 100%); background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px; box-shadow: 0 16px 40px rgba(26,26,46,.08); }
+    .login-mark { width: 42px; height: 42px; border-radius: 10px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 800; margin-bottom: 14px; }
+    #loginForm { display: grid; gap: 10px; margin-top: 16px; }
+    #otpForm { display: none; flex-direction: column; gap: 10px; margin-top: 12px; }
+    #loginForm input, #otpForm input { width: 100%; min-width: 0; }
+    .error { color: #9f1239; font-size: 13px; }
+    .app { display: flex; min-height: 100vh; }
+    .side { width: 232px; flex: 0 0 232px; background: var(--ink); color: #fff; padding: 18px 12px; display: flex; flex-direction: column; gap: 16px; }
+    .side-brand { display: flex; gap: 10px; align-items: center; padding: 4px 8px 8px; }
+    .side-brand strong { display: block; font-size: 14px; }
+    .side-brand span { color: #b8b8c9; font-size: 12px; }
+    .side nav { display: grid; gap: 4px; }
+    .side-foot { margin-top: auto; display: grid; gap: 8px; }
+    .side-foot a, .side-foot button { color: #d6d6e4; }
+    .workspace { flex: 1; min-width: 0; padding: 22px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .stat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    .stat b { display: block; font-size: 26px; margin-top: 4px; }
+    .stat span { color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+    .panel { display: none; }
+    .panel.on { display: block; }
+    .table-wrap { overflow: auto; }
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .side { width: 100%; flex-basis: auto; }
+      .side nav { display: flex; overflow: auto; }
+      .side-foot { margin-top: 0; display: flex; }
+      button.nav-btn { width: auto; white-space: nowrap; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .workspace { padding: 14px; }
+    }
   </style>
 </head>
 <body>
-<header>
-  <div>
-    <div class="muted">BuyWishOnline · Shipping Wish LLC</div>
-    <h1>Shop desk</h1>
-  </div>
-  <a href="/">Back to the shop</a>
-</header>
-<main>
-  <section id="gate" class="card">
-    <p>Sign in with a BuyWish admin account. The same sign-in used for Shipping Wish admin applies, including the email code when two-factor authentication is on.</p>
-    <form id="loginForm" class="row">
-      <input id="email" type="email" placeholder="Email" required>
-      <input id="password" type="password" placeholder="Password" required>
-      <button type="submit">Sign in</button>
-    </form>
-    <form id="otpForm" class="row" style="display:none;margin-top:12px;">
-      <input id="otp" inputmode="numeric" placeholder="6-digit code" required>
-      <button type="submit">Confirm code</button>
-    </form>
-    <p id="loginError" class="error"></p>
+  <section id="gate">
+    <div class="login-card">
+      <div class="login-mark">B</div>
+      <h1>BuyWish shop</h1>
+      <p class="muted">Orders, products, and shop settings. Same admin sign-in, including the email code when it is on.</p>
+      <form id="loginForm">
+        <input id="email" type="email" placeholder="Email" required>
+        <input id="password" type="password" placeholder="Password" required>
+        <button type="submit">Sign in</button>
+      </form>
+      <form id="otpForm">
+        <input id="otp" inputmode="numeric" placeholder="6-digit code" required>
+        <button type="submit">Confirm code</button>
+      </form>
+      <p id="loginError" class="error"></p>
+    </div>
   </section>
 
   <section id="desk">
+    <div class="app">
+      <aside class="side">
+        <div class="side-brand">
+          <div class="login-mark">B</div>
+          <div><strong>BuyWishOnline</strong><span>Shop admin</span></div>
+        </div>
+        <nav>
+          <button class="nav-btn active" type="button" data-panel="orders">Orders</button>
+          <button class="nav-btn" type="button" data-panel="products">Products</button>
+          <button class="nav-btn" type="button" data-panel="deals">Deals</button>
+          <button class="nav-btn" type="button" data-panel="settings">Settings</button>
+        </nav>
+        <div class="side-foot">
+          <a href="/">View shop</a>
+          <button class="nav-btn" id="adminLogout" type="button">Sign out</button>
+        </div>
+      </aside>
+      <div class="workspace">
+    <section class="panel on" id="panel-orders">
+      <div class="topbar">
+        <h1>Orders</h1>
+        <button id="refreshBtn" class="ghost" type="button">Refresh</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>All</span><b id="statTotal">0</b></div>
+        <div class="stat"><span>Paid, not in Zendrop</span><b id="statPaid">0</b></div>
+        <div class="stat"><span>Waiting for payment</span><b id="statPending">0</b></div>
+        <div class="stat"><span>Linked in Zendrop</span><b id="statLinked">0</b></div>
+      </div>
+      <div class="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order</th><th>Customer</th><th>Ship to</th><th>Items</th><th>Payment</th><th>Zendrop</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="orders"></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="panel" id="panel-products">
+      <div class="topbar">
+        <h1>Products</h1>
+        <span id="catalogStatus" class="muted"></span>
+      </div>
     <div class="card">
       <div class="row">
         <button id="syncBtn" type="button">Sync winning products</button>
-        <button id="refreshBtn" class="ghost" type="button">Refresh orders</button>
-        <span id="catalogStatus" class="muted"></span>
       </div>
       <p class="muted">Sync keeps a product only when Zendrop quotes shipping to the USA, Canada, and the United Kingdom, and the fastest USA lane is 14 days or fewer. Run it again until the batch is finished. Paid orders are sent to Zendrop only when Zendrop publishes an order-creation tool for this token. Otherwise the order stays here with the customer’s address so it can be placed in the Zendrop dashboard and linked.</p>
       <p id="syncResult"></p>
-      <p class="muted">Facebook and Instagram shop from this file, not from Shopify: <a href="https://www.buywishonline.com/feeds/meta-catalog.csv">buywishonline.com/feeds/meta-catalog.csv</a>. Disconnect the old Shopify catalog in Commerce Manager, then schedule this file once a day. Customers still pay on BuyWishOnline.</p>
-    </div>
-    <div class="card">
-      <h2>Meta Pixel and Google tag</h2>
-      <p class="muted">Google Tag Manager GTM-PD9DZS54 and Analytics G-8Q973SH30G are already on the shop. Paste a Meta Pixel ID here when you have one. The Google box is only for an extra Ads (AW-) ID.</p>
-      <form id="trackingForm" class="row">
-        <input id="metaPixelId" inputmode="numeric" placeholder="Meta Pixel ID" maxlength="20">
-        <input id="googleTagId" placeholder="G- / AW- / GTM-" maxlength="24">
-        <button type="submit">Save tracking</button>
-        <span id="trackingStatus" class="muted"></span>
-      </form>
-    </div>
-    <div class="card">
-      <h2>Social links</h2>
-      <p class="muted">Paste the full https address. The footer icon opens that page. Leave a box empty to hide that icon.</p>
-      <form id="socialForm" class="row">
-        <input id="socialFacebook" type="url" placeholder="Facebook https://www.facebook.com/..." maxlength="300">
-        <input id="socialInstagram" type="url" placeholder="Instagram https://www.instagram.com/..." maxlength="300">
-        <input id="socialTiktok" type="url" placeholder="TikTok https://www.tiktok.com/@..." maxlength="300">
-        <input id="socialX" type="url" placeholder="X https://x.com/..." maxlength="300">
-        <button type="submit">Save social links</button>
-        <span id="socialStatus" class="muted"></span>
-      </form>
     </div>
     <div class="card" id="catalogDesk">
       <h2>Catalog</h2>
@@ -116,6 +164,9 @@
         </table>
       </div>
     </div>
+    </section>
+    <section class="panel" id="panel-deals">
+      <div class="topbar"><h1>Deals</h1></div>
     <div class="card" id="dealsDesk">
       <h2>Deals and margin</h2>
       <p class="muted">If the supplier price is only what you pay, the shop adds your margin before the customer sees it. If the supplier already lists a higher selling price, that price stays. A two-product offer must stay above supplier cost and below the two selling prices added together.</p>
@@ -138,18 +189,39 @@
         </table>
       </div>
     </div>
-    <div class="card" style="overflow:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Order</th><th>Customer</th><th>Ship to</th><th>Items</th><th>Payment</th><th>Zendrop</th><th></th>
-          </tr>
-        </thead>
-        <tbody id="orders"></tbody>
-      </table>
+    </section>
+    <section class="panel" id="panel-settings">
+      <div class="topbar"><h1>Settings</h1></div>
+      <div class="card">
+        <h2>Meta Pixel and Google tag</h2>
+        <p class="muted">Google Tag Manager GTM-PD9DZS54 and Analytics G-8Q973SH30G are already on the shop. Paste a Meta Pixel ID here when you have one. The Google box is only for an extra Ads (AW-) ID.</p>
+        <form id="trackingForm" class="row">
+          <input id="metaPixelId" inputmode="numeric" placeholder="Meta Pixel ID" maxlength="20">
+          <input id="googleTagId" placeholder="G- / AW- / GTM-" maxlength="24">
+          <button type="submit">Save tracking</button>
+          <span id="trackingStatus" class="muted"></span>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Social links</h2>
+        <p class="muted">Paste the full https address. The footer icon opens that page. Leave a box empty to hide that icon.</p>
+        <form id="socialForm" class="row">
+          <input id="socialFacebook" type="url" placeholder="Facebook https://www.facebook.com/..." maxlength="300">
+          <input id="socialInstagram" type="url" placeholder="Instagram https://www.instagram.com/..." maxlength="300">
+          <input id="socialTiktok" type="url" placeholder="TikTok https://www.tiktok.com/@..." maxlength="300">
+          <input id="socialX" type="url" placeholder="X https://x.com/..." maxlength="300">
+          <button type="submit">Save social links</button>
+          <span id="socialStatus" class="muted"></span>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Facebook and Instagram catalog</h2>
+        <p class="muted">The shop file is <a href="https://www.buywishonline.com/feeds/meta-catalog.csv">buywishonline.com/feeds/meta-catalog.csv</a>. Disconnect the old Shopify catalog in Commerce Manager, then schedule this file once a day. Customers still pay on BuyWishOnline.</p>
+      </div>
+    </section>
+      </div>
     </div>
   </section>
-</main>
 <script>
   const tokenKey = 'bwo_admin_token';
   let tempToken = '';
@@ -174,9 +246,14 @@
       return `<option value="${esc(dept.slug)}"${picked}>${esc(dept.title)}</option>`;
     }).join('');
   }
+  function showPanel(name) {
+    document.querySelectorAll('.panel').forEach((panel) => panel.classList.toggle('on', panel.id === 'panel-' + name));
+    document.querySelectorAll('.nav-btn[data-panel]').forEach((button) => button.classList.toggle('active', button.dataset.panel === name));
+  }
   function showDesk() {
     document.getElementById('gate').style.display = 'none';
     document.getElementById('desk').style.display = 'block';
+    showPanel('orders');
     loadCatalog();
     loadDeskCategories();
     loadMargin();
@@ -276,7 +353,7 @@
     if (res.status === 401 || res.status === 403) {
       sessionStorage.removeItem(tokenKey);
       document.getElementById('desk').style.display = 'none';
-      document.getElementById('gate').style.display = 'block';
+      document.getElementById('gate').style.display = 'grid';
     }
   }
   async function hideProduct(id) {
@@ -303,6 +380,22 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
+  function plainStatus(value) {
+    const labels = {
+      paid: 'Paid',
+      pending: 'Waiting for payment',
+      awaiting_payment: 'Waiting for payment',
+      payment_confirmed_pending_supplier: 'Preparing',
+      supplier_order_placed: 'Sent to supplier',
+      shipped: 'Shipped',
+      delivered: 'Delivered',
+      manual_required: 'Place in Zendrop',
+      not_sent: 'Not sent',
+      failed: 'Send failed',
+      sending: 'Sending'
+    };
+    return labels[value] || value || '';
+  }
   function itemText(items) {
     const list = Array.isArray(items) ? items : [];
     return list.map(item => `${item.quantity || 1} × ${esc(item.title || item.product_id)}`).join(', ');
@@ -312,23 +405,28 @@
     if (res.status === 401 || res.status === 403) {
       sessionStorage.removeItem(tokenKey);
       document.getElementById('desk').style.display = 'none';
-      document.getElementById('gate').style.display = 'block';
+      document.getElementById('gate').style.display = 'grid';
       return;
     }
     const data = await res.json();
+    const orders = data.orders || [];
+    document.getElementById('statTotal').textContent = String(orders.length);
+    document.getElementById('statPaid').textContent = String(orders.filter((order) => order.payment_status === 'paid' && !order.zendrop_order_id).length);
+    document.getElementById('statPending').textContent = String(orders.filter((order) => order.payment_status !== 'paid').length);
+    document.getElementById('statLinked').textContent = String(orders.filter((order) => order.zendrop_order_id).length);
     const body = document.getElementById('orders');
-    body.innerHTML = (data.orders || []).map(order => {
+    body.innerHTML = orders.map(order => {
       const ship = [order.shipping_address, order.shipping_city, order.shipping_state, order.shipping_postal, order.shipping_country].filter(Boolean).join(', ');
       const note = order.customer_note ? `<div class="muted">Note: ${esc(order.customer_note)}</div>` : '';
       const zendrop = order.zendrop_order_id
-        ? `<span class="pill">Linked ${order.zendrop_order_id}</span>`
-        : `<span class="pill">${order.zendrop_sync_status || 'not sent'}</span><div class="muted">${order.zendrop_sync_detail || ''}</div>`;
+        ? `<span class="pill">Linked ${esc(order.zendrop_order_id)}</span>`
+        : `<span class="pill">${esc(plainStatus(order.zendrop_sync_status || 'not_sent'))}</span><div class="muted">${esc(order.zendrop_sync_detail || '')}</div>`;
       return `<tr>
         <td><strong>${order.order_number}</strong><div class="muted">${new Date(order.created_at).toLocaleString()}</div></td>
         <td>${esc(order.customer_name)}<div class="muted">${esc(order.customer_email)}</div>${order.customer_phone ? `<div class="muted">${esc(order.customer_phone)}</div>` : ''}</td>
         <td>${esc(ship) || '—'}${note}</td>
         <td>${itemText(order.items)}<div class="muted">${order.currency || 'USD'} ${order.total_amount}</div></td>
-        <td>${order.payment_status}<div class="muted">${order.fulfillment_status}</div></td>
+        <td>${esc(plainStatus(order.payment_status))}<div class="muted">${esc(plainStatus(order.fulfillment_status))}</div></td>
         <td>${zendrop}</td>
         <td>
           ${order.payment_status === 'paid' && !order.zendrop_order_id ? `<button type="button" onclick="pushOrder('${order.order_number}')">Send to Zendrop</button>` : ''}
@@ -511,8 +609,15 @@
     sessionStorage.setItem(tokenKey, data.token);
     showDesk();
   };
+  document.querySelectorAll('.nav-btn[data-panel]').forEach((button) => {
+    button.onclick = () => showPanel(button.dataset.panel);
+  });
+  document.getElementById('adminLogout').onclick = () => {
+    sessionStorage.removeItem(tokenKey);
+    location.reload();
+  };
   if (sessionStorage.getItem(tokenKey)) showDesk();
-  else document.getElementById('gate').style.display = 'block';
+  else document.getElementById('gate').style.display = 'grid';
 </script>
 </body>
 </html>
