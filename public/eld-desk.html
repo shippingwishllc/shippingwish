@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ELD Desk — Connect Motive / Samsara / Geotab | Shipping Wish</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/design-system.css?v=7">
+  <style>
+    .cd-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+    .cd-card { background:var(--bg-card); border:1px solid var(--border-default); border-radius:16px; padding:18px 20px; box-shadow:0 1px 2px rgba(15,23,42,.05); }
+    .cd-card h3 { margin:0 0 4px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-help { margin:0 0 12px; font-size:12px; color:var(--text-secondary); line-height:1.45; }
+    .cd-hero { grid-column:span 12; display:flex; justify-content:space-between; gap:20px; align-items:center; flex-wrap:wrap; background:linear-gradient(120deg,#0f172a 0%,#1e3a5f 58%,#1d4ed8 100%); color:#fff; border:0; }
+    .cd-hero h2 { margin:0 0 6px; font-size:22px; font-weight:800; letter-spacing:-.02em; }
+    .cd-hero p { margin:0; max-width:720px; font-size:13px; line-height:1.5; color:#cbd5e1; }
+    .cd-kpi { padding:16px 18px; }
+    .cd-kpi .n { font-size:28px; font-weight:800; letter-spacing:-.03em; color:var(--text-primary); }
+    .cd-kpi .l { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-kpi .s { margin-top:6px; font-size:12px; color:var(--text-secondary); }
+    .prov-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .prov { appearance:none; border:1.5px solid var(--border-default); background:#fff; border-radius:12px; padding:14px 12px; text-align:left; cursor:pointer; font:inherit; }
+    .prov strong { display:block; font-size:14px; font-weight:800; color:var(--text-primary); }
+    .prov span { display:block; font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.4; }
+    .prov.is-on { border-color:#0f172a; background:#0f172a; }
+    .prov.is-on strong, .prov.is-on span { color:#fff; }
+    .cd-toggle { display:flex; align-items:flex-start; gap:10px; font-size:13px; line-height:1.4; }
+    .cd-toggle input { width:18px; height:18px; accent-color:#0f172a; margin-top:2px; }
+    .cd-compact td, .cd-compact th { padding:8px 10px; font-size:12px; vertical-align:middle; }
+    .eld-map { width:100%; min-height:280px; border:0; border-radius:12px; background:#e2e8f0; }
+    .eld-empty { font-size:13px; color:var(--text-muted); padding:24px; text-align:center; }
+    .badge-src { font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+    @media (max-width: 980px) {
+      .cd-grid { grid-template-columns:1fr; }
+      .cd-hero, .cd-card, .cd-kpi { grid-column:auto !important; }
+      .prov-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">ELD Desk</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Connect the carrier’s existing ELD. Public shippingwish.com theme is unchanged.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="live-status"><span class="live-dot"></span> Official APIs only</div>
+        <div id="notif-container"></div>
+      </div>
+    </header>
+    <main class="app-content">
+      <div class="cd-grid">
+        <section class="cd-card cd-hero">
+          <div>
+            <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fbbf24;margin-bottom:8px;">How Motive-style ELD works here</div>
+            <h2>Connect Motive, Samsara, or Geotab. Do not clone hardware.</h2>
+            <p>Motive is a registered ELD company. Shipping Wish is dispatch. The legal path is the same as other TMS tools: the fleet admin signs in to their own ELD account, grants consent, and we read GPS + HOS from the official API. We do not scrape ELD portals, do not sell a competing device, and do not invent truck locations.</p>
+          </div>
+          <a href="https://developer.gomotive.com" target="_blank" rel="noopener" class="btn btn-primary" style="background:#f59e0b;color:#0f172a;font-weight:800;padding:12px 18px;border:0;">Motive API docs</a>
+        </section>
+
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Connections</div>
+          <div class="n" id="kpi-conn">0</div>
+          <div class="s">Carrier-consent ELD accounts</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Vehicles</div>
+          <div class="n" id="kpi-veh">0</div>
+          <div class="s">From the connected ELD</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">With GPS</div>
+          <div class="n" id="kpi-gps">0</div>
+          <div class="s">Only real last-known pings</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Drivers / HOS</div>
+          <div class="n" id="kpi-drv">0</div>
+          <div class="s">Clocks from the ELD, if the API sends them</div>
+        </article>
+
+        <section class="cd-card" style="grid-column:span 5;">
+          <h3>1. Pick the ELD the carrier already uses</h3>
+          <p class="cd-help" id="prov-help">OAuth needs a Shipping Wish app in that vendor’s developer portal. API key uses the carrier’s own key from their fleet dashboard.</p>
+          <div class="prov-grid" id="prov-grid"></div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 7;">
+          <h3>2. Fleet-admin consent, then connect</h3>
+          <p class="cd-help">The key or password is encrypted at rest. Geotab password is used once for a session and is not stored. Never paste a login password into git or chat.</p>
+          <div id="connect-fields"></div>
+          <label class="cd-toggle" style="margin:12px 0;">
+            <input type="checkbox" id="eld-consent">
+            <span>I am the fleet admin (or they authorized me). Shipping Wish may read vehicles, GPS, and HOS from this ELD account. HOS edits still require the driver on the ELD. This is not a Motive partnership and not an FMCSA-certified Shipping Wish device.</span>
+          </label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" id="btn-oauth">Connect with OAuth</button>
+            <button type="button" class="btn btn-secondary" id="btn-key">Connect with API key / Geotab</button>
+          </div>
+          <p class="cd-help" id="eld-msg" style="margin:10px 0 0;"></p>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 12;">
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+            <div>
+              <h3 style="margin:0;">Connected accounts</h3>
+              <p class="cd-help" style="margin:4px 0 0;">Sync pulls vehicles and HOS from the official API. Disconnect removes the tokens from Shipping Wish.</p>
+            </div>
+          </div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2 cd-compact">
+              <thead>
+                <tr>
+                  <th>Provider</th>
+                  <th>Account</th>
+                  <th>Status</th>
+                  <th>Last sync</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="conn-body"><tr><td colspan="5" class="eld-empty">No ELD connected yet.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 7;">
+          <h3>Live map (real GPS only)</h3>
+          <p class="cd-help">Empty until a connected ELD reports a last location. No simulated Chicago / Dallas trucks.</p>
+          <iframe class="eld-map" id="eld-map" title="ELD vehicle map" hidden></iframe>
+          <div class="eld-empty" id="map-empty">No GPS yet. Connect an ELD or have a driver send a real ping from the driver app.</div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 5;">
+          <h3>Software logbook</h3>
+          <p class="cd-help">If the carrier has no ELD API yet, drivers can still set duty status from the driver app using the phone GPS. That is a staff logbook, not a registered ELD.</p>
+          <div id="logbook-clocks" class="eld-empty">Sign in as a driver on Driver phone app to set OFF / SB / D / ON with a real location.</div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 12;">
+          <h3>Vehicles &amp; HOS from the ELD</h3>
+          <p class="cd-help" id="veh-meta">After a successful connect, trucks and remaining drive / shift / cycle hours show here.</p>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2 cd-compact">
+              <thead>
+                <tr>
+                  <th>Unit</th>
+                  <th>VIN</th>
+                  <th>Location</th>
+                  <th>Driver / duty</th>
+                  <th>11h</th>
+                  <th>14h</th>
+                  <th>70h</th>
+                </tr>
+              </thead>
+              <tbody id="veh-body"><tr><td colspan="7" class="eld-empty">Nothing synced yet.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/notifications-bell.js"></script>
+<script src="/js/app-shell.js"></script>
+<script>
+(function () {
+  let providers = [];
+  let selected = 'motive';
+  let desk = { connections: [], vehicles: [], drivers: [], with_gps: [] };
+
+  function api(path, opts) {
+    return fetch(path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, opts || {}));
+  }
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  }
+  function setMsg(text, bad) {
+    const el = document.getElementById('eld-msg');
+    el.textContent = text || '';
+    el.style.color = bad ? '#b91c1c' : '#166534';
+  }
+  function osmUrl(points) {
+    const usable = (points || []).filter((p) => Number.isFinite(p.gps_lat) && Number.isFinite(p.gps_lon));
+    if (!usable.length) return '';
+    const lats = usable.map((p) => p.gps_lat);
+    const lngs = usable.map((p) => p.gps_lon);
+    const pad = usable.length > 1 ? 0.08 : 0.03;
+    const marker = usable[0].gps_lat + ',' + usable[0].gps_lon;
+    return 'https://www.openstreetmap.org/export/embed.html?bbox=' +
+      (Math.min.apply(null, lngs) - pad) + ',' + (Math.min.apply(null, lats) - pad) + ',' +
+      (Math.max.apply(null, lngs) + pad) + ',' + (Math.max.apply(null, lats) + pad) +
+      '&layer=mapnik&marker=' + encodeURIComponent(marker);
+  }
+
+  function renderProviders() {
+    const grid = document.getElementById('prov-grid');
+    grid.innerHTML = providers.map((p) => {
+      const on = p.key === selected ? ' is-on' : '';
+      const oauth = p.oauthReady ? 'OAuth app is configured.' : 'OAuth app not on this server yet — use the carrier API key.';
+      return '<button type="button" class="prov' + on + '" data-key="' + p.key + '"><strong>' + esc(p.name) +
+        (p.formerName ? ' <span style="font-weight:600;opacity:.8">(' + esc(p.formerName) + ')</span>' : '') +
+        '</strong><span>' + esc(p.note) + ' ' + oauth + '</span></button>';
+    }).join('');
+    renderFields();
+  }
+
+  function spec() {
+    return providers.find((p) => p.key === selected) || { key: selected, authModes: [] };
+  }
+
+  function renderFields() {
+    const p = spec();
+    const box = document.getElementById('connect-fields');
+    if (p.key === 'geotab') {
+      box.innerHTML =
+        '<div class="cd-grid" style="grid-template-columns:1fr 1fr;gap:10px;">' +
+        '<div><label class="form-label" for="geo-db">MyGeotab database</label><input class="form-input" id="geo-db" autocomplete="off"></div>' +
+        '<div><label class="form-label" for="geo-server">Server</label><input class="form-input" id="geo-server" value="my.geotab.com" autocomplete="off"></div>' +
+        '<div><label class="form-label" for="geo-user">Username</label><input class="form-input" id="geo-user" autocomplete="username"></div>' +
+        '<div><label class="form-label" for="geo-pass">Password (used once, not stored)</label><input class="form-input" id="geo-pass" type="password" autocomplete="current-password"></div>' +
+        '</div>';
+      document.getElementById('btn-oauth').disabled = true;
+      document.getElementById('btn-key').textContent = 'Connect MyGeotab session';
+      return;
+    }
+    box.innerHTML =
+      '<label class="form-label" for="eld-key">API key from the carrier’s ' + esc(p.name) + ' dashboard</label>' +
+      '<input class="form-input" id="eld-key" type="password" autocomplete="off" placeholder="Paste key — never a website password">';
+    document.getElementById('btn-oauth').disabled = false;
+    document.getElementById('btn-key').textContent = 'Connect with API key';
+  }
+
+  function dutyBadge(status) {
+    const s = String(status || 'OFF_DUTY');
+    if (s === 'DRIVING') return '<span class="badge badge-success">Driving</span>';
+    if (s === 'ON_DUTY_NOT_DRIVING') return '<span class="badge badge-warning">On duty</span>';
+    if (s === 'SLEEPER_BERTH') return '<span class="badge badge-primary">Sleeper</span>';
+    return '<span class="badge">Off duty</span>';
+  }
+
+  function renderDesk() {
+    document.getElementById('kpi-conn').textContent = String((desk.connections || []).length);
+    document.getElementById('kpi-veh').textContent = String((desk.vehicles || []).length);
+    document.getElementById('kpi-gps').textContent = String((desk.with_gps || []).length);
+    document.getElementById('kpi-drv').textContent = String((desk.drivers || []).length);
+
+    const cbody = document.getElementById('conn-body');
+    if (!desk.connections.length) {
+      cbody.innerHTML = '<tr><td colspan="5" class="eld-empty">No ELD connected yet.</td></tr>';
+    } else {
+      cbody.innerHTML = desk.connections.map((c) =>
+        '<tr><td class="badge-src">' + esc(c.provider) + '</td><td>' + esc(c.account_label || '—') +
+        '</td><td>' + esc(c.status) + (c.last_error ? '<div style="color:#b91c1c;font-size:11px;">' + esc(c.last_error) + '</div>' : '') +
+        '</td><td>' + esc(c.last_sync_at ? new Date(c.last_sync_at).toLocaleString() : 'Never') +
+        '</td><td style="text-align:right;white-space:nowrap;">' +
+        '<button type="button" class="btn btn-secondary btn-sm" data-sync="' + c.id + '">Sync</button> ' +
+        '<button type="button" class="btn btn-light btn-sm" data-off="' + c.id + '">Disconnect</button></td></tr>'
+      ).join('');
+    }
+
+    const gps = desk.with_gps || [];
+    const map = document.getElementById('eld-map');
+    const empty = document.getElementById('map-empty');
+    const url = osmUrl(gps);
+    if (url) {
+      map.src = url;
+      map.hidden = false;
+      empty.style.display = 'none';
+    } else {
+      map.removeAttribute('src');
+      map.hidden = true;
+      empty.style.display = 'block';
+    }
+
+    const driversByVehicle = {};
+    (desk.drivers || []).forEach((d) => {
+      if (d.vehicle_external_id) driversByVehicle[d.vehicle_external_id] = d;
+    });
+    const vbody = document.getElementById('veh-body');
+    const rows = [];
+    (desk.vehicles || []).forEach((v) => {
+      const d = driversByVehicle[v.external_id];
+      rows.push('<tr><td><strong>' + esc(v.name) + '</strong><div style="font-size:11px;color:var(--text-muted);">' + esc(v.provider) + '</div></td><td>' +
+        esc(v.vin || '—') + '</td><td>' + esc(v.location_name || (v.gps_lat != null ? v.gps_lat.toFixed(4) + ', ' + v.gps_lon.toFixed(4) : 'No GPS yet')) +
+        '</td><td>' + (d ? esc(d.name) + ' ' + dutyBadge(d.duty_status) : '—') +
+        '</td><td>' + esc(d ? d.driving_remaining : '—') + '</td><td>' + esc(d ? d.shift_remaining : '—') +
+        '</td><td>' + esc(d ? d.cycle_remaining : '—') + '</td></tr>');
+    });
+    (desk.drivers || []).filter((d) => !d.vehicle_external_id).forEach((d) => {
+      rows.push('<tr><td>—</td><td>—</td><td>' + esc(d.gps_lat != null ? d.gps_lat + ', ' + d.gps_lon : '—') +
+        '</td><td>' + esc(d.name) + ' ' + dutyBadge(d.duty_status) + '</td><td>' + esc(d.driving_remaining) +
+        '</td><td>' + esc(d.shift_remaining) + '</td><td>' + esc(d.cycle_remaining) + '</td></tr>');
+    });
+    vbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="7" class="eld-empty">Nothing synced yet.</td></tr>';
+  }
+
+  async function loadAll() {
+    const [pRes, dRes] = await Promise.all([
+      api('/api/eld-connect/providers'),
+      api('/api/eld-connect/desk')
+    ]);
+    if (pRes.status === 401 || dRes.status === 401) { window.location.href = '/login'; return; }
+    const pJson = await pRes.json();
+    const dJson = await dRes.json();
+    providers = pJson.providers || [];
+    desk = dJson;
+    if (!providers.length) {
+      providers = [
+        { key: 'motive', name: 'Motive', formerName: 'KeepTruckin', authModes: ['oauth', 'api_key'], note: 'Official Motive API.' },
+        { key: 'samsara', name: 'Samsara', authModes: ['oauth', 'api_key'], note: 'Official Samsara API.' },
+        { key: 'geotab', name: 'Geotab', authModes: ['session'], note: 'MyGeotab session.' }
+      ];
+    }
+    renderProviders();
+    renderDesk();
+  }
+
+  document.getElementById('prov-grid').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-key]');
+    if (!btn) return;
+    selected = btn.getAttribute('data-key');
+    renderProviders();
+  });
+
+  document.getElementById('btn-oauth').addEventListener('click', async () => {
+    if (!document.getElementById('eld-consent').checked) return setMsg('Check the fleet-admin consent box first.', true);
+    setMsg('Opening official ' + selected + ' consent screen…');
+    const res = await api('/api/eld-connect/oauth/' + selected + '/start', {
+      method: 'POST',
+      body: JSON.stringify({ consent: true })
+    });
+    const json = await res.json();
+    if (!res.ok) return setMsg(json.error || 'OAuth is not ready.', true);
+    window.location = json.url;
+  });
+
+  document.getElementById('btn-key').addEventListener('click', async () => {
+    if (!document.getElementById('eld-consent').checked) return setMsg('Check the fleet-admin consent box first.', true);
+    const body = { provider: selected, consent: true };
+    if (selected === 'geotab') {
+      body.geotab_database = (document.getElementById('geo-db') || {}).value;
+      body.geotab_server = (document.getElementById('geo-server') || {}).value;
+      body.geotab_username = (document.getElementById('geo-user') || {}).value;
+      body.geotab_password = (document.getElementById('geo-pass') || {}).value;
+    } else {
+      body.api_key = (document.getElementById('eld-key') || {}).value;
+    }
+    setMsg('Connecting to the official API…');
+    const res = await api('/api/eld-connect/api-key', { method: 'POST', body: JSON.stringify(body) });
+    const json = await res.json();
+    if (document.getElementById('eld-key')) document.getElementById('eld-key').value = '';
+    if (document.getElementById('geo-pass')) document.getElementById('geo-pass').value = '';
+    if (!res.ok) return setMsg(json.error || 'Connect failed.', true);
+    setMsg('Connected. Vehicles: ' + (json.synced && json.synced.vehicles) + ', drivers: ' + (json.synced && json.synced.drivers) + '.');
+    await loadAll();
+  });
+
+  document.getElementById('conn-body').addEventListener('click', async (e) => {
+    const sync = e.target.closest('[data-sync]');
+    const off = e.target.closest('[data-off]');
+    if (sync) {
+      const res = await api('/api/eld-connect/connections/' + sync.getAttribute('data-sync') + '/sync', { method: 'POST', body: '{}' });
+      const json = await res.json();
+      if (!res.ok) return setMsg(json.error || 'Sync failed.', true);
+      setMsg('Synced.');
+      await loadAll();
+    }
+    if (off) {
+      const res = await api('/api/eld-connect/connections/' + off.getAttribute('data-off') + '/disconnect', { method: 'POST', body: '{}' });
+      if (!res.ok) return setMsg('Could not disconnect.', true);
+      setMsg('Disconnected.');
+      await loadAll();
+    }
+  });
+
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('connected')) setMsg('Connected ' + qs.get('connected') + '.');
+  if (qs.get('error')) setMsg(qs.get('error'), true);
+  loadAll().catch(() => setMsg('Could not load ELD desk.', true));
+})();
+</script>
+</body>
+</html>

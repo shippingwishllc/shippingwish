@@ -311,10 +311,74 @@
       .replace(/"/g, '&quot;');
   }
 
+  async function loadHosClocks() {
+    try {
+      const res = await fetch('/api/eld/me', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if ($('hos-11')) $('hos-11').textContent = data.clocks?.driving_11h?.remaining_formatted || '—';
+      if ($('hos-14')) $('hos-14').textContent = data.clocks?.shift_14h?.remaining_formatted || '—';
+      if ($('hos-70')) $('hos-70').textContent = data.clocks?.cycle_70h?.remaining_formatted || '—';
+      if ($('eld-duty-badge')) $('eld-duty-badge').textContent = (data.current_status || 'OFF_DUTY').replace(/_/g, ' ');
+      if ($('hos-src')) $('hos-src').textContent = 'Logbook';
+      document.querySelectorAll('[data-duty]').forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-duty') === data.current_status);
+      });
+    } catch (_) { /* optional */ }
+  }
+
+  function readPhoneGps() {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve({});
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({
+          gps_lat: pos.coords.latitude,
+          gps_lon: pos.coords.longitude
+        }),
+        () => resolve({}),
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    });
+  }
+
+  async function setDutyStatus(duty_status) {
+    const msg = $('eld-duty-msg');
+    if (msg) msg.textContent = 'Saving duty status…';
+    const geo = await readPhoneGps();
+    try {
+      const res = await fetch('/api/eld/status-change', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ duty_status }, geo))
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (msg) msg.textContent = data.error || 'Could not save duty status.';
+        return;
+      }
+      if (msg) {
+        msg.textContent = geo.gps_lat
+          ? `Saved ${duty_status.replace(/_/g, ' ')} at ${geo.gps_lat.toFixed(4)}, ${geo.gps_lon.toFixed(4)}.`
+          : `Saved ${duty_status.replace(/_/g, ' ')} without GPS (location permission off).`;
+      }
+      await loadHosClocks();
+    } catch (_) {
+      if (msg) msg.textContent = 'Network error saving duty status.';
+    }
+  }
+
   async function initDriverApp() {
     await checkDriverAuth();
     await loadActiveDriverLoad();
+    await loadHosClocks();
   }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-duty]');
+    if (!btn) return;
+    setDutyStatus(btn.getAttribute('data-duty'));
+  });
 
   window.pickDriverLoad = pickDriverLoad;
   window.setTripStatus = setTripStatus;

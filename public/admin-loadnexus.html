@@ -877,7 +877,7 @@
               <span>🚨</span> FMCSA DOT Roadside Inspection Compliance Mode
             </h4>
             <p style="font-size:11.5px;color:var(--text-muted);margin:0;">
-              Certified under 49 CFR Part 395 Subpart B. Instant electronic transfer &amp; printable inspection daily log sheet.
+              Software logbook clocks plus any Motive / Samsara / Geotab account connected on <a href="/eld-desk">ELD Desk</a>. Not a registered Shipping Wish ELD device.
             </p>
           </div>
           <div style="display:flex;gap:10px;">
@@ -7084,7 +7084,7 @@
     } catch (e) {
       console.warn('ELD fleet error:', e);
     }
-    renderEldFleetDesk(FALLBACK_ELD);
+    renderEldFleetDesk([]);
   }
 
   function renderEldFleetDesk(drivers) {
