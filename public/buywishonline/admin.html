@@ -76,6 +76,18 @@
         <span id="trackingStatus" class="muted"></span>
       </form>
     </div>
+    <div class="card">
+      <h2>Social links</h2>
+      <p class="muted">Paste the full https address. The footer icon opens that page. Leave a box empty to hide that icon.</p>
+      <form id="socialForm" class="row">
+        <input id="socialFacebook" type="url" placeholder="Facebook https://www.facebook.com/..." maxlength="300">
+        <input id="socialInstagram" type="url" placeholder="Instagram https://www.instagram.com/..." maxlength="300">
+        <input id="socialTiktok" type="url" placeholder="TikTok https://www.tiktok.com/@..." maxlength="300">
+        <input id="socialX" type="url" placeholder="X https://x.com/..." maxlength="300">
+        <button type="submit">Save social links</button>
+        <span id="socialStatus" class="muted"></span>
+      </form>
+    </div>
     <div class="card" id="catalogDesk">
       <h2>Catalog</h2>
       <p class="muted">Create a category, add a product by its numeric supplier ID, move a product into another category, or remove it from the shop. Built-in categories stay in place. A removed product stays hidden until you add that same ID again.</p>
@@ -169,8 +181,18 @@
     loadDeskCategories();
     loadMargin();
     loadTracking();
+    loadSocial();
     loadDeals();
     loadOrders();
+  }
+  async function loadSocial() {
+    const res = await fetch('/api/buywish/admin/settings', { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok || !data.social) return;
+    document.getElementById('socialFacebook').value = data.social.facebook || '';
+    document.getElementById('socialInstagram').value = data.social.instagram || '';
+    document.getElementById('socialTiktok').value = data.social.tiktok || '';
+    document.getElementById('socialX').value = data.social.x || '';
   }
   async function loadTracking() {
     const res = await fetch('/api/buywish/admin/settings', { headers: authHeaders() });
@@ -351,6 +373,21 @@
   };
   document.getElementById('refreshBtn').onclick = loadOrders;
   document.getElementById('loadDeskProductsBtn').onclick = loadDeskProducts;
+  document.getElementById('socialForm').onsubmit = async (event) => {
+    event.preventDefault();
+    const res = await fetch('/api/buywish/admin/settings/social', {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        facebook: document.getElementById('socialFacebook').value,
+        instagram: document.getElementById('socialInstagram').value,
+        tiktok: document.getElementById('socialTiktok').value,
+        x: document.getElementById('socialX').value
+      })
+    });
+    const data = await res.json();
+    document.getElementById('socialStatus').textContent = data.error || 'Social links saved. They show on the shop within a minute.';
+  };
   document.getElementById('trackingForm').onsubmit = async (event) => {
     event.preventDefault();
     const res = await fetch('/api/buywish/admin/settings/tracking', {
