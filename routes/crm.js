@@ -3,9 +3,11 @@ const router = express.Router();
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { searchFmcsa } = require('../utils/fmcsa');
+const { normalizeEquipmentKeys } = require('../utils/fmcsa-equipment');
 const { sanitizeEmail, emailValidationError } = require('../utils/email-valid');
 const { ensureCrmLeadsTable } = require('../utils/ensure-growth-schema');
 const { ensureSmsMessagesTable } = require('../utils/sms-inbox');
+const outreach = require('../utils/crm-outreach');
 
 // Security: CRM is strictly an internal company operations tool — Carriers & Drivers are Forbidden
 router.use(requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep'));
@@ -93,14 +95,20 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
 
     const {
       states = ['TX', 'FL', 'GA', 'IL', 'CA'],
-      equipment_types = ['53ft Dry Van', 'Reefer', 'Flatbed', 'Box Truck'],
+      equipment_types = ['dry_van'],
       limit = 10,
       send_email = true,
-      send_sms = false
+      send_sms = false,
+      send_vapi = false,
+      consent_confirmed = false
     } = req.body;
 
     const maxLimit = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
     const targetStates = Array.isArray(states) && states.length ? states : ['TX', 'FL', 'GA', 'IL', 'CA'];
+    const equipmentKeys = normalizeEquipmentKeys(equipment_types).length
+      ? normalizeEquipmentKeys(equipment_types)
+      : ['dry_van'];
+    await outreach.ensureSmsOptInColumn();
 
     // Pre-load all existing leads into in-memory Sets for ultra-fast deduplication
     const existingRows = await pool.query(`
@@ -130,7 +138,17 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
 
         let fmcsaRes;
         try {
-          fmcsaRes = await searchFmcsa(stateCode, { mode: 'state', offset: pageOffset });
+          fmcsaRes = await searchFmcsa(stateCode, {
+            mode: 'state',
+            offset: pageOffset,
+            equipment: equipmentKeys,
+            exclusive: true,
+            activeOnly: true,
+            forHire: true,
+            excludePassengers: true,
+            hasPhone: true,
+            limit: 35
+          });
         } catch (err) {
           console.warn(`FMCSA search for state ${stateCode} offset ${pageOffset} failed:`, err.message);
           break;
@@ -207,16 +225,24 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
             } catch {}
           }
 
-          // Map equipment type to standard target freight equipment
-          let matchedEquip = '53ft Dry Van';
-          if (cargoDesc.includes('reefer') || cargoDesc.includes('cold') || cargoDesc.includes('frozen') || compName.includes('reefer')) {
+          const matchedKeys = normalizeEquipmentKeys(c.equipment_type || cargoDesc);
+          if (equipmentKeys.length && matchedKeys.length && !matchedKeys.some((k) => equipmentKeys.includes(k))) {
+            excludedBanned++;
+            continue;
+          }
+          let matchedEquip = 'Dry Van';
+          if (matchedKeys.includes('reefer') || cargoDesc.includes('reefer') || cargoDesc.includes('cold') || cargoDesc.includes('frozen')) {
             matchedEquip = 'Reefer';
-          } else if (cargoDesc.includes('flatbed') || cargoDesc.includes('step') || cargoDesc.includes('heavy') || compName.includes('flatbed')) {
+          } else if (matchedKeys.includes('flatbed') || cargoDesc.includes('flatbed')) {
             matchedEquip = 'Flatbed';
-          } else if (cargoDesc.includes('box') || compName.includes('box') || compName.includes('expedit')) {
+          } else if (matchedKeys.includes('tanker')) {
+            matchedEquip = 'Tanker';
+          } else if (matchedKeys.includes('hopper')) {
+            matchedEquip = 'Hopper';
+          } else if (cargoDesc.includes('box') || compName.includes('box')) {
             matchedEquip = 'Box Truck';
-          } else if (cargoDesc.includes('power') || compName.includes('power')) {
-            matchedEquip = 'Power Only';
+          } else if (matchedKeys[0]) {
+            matchedEquip = matchedKeys[0].replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
           }
 
           // AI Personalized Outreach Copy
@@ -271,6 +297,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
           const leadItem = {
             id: newLead.id,
             company_name: newLead.company_name,
+            owner_name: ownerName,
             mc_number: newLead.mc_number,
             dot_number: newLead.dot_number,
             state: stateName,
@@ -279,6 +306,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
             email: newLead.email,
             email_sent: false,
             sms_sent: false,
+            vapi_sent: false,
             raw_email: cleanEmail,
             raw_phone: cleanPhone,
             email_subject: emailSubject,
@@ -293,87 +321,78 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       }
     }
 
-    // Dispatch all email and SMS messages concurrently in parallel with timeout safeguards
     let emailsSent = 0;
     let smsSent = 0;
+    let vapiSent = 0;
+    const skippedOutreach = [];
 
-    const outreachPromises = pendingOutreach.map(async (leadItem) => {
-      const ops = [];
+    for (const leadItem of pendingOutreach) {
+      const leadRow = {
+        id: leadItem.id,
+        company_name: leadItem.company_name,
+        owner_name: leadItem.owner_name || 'Fleet Manager',
+        email: leadItem.raw_email,
+        phone: leadItem.raw_phone,
+        phy_state: leadItem.state,
+        equipment_type: leadItem.equipment_type
+      };
 
-      // Email dispatch
       if (send_email && leadItem.raw_email) {
-        ops.push((async () => {
-          try {
-            const { sendBrandedEmail } = require('../utils/mailer');
-            await Promise.race([
-              sendBrandedEmail({
-                to: leadItem.raw_email,
-                subject: leadItem.email_subject,
-                text: leadItem.email_text,
-                html: leadItem.email_html,
-                leadId: leadItem.id,
-                sentBy: req.user ? req.user.id : null,
-                emailType: 'ai_prospecting'
-              }),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 2500))
-            ]);
+        try {
+          const result = await Promise.race([
+            outreach.sendLeadEmail(leadRow, req.user, 'dedicated_manager'),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 12000))
+          ]);
+          if (result && result.ok) {
             leadItem.email_sent = true;
-            emailsSent++;
-          } catch (eErr) {
-            console.warn('AI Campaign email error:', eErr.message);
+            emailsSent += 1;
+          } else {
+            skippedOutreach.push({ id: leadItem.id, channel: 'email', reason: (result && result.reason) || 'Email skipped' });
           }
-        })());
+        } catch (eErr) {
+          skippedOutreach.push({ id: leadItem.id, channel: 'email', reason: eErr.message });
+        }
+      } else if (send_email) {
+        skippedOutreach.push({ id: leadItem.id, channel: 'email', reason: 'No email on FMCSA record' });
       }
 
-      // SMS dispatch — TCPA: only numbers that already consented on our dispatch desk
       if (send_sms && leadItem.raw_phone) {
-        ops.push((async () => {
-          try {
-            const { phoneTail, isPhoneOptedOut, logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
-            const { isWithinTcpaHours } = require('../utils/us-timezones');
-            const tail = phoneTail(leadItem.raw_phone);
-            if (!tail || await isPhoneOptedOut(leadItem.raw_phone)) return;
-            const consented = await pool.query(
-              `SELECT id FROM ai_dispatch_carriers
-               WHERE sms_consent = TRUE
-                 AND right(regexp_replace(coalesce(phone,''), '[^0-9]', '', 'g'), 10) = $1
-               LIMIT 1`,
-              [tail]
-            ).catch(() => ({ rows: [] }));
-            if (!consented.rows.length) return;
-            if (!isWithinTcpaHours(leadItem.raw_phone, leadItem.state).allowed) return;
-            const { sendTwilioSms } = require('./voip');
-            const smsRes = await Promise.race([
-              sendTwilioSms(leadItem.raw_phone, leadItem.sms_text),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 2500))
-            ]);
-            if (smsRes && (smsRes.status === 'sent' || smsRes.status === 'logged')) {
-              leadItem.sms_sent = true;
-              smsSent++;
-              await logSmsMessage({
-                direction: 'outbound',
-                from_number: OUR_NUMBER,
-                to_number: leadItem.raw_phone,
-                body: smsRes.body || leadItem.sms_text,
-                lead_id: leadItem.id,
-                sent_by: req.user ? req.user.id : null,
-                twilio_sid: smsRes.sid,
-                disposition: smsRes.status,
-                is_read: true
-              }).catch(() => {});
-            }
-          } catch (sErr) {
-            console.warn('AI Campaign SMS error:', sErr.message);
+        try {
+          const result = await outreach.sendLeadSms(leadRow, req.user, {
+            consentConfirmed: consent_confirmed === true,
+            customMessage: leadItem.sms_text
+          });
+          if (result && result.ok) {
+            leadItem.sms_sent = true;
+            smsSent += 1;
+          } else {
+            skippedOutreach.push({ id: leadItem.id, channel: 'sms', reason: (result && result.reason) || 'SMS skipped' });
           }
-        })());
+        } catch (sErr) {
+          skippedOutreach.push({ id: leadItem.id, channel: 'sms', reason: sErr.message });
+        }
       }
 
-      await Promise.allSettled(ops);
-    });
+      if (send_vapi && leadItem.raw_phone) {
+        try {
+          const result = await outreach.sendLeadVapi(leadRow, req.user, {
+            consentConfirmed: consent_confirmed === true
+          });
+          if (result && result.ok && !result.logged_only) {
+            leadItem.vapi_sent = true;
+            vapiSent += 1;
+          } else if (result && result.logged_only) {
+            leadItem.vapi_standby = true;
+            skippedOutreach.push({ id: leadItem.id, channel: 'vapi', reason: result.message });
+          } else {
+            skippedOutreach.push({ id: leadItem.id, channel: 'vapi', reason: (result && result.reason) || 'Vapi skipped' });
+          }
+        } catch (vErr) {
+          skippedOutreach.push({ id: leadItem.id, channel: 'vapi', reason: vErr.message });
+        }
+      }
+    }
 
-    await Promise.allSettled(outreachPromises);
-
-    // Clean up internal properties before responding
     const clientLeads = importedLeads.map(({ raw_email, raw_phone, email_subject, email_text, email_html, sms_text, ...rest }) => rest);
 
     res.json({
@@ -382,8 +401,11 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       imported: clientLeads.length,
       emails_sent: emailsSent,
       sms_sent: smsSent,
+      vapi_sent: vapiSent,
       skipped_duplicates: skippedDuplicates,
       filtered_out: excludedBanned,
+      skipped_outreach: skippedOutreach,
+      equipment: equipmentKeys,
       leads: clientLeads
     });
   } catch (err) {
@@ -393,11 +415,49 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
 });
 
 
+// POST /api/crm/leads/bulk-outreach — select rows, then email / SMS / Vapi / packet / click-to-call
+router.post('/leads/bulk-outreach', requireAuth, async (req, res) => {
+  const leadIds = req.body.lead_ids || req.body.ids || [];
+  const channel = String(req.body.channel || '').trim().toLowerCase();
+  const allowed = ['email', 'sms', 'vapi', 'voip', 'packet'];
+  if (!allowed.includes(channel)) {
+    return res.status(400).json({ error: 'channel must be email, sms, vapi, voip, or packet.' });
+  }
+  try {
+    await ensureCrmLeadsTable().catch(() => {});
+    const result = await outreach.bulkOutreach({
+      leadIds,
+      channel,
+      user: req.user,
+      consentConfirmed: req.body.consent_confirmed === true,
+      customMessage: req.body.custom_message || req.body.message || '',
+      templateKey: req.body.template_key || 'dedicated_manager'
+    });
+    if (!result.ok && result.error) return res.status(400).json({ error: result.error });
+    res.json(result);
+  } catch (err) {
+    console.error('CRM bulk outreach:', err);
+    res.status(500).json({ error: err.message || 'Could not send.' });
+  }
+});
+
+router.patch('/leads/:id/consent', requireAuth, async (req, res) => {
+  try {
+    const leadId = parseInt(req.params.id, 10);
+    if (!leadId) return res.status(400).json({ error: 'Invalid lead id' });
+    await outreach.recordPriorConsent(leadId);
+    res.json({ ok: true, message: 'Consent recorded for this lead. SMS and Vapi can now go to that number.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not record consent.' });
+  }
+});
+
 // GET /api/crm/leads - Get all leads (Super Admin & Admin see all, Sales Rep sees assigned)
 router.get('/leads', requireAuth, async (req, res) => {
   try {
     await ensureCrmLeadsTable().catch(() => {});
     await ensureSmsMessagesTable().catch(() => {});
+    await outreach.ensureSmsOptInColumn();
     let query = `
       SELECT l.*, u.name as sales_rep_name,
         COALESCE((
@@ -411,7 +471,8 @@ router.get('/leads', requireAuth, async (req, res) => {
         EXISTS (
           SELECT 1 FROM sms_optouts o
           WHERE regexp_replace(o.phone, '\\D', '', 'g') LIKE '%' || right(regexp_replace(l.phone, '\\D', '', 'g'), 10)
-        ) AS sms_opted_out
+        ) AS sms_opted_out,
+        COALESCE(l.sms_opt_in, FALSE) AS sms_opt_in
       FROM crm_leads l
       LEFT JOIN users u ON l.sales_rep_id = u.id
     `;

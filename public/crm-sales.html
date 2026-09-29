@@ -9,7 +9,49 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/css/design-system.css?v=7">
-  
+  <style>
+    .cd-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+    .cd-card { background:var(--bg-card); border:1px solid var(--border-default); border-radius:16px; padding:18px 20px; box-shadow:0 1px 2px rgba(15,23,42,.05); }
+    .cd-card h3 { margin:0 0 4px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-help { margin:0 0 12px; font-size:12px; color:var(--text-secondary); line-height:1.45; }
+    .cd-hero { grid-column:span 12; display:flex; justify-content:space-between; gap:20px; align-items:center; flex-wrap:wrap; background:linear-gradient(120deg,#0f172a 0%,#1e3a5f 58%,#1d4ed8 100%); color:#fff; border:0; }
+    .cd-hero h2 { margin:0 0 6px; font-size:22px; font-weight:800; letter-spacing:-.02em; }
+    .cd-hero p { margin:0; max-width:680px; font-size:13px; line-height:1.5; color:#cbd5e1; }
+    .cd-kpi { padding:16px 18px; }
+    .cd-kpi .n { font-size:28px; font-weight:800; letter-spacing:-.03em; color:var(--text-primary); }
+    .cd-kpi .l { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-kpi .s { margin-top:6px; font-size:12px; color:var(--text-secondary); }
+    .eq-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .eq-chip { appearance:none; border:1.5px solid var(--border-default); background:#fff; border-radius:12px; padding:10px 12px; text-align:left; cursor:pointer; font:inherit; }
+    .eq-chip strong { display:block; font-size:13px; font-weight:800; color:var(--text-primary); }
+    .eq-chip span { display:block; font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .eq-chip.is-on { border-color:#0f172a; background:#0f172a; }
+    .eq-chip.is-on strong, .eq-chip.is-on span { color:#fff; }
+    .eq-chip.is-on span { color:#cbd5e1; }
+    .cd-compact { font-size:12px; }
+    .cd-compact td, .cd-compact th { padding:8px 10px; vertical-align:middle; }
+    .cd-compact tr.is-on td { background:#eff6ff; }
+    .cd-acts { display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; min-width:240px; }
+    .cd-act { appearance:none; border:1px solid var(--border-default); background:#fff; border-radius:999px; padding:3px 8px; font-size:10px; font-weight:700; cursor:pointer; color:#334155; }
+    .cd-act:hover { border-color:#1e3a5f; color:#0f172a; }
+    .cd-act.is-primary { background:#0f172a; color:#fff; border-color:#0f172a; }
+    .cd-act.is-warn { color:#b91c1c; border-color:#fecaca; }
+    .cd-pager { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; font-size:12px; color:var(--text-secondary); }
+    .cd-sub { font-size:11px; color:var(--text-muted); }
+    .cd-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .cd-bulk { display:flex; gap:8px; flex-wrap:wrap; align-items:center; background:#f8fafc; border:1px solid var(--border-default); border-radius:12px; padding:10px 12px; margin-bottom:12px; }
+    .cd-toast { display:none; margin-top:10px; padding:10px 12px; border-radius:10px; font-size:12px; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+    .cd-toast.is-err { background:#fef2f2; color:#991b1b; border-color:#fecaca; }
+    .cd-modal { display:none; position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:80; align-items:center; justify-content:center; padding:16px; }
+    .cd-modal.is-open { display:flex; }
+    .cd-modal .box { background:#fff; border-radius:16px; padding:20px; width:min(520px,100%); box-shadow:0 20px 50px rgba(15,23,42,.2); }
+    .cd-consent { display:flex; align-items:flex-start; gap:8px; font-size:12px; line-height:1.4; color:#334155; }
+    .cd-consent input { margin-top:2px; }
+    @media (max-width: 980px) {
+      .cd-grid { grid-template-columns:1fr; }
+      .cd-hero, .cd-card { grid-column:auto !important; }
+    }
+  </style>
 </head>
 <body class="app-body">
 
@@ -23,8 +65,8 @@
     <!-- TOP HEADER -->
     <header class="app-header">
       <div>
-        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Sales CRM &amp; Carrier Acquisition</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Website Stripe checkouts land here as Active. Contact-form requests land as New. Portal signups are under Admin → Carriers.</p>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Sales CRM &amp; Outreach Desk</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Select rows, then email, SMS, or Vapi. Public shippingwish.com theme is unchanged.</p>
       </div>
 
       <div style="display:flex;align-items:center;gap:var(--space-3);">
@@ -40,55 +82,42 @@
 
     <!-- CONTENT BODY -->
     <main class="app-content">
-
-      <!-- KPI STAT CARDS -->
-      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
-        <div class="stat-kpi-card">
-          <div class="stat-kpi-top">
-            <span class="stat-kpi-title">Total Carrier Leads</span>
-            <div class="stat-kpi-icon">📈</div>
-          </div>
-          <div class="stat-kpi-val" id="kpi-total-leads">0</div>
-          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Prospect carrier list in pipeline</div>
-        </div>
-
-        <div class="stat-kpi-card">
-          <div class="stat-kpi-top">
-            <span class="stat-kpi-title">Active Pipeline</span>
-            <div class="stat-kpi-icon">⚡</div>
-          </div>
-          <div class="stat-kpi-val" id="kpi-active-pipeline">0</div>
-          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">In contact / packets sent</div>
-        </div>
-
-        <div class="stat-kpi-card">
-          <div class="stat-kpi-top">
-            <span class="stat-kpi-title">Onboarded Carriers</span>
-            <div class="stat-kpi-icon">✅</div>
-          </div>
-          <div class="stat-kpi-val" id="kpi-onboarded">0</div>
-          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Stripe checkout completed — start their desk</div>
-        </div>
-
-        <div class="stat-kpi-card">
-          <div class="stat-kpi-top">
-            <span class="stat-kpi-title">Packets Sent</span>
-            <div class="stat-kpi-icon">✉️</div>
-          </div>
-          <div class="stat-kpi-val" id="kpi-packets-sent">0</div>
-          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Onboarding email packages sent</div>
-        </div>
-      </div>
-
-      <div class="tms-table-card" style="margin-bottom:var(--space-6);">
-        <div class="tms-table-header">
+      <div class="cd-grid">
+        <section class="cd-card cd-hero">
           <div>
-            <h3 style="font-size:var(--text-base);font-weight:800;margin:0;">Website Stripe checkouts</h3>
-            <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Carriers who started or finished weekly checkout. Filter leads below by <strong>Active</strong> to work paid trials.</p>
+            <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fbbf24;margin-bottom:8px;">Carrier acquisition</div>
+            <h2>Select a row. Email, SMS, or Vapi in one press.</h2>
+            <p>Campaigns pull FMCSA by Dry Van / Reefer cargo flags — same census as Census Desk. Email is CAN-SPAM. SMS and Vapi need prior consent (form, YES, or you mark “they already agreed”).</p>
           </div>
-        </div>
-        <div class="tms-table-wrapper">
-          <table class="tms-table-v2">
+          <button type="button" class="btn btn-primary" id="btn-hero-campaign" style="background:#f59e0b;color:#0f172a;font-weight:800;padding:12px 18px;border:0;">Run campaign</button>
+        </section>
+
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Leads</div>
+          <div class="n" id="kpi-total-leads">0</div>
+          <div class="s">Saved in this CRM</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Pipeline</div>
+          <div class="n" id="kpi-active-pipeline">0</div>
+          <div class="s">New / contacted / packet</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Onboarded</div>
+          <div class="n" id="kpi-onboarded">0</div>
+          <div class="s">Stripe checkout finished</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Selected</div>
+          <div class="n" id="kpi-selected">0</div>
+          <div class="s">Checked on this page</div>
+        </article>
+
+        <section class="cd-card" style="grid-column:span 12;">
+          <h3>Website Stripe checkouts</h3>
+          <p class="cd-help">Carriers who started or finished weekly checkout. Filter leads below by Active to work paid trials.</p>
+          <div class="tms-table-wrapper">
+          <table class="tms-table-v2 cd-compact">
             <thead>
               <tr>
                 <th>Company / name</th>
@@ -103,153 +132,84 @@
             </tbody>
           </table>
         </div>
-      </div>
+        </section>
 
-      <div class="tms-panel call-track-card" style="margin-bottom:var(--space-6);border-left:4px solid #0f172a;">
-        <h3 style="margin:0 0 8px;font-size:15px;font-weight:800;">Call track — never lead with “dispatch”</h3>
-        <p style="margin:0 0 10px;font-size:13px;color:var(--text-secondary);line-height:1.55;">Carriers hang up on “dispatch companies.” Open as Shipping Wish LLC offering a <strong>Dedicated Fleet Operations Manager</strong> for their trucks. Weekly retainer. They keep broker pay.</p>
-        <ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.6;color:var(--text-secondary);">
-          <li>“Hi, this is ___ with Shipping Wish LLC. I’m not calling to dump loads. We place a Dedicated Operations Manager with small fleets. Do you already have that person in-house?”</li>
-          <li>If they pause: “Small weekly Stripe invoice. You collect 100% of freight from the broker. We find and book. Useful, or are you covered?”</li>
-          <li>If they say they got burned: “Understood. This is a named manager, not a call center. I can email the one-pager — no pressure.”</li>
-        </ol>
-      </div>
-
-      <!-- AI AUTONOMOUS CARRIER PROSPECTING BOT WIDGET -->
-      <div class="tms-table-card" style="margin-bottom:var(--space-6);background:linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(15,23,42,0.4) 100%);border:1px solid rgba(245,158,11,0.3);">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
-          <div>
-            <h3 style="font-size:17px;font-weight:900;color:#f59e0b;margin:0;display:flex;align-items:center;gap:8px;">
-              <span>🤖 AI Autonomous FMCSA Freight Prospecting Bot</span>
-              <span class="badge badge-paid" style="font-size:10px;">PROSPECT &amp; OUTREACH ACTIVE</span>
-            </h3>
-            <p style="font-size:12px;color:var(--text-muted);margin:4px 0 0 0;">
-              AI auto-scrapes active FMCSA motor carriers, filters ONLY freight trucks (Dry Van, Reefer, Flatbed, Box Trucks — auto-excludes passengers/farm), generates personalized AI outreach copy, and triggers emails &amp; SMS!
-            </p>
+        <section class="cd-card" style="grid-column:span 5;">
+          <h3>Equipment for this campaign</h3>
+          <p class="cd-help">Same cargo flags as Census Desk. Dry Van is general freight. Reefer is refrigerated food, meat, produce.</p>
+          <div class="eq-grid" id="crm-eq-grid"></div>
+        </section>
+        <section class="cd-card" style="grid-column:span 4;">
+          <h3>States</h3>
+          <p class="cd-help">Hold Ctrl/Cmd to pick more than one. Top 10 is the default freight hubs.</p>
+          <div class="cd-actions" style="margin-bottom:8px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="selectPresetStates('top')">Top 10</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="selectPresetStates('all')">All 50</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="selectPresetStates('clear')">Clear</button>
           </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:14px;">
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <label style="font-size:11px;font-weight:700;color:var(--text-muted);">Target Freight States (50 States)</label>
-              <div style="display:flex;gap:4px;">
-                <button type="button" class="btn btn-secondary btn-sm" style="font-size:9px;padding:2px 5px;" onclick="selectPresetStates('top')">🔥 Top 10</button>
-                <button type="button" class="btn btn-secondary btn-sm" style="font-size:9px;padding:2px 5px;" onclick="selectPresetStates('all')">🇺🇸 All 50</button>
-                <button type="button" class="btn btn-secondary btn-sm" style="font-size:9px;padding:2px 5px;" onclick="selectPresetStates('clear')">🧹 Clear</button>
-              </div>
-            </div>
-            <select id="ai-bot-states" class="form-input" style="font-size:12px;padding:6px;height:120px;" multiple>
-              <optgroup label="🔥 Top US Freight Hubs">
-                <option value="TX" selected>Texas (TX)</option>
-                <option value="FL" selected>Florida (FL)</option>
-                <option value="GA" selected>Georgia (GA)</option>
-                <option value="IL" selected>Illinois (IL)</option>
-                <option value="CA" selected>California (CA)</option>
-                <option value="NC" selected>North Carolina (NC)</option>
-                <option value="PA" selected>Pennsylvania (PA)</option>
-                <option value="OH" selected>Ohio (OH)</option>
-                <option value="TN" selected>Tennessee (TN)</option>
-                <option value="IN" selected>Indiana (IN)</option>
-              </optgroup>
-              <optgroup label="🌴 Southern Region">
-                <option value="AL">Alabama (AL)</option>
-                <option value="AR">Arkansas (AR)</option>
-                <option value="LA">Louisiana (LA)</option>
-                <option value="MS">Mississippi (MS)</option>
-                <option value="OK">Oklahoma (OK)</option>
-                <option value="SC">South Carolina (SC)</option>
-                <option value="VA">Virginia (VA)</option>
-              </optgroup>
-              <optgroup label="🌽 Midwest Region">
-                <option value="IA">Iowa (IA)</option>
-                <option value="KS">Kansas (KS)</option>
-                <option value="MI">Michigan (MI)</option>
-                <option value="MN">Minnesota (MN)</option>
-                <option value="MO">Missouri (MO)</option>
-                <option value="NE">Nebraska (NE)</option>
-                <option value="ND">North Dakota (ND)</option>
-                <option value="SD">South Dakota (SD)</option>
-                <option value="WI">Wisconsin (WI)</option>
-              </optgroup>
-              <optgroup label="🏢 Eastern / Northeast Region">
-                <option value="CT">Connecticut (CT)</option>
-                <option value="DE">Delaware (DE)</option>
-                <option value="ME">Maine (ME)</option>
-                <option value="MD">Maryland (MD)</option>
-                <option value="MA">Massachusetts (MA)</option>
-                <option value="NH">New Hampshire (NH)</option>
-                <option value="NJ">New Jersey (NJ)</option>
-                <option value="NY">New York (NY)</option>
-                <option value="RI">Rhode Island (RI)</option>
-                <option value="VT">Vermont (VT)</option>
-                <option value="WV">West Virginia (WV)</option>
-              </optgroup>
-              <optgroup label="🏔️ Western / Southwest Region">
-                <option value="AZ">Arizona (AZ)</option>
-                <option value="CO">Colorado (CO)</option>
-                <option value="ID">Idaho (ID)</option>
-                <option value="MT">Montana (MT)</option>
-                <option value="NV">Nevada (NV)</option>
-                <option value="NM">New Mexico (NM)</option>
-                <option value="OR">Oregon (OR)</option>
-                <option value="UT">Utah (UT)</option>
-                <option value="WA">Washington (WA)</option>
-                <option value="WY">Wyoming (WY)</option>
-              </optgroup>
-            </select>
-          </div>
-
-          <div>
-            <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Campaign Batch Limit</label>
-            <select id="ai-bot-limit" class="form-input" style="font-size:12px;padding:8px;">
-              <option value="5">5 Active Freight Carriers</option>
-              <option value="10" selected>10 Active Freight Carriers</option>
-              <option value="25">25 Active Freight Carriers</option>
-              <option value="50">50 Active Freight Carriers</option>
-            </select>
-          </div>
-
-          <div>
-            <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Outreach Channels</label>
-            <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;font-size:12px;color:var(--text-primary);">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-                <input type="checkbox" id="ai-bot-email" checked> ✉️ Send Branded Email
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-                <input type="checkbox" id="ai-bot-sms"> 📱 SMS only if they already consented
-              </label>
-            </div>
-          </div>
-
-          <div style="display:flex;align-items:flex-end;">
-            <button class="btn btn-primary btn-block" id="btn-run-ai-bot" onclick="runAiProspectingCampaign()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#0f172a;font-weight:800;padding:12px;">
-              🚀 Run AI Prospecting Campaign →
-            </button>
-          </div>
-        </div>
-
-        <div id="ai-bot-results" style="display:none;margin-top:14px;padding:14px;border-radius:8px;background:rgba(15,23,42,0.6);border:1px solid rgba(245,158,11,0.2);">
-          <div style="font-size:13px;font-weight:800;color:#f59e0b;margin-bottom:8px;" id="ai-bot-status-header">⏳ AI Campaign Progress...</div>
-          <div style="font-size:12px;color:var(--text-muted);" id="ai-bot-summary-text">Processing active carriers...</div>
+          <select id="ai-bot-states" class="form-input" style="font-size:12px;padding:6px;height:168px;" multiple>
+            <optgroup label="Top freight hubs">
+              <option value="TX" selected>Texas (TX)</option>
+              <option value="FL" selected>Florida (FL)</option>
+              <option value="GA" selected>Georgia (GA)</option>
+              <option value="IL" selected>Illinois (IL)</option>
+              <option value="CA" selected>California (CA)</option>
+              <option value="NC" selected>North Carolina (NC)</option>
+              <option value="PA" selected>Pennsylvania (PA)</option>
+              <option value="OH" selected>Ohio (OH)</option>
+              <option value="TN" selected>Tennessee (TN)</option>
+              <option value="IN" selected>Indiana (IN)</option>
+            </optgroup>
+            <optgroup label="South">
+              <option value="AL">Alabama</option><option value="AR">Arkansas</option><option value="LA">Louisiana</option>
+              <option value="MS">Mississippi</option><option value="OK">Oklahoma</option><option value="SC">South Carolina</option>
+              <option value="VA">Virginia</option>
+            </optgroup>
+            <optgroup label="Midwest">
+              <option value="IA">Iowa</option><option value="KS">Kansas</option><option value="MI">Michigan</option>
+              <option value="MN">Minnesota</option><option value="MO">Missouri</option><option value="NE">Nebraska</option>
+              <option value="ND">North Dakota</option><option value="SD">South Dakota</option><option value="WI">Wisconsin</option>
+            </optgroup>
+            <optgroup label="East">
+              <option value="CT">Connecticut</option><option value="DE">Delaware</option><option value="ME">Maine</option>
+              <option value="MD">Maryland</option><option value="MA">Massachusetts</option><option value="NH">New Hampshire</option>
+              <option value="NJ">New Jersey</option><option value="NY">New York</option><option value="RI">Rhode Island</option>
+              <option value="VT">Vermont</option><option value="WV">West Virginia</option>
+            </optgroup>
+            <optgroup label="West">
+              <option value="AZ">Arizona</option><option value="CO">Colorado</option><option value="ID">Idaho</option>
+              <option value="MT">Montana</option><option value="NV">Nevada</option><option value="NM">New Mexico</option>
+              <option value="OR">Oregon</option><option value="UT">Utah</option><option value="WA">Washington</option>
+              <option value="WY">Wyoming</option>
+            </optgroup>
+          </select>
+        </section>
+        <section class="cd-card" style="grid-column:span 3;">
+          <h3>Send after import</h3>
+          <p class="cd-help">Email can go cold. SMS and Vapi only if they already agreed, or you check consent below.</p>
+          <label class="form-label" for="ai-bot-limit">Batch size</label>
+          <select id="ai-bot-limit" class="form-select">
+            <option value="5">5 carriers</option>
+            <option value="10" selected>10 carriers</option>
+            <option value="25">25 carriers</option>
+            <option value="50">50 carriers</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;"><input type="checkbox" id="ai-bot-email" checked> Email</label>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-sms"> SMS (consent only)</label>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-vapi"> Vapi AI call (consent only)</label>
+          <label class="cd-consent" style="margin-top:10px;"><input type="checkbox" id="ai-bot-consent"> They already agreed (form, YES, or signed up). Required for SMS / Vapi.</label>
+          <button type="button" class="btn btn-primary" id="btn-run-ai-bot" onclick="runAiProspectingCampaign()" style="width:100%;margin-top:14px;font-weight:800;padding:12px;">Run campaign</button>
+        </section>
+        <section class="cd-card" style="grid-column:span 12;display:none;" id="ai-bot-results">
+          <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:6px;" id="ai-bot-status-header">Campaign progress</div>
+          <div style="font-size:12px;color:var(--text-secondary);" id="ai-bot-summary-text"></div>
           <div id="ai-bot-leads-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;"></div>
-        </div>
-      </div>
+        </section>
 
-      <!-- FMCSA CARRIER LEADS SCRAPER WIDGET -->
-      <div class="tms-table-card" style="margin-bottom:var(--space-6);background:linear-gradient(135deg, rgba(15,23,42,0.03) 0%, rgba(30,41,59,0.06) 100%);">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
-          <div>
-            <h3 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0;">
-              U.S. FMCSA Live Carrier Finder &amp; Importer
-            </h3>
-            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0 0;">
-              Search official FMCSA database by MC#, USDOT#, Company Name, Phone, Email, or State (e.g. 173267, MC-147919, TX). 1-Click Import into CRM.
-            </p>
-          </div>
-        </div>
-
-        <form onsubmit="event.preventDefault(); searchFmcsacarriers();" style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;">
+        <section class="cd-card" style="grid-column:span 12;">
+          <h3>FMCSA finder</h3>
+          <p class="cd-help">Search by MC#, USDOT, company, phone, email, or state, then import into this CRM.</p>
+          <form onsubmit="event.preventDefault(); searchFmcsacarriers();" style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;">
           <select id="fmcsa-search-mode" class="form-input" style="width:auto;min-width:130px;flex:0 0 auto;padding:10px 12px;font-size:13px;font-weight:700;">
             <option value="auto">Auto-Detect</option>
             <option value="mc">MC Number</option>
@@ -283,44 +243,81 @@
           </div>
           <div id="fmcsa-results-list" style="display:flex;flex-direction:column;gap:10px;"></div>
         </div>
-      </div>
+        </section>
 
-      <!-- LEADS TABLE CARD -->
-      <div class="tms-table-card">
-        <div class="tms-table-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:16px;">
-          <div class="tab-pill-group" style="display:flex;gap:4px;background:var(--bg-card-subtle);padding:4px;border-radius:var(--radius-lg);" id="status-filters">
+        <section class="cd-card" style="grid-column:span 12;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:10px;">
+            <div>
+              <h3 style="margin:0;">CRM leads</h3>
+              <p class="cd-help" style="margin:4px 0 0;">10 per page. Check rows, then Email / SMS / Vapi — or one-press on the row.</p>
+            </div>
+            <div class="search-input-group" style="min-width:240px;">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="search-leads" placeholder="Company, MC#, phone, email…" oninput="searchLeadsTable()">
+            </div>
+          </div>
+          <div class="tab-pill-group" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;" id="status-filters">
             <button class="btn btn-sm btn-primary filter-btn" data-status="All" onclick="filterByStatus('All', this)">All</button>
-            <button class="btn btn-sm btn-secondary filter-btn" data-status="New Lead" onclick="filterByStatus('New Lead', this)">New Lead</button>
+            <button class="btn btn-sm btn-secondary filter-btn" data-status="New Lead" onclick="filterByStatus('New Lead', this)">New</button>
             <button class="btn btn-sm btn-secondary filter-btn" data-status="Contacted" onclick="filterByStatus('Contacted', this)">Contacted</button>
-            <button class="btn btn-sm btn-secondary filter-btn" data-status="Packet Sent" onclick="filterByStatus('Packet Sent', this)">Packet Sent</button>
+            <button class="btn btn-sm btn-secondary filter-btn" data-status="Packet Sent" onclick="filterByStatus('Packet Sent', this)">Packet</button>
             <button class="btn btn-sm btn-secondary filter-btn" data-status="Active" onclick="filterByStatus('Active', this)">Active</button>
             <button class="btn btn-sm btn-secondary filter-btn" data-status="Dead" onclick="filterByStatus('Dead', this)">Dead</button>
           </div>
-
-          <div class="search-input-group" style="min-width:280px;">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="search-leads" placeholder="Search Company, MC#, DOT, Phone, Email, Rep..." oninput="searchLeadsTable()">
+          <div class="cd-bulk">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-select-page">This page</button>
+            <button type="button" class="btn btn-primary btn-sm" data-bulk="email">Email selected</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bulk="sms">SMS selected</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bulk="vapi">Vapi selected</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bulk="packet">Packet selected</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-manual-send">Compose &amp; send</button>
+            <label class="cd-consent" style="margin-left:auto;"><input type="checkbox" id="crm-consent"> They already agreed (SMS / Vapi)</label>
           </div>
-        </div>
+          <div class="cd-toast" id="crm-toast"></div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2 cd-compact" id="leads-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Company</th>
+                  <th>Equip</th>
+                  <th>ST</th>
+                  <th style="text-align:right;">One-press</th>
+                </tr>
+              </thead>
+              <tbody id="leads-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">Loading carrier leads...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="cd-pager" id="crm-pager" hidden>
+            <span id="crm-page-label"></span>
+            <div class="cd-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-crm-prev">Prev</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-crm-next">Next page</button>
+            </div>
+          </div>
+        </section>
+      </div>
 
-        <div class="tms-table-wrapper">
-          <table class="tms-table-v2" id="leads-table">
-            <thead>
-              <tr>
-                <th>Company Name</th>
-                <th>MC/DOT #</th>
-                <th>Equipment &amp; Fleet</th>
-                <th>Contact Info</th>
-                <th>Sales Rep</th>
-                <th>Status</th>
-                <th>SMS</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="leads-tbody">
-              <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">Loading carrier leads...</td></tr>
-            </tbody>
-          </table>
+      <div class="cd-modal" id="crm-send-modal" role="dialog">
+        <div class="box">
+          <h3 style="margin:0 0 8px;font-size:16px;font-weight:800;text-transform:none;letter-spacing:0;color:var(--text-primary);">Send to selected leads</h3>
+          <p class="cd-help" id="crm-send-meta">Pick a channel. Email is one press. SMS and Vapi need consent.</p>
+          <label class="form-label" for="crm-send-channel">Channel</label>
+          <select class="form-select" id="crm-send-channel">
+            <option value="email">Email</option>
+            <option value="sms">SMS</option>
+            <option value="vapi">Vapi AI call</option>
+            <option value="packet">Onboarding packet</option>
+          </select>
+          <label class="form-label" for="crm-send-message" style="margin-top:10px;">Message (SMS only — email uses the ops-manager template)</label>
+          <textarea class="form-input" id="crm-send-message" rows="4" placeholder="Leave blank for the dedicated-manager SMS."></textarea>
+          <label class="cd-consent" style="margin-top:12px;"><input type="checkbox" id="crm-send-consent"> They already agreed to texts / AI calls (form, YES, or signed up).</label>
+          <div class="cd-actions" style="margin-top:16px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-send-cancel">Cancel</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-send-go">Send now</button>
+          </div>
         </div>
       </div>
 
@@ -503,11 +500,73 @@
   let currentFilter = 'All';
 
   document.addEventListener('DOMContentLoaded', async () => {
+    renderEqChips();
     await checkAuth();
     await loadLeads();
     await loadCheckouts();
     await loadInboxCount();
     await loadSmsUnread();
+    const eqGrid = document.getElementById('crm-eq-grid');
+    if (eqGrid) {
+      eqGrid.addEventListener('click', (e) => {
+        const btn = e.target.closest('.eq-chip');
+        if (!btn) return;
+        const key = btn.getAttribute('data-eq');
+        if (selectedEq.includes(key)) selectedEq = selectedEq.filter((k) => k !== key);
+        else selectedEq.push(key);
+        renderEqChips();
+      });
+    }
+    const hero = document.getElementById('btn-hero-campaign');
+    if (hero) hero.addEventListener('click', () => runAiProspectingCampaign());
+    const tbody = document.getElementById('leads-tbody');
+    if (tbody) {
+      tbody.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-act]');
+        if (btn) {
+          e.preventDefault();
+          leadAction(btn.getAttribute('data-act'), Number(btn.getAttribute('data-id')));
+          return;
+        }
+        if (e.target.type === 'checkbox') {
+          const sel = document.getElementById('kpi-selected');
+          if (sel) sel.textContent = String(selectedLeadIds().length);
+        }
+      });
+      tbody.addEventListener('change', () => {
+        const sel = document.getElementById('kpi-selected');
+        if (sel) sel.textContent = String(selectedLeadIds().length);
+      });
+    }
+    document.querySelectorAll('[data-bulk]').forEach((btn) => {
+      btn.addEventListener('click', () => bulkSend(btn.getAttribute('data-bulk')));
+    });
+    const selectPage = document.getElementById('btn-select-page');
+    if (selectPage) {
+      selectPage.addEventListener('click', () => {
+        document.querySelectorAll('#leads-tbody input[type=checkbox]').forEach((el) => { el.checked = true; });
+        const sel = document.getElementById('kpi-selected');
+        if (sel) sel.textContent = String(selectedLeadIds().length);
+      });
+    }
+    const prev = document.getElementById('btn-crm-prev');
+    const next = document.getElementById('btn-crm-next');
+    if (prev) prev.addEventListener('click', () => { crmPage -= 1; renderLeadsTable(); });
+    if (next) next.addEventListener('click', () => { crmPage += 1; renderLeadsTable(); });
+    const manual = document.getElementById('btn-manual-send');
+    if (manual) manual.addEventListener('click', () => openSendModal());
+    const cancel = document.getElementById('btn-send-cancel');
+    if (cancel) cancel.addEventListener('click', () => document.getElementById('crm-send-modal').classList.remove('is-open'));
+    const go = document.getElementById('btn-send-go');
+    if (go) {
+      go.addEventListener('click', async () => {
+        const channel = document.getElementById('crm-send-channel').value;
+        const message = document.getElementById('crm-send-message').value;
+        const consent = document.getElementById('crm-send-consent').checked;
+        document.getElementById('crm-send-modal').classList.remove('is-open');
+        await bulkSend(channel, selectedLeadIds(), { consent_confirmed: consent, custom_message: message });
+      });
+    }
   });
 
   async function checkAuth() {
@@ -557,7 +616,8 @@
           safety: l.safety_rating || '',
           smsSentCount: l.sms_sent_count || 0,
           smsReplyCount: l.sms_reply_count || 0,
-          smsOptedOut: !!l.sms_opted_out
+          smsOptedOut: !!l.sms_opted_out,
+          smsOptIn: !!l.sms_opt_in
         }));
       } else {
         leadsData = [];
@@ -626,12 +686,12 @@
     const total = leadsData.length;
     const active = leadsData.filter(l => ['new', 'contacted', 'packet_sent'].includes(l.status)).length;
     const onboarded = leadsData.filter(l => l.status === 'active').length;
-    const packets = leadsData.filter(l => l.status === 'packet_sent').length;
 
     document.getElementById('kpi-total-leads').textContent = total;
     document.getElementById('kpi-active-pipeline').textContent = active;
     document.getElementById('kpi-onboarded').textContent = onboarded;
-    document.getElementById('kpi-packets-sent').textContent = packets;
+    const sel = document.getElementById('kpi-selected');
+    if (sel) sel.textContent = String(selectedLeadIds().length);
   }
 
   function getInitials(name) {
@@ -645,6 +705,7 @@
   }
 
   function searchLeadsTable() {
+    crmPage = 1;
     renderLeadsTable();
   }
 
@@ -664,105 +725,130 @@
     if (box) box.style.display = 'none';
   }
 
+  const EQUIPMENT = [
+    { key: 'dry_van', label: 'Dry Van', hint: 'General freight' },
+    { key: 'reefer', label: 'Reefer', hint: 'Cold food, meat, produce' },
+    { key: 'flatbed', label: 'Flatbed', hint: 'Building / machinery' },
+    { key: 'hopper', label: 'Hopper / Dry Bulk', hint: 'Grain, bulk' },
+    { key: 'tanker', label: 'Tanker', hint: 'Liquid / chemicals' },
+    { key: 'auto', label: 'Auto Hauler', hint: 'Motor vehicles' }
+  ];
+  let selectedEq = ['dry_van'];
+  let crmPage = 1;
+  const PAGE_SIZE = 10;
+
+  function renderEqChips() {
+    const grid = document.getElementById('crm-eq-grid');
+    if (!grid) return;
+    grid.innerHTML = EQUIPMENT.map((eq) =>
+      `<button type="button" class="eq-chip${selectedEq.includes(eq.key) ? ' is-on' : ''}" data-eq="${eq.key}"><strong>${eq.label}</strong><span>${eq.hint}</span></button>`
+    ).join('');
+  }
+
+  function selectedLeadIds() {
+    return Array.from(document.querySelectorAll('#leads-tbody input[type=checkbox]:checked')).map((el) => Number(el.value)).filter(Boolean);
+  }
+
+  function showToast(text, isErr) {
+    const el = document.getElementById('crm-toast');
+    if (!el) return alert(text);
+    el.textContent = text;
+    el.classList.toggle('is-err', !!isErr);
+    el.style.display = 'block';
+  }
+
+  function filteredLeads() {
+    const searchRaw = (document.getElementById('search-leads') && document.getElementById('search-leads').value || '').trim();
+    const search = searchRaw.toLowerCase();
+    const searchDigits = search.replace(/[^0-9]/g, '');
+    return leadsData.filter(l => {
+      const matchStatus = currentFilter === 'All' ||
+        (currentFilter === 'New Lead' && l.status === 'new') ||
+        (currentFilter === 'Contacted' && l.status === 'contacted') ||
+        (currentFilter === 'Packet Sent' && l.status === 'packet_sent') ||
+        (currentFilter === 'Active' && l.status === 'active') ||
+        (currentFilter === 'Dead' && l.status === 'dead');
+      const leadMcDigits = String(l.mcNumber || '').replace(/[^0-9]/g, '');
+      const leadDotDigits = String(l.dotNumber || '').replace(/[^0-9]/g, '');
+      const matchSearch = !search ||
+        String(l.companyName || '').toLowerCase().includes(search) ||
+        String(l.mcNumber || '').toLowerCase().includes(search) ||
+        (searchDigits && leadMcDigits.includes(searchDigits)) ||
+        (searchDigits && leadDotDigits.includes(searchDigits)) ||
+        String(l.dotNumber || '').toLowerCase().includes(search) ||
+        String(l.phone || '').includes(search) ||
+        String(l.email || '').toLowerCase().includes(search) ||
+        String(l.ownerName || '').toLowerCase().includes(search) ||
+        String(l.salesRep || '').toLowerCase().includes(search);
+      return matchStatus && matchSearch;
+    });
+  }
+
   function renderLeadsTable() {
     const tbody = document.getElementById('leads-tbody');
     try {
-      const searchRaw = (document.getElementById('search-leads').value || '').trim();
-      const search = searchRaw.toLowerCase();
-      const searchDigits = search.replace(/[^0-9]/g, '');
-
-      const filtered = leadsData.filter(l => {
-        const matchStatus = currentFilter === 'All' || 
-          (currentFilter === 'New Lead' && l.status === 'new') ||
-          (currentFilter === 'Contacted' && l.status === 'contacted') ||
-          (currentFilter === 'Packet Sent' && l.status === 'packet_sent') ||
-          (currentFilter === 'Active' && l.status === 'active') ||
-          (currentFilter === 'Dead' && l.status === 'dead');
-
-        const leadMcDigits = String(l.mcNumber || '').replace(/[^0-9]/g, '');
-        const leadDotDigits = String(l.dotNumber || '').replace(/[^0-9]/g, '');
-
-        const matchSearch = !search ||
-          String(l.companyName || '').toLowerCase().includes(search) ||
-          String(l.mcNumber || '').toLowerCase().includes(search) ||
-          (searchDigits && leadMcDigits.includes(searchDigits)) ||
-          (searchDigits && leadDotDigits.includes(searchDigits)) ||
-          String(l.dotNumber || '').toLowerCase().includes(search) ||
-          String(l.phone || '').includes(search) ||
-          String(l.email || '').toLowerCase().includes(search) ||
-          String(l.ownerName || '').toLowerCase().includes(search) ||
-          String(l.salesRep || '').toLowerCase().includes(search);
-
-        return matchStatus && matchSearch;
-      });
+      const searchRaw = (document.getElementById('search-leads') && document.getElementById('search-leads').value || '').trim();
+      const filtered = filteredLeads();
+      const pager = document.getElementById('crm-pager');
+      const label = document.getElementById('crm-page-label');
+      const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+      if (crmPage > pages) crmPage = pages;
+      const start = (crmPage - 1) * PAGE_SIZE;
+      const slice = filtered.slice(start, start + PAGE_SIZE);
+      const selEl = document.getElementById('kpi-selected');
 
       if (!filtered.length) {
+        if (pager) pager.hidden = true;
+        if (selEl) selEl.textContent = '0';
         if (searchRaw) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="8" style="text-align:center;padding:36px 20px;color:var(--text-muted);">
+              <td colspan="5" style="text-align:center;padding:36px 20px;color:var(--text-muted);">
                 <div style="font-size:15px;font-weight:800;color:var(--text-primary);margin-bottom:6px;">
                   No saved CRM leads matching “${escapeHtml(searchRaw)}”
                 </div>
-                <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">
-                  This carrier is not in your CRM database yet. You can find and import them directly from the live US FMCSA registry!
-                </div>
-                <button type="button" class="btn btn-primary btn-sm" onclick="triggerFmcsaFromTableSearch('${escapeJs(searchRaw)}')" style="display:inline-flex;align-items:center;gap:6px;margin:0 auto;padding:8px 16px;font-weight:700;">
-                  <span>🔎</span> Search Live FMCSA for “${escapeHtml(searchRaw)}” →
+                <button type="button" class="btn btn-primary btn-sm" onclick="triggerFmcsaFromTableSearch('${escapeJs(searchRaw)}')" style="margin-top:8px;">
+                  Search live FMCSA for “${escapeHtml(searchRaw)}”
                 </button>
               </td>
-            </tr>
-          `;
+            </tr>`;
         } else {
-          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No carrier leads matching current filter.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No carrier leads matching current filter.</td></tr>`;
         }
         return;
       }
 
-      tbody.innerHTML = filtered.map(l => `
-        <tr>
+      tbody.innerHTML = slice.map(l => `
+        <tr data-lead="${l.id}">
+          <td><input type="checkbox" value="${l.id}" checked></td>
           <td>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#0f172a;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(245,158,11,0.2);">
-                ${getInitials(l.companyName)}
-              </div>
-              <div>
-                <strong style="color:var(--text-primary);font-size:13.5px;display:block;">${escapeHtml(l.companyName)}</strong>
-                <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;margin-top:2px;">
-                  ${l.phyState ? `<span>📍 ${escapeHtml(l.phyState)}</span>` : ''}
-                  ${l.unread ? ` <span class="badge badge-new" style="font-size:9px;">${l.unread} reply</span>` : ''}
-                  ${l.safety ? `<span style="color:#10b981;">&bull; ${escapeHtml(l.safety)}</span>` : ''}
-                </div>
-              </div>
-            </div>
+            <strong>${escapeHtml(l.companyName)}</strong>
+            <div class="cd-sub">${escapeHtml(l.mcNumber)} · DOT ${escapeHtml(l.dotNumber)} · ${escapeHtml(String(l.status || 'new').replace('_', ' '))}</div>
+            <div class="cd-sub">${escapeHtml(l.email || 'no email')} · ${escapeHtml(l.phone || 'no phone')}${l.smsOptIn ? ' · consented' : ''}${l.smsOptedOut ? ' · STOP' : ''}</div>
           </td>
+          <td>${escapeHtml((l.equipmentType || '—').split(',')[0])} (${l.numTrucks})</td>
+          <td>${escapeHtml(l.phyState || '—')}</td>
           <td>
-            <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(l.mcNumber)}</div>
-            <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(l.dotNumber)}</div>
-          </td>
-          <td>
-            <span class="badge badge-amber" style="font-weight:700;font-size:11px;">${escapeHtml(l.equipmentType)} (${l.numTrucks} units)</span>
-          </td>
-          <td>
-            <strong style="color:var(--text-primary);">${escapeHtml(l.ownerName)}</strong>
-            <div style="font-size:12px;margin-top:2px;"><a href="tel:${escapeHtml(l.phone)}" style="color:#60a5fa;text-decoration:none;">${escapeHtml(l.phone)}</a></div>
-            <div style="font-size:11px;color:${l.email && !isValidEmail(l.email) ? 'var(--color-red-500)' : 'var(--text-muted)'};">${escapeHtml(l.email || 'No email')}${l.email && !isValidEmail(l.email) ? ' ⚠ invalid' : ''}</div>
-          </td>
-          <td><span style="font-size:12px;font-weight:600;color:var(--text-secondary);">${escapeHtml(l.salesRep)}</span></td>
-          <td><span class="badge ${getStatusBadge(l.status)}" style="font-weight:800;letter-spacing:0.03em;">${escapeHtml(String(l.status || 'new').replace('_', ' ').toUpperCase())}</span></td>
-          <td>${smsStatusBadge(l)}</td>
-          <td>
-            <div style="display:flex;gap:4px;flex-wrap:wrap;">
-              <button class="btn btn-primary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="sendOutreach(${l.id})">✉️ Email</button>
-              <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="sendSms(${l.id})">📱 SMS</button>
-              <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="openEditContactModal(${l.id})">✏️ Contact</button>
-              <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="openSendPacketModal(${l.id})">📄 Packet</button>
-              <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;" onclick="sendWeeklyLink(${l.id})">💳 Stripe</button>
-              <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;color:var(--color-red-500);" onclick="deleteLead(${l.id})">🗑️</button>
+            <div class="cd-acts">
+              <button type="button" class="cd-act is-primary" data-act="email" data-id="${l.id}">Email</button>
+              <button type="button" class="cd-act" data-act="sms" data-id="${l.id}">SMS</button>
+              <button type="button" class="cd-act" data-act="vapi" data-id="${l.id}">Vapi</button>
+              <button type="button" class="cd-act" data-act="call" data-id="${l.id}">Call</button>
+              <button type="button" class="cd-act" data-act="packet" data-id="${l.id}">Packet</button>
+              <button type="button" class="cd-act" data-act="edit" data-id="${l.id}">Edit</button>
+              <button type="button" class="cd-act is-warn" data-act="delete" data-id="${l.id}">Delete</button>
             </div>
           </td>
         </tr>
       `).join('');
+      if (pager) {
+        pager.hidden = false;
+        const end = Math.min(start + PAGE_SIZE, filtered.length);
+        label.textContent = (start + 1) + '–' + end + ' of ' + filtered.length;
+        document.getElementById('btn-crm-prev').disabled = crmPage <= 1;
+        document.getElementById('btn-crm-next').disabled = crmPage >= pages;
+      }
+      if (selEl) selEl.textContent = String(selectedLeadIds().length);
     } catch (e) {
       console.error('Error rendering leads table:', e);
     }
@@ -793,6 +879,7 @@
 
   function filterByStatus(status, btn) {
     currentFilter = status;
+    crmPage = 1;
     document.querySelectorAll('.filter-btn').forEach(el => {
       el.className = 'btn btn-sm btn-secondary filter-btn';
     });
@@ -834,17 +921,23 @@
     const limit = document.getElementById('ai-bot-limit').value;
     const sendEmail = document.getElementById('ai-bot-email').checked;
     const sendSms = document.getElementById('ai-bot-sms').checked;
+    const sendVapi = document.getElementById('ai-bot-vapi') && document.getElementById('ai-bot-vapi').checked;
+    const consent = document.getElementById('ai-bot-consent') && document.getElementById('ai-bot-consent').checked;
+    if ((sendSms || sendVapi) && !consent) {
+      alert('SMS and Vapi need prior consent. Check “they already agreed”, or leave those boxes off and send email first.');
+      return;
+    }
 
     btn.disabled = true;
-    btn.textContent = '⏳ AI Searching & Messaging...';
+    btn.textContent = 'Searching census…';
 
     resultsBox.style.display = 'block';
-    header.textContent = '⏳ AI Autonomous Campaign In Progress...';
-    summary.textContent = `Scanning FMCSA registry for ${selectedStates.join(', ')}... Filtering active freight equipment & verifying contact details...`;
+    header.textContent = 'Campaign in progress';
+    summary.textContent = `Scanning ${selectedStates.join(', ')} for ${selectedEq.join(', ') || 'dry_van'}…`;
     list.innerHTML = '';
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000);
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
       const res = await fetch('/api/crm/ai-prospect-campaign', {
@@ -854,15 +947,18 @@
         signal: controller.signal,
         body: JSON.stringify({
           states: selectedStates,
+          equipment_types: selectedEq.length ? selectedEq : ['dry_van'],
           limit: parseInt(limit, 10),
           send_email: sendEmail,
-          send_sms: sendSms
+          send_sms: sendSms,
+          send_vapi: !!sendVapi,
+          consent_confirmed: !!consent
         })
       });
 
       clearTimeout(timeoutId);
       btn.disabled = false;
-      btn.textContent = '🚀 Run AI Prospecting Campaign →';
+      btn.textContent = 'Run campaign';
 
       const data = await res.json();
 
@@ -881,14 +977,11 @@
           <span style="color:var(--text-muted);">Tip: Click "Run AI Prospecting Campaign" again to pull the next batch of fresh carriers or select additional states!</span>
         `;
       } else {
-        header.textContent = `✅ AI Campaign Complete! (${data.imported} New Carriers Contacted)`;
+        header.textContent = `Campaign finished — ${data.imported} imported`;
+        const skipNote = (data.skipped_outreach || []).slice(0, 3).map((s) => s.reason).join(' · ');
         summary.innerHTML = `
-          <strong>Scraped/Processed:</strong> ${data.processed} | 
-          <strong>Imported to CRM:</strong> ${data.imported} | 
-          <strong>Emails Sent:</strong> ${data.emails_sent} | 
-          <strong>SMS Sent:</strong> ${data.sms_sent} | 
-          <strong>Skipped Duplicates:</strong> ${data.skipped_duplicates} | 
-          <strong>Filtered Banned/Inactive:</strong> ${data.filtered_out}
+          Scanned ${data.processed} · imported ${data.imported} · emails ${data.emails_sent} · SMS ${data.sms_sent} · Vapi ${data.vapi_sent || 0} · skipped dupes ${data.skipped_duplicates} · filtered ${data.filtered_out}
+          ${skipNote ? '<div style="margin-top:6px;color:#b45309;">Skip: ' + escapeHtml(skipNote) + '</div>' : ''}
         `;
       }
 
@@ -906,8 +999,9 @@
               ${l.email ? `<span style="margin-left:8px;color:var(--text-muted);">✉️ ${escapeHtml(l.email)}</span>` : ''}
             </div>
             <div style="display:flex;gap:6px;">
-              ${l.email_sent ? '<span class="badge badge-paid">✉️ Email Sent</span>' : ''}
-              ${l.sms_sent ? '<span class="badge badge-booked">📱 SMS Sent</span>' : ''}
+              ${l.email_sent ? '<span class="badge badge-paid">Email sent</span>' : ''}
+              ${l.sms_sent ? '<span class="badge badge-booked">SMS sent</span>' : ''}
+              ${l.vapi_sent ? '<span class="badge badge-booked">Vapi started</span>' : ''}
             </div>
           </div>
         `).join('');
@@ -919,10 +1013,10 @@
     } catch (err) {
       clearTimeout(timeoutId);
       btn.disabled = false;
-      btn.textContent = '🚀 Run AI Prospecting Campaign →';
-      header.textContent = '❌ Campaign Interrupted';
+      btn.textContent = 'Run campaign';
+      header.textContent = 'Campaign interrupted';
       summary.textContent = err.name === 'AbortError' 
-        ? 'Request timed out after 55s. Some leads may have already been saved to your CRM table below.'
+        ? 'Request timed out. Some leads may already be in the table below.'
         : err.message;
       if (typeof loadLeads === 'function') loadLeads();
     }
@@ -1320,74 +1414,81 @@
     openModal('edit-contact-modal');
   }
 
-  async function sendOutreach(leadId, email, ownerName, companyName, templateKey) {
-    const leadRow = (leadsData || []).find((x) => String(x.id) === String(leadId));
-    email = (email != null && email !== '' ? email : (leadRow ? leadRow.email : '')) || '';
-    ownerName = (ownerName != null && ownerName !== '' ? ownerName : (leadRow ? leadRow.ownerName : '')) || '';
-    companyName = (companyName != null && companyName !== '' ? companyName : (leadRow ? leadRow.companyName : '')) || '';
-    if (!email) {
-      alert('This lead has no email. Add an email first. FMCSA often does not publish emails.');
-      openEditContactModal(leadId, companyName, ownerName, leadRow?.phone || '', '');
-      return;
+  async function bulkSend(channel, ids, extra) {
+    const lead_ids = ids && ids.length ? ids : selectedLeadIds();
+    if (!lead_ids.length) {
+      showToast('Check at least one row first.', true);
+      return null;
     }
-    if (!isValidEmail(email)) {
-      alert(emailHint(email) + '\n\nCurrent value: ' + email + '\n\nClick OK to fix the email.');
-      openEditContactModal(leadId, companyName, ownerName, leadRow?.phone || '', email);
-      return;
+    const consent = (extra && extra.consent_confirmed)
+      || (document.getElementById('crm-consent') && document.getElementById('crm-consent').checked)
+      || (document.getElementById('crm-send-consent') && document.getElementById('crm-send-consent').checked);
+    if ((channel === 'sms' || channel === 'vapi') && !consent) {
+      const first = leadsData.find((l) => Number(l.id) === Number(lead_ids[0]));
+      if (!first || !first.smsOptIn) {
+        openSendModal(channel, lead_ids);
+        return null;
+      }
     }
-    if (!confirm('Send Dedicated Operations Manager email to ' + email + '?')) return;
-    const res = await fetch('/api/email/send-outreach', {
+    const res = await fetch('/api/crm/leads/bulk-outreach', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
-        lead_id: leadId,
-        recipient_email: email,
-        owner_name: ownerName,
-        company_name: companyName,
-        template_key: templateKey || 'dedicated_manager'
+        lead_ids,
+        channel,
+        consent_confirmed: !!consent,
+        custom_message: extra && extra.custom_message || '',
+        template_key: extra && extra.template_key || 'dedicated_manager'
       })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      alert('❌ Email send failed:\n\n' + (data.message || data.error || 'Could not send email'));
-      if (data.error === 'INVALID_EMAIL') {
-        openEditContactModal(leadId, companyName, ownerName, leadRow?.phone || '', email);
-      }
-      return;
+      showToast(data.error || data.message || 'Send failed', true);
+      return data;
     }
-    alert(data.message || 'Send finished');
-    loadLeads();
+    const skip = (data.skipped || []).length;
+    const firstSkip = skip && data.skipped[0] ? data.skipped[0].reason : '';
+    const voip = data.results && data.results[0];
+    if (channel === 'voip' && voip) {
+      if (voip.call_url) window.location.href = voip.call_url;
+      else if (voip.tel) window.location.href = voip.tel;
+    }
+    showToast((data.note ? '' : '') + 'Sent ' + (data.sent || 0) + (skip ? (' · skipped ' + skip + (firstSkip ? ': ' + firstSkip : '')) : ''), skip && !data.sent);
+    await loadLeads();
+    return data;
   }
 
-  async function sendSms(leadId, phone, companyName) {
-    const leadRow = (leadsData || []).find((x) => String(x.id) === String(leadId));
-    phone = (phone != null && phone !== '' ? phone : (leadRow ? leadRow.phone : '')) || '';
-    companyName = (companyName != null && companyName !== '' ? companyName : (leadRow ? leadRow.companyName : '')) || '';
-    if (!phone || phone === 'unknown') {
-      alert('No phone number on this lead.');
+  function openSendModal(channel, ids) {
+    const modal = document.getElementById('crm-send-modal');
+    if (channel) document.getElementById('crm-send-channel').value = channel;
+    const n = (ids && ids.length) || selectedLeadIds().length;
+    document.getElementById('crm-send-meta').textContent = n + ' selected. Email is one press. SMS and Vapi need the consent box.';
+    modal.classList.add('is-open');
+  }
+
+  async function sendOutreach(leadId) {
+    const lead = leadsData.find((l) => Number(l.id) === Number(leadId));
+    if (lead && !isValidEmail(lead.email)) {
+      openEditContactModal(leadId);
+      showToast('Add a full email on this row, then press Email again.', true);
       return;
     }
-    if (!confirm('SMS only after they asked, or you have consent. Send to ' + phone + ' for ' + (companyName || 'this lead') + '?')) return;
-    const res = await fetch('/api/voip/send-template-sms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        lead_id: leadId,
-        to_number: phone,
-        template_key: 'dedicated_manager',
-        company_name: companyName
-      })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert('❌ SMS send failed:\n\n' + (data.message || data.error || 'Could not send SMS'));
-      return;
-    }
-    alert(data.message || 'SMS finished');
-    await loadSmsUnread();
-    await loadLeads();
+    await bulkSend('email', [leadId]);
+  }
+
+  async function sendSms(leadId) {
+    await bulkSend('sms', [leadId]);
+  }
+
+  async function leadAction(act, id) {
+    if (act === 'email') return sendOutreach(id);
+    if (act === 'sms') return sendSms(id);
+    if (act === 'vapi') return bulkSend('vapi', [id]);
+    if (act === 'packet') return bulkSend('packet', [id]);
+    if (act === 'call') return bulkSend('voip', [id]);
+    if (act === 'edit') return openEditContactModal(id);
+    if (act === 'delete') return deleteLead(id);
   }
 
   async function sendWeeklyLink(leadId) {
@@ -1412,6 +1513,13 @@
   window.clearFmcsaSearch = clearFmcsaSearch;
   window.searchFmcsacarriers = searchFmcsacarriers;
   window.importScrapedIndex = importScrapedIndex;
+  window.sendOutreach = sendOutreach;
+  window.sendSms = sendSms;
+  window.leadAction = leadAction;
+  window.bulkSend = bulkSend;
+  window.runAiProspectingCampaign = runAiProspectingCampaign;
+  window.selectPresetStates = selectPresetStates;
+  window.filterByStatus = filterByStatus;
 
   async function logout() {
     try {
@@ -1428,6 +1536,6 @@
   }
 </script>
 
-<script src="/js/app-shell.js?v=20"></script>
+<script src="/js/app-shell.js?v=26"></script>
 </body>
 </html>
