@@ -294,4 +294,20 @@ assert.ok(shell.includes('ns.html?id=' + gtmId));
 assert.ok(shell.includes('gtag/js?id=G-8Q973SH30G'));
 assert.ok(shell.includes("gtag('config', 'G-8Q973SH30G')"));
 
+const { cleanSocialUrl, cleanSocialLinks } = require('../utils/buywish-social');
+assert.strictEqual(cleanSocialUrl('https://www.instagram.com/buywishonline/', 'instagram'), 'https://www.instagram.com/buywishonline/');
+assert.strictEqual(cleanSocialUrl('https://x.com/buywish', 'x'), 'https://x.com/buywish');
+assert.strictEqual(cleanSocialUrl('http://facebook.com/buywish', 'facebook'), null);
+assert.strictEqual(cleanSocialUrl('https://evil.com/instagram.com', 'instagram'), null);
+assert.strictEqual(cleanSocialUrl('', 'tiktok'), '');
+const saved = cleanSocialLinks({ facebook: 'https://facebook.com/buywish', instagram: '', tiktok: 'https://www.tiktok.com/@buywish', x: 'https://twitter.com/buywish' });
+assert.strictEqual(saved.links.facebook, 'https://facebook.com/buywish');
+assert.strictEqual(saved.links.instagram, '');
+assert.ok(cleanSocialLinks({ facebook: 'javascript:alert(1)' }).error);
+const shopHtml = fs.readFileSync(path.join(__dirname, '../public/buywishonline/index.html'), 'utf8');
+assert.ok(shopHtml.includes('/buywishonline/icons/tech.png'));
+assert.ok(shopHtml.includes('aria-label="Visa"'));
+assert.ok(shopHtml.includes('data-social="instagram"'));
+assert.ok(!shopHtml.includes('aria-label="Facebook">📘'));
+
 console.log('buywish catalog tests passed');

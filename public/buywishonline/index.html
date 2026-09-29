@@ -495,8 +495,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 26px;
+      overflow: hidden;
     }
+    .cat-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .mobile-nav-link .cat-art { width: 28px; height: 28px; border-radius: 8px; flex: 0 0 28px; }
     .cat-chip:hover .cat-emoji, .cat-chip.active .cat-emoji {
       border-color: var(--accent);
       background: #fff5f7;
@@ -635,7 +637,7 @@
       flex: 1;
     }
     .hero-side-card:hover { box-shadow: var(--shadow-hover); transform: translateX(4px); border-color: var(--accent); }
-    .hero-side-icon { font-size: 32px; flex-shrink: 0; }
+    .hero-side-icon { width: 54px; height: 54px; border-radius: 14px; overflow: hidden; flex-shrink: 0; background: #eef2f7; }
     .hero-side-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
     .hero-side-title { font-size: 15px; font-weight: 800; color: var(--text); }
     .hero-side-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
@@ -995,7 +997,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 34px;
+      overflow: hidden;
     }
     .cat-showcase-item:hover .cat-showcase-icon { border-color: var(--accent); background: #fff5f7; }
     .cat-showcase-name { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; }
@@ -1024,7 +1026,7 @@
     }
     .promo-card.dark { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; }
     .promo-card.rose { background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); }
-    .promo-card .promo-emoji { font-size: 52px; position: absolute; right: 24px; top: 20px; opacity: 0.8; }
+    .promo-card .promo-emoji { position: absolute; right: 18px; top: 18px; width: 92px; height: 92px; border-radius: 22px; overflow: hidden; background: #eef2f7; }
     .promo-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; margin-bottom: 6px; }
     .promo-title { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 6px; }
     .promo-sub { font-size: 13px; opacity: 0.75; margin-bottom: 16px; }
@@ -1597,8 +1599,10 @@
     .footer-brand .logo-text span { color: var(--accent); }
     .footer-brand p { font-size: 13.5px; line-height: 1.7; max-width: 280px; }
     .footer-social { display: flex; gap: 10px; margin-top: 20px; }
-    .social-btn { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.07); display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s; }
+    .social-btn { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.07); display: flex; align-items: center; justify-content: center; color: #fff; transition: all 0.2s; }
+    .social-btn[hidden] { display: none; }
     .social-btn:hover { background: var(--accent); }
+    .social-btn svg { display: block; }
     .footer-col-title { font-size: 11px; font-weight: 800; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
     .footer-links { list-style: none; display: flex; flex-direction: column; gap: 9px; }
     .footer-links a { font-size: 13.5px; color: #94a3b8; transition: color 0.15s; }
@@ -1844,17 +1848,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="mobile-nav-body">
     <div class="mobile-nav-section-title">Shop by Category</div>
     <div id="mobileDeptLinks">
-    <a class="mobile-nav-link" data-dept="deals" href="/collections/deals">🏷️ Deals</a>
-    <a class="mobile-nav-link" data-dept="all" href="/collections/all">🛍️ All Products</a>
-    <a class="mobile-nav-link" data-dept="tech-gadgets" href="/collections/tech-gadgets">💻 Tech & Gadgets</a>
-    <a class="mobile-nav-link" data-dept="home-living" href="/collections/home-living">🏠 Home & Living</a>
-    <a class="mobile-nav-link" data-dept="fashion" href="/collections/fashion">👗 Fashion</a>
-    <a class="mobile-nav-link" data-dept="beauty" href="/collections/beauty">✨ Beauty & Wellness</a>
-    <a class="mobile-nav-link" data-dept="fitness" href="/collections/fitness">🏃 Fitness & Outdoors</a>
-    <a class="mobile-nav-link" data-dept="pets" href="/collections/pets">🐾 Pet Supplies</a>
-    <a class="mobile-nav-link" data-dept="kids-baby" href="/collections/kids-baby">🧸 Kids & Baby</a>
-    <a class="mobile-nav-link" data-dept="travel" href="/collections/travel">🧳 Travel</a>
-    <a class="mobile-nav-link" data-dept="arts" href="/collections/arts">🎨 Arts & Crafts</a>
+    <a class="mobile-nav-link" data-dept="deals" href="/collections/deals"><img class="cat-art" src="/buywishonline/icons/deals.png" alt="">Deals</a>
+    <a class="mobile-nav-link" data-dept="all" href="/collections/all"><img class="cat-art" src="/buywishonline/icons/all.png" alt="">All Products</a>
+    <a class="mobile-nav-link" data-dept="tech-gadgets" href="/collections/tech-gadgets"><img class="cat-art" src="/buywishonline/icons/tech.png" alt="">Tech & Gadgets</a>
+    <a class="mobile-nav-link" data-dept="home-living" href="/collections/home-living"><img class="cat-art" src="/buywishonline/icons/home.png" alt="">Home & Living</a>
+    <a class="mobile-nav-link" data-dept="fashion" href="/collections/fashion"><img class="cat-art" src="/buywishonline/icons/fashion.png" alt="">Fashion</a>
+    <a class="mobile-nav-link" data-dept="beauty" href="/collections/beauty"><img class="cat-art" src="/buywishonline/icons/beauty.png" alt="">Beauty & Wellness</a>
+    <a class="mobile-nav-link" data-dept="fitness" href="/collections/fitness"><img class="cat-art" src="/buywishonline/icons/fitness.png" alt="">Fitness & Outdoors</a>
+    <a class="mobile-nav-link" data-dept="pets" href="/collections/pets"><img class="cat-art" src="/buywishonline/icons/pets.png" alt="">Pet Supplies</a>
+    <a class="mobile-nav-link" data-dept="kids-baby" href="/collections/kids-baby"><img class="cat-art" src="/buywishonline/icons/kids.png" alt="">Kids & Baby</a>
+    <a class="mobile-nav-link" data-dept="travel" href="/collections/travel"><img class="cat-art" src="/buywishonline/icons/travel.png" alt="">Travel</a>
+    <a class="mobile-nav-link" data-dept="arts" href="/collections/arts"><img class="cat-art" src="/buywishonline/icons/arts.png" alt="">Arts & Crafts</a>
     </div>
     <div class="mobile-nav-divider"></div>
     <div class="mobile-nav-section-title">Customer Care</div>
@@ -1879,19 +1883,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- Category Strip -->
 <div class="cat-strip">
   <div class="cat-strip-inner" id="catStripInner">
-    <a class="cat-chip" data-dept="deals" href="/collections/deals"><span class="cat-emoji">🏷️</span>Deals</a>
-    <a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji">🛍️</span>All</a>
-    <a class="cat-chip" data-dept="tech-gadgets" href="/collections/tech-gadgets"><span class="cat-emoji">💻</span>Tech & Gadgets</a>
-    <a class="cat-chip" data-dept="home-living" href="/collections/home-living"><span class="cat-emoji">🏠</span>Home & Living</a>
-    <a class="cat-chip" data-dept="fashion" href="/collections/fashion"><span class="cat-emoji">👗</span>Fashion</a>
-    <a class="cat-chip" data-dept="beauty" href="/collections/beauty"><span class="cat-emoji">✨</span>Beauty</a>
-    <a class="cat-chip" data-dept="fitness" href="/collections/fitness"><span class="cat-emoji">🏃</span>Fitness</a>
-    <a class="cat-chip" data-dept="pets" href="/collections/pets"><span class="cat-emoji">🐾</span>Pets</a>
-    <a class="cat-chip" data-dept="kids-baby" href="/collections/kids-baby"><span class="cat-emoji">🧸</span>Kids & Baby</a>
-    <a class="cat-chip" data-dept="travel" href="/collections/travel"><span class="cat-emoji">🧳</span>Travel</a>
-    <a class="cat-chip" data-dept="arts" href="/collections/arts"><span class="cat-emoji">🎨</span>Arts</a>
+    <a class="cat-chip" data-dept="deals" href="/collections/deals"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/deals.png" alt=""></span>Deals</a>
+    <a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/all.png" alt=""></span>All</a>
+    <a class="cat-chip" data-dept="tech-gadgets" href="/collections/tech-gadgets"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/tech.png" alt=""></span>Tech & Gadgets</a>
+    <a class="cat-chip" data-dept="home-living" href="/collections/home-living"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/home.png" alt=""></span>Home & Living</a>
+    <a class="cat-chip" data-dept="fashion" href="/collections/fashion"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/fashion.png" alt=""></span>Fashion</a>
+    <a class="cat-chip" data-dept="beauty" href="/collections/beauty"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/beauty.png" alt=""></span>Beauty</a>
+    <a class="cat-chip" data-dept="fitness" href="/collections/fitness"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/fitness.png" alt=""></span>Fitness</a>
+    <a class="cat-chip" data-dept="pets" href="/collections/pets"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/pets.png" alt=""></span>Pets</a>
+    <a class="cat-chip" data-dept="kids-baby" href="/collections/kids-baby"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/kids.png" alt=""></span>Kids & Baby</a>
+    <a class="cat-chip" data-dept="travel" href="/collections/travel"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/travel.png" alt=""></span>Travel</a>
+    <a class="cat-chip" data-dept="arts" href="/collections/arts"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/arts.png" alt=""></span>Arts</a>
   </div>
 </div>
+<script src="/buywishonline/category-art.js"></script>
 <script>
 (function () {
   var boot = window.BUYWISH_COLLECTION;
@@ -1903,7 +1908,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   strip.innerHTML = children.map(function (dept) {
     var slug = String(dept.slug || '').replace(/[^a-z0-9-]/gi, '');
     var title = String(dept.title || '').replace(/[&<>]/g, '');
-    return '<a class="cat-chip" data-dept="' + slug + '" href="/collections/' + slug + '"><span class="cat-emoji">' + (dept.icon || '🛍️') + '</span>' + title + '</a>';
+    return '<a class="cat-chip" data-dept="' + slug + '" href="/collections/' + slug + '"><span class="cat-emoji">' + (window.bwoCatArtHtml ? window.bwoCatArtHtml(slug) : '') + '</span>' + title + '</a>';
   }).join('');
 })();
 </script>
@@ -1946,7 +1951,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
   <div class="hero-side">
     <a class="hero-side-card" href="/collections/tech-gadgets">
-      <div class="hero-side-icon">💻</div>
+      <div class="hero-side-icon"><img class="cat-art" src="/buywishonline/icons/tech.png" alt=""></div>
       <div>
         <div class="hero-side-label">Trending</div>
         <div class="hero-side-title">Tech & Gadgets</div>
@@ -1955,7 +1960,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="hero-side-badge">HOT</div>
     </a>
     <a class="hero-side-card" href="/collections/home-living">
-      <div class="hero-side-icon">🏠</div>
+      <div class="hero-side-icon"><img class="cat-art" src="/buywishonline/icons/home.png" alt=""></div>
       <div>
         <div class="hero-side-label">Popular</div>
         <div class="hero-side-title">Home & Living</div>
@@ -1964,7 +1969,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="hero-side-badge green">NEW</div>
     </a>
     <a class="hero-side-card" href="/collections/beauty">
-      <div class="hero-side-icon">✨</div>
+      <div class="hero-side-icon"><img class="cat-art" src="/buywishonline/icons/beauty.png" alt=""></div>
       <div>
         <div class="hero-side-label">Staff Pick</div>
         <div class="hero-side-title">Beauty & Wellness</div>
@@ -2025,16 +2030,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
   </div>
   <div class="cat-showcase" id="catShowcase">
-    <a class="cat-showcase-item" href="/collections/deals"><div class="cat-showcase-icon">🏷️</div><div class="cat-showcase-name">Deals</div></a>
-    <a class="cat-showcase-item" href="/collections/tech-gadgets"><div class="cat-showcase-icon">💻</div><div class="cat-showcase-name">Tech & Gadgets</div></a>
-    <a class="cat-showcase-item" href="/collections/home-living"><div class="cat-showcase-icon">🏠</div><div class="cat-showcase-name">Home & Living</div></a>
-    <a class="cat-showcase-item" href="/collections/fashion"><div class="cat-showcase-icon">👗</div><div class="cat-showcase-name">Fashion</div></a>
-    <a class="cat-showcase-item" href="/collections/beauty"><div class="cat-showcase-icon">✨</div><div class="cat-showcase-name">Beauty & Wellness</div></a>
-    <a class="cat-showcase-item" href="/collections/fitness"><div class="cat-showcase-icon">🏃</div><div class="cat-showcase-name">Fitness & Outdoors</div></a>
-    <a class="cat-showcase-item" href="/collections/pets"><div class="cat-showcase-icon">🐾</div><div class="cat-showcase-name">Pet Supplies</div></a>
-    <a class="cat-showcase-item" href="/collections/kids-baby"><div class="cat-showcase-icon">🧸</div><div class="cat-showcase-name">Kids & Baby</div></a>
-    <a class="cat-showcase-item" href="/collections/travel"><div class="cat-showcase-icon">🧳</div><div class="cat-showcase-name">Travel</div></a>
-    <a class="cat-showcase-item" href="/collections/arts"><div class="cat-showcase-icon">🎨</div><div class="cat-showcase-name">Arts & Crafts</div></a>
+    <a class="cat-showcase-item" href="/collections/deals"><div class="cat-showcase-icon"><img class="cat-art" src="/buywishonline/icons/deals.png" alt=""></div><div class="cat-showcase-name">Deals</div></a>
+    <a class="cat-showcase-item" href="/collections/tech-gadgets"><div class="cat-showcase-icon"><img class="cat-art" src="/buywishonline/icons/tech.png" alt=""></div><div class="cat-showcase-name">Tech & Gadgets</div></a>
+    <a class="cat-showcase-item" href="/collections/home-living"><div class="cat-showcase-icon"><img class="cat-art" src="/buywishonline/icons/home.png" alt=""></div><div class="cat-showcase-name">Home & Living</div></a>
+    <a class="cat-showcase-item" href="/collections/fashion"><div class="cat-showcase-icon"><img class="cat-art" src="/buywishonline/icons/fashion.png" alt=""></div><div class="cat-showcase-name">Fashion</div></a>
+    <a class="cat-showcase-item" href="/collections/beauty"><div class="cat-showcase-icon"><img class="cat-art" src="/buywishonline/icons/beauty.png" alt=""></div><div class="cat-showcase-name">Beauty & Wellness</div></a>
+    <a class="cat-showcase-item" href="/collections/fitness"><div class="cat-showcase-icon"><img class="cat-art" src="/buywishonline/icons/fitness.png" alt=""></div><div class="cat-showcase-name">Fitness & Outdoors</div></a>
+    <a class="cat-showcase-item" href="/collections/pets"><div class="cat-showcase-icon"><img class="cat-art" src="/buywishonline/icons/pets.png" alt=""></div><div class="cat-showcase-name">Pet Supplies</div></a>
+    <a class="cat-showcase-item" href="/collections/kids-baby"><div class="cat-showcase-icon"><img class="cat-art" src="/buywishonline/icons/kids.png" alt=""></div><div class="cat-showcase-name">Kids & Baby</div></a>
+    <a class="cat-showcase-item" href="/collections/travel"><div class="cat-showcase-icon"><img class="cat-art" src="/buywishonline/icons/travel.png" alt=""></div><div class="cat-showcase-name">Travel</div></a>
+    <a class="cat-showcase-item" href="/collections/arts"><div class="cat-showcase-icon"><img class="cat-art" src="/buywishonline/icons/arts.png" alt=""></div><div class="cat-showcase-name">Arts & Crafts</div></a>
   </div>
 </section>
 
@@ -2069,7 +2074,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <section class="section" aria-label="Promotions">
   <div class="promo-grid">
     <div class="promo-card dark">
-      <span class="promo-emoji">⚡</span>
+      <span class="promo-emoji"><img class="cat-art" src="/buywishonline/icons/deals.png" alt=""></span>
       <div>
         <div class="promo-eyebrow">Limited Offer</div>
         <div class="promo-title" style="color:#fff;">Deals</div>
@@ -2078,7 +2083,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
     </div>
     <div class="promo-card rose">
-      <span class="promo-emoji">🌿</span>
+      <span class="promo-emoji"><img class="cat-art" src="/buywishonline/icons/beauty.png" alt=""></span>
       <div>
         <div class="promo-eyebrow" style="color:#9d174d;">New Collection</div>
         <div class="promo-title" style="color:#1a1a2e;">Beauty & Wellness Essentials</div>
@@ -2170,11 +2175,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div style="color: #38bdf8; font-weight: 700; margin-top: 4px;">Support: +1 (800) 580-3101</div>
         <div style="color: #94a3b8;">Email: support@buywishonline.com</div>
       </div>
-      <div class="footer-social">
-        <a class="social-btn" href="javascript:void(0)" aria-label="Facebook">📘</a>
-        <a class="social-btn" href="javascript:void(0)" aria-label="Instagram">📸</a>
-        <a class="social-btn" href="javascript:void(0)" aria-label="TikTok">🎵</a>
-        <a class="social-btn" href="javascript:void(0)" aria-label="Pinterest">📌</a>
+      <div class="footer-social" id="footerSocial">
+        <a class="social-btn" data-social="facebook" hidden target="_blank" rel="noopener noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M14 9h3V6h-3c-2.2 0-4 1.8-4 4v2H8v3h2v7h3v-7h2.6l.4-3H13v-2c0-.6.4-1 1-1z"/></svg></a>
+        <a class="social-btn" data-social="instagram" hidden target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm10 2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm-5 3.2A3.8 3.8 0 1 1 8.2 12 3.8 3.8 0 0 1 12 8.2zm0 1.6A2.2 2.2 0 1 0 14.2 12 2.2 2.2 0 0 0 12 9.8zM17.2 6.6a1 1 0 1 1-1 1 1 1 0 0 1 1-1z"/></svg></a>
+        <a class="social-btn" data-social="tiktok" hidden target="_blank" rel="noopener noreferrer" aria-label="TikTok"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M14 3v10.2a3.2 3.2 0 1 1-2.2-3.05V7.4A6 6 0 1 0 17 13V8.1A6.7 6.7 0 0 0 21 9.2V6.4A4 4 0 0 1 17 4.2 4.2 4.2 0 0 1 14 3z"/></svg></a>
+        <a class="social-btn" data-social="x" hidden target="_blank" rel="noopener noreferrer" aria-label="X"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M4 4l6.6 8.3L4.5 20h2.2l4.6-5.5L15.6 20H20l-6.8-8.6L19.4 4h-2.2l-4.2 5L8.4 4H4z"/></svg></a>
       </div>
     </div>
     <div>
@@ -2215,7 +2220,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <svg width="15" height="15" viewBox="0 0 40 40" fill="none"><path d="M19.9 0C8.9 0 0 8.9 0 19.9s8.9 19.9 19.9 19.9 19.9-8.9 19.9-19.9S30.9 0 19.9 0z" fill="#635BFF"/><path d="M19.3 15.6c0-1.1.9-1.5 2.3-1.5 2.1 0 4.7.7 6.8 1.9V9.7c-2.3-.9-4.7-1.3-7-1.3-5.8 0-9.7 3-9.7 8 0 7.8 10.8 6.5 10.8 9.9 0 1.3-1.1 1.7-2.7 1.7-2.3 0-5.4-1-7.8-2.3v6.4c2.7 1.2 5.4 1.7 8 1.7 6 0 10.2-3 10.2-8.2 0-8.5-10.9-7-10.9-10z" fill="#ffffff"/></svg>
         <span>Verified by Stripe</span>
       </div>
-      <div class="pay-card-badges"><span class="stripe-pay-note">Cards and wallets through Stripe</span></div>
+      <svg class="pay-svg-icon" width="46" height="30" viewBox="0 0 46 30" role="img" aria-label="Visa"><rect width="46" height="30" rx="4" fill="#1A1F71"/><text x="23" y="20" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-style="italic" font-weight="700" fill="#fff">VISA</text></svg>
+      <svg class="pay-svg-icon" width="46" height="30" viewBox="0 0 46 30" role="img" aria-label="Mastercard"><rect width="46" height="30" rx="4" fill="#fff"/><circle cx="19" cy="15" r="8" fill="#EB001B"/><circle cx="27" cy="15" r="8" fill="#F79E1B"/><path d="M23 8.4a8 8 0 0 1 0 13.2 8 8 0 0 1 0-13.2z" fill="#FF5F00"/></svg>
+      <svg class="pay-svg-icon" width="46" height="30" viewBox="0 0 46 30" role="img" aria-label="American Express"><rect width="46" height="30" rx="4" fill="#2E77BC"/><text x="23" y="19" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#fff">AMEX</text></svg>
+      <svg class="pay-svg-icon" width="46" height="30" viewBox="0 0 46 30" role="img" aria-label="Discover"><rect width="46" height="30" rx="4" fill="#111"/><text x="5" y="18" font-family="Arial, sans-serif" font-size="6" font-weight="700" fill="#fff">DISCOVER</text><circle cx="38" cy="15" r="5" fill="#F76B1C"/></svg>
     </div>
   </div>
 </footer>
@@ -2452,6 +2460,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
 <script src="/tracking.js"></script>
+<script>
+  fetch('/api/buywish/social').then(function (res) { return res.json(); }).then(function (data) {
+    if (!data || !data.ok) return;
+    document.querySelectorAll('[data-social]').forEach(function (link) {
+      var url = data[link.getAttribute('data-social')];
+      if (!url || url.indexOf('https://') !== 0) { link.hidden = true; return; }
+      link.href = url;
+      link.hidden = false;
+    });
+  }).catch(function () {});
+</script>
 <script>
 // ============================================================
 // CURRENCY DETECTION & CONVERSION
@@ -2725,7 +2744,7 @@ function renderChildStrip(children) {
   const strip = document.getElementById('catStripInner');
   if (!strip || !children || !children.length) return;
   strip.innerHTML = children.map((dept) => (
-    `<a class="cat-chip" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}"><span class="cat-emoji">${dept.icon || '🛍️'}</span>${escHtml(dept.title)}</a>`
+    `<a class="cat-chip" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}"><span class="cat-emoji">${window.bwoCatArtHtml(dept.slug)}</span>${escHtml(dept.title)}</a>`
   )).join('');
   applyCollectionChrome();
 }
@@ -2742,18 +2761,18 @@ function renderDepartmentMenus(collections) {
   const showcase = document.getElementById('catShowcase');
   const mobile = document.getElementById('mobileDeptLinks');
   if (strip) {
-    strip.innerHTML = `<a class="cat-chip" data-dept="deals" href="/collections/deals"><span class="cat-emoji">🏷️</span>Deals</a><a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji">🛍️</span>All</a>` + list.map((dept) => (
-      `<a class="cat-chip" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}"><span class="cat-emoji">${dept.icon || '🛍️'}</span>${escHtml(dept.title)}</a>`
+    strip.innerHTML = `<a class="cat-chip" data-dept="deals" href="/collections/deals"><span class="cat-emoji">${window.bwoCatArtHtml('deals')}</span>Deals</a><a class="cat-chip" data-dept="all" href="/collections/all"><span class="cat-emoji">${window.bwoCatArtHtml('all')}</span>All</a>` + list.map((dept) => (
+      `<a class="cat-chip" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}"><span class="cat-emoji">${window.bwoCatArtHtml(dept.slug)}</span>${escHtml(dept.title)}</a>`
     )).join('');
   }
   if (showcase) {
-    showcase.innerHTML = `<a class="cat-showcase-item" href="/collections/deals"><div class="cat-showcase-icon">🏷️</div><div class="cat-showcase-name">Deals</div></a>` + list.map((dept) => (
-      `<a class="cat-showcase-item" href="/collections/${encodeURIComponent(dept.slug)}"><div class="cat-showcase-icon">${dept.icon || '🛍️'}</div><div class="cat-showcase-name">${escHtml(dept.title)}</div></a>`
+    showcase.innerHTML = `<a class="cat-showcase-item" href="/collections/deals"><div class="cat-showcase-icon">${window.bwoCatArtHtml('deals')}</div><div class="cat-showcase-name">Deals</div></a>` + list.map((dept) => (
+      `<a class="cat-showcase-item" href="/collections/${encodeURIComponent(dept.slug)}"><div class="cat-showcase-icon">${window.bwoCatArtHtml(dept.slug)}</div><div class="cat-showcase-name">${escHtml(dept.title)}</div></a>`
     )).join('');
   }
   if (mobile) {
-    mobile.innerHTML = `<a class="mobile-nav-link" data-dept="deals" href="/collections/deals">🏷️ Deals</a><a class="mobile-nav-link" data-dept="all" href="/collections/all">🛍️ All Products</a>` + list.map((dept) => (
-      `<a class="mobile-nav-link" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}">${dept.icon || '🛍️'} ${escHtml(dept.title)}</a>`
+    mobile.innerHTML = `<a class="mobile-nav-link" data-dept="deals" href="/collections/deals">${window.bwoCatArtHtml('deals')} Deals</a><a class="mobile-nav-link" data-dept="all" href="/collections/all">${window.bwoCatArtHtml('all')} All Products</a>` + list.map((dept) => (
+      `<a class="mobile-nav-link" data-dept="${escHtml(dept.slug)}" href="/collections/${encodeURIComponent(dept.slug)}">${window.bwoCatArtHtml(dept.slug)} ${escHtml(dept.title)}</a>`
     )).join('');
   }
   applyCollectionChrome();
