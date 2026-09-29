@@ -138,6 +138,21 @@ async function ensureBuyWishSchema() {
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS customer_note TEXT;
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS confirmation_sent_at TIMESTAMPTZ;
 
+    CREATE TABLE IF NOT EXISTS buywish_addresses (
+      id SERIAL PRIMARY KEY,
+      customer_id INTEGER NOT NULL,
+      recipient TEXT,
+      phone TEXT,
+      line1 TEXT NOT NULL,
+      city TEXT NOT NULL,
+      state TEXT,
+      postal TEXT NOT NULL,
+      country TEXT NOT NULL,
+      is_default BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS idx_buywish_addresses_customer ON buywish_addresses (customer_id);
+
     CREATE TABLE IF NOT EXISTS buywish_categories (
       slug TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -999,6 +1014,18 @@ router.post('/checkout', async (req, res) => {
       signedIn ? signedIn.id : null
     ]);
 
+    if (signedIn) {
+      await saveCustomerAddress(signedIn.id, {
+        recipient: String(customer.name || '').slice(0, 160),
+        phone: String(customer.phone || '').slice(0, 40),
+        line1: shipTo.line1,
+        city: shipTo.city,
+        state: shipTo.state,
+        postal: shipTo.postal,
+        country: shipTo.country
+      }).catch((err) => console.warn('[BUYWISH ADDRESS SAVE]:', err.message));
+    }
+
     const baseUrl = 'https://www.buywishonline.com';
     const buyerName = String(customer.name || 'Valued Customer').slice(0, 160);
     const buyerEmail = String(customer.email).slice(0, 254);
@@ -1660,6 +1687,146 @@ router.delete('/admin/products/:id', ...buyWishAdmin, async (req, res) => {
   }
 });
 
+async function saveCustomerAddress(customerId, address) {
+  const line1 = String(address.line1 || '').trim().slice(0, 200);
+  const city = String(address.city || '').trim().slice(0, 80);
+  const state = String(address.state || '').trim().slice(0, 40);
+  const postal = String(address.postal || '').trim().slice(0, 16);
+  const country = String(address.country || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+  if (!customerId || line1.length < 4 || city.length < 2 || postal.length < 3 || !['US', 'CA', 'GB'].includes(country)) return null;
+  if ((country === 'US' || country === 'CA') && state.length < 2) return null;
+  const existing = await pool.query(
+    `SELECT id FROM buywish_addresses
+     WHERE customer_id = $1 AND lower(line1) = lower($2) AND lower(postal) = lower($3) AND country = $4
+     LIMIT 1`,
+    [customerId, line1, postal, country]
+  );
+  await pool.query(`UPDATE buywish_addresses SET is_default = false WHERE customer_id = $1`, [customerId]);
+  if (existing.rows[0]) {
+    await pool.query(
+      `UPDATE buywish_addresses
+       SET is_default = true, city = $2, state = $3, phone = $4, recipient = $5
+       WHERE id = $1`,
+      [existing.rows[0].id, city, state, address.phone || null, address.recipient || null]
+    );
+    return existing.rows[0].id;
+  }
+  const count = await pool.query(`SELECT COUNT(*)::int AS n FROM buywish_addresses WHERE customer_id = $1`, [customerId]);
+  if (count.rows[0].n >= 8) {
+    await pool.query(
+      `DELETE FROM buywish_addresses WHERE id = (
+         SELECT id FROM buywish_addresses WHERE customer_id = $1 AND is_default = false ORDER BY created_at ASC LIMIT 1
+       )`,
+      [customerId]
+    );
+  }
+  const inserted = await pool.query(
+    `INSERT INTO buywish_addresses (customer_id, recipient, phone, line1, city, state, postal, country, is_default)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true)
+     RETURNING id`,
+    [customerId, address.recipient || null, address.phone || null, line1, city, state, postal, country]
+  );
+  return inserted.rows[0].id;
+}
+
+router.get('/account/addresses', requireCustomer, async (req, res) => {
+  try {
+    await ensureBuyWishSchema();
+    let { rows } = await pool.query(
+      `SELECT id, recipient, phone, line1, city, state, postal, country, is_default
+       FROM buywish_addresses WHERE customer_id = $1
+       ORDER BY is_default DESC, id DESC`,
+      [req.customer.id]
+    );
+    if (!rows.length) {
+      const recent = await pool.query(
+        `SELECT customer_name, customer_phone, shipping_address, shipping_city, shipping_state, shipping_postal, shipping_country
+         FROM ecommerce_orders
+         WHERE customer_id = $1 OR lower(customer_email) = lower($2)
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [req.customer.id, req.customer.email]
+      );
+      const order = recent.rows[0];
+      if (order) {
+        await saveCustomerAddress(req.customer.id, {
+          recipient: order.customer_name,
+          phone: order.customer_phone,
+          line1: order.shipping_address,
+          city: order.shipping_city,
+          state: order.shipping_state,
+          postal: order.shipping_postal,
+          country: order.shipping_country
+        });
+        rows = (await pool.query(
+          `SELECT id, recipient, phone, line1, city, state, postal, country, is_default
+           FROM buywish_addresses WHERE customer_id = $1
+           ORDER BY is_default DESC, id DESC`,
+          [req.customer.id]
+        )).rows;
+      }
+    }
+    res.json({ ok: true, addresses: rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load saved addresses.' });
+  }
+});
+
+router.post('/account/addresses', requireCustomer, async (req, res) => {
+  const ship = cleanShipTo(req.body || {});
+  if (ship.error) return res.status(400).json({ error: ship.error });
+  try {
+    await ensureBuyWishSchema();
+    const id = await saveCustomerAddress(req.customer.id, {
+      recipient: String(req.body?.recipient || req.body?.name || '').slice(0, 160),
+      phone: String(req.body?.phone || '').slice(0, 40),
+      ...ship
+    });
+    res.json({ ok: true, id });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not save the address.' });
+  }
+});
+
+router.post('/account/addresses/:id/default', requireCustomer, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Unknown address.' });
+  try {
+    await pool.query(`UPDATE buywish_addresses SET is_default = false WHERE customer_id = $1`, [req.customer.id]);
+    const updated = await pool.query(
+      `UPDATE buywish_addresses SET is_default = true WHERE id = $1 AND customer_id = $2 RETURNING id`,
+      [id, req.customer.id]
+    );
+    if (!updated.rows.length) return res.status(404).json({ error: 'Address not found.' });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not update the address.' });
+  }
+});
+
+router.delete('/account/addresses/:id', requireCustomer, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Unknown address.' });
+  try {
+    const removed = await pool.query(
+      `DELETE FROM buywish_addresses WHERE id = $1 AND customer_id = $2 RETURNING is_default`,
+      [id, req.customer.id]
+    );
+    if (!removed.rows.length) return res.status(404).json({ error: 'Address not found.' });
+    if (removed.rows[0].is_default) {
+      await pool.query(
+        `UPDATE buywish_addresses SET is_default = true WHERE id = (
+           SELECT id FROM buywish_addresses WHERE customer_id = $1 ORDER BY id DESC LIMIT 1
+         )`,
+        [req.customer.id]
+      );
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not remove the address.' });
+  }
+});
+
 router.post('/account/register', accountRateLimit, async (req, res) => {
   const name = String(req.body?.name || '').trim();
   const email = String(req.body?.email || '').trim().toLowerCase();
@@ -1719,7 +1886,8 @@ router.get('/account/orders', requireCustomer, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT order_number, items, total_amount, currency, payment_status, fulfillment_status,
-              supplier_tracking_number, shipping_city, shipping_country, created_at
+              supplier_tracking_number, shipping_address, shipping_city, shipping_state, shipping_postal,
+              shipping_country, customer_note, created_at
        FROM ecommerce_orders
        WHERE customer_id = $1 OR lower(customer_email) = lower($2)
        ORDER BY created_at DESC

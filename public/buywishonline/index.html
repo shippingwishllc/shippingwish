@@ -1585,6 +1585,25 @@
     .form-row-3 { grid-template-columns: 1.4fr 0.8fr 0.9fr; }
     .addr-box { position: relative; }
     .addr-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+    .saved-addresses { margin-bottom: 12px; }
+    .saved-label { font-size: 12.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; }
+    .saved-address, .saved-new {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font: inherit;
+      font-size: 13.5px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .saved-address.selected { border-color: var(--accent); background: #fff5f7; }
+    .saved-address small { display: block; margin-top: 2px; color: var(--text-muted); font-size: 12px; }
+    .saved-new { color: var(--text-muted); background: #f9fafb; }
     .addr-list {
       position: absolute;
       z-index: 5;
@@ -2497,6 +2516,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
     <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" id="co_email" type="email" placeholder="john@email.com" required></div>
     <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="co_phone" type="tel" placeholder="+1 (555) 000-0000"></div>
+    <div id="savedAddresses" class="saved-addresses" hidden></div>
+    <p class="addr-hint" id="addressSignIn" hidden>Sign in before checkout to keep this address for next time. <a href="/account">Account</a></p>
     <div class="form-group addr-field">
       <label class="form-label" for="co_address">Street address</label>
       <div class="addr-box">
@@ -3472,6 +3493,47 @@ function openCheckout() {
   document.getElementById('checkoutModal').classList.add('open');
   document.body.style.overflow = 'hidden';
   bindAddressSuggestions();
+  loadSavedAddresses();
+}
+
+async function loadSavedAddresses() {
+  const box = document.getElementById('savedAddresses');
+  const hint = document.getElementById('addressSignIn');
+  const token = localStorage.getItem('bwo_customer_token');
+  if (!token) {
+    box.hidden = true;
+    hint.hidden = false;
+    return;
+  }
+  hint.hidden = true;
+  try {
+    const res = await fetch('/api/buywish/account/addresses', { headers: { Authorization: 'Bearer ' + token } });
+    const data = await res.json();
+    const list = res.ok && data.addresses ? data.addresses : [];
+    if (!list.length) { box.hidden = true; return; }
+    box.hidden = false;
+    box.innerHTML = '<div class="saved-label">Saved addresses</div>' + list.map((item) => {
+      const line = [item.line1, item.city, item.state, item.postal, item.country].filter(Boolean).join(', ');
+      return '<button type="button" class="saved-address' + (item.is_default ? ' selected' : '') + '" data-id="' + Number(item.id) + '">' + escHtml(item.recipient || 'Saved address') + '<small>' + escHtml(line) + '</small></button>';
+    }).join('') + '<button type="button" class="saved-new" id="useNewAddress">Use a new address</button>';
+    box.querySelectorAll('.saved-address').forEach((button) => {
+      button.addEventListener('click', () => {
+        const item = list.find((row) => String(row.id) === button.getAttribute('data-id'));
+        box.querySelectorAll('.saved-address').forEach((el) => el.classList.remove('selected'));
+        button.classList.add('selected');
+        if (item) fillCheckoutAddress({ line1: item.line1, city: item.city, state: item.state, postal: item.postal, country: item.country });
+      });
+    });
+    document.getElementById('useNewAddress').onclick = () => {
+      box.querySelectorAll('.saved-address').forEach((el) => el.classList.remove('selected'));
+      ['co_address', 'co_city', 'co_state', 'co_postal'].forEach((id) => { document.getElementById(id).value = ''; });
+      document.getElementById('co_address').focus();
+    };
+    const chosen = list.find((item) => item.is_default) || list[0];
+    fillCheckoutAddress({ line1: chosen.line1, city: chosen.city, state: chosen.state, postal: chosen.postal, country: chosen.country });
+  } catch (err) {
+    box.hidden = true;
+  }
 }
 
 function closeCheckout() {
