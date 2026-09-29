@@ -44,6 +44,10 @@ async function purgeExpiredTrash() {
     `DELETE FROM email_inbound WHERE deleted_at IS NOT NULL AND deleted_at < now() - ($1 || ' days')::interval RETURNING id`,
     [dayStr]
   );
+  const leads = await pool.query(
+    `DELETE FROM crm_leads WHERE deleted_at IS NOT NULL AND deleted_at < now() - ($1 || ' days')::interval RETURNING id`,
+    [dayStr]
+  );
 
   const oldUsers = await pool.query(
     `SELECT id FROM users WHERE deleted_at IS NOT NULL AND deleted_at < now() - ($1 || ' days')::interval`,
@@ -61,6 +65,7 @@ async function purgeExpiredTrash() {
       loads: loads.rowCount || 0,
       drivers: drivers.rowCount || 0,
       emails: emails.rowCount || 0,
+      leads: leads.rowCount || 0,
       users: usersDeleted
     }
   };
@@ -97,6 +102,10 @@ async function permanentlyDeleteItem(type, id) {
   }
   if (type === 'email') {
     const res = await pool.query('DELETE FROM email_inbound WHERE id = $1 AND deleted_at IS NOT NULL RETURNING id', [id]);
+    return res.rows.length > 0;
+  }
+  if (type === 'lead') {
+    const res = await pool.query('DELETE FROM crm_leads WHERE id = $1 AND deleted_at IS NOT NULL RETURNING id', [id]);
     return res.rows.length > 0;
   }
   if (type === 'user') {

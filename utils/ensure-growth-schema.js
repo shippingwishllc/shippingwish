@@ -168,6 +168,8 @@ async function ensureGrowthSchema() {
     await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ');
     await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL');
     await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS from_name TEXT');
+    await pool.query('ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ');
+    await pool.query('ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL');
   } catch (err) {
     console.warn('[SOFT_DELETE] direct ensure skipped:', err.message);
   }
@@ -241,6 +243,8 @@ async function ensureCrmLeadsTable() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `).catch(() => {});
+  await pool.query('ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ').catch(() => {});
+  await pool.query('ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS deleted_by INTEGER').catch(() => {});
 }
 
 module.exports = { ensureGrowthSchema, ensureCrmCoreTables, ensureCrmLeadsTable };

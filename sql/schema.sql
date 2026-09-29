@@ -360,6 +360,8 @@ CREATE TABLE IF NOT EXISTS crm_leads (
   sales_rep_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   notes TEXT,
   last_contacted_at TIMESTAMPTZ,
+  deleted_at TIMESTAMPTZ,
+  deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

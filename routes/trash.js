@@ -86,8 +86,23 @@ router.get('/', requireAuth, adminOnly, async (req, res) => {
         [perPage, offset]
       );
       items = result.rows.map((r) => enrichTrashItem({ type: 'email', ...r }));
+    } else if (type === 'leads') {
+      const countRes = await pool.query(`SELECT COUNT(*)::int AS count FROM crm_leads WHERE deleted_at IS NOT NULL`);
+      total = countRes.rows[0]?.count || 0;
+      const result = await pool.query(
+        `SELECT l.id, l.company_name, l.mc_number, l.dot_number, l.email, l.phone,
+                l.equipment_type, l.status, l.deleted_at,
+                du.name AS deleted_by_name
+         FROM crm_leads l
+         LEFT JOIN users du ON du.id = l.deleted_by
+         WHERE l.deleted_at IS NOT NULL
+         ORDER BY l.deleted_at DESC
+         LIMIT $1 OFFSET $2`,
+        [perPage, offset]
+      );
+      items = result.rows.map((r) => enrichTrashItem({ type: 'lead', ...r }));
     } else {
-      return res.status(400).json({ error: 'Invalid type. Use loads, users, drivers, or emails.' });
+      return res.status(400).json({ error: 'Invalid type. Use loads, users, drivers, emails, or leads.' });
     }
 
     const totalPages = Math.max(1, Math.ceil(total / perPage));
@@ -113,16 +128,19 @@ router.get('/counts', requireAuth, adminOnly, async (req, res) => {
     const users = await pool.query(`SELECT COUNT(*)::int AS count FROM users WHERE deleted_at IS NOT NULL`);
     const drivers = await pool.query(`SELECT COUNT(*)::int AS count FROM drivers WHERE deleted_at IS NOT NULL`);
     const emails = await pool.query(`SELECT COUNT(*)::int AS count FROM email_inbound WHERE deleted_at IS NOT NULL`);
+    const leads = await pool.query(`SELECT COUNT(*)::int AS count FROM crm_leads WHERE deleted_at IS NOT NULL`);
     res.json({
       loads: loads.rows[0]?.count || 0,
       users: users.rows[0]?.count || 0,
       drivers: drivers.rows[0]?.count || 0,
       emails: emails.rows[0]?.count || 0,
+      leads: leads.rows[0]?.count || 0,
       total:
         (loads.rows[0]?.count || 0) +
         (users.rows[0]?.count || 0) +
         (drivers.rows[0]?.count || 0) +
-        (emails.rows[0]?.count || 0),
+        (emails.rows[0]?.count || 0) +
+        (leads.rows[0]?.count || 0),
       retentionDays: getRetentionDays()
     });
   } catch (err) {
@@ -132,10 +150,10 @@ router.get('/counts', requireAuth, adminOnly, async (req, res) => {
 
 router.post('/restore', requireAuth, adminOnly, async (req, res) => {
   const { type, id } = req.body || {};
-  const TYPE_MAP = { load: 'loads', user: 'users', driver: 'drivers', email: 'email_inbound' };
+  const TYPE_MAP = { load: 'loads', user: 'users', driver: 'drivers', email: 'email_inbound', lead: 'crm_leads' };
   const table = TYPE_MAP[type];
   if (!table || !id) {
-    return res.status(400).json({ error: 'type and id are required (load, user, driver, email).' });
+    return res.status(400).json({ error: 'type and id are required (load, user, driver, email, lead).' });
   }
 
   try {
