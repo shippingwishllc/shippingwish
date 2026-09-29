@@ -32,7 +32,8 @@ const {
   isOrderCreateTool,
   selectOrderTool,
   buildOrderArguments,
-  extractOrderId
+  extractOrderId,
+  findStoreId
 } = require('../utils/buywish-fulfillment');
 const { renderProductPage, renderCollectionPage, renderSitemap, injectProductIntoStorefront } = require('../utils/buywish-pages');
 
@@ -219,6 +220,21 @@ const noted = buildOrderArguments({
 assert.strictEqual(noted.ok, true);
 assert.ok(noted.args.note.includes('Leave at the side door'));
 assert.ok(noted.args.note.includes('BWO-ABC'));
+
+const withStore = buildOrderArguments({
+  name: 'create_order',
+  inputSchema: { properties: { store_id: { type: 'string' }, product_id: {} }, required: ['store_id', 'product_id'] }
+}, { ...order, store_id: 'zd-store-01m3cwrb' });
+assert.strictEqual(withStore.ok, true);
+assert.strictEqual(withStore.args.store_id, 'zd-store-01m3cwrb');
+const needsStore = buildOrderArguments({
+  name: 'create_order',
+  inputSchema: { properties: { store_id: { type: 'string' } }, required: ['store_id'] }
+}, order);
+assert.strictEqual(needsStore.ok, false);
+assert.ok(needsStore.error.includes('store_id'));
+assert.strictEqual(findStoreId({ store: { id: 'zd-store-01m3cwrb' } }), 'zd-store-01m3cwrb');
+assert.strictEqual(findStoreId({ data: { store_id: 'store_9' } }), 'store_9');
 
 const parsedGoogle = fromGoogleComponents([
   { longText: '1600', shortText: '1600', types: ['street_number'] },

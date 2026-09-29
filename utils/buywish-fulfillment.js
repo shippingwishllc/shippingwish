@@ -86,6 +86,8 @@ function buildOrderArguments(tool, order) {
     store_order_id: order.order_number,
     order_number: order.order_number,
     idempotency_key: order.order_number,
+    store_id: order.store_id || '',
+    storeId: order.store_id || '',
     currency: order.currency || 'USD',
     confirm: true,
     confirmed: true,
@@ -137,6 +139,23 @@ function buildOrderArguments(tool, order) {
   return { ok: true, args, toolName: tool.name };
 }
 
+function findStoreId(payload) {
+  const found = [];
+  const stack = [payload];
+  const seen = new Set();
+  while (stack.length && found.length < 20) {
+    const node = stack.pop();
+    if (!node || typeof node !== 'object' || seen.has(node)) continue;
+    seen.add(node);
+    Object.entries(node).forEach(([key, value]) => {
+      if (typeof value === 'string' && value.trim()) {
+        if (/^zd-store-/i.test(value.trim()) || key === 'store_id' || key === 'storeId') found.push(value.trim());
+      } else if (value && typeof value === 'object') stack.push(value);
+    });
+  }
+  return found.find((value) => /^zd-store-/i.test(value)) || found[0] || '';
+}
+
 function extractOrderId(result) {
   if (!result || typeof result !== 'object') return null;
   const directKeys = ['order_id', 'zendrop_order_id', 'id', 'supplier_order_id'];
@@ -154,5 +173,6 @@ module.exports = {
   isOrderCreateTool,
   selectOrderTool,
   buildOrderArguments,
-  extractOrderId
+  extractOrderId,
+  findStoreId
 };

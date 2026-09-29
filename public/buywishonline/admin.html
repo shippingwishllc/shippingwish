@@ -66,6 +66,11 @@
     .bar i { display: block; height: 100%; background: #1a1a1a; }
     .bar-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 13px; }
     .bar-row span { width: 92px; color: var(--muted); }
+    .chart { display: flex; align-items: flex-end; justify-content: flex-start; gap: 18px; min-height: 168px; padding: 8px 4px 0; }
+    .chart-col { flex: 0 0 56px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 168px; }
+    .chart-col b { font-size: 12px; }
+    .chart-col i { display: block; width: min(36px, 100%); background: #1a1a1a; border-radius: 8px 8px 3px 3px; }
+    .chart-col span { font-size: 11px; color: var(--muted); white-space: nowrap; }
     .apps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .app-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
     #command { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: start; justify-content: center; padding: 12vh 16px 16px; z-index: 30; }
@@ -160,7 +165,7 @@
                 <button class="ghost" type="button" data-jump="orders">View all</button>
               </div>
               <table>
-                <thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th></tr></thead>
+                <thead><tr><th>Order</th><th>Customer</th><th>Stripe</th><th>Payment</th></tr></thead>
                 <tbody id="homeOrders"></tbody>
               </table>
             </div>
@@ -188,6 +193,7 @@
             <div class="stat"><span>Waiting for payment</span><b id="statPending">0</b></div>
             <div class="stat"><span>Linked in Zendrop</span><b id="statLinked">0</b></div>
           </div>
+          <p class="muted" style="margin-top:10px;">Paid confirmed means Stripe reported that checkout as paid. A refund or chargeback shows on that same order when Stripe records it.</p>
           <div class="card table-wrap">
             <input id="orderSearch" placeholder="Search orders" aria-label="Search orders">
             <table>
@@ -337,7 +343,8 @@
 
         <section class="panel" id="panel-analytics">
           <div class="topbar"><h1>Analytics</h1></div>
-          <p class="muted">Orders on this shop for the last 14 days. Site visits are in Google Analytics, measurement ID G-8Q973SH30G.</p>
+          <p class="muted">Paid sales by country, then orders by day. Site visits are in Google Analytics, measurement ID G-8Q973SH30G.</p>
+          <div class="stats" id="analyticsMarkets" style="margin-top:12px;"></div>
           <div class="card" id="analyticsDays"></div>
           <div class="card" id="analyticsCountries"></div>
         </section>
@@ -561,6 +568,34 @@
     };
     return labels[value] || value || '';
   }
+  function chargeText(order) {
+    const currency = order.currency || 'USD';
+    const total = Number(order.total_amount || 0).toFixed(2);
+    const tax = Number(order.tax_amount || 0);
+    const refunded = Number(order.refunded_amount || 0);
+    const parts = [`Stripe charged ${currency} ${total}`];
+    if (tax) parts.push(`tax ${currency} ${tax.toFixed(2)}`);
+    if (refunded) parts.push(`refunded ${currency} ${refunded.toFixed(2)}`);
+    return parts.join(' · ');
+  }
+  function payBadge(order) {
+    const dispute = order.stripe_dispute_status;
+    if (dispute && dispute !== 'won') {
+      return `<span class="pill off">Chargeback</span><div class="muted">${esc(plainStatus(order.fulfillment_status))}</div>`;
+    }
+    const refunded = Number(order.refunded_amount || 0);
+    const total = Number(order.total_amount || 0);
+    if (refunded > 0 && total > 0 && refunded >= total - 0.009) {
+      return `<span class="pill">Refunded</span><div class="muted">${esc(plainStatus(order.fulfillment_status))}</div>`;
+    }
+    if (refunded > 0) {
+      return `<span class="pill">Partial refund</span><div class="muted">${esc(plainStatus(order.fulfillment_status))}</div>`;
+    }
+    if (order.payment_status === 'paid' && (order.stripe_payment_intent || order.stripe_session_id)) {
+      return `<span class="pill on">Paid confirmed</span><div class="muted">${esc(plainStatus(order.fulfillment_status))}</div>`;
+    }
+    return `${esc(plainStatus(order.payment_status))}<div class="muted">${esc(plainStatus(order.fulfillment_status))}</div>`;
+  }
   function itemText(items) {
     const list = Array.isArray(items) ? items : [];
     return list.map(item => `${item.quantity || 1} × ${esc(item.title || item.product_id)}`).join(', ');
@@ -570,8 +605,8 @@
     document.getElementById('homeOrders').innerHTML = rows.map((order) => `<tr>
       <td><strong>${esc(order.order_number)}</strong><div class="muted">${new Date(order.created_at).toLocaleString()}</div></td>
       <td>${esc(order.customer_name)}<div class="muted">${esc(order.customer_email)}</div></td>
-      <td>${esc(order.currency || 'USD')} ${esc(order.total_amount)}</td>
-      <td>${esc(plainStatus(order.payment_status))}</td>
+      <td>${esc(chargeText(order))}</td>
+      <td>${payBadge(order)}</td>
     </tr>`).join('') || '<tr><td colspan="4">No orders yet. An order appears here after Place Order saves it.</td></tr>';
   }
   async function loadOrders() {
@@ -603,8 +638,8 @@
         <td><strong>${esc(order.order_number)}</strong><div class="muted">${new Date(order.created_at).toLocaleString()}</div></td>
         <td>${esc(order.customer_name)}<div class="muted">${esc(order.customer_email)}</div>${order.customer_phone ? `<div class="muted">${esc(order.customer_phone)}</div>` : ''}</td>
         <td>${esc(ship) || '—'}${note}</td>
-        <td>${itemText(order.items)}<div class="muted">${esc(order.currency || 'USD')} ${esc(order.total_amount)}</div></td>
-        <td>${esc(plainStatus(order.payment_status))}<div class="muted">${esc(plainStatus(order.fulfillment_status))}</div></td>
+        <td>${itemText(order.items)}<div class="muted">${esc(chargeText(order))}</div></td>
+        <td>${payBadge(order)}</td>
         <td>${zendrop}</td>
         <td>
           ${order.payment_status === 'paid' && !order.zendrop_order_id ? `<button type="button" onclick="pushOrder('${esc(order.order_number)}')">Send to Zendrop</button>` : ''}
@@ -641,10 +676,12 @@
     ((shopOverview && shopOverview.countries) || []).forEach((row) => { byCountry[String(row.country || '').toUpperCase()] = row; });
     names.UNKNOWN = 'Other';
     const marketKeys = ['US', 'CA', 'GB'].concat(Object.keys(byCountry).filter((key) => !['US', 'CA', 'GB'].includes(key)));
-    document.getElementById('marketCards').innerHTML = marketKeys.map((key) => {
+    const marketHtml = marketKeys.map((key) => {
       const row = byCountry[key] || { orders: 0, paid_total: 0 };
-      return `<div class="stat"><span>${esc(names[key] || key)}</span><b>${esc(row.orders)}</b><span>${money(row.paid_total)} paid</span></div>`;
+      return `<div class="stat"><span>${esc(names[key] || key)}</span><b>${money(row.paid_total)}</b><span>${esc(row.orders)} order${Number(row.orders) === 1 ? '' : 's'}</span></div>`;
     }).join('');
+    document.getElementById('marketCards').innerHTML = marketHtml;
+    document.getElementById('analyticsMarkets').innerHTML = marketHtml;
     document.getElementById('financeCards').innerHTML = [
       ['Paid sales', money(totals.paid_total)],
       ['Tax on paid orders', money(totals.tax_total)],
@@ -653,10 +690,11 @@
     ].map(([label, value]) => `<div class="stat"><span>${esc(label)}</span><b>${esc(value)}</b></div>`).join('');
     const days = (shopOverview && shopOverview.days) || [];
     const maxDay = days.reduce((max, row) => Math.max(max, Number(row.orders) || 0), 0) || 1;
-    document.getElementById('analyticsDays').innerHTML = `<h2>Orders by day</h2>` + (days.map((row) => {
-      const width = Math.round(((Number(row.orders) || 0) / maxDay) * 100);
-      return `<div class="bar-row"><span>${esc(row.day)}</span><div class="bar"><i style="width:${width}%"></i></div><b>${esc(row.orders)}</b></div>`;
-    }).join('') || '<p class="muted">No orders in the last 14 days.</p>');
+    document.getElementById('analyticsDays').innerHTML = `<h2>Orders by day</h2>` + (days.length ? `<div class="chart">${days.map((row) => {
+      const height = Math.max(8, Math.round(((Number(row.orders) || 0) / maxDay) * 120));
+      const label = String(row.day || '').slice(5);
+      return `<div class="chart-col"><b>${esc(row.orders)}</b><i style="height:${height}px"></i><span>${esc(label)}</span></div>`;
+    }).join('')}</div>` : '<p class="muted">No orders in the last 14 days.</p>');
     const countries = (shopOverview && shopOverview.countries) || [];
     document.getElementById('analyticsCountries').innerHTML = `<h2>Orders by country</h2>` + (countries.map((row) => `<div class="page-link"><strong>${esc(names[String(row.country || '').toUpperCase()] || row.country)}</strong><span>${esc(row.orders)} · ${money(row.paid_total)} paid</span></div>`).join('') || '<p class="muted">No orders yet.</p>');
     const apps = (shopOverview && shopOverview.apps) || {};

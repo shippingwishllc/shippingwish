@@ -42,7 +42,7 @@ const {
 } = require('../utils/buywish-catalog');
 const { cleanMetaPixelId, cleanGoogleTagId } = require('../utils/buywish-tracking');
 const { cleanSocialLinks, cleanSocialUrl, NETWORKS } = require('../utils/buywish-social');
-const { selectOrderTool, buildOrderArguments, extractOrderId } = require('../utils/buywish-fulfillment');
+const { selectOrderTool, buildOrderArguments, extractOrderId, findStoreId } = require('../utils/buywish-fulfillment');
 const { suggestAddresses, completeAddress, cleanShipTo } = require('../utils/buywish-address');
 const { orderConfirmationEmail, orderConfirmationSms, orderSmsPhone } = require('../utils/buywish-notify');
 const { sendBrandedEmail } = require('../utils/mailer');
@@ -137,6 +137,9 @@ async function ensureBuyWishSchema() {
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS zendrop_sync_detail TEXT;
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS customer_note TEXT;
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS confirmation_sent_at TIMESTAMPTZ;
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS refunded_amount NUMERIC(10,2) NOT NULL DEFAULT 0;
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS stripe_dispute_status TEXT;
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS stripe_synced_at TIMESTAMPTZ;
 
     CREATE TABLE IF NOT EXISTS buywish_addresses (
       id SERIAL PRIMARY KEY,
@@ -185,7 +188,47 @@ async function ensureBuyWishSchema() {
     );
   `);
   buyWishSchemaReady = true;
+  await keepOnlyRealOrder();
   queuePendingConfirmations();
+}
+
+const REAL_ORDER_NUMBER = 'BWO-8A280115652B';
+
+async function keepOnlyRealOrder() {
+  const client = await pool.connect();
+  let transactionOpen = false;
+  try {
+    const flag = await client.query(`SELECT 1 FROM buywish_settings WHERE key = 'keep_real_order_v1'`);
+    if (flag.rows.length) return;
+    await client.query('BEGIN');
+    transactionOpen = true;
+    const exists = await client.query(
+      `SELECT 1 FROM ecommerce_orders WHERE upper(order_number) = $1`,
+      [REAL_ORDER_NUMBER]
+    );
+    if (!exists.rows.length) {
+      await client.query('ROLLBACK');
+      transactionOpen = false;
+      return;
+    }
+    await client.query(
+      `DELETE FROM ecommerce_orders WHERE upper(order_number) <> $1`,
+      [REAL_ORDER_NUMBER]
+    );
+    await client.query(
+      `INSERT INTO buywish_settings (key, value) VALUES ('keep_real_order_v1', $1)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [REAL_ORDER_NUMBER]
+    );
+    await client.query('COMMIT');
+    transactionOpen = false;
+    console.log(`[BUYWISH] Removed smoke-test orders. Kept ${REAL_ORDER_NUMBER}.`);
+  } catch (err) {
+    if (transactionOpen) await client.query('ROLLBACK').catch(() => {});
+    console.error('[BUYWISH PURGE]:', err.message);
+  } finally {
+    client.release();
+  }
 }
 
 function signCustomer(customer) {
@@ -1156,6 +1199,7 @@ router.get('/verify-session', async (req, res) => {
 router.get('/admin/overview', ...buyWishAdmin, async (req, res) => {
   try {
     await ensureBuyWishSchema();
+    await refreshStripePayments();
     const [totals, countries, customers, days, products, accounts] = await Promise.all([
       pool.query(`
         SELECT
@@ -1233,9 +1277,70 @@ router.get('/admin/overview', ...buyWishAdmin, async (req, res) => {
   }
 });
 
+let stripeRefreshPromise = null;
+function refreshStripePayments() {
+  if (!stripeRefreshPromise) {
+    stripeRefreshPromise = refreshStripePaymentsNow().finally(() => { stripeRefreshPromise = null; });
+  }
+  return stripeRefreshPromise;
+}
+
+async function refreshStripePaymentsNow() {
+  const stripe = getStripe();
+  if (!stripe) return;
+  const { rows } = await pool.query(`
+    SELECT id, stripe_session_id
+    FROM ecommerce_orders
+    WHERE stripe_session_id IS NOT NULL
+      AND (stripe_synced_at IS NULL OR stripe_synced_at < NOW() - INTERVAL '6 hours')
+    ORDER BY created_at DESC
+    LIMIT 8
+  `);
+  for (const row of rows) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(row.stripe_session_id, {
+        expand: ['payment_intent.latest_charge.dispute']
+      });
+      const pi = session.payment_intent && typeof session.payment_intent === 'object' ? session.payment_intent : null;
+      const charge = pi && pi.latest_charge && typeof pi.latest_charge === 'object' ? pi.latest_charge : null;
+      const paymentIntentId = pi ? pi.id : (typeof session.payment_intent === 'string' ? session.payment_intent : null);
+      const refunded = charge ? Number(charge.amount_refunded || 0) / 100 : 0;
+      const dispute = charge && charge.dispute && typeof charge.dispute === 'object'
+        ? charge.dispute.status
+        : (charge && charge.disputed ? 'open' : null);
+      await pool.query(`
+        UPDATE ecommerce_orders SET
+          payment_status = CASE WHEN $2::boolean THEN 'paid' ELSE payment_status END,
+          tax_amount = COALESCE($3, tax_amount),
+          total_amount = COALESCE($4, total_amount),
+          subtotal_amount = COALESCE($5, subtotal_amount),
+          stripe_payment_intent = COALESCE($6, stripe_payment_intent),
+          refunded_amount = $7,
+          stripe_dispute_status = $8,
+          stripe_synced_at = NOW(),
+          updated_at = NOW()
+        WHERE id = $1
+      `, [
+        row.id,
+        session.payment_status === 'paid',
+        session.amount_total == null ? null : (session.total_details?.amount_tax || 0) / 100,
+        session.amount_total == null ? null : session.amount_total / 100,
+        session.amount_subtotal == null ? null : session.amount_subtotal / 100,
+        paymentIntentId,
+        refunded.toFixed(2),
+        dispute
+      ]);
+    } catch (err) {
+      console.warn('[BUYWISH STRIPE SYNC]:', err.message);
+      await pool.query(`UPDATE ecommerce_orders SET stripe_synced_at = NOW() WHERE id = $1`, [row.id]).catch(() => {});
+    }
+  }
+}
+
 router.get('/admin/orders', ...buyWishAdmin, async (req, res) => {
   try {
     await ensureBuyWishSchema();
+    await refreshStripePayments();
     const scope = req.query.scope === 'all' ? 'all' : 'queue';
     const where = scope === 'all'
       ? 'TRUE'
@@ -1245,6 +1350,7 @@ router.get('/admin/orders', ...buyWishAdmin, async (req, res) => {
               shipping_address, shipping_city, shipping_state, shipping_postal, shipping_country, customer_note,
               items, total_amount, subtotal_amount, tax_amount, currency, payment_status, fulfillment_status,
               zendrop_order_id, zendrop_sync_status, zendrop_sync_detail, supplier_tracking_number,
+              stripe_session_id, stripe_payment_intent, refunded_amount, stripe_dispute_status,
               created_at, updated_at
        FROM ecommerce_orders
        WHERE ${where}
@@ -2472,7 +2578,15 @@ async function pushPaidOrderToZendrop(orderNumber) {
   }
 
   const items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
-  const built = buildOrderArguments(tool, { ...order, items });
+  let storeId = String(process.env.ZENDROP_STORE_ID || '').trim();
+  if (!storeId) {
+    try {
+      storeId = findStoreId(await zendropCall('get_store', {}, { timeoutMs: 8000 }));
+    } catch (err) {
+      storeId = '';
+    }
+  }
+  const built = buildOrderArguments(tool, { ...order, items, store_id: storeId });
   if (!built.ok) {
     await pool.query(
       `UPDATE ecommerce_orders SET zendrop_sync_status = 'manual_required', zendrop_sync_detail = $2, updated_at = NOW() WHERE id = $1`,
@@ -2620,6 +2734,34 @@ async function applyCheckoutEvent(event) {
   }
 }
 
+async function applyBuyWishStripeEvent(event) {
+  if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
+    return applyCheckoutEvent(event);
+  }
+  const obj = event.data && event.data.object;
+  if (!obj) return;
+  const paymentIntent = typeof obj.payment_intent === 'string' ? obj.payment_intent : obj.payment_intent && obj.payment_intent.id;
+  if (!paymentIntent) return;
+  await ensureBuyWishSchema();
+  if (event.type.startsWith('charge.dispute.')) {
+    await pool.query(
+      `UPDATE ecommerce_orders
+       SET stripe_dispute_status = $2, stripe_synced_at = NOW(), updated_at = NOW()
+       WHERE stripe_payment_intent = $1`,
+      [paymentIntent, String(obj.status || 'open').slice(0, 40)]
+    );
+    return;
+  }
+  if (event.type === 'charge.refunded') {
+    await pool.query(
+      `UPDATE ecommerce_orders
+       SET refunded_amount = $2, stripe_synced_at = NOW(), updated_at = NOW()
+       WHERE stripe_payment_intent = $1`,
+      [paymentIntent, (Number(obj.amount_refunded || 0) / 100).toFixed(2)]
+    );
+  }
+}
+
 async function handleBuyWishWebhook(req, res) {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = approvedWebhookSecret();
@@ -2639,7 +2781,7 @@ async function handleBuyWishWebhook(req, res) {
   }
 
   try {
-    await applyCheckoutEvent(event);
+    await applyBuyWishStripeEvent(event);
     res.json({ received: true });
   } catch (e) {
     console.error('[BUYWISH WEBHOOK PROCESS ERROR]:', e.message);
