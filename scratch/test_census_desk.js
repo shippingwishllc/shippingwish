@@ -94,8 +94,8 @@ test('census desk page and staff nav are wired', () => {
   assert.match(route, /directories\/:id\/members\/:memberId/);
   assert.match(route, /directories\/:id\/contract/);
   assert.match(shell, /href: '\/census-desk'/);
-  assert.match(shell, /SIDEBAR_VERSION = '29'/);
-  assert.match(boot, /BOOT_VER = '29'/);
+  assert.match(shell, /SIDEBAR_VERSION = '30'/);
+  assert.match(boot, /BOOT_VER = '30'/);
   assert.match(server, /routes\/census-desk/);
   assert.match(route, /sms_consent = TRUE/);
   assert.doesNotMatch(route, /facebook/i);

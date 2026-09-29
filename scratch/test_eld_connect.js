@@ -103,8 +103,8 @@ test('login ELD desk is wired and public marketing.css is untouched', () => {
   assert.match(page, /eld-consent/);
   assert.doesNotMatch(page, /marketing\.css/);
   assert.match(shell, /href: '\/eld-desk'/);
-  assert.match(shell, /SIDEBAR_VERSION = '29'/);
-  assert.match(boot, /BOOT_VER = '29'/);
+  assert.match(shell, /SIDEBAR_VERSION = '30'/);
+  assert.match(boot, /BOOT_VER = '30'/);
   assert.match(server, /routes\/eld-connect/);
   const providers = fs.readFileSync(path.join(__dirname, '../utils/eld-providers.js'), 'utf8');
   assert.match(route, /consent is required/);

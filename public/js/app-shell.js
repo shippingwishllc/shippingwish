@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '29';
+  const SIDEBAR_VERSION = '30';
   // #endregion
 
   function clearRoleCache() {
@@ -95,6 +95,7 @@
     { section: 'Sales & Staff' },
     { key: 'crm', href: '/crm-sales', icon: '📈', label: 'Sales CRM & Leads' },
     { key: 'census', href: '/census-desk', icon: '🗂️', label: 'Census Desk' },
+    { key: 'broker-mkt', href: '/broker-marketing', icon: '📣', label: 'Broker Marketing' },
     { key: 'voice-calls', href: '/voice-calls', icon: '📞', label: 'AI Calls & Audio' },
     { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Replies' },
     { key: 'sms-inbox', href: '/sms-inbox', icon: '📱', label: 'SMS Replies' },
@@ -161,9 +162,12 @@
     'brokers.html': 'brokers',
     'fleet.html': 'fleet',
     'eld-desk.html': 'eld',
+    'eld-register.html': 'eldreg',
+    'visibility-desk.html': 'vis',
     'broker-desk.html': 'track',
     'crm-sales.html': 'crm',
     'census-desk.html': 'census',
+    'broker-marketing.html': 'broker-mkt',
     'sales-dashboard.html': 'crm',
     'inbox.html': 'inbox',
     'voice-calls.html': 'voice-calls',
@@ -530,7 +534,7 @@
     try {
       if (sessionStorage.getItem('sw_sidebar_ver') !== SIDEBAR_VERSION) return true;
     } catch (_) { /* ignore */ }
-    return !aside.querySelector('a.sidebar-nav-link[href="/visibility-desk"]');
+    return !aside.querySelector('a.sidebar-nav-link[href="/broker-marketing"]');
   }
 
   function mountSidebarContent(aside) {
@@ -876,7 +880,7 @@
         if (CURRENT_ROLE === 'carrier' || CURRENT_ROLE === 'carrier_admin') {
           const p = pageName();
           if (p === 'dashboard.html') window.location.replace('/carrier-overview');
-          if (p === 'crm-sales.html' || p === 'census-desk.html' || p === 'staff-management.html' || p === 'admin-dashboard.html' || p === 'dispatcher-dashboard.html') {
+          if (p === 'crm-sales.html' || p === 'census-desk.html' || p === 'broker-marketing.html' || p === 'staff-management.html' || p === 'admin-dashboard.html' || p === 'dispatcher-dashboard.html') {
             window.location.replace('/carrier-overview');
           }
         }

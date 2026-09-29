@@ -553,6 +553,7 @@ app.use('/api/loadboard', require('./routes/loadboard'));
 app.use('/api/dispatch-desk', require('./routes/dispatch-desk'));
 app.use('/api/outreach', require('./routes/outreach'));
 app.use('/api/census-desk', require('./routes/census-desk'));
+app.use('/api/broker-marketing', require('./routes/broker-marketing'));
 app.use('/api/loadboard/matches', require('./routes/loadboard-matchmaking')); // Smart Freight & Capacity Matchmaking Engine
 app.use('/api/crm', require('./routes/crm'));             // CRM Carrier Leads, Dispositions & Daily Tasks
 app.use('/api/email', require('./routes/email'));         // 1-Click branded outreach, inbound replies, unsubscribe

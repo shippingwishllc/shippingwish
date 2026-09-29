@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broker Marketing — FMCSA Brokers | Shipping Wish</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/design-system.css?v=7">
+  <style>
+    .cd-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+    .cd-card { background:var(--bg-card); border:1px solid var(--border-default); border-radius:16px; padding:18px 20px; box-shadow:0 1px 2px rgba(15,23,42,.05); }
+    .cd-card h3 { margin:0 0 4px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-help { margin:0 0 12px; font-size:12px; color:var(--text-secondary); line-height:1.45; }
+    .cd-hero { grid-column:span 12; display:flex; justify-content:space-between; gap:20px; align-items:center; flex-wrap:wrap; background:linear-gradient(120deg,#0f172a 0%,#1e3a5f 58%,#1d4ed8 100%); color:#fff; border:0; }
+    .cd-hero h2 { margin:0 0 6px; font-size:22px; font-weight:800; letter-spacing:-.02em; }
+    .cd-hero p { margin:0; max-width:680px; font-size:13px; line-height:1.5; color:#cbd5e1; }
+    .cd-kpi { padding:16px 18px; }
+    .cd-kpi .n { font-size:28px; font-weight:800; letter-spacing:-.03em; color:var(--text-primary); }
+    .cd-kpi .l { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-kpi .s { margin-top:6px; font-size:12px; color:var(--text-secondary); }
+    .cd-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--border-subtle); font-size:13px; }
+    .cd-toggle:last-child { border-bottom:0; }
+    .cd-toggle input { width:18px; height:18px; accent-color:#0f172a; }
+    .cd-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .cd-launch { width:100%; margin-top:12px; font-weight:800; padding:12px 16px; }
+    .cd-compact { font-size:12px; }
+    .cd-compact td, .cd-compact th { padding:8px 10px; vertical-align:middle; }
+    .cd-compact tr.is-on td { background:#eff6ff; }
+    .cd-pager { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; font-size:12px; color:var(--text-secondary); }
+    .cd-bulk { display:flex; gap:8px; flex-wrap:wrap; align-items:center; background:#f8fafc; border:1px solid var(--border-default); border-radius:12px; padding:10px 12px; margin-bottom:12px; }
+    .cd-toast { display:none; margin-top:10px; padding:10px 12px; border-radius:10px; font-size:12px; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+    .cd-toast.is-err { background:#fef2f2; color:#991b1b; border-color:#fecaca; }
+    .cd-sub { font-size:11px; color:var(--text-muted); }
+    .cd-consent { display:flex; align-items:flex-start; gap:8px; font-size:12px; line-height:1.4; color:#334155; }
+    .cd-consent input { margin-top:2px; }
+    .cd-badge { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 6px; border-radius:999px; background:#e2e8f0; color:#334155; }
+    .cd-badge.is-dual { background:#fef3c7; color:#92400e; }
+    @media (max-width: 980px) {
+      .cd-grid { grid-template-columns:1fr; }
+      .cd-hero, .cd-card { grid-column:auto !important; }
+    }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Broker Marketing</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Staff-only FMCSA brokers. Census Desk stays on carriers. Public shippingwish.com theme is unchanged.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="live-status"><span class="live-dot"></span> Census live</div>
+        <div id="notif-container"></div>
+      </div>
+    </header>
+    <main class="app-content">
+      <div class="cd-grid">
+        <section class="cd-card cd-hero">
+          <div>
+            <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fbbf24;margin-bottom:8px;">FMCSA brokers only</div>
+            <h2>Select brokers, then email, SMS, or Vapi.</h2>
+            <p>Pulls classdef BROKER and/or carship B from the Company Census. Next skips every company already shown or contacted so old rows do not mix back in. Cold SMS and AI calls need prior consent; email is allowed cold.</p>
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-load-hero" style="background:#f59e0b;color:#0f172a;font-weight:800;padding:12px 18px;border:0;">Load brokers</button>
+        </section>
+
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Shown</div>
+          <div class="n" id="kpi-shown">0</div>
+          <div class="s">Skipped on Next</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Emailed</div>
+          <div class="n" id="kpi-emailed">0</div>
+          <div class="s">CAN-SPAM batches</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">SMS</div>
+          <div class="n" id="kpi-sms">0</div>
+          <div class="s">Consent + 9am–5pm</div>
+        </article>
+        <article class="cd-card cd-kpi" style="grid-column:span 3;">
+          <div class="l">Vapi</div>
+          <div class="n" id="kpi-vapi">0</div>
+          <div class="s">Consent-gated calls</div>
+        </article>
+
+        <section class="cd-card" style="grid-column:span 4;">
+          <h3>Filters</h3>
+          <p class="cd-help">Default is active brokers with an email. Dual C;B authority still counts as a broker unless you tick broker-only.</p>
+          <label class="form-label" for="bm-state">State</label>
+          <select class="form-select" id="bm-state"></select>
+          <label class="cd-toggle"><span>Email on file</span><input type="checkbox" id="bm-email" checked></label>
+          <label class="cd-toggle"><span>Phone on file</span><input type="checkbox" id="bm-phone"></label>
+          <label class="cd-toggle"><span>Broker-only (exclude carship C)</span><input type="checkbox" id="bm-brokeronly"></label>
+          <label class="cd-toggle"><span>Active USDOT only</span><input type="checkbox" id="bm-active" checked></label>
+          <button type="button" class="btn btn-primary cd-launch" id="btn-load">Load brokers</button>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 8;">
+          <h3>How Next works</h3>
+          <p class="cd-help">Each Load / Next page of 10 is marked shown. Those USDOT numbers never return on a later page. Emailed, SMS, and Vapi rows stay skipped even if you reset shown-only rows.</p>
+          <p class="cd-help" id="bm-where" style="font-family:ui-monospace,monospace;font-size:11px;color:var(--text-muted);">No pull yet.</p>
+          <div class="cd-actions">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-reset">Reset shown (keep contacted)</button>
+            <a class="btn btn-secondary btn-sm" href="/census-desk">Open Census Desk (carriers)</a>
+          </div>
+        </section>
+
+        <section class="cd-card" style="grid-column:span 12;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+            <div>
+              <h3 style="margin:0;">This page</h3>
+              <p class="cd-help" id="bm-meta" style="margin:4px 0 0;">Load brokers, select how many to contact, then send.</p>
+            </div>
+          </div>
+          <div class="cd-bulk">
+            <label class="cd-consent" style="margin:0;">
+              <input type="checkbox" id="bm-consent">
+              <span>They already agreed (required for SMS / Vapi)</span>
+            </label>
+            <button type="button" class="btn btn-primary btn-sm" data-bulk="email">Email selected</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bulk="sms">SMS selected</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bulk="vapi">Vapi selected</button>
+          </div>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2 cd-compact">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="bm-all" aria-label="Select all on this page"></th>
+                  <th>Company</th>
+                  <th>MC / DOT</th>
+                  <th>ST</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                </tr>
+              </thead>
+              <tbody id="bm-rows">
+                <tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No brokers loaded yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="cd-pager">
+            <span id="bm-page-label">Page size 10. Next never reuses this batch.</span>
+            <div class="cd-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-next">Next (new companies)</button>
+            </div>
+          </div>
+          <div class="cd-toast" id="bm-toast"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/app-shell.js?v=30"></script>
+<script>
+(function () {
+  const STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
+  const PAGE_SIZE = 10;
+  let lastBrokers = [];
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function api(path, opts) {
+    return fetch(path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, opts || {}));
+  }
+  function toast(msg, err) {
+    const el = document.getElementById('bm-toast');
+    el.textContent = msg;
+    el.classList.toggle('is-err', !!err);
+    el.style.display = 'block';
+  }
+  function filters() {
+    return {
+      state: document.getElementById('bm-state').value,
+      hasEmail: document.getElementById('bm-email').checked,
+      hasPhone: document.getElementById('bm-phone').checked,
+      brokerOnly: document.getElementById('bm-brokeronly').checked,
+      activeOnly: document.getElementById('bm-active').checked
+    };
+  }
+  function selectedDots() {
+    return Array.from(document.querySelectorAll('#bm-rows input[type=checkbox]:checked')).map((el) => el.value).filter(Boolean);
+  }
+  function fillStats(stats) {
+    if (!stats) return;
+    document.getElementById('kpi-shown').textContent = stats.shown || 0;
+    document.getElementById('kpi-emailed').textContent = stats.emailed || 0;
+    document.getElementById('kpi-sms').textContent = stats.sms || 0;
+    document.getElementById('kpi-vapi').textContent = stats.vapi || 0;
+  }
+  function renderRows(brokers) {
+    lastBrokers = brokers || [];
+    const tbody = document.getElementById('bm-rows');
+    if (!lastBrokers.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No new brokers in this window. Try another state or Reset shown.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lastBrokers.map((b) => {
+      const dual = b.also_carrier ? '<span class="cd-badge is-dual">also carrier</span>' : '<span class="cd-badge">broker</span>';
+      const loc = [b.phy_city, b.phy_state].filter(Boolean).join(', ');
+      return `<tr>
+        <td><input type="checkbox" value="${escapeHtml(b.dot_number)}"></td>
+        <td><strong>${escapeHtml(b.company_name)}</strong><div class="cd-sub">${escapeHtml(b.owner_name || '')} ${dual}<div>${escapeHtml(loc)}</div></div></td>
+        <td>MC ${escapeHtml(b.mc_number || '—')}<div class="cd-sub">DOT ${escapeHtml(b.dot_number || '')}</div></td>
+        <td>${escapeHtml(b.phy_state || '')}</td>
+        <td>${escapeHtml(b.email || '—')}</td>
+        <td>${escapeHtml(b.phone || '—')}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('bm-all').checked = false;
+  }
+
+  async function loadNext() {
+    const btn = document.getElementById('btn-load');
+    btn.disabled = true;
+    try {
+      const res = await api('/api/broker-marketing/next', { method: 'POST', body: JSON.stringify(filters()) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Census failed');
+      renderRows(data.brokers || []);
+      fillStats(data.stats);
+      document.getElementById('bm-meta').textContent = (data.count || 0) + ' new brokers on this page. Next skips these USDOT numbers.';
+      document.getElementById('bm-where').textContent = data.exhausted
+        ? 'Census window exhausted for these filters. Reset shown (keep contacted) or change state.'
+        : (data.where || '');
+      document.getElementById('bm-page-label').textContent = 'Page size ' + PAGE_SIZE + (data.exhausted ? ' · end of census window' : ' · Next never reuses this batch');
+    } catch (err) {
+      toast(err.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function bulkSend(channel) {
+    const dots = selectedDots();
+    if (!dots.length) return toast('Select at least one broker on this page.', true);
+    const consent = document.getElementById('bm-consent').checked;
+    if ((channel === 'sms' || channel === 'vapi') && !consent) {
+      return toast('SMS and Vapi need prior consent. Check “they already agreed” or email first.', true);
+    }
+    try {
+      const res = await api('/api/broker-marketing/outreach', {
+        method: 'POST',
+        body: JSON.stringify({ dots, channel, consent_confirmed: consent })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      fillStats(data.stats);
+      const skip = (data.skipped || []).map((s) => s.company + ': ' + s.reason).join(' · ');
+      toast((data.sent || 0) + ' ' + channel + ' sent.' + (skip ? ' Skipped: ' + skip : ''));
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+
+  const stateSel = document.getElementById('bm-state');
+  stateSel.innerHTML = '<option value="">All states</option>' + STATES.map((s) => `<option value="${s}">${s}</option>`).join('');
+  document.getElementById('btn-load').addEventListener('click', loadNext);
+  document.getElementById('btn-load-hero').addEventListener('click', loadNext);
+  document.getElementById('btn-next').addEventListener('click', loadNext);
+  document.getElementById('btn-reset').addEventListener('click', async () => {
+    if (!confirm('Clear shown-only brokers so Next can refill? Emailed / SMS / Vapi stay skipped.')) return;
+    const res = await api('/api/broker-marketing/reset-shown', { method: 'POST', body: '{}' });
+    const data = await res.json();
+    if (!res.ok) return toast(data.error || 'Reset failed', true);
+    fillStats(data.stats);
+    renderRows([]);
+    toast((data.cleared || 0) + ' shown rows cleared. Contacted brokers stay skipped.');
+  });
+  document.getElementById('bm-all').addEventListener('change', (e) => {
+    document.querySelectorAll('#bm-rows input[type=checkbox]').forEach((el) => { el.checked = e.target.checked; });
+  });
+  document.querySelectorAll('[data-bulk]').forEach((btn) => {
+    btn.addEventListener('click', () => bulkSend(btn.getAttribute('data-bulk')));
+  });
+  api('/api/broker-marketing/stats').then((r) => r.json()).then((d) => fillStats(d.stats)).catch(() => {});
+})();
+</script>
+</body>
+</html>
