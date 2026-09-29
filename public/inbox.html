@@ -102,17 +102,23 @@
   <div class="app-main">
     <header class="app-header">
       <div>
-        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">📧 Freight Email Center</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Inbound carrier replies, outbound outreach, and dispatch dispatches.</p>
+        <h1 id="inbox-title" style="font-size:var(--text-lg);font-weight:800;margin:0;">Shipping Wish mail</h1>
+        <p id="inbox-subtitle" style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">One inbound webhook receives every brand. Open a brand, then Inbox, Sent, Draft, Spam, or Trash.</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <button class="btn btn-primary btn-sm" type="button" onclick="openComposeModal()" style="font-weight:800;">✏️ Compose Email</button>
-        <button class="btn btn-primary btn-sm" type="button" id="btn-folder-inbound" onclick="loadInbox(false, 1, 'inbound')" style="font-weight:700;">📥 Inbox</button>
-        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-outbound" onclick="loadInbox(false, 1, 'outbound')">📤 Sent</button>
-        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-all" onclick="loadInbox(false, 1, 'all')">📋 All Mail</button>
+        <span id="brand-switch" style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" type="button" data-brand="shippingwish.com" onclick="selectBrand('shippingwish.com')">Shipping Wish</button>
+          <button class="btn btn-secondary btn-sm" type="button" data-brand="loadsnexus.com" onclick="selectBrand('loadsnexus.com')">LoadsNexus</button>
+          <button class="btn btn-secondary btn-sm" type="button" data-brand="nyclimowish.com" onclick="selectBrand('nyclimowish.com')">NYC Limo Wish</button>
+          <button class="btn btn-secondary btn-sm" type="button" data-brand="buywishonline.com" onclick="selectBrand('buywishonline.com')">BuyWish</button>
+        </span>
+        <button class="btn btn-primary btn-sm" type="button" id="btn-folder-inbox" onclick="selectFolder('inbox')">📥 Inbox</button>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-sent" onclick="selectFolder('sent')">📤 Sent</button>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-draft" onclick="selectFolder('draft')">📝 Draft</button>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-spam" onclick="selectFolder('spam')">🚫 Spam</button>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-trash" onclick="selectFolder('trash')">🗑️ Trash</button>
         <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-unread" onclick="loadInbox(true, 1, 'inbound')">📬 Unread</button>
-        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-buywish" onclick="loadInbox(false, 1, 'inbound', 'buywishonline.com')">BuyWish</button>
-        <a href="/trash" class="btn btn-secondary btn-sm" id="inbox-trash-link" style="display:none;">🗑️ Trash</a>
       </div>
     </header>
     <main class="app-content inbox-page-content">
@@ -164,6 +170,13 @@
   let totalMessages = 0;
   let unreadOnlyFilter = false;
   let IS_ADMIN = false;
+  let IS_SUPER = false;
+  const BRAND_LABELS = {
+    'shippingwish.com': 'Shipping Wish',
+    'loadsnexus.com': 'LoadsNexus',
+    'nyclimowish.com': 'NYC Limo Wish',
+    'buywishonline.com': 'BuyWish'
+  };
 
   async function checkAuth() {
     const res = await fetch('/api/me', { credentials: 'include' });
@@ -177,8 +190,13 @@
       window.location.href = '/carrier-overview';
     }
     IS_ADMIN = role === 'admin' || role === 'super_admin';
-    const trashLink = document.getElementById('inbox-trash-link');
-    if (trashLink) trashLink.style.display = IS_ADMIN ? '' : 'none';
+    IS_SUPER = role === 'super_admin';
+    const brandSwitch = document.getElementById('brand-switch');
+    if (brandSwitch) brandSwitch.style.display = IS_SUPER ? 'flex' : 'none';
+    ['spam', 'trash'].forEach(function (name) {
+      const btn = document.getElementById('btn-folder-' + name);
+      if (btn) btn.style.display = IS_ADMIN ? '' : 'none';
+    });
   }
 
   function escapeHtml(str) {
@@ -199,7 +217,8 @@
   function renderInboxList() {
     const list = document.getElementById('inbox-list');
     if (!messagesCache.length) {
-      list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No carrier emails on this page. Try Previous or show all messages.</p>';
+      const label = BRAND_LABELS[currentDomain] || 'this mailbox';
+      list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No mail in ' + escapeHtml(label) + ' / ' + escapeHtml(currentFolder) + '.</p>';
       return;
     }
     list.innerHTML = messagesCache.map(m => `
@@ -254,7 +273,46 @@
   }
 
   let currentDirection = 'inbound';
-  let currentDomain = '';
+  let currentFolder = 'inbox';
+  let currentDomain = 'shippingwish.com';
+
+  function paintFolders() {
+    ['inbox', 'sent', 'draft', 'spam', 'trash', 'unread'].forEach(function (name) {
+      const btn = document.getElementById('btn-folder-' + name);
+      if (!btn) return;
+      const active = name === 'unread' ? unreadOnlyFilter : (name === currentFolder && !unreadOnlyFilter);
+      btn.classList.toggle('btn-primary', active);
+      btn.classList.toggle('btn-secondary', !active);
+    });
+    document.querySelectorAll('#brand-switch [data-brand]').forEach(function (btn) {
+      const active = btn.getAttribute('data-brand') === currentDomain;
+      btn.classList.toggle('btn-primary', active);
+      btn.classList.toggle('btn-secondary', !active);
+    });
+    const title = document.getElementById('inbox-title');
+    if (title) title.textContent = (BRAND_LABELS[currentDomain] || 'Mail') + ' mail';
+  }
+
+  function selectBrand(domain) {
+    if (!IS_SUPER) domain = 'shippingwish.com';
+    currentDomain = domain;
+    const url = new URL(location.href);
+    url.searchParams.set('domain', domain);
+    url.searchParams.set('folder', currentFolder);
+    history.replaceState({}, '', url.pathname + url.search);
+    loadInbox(false, 1, currentDirection, domain);
+  }
+
+  function selectFolder(folder) {
+    currentFolder = folder;
+    unreadOnlyFilter = false;
+    const direction = folder === 'sent' ? 'outbound' : folder === 'inbox' ? 'inbound' : folder;
+    const url = new URL(location.href);
+    url.searchParams.set('domain', currentDomain);
+    url.searchParams.set('folder', folder);
+    history.replaceState({}, '', url.pathname + url.search);
+    loadInbox(false, 1, direction, currentDomain);
+  }
 
   async function loadInbox(unreadOnly, page, direction, domain) {
     if (typeof unreadOnly === 'boolean') {
@@ -264,30 +322,21 @@
     if (page !== undefined) currentPage = page;
     if (currentPage < 1) currentPage = 1;
     if (direction !== undefined) currentDirection = direction;
-    if (domain !== undefined) currentDomain = domain || '';
-
-    // Update active folder tabs
-    ['inbound', 'outbound', 'all', 'unread'].forEach(d => {
-      const btn = document.getElementById('btn-folder-' + d);
-      if (btn) {
-        const isAct = (d === 'unread' && unreadOnlyFilter) || (d === currentDirection && !unreadOnlyFilter);
-        if (isAct) {
-          btn.classList.remove('btn-secondary');
-          btn.classList.add('btn-primary');
-        } else {
-          btn.classList.remove('btn-primary');
-          btn.classList.add('btn-secondary');
-        }
-      }
-    });
+    if (domain !== undefined) currentDomain = domain || 'shippingwish.com';
+    if (!IS_SUPER) currentDomain = 'shippingwish.com';
+    if (currentDirection === 'outbound') currentFolder = 'sent';
+    else if (currentDirection === 'spam' || currentDirection === 'trash' || currentDirection === 'draft') currentFolder = currentDirection;
+    else if (!unreadOnlyFilter) currentFolder = 'inbox';
+    paintFolders();
 
     const qs = new URLSearchParams({
       perPage: String(INBOX_PAGE_SIZE),
-      page: String(currentPage)
+      page: String(currentPage),
+      folder: unreadOnlyFilter ? 'inbox' : currentFolder,
+      domain: currentDomain
     });
     if (unreadOnlyFilter) qs.set('unread', '1');
     if (currentDirection) qs.set('direction', currentDirection);
-    if (currentDomain) qs.set('domain', currentDomain);
 
     try {
       const res = await fetch('/api/email/inbox?' + qs.toString(), { credentials: 'include' });
@@ -392,7 +441,9 @@
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <a class="btn btn-secondary btn-sm" href="${mailto}">Open in mail app</a>
-            ${IS_ADMIN ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="trashEmail(${m.id})">Move to trash</button>` : ''}
+            ${IS_ADMIN && m.direction !== 'draft' && m.direction !== 'outbound' ? `<button type="button" class="btn btn-light btn-sm" onclick="spamEmail(${m.id}, ${currentFolder === 'spam' ? 'false' : 'true'})">${currentFolder === 'spam' ? 'Not spam' : 'Spam'}</button>` : ''}
+            ${IS_ADMIN && m.direction !== 'draft' && m.direction !== 'outbound' && currentFolder !== 'trash' ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="trashEmail(${m.id})">Move to trash</button>` : ''}
+            ${m.direction === 'draft' ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="deleteDraft(${m.id})">Delete draft</button>` : ''}
           </div>
         </div>
       </div>
@@ -441,14 +492,14 @@
         </div>
       </div>
 
-      <div class="reply-box">
+      ${m.direction === 'inbound' || !m.direction ? `<div class="reply-box">
         <h3 style="margin:0 0 6px;font-size:14px;font-weight:700;color:#0f172a;">Reply from portal</h3>
         <p class="reply-from-note" style="font-size:11.5px;color:#64748b;margin:0 0 8px;">Reply will send from <strong style="color:#0f172a;">${escapeHtml(replyFrom)}</strong> to <strong style="color:#0f172a;">${escapeHtml(m.peer_email || m.from_email || '')}</strong> (same thread).</p>
         <textarea id="reply-text-${m.id}" placeholder="Type your reply to carrier…" style="width:100%;min-height:84px;border:1.5px solid #cbd5e1;border-radius:10px;padding:12px;font-family:inherit;font-size:14px;box-sizing:border-box;color:#0f172a;background:#ffffff;"></textarea>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
           <button type="button" class="btn btn-primary btn-sm" onclick="sendReply(${m.id})">Send reply</button>
         </div>
-      </div>
+      </div>` : ''}
     `;
   }
 
@@ -479,6 +530,41 @@
     const d = document.createElement('div');
     d.innerHTML = String(html || '');
     return (d.textContent || d.innerText || '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  async function spamEmail(id, spam) {
+    const res = await fetch('/api/email/inbox/' + id + '/spam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ spam: spam !== false })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not update spam.');
+      return;
+    }
+    if (selectedId === id) {
+      selectedId = null;
+      document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">Select a message on the left.</p>';
+    }
+    loadInbox(unreadOnlyFilter);
+  }
+
+  async function deleteDraft(id) {
+    const draftId = id > 30000000 ? id - 30000000 : id;
+    if (!confirm('Delete this draft?')) return;
+    const res = await fetch('/api/email/drafts/' + draftId, { method: 'DELETE', credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not delete draft.');
+      return;
+    }
+    if (selectedId === id) {
+      selectedId = null;
+      document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">Select a message on the left.</p>';
+    }
+    loadInbox(false, 1, 'draft', currentDomain);
   }
 
   async function trashEmail(id) {
@@ -608,7 +694,7 @@
       if (!res.ok) throw new Error(data.error || 'Failed to send email');
       alert(`✅ ${data.message || 'Email sent successfully!'}`);
       closeComposeModal();
-      loadInbox(false, 1, 'outbound');
+      selectFolder('sent');
     } catch (err) {
       alert(`⚠️ ${err.message}`);
     } finally {
@@ -617,6 +703,32 @@
     }
   };
 
+  window.selectBrand = selectBrand;
+  window.selectFolder = selectFolder;
+  window.spamEmail = spamEmail;
+  window.deleteDraft = deleteDraft;
+  window.saveComposeDraft = async function () {
+    const res = await fetch('/api/email/drafts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        domain: currentDomain,
+        from: document.getElementById('compose-from').value,
+        to: document.getElementById('compose-to').value,
+        subject: document.getElementById('compose-subject').value,
+        message: document.getElementById('compose-body').value
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not save draft.');
+      return;
+    }
+    alert(data.message || 'Draft saved.');
+    closeComposeModal();
+    selectFolder('draft');
+  };
   window.loadInbox = loadInbox;
   window.openMessage = openMessage;
   window.goInboxPage = goInboxPage;
@@ -628,8 +740,13 @@
 
   async function init() {
     await checkAuth();
-    const domain = new URLSearchParams(location.search).get('domain') || '';
-    await loadInbox(false, 1, 'inbound', domain);
+    const params = new URLSearchParams(location.search);
+    const domain = IS_SUPER ? (params.get('domain') || 'shippingwish.com') : 'shippingwish.com';
+    const folder = params.get('folder') || 'inbox';
+    currentDomain = domain;
+    currentFolder = folder;
+    const direction = folder === 'sent' ? 'outbound' : folder === 'inbox' ? 'inbound' : folder;
+    await loadInbox(false, 1, direction, domain);
   }
 
   if (document.readyState === 'loading') {
@@ -659,6 +776,11 @@
           <option value="Shipping Wish Billing <billing@shippingwish.com>">Shipping Wish Billing &lt;billing@shippingwish.com&gt;</option>
           <option value="LoadsNexus Dispatch <dispatch@loadsnexus.com>">LoadsNexus Dispatch &lt;dispatch@loadsnexus.com&gt;</option>
           <option value="LoadsNexus Billing <billing@loadsnexus.com>">LoadsNexus Billing &lt;billing@loadsnexus.com&gt;</option>
+          <option value="NYC Limo Wish <info@nyclimowish.com>">NYC Limo Wish &lt;info@nyclimowish.com&gt;</option>
+          <option value="BuyWishOnline <support@buywishonline.com>">BuyWishOnline &lt;support@buywishonline.com&gt;</option>
+          <option value="BuyWishOnline Orders <orders@buywishonline.com>">BuyWishOnline Orders &lt;orders@buywishonline.com&gt;</option>
+          <option value="BuyWishOnline Billing <billing@buywishonline.com>">BuyWishOnline Billing &lt;billing@buywishonline.com&gt;</option>
+          <option value="BuyWishOnline Alerts <alerts@buywishonline.com>">BuyWishOnline Alerts &lt;alerts@buywishonline.com&gt;</option>
         </select>
       </div>
 
@@ -690,6 +812,7 @@
 
       <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #e2e8f0;padding-top:14px;">
         <button type="button" class="btn btn-secondary" onclick="closeComposeModal()">Cancel</button>
+        <button type="button" class="btn btn-secondary" onclick="saveComposeDraft()">Save draft</button>
         <button type="submit" id="btn-send-compose" class="btn btn-primary" style="font-weight:800;">🚀 Send Email Now</button>
       </div>
     </form>

@@ -131,11 +131,12 @@ async function sendBrandedEmail({
     console.log('[MAILER] RESEND_API_KEY missing — logged only:', { to, subject });
   }
 
+  const fromEmail = (String(from).match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i) || [null])[0];
   try {
     await pool.query(
-      `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [leadId || null, to, subject, emailType || templateKey || 'outreach', status, providerId, sentBy || null, templateKey || emailType || null]
+      `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key, from_email)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [leadId || null, to, subject, emailType || templateKey || 'outreach', status, providerId, sentBy || null, templateKey || emailType || null, fromEmail]
     );
   } catch (err) {
     // template_key column may not exist yet — fall back
