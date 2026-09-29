@@ -41,6 +41,7 @@ const {
   clampMargin
 } = require('../utils/buywish-catalog');
 const { cleanMetaPixelId, cleanGoogleTagId } = require('../utils/buywish-tracking');
+const { cleanSocialLinks, cleanSocialUrl, NETWORKS } = require('../utils/buywish-social');
 const { selectOrderTool, buildOrderArguments, extractOrderId } = require('../utils/buywish-fulfillment');
 const buyWishAdmin = [requireAuth, requireRole('admin')];
 
@@ -1275,11 +1276,67 @@ router.get('/tracking', async (req, res) => {
   res.json({ ok: true, ...ids });
 });
 
+const SOCIAL_KEYS = Object.keys(NETWORKS);
+let socialLinkCache = { at: 0, links: null };
+
+async function readSocialLinks() {
+  if (socialLinkCache.links && Date.now() - socialLinkCache.at < 60000) return socialLinkCache.links;
+  const links = { facebook: '', instagram: '', tiktok: '', x: '' };
+  try {
+    await ensureBuyWishSchema();
+    const { rows } = await pool.query(
+      `SELECT key, value FROM buywish_settings WHERE key = ANY($1::text[])`,
+      [SOCIAL_KEYS.map((name) => 'social_' + name)]
+    );
+    rows.forEach((row) => {
+      const name = String(row.key || '').replace(/^social_/, '');
+      if (!NETWORKS[name]) return;
+      links[name] = cleanSocialUrl(row.value, name) || '';
+    });
+  } catch (err) {
+    links.facebook = '';
+    links.instagram = '';
+    links.tiktok = '';
+    links.x = '';
+  }
+  socialLinkCache = { at: Date.now(), links };
+  return links;
+}
+
+router.get('/social', async (req, res) => {
+  const links = await readSocialLinks();
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  res.json({ ok: true, ...links });
+});
+
+router.put('/admin/settings/social', ...buyWishAdmin, async (req, res) => {
+  const cleaned = cleanSocialLinks(req.body || {});
+  if (cleaned.error) return res.status(400).json({ error: cleaned.error });
+  const links = cleaned.links;
+  try {
+    await ensureBuyWishSchema();
+    await pool.query(
+      `INSERT INTO buywish_settings (key, value, updated_at) VALUES
+         ('social_facebook', $1, now()),
+         ('social_instagram', $2, now()),
+         ('social_tiktok', $3, now()),
+         ('social_x', $4, now())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+      [links.facebook, links.instagram, links.tiktok, links.x]
+    );
+    socialLinkCache = { at: 0, links: null };
+    res.json({ ok: true, ...links });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not save the social links.' });
+  }
+});
+
 router.get('/admin/settings', ...buyWishAdmin, async (req, res) => {
   try {
     const margin_percent = await refreshStoreMargin();
     const tracking = await readTrackingIds();
-    res.json({ ok: true, margin_percent, ...tracking });
+    const social = await readSocialLinks();
+    res.json({ ok: true, margin_percent, ...tracking, social });
   } catch (err) {
     res.status(500).json({ error: 'Could not load shop settings.' });
   }
