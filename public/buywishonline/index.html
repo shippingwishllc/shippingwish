@@ -456,39 +456,51 @@
       border-bottom: 1px solid var(--border);
     }
     .cat-strip-inner {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 12px 16px 10px;
+      width: 100%;
+      margin: 0;
+      padding: 14px clamp(12px, 1.6vw, 28px) 12px;
       display: flex;
       align-items: flex-start;
-      gap: 4px;
-      overflow-x: auto;
-      scrollbar-width: none;
+      justify-content: center;
+      gap: clamp(8px, 1.2vw, 18px);
+      overflow: visible;
     }
-    .cat-strip-inner::-webkit-scrollbar { display: none; }
     .cat-chip {
       display: flex;
       flex-direction: column;
-      flex-shrink: 0;
+      flex: 0 1 auto;
       align-items: center;
-      gap: 6px;
-      min-width: 76px;
-      padding: 6px 8px 8px;
-      font-size: 11px;
+      gap: 8px;
+      width: clamp(76px, 8vw, 128px);
+      min-width: 0;
+      padding: 4px 2px 8px;
+      font-size: 12.5px;
       font-weight: 700;
+      line-height: 1.25;
       color: #4b5563;
       border: none;
       cursor: pointer;
       transition: color 0.15s;
-      white-space: nowrap;
+      white-space: normal;
+      text-wrap: balance;
       border-radius: 0;
       background: none;
       text-align: center;
     }
+    /* The full shop row stretches so the circles use the whole screen. */
+    .cat-strip-inner:has(.cat-chip:nth-child(8)) {
+      justify-content: stretch;
+      gap: clamp(4px, 0.5vw, 12px);
+    }
+    .cat-strip-inner:has(.cat-chip:nth-child(8)) .cat-chip {
+      flex: 1 1 0;
+      width: auto;
+    }
     .cat-chip:hover, .cat-chip.active { color: var(--accent); }
     .cat-chip .cat-emoji {
-      width: 62px;
-      height: 62px;
+      width: clamp(56px, 5.8vw, 96px);
+      height: clamp(56px, 5.8vw, 96px);
+      flex: 0 0 auto;
       border-radius: 50%;
       background: #eef2f7;
       border: 2px solid #e5e7eb;
@@ -496,6 +508,31 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
+    }
+    @media (max-width: 740px) {
+      .cat-strip-inner,
+      .cat-strip-inner:has(.cat-chip:nth-child(8)) {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px 8px;
+        padding: 12px 12px 10px;
+      }
+      .cat-strip-inner .cat-chip,
+      .cat-strip-inner:has(.cat-chip:nth-child(8)) .cat-chip {
+        width: auto;
+        font-size: 12px;
+      }
+      .cat-chip .cat-emoji {
+        width: min(72px, 78%);
+        height: auto;
+        aspect-ratio: 1;
+      }
+    }
+    @media (max-width: 430px) {
+      .cat-strip-inner,
+      .cat-strip-inner:has(.cat-chip:nth-child(8)) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
     }
     .cat-art { width: 100%; height: 100%; object-fit: cover; display: block; }
     .mobile-nav-link .cat-art { width: 28px; height: 28px; border-radius: 8px; flex: 0 0 28px; }
@@ -1888,12 +1925,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <a class="cat-chip" data-dept="tech-gadgets" href="/collections/tech-gadgets"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/tech.png" alt=""></span>Tech & Gadgets</a>
     <a class="cat-chip" data-dept="home-living" href="/collections/home-living"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/home.png" alt=""></span>Home & Living</a>
     <a class="cat-chip" data-dept="fashion" href="/collections/fashion"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/fashion.png" alt=""></span>Fashion</a>
-    <a class="cat-chip" data-dept="beauty" href="/collections/beauty"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/beauty.png" alt=""></span>Beauty</a>
-    <a class="cat-chip" data-dept="fitness" href="/collections/fitness"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/fitness.png" alt=""></span>Fitness</a>
-    <a class="cat-chip" data-dept="pets" href="/collections/pets"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/pets.png" alt=""></span>Pets</a>
+    <a class="cat-chip" data-dept="beauty" href="/collections/beauty"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/beauty.png" alt=""></span>Beauty & Wellness</a>
+    <a class="cat-chip" data-dept="fitness" href="/collections/fitness"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/fitness.png" alt=""></span>Fitness & Outdoors</a>
+    <a class="cat-chip" data-dept="pets" href="/collections/pets"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/pets.png" alt=""></span>Pet Supplies</a>
     <a class="cat-chip" data-dept="kids-baby" href="/collections/kids-baby"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/kids.png" alt=""></span>Kids & Baby</a>
     <a class="cat-chip" data-dept="travel" href="/collections/travel"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/travel.png" alt=""></span>Travel</a>
-    <a class="cat-chip" data-dept="arts" href="/collections/arts"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/arts.png" alt=""></span>Arts</a>
+    <a class="cat-chip" data-dept="arts" href="/collections/arts"><span class="cat-emoji"><img class="cat-art" src="/buywishonline/icons/arts.png" alt=""></span>Arts & Crafts</a>
   </div>
 </div>
 <script src="/buywishonline/category-art.js"></script>
