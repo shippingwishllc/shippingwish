@@ -36,7 +36,7 @@
     <header class="app-header">
       <div>
         <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Trash</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Soft-deleted loads, accounts, drivers &amp; emails — restore or permanently delete</p>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Soft-deleted loads, CRM leads, accounts, drivers &amp; emails — restore or permanently delete</p>
       </div>
     </header>
     <main class="app-content">
@@ -57,6 +57,10 @@
           <div class="stat-kpi-top"><span class="stat-kpi-title">Emails</span><div class="stat-kpi-icon">📧</div></div>
           <div class="stat-kpi-val" id="kpi-trash-emails">0</div>
         </div>
+        <div class="stat-kpi-card">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">CRM leads</span><div class="stat-kpi-icon">📋</div></div>
+          <div class="stat-kpi-val" id="kpi-trash-leads">0</div>
+        </div>
       </div>
 
       <div class="tms-table-card" style="padding:16px;">
@@ -66,6 +70,7 @@
         </div>
         <div class="trash-tabs" id="trash-tabs">
           <button type="button" class="btn btn-primary btn-sm" data-type="loads" onclick="switchTrashTab('loads', this)">Loads</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-type="leads" onclick="switchTrashTab('leads', this)">CRM leads</button>
           <button type="button" class="btn btn-secondary btn-sm" data-type="users" onclick="switchTrashTab('users', this)">Carriers / accounts</button>
           <button type="button" class="btn btn-secondary btn-sm" data-type="drivers" onclick="switchTrashTab('drivers', this)">Drivers</button>
           <button type="button" class="btn btn-secondary btn-sm" data-type="emails" onclick="switchTrashTab('emails', this)">Emails</button>
@@ -125,6 +130,8 @@
     document.getElementById('kpi-trash-loads').textContent = c.loads || 0;
     document.getElementById('kpi-trash-users').textContent = c.users || 0;
     document.getElementById('kpi-trash-emails').textContent = c.emails || 0;
+    const leadsKpi = document.getElementById('kpi-trash-leads');
+    if (leadsKpi) leadsKpi.textContent = c.leads || 0;
     if (c.retentionDays) {
       trashRetentionDays = c.retentionDays;
       document.getElementById('trash-retention-days').textContent = c.retentionDays;
@@ -166,6 +173,8 @@
     const thead = document.getElementById('trash-thead');
     if (trashType === 'loads') {
       thead.innerHTML = '<tr><th>Load</th><th>Carrier</th><th>Lane</th><th>Deleted</th><th>Auto-purge</th><th>By</th><th></th></tr>';
+    } else if (trashType === 'leads') {
+      thead.innerHTML = '<tr><th>Company</th><th>MC / DOT</th><th>Contact</th><th>Deleted</th><th>Auto-purge</th><th>By</th><th></th></tr>';
     } else if (trashType === 'users') {
       thead.innerHTML = '<tr><th>Name / email</th><th>Role</th><th>Company</th><th>Deleted</th><th>Auto-purge</th><th>By</th><th></th></tr>';
     } else if (trashType === 'drivers') {
@@ -240,6 +249,17 @@
           <td><strong>${escapeHtml(item.name)}</strong></td>
           <td>${escapeHtml(item.carrier_company || item.carrier_name || '—')}</td>
           <td>${escapeHtml(item.phone || item.email || '—')}</td>
+          <td style="font-size:12px;">${deleted}</td>
+          <td>${daysLeft}</td>
+          <td style="font-size:12px;">${by}</td>
+          <td>${actions}</td>
+        </tr>`;
+      }
+      if (item.type === 'lead') {
+        return `<tr>
+          <td><strong>${escapeHtml(item.company_name)}</strong><br><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(item.status || '')}</span></td>
+          <td>${escapeHtml(item.mc_number || '—')}<br><span style="font-size:11px;color:var(--text-muted);">DOT ${escapeHtml(item.dot_number || '—')}</span></td>
+          <td>${escapeHtml(item.email || item.phone || '—')}</td>
           <td style="font-size:12px;">${deleted}</td>
           <td>${daysLeft}</td>
           <td style="font-size:12px;">${by}</td>

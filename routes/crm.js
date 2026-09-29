@@ -516,8 +516,9 @@ router.get('/leads', requireAuth, async (req, res) => {
     `;
     const params = [];
 
+    query += ` WHERE l.deleted_at IS NULL`;
     if (req.user.role === 'sales_rep') {
-      query += ` WHERE l.sales_rep_id = $1`;
+      query += ` AND l.sales_rep_id = $1`;
       params.push(req.user.id);
     }
 
@@ -534,10 +535,10 @@ router.get('/leads', requireAuth, async (req, res) => {
 // POST /api/crm/leads - Create new lead
 router.get('/leads/stats', requireAuth, async (req, res) => {
   try {
-    const totalLeads = await pool.query('SELECT COUNT(*) FROM crm_leads');
-    const newLeads = await pool.query("SELECT COUNT(*) FROM crm_leads WHERE status = 'new'");
-    const interested = await pool.query("SELECT COUNT(*) FROM crm_leads WHERE status = 'interested'");
-    const activeCarriers = await pool.query("SELECT COUNT(*) FROM crm_leads WHERE status = 'active'");
+    const totalLeads = await pool.query("SELECT COUNT(*) FROM crm_leads WHERE deleted_at IS NULL");
+    const newLeads = await pool.query("SELECT COUNT(*) FROM crm_leads WHERE deleted_at IS NULL AND status = 'new'");
+    const interested = await pool.query("SELECT COUNT(*) FROM crm_leads WHERE deleted_at IS NULL AND status = 'interested'");
+    const activeCarriers = await pool.query("SELECT COUNT(*) FROM crm_leads WHERE deleted_at IS NULL AND status = 'active'");
 
     res.json({
       total: parseInt(totalLeads.rows[0].count),
@@ -954,10 +955,25 @@ router.put('/leads/:id/status', requireAuth, async (req, res) => {
 
 router.delete('/leads/:id', requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
   try {
-    await pool.query('DELETE FROM crm_leads WHERE id = $1', [req.params.id]);
-    res.json({ ok: true });
+    await ensureCrmLeadsTable().catch(() => {});
+    const result = await pool.query(
+      `UPDATE crm_leads
+       SET deleted_at = now(), deleted_by = $2
+       WHERE id = $1 AND deleted_at IS NULL
+       RETURNING id, company_name`,
+      [req.params.id, req.user && req.user.id ? req.user.id : null]
+    );
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'Lead not found or already in Trash.' });
+    }
+    res.json({
+      ok: true,
+      trash: true,
+      lead: result.rows[0],
+      message: 'Moved to Trash. Restore from Trash within 30 days.'
+    });
   } catch (err) {
-    res.status(500).json({ error: 'Could not delete lead' });
+    res.status(500).json({ error: 'Could not move lead to Trash' });
   }
 });
 

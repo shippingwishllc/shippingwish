@@ -255,7 +255,7 @@
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:10px;">
             <div>
               <h3 style="margin:0;">CRM leads</h3>
-              <p class="cd-help" style="margin:4px 0 0;">10 per page. Check rows, then Email / SMS / Vapi — or one-press on the row.</p>
+              <p class="cd-help" style="margin:4px 0 0;">Checks start empty. Tick only the rows you want to Email / SMS / Vapi. Delete is the red button on that one row — it moves the company to Trash, not every checked box.</p>
             </div>
             <div class="search-input-group" style="min-width:240px;">
               <span class="search-icon">🔍</span>
@@ -272,6 +272,7 @@
           </div>
           <div class="cd-bulk">
             <button type="button" class="btn btn-secondary btn-sm" id="btn-select-page">This page</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-checks">Clear checks</button>
             <button type="button" class="btn btn-primary btn-sm" data-bulk="email">Email selected</button>
             <button type="button" class="btn btn-secondary btn-sm" data-bulk="sms">SMS selected</button>
             <button type="button" class="btn btn-secondary btn-sm" data-bulk="vapi">Vapi selected</button>
@@ -560,6 +561,14 @@
         if (sel) sel.textContent = String(selectedLeadIds().length);
       });
     }
+    const clearChecks = document.getElementById('btn-clear-checks');
+    if (clearChecks) {
+      clearChecks.addEventListener('click', () => {
+        document.querySelectorAll('#leads-tbody input[type=checkbox]').forEach((el) => { el.checked = false; });
+        const sel = document.getElementById('kpi-selected');
+        if (sel) sel.textContent = '0';
+      });
+    }
     const prev = document.getElementById('btn-crm-prev');
     const next = document.getElementById('btn-crm-next');
     if (prev) prev.addEventListener('click', () => { crmPage -= 1; renderLeadsTable(); });
@@ -845,7 +854,7 @@
 
       tbody.innerHTML = slice.map(l => `
         <tr data-lead="${l.id}">
-          <td><input type="checkbox" value="${l.id}" checked></td>
+          <td><input type="checkbox" value="${l.id}"></td>
           <td>
             <strong>${escapeHtml(l.companyName)}</strong>
             <div class="cd-sub">${escapeHtml(l.mcNumber)} · DOT ${escapeHtml(l.dotNumber)} · ${escapeHtml(String(l.status || 'new').replace('_', ' '))}</div>
@@ -1154,9 +1163,21 @@
   });
 
   async function deleteLead(id) {
-    if (confirm('Delete lead record?')) {
-      await fetch(`/api/crm/leads/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (!confirm('Move this lead to Trash? Only this company. Restore from Trash within 30 days. Checked boxes are for Email/SMS/Vapi — they do not delete.')) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/crm/leads/${id}`, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (typeof showToast === 'function') showToast(data.error || 'Could not move lead to Trash', true);
+        else alert(data.error || 'Could not move lead to Trash');
+        return;
+      }
+      if (typeof showToast === 'function') showToast(data.message || 'Moved to Trash.');
       loadLeads();
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Could not move lead to Trash', true);
     }
   }
 
