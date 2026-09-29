@@ -26,7 +26,7 @@ const {
   applyCatalogEdits,
   STORE_DEPARTMENTS
 } = require('../utils/buywish-catalog');
-const { fromGoogleComponents, fromNominatim, cleanShipTo } = require('../utils/buywish-address');
+const { fromGoogleComponents, fromNominatim, cleanShipTo, shopLocale, suggestRegionCodes } = require('../utils/buywish-address');
 const { orderConfirmationEmail, orderConfirmationSms, orderSmsPhone } = require('../utils/buywish-notify');
 const {
   isOrderCreateTool,
@@ -261,7 +261,15 @@ assert.strictEqual(parsedMap.country, 'GB');
 
 assert.strictEqual(cleanShipTo({ address: '1 Main', city: 'Austin', state: 'TX', postal: '78701', country: 'US' }).city, 'Austin');
 assert.ok(cleanShipTo({ address: '1 Main', city: 'Austin', postal: '78701', country: 'US' }).error);
+assert.ok(cleanShipTo({ address: '1 King St', city: 'Toronto', postal: 'M5V 2T6', country: 'CA' }).error);
+assert.strictEqual(cleanShipTo({ address: '10 Downing Street', city: 'London', postal: 'SW1A 2AA', country: 'GB' }).country, 'GB');
 assert.strictEqual(cleanShipTo({ address: '10 Downing', city: 'London', postal: 'SW1A', country: 'GB', note: '  Ring  the bell  ' }).note, 'Ring the bell');
+assert.deepStrictEqual(shopLocale('gb'), { country: 'GB', currency: 'GBP' });
+assert.deepStrictEqual(shopLocale('CA'), { country: 'CA', currency: 'CAD' });
+assert.deepStrictEqual(shopLocale('PK'), { country: 'US', currency: 'USD' });
+assert.deepStrictEqual(shopLocale(''), { country: 'US', currency: 'USD' });
+assert.deepStrictEqual(suggestRegionCodes('GB'), ['gb']);
+assert.deepStrictEqual(suggestRegionCodes('FR'), ['us', 'ca', 'gb']);
 
 const mail = orderConfirmationEmail({
   order_number: 'BWO-1',

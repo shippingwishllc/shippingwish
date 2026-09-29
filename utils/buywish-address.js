@@ -4,6 +4,18 @@
  */
 
 const SHIP_COUNTRIES = ['US', 'CA', 'GB'];
+const COUNTRY_CURRENCY = { US: 'USD', CA: 'CAD', GB: 'GBP' };
+
+function shopLocale(countryCode) {
+  const code = String(countryCode || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+  if (COUNTRY_CURRENCY[code]) return { country: code, currency: COUNTRY_CURRENCY[code] };
+  return { country: 'US', currency: 'USD' };
+}
+
+function suggestRegionCodes(country) {
+  const code = shipCountry(country);
+  return code ? [code.toLowerCase()] : ['us', 'ca', 'gb'];
+}
 
 function googleMapsKey() {
   return String(process.env.GOOGLE_MAPS_API_KEY || '').trim();
@@ -77,7 +89,7 @@ function cleanShipTo(customer) {
   return { line1, city, state, postal, country, note };
 }
 
-async function googleSuggest(query, sessionToken, key) {
+async function googleSuggest(query, sessionToken, key, country) {
   const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
     method: 'POST',
     headers: {
@@ -87,7 +99,7 @@ async function googleSuggest(query, sessionToken, key) {
     },
     body: JSON.stringify({
       input: query,
-      includedRegionCodes: ['us', 'ca', 'gb'],
+      includedRegionCodes: suggestRegionCodes(country),
       languageCode: 'en',
       ...(sessionToken ? { sessionToken } : {})
     }),
@@ -114,9 +126,9 @@ async function googleSuggest(query, sessionToken, key) {
   }).filter(Boolean);
 }
 
-async function nominatimSuggest(query) {
+async function nominatimSuggest(query, country) {
   const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=us,ca,gb`,
+    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=${suggestRegionCodes(country).join(',')}`,
     {
       headers: { 'User-Agent': 'BuyWishOnline/1.0 (https://www.buywishonline.com)' },
       signal: AbortSignal.timeout(8000)
@@ -127,20 +139,20 @@ async function nominatimSuggest(query) {
   return (Array.isArray(data) ? data : []).slice(0, 5).map(fromNominatim).filter((item) => item.line1 && item.label);
 }
 
-async function suggestAddresses(input, sessionToken) {
+async function suggestAddresses(input, sessionToken, country) {
   const query = String(input || '').trim().slice(0, 120);
   if (query.length < 3) return [];
   const token = cleanSessionToken(sessionToken);
   const key = googleMapsKey();
   if (key) {
     try {
-      const google = await googleSuggest(query, token, key);
+      const google = await googleSuggest(query, token, key, country);
       if (google.length) return google;
     } catch (err) {
       console.warn('[BUYWISH ADDRESS]:', err.message);
     }
   }
-  return nominatimSuggest(query);
+  return nominatimSuggest(query, country);
 }
 
 async function completeAddress(placeId, sessionToken) {
@@ -166,6 +178,9 @@ async function completeAddress(placeId, sessionToken) {
 
 module.exports = {
   SHIP_COUNTRIES,
+  COUNTRY_CURRENCY,
+  shopLocale,
+  suggestRegionCodes,
   googleMapsKey,
   cleanPlaceId,
   fromGoogleComponents,
