@@ -969,7 +969,6 @@
     summary.textContent = scanLine;
     list.innerHTML = '';
     if (typeof showToast === 'function') showToast('Campaign started — scanning FMCSA census…');
-    btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
