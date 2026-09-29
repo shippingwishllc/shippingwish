@@ -5,6 +5,7 @@
  */
 
 const express = require('express');
+const pool = require('../db');
 const router = express.Router();
 
 const SYSTEM_PROMPTS = {
@@ -29,6 +30,23 @@ GUIDELINES:
 2. Keep responses concise, readable, and structured with bullet points where helpful.
 3. If the user has a complex billing issue or wants to speak to a human dispatcher right now, advise them to call our toll-free line: +1 (800) 580-3101 or email dispatch@shippingwish.com.
 4. Format markdown links naturally when relevant (e.g. [Start 7-Day Free Trial](https://www.shippingwish.com/services)).`,
+
+  buywish: `You are Willa, the shopping assistant on BuyWishOnline (buywishonline.com), the shop from Shipping Wish LLC.
+Your goal: Help a customer find a product, understand shipping, or know what happens after they pay.
+
+SHOP FACTS:
+- Shop: BuyWishOnline, operated by Shipping Wish LLC.
+- Ships to the United States, Canada, and the United Kingdom.
+- Customers pay on buywishonline.com. A paid order gets a confirmation email.
+- Support: support@buywishonline.com. Orders: orders@buywishonline.com. Billing: billing@buywishonline.com.
+- Order tracking: the customer can open buywishonline.com and use Track with their order number, which looks like BWO- followed by letters and numbers.
+- You cannot see a customer's private order, payment, or address. If they ask for a refund, a change, or where a package is, ask for the order number and tell them to email support@buywishonline.com.
+- Never invent a delivery date, a tracking number, or a price.
+
+GUIDELINES:
+1. Be warm, brief, and clear.
+2. Thank them for shopping when they mention an order.
+3. If you do not know, say so and point them to support@buywishonline.com.`,
 
   loadsnexus: `You are Jordan, the 24/7 Senior Freight Specialist and Support Copilot at LoadsNexus™ (loadsnexus.com, an enterprise freight product operated by Shipping Wish LLC).
 Your goal: Assist motor carriers, owner-operators, and freight brokers with finding spot freight, understanding our $19/mo Carrier Pass, and posting loads for free.
@@ -70,14 +88,16 @@ function isChatRateLimited(ip) {
 router.post('/message', async (req, res) => {
   const ip = req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim() || req.ip || 'unknown';
 
+  const { message, brand = 'shippingwish', history = [] } = req.body || {};
+
   if (isChatRateLimited(ip)) {
     return res.status(429).json({
       error: 'RATE_LIMITED',
-      reply: "You've sent quite a few messages! Please give our dispatch desk a moment or call us directly at +1 (800) 580-3101."
+      reply: brand === 'buywish'
+        ? 'Please wait a moment, then email support@buywishonline.com if you still need help.'
+        : "You've sent quite a few messages! Please give our dispatch desk a moment or call us directly at +1 (800) 580-3101."
     });
   }
-
-  const { message, brand = 'shippingwish', history = [] } = req.body;
 
   if (!message || typeof message !== 'string' || !message.trim()) {
     return res.status(400).json({ error: 'Message text is required.' });
@@ -85,15 +105,16 @@ router.post('/message', async (req, res) => {
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return res.json({
-      ok: true,
-      reply: brand === 'loadsnexus'
+    const fallback = brand === 'buywish'
+      ? 'Thank you for shopping with BuyWishOnline. Email support@buywishonline.com with your order number and we will help.'
+      : brand === 'loadsnexus'
         ? "Thank you for reaching out to LoadsNexus™! Our AI freight exchange connects motor carriers with verified spot loads for $19/month, and brokers can post 100% free. For instant assistance, please call our toll-free support line at +1 (800) 580-3101 or email support@loadsnexus.com."
-        : "Thank you for contacting Shipping Wish LLC! We provide dedicated 24/7 truck dispatch for a flat $149/wk with a 7-day $0 free trial. To speak with our dispatch team immediately, please call our toll-free desk at +1 (800) 580-3101 or email dispatch@shippingwish.com."
-    });
+        : "Thank you for contacting Shipping Wish LLC! We provide dedicated 24/7 truck dispatch for a flat $149/wk with a 7-day $0 free trial. To speak with our dispatch team immediately, please call our toll-free desk at +1 (800) 580-3101 or email dispatch@shippingwish.com.";
+    if (brand === 'buywish') await saveBuyWishChat(req.body.visitor, message, fallback);
+    return res.json({ ok: true, reply: fallback });
   }
 
-  const selectedPrompt = brand === 'loadsnexus' ? SYSTEM_PROMPTS.loadsnexus : SYSTEM_PROMPTS.shippingwish;
+  const selectedPrompt = SYSTEM_PROMPTS[brand] || SYSTEM_PROMPTS.shippingwish;
 
   // Build message history (capped at last 8 turns)
   const cleanHistory = (Array.isArray(history) ? history.slice(-8) : []).map(h => ({
@@ -131,6 +152,7 @@ router.post('/message', async (req, res) => {
 
     const data = await openAiRes.json();
     const reply = data.choices?.[0]?.message?.content?.trim() || "Thank you for your message. Our operations desk is available 24/7 at +1 (800) 580-3101.";
+    if (brand === 'buywish') await saveBuyWishChat(req.body.visitor, message, reply);
 
     res.json({
       ok: true,
@@ -141,11 +163,34 @@ router.post('/message', async (req, res) => {
     console.error('[AI Chat] Error processing chat message:', err.message);
     res.json({
       ok: true,
-      reply: brand === 'loadsnexus'
+      reply: brand === 'buywish'
+        ? 'Thank you for shopping with BuyWishOnline. Email support@buywishonline.com with your order number and we will help.'
+        : brand === 'loadsnexus'
         ? "I am currently connecting to our live freight stream. You can search live loads at [loadsnexus.com](https://www.loadsnexus.com) or call our desk directly at +1 (800) 580-3101."
         : "I am connecting with our dispatch desk. You can explore our dedicated dispatch services and start your 7-day free trial at [shippingwish.com/services](https://www.shippingwish.com/services) or call us at +1 (800) 580-3101."
     });
   }
 });
+
+async function saveBuyWishChat(visitor, question, answer) {
+  const key = String(visitor || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) || 'guest';
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS buywish_chat_messages (
+        id SERIAL PRIMARY KEY,
+        visitor_key TEXT NOT NULL,
+        role TEXT NOT NULL,
+        body TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await pool.query(
+      `INSERT INTO buywish_chat_messages (visitor_key, role, body) VALUES ($1, 'customer', $2), ($1, 'assistant', $3)`,
+      [key, String(question || '').slice(0, 1000), String(answer || '').slice(0, 2000)]
+    );
+  } catch (err) {
+    console.warn('[BUYWISH CHAT LOG]:', err.message);
+  }
+}
 
 module.exports = router;

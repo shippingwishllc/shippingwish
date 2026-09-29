@@ -351,7 +351,7 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
       const ibRes = await pool.query(
         `SELECT i.id, i.lead_id, i.from_email AS peer_email,
                 COALESCE(l.company_name, l.owner_name, i.from_email) AS peer_name,
-                i.from_email, i.subject, i.body_text, i.body_html, i.is_read,
+                i.from_email, i.to_email, i.subject, i.body_text, i.body_html, i.is_read,
                 i.created_at, l.company_name, l.owner_name, l.phone, l.mc_number,
                 'inbound' AS direction
          FROM email_inbound i
@@ -419,6 +419,11 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
       allMessages = outboundRows;
     } else {
       allMessages = [...inboundRows, ...outboundRows].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    }
+
+    const shopDomain = String(req.query.domain || '').toLowerCase();
+    if (shopDomain === 'buywishonline.com') {
+      allMessages = inboundRows.filter((row) => /@buywishonline\.com\b/i.test(String(row.to_email || '')));
     }
 
     const total = allMessages.length;

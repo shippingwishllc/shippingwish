@@ -111,6 +111,7 @@
         <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-outbound" onclick="loadInbox(false, 1, 'outbound')">📤 Sent</button>
         <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-all" onclick="loadInbox(false, 1, 'all')">📋 All Mail</button>
         <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-unread" onclick="loadInbox(true, 1, 'inbound')">📬 Unread</button>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-buywish" onclick="loadInbox(false, 1, 'inbound', 'buywishonline.com')">BuyWish</button>
         <a href="/trash" class="btn btn-secondary btn-sm" id="inbox-trash-link" style="display:none;">🗑️ Trash</a>
       </div>
     </header>
@@ -253,8 +254,9 @@
   }
 
   let currentDirection = 'inbound';
+  let currentDomain = '';
 
-  async function loadInbox(unreadOnly, page, direction) {
+  async function loadInbox(unreadOnly, page, direction, domain) {
     if (typeof unreadOnly === 'boolean') {
       if (page === undefined) currentPage = 1;
       unreadOnlyFilter = unreadOnly;
@@ -262,6 +264,7 @@
     if (page !== undefined) currentPage = page;
     if (currentPage < 1) currentPage = 1;
     if (direction !== undefined) currentDirection = direction;
+    if (domain !== undefined) currentDomain = domain || '';
 
     // Update active folder tabs
     ['inbound', 'outbound', 'all', 'unread'].forEach(d => {
@@ -284,6 +287,7 @@
     });
     if (unreadOnlyFilter) qs.set('unread', '1');
     if (currentDirection) qs.set('direction', currentDirection);
+    if (currentDomain) qs.set('domain', currentDomain);
 
     try {
       const res = await fetch('/api/email/inbox?' + qs.toString(), { credentials: 'include' });
@@ -624,7 +628,8 @@
 
   async function init() {
     await checkAuth();
-    await loadInbox(false, 1, 'inbound');
+    const domain = new URLSearchParams(location.search).get('domain') || '';
+    await loadInbox(false, 1, 'inbound', domain);
   }
 
   if (document.readyState === 'loading') {
