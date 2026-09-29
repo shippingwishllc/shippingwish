@@ -45,6 +45,58 @@ function firstVoiceMessage(lead) {
   return `Hi this is Alex with Shipping Wish operations. Am I speaking with the fleet owner or manager for ${companyOf(lead)}?`;
 }
 
+const BROKER_FACTS = `You work for Shipping Wish LLC (${SITE}, desk ${DESK_PHONE}, transfer ${TRANSFER}).
+We are a motor carrier. Licensed property brokers post freight; we offer our trucks on those loads when they match.
+A named operations manager books the truck after the owner approves. We haul as the carrier. We do not co-broker and we do not take a cut of the broker's margin.
+After booking, tracking is available through SW Track or official partner APIs the broker already uses (MacroPoint, FourKites, Trucker Tools) when those accounts exist.
+Never quote a rate per mile, a truck count, DAT, or a harvest count. Do not say we are FMCSA-certified ELD hardware. If a fact is not in this list, say a live manager will follow up the same business day.
+If they ask to stop, confirm they will not be contacted again and end.`;
+
+function brokerCompanyOf(lead) {
+  return String((lead && (lead.company_name || lead.companyName)) || 'your brokerage').trim() || 'your brokerage';
+}
+
+function brokerVoiceSystemPrompt(lead) {
+  const company = brokerCompanyOf(lead);
+  const loc = [lead && lead.phy_city, lead && lead.phy_state].filter(Boolean).join(', ') || 'their listed office';
+  return `${BROKER_FACTS}
+
+This live call is with ${ownerOf(lead)} at ${company}, listed in ${loc}.
+Use their company name. Answer every question completely from the facts — 2 to 6 spoken sentences. Keep hellos to one short sentence.
+If they want to book a lane or speak to a person, use transferCall to ${TRANSFER}.`;
+}
+
+function brokerFirstVoiceMessage(lead) {
+  return `Hi this is Alex with Shipping Wish, a motor carrier. Am I speaking with someone who books freight at ${brokerCompanyOf(lead)}?`;
+}
+
+function brokerVapiAssistant(lead) {
+  const company = brokerCompanyOf(lead);
+  const name = (lead && (lead.owner_name || lead.ownerName)) || 'Broker';
+  const serverUrl = String(process.env.APP_URL || SITE).replace(/\/$/, '') + '/api/ai-calling/webhook';
+  return {
+    name: `Alex — broker ${company}`,
+    firstMessage: brokerFirstVoiceMessage(lead),
+    model: {
+      provider: 'openai',
+      model: process.env.OUTREACH_AI_MODEL || 'gpt-4o-mini',
+      messages: [{ role: 'system', content: brokerVoiceSystemPrompt(lead) }],
+      tools: [{
+        type: 'transferCall',
+        destinations: [{
+          type: 'number',
+          number: TRANSFER,
+          message: 'One moment while I transfer you to our operations desk.'
+        }]
+      }]
+    },
+    voice: { provider: '11labs', voiceId: '21m00Tcm4TlvDq8ikWAM' },
+    endCallMessage: 'Thank you for your time.',
+    recordingEnabled: true,
+    serverUrl
+  };
+}
+
 function vapiAssistant(lead) {
   const company = companyOf(lead);
   const name = (lead && (lead.owner_name || lead.ownerName)) || 'Fleet Manager';
@@ -298,11 +350,13 @@ async function followupStats() {
 
 module.exports = {
   FACTS,
+  BROKER_FACTS,
   TRANSFER,
   companyOf,
   ownerOf,
   voiceSystemPrompt,
   firstVoiceMessage,
+  brokerVapiAssistant,
   vapiAssistant,
   enqueueFollowups,
   cancelFollowups,

@@ -195,8 +195,8 @@ test('previewPayload and desks are wired; marketing.css is untouched', () => {
   assert.match(eld, /\/eld-register/);
   assert.match(shell, /href: '\/eld-register'/);
   assert.match(shell, /href: '\/visibility-desk'/);
-  assert.match(shell, /SIDEBAR_VERSION = '29'/);
-  assert.match(boot, /BOOT_VER = '29'/);
+  assert.match(shell, /SIDEBAR_VERSION = '30'/);
+  assert.match(boot, /BOOT_VER = '30'/);
   assert.match(server, /routes\/eld-registration/);
   assert.match(server, /routes\/visibility/);
   assert.match(visRoute, /consent/);

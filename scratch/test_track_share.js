@@ -41,7 +41,7 @@ test('LoadsNexus broker nav and SW Track plan are honest about ELD', () => {
   const marketingCss = fs.readFileSync(path.join(__dirname, '../public/css/marketing.css'), 'utf8');
   assert.match(shell, /BROKER_LINKS/);
   assert.match(shell, /href: '\/broker-desk'/);
-  assert.match(shell, /SIDEBAR_VERSION = '29'/);
+  assert.match(shell, /SIDEBAR_VERSION = '30'/);
   assert.match(billing, /sw_track/);
   assert.match(billing, /Not sold as registered ELD hardware/);
   assert.match(eld, /checkout\?plan=sw_track/);
