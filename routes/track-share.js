@@ -26,7 +26,8 @@ router.post('/send', ...senders, async (req, res) => {
       driverName: req.body.driver_name,
       driverEmail: req.body.driver_email,
       brokerEmail: req.body.broker_email,
-      brokerName: req.body.broker_name
+      brokerName: req.body.broker_name,
+      visibility: store.visibilityFromBody(req.body)
     });
 
     let sms = { sent: false, reason: 'not requested' };
@@ -68,7 +69,7 @@ router.post('/send', ...senders, async (req, res) => {
     auditLog(req.user.id, 'TRACK_SHARE_SEND', 'load_tracking_shares', row.id, { load_id: row.load_id }, getClientIp(req));
     res.json({
       ok: true,
-      how: 'Same method brokers use: driver gets a link, taps Accept, phone GPS is shared for this load only. Not MacroPoint and not an ELD device.',
+      how: 'Same method brokers use: driver gets a link, taps Accept, phone GPS is shared for this load only. Optional official push to connected FourKites / MacroPoint / Trucker Tools. Not an ELD device.',
       share: store.publicShare(row, { includeTokens: true }),
       sms
     });
@@ -145,7 +146,20 @@ router.post('/ping/:token', optionalAuth, async (req, res) => {
       lon: req.body.longitude ?? req.body.gps_lon,
       locationName: req.body.locationName
     });
-    res.json({ ok: true, ...ping });
+    let visibility = [];
+    if (row.visibility_json && Array.isArray(row.visibility_json.partners) && row.visibility_json.partners.length) {
+      try {
+        const vis = require('../utils/visibility-connect');
+        visibility = await vis.pushShareToConnections(req.user, Object.assign({}, row, ping, {
+          last_lat: ping.gps_lat,
+          last_lon: ping.gps_lon,
+          last_ping_at: ping.last_ping_at
+        }), { lat: ping.gps_lat, lon: ping.gps_lon });
+      } catch (_) {
+        visibility = [{ ok: false, error: 'Partner push skipped' }];
+      }
+    }
+    res.json({ ok: true, ...ping, visibility });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || 'Could not save GPS ping.' });
   }

@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '28';
+  const SIDEBAR_VERSION = '29';
   // #endregion
 
   function clearRoleCache() {
@@ -89,6 +89,8 @@
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
     { key: 'eld', href: '/eld-desk', icon: '📡', label: 'ELD Desk' },
+    { key: 'eldreg', href: '/eld-register', icon: '📋', label: 'FMCSA ELD pack' },
+    { key: 'vis', href: '/visibility-desk', icon: '🛰️', label: 'Visibility partners' },
     { key: 'track', href: '/broker-desk', icon: '📍', label: 'Load tracking' },
     { section: 'Sales & Staff' },
     { key: 'crm', href: '/crm-sales', icon: '📈', label: 'Sales CRM & Leads' },
@@ -115,6 +117,8 @@
     { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Bidding' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Trucks & drivers' },
     { key: 'eld', href: '/eld-desk', icon: '📡', label: 'ELD connect' },
+    { key: 'eldreg', href: '/eld-register', icon: '📋', label: 'FMCSA ELD pack' },
+    { key: 'vis', href: '/visibility-desk', icon: '🛰️', label: 'Visibility partners' },
     { key: 'track', href: '/broker-desk', icon: '📍', label: 'Send tracking' },
     { key: 'planning', href: '/load-planning', icon: '📅', label: 'Empty truck / next load' },
     { key: 'documents', href: '/documents', icon: '📄', label: 'Documents' },
@@ -130,6 +134,7 @@
     { section: 'LoadsNexus broker' },
     { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Post & book loads' },
     { key: 'track', href: '/broker-desk', icon: '📍', label: 'Send tracking' },
+    { key: 'vis', href: '/visibility-desk', icon: '🛰️', label: 'Visibility partners' },
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker credit check' }
   ];
 
@@ -525,7 +530,7 @@
     try {
       if (sessionStorage.getItem('sw_sidebar_ver') !== SIDEBAR_VERSION) return true;
     } catch (_) { /* ignore */ }
-    return !aside.querySelector('a.sidebar-nav-link[href="/broker-desk"]');
+    return !aside.querySelector('a.sidebar-nav-link[href="/visibility-desk"]');
   }
 
   function mountSidebarContent(aside) {

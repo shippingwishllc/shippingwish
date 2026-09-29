@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const pool = require('../db');
 const { publicBaseUrl, osmEmbedForPoints } = require('./eld-providers');
+const { visibilityFromBody } = require('./visibility-partners');
 
 let migrated = false;
 
@@ -28,12 +29,17 @@ async function ensureTrackShareTables() {
       sms_sent_at TIMESTAMP,
       sms_skip_reason TEXT,
       email_sent_at TIMESTAMP,
+      visibility_json JSONB DEFAULT '{}'::jsonb,
       created_at TIMESTAMP DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS idx_track_share_load ON load_tracking_shares(load_id);
     CREATE INDEX IF NOT EXISTS idx_track_share_status ON load_tracking_shares(status);
     CREATE INDEX IF NOT EXISTS idx_track_share_accept ON load_tracking_shares(accept_token);
     CREATE INDEX IF NOT EXISTS idx_track_share_view ON load_tracking_shares(view_token);
+  `);
+  await pool.query(`
+    ALTER TABLE load_tracking_shares
+      ADD COLUMN IF NOT EXISTS visibility_json JSONB DEFAULT '{}'::jsonb
   `);
   migrated = true;
 }
@@ -72,7 +78,8 @@ function publicShare(row, { includeTokens } = {}) {
     map_url: hasGps ? osmEmbedForPoints([{ lat, lng: lon }]) : null,
     sms_sent_at: row.sms_sent_at,
     sms_skip_reason: row.sms_skip_reason || null,
-    created_at: row.created_at
+    created_at: row.created_at,
+    visibility_partners: Array.isArray(row.visibility_json?.partners) ? row.visibility_json.partners : []
   };
   if (includeTokens) {
     out.accept_url = acceptUrl(row.accept_token);
@@ -108,7 +115,7 @@ function canAccessLoad(user, load) {
   return false;
 }
 
-async function createShare({ user, loadId, driverPhone, driverName, driverEmail, brokerEmail, brokerName }) {
+async function createShare({ user, loadId, driverPhone, driverName, driverEmail, brokerEmail, brokerName, visibility }) {
   await ensureTrackShareTables();
   const load = await loadRow(loadId);
   if (!load) {
@@ -127,8 +134,8 @@ async function createShare({ user, loadId, driverPhone, driverName, driverEmail,
   const { rows } = await pool.query(`
     INSERT INTO load_tracking_shares (
       load_id, created_by, driver_phone, driver_name, driver_email, broker_email, broker_name,
-      status, accept_token, view_token, expires_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,'pending',$8,$9,$10)
+      status, accept_token, view_token, expires_at, visibility_json
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,'pending',$8,$9,$10,$11::jsonb)
     RETURNING *
   `, [
     load.id,
@@ -140,7 +147,8 @@ async function createShare({ user, loadId, driverPhone, driverName, driverEmail,
     brokerName || load.broker_name || null,
     newToken(),
     newToken(),
-    expires
+    expires,
+    JSON.stringify(visibility && typeof visibility === 'object' ? visibility : {})
   ]);
   return Object.assign(rows[0], load);
 }
@@ -323,5 +331,6 @@ module.exports = {
   markEmail,
   stopShare,
   acceptUrl,
-  viewUrl
+  viewUrl,
+  visibilityFromBody
 };
