@@ -43,6 +43,9 @@ const {
 const { cleanMetaPixelId, cleanGoogleTagId } = require('../utils/buywish-tracking');
 const { cleanSocialLinks, cleanSocialUrl, NETWORKS } = require('../utils/buywish-social');
 const { selectOrderTool, buildOrderArguments, extractOrderId } = require('../utils/buywish-fulfillment');
+const { suggestAddresses, completeAddress, cleanShipTo } = require('../utils/buywish-address');
+const { orderConfirmationEmail, orderConfirmationSms, orderSmsPhone } = require('../utils/buywish-notify');
+const { sendBrandedEmail } = require('../utils/mailer');
 const buyWishAdmin = [requireAuth, requireRole('admin')];
 
 // ============================================================
@@ -132,6 +135,8 @@ async function ensureBuyWishSchema() {
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS customer_id INTEGER;
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS zendrop_sync_status TEXT;
     ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS zendrop_sync_detail TEXT;
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS customer_note TEXT;
+    ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS confirmation_sent_at TIMESTAMPTZ;
 
     CREATE TABLE IF NOT EXISTS buywish_categories (
       slug TEXT PRIMARY KEY,
@@ -844,6 +849,40 @@ function getStripe() {
   return getApprovedStripe();
 }
 
+const addressHits = new Map();
+function addressRateLimit(req, res, next) {
+  const ip = req.ip || 'local';
+  const now = Date.now();
+  const hits = (addressHits.get(ip) || []).filter((at) => now - at < 60000);
+  if (hits.length >= 30) return res.status(429).json({ error: 'Too many address lookups. Wait a moment and try again.' });
+  hits.push(now);
+  addressHits.set(ip, hits);
+  next();
+}
+
+router.get('/address/suggest', addressRateLimit, async (req, res) => {
+  const query = String(req.query.q || '').trim();
+  if (query.length < 3) return res.json({ ok: true, suggestions: [] });
+  try {
+    const suggestions = await suggestAddresses(query, req.query.session);
+    res.json({ ok: true, suggestions });
+  } catch (err) {
+    console.warn('[BUYWISH ADDRESS SUGGEST]:', err.message);
+    res.json({ ok: true, suggestions: [] });
+  }
+});
+
+router.get('/address/complete', addressRateLimit, async (req, res) => {
+  try {
+    const address = await completeAddress(req.query.placeId, req.query.session);
+    if (!address) return res.status(404).json({ error: 'That address could not be completed. Enter the city and ZIP yourself.' });
+    res.json({ ok: true, address });
+  } catch (err) {
+    console.warn('[BUYWISH ADDRESS COMPLETE]:', err.message);
+    res.status(502).json({ error: 'Address lookup failed. Enter the city and ZIP yourself.' });
+  }
+});
+
 // ============================================================
 // POST /api/buywish/checkout — Stripe Payments + Automatic Tax
 // ============================================================
@@ -933,34 +972,56 @@ router.post('/checkout', async (req, res) => {
     await ensureBuyWishSchema();
     const orderNumber = 'BWO-' + crypto.randomBytes(6).toString('hex').toUpperCase();
     const subtotalDollars = (subtotalCents / 100).toFixed(2);
-    const addrParts = String(customer.address || '').split(',');
-    const city = addrParts[1]?.trim() || customer.city || 'Unknown';
-    const state = addrParts[2]?.trim() || customer.state || '';
+    const shipTo = cleanShipTo(customer);
+    if (shipTo.error) return res.status(400).json({ error: shipTo.error });
 
     // Persist before creating the payment session. No synthetic supplier tracking number is generated.
     await pool.query(`
       INSERT INTO ecommerce_orders (
         order_number, customer_name, customer_email, customer_phone,
-        shipping_address, shipping_city, shipping_state, shipping_country, items, total_amount, subtotal_amount,
+        shipping_address, shipping_city, shipping_state, shipping_postal, shipping_country, customer_note,
+        items, total_amount, subtotal_amount,
         supplier, supplier_tracking_number, fulfillment_status, payment_status, currency, customer_id, zendrop_sync_status
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'Zendrop',NULL,'awaiting_payment','pending',$12,$13,'not_sent')
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'Zendrop',NULL,'awaiting_payment','pending',$14,$15,'not_sent')
     `, [
       orderNumber,
       String(customer.name || 'Valued Customer').slice(0, 160),
       String(customer.email).slice(0, 254),
       String(customer.phone || '').slice(0, 40) || null,
-      String(customer.address || '').slice(0, 500) || null,
-      city, state,
-      String(customer.country || 'US').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || 'US',
+      shipTo.line1,
+      shipTo.city,
+      shipTo.state,
+      shipTo.postal,
+      shipTo.country,
+      shipTo.note || null,
       JSON.stringify(trustedItems),
       subtotalDollars, subtotalDollars, curUpper,
       signedIn ? signedIn.id : null
     ]);
 
     const baseUrl = 'https://www.buywishonline.com';
+    const buyerName = String(customer.name || 'Valued Customer').slice(0, 160);
+    const buyerEmail = String(customer.email).slice(0, 254);
+    const buyerPhone = String(customer.phone || '').slice(0, 40);
+    const stripeCustomer = await stripe.customers.create({
+      email: buyerEmail,
+      name: buyerName,
+      phone: buyerPhone || undefined,
+      shipping: {
+        name: buyerName,
+        phone: buyerPhone || undefined,
+        address: {
+          line1: shipTo.line1,
+          city: shipTo.city,
+          state: shipTo.state || undefined,
+          postal_code: shipTo.postal,
+          country: shipTo.country
+        }
+      }
+    });
     const sessionPayload = {
       mode: 'payment',
-      customer_email: String(customer.email).slice(0, 254),
+      customer: stripeCustomer.id,
       line_items: lineItems,
       success_url: `${baseUrl}/?order_success=${encodeURIComponent(orderNumber)}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/?canceled=1`,
@@ -1038,6 +1099,7 @@ router.get('/verify-session', async (req, res) => {
       `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNum]);
       await saveStripeShipping(session);
       await pushPaidOrderToZendrop(orderNum);
+      await sendOrderConfirmation(orderNum);
     }
 
     res.json({
@@ -1072,7 +1134,7 @@ router.get('/admin/orders', ...buyWishAdmin, async (req, res) => {
       : `payment_status = 'paid' AND zendrop_order_id IS NULL`;
     const { rows } = await pool.query(
       `SELECT order_number, customer_name, customer_email, customer_phone,
-              shipping_address, shipping_city, shipping_state, shipping_postal, shipping_country,
+              shipping_address, shipping_city, shipping_state, shipping_postal, shipping_country, customer_note,
               items, total_amount, subtotal_amount, tax_amount, currency, payment_status, fulfillment_status,
               zendrop_order_id, zendrop_sync_status, zendrop_sync_detail, supplier_tracking_number,
               created_at, updated_at
@@ -2199,6 +2261,52 @@ async function pushPaidOrderToZendrop(orderNumber) {
   }
 }
 
+async function sendOrderConfirmation(orderNumber) {
+  const claimed = await pool.query(`
+    UPDATE ecommerce_orders
+    SET confirmation_sent_at = NOW()
+    WHERE upper(order_number) = upper($1)
+      AND payment_status = 'paid'
+      AND confirmation_sent_at IS NULL
+    RETURNING *
+  `, [orderNumber]);
+  const order = claimed.rows[0];
+  if (!order) return;
+  let emailed = false;
+  try {
+    const message = orderConfirmationEmail(order);
+    await sendBrandedEmail({
+      to: order.customer_email,
+      subject: message.subject,
+      html: message.html,
+      text: message.text,
+      transactional: true,
+      templateKey: 'buywish_order',
+      emailType: 'buywish_order',
+      from: process.env.BUYWISH_MAIL_FROM || undefined,
+      replyTo: 'support@buywishonline.com'
+    });
+    emailed = true;
+  } catch (err) {
+    console.error('[BUYWISH ORDER EMAIL]:', err.message);
+  }
+  try {
+    const to = orderSmsPhone(order.customer_phone, order.shipping_country);
+    if (to) {
+      const { sendTwilioSms } = require('./voip');
+      const sent = await sendTwilioSms(to, orderConfirmationSms(order));
+      if (sent.status !== 'sent' && sent.status !== 'logged') {
+        console.warn('[BUYWISH ORDER SMS]:', sent.status, order.order_number);
+      }
+    }
+  } catch (err) {
+    console.error('[BUYWISH ORDER SMS]:', err.message);
+  }
+  if (!emailed) {
+    await pool.query(`UPDATE ecommerce_orders SET confirmation_sent_at = NULL WHERE id = $1`, [order.id]);
+  }
+}
+
 async function applyCheckoutEvent(event) {
   if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) return;
   const session = event.data && event.data.object;
@@ -2224,6 +2332,7 @@ async function applyCheckoutEvent(event) {
       WHERE upper(order_number) = upper($6)
     `, [session.id, paymentIntentId, taxAmount, totalAmount, subtotalAmount, orderNumber]);
     await saveStripeShipping(session);
+    await sendOrderConfirmation(orderNumber);
     const pushed = await pushPaidOrderToZendrop(orderNumber);
     console.log(`[BUYWISH ORDER PAID]: Order ${orderNumber} paid ($${totalAmount}). Zendrop: ${pushed.ok ? 'sent' : (pushed.manual ? 'manual' : 'pending')}`);
   }

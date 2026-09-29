@@ -1558,6 +1558,8 @@
       border-radius: 20px;
       max-width: 520px;
       width: 100%;
+      max-height: min(92vh, 860px);
+      overflow: auto;
       padding: 32px;
       box-shadow: 0 24px 64px rgba(0,0,0,0.25);
     }
@@ -1580,6 +1582,39 @@
     }
     .form-input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(233,69,96,0.1); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-row-3 { grid-template-columns: 1.4fr 0.8fr 0.9fr; }
+    .addr-box { position: relative; }
+    .addr-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+    .addr-list {
+      position: absolute;
+      z-index: 5;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 12px 28px rgba(15,20,40,0.12);
+      max-height: 220px;
+      overflow: auto;
+    }
+    .addr-list[hidden] { display: none; }
+    .addr-option {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: #fff;
+      border: 0;
+      border-bottom: 1px solid #f3f4f6;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 13.5px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .addr-option:hover, .addr-option:focus { background: #fff5f7; }
+    .addr-option small { display: block; color: var(--text-muted); font-size: 12px; }
+    textarea.form-input { resize: vertical; min-height: 64px; }
     .order-summary-mini { background: #f8f9fa; border-radius: 12px; padding: 14px; margin-bottom: 20px; }
     .order-summary-mini .os-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; }
     .order-summary-mini .os-total { font-weight: 900; font-size: 16px; border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; }
@@ -2462,7 +2497,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
     <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" id="co_email" type="email" placeholder="john@email.com" required></div>
     <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="co_phone" type="tel" placeholder="+1 (555) 000-0000"></div>
-    <div class="form-group"><label class="form-label">Shipping Address</label><input class="form-input" id="co_address" placeholder="123 Main St, City, State, ZIP"></div>
+    <div class="form-group addr-field">
+      <label class="form-label" for="co_address">Street address</label>
+      <div class="addr-box">
+        <input class="form-input" id="co_address" placeholder="Start typing your street address" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="co_address_list">
+        <div class="addr-list" id="co_address_list" role="listbox" hidden></div>
+      </div>
+      <div class="addr-hint">Pick a suggestion and the city, state, and ZIP fill in. You can still edit them.</div>
+    </div>
+    <div class="form-row form-row-3">
+      <div class="form-group"><label class="form-label" for="co_city">City</label><input class="form-input" id="co_city" autocomplete="address-level2"></div>
+      <div class="form-group"><label class="form-label" for="co_state">State</label><input class="form-input" id="co_state" autocomplete="address-level1"></div>
+      <div class="form-group"><label class="form-label" for="co_postal">ZIP</label><input class="form-input" id="co_postal" autocomplete="postal-code"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="co_country">Country</label>
+      <select class="form-input" id="co_country" autocomplete="country">
+        <option value="US">United States</option>
+        <option value="CA">Canada</option>
+        <option value="GB">United Kingdom</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="co_note">Special instructions <span style="font-weight:600;text-transform:none;letter-spacing:0;">(optional)</span></label>
+      <textarea class="form-input" id="co_note" rows="2" maxlength="400" placeholder="Gate code, leave at the door, or anything the courier should know"></textarea>
+    </div>
     <button class="btn-checkout" id="checkoutBtn" onclick="processCheckout()">🔒 Place Order — <span id="checkoutBtnTotal">$0.00</span></button>
     <div class="checkout-security-box">
       <div class="checkout-security-head">
@@ -3412,6 +3471,7 @@ function openCheckout() {
   summaryEl.innerHTML = html;
   document.getElementById('checkoutModal').classList.add('open');
   document.body.style.overflow = 'hidden';
+  bindAddressSuggestions();
 }
 
 function closeCheckout() {
@@ -3419,14 +3479,99 @@ function closeCheckout() {
   document.body.style.overflow = '';
 }
 
+let addressSession = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+let addressTimer = null;
+
+function hideAddressSuggestions() {
+  const list = document.getElementById('co_address_list');
+  const input = document.getElementById('co_address');
+  if (list) { list.hidden = true; list.innerHTML = ''; }
+  if (input) input.setAttribute('aria-expanded', 'false');
+}
+
+function fillCheckoutAddress(address) {
+  if (!address) return;
+  if (address.line1) document.getElementById('co_address').value = address.line1;
+  if (address.city) document.getElementById('co_city').value = address.city;
+  if (address.state) document.getElementById('co_state').value = address.state;
+  if (address.postal) document.getElementById('co_postal').value = address.postal;
+  if (address.country && document.querySelector('#co_country option[value="' + address.country + '"]')) {
+    document.getElementById('co_country').value = address.country;
+  }
+  hideAddressSuggestions();
+  addressSession = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+}
+
+async function loadAddressSuggestions(query) {
+  const list = document.getElementById('co_address_list');
+  const input = document.getElementById('co_address');
+  try {
+    const res = await fetch('/api/buywish/address/suggest?q=' + encodeURIComponent(query) + '&session=' + encodeURIComponent(addressSession));
+    const data = await res.json();
+    const suggestions = data && data.suggestions ? data.suggestions : [];
+    if (!suggestions.length || input.value.trim() !== query) { hideAddressSuggestions(); return; }
+    list.innerHTML = suggestions.map((item, index) => {
+      const main = item.mainText || item.line1 || item.label;
+      const extra = item.secondaryText || [item.city, item.state, item.postal].filter(Boolean).join(', ');
+      return '<button type="button" class="addr-option" role="option" data-index="' + index + '"><span>' + escHtml(main) + '</span>' + (extra ? '<small>' + escHtml(extra) + '</small>' : '') + '</button>';
+    }).join('');
+    list.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+    list.querySelectorAll('.addr-option').forEach((button) => {
+      button.addEventListener('click', () => chooseAddressSuggestion(suggestions[Number(button.getAttribute('data-index'))]));
+    });
+  } catch (err) {
+    hideAddressSuggestions();
+  }
+}
+
+async function chooseAddressSuggestion(item) {
+  if (!item) return;
+  if (item.placeId) {
+    try {
+      const res = await fetch('/api/buywish/address/complete?placeId=' + encodeURIComponent(item.placeId) + '&session=' + encodeURIComponent(addressSession));
+      const data = await res.json();
+      if (data && data.address) { fillCheckoutAddress(data.address); return; }
+    } catch (err) {}
+    document.getElementById('co_address').value = item.mainText || item.label || '';
+    hideAddressSuggestions();
+    showToast('⚠️', 'Add the city, state, and ZIP');
+    return;
+  }
+  fillCheckoutAddress(item);
+}
+
+function bindAddressSuggestions() {
+  const input = document.getElementById('co_address');
+  if (!input || input.dataset.bound) return;
+  input.dataset.bound = '1';
+  input.addEventListener('input', () => {
+    clearTimeout(addressTimer);
+    const query = input.value.trim();
+    if (query.length < 3) { hideAddressSuggestions(); return; }
+    addressTimer = setTimeout(() => loadAddressSuggestions(query), 280);
+  });
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') hideAddressSuggestions();
+  });
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.addr-box') && event.target.id !== 'co_address') hideAddressSuggestions();
+  });
+}
+
 async function processCheckout() {
   const fname = document.getElementById('co_fname').value.trim();
   const lname = document.getElementById('co_lname').value.trim();
   const email = document.getElementById('co_email').value.trim();
   const address = document.getElementById('co_address').value.trim();
+  const city = document.getElementById('co_city').value.trim();
+  const state = document.getElementById('co_state').value.trim();
+  const postal = document.getElementById('co_postal').value.trim();
+  const country = document.getElementById('co_country').value;
+  const note = document.getElementById('co_note').value.trim();
 
-  if (!fname || !lname || !email || !address) {
-    showToast('⚠️', 'Please fill in all required fields');
+  if (!fname || !lname || !email || !address || !city || !postal || ((country === 'US' || country === 'CA') && !state)) {
+    showToast('⚠️', 'Add your name, email, street, city, state, and ZIP');
     return;
   }
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -3445,7 +3590,17 @@ async function processCheckout() {
         items: cart.map(i => i.deal_id
           ? { deal_id: i.deal_id, quantity: i.qty }
           : { product_id: i.zendrop_id || i.id, quantity: i.qty }),
-        customer: { name: fname + ' ' + lname, email, phone: document.getElementById('co_phone').value.trim(), address },
+        customer: {
+          name: fname + ' ' + lname,
+          email,
+          phone: document.getElementById('co_phone').value.trim(),
+          address,
+          city,
+          state,
+          postal,
+          country,
+          note
+        },
         currency: currentCurrency.code
       })
     });

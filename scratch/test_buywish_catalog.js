@@ -26,6 +26,8 @@ const {
   applyCatalogEdits,
   STORE_DEPARTMENTS
 } = require('../utils/buywish-catalog');
+const { fromGoogleComponents, fromNominatim, cleanShipTo } = require('../utils/buywish-address');
+const { orderConfirmationEmail, orderConfirmationSms, orderSmsPhone } = require('../utils/buywish-notify');
 const {
   isOrderCreateTool,
   selectOrderTool,
@@ -209,6 +211,62 @@ const missing = buildOrderArguments({
   inputSchema: { properties: { variant_id: {} }, required: ['variant_id'] }
 }, order);
 assert.strictEqual(missing.ok, false);
+
+const noted = buildOrderArguments({
+  name: 'create_order',
+  inputSchema: { properties: { note: { type: 'string' } }, required: [] }
+}, { ...order, customer_note: 'Leave at the side door' });
+assert.strictEqual(noted.ok, true);
+assert.ok(noted.args.note.includes('Leave at the side door'));
+assert.ok(noted.args.note.includes('BWO-ABC'));
+
+const parsedGoogle = fromGoogleComponents([
+  { longText: '1600', shortText: '1600', types: ['street_number'] },
+  { longText: 'Amphitheatre Parkway', shortText: 'Amphitheatre Pkwy', types: ['route'] },
+  { longText: 'Mountain View', shortText: 'Mountain View', types: ['locality'] },
+  { longText: 'California', shortText: 'CA', types: ['administrative_area_level_1'] },
+  { longText: '94043', shortText: '94043', types: ['postal_code'] },
+  { longText: 'United States', shortText: 'US', types: ['country'] }
+], '1600 Amphitheatre Parkway, Mountain View, CA 94043, USA');
+assert.strictEqual(parsedGoogle.line1, '1600 Amphitheatre Parkway');
+assert.strictEqual(parsedGoogle.city, 'Mountain View');
+assert.strictEqual(parsedGoogle.state, 'CA');
+assert.strictEqual(parsedGoogle.postal, '94043');
+assert.strictEqual(parsedGoogle.country, 'US');
+
+const parsedMap = fromNominatim({
+  display_name: '10 Downing Street, London, SW1A 2AA, United Kingdom',
+  address: { house_number: '10', road: 'Downing Street', city: 'London', state: 'England', postcode: 'SW1A 2AA', country_code: 'gb' }
+});
+assert.strictEqual(parsedMap.line1, '10 Downing Street');
+assert.strictEqual(parsedMap.city, 'London');
+assert.strictEqual(parsedMap.postal, 'SW1A 2AA');
+assert.strictEqual(parsedMap.country, 'GB');
+
+assert.strictEqual(cleanShipTo({ address: '1 Main', city: 'Austin', state: 'TX', postal: '78701', country: 'US' }).city, 'Austin');
+assert.ok(cleanShipTo({ address: '1 Main', city: 'Austin', postal: '78701', country: 'US' }).error);
+assert.strictEqual(cleanShipTo({ address: '10 Downing', city: 'London', postal: 'SW1A', country: 'GB', note: '  Ring  the bell  ' }).note, 'Ring the bell');
+
+const mail = orderConfirmationEmail({
+  order_number: 'BWO-1',
+  customer_name: 'Ava <Shah>',
+  customer_email: 'ava@example.com',
+  total_amount: 24.5,
+  currency: 'USD',
+  shipping_address: '1 Main St',
+  shipping_city: 'Austin',
+  shipping_state: 'TX',
+  shipping_postal: '78701',
+  shipping_country: 'US',
+  customer_note: 'Gate 4',
+  items: [{ title: 'Earbuds', quantity: 1 }]
+});
+assert.ok(mail.subject.includes('BWO-1'));
+assert.ok(mail.html.includes('Ava &lt;Shah&gt;'));
+assert.ok(mail.text.includes('Gate 4'));
+assert.ok(orderConfirmationSms({ order_number: 'BWO-1', total_amount: 10, currency: 'USD' }).includes('BWO-1'));
+assert.strictEqual(orderSmsPhone('07123456789', 'GB'), '+447123456789');
+assert.strictEqual(orderSmsPhone('5551234567', 'US'), '+15551234567');
 
 assert.strictEqual(extractOrderId({ order: { id: 'zd_9' } }), 'zd_9');
 assert.strictEqual(extractOrderId({ status: 'ok' }), null);

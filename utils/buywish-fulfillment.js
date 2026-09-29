@@ -89,7 +89,7 @@ function buildOrderArguments(tool, order) {
     currency: order.currency || 'USD',
     confirm: true,
     confirmed: true,
-    note: `BuyWishOnline ${order.order_number}`,
+    note: [order.customer_note, `BuyWishOnline ${order.order_number}`].filter(Boolean).join(' — ').slice(0, 500),
     items: items.map((item) => ({
       product_id: item.product_id,
       quantity: item.quantity,
