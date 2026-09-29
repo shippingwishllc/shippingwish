@@ -49,7 +49,14 @@ router.get('/fmcsa/search', requireAuth, async (req, res) => {
   }
 
   try {
-    const result = await searchFmcsa(q, { mode });
+    const result = await searchFmcsa(q, {
+      mode,
+      equipment: req.query.equipment,
+      minUnits: req.query.minUnits || req.query.min_units,
+      maxUnits: req.query.maxUnits || req.query.max_units,
+      hasEmail: req.query.hasEmail === 'true' || req.query.has_email === 'true',
+      state: req.query.state
+    });
     try {
       result.carriers = await tagCrmDuplicates(result.carriers || []);
     } catch (tagErr) {
@@ -89,7 +96,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       equipment_types = ['53ft Dry Van', 'Reefer', 'Flatbed', 'Box Truck'],
       limit = 10,
       send_email = true,
-      send_sms = true
+      send_sms = false
     } = req.body;
 
     const maxLimit = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
@@ -219,17 +226,16 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
 
           const emailSubject = `Dedicated Freight & Load Booking for ${c.company_name} (${matchedEquip} Fleet)`;
           const emailBodyText = `Hi ${ownerName},\n\n` +
-            `Shipping Wish LLC dispatch team noticed ${c.company_name} is actively operating ${numUnits} ${matchedEquip} unit(s) out of ${stateName}.\n\n` +
-            `We provide 24/7 dedicated dispatch, high-paying freight rate negotiation ($3.20/mile avg), and load board booking — you keep 100% of your gross pay with $0 upfront fees.\n\n` +
-            `Would you be open to reviewing our current load availability for ${stateName}?\n\n` +
-            `Best regards,\nShipping Wish Operations Team\nhttps://www.shippingwish.com`;
+            `Shipping Wish LLC places a named fleet operations manager with small fleets. ${c.company_name} shows as ${numUnits} ${matchedEquip} unit(s) out of ${stateName} on the public FMCSA census.\n\n` +
+            `Weekly desk. You keep broker pay. First week $0 if you want to try it.\n\n` +
+            `Best regards,\nShipping Wish Operations\nhttps://www.shippingwish.com`;
 
           const emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
-            `<p>Shipping Wish LLC dispatch team noticed <strong>${c.company_name}</strong> is actively operating ${numUnits} ${matchedEquip} unit(s) out of <strong>${stateName}</strong>.</p>` +
-            `<p>We provide 24/7 dedicated dispatch, high-paying freight rate negotiation ($3.20/mile avg), and load board booking — you keep 100% of your gross pay with $0 upfront fees.</p>` +
-            `<p><a href="https://www.shippingwish.com/services" style="background:#f59e0b;color:#0f172a;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">View Dispatch Services &amp; Load Rates &rarr;</a></p>`;
+            `<p>Shipping Wish LLC places a named fleet operations manager with small fleets. <strong>${c.company_name}</strong> shows as ${numUnits} ${matchedEquip} unit(s) out of <strong>${stateName}</strong> on the public FMCSA census.</p>` +
+            `<p>Weekly desk. You keep broker pay. First week $0 if you want to try it.</p>` +
+            `<p><a href="https://www.shippingwish.com/services" style="background:#f59e0b;color:#0f172a;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">See the operations desk &rarr;</a></p>`;
 
-          const smsText = `Hi ${ownerName}, Shipping Wish LLC has premium ${matchedEquip} freight out of ${stateName}. We book loads 24/7 & you keep 100% pay. Check rates: https://www.shippingwish.com or reply YES.`;
+          const smsText = `Hi ${ownerName}, Shipping Wish LLC emailed a one-pager about a named ops manager for ${matchedEquip} out of ${stateName}. Reply YES if useful, STOP to opt out.`;
 
           // Save lead in PostgreSQL CRM table
           const insertRes = await pool.query(
@@ -319,12 +325,24 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
         })());
       }
 
-      // SMS dispatch
+      // SMS dispatch — TCPA: only numbers that already consented on our dispatch desk
       if (send_sms && leadItem.raw_phone) {
         ops.push((async () => {
           try {
+            const { phoneTail, isPhoneOptedOut, logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
+            const { isWithinTcpaHours } = require('../utils/us-timezones');
+            const tail = phoneTail(leadItem.raw_phone);
+            if (!tail || await isPhoneOptedOut(leadItem.raw_phone)) return;
+            const consented = await pool.query(
+              `SELECT id FROM ai_dispatch_carriers
+               WHERE sms_consent = TRUE
+                 AND right(regexp_replace(coalesce(phone,''), '[^0-9]', '', 'g'), 10) = $1
+               LIMIT 1`,
+              [tail]
+            ).catch(() => ({ rows: [] }));
+            if (!consented.rows.length) return;
+            if (!isWithinTcpaHours(leadItem.raw_phone, leadItem.state).allowed) return;
             const { sendTwilioSms } = require('./voip');
-            const { logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
             const smsRes = await Promise.race([
               sendTwilioSms(leadItem.raw_phone, leadItem.sms_text),
               new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 2500))
