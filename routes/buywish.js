@@ -197,7 +197,7 @@ async function resendStyledConfirmationOnce() {
   const client = await pool.connect();
   let transactionOpen = false;
   try {
-    const flag = await client.query(`SELECT 1 FROM buywish_settings WHERE key = 'welcome_email_v1'`);
+    const flag = await client.query(`SELECT 1 FROM buywish_settings WHERE key = 'welcome_email_v2'`);
     if (flag.rows.length) return;
     await client.query('BEGIN');
     transactionOpen = true;
@@ -213,7 +213,7 @@ async function resendStyledConfirmationOnce() {
       return;
     }
     await client.query(
-      `INSERT INTO buywish_settings (key, value) VALUES ('welcome_email_v1', 'BWO-8A280115652B')
+      `INSERT INTO buywish_settings (key, value) VALUES ('welcome_email_v2', 'BWO-8A280115652B')
        ON CONFLICT (key) DO NOTHING`
     );
     await client.query('COMMIT');
@@ -1370,6 +1370,21 @@ async function refreshStripePaymentsNow() {
     }
   }
 }
+
+router.get('/admin/chat', ...buyWishAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT id, visitor_key, role, body, created_at
+      FROM buywish_chat_messages
+      ORDER BY id DESC
+      LIMIT 80
+    `);
+    res.json({ ok: true, messages: rows });
+  } catch (err) {
+    if (err.code === '42P01') return res.json({ ok: true, messages: [] });
+    res.status(500).json({ error: 'Could not load shop chat.' });
+  }
+});
 
 router.get('/admin/orders', ...buyWishAdmin, async (req, res) => {
   try {

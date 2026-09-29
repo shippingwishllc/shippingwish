@@ -128,6 +128,7 @@
         <nav>
           <button class="nav-btn active" type="button" data-panel="home"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 8.2 10 3.2l6.5 5V16a1 1 0 0 1-1 1H12v-4.2H8V17H4.5a1 1 0 0 1-1-1V8.2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Home</button>
           <button class="nav-btn" type="button" data-panel="orders"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5.5h12l-1 10H5L4 5.5Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 5.5a2.5 2.5 0 0 1 5 0" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Orders</button>
+          <button class="nav-btn" type="button" data-panel="inbox"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 6.5h13v8.2a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V6.5Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 7.2 10 11.4l6.5-4.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Inbox</button>
           <button class="nav-btn" type="button" data-panel="products"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7.2 10 4l6 3.2v6.2L10 16.5 4 13.4V7.2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4 7.2 10 10.4 16 7.2M10 10.4V16.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Products</button>
           <button class="nav-btn" type="button" data-panel="customers"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="7" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 15.5c.6-2.2 2.4-3.3 5-3.3s4.4 1.1 5 3.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Customers</button>
           <button class="nav-btn" type="button" data-panel="growth"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 14.5 8.2 9.8l2.6 2.4L16 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.2 6.5H16V10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Growth</button>
@@ -204,6 +205,34 @@
               </thead>
               <tbody id="orders"></tbody>
             </table>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-inbox">
+          <div class="topbar"><h1>Inbox</h1><button id="inboxRefresh" class="ghost" type="button">Refresh</button></div>
+          <p class="muted">Mail sent to support@, orders@, billing@, and alerts@buywishonline.com appears here and in the Shipping Wish inbox under BuyWish. A reply goes back from the same address. Shop chat from the website is listed below.</p>
+          <div class="split">
+            <div class="card table-wrap">
+              <h2>Email</h2>
+              <table>
+                <thead><tr><th>From</th><th>To</th><th>Subject</th></tr></thead>
+                <tbody id="inboxRows"></tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h2 id="inboxSubject">Message</h2>
+              <p id="inboxBody" class="muted">Choose a message.</p>
+              <form id="inboxReplyForm" style="display:none;margin-top:12px;">
+                <input id="inboxReplyId" type="hidden">
+                <textarea id="inboxReplyBody" placeholder="Reply to the customer" required style="width:100%;min-height:90px;"></textarea>
+                <button type="submit" style="margin-top:8px;">Send reply</button>
+                <span id="inboxReplyStatus" class="muted"></span>
+              </form>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Shop chat</h2>
+            <div id="shopChatLog" class="muted">No shop chat yet.</div>
           </div>
         </section>
 
@@ -905,8 +934,48 @@
     showDesk();
   };
   document.querySelectorAll('.nav-btn[data-panel]').forEach((button) => {
-    button.onclick = () => showPanel(button.dataset.panel);
+    button.onclick = () => {
+      showPanel(button.dataset.panel);
+      if (button.dataset.panel === 'inbox') loadShopInbox();
+    };
   });
+  async function loadShopInbox() {
+    const mailRes = await fetch('/api/email/inbox?direction=inbound&domain=buywishonline.com&perPage=20', { headers: authHeaders() });
+    const mail = await mailRes.json().catch(() => ({}));
+    const messages = mail.messages || mail.inbox || [];
+    document.getElementById('inboxRows').innerHTML = messages.map((item) => `<tr>
+      <td><button class="ghost" type="button" data-mail="${esc(item.id)}">${esc(item.from_email || item.peer_email || '')}</button></td>
+      <td>${esc(item.to_email || '')}</td>
+      <td>${esc(item.subject || '')}</td>
+    </tr>`).join('') || '<tr><td colspan="3">No BuyWish mail yet. It shows up after someone writes to those addresses and Resend delivers it to the shop inbox.</td></tr>';
+    document.querySelectorAll('[data-mail]').forEach((button) => {
+      button.onclick = () => openShopMail(messages.find((item) => String(item.id) === button.dataset.mail));
+    });
+    const chatRes = await fetch('/api/buywish/admin/chat', { headers: authHeaders() });
+    const chat = await chatRes.json().catch(() => ({}));
+    const lines = (chat.messages || []).slice().reverse();
+    document.getElementById('shopChatLog').innerHTML = lines.map((line) => `<p><strong>${esc(line.role)}</strong> · ${esc(line.visitor_key)}<br>${esc(line.body)}</p>`).join('') || 'No shop chat yet.';
+  }
+  function openShopMail(item) {
+    if (!item) return;
+    document.getElementById('inboxSubject').textContent = item.subject || 'Message';
+    document.getElementById('inboxBody').textContent = item.body_text || 'Open this message in the Shipping Wish inbox if the body is still loading.';
+    document.getElementById('inboxReplyId').value = item.id;
+    document.getElementById('inboxReplyForm').style.display = 'block';
+  }
+  document.getElementById('inboxRefresh').onclick = loadShopInbox;
+  document.getElementById('inboxReplyForm').onsubmit = async (event) => {
+    event.preventDefault();
+    const id = document.getElementById('inboxReplyId').value;
+    const res = await fetch('/api/email/inbox/' + encodeURIComponent(id) + '/reply', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ message: document.getElementById('inboxReplyBody').value })
+    });
+    const data = await res.json().catch(() => ({}));
+    document.getElementById('inboxReplyStatus').textContent = data.error || data.message || 'Reply sent.';
+    if (res.ok) document.getElementById('inboxReplyBody').value = '';
+  };
   document.querySelectorAll('[data-jump]').forEach((button) => {
     button.onclick = () => showPanel(button.dataset.jump);
   });

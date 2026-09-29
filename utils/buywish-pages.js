@@ -96,6 +96,7 @@ function foot() {
   <p>BuyWishOnline is operated by Shipping Wish LLC. Orders ship to the USA, Canada, and the United Kingdom after payment.</p>
   <p><a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/privacy-policy">Privacy</a> · <a href="/terms">Terms</a></p>
 </footer>
+<script src="/buywishonline/chat.js"></script>
 </body></html>`;
 }
 
