@@ -1,0 +1,80 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const { normalizeEquipmentKeys } = require('../utils/fmcsa-equipment');
+
+function test(name, fn) {
+  fn();
+  console.log('ok  ' + name);
+}
+
+const crm = fs.readFileSync(path.join(__dirname, '../routes/crm.js'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '../public/crm-sales.html'), 'utf8');
+const helper = fs.readFileSync(path.join(__dirname, '../utils/crm-outreach.js'), 'utf8');
+const marketingCss = fs.readFileSync(path.join(__dirname, '../public/css/marketing.css'), 'utf8');
+
+test('campaign uses census equipment keys, not state-only scrape', () => {
+  assert.match(crm, /equipmentKeys = normalizeEquipmentKeys/);
+  assert.match(crm, /equipment: equipmentKeys/);
+  assert.match(crm, /exclusive: true/);
+});
+
+test('campaign email timeout is long enough for Resend', () => {
+  assert.match(crm, /Email timeout.*12000/);
+  assert.doesNotMatch(crm, /Email timeout.*2500/);
+});
+
+test('campaign SMS and Vapi stay consent-gated', () => {
+  assert.match(crm, /send_sms = false/);
+  assert.match(crm, /send_vapi = false/);
+  assert.match(crm, /consent_confirmed/);
+  assert.match(helper, /No SMS consent/);
+  assert.match(helper, /AI call needs prior consent/);
+});
+
+test('bulk outreach endpoint is wired for select-then-send', () => {
+  assert.match(crm, /\/leads\/bulk-outreach/);
+  assert.match(helper, /channel === 'email'/);
+  assert.match(helper, /channel === 'sms'/);
+  assert.match(helper, /channel === 'vapi'/);
+  assert.match(helper, /api\.vapi\.ai\/call\/phone/);
+});
+
+test('CRM page has census-style select, pager, and one-press Vapi', () => {
+  assert.match(html, /PAGE_SIZE = 10/);
+  assert.match(html, /data-act="vapi"/);
+  assert.match(html, /data-bulk="email"/);
+  assert.match(html, /data-bulk="sms"/);
+  assert.match(html, /data-bulk="vapi"/);
+  assert.match(html, /\/api\/crm\/leads\/bulk-outreach/);
+  assert.match(html, /id="crm-eq-grid"/);
+  assert.match(html, /key: 'reefer'/);
+  assert.match(html, /They already agreed/);
+  assert.match(html, /Compose &amp; send/);
+  assert.match(html, /cd-hero/);
+  assert.doesNotMatch(html, /marketing\.css/);
+});
+
+test('campaign UI sends equipment_types and vapi flag', () => {
+  assert.match(html, /equipment_types: selectedEq/);
+  assert.match(html, /send_vapi/);
+  assert.doesNotMatch(html, /id="ai-bot-sms" checked/);
+  assert.doesNotMatch(html, /id="ai-bot-vapi" checked/);
+});
+
+test('public marketing stylesheet is unchanged by this CRM desk', () => {
+  assert.doesNotMatch(marketingCss, /crm-eq-grid/);
+  assert.doesNotMatch(marketingCss, /data-bulk="vapi"/);
+});
+
+test('UI labels still normalize to census keys', () => {
+  assert.deepStrictEqual(normalizeEquipmentKeys(['53ft Reefer', 'Dry Van']), ['reefer', 'dry_van']);
+});
+
+test('no invented RPM in CRM outreach helper', () => {
+  assert.doesNotMatch(helper, /\$3\.20\/mile/);
+  assert.doesNotMatch(crm, /\$3\.20\/mile/);
+  assert.doesNotMatch(html, /\$3\.20\/mile/);
+});
+
+console.log('ok  crm outreach desk');
