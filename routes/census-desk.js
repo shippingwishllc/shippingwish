@@ -320,4 +320,67 @@ router.post('/directories/:id/import-crm', async (req, res) => {
   }
 });
 
+router.patch('/directories/:id/members/:memberId', async (req, res) => {
+  try {
+    const member = await directories.updateMember(req.params.id, req.params.memberId, req.body || {});
+    if (!member) return res.status(404).json({ error: 'Carrier not found in this directory.' });
+    res.json({ ok: true, member });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Could not save contact.' });
+  }
+});
+
+router.delete('/directories/:id/members/:memberId', async (req, res) => {
+  try {
+    const ok = await directories.deleteMember(req.params.id, req.params.memberId);
+    if (!ok) return res.status(404).json({ error: 'Carrier not found in this directory.' });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not delete this carrier.' });
+  }
+});
+
+router.post('/directories/:id/contract', async (req, res) => {
+  try {
+    const found = await directories.getDirectory(req.params.id);
+    if (!found) return res.status(404).json({ error: 'Directory not found.' });
+    const ids = new Set((req.body.member_ids || []).map(Number).filter(Boolean));
+    if (!ids.size) return res.status(400).json({ error: 'Pick one carrier to send the packet.' });
+    const member = found.members.find((m) => ids.has(m.id));
+    if (!member) return res.status(404).json({ error: 'Carrier not found in this directory.' });
+    const to = sanitizeEmail(member.email);
+    if (!to) return res.status(400).json({ error: 'Add an email on this row before sending the packet.' });
+    const tpl = buildTemplate('onboarding', {
+      ownerName: member.owner_name || 'there',
+      companyName: member.company_name,
+      recipientEmail: to
+    });
+    const attachments = [];
+    const fs = require('fs');
+    const path = require('path');
+    const packetPath = path.join(__dirname, '../public/downloads/Shipping-Wish-Carrier-Onboarding-Packet.pdf');
+    if (fs.existsSync(packetPath)) {
+      attachments.push({
+        filename: 'Shipping-Wish-Carrier-Onboarding-Packet.pdf',
+        content: fs.readFileSync(packetPath)
+      });
+    }
+    const result = await sendBrandedEmail({
+      to,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      sentBy: req.user.id,
+      emailType: 'census_packet',
+      templateKey: 'onboarding',
+      attachments
+    });
+    if (result.skipped) return res.status(400).json({ error: 'Recipient is unsubscribed.' });
+    await directories.markMember(member.id, { email_sent_at: new Date() });
+    res.json({ ok: true, sent: 1, message: 'Onboarding packet emailed to ' + to });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Could not send the packet.' });
+  }
+});
+
 module.exports = router;

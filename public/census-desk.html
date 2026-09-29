@@ -45,6 +45,19 @@
     .dir-table td, .dir-table th { font-size:12px; }
     .dir-item-btn { cursor:pointer; }
     .dir-item-btn:hover td { background:#f8fafc; }
+    .cd-compact { font-size:12px; }
+    .cd-compact td, .cd-compact th { padding:8px 10px; vertical-align:middle; }
+    .cd-compact tr.is-on td { background:#eff6ff; }
+    .cd-acts { display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; min-width:210px; }
+    .cd-act { appearance:none; border:1px solid var(--border-default); background:#fff; border-radius:999px; padding:3px 8px; font-size:10px; font-weight:700; cursor:pointer; color:#334155; }
+    .cd-act:hover { border-color:#1e3a5f; color:#0f172a; }
+    .cd-act.is-primary { background:#0f172a; color:#fff; border-color:#0f172a; }
+    .cd-act.is-warn { color:#b91c1c; border-color:#fecaca; }
+    .cd-pager { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; font-size:12px; color:var(--text-secondary); }
+    .cd-sub { font-size:11px; color:var(--text-muted); }
+    .cd-modal { display:none; position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:80; align-items:center; justify-content:center; padding:16px; }
+    .cd-modal.is-open { display:flex; }
+    .cd-modal .box { background:#fff; border-radius:16px; padding:20px; width:min(420px,100%); box-shadow:0 20px 50px rgba(15,23,42,.2); }
     @media (max-width: 980px) {
       .cd-grid { grid-template-columns:1fr; }
       .cd-hero, .cd-card { grid-column:auto !important; }
@@ -156,23 +169,28 @@
             </div>
           </div>
           <div class="tms-table-wrapper">
-            <table class="tms-table-v2">
+            <table class="tms-table-v2 cd-compact">
               <thead>
                 <tr>
                   <th></th>
                   <th>Company</th>
-                  <th>MC / DOT</th>
-                  <th>Equipment</th>
+                  <th>Equip</th>
+                  <th>ST</th>
                   <th>Units</th>
-                  <th>State</th>
-                  <th>Email</th>
-                  <th>Phone</th>
+                  <th style="text-align:right;">Actions</th>
                 </tr>
               </thead>
               <tbody id="cd-results">
-                <tr><td colspan="8" style="text-align:center;padding:28px;color:var(--text-muted);">No search yet.</td></tr>
+                <tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No search yet.</td></tr>
               </tbody>
             </table>
+          </div>
+          <div class="cd-pager" id="cd-result-pager" hidden>
+            <span id="cd-result-page-label"></span>
+            <div class="cd-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-result-prev">Prev</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-result-next">Next page</button>
+            </div>
           </div>
         </section>
 
@@ -207,28 +225,49 @@
             <div class="cd-actions">
               <button type="button" class="btn btn-secondary btn-sm" id="btn-csv">Download CSV</button>
               <button type="button" class="btn btn-secondary btn-sm" id="btn-crm">Import to CRM</button>
-              <button type="button" class="btn btn-primary btn-sm" id="btn-email">Email selected</button>
-              <button type="button" class="btn btn-secondary btn-sm" id="btn-sms">SMS (consent only)</button>
-              <button type="button" class="btn btn-secondary btn-sm" id="btn-delete">Delete</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-delete">Delete list</button>
             </div>
           </div>
           <div class="tms-table-wrapper">
-            <table class="tms-table-v2">
+            <table class="tms-table-v2 cd-compact">
               <thead>
                 <tr>
                   <th></th>
                   <th>Company</th>
-                  <th>Equipment</th>
-                  <th>State</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Status</th>
+                  <th>Equip</th>
+                  <th>ST</th>
+                  <th style="text-align:right;">One-press</th>
                 </tr>
               </thead>
               <tbody id="cd-members"></tbody>
             </table>
           </div>
+          <div class="cd-pager" id="cd-member-pager" hidden>
+            <span id="cd-member-page-label"></span>
+            <div class="cd-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-member-prev">Prev</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-member-next">Next page</button>
+            </div>
+          </div>
         </section>
+      </div>
+      <div class="cd-modal" id="cd-edit-modal" role="dialog" aria-labelledby="cd-edit-title">
+        <div class="box">
+          <h3 id="cd-edit-title" style="margin:0 0 12px;font-size:16px;font-weight:800;text-transform:none;letter-spacing:0;color:var(--text-primary);">Edit contact</h3>
+          <input type="hidden" id="cd-edit-id">
+          <label class="form-label" for="cd-edit-company">Company</label>
+          <input class="form-input" id="cd-edit-company">
+          <label class="form-label" for="cd-edit-owner" style="margin-top:10px;">Owner</label>
+          <input class="form-input" id="cd-edit-owner">
+          <label class="form-label" for="cd-edit-email" style="margin-top:10px;">Email</label>
+          <input class="form-input" id="cd-edit-email">
+          <label class="form-label" for="cd-edit-phone" style="margin-top:10px;">Phone</label>
+          <input class="form-input" id="cd-edit-phone">
+          <div class="cd-actions" style="margin-top:16px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-edit-cancel">Cancel</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-edit-save">Save</button>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -248,6 +287,10 @@
   let selectedEq = ['dry_van'];
   let lastCarriers = [];
   let openId = null;
+  let allMembers = [];
+  let resultPage = 1;
+  let memberPage = 1;
+  const PAGE_SIZE = 10;
 
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -322,23 +365,90 @@
     }).join('');
   }
 
+  function pageSlice(list, page) {
+    const start = (page - 1) * PAGE_SIZE;
+    return list.slice(start, start + PAGE_SIZE);
+  }
+  function pageCount(list) {
+    return Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  }
+  function paintPager(prefix, list, page) {
+    const pager = document.getElementById(prefix + '-pager');
+    const label = document.getElementById(prefix + '-page-label');
+    if (!list.length) {
+      pager.hidden = true;
+      return;
+    }
+    pager.hidden = false;
+    const start = (page - 1) * PAGE_SIZE + 1;
+    const end = Math.min(page * PAGE_SIZE, list.length);
+    label.textContent = start + '–' + end + ' of ' + list.length;
+    document.getElementById('btn-' + (prefix === 'cd-result' ? 'result' : 'member') + '-prev').disabled = page <= 1;
+    document.getElementById('btn-' + (prefix === 'cd-result' ? 'result' : 'member') + '-next').disabled = page >= pageCount(list);
+  }
+  function memberActs(m) {
+    return `<div class="cd-acts">
+      <button type="button" class="cd-act is-primary" data-act="email" data-id="${m.id}">Email</button>
+      <button type="button" class="cd-act" data-act="sms" data-id="${m.id}">SMS</button>
+      <button type="button" class="cd-act" data-act="call" data-id="${m.id}">Call</button>
+      <button type="button" class="cd-act" data-act="packet" data-id="${m.id}">Packet</button>
+      <button type="button" class="cd-act" data-act="edit" data-id="${m.id}">Edit</button>
+      <button type="button" class="cd-act is-warn" data-act="delete" data-id="${m.id}">Delete</button>
+    </div>`;
+  }
+  function resultActs(i, c) {
+    const tel = c.phone ? `tel:${escapeHtml(String(c.phone).replace(/[^\d+]/g, ''))}` : '';
+    return `<div class="cd-acts">
+      ${tel ? `<a class="cd-act" href="${tel}">Call</a>` : '<span class="cd-sub">No phone</span>'}
+    </div>`;
+  }
+
   function renderResults(carriers) {
     const body = document.getElementById('cd-results');
     renderChart(carriers);
     if (!carriers.length) {
-      body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--text-muted);">No census rows for this equipment / state.</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No census rows for this equipment / state.</td></tr>';
+      paintPager('cd-result', [], 1);
       return;
     }
-    body.innerHTML = carriers.map((c, i) => `<tr>
-      <td><input type="checkbox" value="${i}" checked></td>
-      <td><strong>${escapeHtml(c.company_name)}</strong><div style="font-size:11px;color:var(--text-muted);">${escapeHtml(c.owner_name || '')}</div></td>
-      <td>${escapeHtml(c.mc_number || '—')}<div style="font-size:11px;color:var(--text-muted);">DOT ${escapeHtml(c.dot_number || '')}</div></td>
-      <td>${escapeHtml(c.equipment_type || '—')}<div style="font-size:11px;color:var(--text-muted);">${escapeHtml(c.cargo_carried || '')}</div></td>
-      <td>${escapeHtml(c.num_trucks || '')}</td>
+    if (resultPage > pageCount(carriers)) resultPage = pageCount(carriers);
+    const slice = pageSlice(carriers, resultPage);
+    const offset = (resultPage - 1) * PAGE_SIZE;
+    body.innerHTML = slice.map((c, i) => {
+      const idx = offset + i;
+      return `<tr data-result="${idx}">
+      <td><input type="checkbox" value="${idx}" checked></td>
+      <td><strong>${escapeHtml(c.company_name)}</strong>
+        <div class="cd-sub">${escapeHtml(c.mc_number || '—')} · DOT ${escapeHtml(c.dot_number || '')}</div>
+        <div class="cd-sub">${escapeHtml(c.email || 'no email')} · ${escapeHtml(c.phone || 'no phone')}</div></td>
+      <td>${escapeHtml((c.equipment_type || '—').split(',')[0])}</td>
       <td>${escapeHtml(c.phy_state || c.state || '')}</td>
-      <td>${escapeHtml(c.email || '—')}</td>
-      <td>${escapeHtml(c.phone || '—')}</td>
+      <td>${escapeHtml(c.num_trucks || '')}</td>
+      <td>${resultActs(idx, c)}</td>
+    </tr>`;
+    }).join('');
+    paintPager('cd-result', carriers, resultPage);
+  }
+
+  function renderMembers() {
+    const body = document.getElementById('cd-members');
+    if (!allMembers.length) {
+      body.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted);">This directory is empty.</td></tr>';
+      paintPager('cd-member', [], 1);
+      return;
+    }
+    if (memberPage > pageCount(allMembers)) memberPage = pageCount(allMembers);
+    const slice = pageSlice(allMembers, memberPage);
+    body.innerHTML = slice.map((m) => `<tr data-member="${m.id}">
+      <td><input type="checkbox" value="${m.id}" checked></td>
+      <td><strong>${escapeHtml(m.company_name)}</strong>
+        <div class="cd-sub">${escapeHtml(m.mc_number || '')} · DOT ${escapeHtml(m.dot_number || '')}</div>
+        <div class="cd-sub">${escapeHtml(m.email || 'no email')} · ${escapeHtml(m.phone || 'no phone')}</div></td>
+      <td>${escapeHtml((m.equipment_type || '—').split(',')[0])}</td>
+      <td>${escapeHtml(m.state || '')}</td>
+      <td>${memberActs(m)}</td>
     </tr>`).join('');
+    paintPager('cd-member', allMembers, memberPage);
   }
 
   async function runSearch() {
@@ -366,6 +476,7 @@
       return;
     }
     lastCarriers = data.carriers || [];
+    resultPage = 1;
     meta.textContent = lastCarriers.length + ' carriers · ' + (f.equipment.join(', ') || 'any equipment') + (f.state ? ' · ' + f.state : '') + ' · public census, not a score.';
     renderResults(lastCarriers);
   }
@@ -419,38 +530,85 @@
     </tr>`).join('');
   }
 
-  async function openDirectory(id) {
+  async function openDirectory(id, opts) {
     openId = id;
     const res = await api('/api/census-desk/directories/' + id);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return alert(data.error || 'Could not open directory.');
     document.getElementById('cd-open').style.display = 'block';
     document.getElementById('cd-open-title').textContent = data.directory.name;
-    document.getElementById('cd-open-meta').textContent = (data.members || []).length + ' carriers in this file.';
-    document.getElementById('cd-members').innerHTML = (data.members || []).map((m) => `<tr>
-      <td><input type="checkbox" value="${m.id}" checked></td>
-      <td><strong>${escapeHtml(m.company_name)}</strong><div style="font-size:11px;color:var(--text-muted);">${escapeHtml(m.mc_number || '')} · DOT ${escapeHtml(m.dot_number || '')}</div></td>
-      <td>${escapeHtml(m.equipment_type || '—')}</td>
-      <td>${escapeHtml(m.state || '')}</td>
-      <td>${escapeHtml(m.email || '—')}</td>
-      <td>${escapeHtml(m.phone || '—')}</td>
-      <td>${m.email_sent_at ? 'emailed' : ''}${m.sms_sent_at ? ' · sms' : ''}${m.sms_blocked_reason === 'no_consent' ? ' · email only' : ''}</td>
-    </tr>`).join('');
+    allMembers = data.members || [];
+    memberPage = (opts && opts.page) || 1;
+    document.getElementById('cd-open-meta').textContent = allMembers.length + ' carriers · 10 per page · one-press Email / SMS / Call / Packet on each row.';
+    renderMembers();
     await loadDirs();
-    document.getElementById('cd-open').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!opts || !opts.silent) {
+      document.getElementById('cd-open').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   async function postMembers(path, extra) {
     if (!openId) return alert('Open a directory first.');
+    const ids = extra && extra.member_ids ? extra.member_ids : selectedIds('cd-members');
     const res = await api('/api/census-desk/directories/' + openId + '/' + path, {
       method: 'POST',
-      body: JSON.stringify(Object.assign({ member_ids: selectedIds('cd-members') }, extra || {}))
+      body: JSON.stringify(Object.assign({ member_ids: ids }, extra || {}))
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return alert(data.error || 'Request failed.');
     const skip = (data.skipped || []).length;
-    alert((data.note ? data.note + '\n\n' : '') + 'Sent: ' + (data.sent || data.imported || 0) + (skip ? (' · skipped: ' + skip) : '') + (data.remaining ? (' · remaining: ' + data.remaining) : ''));
-    openDirectory(openId);
+    const firstSkip = skip && data.skipped[0] ? data.skipped[0].reason : '';
+    alert((data.message || data.note || 'Done.') + '\n\nSent: ' + (data.sent || data.imported || 0) + (skip ? (' · skipped: ' + skip + (firstSkip ? ' (' + firstSkip + ')' : '')) : ''));
+    const keepPage = memberPage;
+    await openDirectory(openId, { silent: true, page: keepPage });
+  }
+
+  function findMember(id) {
+    return allMembers.find((m) => Number(m.id) === Number(id));
+  }
+
+  async function memberAction(act, id) {
+    const member = findMember(id);
+    if (!member) return;
+    if (act === 'email') return postMembers('email', { member_ids: [id] });
+    if (act === 'sms') return postMembers('sms', { member_ids: [id] });
+    if (act === 'packet') return postMembers('contract', { member_ids: [id] });
+    if (act === 'call') {
+      if (!member.phone) return alert('No phone on this row. Edit the contact first.');
+      try {
+        const res = await api('/api/voip/click-to-call', {
+          method: 'POST',
+          body: JSON.stringify({ to_number: member.phone, lead_id: member.crm_lead_id || null })
+        });
+        const data = await res.json().catch(() => ({}));
+        const tel = 'tel:' + String(member.phone).replace(/[^\d+]/g, '');
+        if (data.call_url) window.location.href = data.call_url;
+        else window.location.href = tel;
+      } catch (err) {
+        window.location.href = 'tel:' + String(member.phone).replace(/[^\d+]/g, '');
+      }
+      return;
+    }
+    if (act === 'edit') {
+      document.getElementById('cd-edit-id').value = String(id);
+      document.getElementById('cd-edit-company').value = member.company_name || '';
+      document.getElementById('cd-edit-owner').value = member.owner_name || '';
+      document.getElementById('cd-edit-email').value = member.email || '';
+      document.getElementById('cd-edit-phone').value = member.phone || '';
+      document.getElementById('cd-edit-modal').classList.add('is-open');
+      return;
+    }
+    if (act === 'delete') {
+      if (!confirm('Remove ' + member.company_name + ' from this directory?')) return;
+      const res = await api('/api/census-desk/directories/' + openId + '/members/' + id, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return alert(data.error || 'Could not delete.');
+      }
+      allMembers = allMembers.filter((m) => Number(m.id) !== Number(id));
+      renderMembers();
+      loadDirs();
+    }
   }
 
   document.getElementById('eq-grid').addEventListener('click', (e) => {
@@ -465,6 +623,18 @@
     const row = e.target.closest('[data-id]');
     if (row) openDirectory(row.getAttribute('data-id'));
   });
+  document.getElementById('cd-members').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (btn) {
+      e.preventDefault();
+      memberAction(btn.getAttribute('data-act'), Number(btn.getAttribute('data-id')));
+      return;
+    }
+    const row = e.target.closest('tr[data-member]');
+    if (!row) return;
+    document.querySelectorAll('#cd-members tr').forEach((tr) => tr.classList.remove('is-on'));
+    row.classList.add('is-on');
+  });
   document.getElementById('btn-search').addEventListener('click', () => runSearch().catch((err) => alert(err.message)));
   document.getElementById('btn-search-hero').addEventListener('click', () => runSearch().catch((err) => alert(err.message)));
   document.getElementById('btn-save').addEventListener('click', () => saveDirectory().catch((err) => alert(err.message)));
@@ -473,14 +643,48 @@
     window.location = '/api/census-desk/directories/' + openId + '.csv';
   });
   document.getElementById('btn-crm').addEventListener('click', () => postMembers('import-crm'));
-  document.getElementById('btn-email').addEventListener('click', () => postMembers('email'));
-  document.getElementById('btn-sms').addEventListener('click', () => postMembers('sms'));
   document.getElementById('btn-delete').addEventListener('click', async () => {
     if (!openId || !confirm('Delete this directory?')) return;
     await api('/api/census-desk/directories/' + openId, { method: 'DELETE' });
     openId = null;
     document.getElementById('cd-open').style.display = 'none';
     loadDirs();
+  });
+  document.getElementById('btn-result-prev').addEventListener('click', () => {
+    resultPage = Math.max(1, resultPage - 1);
+    renderResults(lastCarriers);
+  });
+  document.getElementById('btn-result-next').addEventListener('click', () => {
+    resultPage = Math.min(pageCount(lastCarriers), resultPage + 1);
+    renderResults(lastCarriers);
+  });
+  document.getElementById('btn-member-prev').addEventListener('click', () => {
+    memberPage = Math.max(1, memberPage - 1);
+    renderMembers();
+  });
+  document.getElementById('btn-member-next').addEventListener('click', () => {
+    memberPage = Math.min(pageCount(allMembers), memberPage + 1);
+    renderMembers();
+  });
+  document.getElementById('btn-edit-cancel').addEventListener('click', () => {
+    document.getElementById('cd-edit-modal').classList.remove('is-open');
+  });
+  document.getElementById('btn-edit-save').addEventListener('click', async () => {
+    const id = Number(document.getElementById('cd-edit-id').value);
+    const res = await api('/api/census-desk/directories/' + openId + '/members/' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        company_name: document.getElementById('cd-edit-company').value,
+        owner_name: document.getElementById('cd-edit-owner').value,
+        email: document.getElementById('cd-edit-email').value,
+        phone: document.getElementById('cd-edit-phone').value
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.error || 'Could not save.');
+    document.getElementById('cd-edit-modal').classList.remove('is-open');
+    const keepPage = memberPage;
+    await openDirectory(openId, { silent: true, page: keepPage });
   });
 
   const stateSel = document.getElementById('cd-state');

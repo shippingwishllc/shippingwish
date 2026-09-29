@@ -141,6 +141,48 @@ async function deleteDirectory(id) {
   return rowCount > 0;
 }
 
+async function getMember(directoryId, memberId) {
+  await ensureCensusDirectorySchema();
+  const { rows } = await pool.query(
+    `SELECT * FROM census_directory_members WHERE directory_id = $1 AND id = $2`,
+    [Number(directoryId), Number(memberId)]
+  );
+  return rows[0] || null;
+}
+
+async function updateMember(directoryId, memberId, patch) {
+  const member = await getMember(directoryId, memberId);
+  if (!member) return null;
+  const allowed = {
+    company_name: String(patch.company_name || member.company_name).trim().slice(0, 160),
+    owner_name: String(patch.owner_name == null ? member.owner_name || '' : patch.owner_name).trim().slice(0, 120) || null,
+    email: String(patch.email == null ? member.email || '' : patch.email).trim().slice(0, 160) || null,
+    phone: String(patch.phone == null ? member.phone || '' : patch.phone).trim().slice(0, 30) || null
+  };
+  if (!allowed.company_name) {
+    const err = new Error('Company name is required.');
+    err.status = 400;
+    throw err;
+  }
+  const { rows } = await pool.query(
+    `UPDATE census_directory_members
+     SET company_name = $1, owner_name = $2, email = $3, phone = $4
+     WHERE directory_id = $5 AND id = $6
+     RETURNING *`,
+    [allowed.company_name, allowed.owner_name, allowed.email, allowed.phone, Number(directoryId), Number(memberId)]
+  );
+  return rows[0] || null;
+}
+
+async function deleteMember(directoryId, memberId) {
+  await ensureCensusDirectorySchema();
+  const { rowCount } = await pool.query(
+    `DELETE FROM census_directory_members WHERE directory_id = $1 AND id = $2`,
+    [Number(directoryId), Number(memberId)]
+  );
+  return rowCount > 0;
+}
+
 async function markMember(id, fields) {
   const sets = [];
   const vals = [];
@@ -178,5 +220,8 @@ module.exports = {
   addMembers,
   deleteDirectory,
   markMember,
+  getMember,
+  updateMember,
+  deleteMember,
   toCsv
 };

@@ -87,6 +87,12 @@ test('census desk page and staff nav are wired', () => {
   assert.match(page, /id="kpi-dirs"/);
   assert.match(page, /Find active carriers by equipment/);
   assert.doesNotMatch(page, /#e11d48|#ef4444|XTERA/);
+  assert.match(page, /Next page/);
+  assert.match(page, /data-act="email"/);
+  assert.match(page, /data-act="packet"/);
+  assert.match(page, /PAGE_SIZE = 10/);
+  assert.match(route, /directories\/:id\/members\/:memberId/);
+  assert.match(route, /directories\/:id\/contract/);
   assert.match(shell, /href: '\/census-desk'/);
   assert.match(shell, /SIDEBAR_VERSION = '26'/);
   assert.match(boot, /BOOT_VER = '26'/);
