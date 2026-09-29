@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broker tracking desk — LoadsNexus / Shipping Wish</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/design-system.css?v=7">
+  <style>
+    .cd-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+    .cd-card { background:var(--bg-card); border:1px solid var(--border-default); border-radius:16px; padding:18px 20px; }
+    .cd-card h3 { margin:0 0 4px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
+    .cd-help { margin:0 0 12px; font-size:12px; color:var(--text-secondary); line-height:1.45; }
+    .cd-hero { grid-column:span 12; background:linear-gradient(120deg,#0f172a 0%,#1e3a5f 58%,#4c1d95 100%); color:#fff; border:0; }
+    .cd-hero h2 { margin:0 0 6px; font-size:22px; font-weight:800; }
+    .cd-hero p { margin:0; max-width:720px; font-size:13px; line-height:1.5; color:#ddd6fe; }
+    .cd-compact td, .cd-compact th { padding:8px 10px; font-size:12px; }
+    .cd-kpi { grid-column:span 4; }
+    .cd-kpi .n { font-size:28px; font-weight:800; }
+    .cd-kpi .l { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+    @media (max-width:980px) { .cd-grid { grid-template-columns:1fr; } .cd-hero, .cd-kpi, .cd-card { grid-column:auto !important; } }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Broker tracking</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Send tracking to the driver. They tap Accept. You watch the live map. Public LoadsNexus homepage is unchanged.</p>
+      </div>
+      <div class="live-status"><span class="live-dot"></span> SW Track</div>
+    </header>
+    <main class="app-content">
+      <div class="cd-grid">
+        <section class="cd-card cd-hero">
+          <div>
+            <div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#fbbf24;margin-bottom:8px;">THE METHOD BROKERS ALREADY USE</div>
+            <h2>Send tracking. Driver accepts. GPS starts.</h2>
+            <p>When a broker says “I sent tracking, tell the driver to accept,” they mean a phone GPS share (MacroPoint / FourKites style) — not an ELD plug. LoadsNexus does the same on your booked loads: SMS or in-app link, driver taps Accept, you get a live map. We do not scrape MacroPoint.</p>
+          </div>
+        </section>
+        <article class="cd-card cd-kpi"><div class="l">Your loads</div><div class="n" id="kpi-loads">0</div></article>
+        <article class="cd-card cd-kpi"><div class="l">Tracking sent</div><div class="n" id="kpi-sent">0</div></article>
+        <article class="cd-card cd-kpi"><div class="l">Accepted / with GPS</div><div class="n" id="kpi-on">0</div></article>
+
+        <section class="cd-card" style="grid-column:span 12;">
+          <h3>Booked loads</h3>
+          <p class="cd-help">Pick a load, confirm the driver phone, send tracking. Copy the broker map link after send.</p>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2 cd-compact">
+              <thead><tr><th>Load</th><th>Lane</th><th>Driver</th><th>Phone</th><th></th></tr></thead>
+              <tbody id="load-body"><tr><td colspan="5">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="cd-card" style="grid-column:span 12;">
+          <h3>Tracking shares</h3>
+          <p class="cd-help" id="desk-msg">Empty until you send one.</p>
+          <div class="tms-table-wrapper">
+            <table class="tms-table-v2 cd-compact">
+              <thead><tr><th>Load</th><th>Status</th><th>GPS</th><th>SMS</th><th></th></tr></thead>
+              <tbody id="share-body"><tr><td colspan="5">None yet.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/app-shell.js"></script>
+<script>
+(function () {
+  function api(path, opts) {
+    return fetch(path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, opts || {}));
+  }
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+  function setMsg(t, bad) {
+    const el = document.getElementById('desk-msg');
+    el.textContent = t;
+    el.style.color = bad ? '#b91c1c' : '';
+  }
+
+  async function loadDesk() {
+    const me = await api('/api/me');
+    if (me.status === 401) { location.href = '/login?from=loadsnexus'; return; }
+    const [loadsRes, shareRes] = await Promise.all([
+      api('/api/loadboard/broker/my-loads'),
+      api('/api/track-share/desk')
+    ]);
+    const loadsJson = await loadsRes.json();
+    const shareJson = await shareRes.json();
+    const loads = loadsJson.loads || [];
+    const shares = shareJson.shares || [];
+    document.getElementById('kpi-loads').textContent = String(loads.length);
+    document.getElementById('kpi-sent').textContent = String(shares.length);
+    document.getElementById('kpi-on').textContent = String(shares.filter((s) => s.status === 'accepted').length);
+
+    const lb = document.getElementById('load-body');
+    if (!loads.length) {
+      lb.innerHTML = '<tr><td colspan="5">No booked loads on file for this broker login yet.</td></tr>';
+    } else {
+      lb.innerHTML = loads.map((l) =>
+        '<tr><td>' + esc(l.load_number || l.id) + '</td><td>' + esc((l.pickup_location || '') + ' → ' + (l.delivery_location || '')) +
+        '</td><td>' + esc(l.driver_name || '—') + '</td><td><input class="form-input" data-phone="' + l.id + '" value="' + esc(l.driver_phone || '') + '" placeholder="Driver cell"></td>' +
+        '<td><button type="button" class="btn btn-primary btn-sm" data-send="' + l.id + '">Send tracking</button></td></tr>'
+      ).join('');
+    }
+
+    const sb = document.getElementById('share-body');
+    if (!shares.length) {
+      sb.innerHTML = '<tr><td colspan="5">None yet.</td></tr>';
+    } else {
+      sb.innerHTML = shares.map((s) =>
+        '<tr><td>' + esc(s.load_number || s.load_id) + '<div style="font-size:11px;color:var(--text-muted);">' + esc((s.pickup || '') + ' → ' + (s.delivery || '')) +
+        '</div></td><td>' + esc(s.status) + '</td><td>' + (s.gps_lat != null ? esc(s.gps_lat.toFixed(4) + ', ' + s.gps_lon.toFixed(4)) : 'Waiting') +
+        '</td><td>' + (s.sms_sent_at ? 'SMS sent' : esc(s.sms_skip_reason || '—')) +
+        '</td><td style="white-space:nowrap;">' +
+        (s.view_url ? '<a class="btn btn-secondary btn-sm" target="_blank" href="' + esc(s.view_url) + '">Map</a> ' : '') +
+        (s.accept_url ? '<button type="button" class="btn btn-light btn-sm" data-copy="' + esc(s.accept_url) + '">Copy driver link</button>' : '') +
+        '</td></tr>'
+      ).join('');
+    }
+  }
+
+  document.getElementById('load-body').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-send]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-send');
+    const phone = (document.querySelector('[data-phone="' + id + '"]') || {}).value;
+    const res = await api('/api/track-share/send', {
+      method: 'POST',
+      body: JSON.stringify({ load_id: id, driver_phone: phone, send_sms: true })
+    });
+    const json = await res.json();
+    if (!res.ok) return setMsg(json.error || 'Send failed.', true);
+    setMsg('Tracking sent. Driver link ready. SMS: ' + (json.sms && json.sms.sent ? 'sent' : (json.sms && json.sms.reason) || 'not sent') + '.');
+    await loadDesk();
+  });
+
+  document.getElementById('share-body').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-copy]');
+    if (!btn) return;
+    navigator.clipboard.writeText(btn.getAttribute('data-copy')).then(() => setMsg('Driver Accept link copied. Call the driver and tell them to tap it.'));
+  });
+
+  loadDesk().catch(() => setMsg('Could not load broker desk.', true));
+})();
+</script>
+</body>
+</html>

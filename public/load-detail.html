@@ -104,6 +104,21 @@
       <!-- Right Column: Status History & Documents -->
       <div>
         <div class="tms-panel">
+          <h3>SW Track — send tracking to driver</h3>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Same method as MacroPoint-style broker tracking: driver taps Accept, phone GPS is shared for this load only. Not an ELD plug.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+            <div class="field" style="flex:1;min-width:160px;margin:0;">
+              <label>Driver cell</label>
+              <input id="track-phone" class="form-input" placeholder="From the load or type it">
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-send-track">Send tracking</button>
+            <a class="btn btn-secondary btn-sm" href="/broker-desk">Tracking desk</a>
+          </div>
+          <p id="track-msg" class="muted" style="font-size:12px;margin:8px 0 0;"></p>
+          <div id="track-links" style="margin-top:8px;font-size:12px;"></div>
+        </div>
+
+        <div class="tms-panel">
           <h3>Attached Load Documents</h3>
           <div id="load-docs-list" style="margin-top:12px;"></div>
           <button class="btn btn-amber btn-block btn-sm" style="margin-top:16px;" onclick="document.location.href='/documents'">+ Upload Rate Conf / POD</button>
@@ -200,6 +215,8 @@
     document.getElementById('ld-mc').textContent = l.broker_mc ? `(MC: ${l.broker_mc})` : '';
     document.getElementById('ld-carrier').textContent = l.carrier_company || l.carrier_name;
     document.getElementById('ld-driver-truck').textContent = `${l.driver_name || 'Unassigned'} / Truck #${l.truck_number || 'N/A'}`;
+    const phoneEl = document.getElementById('track-phone');
+    if (phoneEl && l.driver_phone && !phoneEl.value) phoneEl.value = l.driver_phone;
 
     document.getElementById('ld-rate').textContent = formatCurrency(l.rate);
     document.getElementById('ld-carrier-pay').textContent = formatCurrency(l.carrier_pay);
@@ -295,6 +312,23 @@
   });
 
   document.addEventListener('DOMContentLoaded', initLoadDetail);
+
+  document.getElementById('btn-send-track').addEventListener('click', async () => {
+    const msg = document.getElementById('track-msg');
+    const res = await fetch('/api/track-share/send', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ load_id: loadId, driver_phone: document.getElementById('track-phone').value, send_sms: true })
+    });
+    const json = await res.json();
+    if (!res.ok) { msg.textContent = json.error || 'Could not send tracking.'; return; }
+    msg.textContent = json.sms && json.sms.sent ? 'SMS sent to driver. Call them and say tap Accept.' : ('Tracking created. SMS: ' + ((json.sms && json.sms.reason) || 'not sent') + '. Copy the driver link.');
+    const s = json.share || {};
+    document.getElementById('track-links').innerHTML =
+      (s.accept_url ? '<div>Driver Accept: <a href="' + s.accept_url + '" target="_blank">open</a></div>' : '') +
+      (s.view_url ? '<div>Broker map: <a href="' + s.view_url + '" target="_blank">open</a></div>' : '');
+  });
 </script>
 <script src="/js/app-shell.js?v=20"></script>
 </body>

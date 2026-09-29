@@ -113,6 +113,22 @@ const PLANS = {
       'Compliance and insurance coordination',
       'Custom TMS setup for your company'
     ]
+  },
+  sw_track: {
+    key: 'sw_track',
+    name: 'SW Track — phone GPS + logbook',
+    trucks: 'Per truck / driver app',
+    amount_cents: parseInt(process.env.STRIPE_PLAN_SW_TRACK_CENTS || '2500', 10),
+    price_env: 'STRIPE_PRICE_SW_TRACK',
+    interval: 'month',
+    description: 'Driver Accept tracking (same method brokers already use), live broker map, and software HOS logbook. Not an FMCSA-registered ELD device. Connect Motive, Samsara, or Geotab when a registered ELD is required.',
+    features: [
+      'Send tracking — driver taps Accept on the phone',
+      'Broker live map link for that load only',
+      'Software HOS logbook on the driver app',
+      'Connect the carrier’s existing Motive / Samsara / Geotab',
+      'Not sold as registered ELD hardware'
+    ]
   }
 };
 
@@ -240,7 +256,7 @@ async function upsertWebsiteLead({
 }
 
 function publicPlans() {
-  return ['solo_weekly', 'fleet_weekly', 'command_weekly'].map((key) => {
+  const weekly = ['solo_weekly', 'fleet_weekly', 'command_weekly'].map((key) => {
     const p = PLANS[key];
     return {
       key: p.key,
@@ -254,6 +270,19 @@ function publicPlans() {
       features: p.features
     };
   });
+  const track = PLANS.sw_track;
+  weekly.push({
+    key: track.key,
+    name: track.name,
+    trucks: track.trucks,
+    amount_cents: track.amount_cents,
+    amount_display: `$${(track.amount_cents / 100).toFixed(0)}`,
+    interval: 'month',
+    trial_days: 0,
+    description: track.description,
+    features: track.features
+  });
+  return weekly;
 }
 
 function lineItemForPlan(plan, amount) {

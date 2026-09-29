@@ -96,7 +96,12 @@
     solo_weekly: { title: 'Owner Operator — $149 / week after trial', trucks: '1' },
     fleet_weekly: { title: 'Small Fleet — $350 / week after trial', trucks: '2-5' },
     command_weekly: { title: 'Fleet Command — $500 / week after trial', trucks: '6+' },
-    custom_weekly: { title: 'Fleet Command — $500 / week after trial', trucks: '6+' }
+    custom_weekly: { title: 'Fleet Command — $500 / week after trial', trucks: '6+' },
+    sw_track: {
+      title: 'SW Track — phone GPS + logbook',
+      trucks: '1',
+      sub: 'Monthly add-on. Driver taps Accept to share GPS for a load (same method brokers already use). Software HOS logbook. Connect Motive/Samsara/Geotab when a registered ELD is required. Not sold as FMCSA ELD hardware.'
+    }
   };
   const meta = copy[plan] || copy.solo_weekly;
   document.getElementById('plan_key').value = copy[plan] ? plan : 'solo_weekly';
@@ -111,6 +116,11 @@
   if (plan === 'loadboard_ai_pass') {
     const duePill = document.getElementById('due-pill');
     if (duePill) duePill.textContent = '$19 due today';
+  }
+  if (plan === 'sw_track') {
+    const duePill = document.getElementById('due-pill');
+    if (duePill) duePill.textContent = 'Monthly via Stripe';
+    document.getElementById('submit-btn').textContent = 'Continue to Stripe — SW Track';
   }
   document.getElementById('submit-btn').textContent = defaultBtnText;
 

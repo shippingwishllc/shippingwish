@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Load tracking map — Shipping Wish</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/design-system.css?v=7">
+  <style>
+    body { background:#0f172a; color:#e2e8f0; margin:0; min-height:100vh; }
+    .box { max-width:720px; margin:0 auto; padding:24px 16px 40px; }
+    h1 { font-size:22px; margin:0 0 6px; }
+    .muted { color:#94a3b8; font-size:13px; }
+    iframe { width:100%; min-height:320px; border:0; border-radius:14px; background:#1e293b; margin-top:12px; }
+    .kpi { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; }
+    .kpi div { background:#1e293b; border-radius:12px; padding:12px; }
+    .kpi b { display:block; font-size:16px; }
+    .kpi span { font-size:11px; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em; }
+    @media (max-width:640px) { .kpi { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="muted">SW TRACK LIVE MAP — EMPTY UNTIL THE DRIVER ACCEPTS AND THE PHONE PINGS</div>
+    <h1 id="lane">Loading…</h1>
+    <p class="muted" id="meta"></p>
+    <div class="kpi">
+      <div><span>Status</span><b id="st">—</b></div>
+      <div><span>Last GPS</span><b id="when">—</b></div>
+      <div><span>Coordinates</span><b id="coord">None yet</b></div>
+    </div>
+    <iframe id="map" title="Load map" hidden></iframe>
+    <p class="muted" id="empty">No GPS yet. This page does not invent Chicago or Dallas trucks. When the driver taps Accept and allows location, the map fills in.</p>
+  </div>
+<script>
+(function () {
+  const t = new URLSearchParams(location.search).get('t') || '';
+  const map = document.getElementById('map');
+  const empty = document.getElementById('empty');
+  async function load() {
+    if (!t) return;
+    const res = await fetch('/api/track-share/view/' + encodeURIComponent(t));
+    const d = await res.json();
+    const s = d.share || {};
+    document.getElementById('lane').textContent = (s.pickup || 'Pickup') + ' → ' + (s.delivery || 'Delivery');
+    document.getElementById('meta').textContent = [s.load_number && ('Load ' + s.load_number), s.broker_name, s.driver_name].filter(Boolean).join(' · ');
+    document.getElementById('st').textContent = (s.status || '—').replace(/_/g, ' ');
+    document.getElementById('when').textContent = s.last_ping_at ? new Date(s.last_ping_at).toLocaleString() : 'Waiting';
+    if (s.gps_lat != null && s.gps_lon != null) {
+      document.getElementById('coord').textContent = s.gps_lat.toFixed(4) + ', ' + s.gps_lon.toFixed(4);
+      if (s.map_url) { map.src = s.map_url; map.hidden = false; empty.style.display = 'none'; }
+    } else {
+      document.getElementById('coord').textContent = 'None yet';
+      map.hidden = true;
+      empty.style.display = 'block';
+      if (d.note) empty.textContent = d.note;
+    }
+  }
+  load();
+  setInterval(load, 20000);
+})();
+</script>
+</body>
+</html>

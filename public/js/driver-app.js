@@ -368,10 +368,30 @@
     }
   }
 
+  async function loadPendingTracking() {
+    const banner = $('track-accept-banner');
+    if (!banner) return;
+    try {
+      const res = await fetch('/api/track-share/mine', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const share = (data.shares || [])[0];
+      if (!share) { banner.style.display = 'none'; return; }
+      banner.style.display = 'block';
+      const copy = $('track-accept-copy');
+      if (copy) copy.textContent = (share.pickup || 'Pickup') + ' → ' + (share.delivery || 'Delivery') + '. Tap Accept to share GPS for this load only.';
+      const btn = $('btn-accept-track');
+      if (btn) {
+        btn.onclick = () => { window.location.href = share.accept_url || ('/track-accept?t='); };
+      }
+    } catch (_) { /* optional */ }
+  }
+
   async function initDriverApp() {
     await checkDriverAuth();
     await loadActiveDriverLoad();
     await loadHosClocks();
+    await loadPendingTracking();
   }
 
   document.addEventListener('click', (e) => {

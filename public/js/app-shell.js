@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '27';
+  const SIDEBAR_VERSION = '28';
   // #endregion
 
   function clearRoleCache() {
@@ -89,6 +89,7 @@
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
     { key: 'eld', href: '/eld-desk', icon: '📡', label: 'ELD Desk' },
+    { key: 'track', href: '/broker-desk', icon: '📍', label: 'Load tracking' },
     { section: 'Sales & Staff' },
     { key: 'crm', href: '/crm-sales', icon: '📈', label: 'Sales CRM & Leads' },
     { key: 'census', href: '/census-desk', icon: '🗂️', label: 'Census Desk' },
@@ -114,6 +115,7 @@
     { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Bidding' },
     { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Trucks & drivers' },
     { key: 'eld', href: '/eld-desk', icon: '📡', label: 'ELD connect' },
+    { key: 'track', href: '/broker-desk', icon: '📍', label: 'Send tracking' },
     { key: 'planning', href: '/load-planning', icon: '📅', label: 'Empty truck / next load' },
     { key: 'documents', href: '/documents', icon: '📄', label: 'Documents' },
     { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker credit check' },
@@ -122,6 +124,13 @@
     { key: 'ifta', href: '/ifta', icon: '⛽', label: 'IFTA & fuel' },
     { section: 'On the road' },
     { key: 'driver', href: '/driver-app', icon: '📱', label: 'Driver phone app' }
+  ];
+
+  const BROKER_LINKS = [
+    { section: 'LoadsNexus broker' },
+    { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Post & book loads' },
+    { key: 'track', href: '/broker-desk', icon: '📍', label: 'Send tracking' },
+    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker credit check' }
   ];
 
   const DRIVER_LINKS = [
@@ -147,6 +156,7 @@
     'brokers.html': 'brokers',
     'fleet.html': 'fleet',
     'eld-desk.html': 'eld',
+    'broker-desk.html': 'track',
     'crm-sales.html': 'crm',
     'census-desk.html': 'census',
     'sales-dashboard.html': 'crm',
@@ -253,6 +263,7 @@
 
   function linkItemsForRole(role) {
     if (role === 'driver') return DRIVER_LINKS;
+    if (role === 'broker') return BROKER_LINKS;
     if (isCarrierRole(role)) {
       if (isLoadboardSubscriber()) return LOADBOARD_MEMBER_LINKS;
       return CARRIER_LINKS;
@@ -285,9 +296,10 @@
     const driver = CURRENT_ROLE === 'driver';
     const loadboardSub = isLoadboardSubscriber();
     const active = activeKey();
-    const tag = driver ? 'Driver app' : loadboardSub ? 'AI Load Pass' : carrier ? 'Your TMS' : 'Operations';
-    const home = driver ? '/driver-app' : loadboardSub ? '/load-booking' : carrier ? '/carrier-overview' : '/admin-dashboard';
-    const links = driver ? DRIVER_LINKS : loadboardSub ? LOADBOARD_MEMBER_LINKS : carrier ? CARRIER_LINKS : STAFF_LINKS.concat(extraLinks());
+    const broker = CURRENT_ROLE === 'broker';
+    const tag = driver ? 'Driver app' : broker ? 'Broker' : loadboardSub ? 'AI Load Pass' : carrier ? 'Your TMS' : 'Operations';
+    const home = driver ? '/driver-app' : broker ? '/broker-desk' : loadboardSub ? '/load-booking' : carrier ? '/carrier-overview' : '/admin-dashboard';
+    const links = driver ? DRIVER_LINKS : broker ? BROKER_LINKS : loadboardSub ? LOADBOARD_MEMBER_LINKS : carrier ? CARRIER_LINKS : STAFF_LINKS.concat(extraLinks());
     return `
       <div class="sidebar-nav-scroll">
         <a href="${home}" class="sidebar-brand">
@@ -513,7 +525,7 @@
     try {
       if (sessionStorage.getItem('sw_sidebar_ver') !== SIDEBAR_VERSION) return true;
     } catch (_) { /* ignore */ }
-    return !aside.querySelector('a.sidebar-nav-link[href="/eld-desk"]');
+    return !aside.querySelector('a.sidebar-nav-link[href="/broker-desk"]');
   }
 
   function mountSidebarContent(aside) {
@@ -865,6 +877,11 @@
         }
         if (CURRENT_ROLE === 'driver' && pageName() !== 'driver-app.html') {
           window.location.replace('/driver-app');
+        }
+        if (CURRENT_ROLE === 'broker') {
+          const p = pageName();
+          const ok = p === 'broker-desk.html' || p === 'load-booking.html' || p === 'brokers.html' || p === 'track-share.html' || p === 'track-accept.html';
+          if (!ok) window.location.replace('/broker-desk');
         }
       })
       .catch((err) => {
