@@ -168,6 +168,21 @@ async function ensureGrowthSchema() {
     await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ');
     await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL');
     await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS from_name TEXT');
+    await pool.query('ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS is_spam BOOLEAN DEFAULT FALSE');
+    await pool.query('ALTER TABLE email_logs ADD COLUMN IF NOT EXISTS from_email TEXT');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS email_drafts (
+        id SERIAL PRIMARY KEY,
+        mailbox_domain TEXT NOT NULL,
+        from_email TEXT,
+        to_email TEXT,
+        subject TEXT,
+        body_text TEXT,
+        created_by INTEGER,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
   } catch (err) {
     console.warn('[SOFT_DELETE] direct ensure skipped:', err.message);
   }

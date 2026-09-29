@@ -9,6 +9,7 @@ const { sendBrandedEmail, isUnsubscribed, fetchReceivedEmail, fetchReceivedAttac
 const { buildTemplate, verifyUnsubscribeToken, COMPANY } = require('../utils/email-templates');
 const { notifyAdmins, createNotification } = require('../utils/notifications');
 const { isValidEmail, emailValidationError } = require('../utils/email-valid');
+const { knownMailbox, filterBrandMessages, normalizeFolder } = require('../utils/brand-mailboxes');
 
 const emailUpload = multer({
   storage: multer.memoryStorage(),
@@ -82,6 +83,21 @@ function normalizeEmailFromHeader(value) {
 async function ensureInboundColumns() {
   await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS from_name TEXT`).catch(() => {});
   await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'`).catch(() => {});
+  await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS is_spam BOOLEAN DEFAULT FALSE`).catch(() => {});
+  await pool.query(`ALTER TABLE email_logs ADD COLUMN IF NOT EXISTS from_email TEXT`).catch(() => {});
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS email_drafts (
+      id SERIAL PRIMARY KEY,
+      mailbox_domain TEXT NOT NULL,
+      from_email TEXT,
+      to_email TEXT,
+      subject TEXT,
+      body_text TEXT,
+      created_by INTEGER,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `).catch(() => {});
 }
 
 async function loadAttachmentsForMessage(msg) {
@@ -341,22 +357,70 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
 
     const unreadOnly = req.query.unread === '1';
     const direction = (req.query.direction || '').toLowerCase().trim();
+    const requestedDomain = String(req.query.domain || '').toLowerCase().trim();
+    const mailbox = requestedDomain ? knownMailbox(requestedDomain) : null;
+    if (requestedDomain && !mailbox) {
+      return res.status(400).json({ error: 'Unknown mailbox. Use shippingwish.com, loadsnexus.com, nyclimowish.com, or buywishonline.com.' });
+    }
+    const domain = mailbox ? mailbox.domain : '';
+    const folder = normalizeFolder(req.query.folder, direction);
     const page = Math.max(1, parseInt(req.query.page || '1', 10));
     const perPage = Math.min(20, Math.max(1, parseInt(req.query.perPage || '8', 10)));
     const offset = (page - 1) * perPage;
 
+    if (folder === 'draft') {
+      const draftRes = await pool.query(
+        `SELECT id, mailbox_domain, from_email, to_email, subject, body_text, updated_at
+         FROM email_drafts
+         WHERE ($1 = '' OR mailbox_domain = $1)
+         ORDER BY updated_at DESC`,
+        [domain]
+      );
+      const drafts = (draftRes.rows || []).map((row) => ({
+        id: row.id + 30000000,
+        direction: 'draft',
+        from_email: row.from_email,
+        to_email: row.to_email,
+        peer_email: row.to_email,
+        peer_name: row.to_email || 'Draft',
+        subject: row.subject || '(draft)',
+        body_text: row.body_text || '',
+        body_html: '',
+        is_read: true,
+        created_at: row.updated_at
+      }));
+      const total = drafts.length;
+      const totalPages = Math.max(1, Math.ceil(total / perPage));
+      return res.json({
+        messages: drafts.slice(offset, offset + perPage),
+        unread: 0,
+        total,
+        page,
+        perPage,
+        totalPages,
+        folder: 'draft',
+        domain
+      });
+    }
+
     // Layer 1: Inbound emails
     let inboundRows = [];
+    const inboundWhere = folder === 'trash'
+      ? 'i.deleted_at IS NOT NULL'
+      : folder === 'spam'
+        ? 'i.deleted_at IS NULL AND COALESCE(i.is_spam, FALSE) = TRUE'
+        : `i.deleted_at IS NULL AND COALESCE(i.is_spam, FALSE) = FALSE ${unreadOnly ? 'AND i.is_read = FALSE' : ''}`;
     try {
       const ibRes = await pool.query(
         `SELECT i.id, i.lead_id, i.from_email AS peer_email,
                 COALESCE(l.company_name, l.owner_name, i.from_email) AS peer_name,
                 i.from_email, i.to_email, i.subject, i.body_text, i.body_html, i.is_read,
+                COALESCE(i.is_spam, FALSE) AS is_spam, i.deleted_at,
                 i.created_at, l.company_name, l.owner_name, l.phone, l.mc_number,
                 'inbound' AS direction
          FROM email_inbound i
          LEFT JOIN crm_leads l ON l.id = i.lead_id
-         WHERE i.deleted_at IS NULL ${unreadOnly ? 'AND i.is_read = FALSE' : ''}
+         WHERE ${inboundWhere}
          ORDER BY i.created_at DESC`
       );
       inboundRows = ibRes.rows || [];
@@ -371,7 +435,7 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
         const obRes = await pool.query(
           `SELECT (e.id + 10000000) AS id, e.lead_id, e.recipient_email AS peer_email,
                   COALESCE(l.company_name, l.owner_name, e.recipient_email) AS peer_name,
-                  'operations@shippingwish.com' AS from_email,
+                  COALESCE(NULLIF(e.from_email, ''), 'operations@shippingwish.com') AS from_email,
                   CONCAT('↗ Outbound: ', e.subject) AS subject,
                   CONCAT('Outbound Email (', COALESCE(e.email_type, 'outreach'), ') sent to ', e.recipient_email) AS body_text,
                   CONCAT('<p>Outbound Email sent to <strong>', e.recipient_email, '</strong></p>') AS body_html,
@@ -411,25 +475,33 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
       }
     }
 
-    // Filter by direction: inbound, outbound, or combined
-    let allMessages = [];
-    if (direction === 'inbound') {
-      allMessages = inboundRows;
-    } else if (direction === 'outbound') {
-      allMessages = outboundRows;
-    } else {
-      allMessages = [...inboundRows, ...outboundRows].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-    }
-
-    const shopDomain = String(req.query.domain || '').toLowerCase();
-    if (shopDomain === 'buywishonline.com') {
-      allMessages = inboundRows.filter((row) => /@buywishonline\.com\b/i.test(String(row.to_email || '')));
+    const scopedOutbound = (folder === 'spam' || folder === 'trash') ? [] : outboundRows;
+    const allMessages = filterBrandMessages({
+      inboundRows,
+      outboundRows: scopedOutbound,
+      domain,
+      folder
+    });
+    let unreadCount = 0;
+    try {
+      const unreadRes = await pool.query(
+        `SELECT to_email, FALSE AS is_spam, NULL::timestamptz AS deleted_at, created_at
+         FROM email_inbound
+         WHERE deleted_at IS NULL AND COALESCE(is_spam, FALSE) = FALSE AND is_read = FALSE`
+      );
+      unreadCount = filterBrandMessages({
+        inboundRows: unreadRes.rows || [],
+        outboundRows: [],
+        domain,
+        folder: 'inbox'
+      }).length;
+    } catch (unreadErr) {
+      unreadCount = inboundRows.filter((row) => !row.is_read && !row.is_spam && !row.deleted_at).length;
     }
 
     const total = allMessages.length;
     const totalPages = Math.max(1, Math.ceil(total / perPage));
     const paginatedMessages = allMessages.slice(offset, offset + perPage);
-    const unreadCount = inboundRows.filter(m => !m.is_read).length;
 
     res.json({
       messages: paginatedMessages,
@@ -437,7 +509,9 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
       total,
       page,
       perPage,
-      totalPages
+      totalPages,
+      folder,
+      domain
     });
   } catch (err) {
     console.error('Inbox fetch error:', err);
@@ -459,9 +533,77 @@ router.delete('/inbox/:id', requireAuth, requireRole('admin', 'super_admin'), as
   }
 });
 
+router.post('/inbox/:id/spam', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    await ensureInboundColumns();
+    const spam = !(req.body && req.body.spam === false);
+    const result = await pool.query(
+      `UPDATE email_inbound SET is_spam = $2 WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
+      [req.params.id, spam]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Message not found.' });
+    res.json({ ok: true, message: spam ? 'Moved to Spam.' : 'Moved back to Inbox.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not update spam.' });
+  }
+});
+
+router.post('/drafts', requireAuth, staffEmailOnly, async (req, res) => {
+  try {
+    await ensureInboundColumns();
+    const mailbox = knownMailbox(req.body.domain || req.body.mailbox);
+    if (!mailbox) return res.status(400).json({ error: 'Choose a brand mailbox before saving a draft.' });
+    const subject = String(req.body.subject || '').trim();
+    const body = String(req.body.message || req.body.body || '').trim();
+    const toEmail = String(req.body.to || '').trim();
+    const fromEmail = String(req.body.from || '').trim();
+    if (!subject && !body && !toEmail) return res.status(400).json({ error: 'Write a subject, recipient, or message before saving a draft.' });
+    const saved = await pool.query(
+      `INSERT INTO email_drafts (mailbox_domain, from_email, to_email, subject, body_text, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [mailbox.domain, fromEmail, toEmail, subject, body, req.user.id]
+    );
+    res.json({ ok: true, id: saved.rows[0].id, message: 'Draft saved.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not save draft.' });
+  }
+});
+
+router.delete('/drafts/:id', requireAuth, staffEmailOnly, async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM email_drafts WHERE id = $1 RETURNING id', [req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Draft not found.' });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not delete draft.' });
+  }
+});
+
 router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     const numericId = parseInt(req.params.id, 10);
+
+    if (numericId > 30000000) {
+      const draftId = numericId - 30000000;
+      const draft = await pool.query('SELECT * FROM email_drafts WHERE id = $1', [draftId]);
+      if (!draft.rows.length) return res.status(404).json({ error: 'Draft not found' });
+      const row = draft.rows[0];
+      return res.json({
+        message: {
+          id: numericId,
+          direction: 'draft',
+          from_email: row.from_email,
+          to_email: row.to_email,
+          peer_email: row.to_email,
+          subject: row.subject || '(draft)',
+          body_text: row.body_text || '',
+          body_html: '',
+          created_at: row.updated_at,
+          is_read: true,
+          attachments: []
+        }
+      });
+    }
 
     // Case 1: Outbound lead from crm_leads
     if (numericId > 20000000) {
@@ -544,7 +686,7 @@ router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
        FROM email_inbound i
        LEFT JOIN crm_leads l ON l.id = i.lead_id
        LEFT JOIN users u ON u.id = l.sales_rep_id
-       WHERE i.id = $1 AND i.deleted_at IS NULL`,
+       WHERE i.id = $1`,
       [req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Message not found' });
@@ -706,9 +848,9 @@ router.post('/inbox/:id/reply', requireAuth, staffEmailOnly, async (req, res) =>
     const providerId = (sent.data && sent.data.id) || null;
     try {
       await pool.query(
-        `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key)
-         VALUES ($1, $2, $3, 'inbox_reply', 'sent', $4, $5, 'inbox_reply')`,
-        [msg.lead_id || null, recipient, subject, providerId, req.user.id]
+        `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key, from_email)
+         VALUES ($1, $2, $3, 'inbox_reply', 'sent', $4, $5, 'inbox_reply', $6)`,
+        [msg.lead_id || null, recipient, subject, providerId, req.user.id, replyMailbox]
       );
     } catch (_) { /* optional log */ }
 
