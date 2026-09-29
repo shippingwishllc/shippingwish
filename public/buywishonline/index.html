@@ -1583,6 +1583,7 @@
     .form-input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(233,69,96,0.1); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .form-row-3 { grid-template-columns: 1.4fr 0.8fr 0.9fr; }
+    @media (max-width: 560px) { .form-row-3 { grid-template-columns: 1fr; } }
     .addr-box { position: relative; }
     .addr-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
     .saved-addresses { margin-bottom: 12px; }
@@ -2523,12 +2524,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <input class="form-input" id="co_address" placeholder="Start typing your street address" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="co_address_list">
         <div class="addr-list" id="co_address_list" role="listbox" hidden></div>
       </div>
-      <div class="addr-hint">Pick a suggestion and the city, state, and ZIP fill in. You can still edit them.</div>
+      <div class="addr-hint" id="addrFillHint">Pick a suggestion and the city, state, and ZIP fill in. You can still edit them.</div>
     </div>
     <div class="form-row form-row-3">
       <div class="form-group"><label class="form-label" for="co_city">City</label><input class="form-input" id="co_city" autocomplete="address-level2"></div>
-      <div class="form-group"><label class="form-label" for="co_state">State</label><input class="form-input" id="co_state" autocomplete="address-level1"></div>
-      <div class="form-group"><label class="form-label" for="co_postal">ZIP</label><input class="form-input" id="co_postal" autocomplete="postal-code"></div>
+      <div class="form-group">
+        <label class="form-label" id="co_state_label" for="co_state">State</label>
+        <select class="form-input" id="co_state" autocomplete="address-level1"></select>
+        <input class="form-input" id="co_county" autocomplete="address-level1" placeholder="Optional" hidden>
+      </div>
+      <div class="form-group"><label class="form-label" id="co_postal_label" for="co_postal">ZIP</label><input class="form-input" id="co_postal" autocomplete="postal-code"></div>
     </div>
     <div class="form-group">
       <label class="form-label" for="co_country">Country</label>
@@ -2598,35 +2603,110 @@ const CURRENCIES = {
   EUR: { symbol: '€', flag: '🇪🇺', code: 'EUR', rate: 0.93 },
   AUD: { symbol: 'A$', flag: '🇦🇺', code: 'AUD', rate: 1.54 }
 };
-const CURRENCY_ORDER = ['USD','GBP','CAD','EUR','AUD'];
+const CURRENCY_ORDER = ['USD','CAD','GBP'];
+const CHECKOUT_REGIONS = {
+  US: {
+    currency: 'USD',
+    regionLabel: 'State',
+    postalLabel: 'ZIP',
+    hint: 'Pick a suggestion and the city, state, and ZIP fill in. You can still edit them.',
+    missing: 'Add your name, email, street, city, state, and ZIP',
+    regions: [['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['DC','District of Columbia'],['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],['NH','New Hampshire'],['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming']]
+  },
+  CA: {
+    currency: 'CAD',
+    regionLabel: 'Province',
+    postalLabel: 'Postal code',
+    hint: 'Pick a suggestion and the city, province, and postal code fill in. You can still edit them.',
+    missing: 'Add your name, email, street, city, province, and postal code',
+    regions: [['AB','Alberta'],['BC','British Columbia'],['MB','Manitoba'],['NB','New Brunswick'],['NL','Newfoundland and Labrador'],['NS','Nova Scotia'],['NT','Northwest Territories'],['NU','Nunavut'],['ON','Ontario'],['PE','Prince Edward Island'],['QC','Quebec'],['SK','Saskatchewan'],['YT','Yukon']]
+  },
+  GB: {
+    currency: 'GBP',
+    regionLabel: 'County',
+    postalLabel: 'Postcode',
+    hint: 'Pick a suggestion and the city and postcode fill in. County is optional.',
+    missing: 'Add your name, email, street, city, and postcode',
+    regions: null
+  }
+};
 let currentCurrency = CURRENCIES.USD;
+let checkoutCountry = '';
+let localeLocked = false;
 
-// Detect currency from Vercel/Cloudflare geo headers (server-side injected meta or IP fallback)
+function shipCountry(code) {
+  const value = String(code || '').toUpperCase();
+  return CHECKOUT_REGIONS[value] ? value : '';
+}
+
+function regionValue() {
+  if (checkoutCountry === 'GB') return document.getElementById('co_county').value.trim();
+  return document.getElementById('co_state').value.trim();
+}
+
+function setRegionValue(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return;
+  if (checkoutCountry === 'GB') {
+    document.getElementById('co_county').value = raw;
+    return;
+  }
+  const select = document.getElementById('co_state');
+  const upper = raw.toUpperCase();
+  const match = Array.from(select.options).find((opt) => opt.value.toUpperCase() === upper || opt.text.toUpperCase() === upper);
+  if (match) select.value = match.value;
+}
+
+function applyCheckoutCountry(code, region, source) {
+  if (source === 'user') localeLocked = true;
+  const next = shipCountry(code) || 'US';
+  const changed = next !== checkoutCountry;
+  checkoutCountry = next;
+  const profile = CHECKOUT_REGIONS[next];
+  const countrySelect = document.getElementById('co_country');
+  if (countrySelect && countrySelect.value !== next) countrySelect.value = next;
+  const stateSelect = document.getElementById('co_state');
+  const county = document.getElementById('co_county');
+  const label = document.getElementById('co_state_label');
+  if (label) {
+    label.textContent = profile.regionLabel;
+    label.setAttribute('for', next === 'GB' ? 'co_county' : 'co_state');
+  }
+  const postalLabel = document.getElementById('co_postal_label');
+  if (postalLabel) postalLabel.textContent = profile.postalLabel;
+  const hint = document.getElementById('addrFillHint');
+  if (hint) hint.textContent = profile.hint;
+  if (profile.regions) {
+    stateSelect.hidden = false;
+    stateSelect.disabled = false;
+    county.hidden = true;
+    county.disabled = true;
+    const previous = stateSelect.value;
+    stateSelect.innerHTML = '<option value="">Select</option>' + profile.regions.map((row) => '<option value="' + row[0] + '">' + row[1] + '</option>').join('');
+    if (!changed && previous) stateSelect.value = previous;
+    else stateSelect.value = '';
+  } else {
+    stateSelect.hidden = true;
+    stateSelect.disabled = true;
+    county.hidden = false;
+    county.disabled = false;
+    if (changed) county.value = '';
+  }
+  if (region) setRegionValue(region);
+  setCurrency(profile.currency);
+}
+
 async function detectCurrency() {
+  const geoMeta = document.querySelector('meta[name="x-geo-country"]');
+  const metaCountry = geoMeta ? shipCountry(geoMeta.content) : '';
+  if (metaCountry) applyCheckoutCountry(metaCountry);
+  else applyCheckoutCountry('US');
   try {
-    // Try Vercel edge geo detection via meta tag injected by server
-    const geoMeta = document.querySelector('meta[name="x-geo-country"]');
-    const countryCode = geoMeta ? geoMeta.content : null;
-
-    const countryToCurrency = {
-      US: 'USD', CA: 'CAD', GB: 'GBP', IE: 'EUR', DE: 'EUR',
-      FR: 'EUR', IT: 'EUR', ES: 'EUR', NL: 'EUR', BE: 'EUR',
-      AT: 'EUR', PT: 'EUR', AU: 'AUD', NZ: 'AUD'
-    };
-
-    if (countryCode && countryToCurrency[countryCode]) {
-      setCurrency(countryToCurrency[countryCode]);
-      return;
-    }
-
-    // Fallback: detect via free IP geo API
-    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
+    const res = await fetch('/api/buywish/locale', { cache: 'no-store', signal: AbortSignal.timeout(3000) });
     const data = await res.json();
-    if (data && data.country_code && countryToCurrency[data.country_code]) {
-      setCurrency(countryToCurrency[data.country_code]);
-    }
+    if (!localeLocked && data && data.country) applyCheckoutCountry(data.country);
   } catch (e) {
-    // Stay on USD default
+    // Keep the country already on the form.
   }
 }
 
@@ -2642,7 +2722,8 @@ function setCurrency(code) {
 function cycleCurrency() {
   const idx = CURRENCY_ORDER.indexOf(currentCurrency.code);
   const next = CURRENCY_ORDER[(idx + 1) % CURRENCY_ORDER.length];
-  setCurrency(next);
+  const country = Object.keys(CHECKOUT_REGIONS).find((code) => CHECKOUT_REGIONS[code].currency === next) || 'US';
+  applyCheckoutCountry(country, '', 'user');
   showToast('💱', `Currency changed to ${CURRENCIES[next].code}`);
 }
 
@@ -3525,7 +3606,8 @@ async function loadSavedAddresses() {
     });
     document.getElementById('useNewAddress').onclick = () => {
       box.querySelectorAll('.saved-address').forEach((el) => el.classList.remove('selected'));
-      ['co_address', 'co_city', 'co_state', 'co_postal'].forEach((id) => { document.getElementById(id).value = ''; });
+      ['co_address', 'co_city', 'co_postal', 'co_county'].forEach((id) => { document.getElementById(id).value = ''; });
+      document.getElementById('co_state').value = '';
       document.getElementById('co_address').focus();
     };
     const chosen = list.find((item) => item.is_default) || list[0];
@@ -3554,11 +3636,9 @@ function fillCheckoutAddress(address) {
   if (!address) return;
   if (address.line1) document.getElementById('co_address').value = address.line1;
   if (address.city) document.getElementById('co_city').value = address.city;
-  if (address.state) document.getElementById('co_state').value = address.state;
   if (address.postal) document.getElementById('co_postal').value = address.postal;
-  if (address.country && document.querySelector('#co_country option[value="' + address.country + '"]')) {
-    document.getElementById('co_country').value = address.country;
-  }
+  const country = shipCountry(address.country) || checkoutCountry || 'US';
+  applyCheckoutCountry(country, address.state || '', 'user');
   hideAddressSuggestions();
   addressSession = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
 }
@@ -3567,7 +3647,8 @@ async function loadAddressSuggestions(query) {
   const list = document.getElementById('co_address_list');
   const input = document.getElementById('co_address');
   try {
-    const res = await fetch('/api/buywish/address/suggest?q=' + encodeURIComponent(query) + '&session=' + encodeURIComponent(addressSession));
+    const country = document.getElementById('co_country').value;
+    const res = await fetch('/api/buywish/address/suggest?q=' + encodeURIComponent(query) + '&session=' + encodeURIComponent(addressSession) + '&country=' + encodeURIComponent(country));
     const data = await res.json();
     const suggestions = data && data.suggestions ? data.suggestions : [];
     if (!suggestions.length || input.value.trim() !== query) { hideAddressSuggestions(); return; }
@@ -3596,7 +3677,7 @@ async function chooseAddressSuggestion(item) {
     } catch (err) {}
     document.getElementById('co_address').value = item.mainText || item.label || '';
     hideAddressSuggestions();
-    showToast('⚠️', 'Add the city, state, and ZIP');
+    showToast('⚠️', CHECKOUT_REGIONS[checkoutCountry || 'US'].missing);
     return;
   }
   fillCheckoutAddress(item);
@@ -3626,13 +3707,14 @@ async function processCheckout() {
   const email = document.getElementById('co_email').value.trim();
   const address = document.getElementById('co_address').value.trim();
   const city = document.getElementById('co_city').value.trim();
-  const state = document.getElementById('co_state').value.trim();
+  const country = shipCountry(document.getElementById('co_country').value) || 'US';
+  const state = regionValue();
   const postal = document.getElementById('co_postal').value.trim();
-  const country = document.getElementById('co_country').value;
   const note = document.getElementById('co_note').value.trim();
+  const profile = CHECKOUT_REGIONS[country];
 
-  if (!fname || !lname || !email || !address || !city || !postal || ((country === 'US' || country === 'CA') && !state)) {
-    showToast('⚠️', 'Add your name, email, street, city, state, and ZIP');
+  if (!fname || !lname || !email || !address || !city || !postal || (profile.regions && !state)) {
+    showToast('⚠️', profile.missing);
     return;
   }
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -3866,6 +3948,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   applyCollectionChrome();
   loadDepartments();
+  const countrySelect = document.getElementById('co_country');
+  if (countrySelect) countrySelect.addEventListener('change', function () { applyCheckoutCountry(this.value, '', 'user'); });
   detectCurrency();
   const startupParams = new URLSearchParams(window.location.search);
   if (startupParams.get('q')) {

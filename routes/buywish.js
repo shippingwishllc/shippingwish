@@ -43,7 +43,7 @@ const {
 const { cleanMetaPixelId, cleanGoogleTagId } = require('../utils/buywish-tracking');
 const { cleanSocialLinks, cleanSocialUrl, NETWORKS } = require('../utils/buywish-social');
 const { selectOrderTool, buildOrderArguments, extractOrderId, findStoreId } = require('../utils/buywish-fulfillment');
-const { suggestAddresses, completeAddress, cleanShipTo } = require('../utils/buywish-address');
+const { suggestAddresses, completeAddress, cleanShipTo, shopLocale } = require('../utils/buywish-address');
 const { orderConfirmationEmail, orderConfirmationSms, orderSmsPhone } = require('../utils/buywish-notify');
 const { sendBrandedEmail } = require('../utils/mailer');
 const buyWishAdmin = [requireAuth, requireRole('admin')];
@@ -953,11 +953,17 @@ function addressRateLimit(req, res, next) {
   next();
 }
 
+router.get('/locale', (req, res) => {
+  const header = req.headers['x-vercel-ip-country'] || req.headers['cf-ipcountry'] || req.headers['x-country-code'] || '';
+  res.set('Cache-Control', 'private, no-store');
+  res.json({ ok: true, ...shopLocale(header) });
+});
+
 router.get('/address/suggest', addressRateLimit, async (req, res) => {
   const query = String(req.query.q || '').trim();
   if (query.length < 3) return res.json({ ok: true, suggestions: [] });
   try {
-    const suggestions = await suggestAddresses(query, req.query.session);
+    const suggestions = await suggestAddresses(query, req.query.session, req.query.country);
     res.json({ ok: true, suggestions });
   } catch (err) {
     console.warn('[BUYWISH ADDRESS SUGGEST]:', err.message);
