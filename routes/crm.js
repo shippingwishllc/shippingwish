@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
-const { searchFmcsa } = require('../utils/fmcsa');
+const { searchFmcsa, searchCensusFiltered } = require('../utils/fmcsa');
 const { normalizeEquipmentKeys } = require('../utils/fmcsa-equipment');
 const { sanitizeEmail, emailValidationError } = require('../utils/email-valid');
 const { ensureCrmLeadsTable } = require('../utils/ensure-growth-schema');
@@ -128,28 +128,37 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
     let excludedBanned = 0;
     let importedLeads = [];
     let pendingOutreach = [];
+    const startedAt = Date.now();
+    const CENSUS_BUDGET_MS = 22000;
+    const TOTAL_BUDGET_MS = 48000;
+    const wantEmail = send_email !== false;
+    const wantSms = send_sms === true;
+    const wantVapi = send_vapi === true;
 
-    // Iterate through states
+    // Iterate through states. Offset is sequential (not random) so the first
+    // page is the actual census window. Email campaigns require an email on file.
     for (const stateCode of targetStates) {
       if (importedLeads.length >= maxLimit) break;
+      if (Date.now() - startedAt > CENSUS_BUDGET_MS) break;
 
-      // Allow up to 2 offset attempts per state if needed to reach maxLimit
       for (let page = 0; page < 2; page++) {
         if (importedLeads.length >= maxLimit) break;
-        const pageOffset = page * 35 + Math.floor(Math.random() * 25);
+        if (Date.now() - startedAt > CENSUS_BUDGET_MS) break;
+        const pageOffset = page * 35;
 
         let fmcsaRes;
         try {
-          fmcsaRes = await searchFmcsa(stateCode, {
-            mode: 'state',
-            offset: pageOffset,
+          fmcsaRes = await searchCensusFiltered({
+            state: stateCode,
             equipment: equipmentKeys,
             exclusive: true,
             activeOnly: true,
             forHire: true,
             excludePassengers: true,
-            hasPhone: true,
-            limit: 35
+            hasEmail: wantEmail,
+            hasPhone: wantSms || wantVapi,
+            limit: 35,
+            offset: pageOffset
           });
         } catch (err) {
           console.warn(`FMCSA search for state ${stateCode} offset ${pageOffset} failed:`, err.message);
@@ -340,10 +349,13 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       };
 
       if (send_email && leadItem.raw_email) {
+        if (Date.now() - startedAt > TOTAL_BUDGET_MS) {
+          skippedOutreach.push({ id: leadItem.id, channel: 'email', reason: 'Imported. Email queued for a later press — census used the time window.' });
+        } else {
         try {
           const result = await Promise.race([
             outreach.sendLeadEmail(leadRow, req.user, 'dedicated_manager'),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 12000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 8000))
           ]);
           if (result && result.ok) {
             leadItem.email_sent = true;
@@ -357,6 +369,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
           }
         } catch (eErr) {
           skippedOutreach.push({ id: leadItem.id, channel: 'email', reason: eErr.message });
+        }
         }
       } else if (send_email) {
         skippedOutreach.push({ id: leadItem.id, channel: 'email', reason: 'No email on FMCSA record' });
@@ -413,6 +426,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       skipped_outreach: skippedOutreach,
       equipment: equipmentKeys,
       followups: send_followup !== false,
+      note: 'Census Dry Van / Reefer flags. Email goes to rows with an address on file. SMS / Vapi stay consent-gated.',
       leads: clientLeads
     });
   } catch (err) {
