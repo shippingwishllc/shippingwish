@@ -1011,6 +1011,8 @@ router.post('/change-password', requireAuth, async (req, res) => {
 // ADMIN & SUPER ADMIN: List all users (with role filter)
 router.get('/users', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ').catch(() => {});
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE').catch(() => {});
     const { role } = req.query;
     let query = `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, is_suspended, signup_ip, created_at FROM users WHERE deleted_at IS NULL`;
     let params = [];
@@ -1022,6 +1024,7 @@ router.get('/users', requireAuth, requireRole('admin', 'super_admin'), async (re
     const result = await pool.query(query, params);
     res.json({ users: result.rows });
   } catch (err) {
+    console.error('List users error:', err);
     res.status(500).json({ error: 'Could not load users.' });
   }
 });
@@ -1032,12 +1035,17 @@ router.post('/users', requireAuth, requireRole('admin', 'super_admin'), async (r
   if (!name || !email || !password || !role) {
     return res.status(400).json({ error: 'Name, email, password, and role are required.' });
   }
-  
+  if (String(password).length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  }
+
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ').catch(() => {});
+
   if (role === 'super_admin') {
     if (req.user.role !== 'super_admin') {
       return res.status(403).json({ error: 'Only Super Admin can create Super Admin accounts.' });
     }
-    const countRes = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'super_admin'");
+    const countRes = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'super_admin' AND deleted_at IS NULL");
     if (parseInt(countRes.rows[0].count, 10) >= 2) {
       return res.status(400).json({ error: 'Maximum 2 Super Admin accounts allowed.' });
     }
@@ -1066,12 +1074,87 @@ router.post('/users', requireAuth, requireRole('admin', 'super_admin'), async (r
   }
 });
 
+// SUPER ADMIN / ADMIN: Edit name, role, phone, company
+router.patch('/users/:id', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).json({ error: 'Invalid user id.' });
+  const name = String(req.body.name || '').trim();
+  const role = String(req.body.role || '').trim();
+  const phone = String(req.body.phone || '').trim() || null;
+  const company_name = String(req.body.company_name || '').trim() || null;
+  const allowed = ['dispatcher', 'sales_rep', 'admin', 'super_admin', 'carrier', 'driver'];
+  if (!name || !allowed.includes(role)) {
+    return res.status(400).json({ error: 'Name and a valid role are required.' });
+  }
+  try {
+    const check = await pool.query('SELECT id, role FROM users WHERE id = $1 AND deleted_at IS NULL', [id]);
+    if (!check.rows.length) return res.status(404).json({ error: 'User not found.' });
+    if (check.rows[0].role === 'super_admin' && req.user.role !== 'super_admin' && !req.user.is_super_admin) {
+      return res.status(403).json({ error: 'Only Super Admin can edit a Super Admin.' });
+    }
+    if (role === 'super_admin' && req.user.role !== 'super_admin' && !req.user.is_super_admin) {
+      return res.status(403).json({ error: 'Only Super Admin can assign Super Admin.' });
+    }
+    if (check.rows[0].role === 'super_admin' && role !== 'super_admin') {
+      const countRes = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'super_admin' AND deleted_at IS NULL");
+      if (parseInt(countRes.rows[0].count, 10) <= 1) {
+        return res.status(400).json({ error: 'Cannot demote the only Super Admin account.' });
+      }
+    }
+    const result = await pool.query(
+      `UPDATE users SET name = $1, role = $2, phone = $3, company_name = $4
+       WHERE id = $5 AND deleted_at IS NULL
+       RETURNING id, name, email, role, company_name, phone`,
+      [name, role, phone, company_name, id]
+    );
+    res.json({ ok: true, user: result.rows[0] });
+  } catch (err) {
+    console.error('Edit user error:', err);
+    res.status(500).json({ error: 'Could not update user.' });
+  }
+});
+
+router.post('/users/:id/password', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const password = String(req.body.password || req.body.new_password || '');
+  if (!id) return res.status(400).json({ error: 'Invalid user id.' });
+  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  try {
+    const check = await pool.query('SELECT id, role FROM users WHERE id = $1 AND deleted_at IS NULL', [id]);
+    if (!check.rows.length) return res.status(404).json({ error: 'User not found.' });
+    if (check.rows[0].role === 'super_admin' && req.user.role !== 'super_admin' && !req.user.is_super_admin) {
+      return res.status(403).json({ error: 'Only Super Admin can change a Super Admin password.' });
+    }
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2 AND deleted_at IS NULL', [hash, id]);
+    res.json({ ok: true, message: 'Password updated. They can sign in with the new password.' });
+  } catch (err) {
+    console.error('Set user password error:', err);
+    res.status(500).json({ error: 'Could not set password.' });
+  }
+});
+
 // SUPER ADMIN: Suspend/Unsuspend user
 router.patch('/users/:id/suspend', requireAuth, requireSuperAdmin, async (req, res) => {
   const { suspended } = req.body;
   try {
     await pool.query('UPDATE users SET is_suspended = $1 WHERE id = $2', [Boolean(suspended), req.params.id]);
     res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not update user status.' });
+  }
+});
+
+router.patch('/users/:id/toggle-suspend', requireAuth, requireSuperAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE users SET is_suspended = NOT COALESCE(is_suspended, FALSE)
+       WHERE id = $1 AND deleted_at IS NULL
+       RETURNING id, is_suspended`,
+      [req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'User not found.' });
+    res.json({ ok: true, is_suspended: result.rows[0].is_suspended });
   } catch (err) {
     res.status(500).json({ error: 'Could not update user status.' });
   }
