@@ -9,6 +9,7 @@ const { sendBrandedEmail } = require('./mailer');
 const { buildTemplate } = require('./email-templates');
 const { isPhoneOptedOut, phoneTail, logSmsMessage, OUR_NUMBER } = require('./sms-inbox');
 const { isWithinTcpaHours } = require('./us-timezones');
+const desk = require('./crm-ai-desk');
 
 const EMAIL_CAP = 15;
 const SMS_CAP = 10;
@@ -165,10 +166,8 @@ async function sendLeadVapi(lead, user, opts = {}) {
 
   const vapiApiKey = String(process.env.VAPI_API_KEY || '').trim();
   const vapiPhoneId = String(process.env.VAPI_PHONE_NUMBER_ID || '').trim();
-  const transfer = process.env.MIGHTYCALL_TRANSFER_NUMBER || process.env.OUR_NUMBER || '+18005803101';
   const company = lead.company_name || 'your fleet';
   const name = lead.owner_name || 'Fleet Manager';
-  const equipment = lead.equipment_type || '53ft Dry Van';
 
   if (!vapiApiKey) {
     return {
@@ -179,30 +178,12 @@ async function sendLeadVapi(lead, user, opts = {}) {
     };
   }
 
-  const firstMessage = `Hi this is Alex with Shipping Wish Logistics operations. Am I speaking with the fleet owner or manager for ${company}?`;
+  const assistant = desk.vapiAssistant(lead);
   const vapiPayload = {
-    name: `CRM AI Call to ${name}`,
+    name: `CRM AI Call to ${name} (${company})`,
     phoneNumberId: vapiPhoneId || undefined,
     customer: { number: phone, name },
-    assistant: {
-      name: 'Alex — Senior Dispatch Manager at Shipping Wish LLC',
-      firstMessage,
-      model: {
-        provider: 'openai',
-        model: 'gpt-4o-mini',
-        messages: [{
-          role: 'system',
-          content: `You are Alex at Shipping Wish LLC. Keep replies to 1-3 sentences. Offer a named operations manager, weekly retainer, they keep broker pay, first week $0. Never quote a rate per mile or load count. If they ask to stop, apologize and end the call. Transfer ready deals to ${transfer}.`
-        }],
-        tools: [{
-          type: 'transferCall',
-          destinations: [{ type: 'number', number: transfer, message: 'One moment while I transfer you to our operations desk.' }]
-        }]
-      },
-      voice: { provider: '11labs', voiceId: '21m00Tcm4TlvDq8ikWAM' },
-      endCallMessage: 'Thank you for your time. Have a safe drive!',
-      recordingEnabled: true
-    }
+    assistant
   };
 
   const vapiRes = await fetch('https://api.vapi.ai/call/phone', {

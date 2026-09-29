@@ -400,6 +400,10 @@ router.all('/twilio-inbound', async (req, res) => {
            WHERE regexp_replace(phone, '\\D', '', 'g') LIKE '%' || right(regexp_replace($1, '\\D', '', 'g'), 10)`,
           [from]
         );
+        const leadYes = await findLeadByPhone(from);
+        if (leadYes && leadYes.id) {
+          await require('../utils/crm-ai-desk').cancelFollowups(leadYes.id, 'sms_yes').catch(() => {});
+        }
       } catch { /* ignore */ }
     } else if (isHelpKeyword(body)) {
       disposition = 'help';
@@ -459,18 +463,26 @@ router.all('/twilio-inbound', async (req, res) => {
       }
 
       if (!offerApproved) {
-        disposition = 'ai_deal_reply';
+        disposition = 'crm_ai_reply';
         try {
-          const { generateSmsReply } = require('../utils/ai-deal-maker');
+          const desk = require('../utils/crm-ai-desk');
           const lead = await findLeadByPhone(from);
-          reply = await generateSmsReply({
-            fromPhone: from,
-            incomingText: body,
-            leadInfo: lead || {}
-          });
+          const aiText = await desk.replySms({ from, body, lead });
+          if (aiText) reply = aiText;
+          if (lead && lead.id) await desk.cancelFollowups(lead.id, 'sms_replied').catch(() => {});
         } catch (aiErr) {
-          console.warn('[VOIP] AI Deal Maker SMS reply error:', aiErr.message);
-          reply = helpReply();
+          console.warn('[VOIP] CRM AI SMS reply error:', aiErr.message);
+          try {
+            const { generateSmsReply } = require('../utils/ai-deal-maker');
+            const lead = await findLeadByPhone(from);
+            reply = await generateSmsReply({
+              fromPhone: from,
+              incomingText: body,
+              leadInfo: lead || {}
+            });
+          } catch (e2) {
+            reply = helpReply();
+          }
         }
       }
 

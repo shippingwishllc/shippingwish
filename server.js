@@ -816,6 +816,7 @@ if (require.main === module) {
             dispatchDesk.sendDueMorningTexts().catch((err) => console.warn('[AI-DISPATCH] morning:', err.message));
             dispatchDesk.sendDueEmptySoonOffers().catch((err) => console.warn('[AI-DISPATCH] empty-soon:', err.message));
             require('./utils/outreach-engine').tick().catch((err) => console.warn('[OUTREACH] tick:', err.message));
+            require('./utils/crm-ai-desk').processFollowups().catch((err) => console.warn('[CRM] followups:', err.message));
           }, 60000);
         }
       });

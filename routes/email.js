@@ -808,7 +808,21 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
     await notifyAdmins(`Unmatched inbound email from ${from}`, (subject || '').slice(0, 140), 'warning', '/inbox.html');
   }
 
-  return { ok: true, inbound: ins.rows[0], lead_id: leadId, outreach, booking };
+  let crmAi = null;
+  if (leadId) {
+    try {
+      crmAi = await require('../utils/crm-ai-desk').handleInboundEmail({
+        leadId,
+        fromEmail: from,
+        subject: subjectFinal,
+        bodyText: bodyTextFinal || htmlToPlain(bodyHtmlFinal)
+      });
+    } catch (err) {
+      console.warn('[CRM AI] inbound email:', err.message);
+    }
+  }
+
+  return { ok: true, inbound: ins.rows[0], lead_id: leadId, outreach, booking, crm_ai: crmAi };
 }
 
 function pickAddress(value) {

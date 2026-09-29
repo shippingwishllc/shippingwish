@@ -16,6 +16,7 @@ const { requireAuth } = require('../middleware/auth');
 const { isWithinTcpaHours, getNextValidWindow } = require('../utils/us-timezones');
 const { sendTwilioSms, isSmsOptedOut } = require('./voip');
 const { sendBrandedEmail } = require('../utils/mailer');
+const desk = require('../utils/crm-ai-desk');
 
 // Default human transfer number (MightyCall PBX desk or dispatch toll-free)
 const MIGHTYCALL_TRANSFER_NUMBER = process.env.MIGHTYCALL_TRANSFER_NUMBER || process.env.OUR_NUMBER || '+18005803101';
@@ -87,7 +88,7 @@ CONVERSATION RULES:
  * Trigger an outbound AI Voice call to a carrier or broker lead
  */
 router.post('/outbound', requireAuth, async (req, res) => {
-  const {
+  let {
     to_phone,
     name = 'Carrier Partner',
     company_name = 'Fleet Logistics',
@@ -128,6 +129,42 @@ router.post('/outbound', requireAuth, async (req, res) => {
     promptKey = target_role === 'broker' ? 'loadsnexus_broker' : 'loadsnexus_carrier';
   }
   const config = VOICE_PROMPTS[promptKey] || VOICE_PROMPTS.shippingwish;
+  let lead = null;
+  try {
+    const { findLeadByPhone } = require('../utils/sms-inbox');
+    lead = await findLeadByPhone(to_phone);
+  } catch (_) { /* optional */ }
+  if (lead) {
+    if (!company_name || company_name === 'Fleet Logistics') company_name = lead.company_name || company_name;
+    if (!name || name === 'Carrier Partner') name = lead.owner_name || name;
+    if (lead.equipment_type) equipment_type = lead.equipment_type;
+  }
+
+  const shippingWishAssistant = desk.vapiAssistant({
+    company_name,
+    owner_name: name,
+    equipment_type,
+    phone: to_phone
+  });
+  const assistant = promptKey === 'shippingwish' ? shippingWishAssistant : {
+    name: config.name,
+    firstMessage: config.firstMessage
+      .replace('{{company_name}}', company_name)
+      .replace('{{equipment_type}}', equipment_type),
+    model: {
+      provider: 'openai',
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'system', content: config.systemPrompt }],
+      tools: [{
+        type: 'transferCall',
+        destinations: [{ type: 'number', number: MIGHTYCALL_TRANSFER_NUMBER, message: 'One moment while I transfer you to our operations desk.' }]
+      }]
+    },
+    voice: { provider: '11labs', voiceId: '21m00Tcm4TlvDq8ikWAM' },
+    endCallMessage: 'Thank you for your time. Have a safe drive!',
+    recordingEnabled: true,
+    serverUrl: shippingWishAssistant.serverUrl
+  };
 
   const vapiApiKey = process.env.VAPI_API_KEY;
   const vapiPhoneId = process.env.VAPI_PHONE_NUMBER_ID;
@@ -136,46 +173,13 @@ router.post('/outbound', requireAuth, async (req, res) => {
   if (vapiApiKey) {
     try {
       const vapiPayload = {
-        name: `Outbound AI Call to ${name} (${brand})`,
+        name: `Outbound AI Call to ${name} (${company_name})`,
         phoneNumberId: vapiPhoneId || undefined,
         customer: {
           number: to_phone,
           name: name
         },
-        assistant: {
-          name: config.name,
-          firstMessage: config.firstMessage
-            .replace('{{company_name}}', company_name)
-            .replace('{{equipment_type}}', equipment_type),
-          model: {
-            provider: 'openai',
-            model: 'gpt-4o-mini',
-            messages: [
-              {
-                role: 'system',
-                content: config.systemPrompt
-              }
-            ],
-            tools: [
-              {
-                type: 'transferCall',
-                destinations: [
-                  {
-                    type: 'number',
-                    number: MIGHTYCALL_TRANSFER_NUMBER,
-                    message: "One moment while I transfer you to our operations dispatch desk."
-                  }
-                ]
-              }
-            ]
-          },
-          voice: {
-            provider: '11labs',
-            voiceId: '21m00Tcm4TlvDq8ikWAM' // Rachel / American natural dispatcher
-          },
-          endCallMessage: "Thank you for your time. Have a safe drive!",
-          recordingEnabled: true
-        }
+        assistant
       };
 
       const vapiRes = await fetch('https://api.vapi.ai/call/phone', {
@@ -245,6 +249,26 @@ router.post('/webhook', async (req, res) => {
   const eventType = event.type || event.status;
 
   try {
+    // Inbound call to our Vapi number: return an assistant that knows this company
+    if (eventType === 'assistant-request' || eventType === 'assistant.request') {
+      const customerPhone = event.call?.customer?.number || event.customer?.number || event.phoneNumber;
+      let lead = null;
+      try {
+        const { findLeadByPhone } = require('../utils/sms-inbox');
+        if (customerPhone) lead = await findLeadByPhone(customerPhone);
+      } catch (_) { /* optional */ }
+      if (lead && lead.id) {
+        await desk.cancelFollowups(lead.id, 'inbound_call').catch(() => {});
+      }
+      return res.json({
+        assistant: desk.vapiAssistant(lead || {
+          company_name: 'your company',
+          owner_name: 'there',
+          equipment_type: 'your equipment'
+        })
+      });
+    }
+
     if (eventType === 'end-of-call-report' || eventType === 'call.ended') {
       const call = event.call || {};
       const transcript = event.transcript || '';
@@ -276,14 +300,13 @@ router.post('/webhook', async (req, res) => {
       const isInterested = lower.includes('yes') || lower.includes('send') || lower.includes('sign up') || lower.includes('interested') || lower.includes('free trial') || lower.includes('pass');
 
       if (isInterested && customerPhone) {
-        // Auto-send follow-up SMS via Twilio
+        const { findLeadByPhone } = require('../utils/sms-inbox');
+        const lead = await findLeadByPhone(customerPhone).catch(() => null);
+        const hasConsent = lead && (lead.sms_opt_in || lead.status === 'interested' || lead.status === 'active');
         const isOptedOut = await isSmsOptedOut(customerPhone);
-        if (!isOptedOut) {
-          const smsText = lower.includes('loadsnexus') || lower.includes('load board')
-            ? `Hi ${customerName}, here is the LoadsNexus link we talked about. The Solo Pass is $19/mo: https://www.loadsnexus.com`
-            : `Hi ${customerName}, thanks for speaking with our dispatch desk! Start your 7-day free trial ($0 today) here: https://www.shippingwish.com/services`;
-          
-          await sendTwilioSms(customerPhone, smsText).catch(e => console.warn('Auto follow-up SMS error:', e.message));
+        if (!isOptedOut && hasConsent) {
+          const smsText = `Hi ${desk.companyOf(lead)}: thanks for speaking with Shipping Wish. Named ops manager, weekly retainer, you keep broker pay, first week $0. Reply YES and we send setup, STOP to opt out.`;
+          await sendTwilioSms(customerPhone, smsText).catch((e) => console.warn('Auto follow-up SMS error:', e.message));
         }
       }
     }

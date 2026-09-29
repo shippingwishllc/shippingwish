@@ -8,6 +8,7 @@ const { sanitizeEmail, emailValidationError } = require('../utils/email-valid');
 const { ensureCrmLeadsTable } = require('../utils/ensure-growth-schema');
 const { ensureSmsMessagesTable } = require('../utils/sms-inbox');
 const outreach = require('../utils/crm-outreach');
+const desk = require('../utils/crm-ai-desk');
 
 // Security: CRM is strictly an internal company operations tool — Carriers & Drivers are Forbidden
 router.use(requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep'));
@@ -100,7 +101,8 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       send_email = true,
       send_sms = false,
       send_vapi = false,
-      consent_confirmed = false
+      consent_confirmed = false,
+      send_followup = true
     } = req.body;
 
     const maxLimit = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
@@ -346,6 +348,10 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
           if (result && result.ok) {
             leadItem.email_sent = true;
             emailsSent += 1;
+            if (send_followup !== false) {
+              await desk.enqueueFollowups(leadItem.id).catch(() => {});
+              leadItem.followups_scheduled = 2;
+            }
           } else {
             skippedOutreach.push({ id: leadItem.id, channel: 'email', reason: (result && result.reason) || 'Email skipped' });
           }
@@ -406,6 +412,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       filtered_out: excludedBanned,
       skipped_outreach: skippedOutreach,
       equipment: equipmentKeys,
+      followups: send_followup !== false,
       leads: clientLeads
     });
   } catch (err) {
@@ -438,6 +445,23 @@ router.post('/leads/bulk-outreach', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('CRM bulk outreach:', err);
     res.status(500).json({ error: err.message || 'Could not send.' });
+  }
+});
+
+router.get('/followups', requireAuth, async (req, res) => {
+  try {
+    const stats = await desk.followupStats();
+    res.json({ ok: true, stats });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load follow-ups.' });
+  }
+});
+
+router.post('/followups/tick', requireAuth, async (req, res) => {
+  try {
+    res.json(await desk.processFollowups(req.body.limit));
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Follow-up tick failed.' });
   }
 });
 

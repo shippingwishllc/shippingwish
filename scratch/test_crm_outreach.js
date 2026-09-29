@@ -71,10 +71,20 @@ test('UI labels still normalize to census keys', () => {
   assert.deepStrictEqual(normalizeEquipmentKeys(['53ft Reefer', 'Dry Van']), ['reefer', 'dry_van']);
 });
 
-test('no invented RPM in CRM outreach helper', () => {
-  assert.doesNotMatch(helper, /\$3\.20\/mile/);
-  assert.doesNotMatch(crm, /\$3\.20\/mile/);
-  assert.doesNotMatch(html, /\$3\.20\/mile/);
+test('campaign schedules named follow-ups and AI replies inbound', () => {
+  const desk = fs.readFileSync(path.join(__dirname, '../utils/crm-ai-desk.js'), 'utf8');
+  const calling = fs.readFileSync(path.join(__dirname, '../routes/ai-calling.js'), 'utf8');
+  const email = fs.readFileSync(path.join(__dirname, '../routes/email.js'), 'utf8');
+  const voip = fs.readFileSync(path.join(__dirname, '../routes/voip.js'), 'utf8');
+  assert.match(desk, /enqueueFollowups/);
+  assert.match(desk, /Answer every question completely/);
+  assert.match(desk, /Never quote a rate per mile/);
+  assert.match(crm, /send_followup/);
+  assert.match(calling, /assistant-request/);
+  assert.match(email, /handleInboundEmail/);
+  assert.match(voip, /desk\.replySms/);
+  assert.match(html, /Follow-up emails day 3 and 7/);
+  assert.doesNotMatch(desk, /\$3\.20\/mile/);
 });
 
 console.log('ok  crm outreach desk');

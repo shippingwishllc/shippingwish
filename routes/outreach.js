@@ -62,14 +62,15 @@ router.post('/run', ...staff, async (req, res) => {
 router.all('/tick', async (req, res) => {
   if (!cronAuthorized(req)) return res.status(401).json({ error: 'Unauthorized' });
   try {
-    const [outreach, dispatch] = await Promise.all([
+    const [outreach, dispatch, crmFollow] = await Promise.all([
       engine.tick(),
       Promise.resolve().then(() => {
         const desk = require('./dispatch-desk');
         return Promise.all([desk.syncDueSources(), desk.sendDueMorningTexts(), desk.sendDueEmptySoonOffers()]);
-      }).catch((err) => ({ error: err.message }))
+      }).catch((err) => ({ error: err.message })),
+      require('../utils/crm-ai-desk').processFollowups().catch((err) => ({ error: err.message }))
     ]);
-    res.json({ ok: true, outreach, dispatch: Array.isArray(dispatch) ? 'ok' : dispatch });
+    res.json({ ok: true, outreach, dispatch: Array.isArray(dispatch) ? 'ok' : dispatch, crm_followups: crmFollow });
   } catch (err) {
     res.status(500).json({ error: 'Tick failed.' });
   }

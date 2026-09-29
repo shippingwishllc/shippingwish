@@ -111,7 +111,7 @@ async function findLeadByPhone(phone) {
   const tail = phoneTail(phone);
   if (!tail) return null;
   const r = await pool.query(
-    `SELECT id, company_name, owner_name, phone, sales_rep_id, status
+    `SELECT id, company_name, owner_name, phone, email, equipment_type, sales_rep_id, status, sms_opt_in
      FROM crm_leads
      WHERE regexp_replace(phone, '\\D', '', 'g') LIKE '%' || $1
      ORDER BY last_contacted_at DESC NULLS LAST, created_at DESC

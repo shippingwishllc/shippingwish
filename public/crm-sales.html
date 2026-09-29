@@ -87,7 +87,7 @@
           <div>
             <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fbbf24;margin-bottom:8px;">Carrier acquisition</div>
             <h2>Select a row. Email, SMS, or Vapi in one press.</h2>
-            <p>Campaigns pull FMCSA by Dry Van / Reefer cargo flags — same census as Census Desk. Email is CAN-SPAM. SMS and Vapi need prior consent (form, YES, or you mark “they already agreed”).</p>
+            <p>Run campaign names every company. First email goes out, then day-3 and day-7 follow-ups. If they reply by email or SMS, Alex answers from our facts. If they call our Vapi number, Alex picks up and answers. SMS and outbound Vapi still need prior consent.</p>
           </div>
           <button type="button" class="btn btn-primary" id="btn-hero-campaign" style="background:#f59e0b;color:#0f172a;font-weight:800;padding:12px 18px;border:0;">Run campaign</button>
         </section>
@@ -186,7 +186,7 @@
         </section>
         <section class="cd-card" style="grid-column:span 3;">
           <h3>Send after import</h3>
-          <p class="cd-help">Email can go cold. SMS and Vapi only if they already agreed, or you check consent below.</p>
+          <p class="cd-help">Email can go cold, by company name. Day 3 and 7 follow-up emails are scheduled. SMS and Vapi only if they already agreed, or you check consent below.</p>
           <label class="form-label" for="ai-bot-limit">Batch size</label>
           <select id="ai-bot-limit" class="form-select">
             <option value="5">5 carriers</option>
@@ -197,6 +197,7 @@
           <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;"><input type="checkbox" id="ai-bot-email" checked> Email</label>
           <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-sms"> SMS (consent only)</label>
           <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-vapi"> Vapi AI call (consent only)</label>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-followup" checked> Follow-up emails day 3 and 7</label>
           <label class="cd-consent" style="margin-top:10px;"><input type="checkbox" id="ai-bot-consent"> They already agreed (form, YES, or signed up). Required for SMS / Vapi.</label>
           <button type="button" class="btn btn-primary" id="btn-run-ai-bot" onclick="runAiProspectingCampaign()" style="width:100%;margin-top:14px;font-weight:800;padding:12px;">Run campaign</button>
         </section>
@@ -925,6 +926,7 @@
     const sendSms = document.getElementById('ai-bot-sms').checked;
     const sendVapi = document.getElementById('ai-bot-vapi') && document.getElementById('ai-bot-vapi').checked;
     const consent = document.getElementById('ai-bot-consent') && document.getElementById('ai-bot-consent').checked;
+    const sendFollowup = !document.getElementById('ai-bot-followup') || document.getElementById('ai-bot-followup').checked;
     if ((sendSms || sendVapi) && !consent) {
       alert('SMS and Vapi need prior consent. Check “they already agreed”, or leave those boxes off and send email first.');
       return;
@@ -954,7 +956,8 @@
           send_email: sendEmail,
           send_sms: sendSms,
           send_vapi: !!sendVapi,
-          consent_confirmed: !!consent
+          consent_confirmed: !!consent,
+          send_followup: !!sendFollowup
         })
       });
 
@@ -982,7 +985,7 @@
         header.textContent = `Campaign finished — ${data.imported} imported`;
         const skipNote = (data.skipped_outreach || []).slice(0, 3).map((s) => s.reason).join(' · ');
         summary.innerHTML = `
-          Scanned ${data.processed} · imported ${data.imported} · emails ${data.emails_sent} · SMS ${data.sms_sent} · Vapi ${data.vapi_sent || 0} · skipped dupes ${data.skipped_duplicates} · filtered ${data.filtered_out}
+          Scanned ${data.processed} · imported ${data.imported} · emails ${data.emails_sent} · SMS ${data.sms_sent} · Vapi ${data.vapi_sent || 0} · follow-ups ${data.followups ? 'on' : 'off'} · skipped dupes ${data.skipped_duplicates} · filtered ${data.filtered_out}
           ${skipNote ? '<div style="margin-top:6px;color:#b45309;">Skip: ' + escapeHtml(skipNote) + '</div>' : ''}
         `;
       }
