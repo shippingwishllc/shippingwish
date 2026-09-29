@@ -98,7 +98,12 @@
 <script src="/js/app-shell.js"></script>
 <script>
 (function () {
-  let partners = [];
+  const FALLBACK = [
+    { key: 'fourkites', name: 'FourKites', docs: 'https://fourkites.my.site.com/publicKB/s/tms-locations-api-integration', pushUrl: 'https://tracking-api.fourkites.com/api/v1/tracking/dispatcher_updates', support: 'support@fourkites.com', note: 'Dispatcher Updates API. Basic or Nonce from FourKites carrier ops.' },
+    { key: 'macropoint', name: 'Descartes MacroPoint', docs: 'https://carrierdocs.macropoint.com/', pushUrl: 'https://macropoint-lite.com/api/1.0/tms/data/location', support: 'MPActivations@descartes.com', note: 'TMS Location Update XML. HTTP Basic from activations.' },
+    { key: 'truckertools', name: 'Trucker Tools', docs: 'https://info.truckertools.com/tms-integration', support: 'integrations@truckertools.com', eldSetup: 'eldsetup@truckertools.com', note: 'Paste the HTTPS URL from integrations@truckertools.com. The endpoint is not public.' }
+  ];
+  let partners = FALLBACK.slice();
   let selected = 'fourkites';
   function api(path, opts) {
     return fetch(path, Object.assign({ credentials: 'include', headers: { 'Content-Type': 'application/json' } }, opts || {}));
@@ -152,14 +157,7 @@
     const res = await api('/api/visibility/desk');
     if (res.status === 401) { location.href = '/login'; return; }
     const json = await res.json();
-    partners = json.partners || [];
-    if (!partners.length) {
-      partners = [
-        { key: 'fourkites', name: 'FourKites', docs: 'https://fourkites.my.site.com/publicKB/s/tms-locations-api-integration', pushUrl: 'https://tracking-api.fourkites.com/api/v1/tracking/dispatcher_updates', note: 'Dispatcher Updates API.' },
-        { key: 'macropoint', name: 'Descartes MacroPoint', docs: 'https://carrierdocs.macropoint.com/', pushUrl: 'https://macropoint-lite.com/api/1.0/tms/data/location', note: 'TMS Location Update XML.' },
-        { key: 'truckertools', name: 'Trucker Tools', docs: 'https://info.truckertools.com/tms-integration', note: 'Partner URL from integrations@truckertools.com.' }
-      ];
-    }
+    partners = json.partners && json.partners.length ? json.partners : FALLBACK;
     renderProv();
     const cb = document.getElementById('conn-body');
     const conns = json.connections || [];
@@ -215,7 +213,12 @@
     setMsg('Disconnected.');
     await loadDesk();
   });
-  loadDesk().catch(() => setMsg('Could not load visibility desk.', true));
+  renderProv();
+  loadDesk().catch(() => {
+    partners = FALLBACK.slice();
+    renderProv();
+    setMsg('Could not load saved connections. Partner forms below still work once you sign in.', true);
+  });
 })();
 </script>
 </body>

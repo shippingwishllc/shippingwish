@@ -186,6 +186,8 @@ test('previewPayload and desks are wired; marketing.css is untouched', () => {
   assert.match(page, /tracking-api\.fourkites\.com/);
   assert.match(page, /macropoint-lite\.com/);
   assert.match(page, /integrations@truckertools\.com/);
+  assert.match(page, /const FALLBACK/);
+  assert.match(page, /renderProv\(\);/);
   assert.doesNotMatch(page, /marketing\.css/);
   assert.match(reg, /eld\.fmcsa\.dot\.gov\/provider/);
   assert.match(reg, /phone GPS \/ SW Track is not an ELD/);
