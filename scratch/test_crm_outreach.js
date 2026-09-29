@@ -15,12 +15,14 @@ const marketingCss = fs.readFileSync(path.join(__dirname, '../public/css/marketi
 
 test('campaign uses census equipment keys, not state-only scrape', () => {
   assert.match(crm, /equipmentKeys = normalizeEquipmentKeys/);
-  assert.match(crm, /equipment: equipmentKeys/);
+  assert.match(crm, /searchCensusFiltered/);
   assert.match(crm, /exclusive: true/);
+  assert.match(crm, /hasEmail: wantEmail/);
+  assert.doesNotMatch(crm, /Math\.random\(\) \* 25/);
 });
 
 test('campaign email timeout is long enough for Resend', () => {
-  assert.match(crm, /Email timeout.*12000/);
+  assert.match(crm, /Email timeout.*8000/);
   assert.doesNotMatch(crm, /Email timeout.*2500/);
 });
 
@@ -52,6 +54,8 @@ test('CRM page has census-style select, pager, and one-press Vapi', () => {
   assert.match(html, /They already agreed/);
   assert.match(html, /Compose &amp; send/);
   assert.match(html, /cd-hero/);
+  assert.match(html, /Campaign started/);
+  assert.doesNotMatch(html, /strong style="color:#fff;"/);
   assert.doesNotMatch(html, /marketing\.css/);
 });
 
