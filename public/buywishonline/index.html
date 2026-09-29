@@ -151,13 +151,14 @@
       box-shadow: 0 1px 8px rgba(0,0,0,0.04);
     }
     .nav-wrap {
-      max-width: 1280px;
+      width: 100%;
       margin: 0 auto;
-      padding: 0 24px;
+      padding: 0 20px;
       height: var(--nav-h);
       display: flex;
       align-items: center;
-      gap: 32px;
+      gap: 14px;
+      min-width: 0;
     }
     .brand-logo {
       display: flex;
@@ -201,23 +202,27 @@
     .nav-cats {
       display: flex;
       align-items: center;
-      gap: 4px;
-      flex: 1;
+      gap: 2px;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
     }
     .nav-cat-btn {
       background: none;
       border: none;
       text-decoration: none;
       font-family: inherit;
-      padding: 8px 14px;
+      padding: 8px 9px;
       border-radius: 8px;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 600;
       color: #374151;
       transition: all 0.15s;
       display: flex;
       align-items: center;
       gap: 4px;
+      white-space: nowrap;
+      flex: 0 0 auto;
     }
     .nav-cat-btn:hover, .nav-cat-btn.active { background: #f3f4f6; color: var(--accent); }
     .nav-cat-btn svg { width: 12px; height: 12px; }
@@ -225,8 +230,9 @@
     .nav-right {
       display: flex;
       align-items: center;
-      gap: 12px;
-      flex-shrink: 0;
+      gap: 8px;
+      flex: 0 0 auto;
+      margin-left: auto;
     }
     .search-bar {
       display: flex;
@@ -237,7 +243,7 @@
       border-radius: 10px;
       overflow: hidden;
       transition: all 0.2s;
-      width: 260px;
+      width: 210px;
     }
     .search-bar:focus-within { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(233,69,96,0.1); }
     .search-bar input {
@@ -325,12 +331,14 @@
     .mobile-menu-btn:hover { background: #e5e7eb; }
     @media (max-width: 1180px) {
       .nav-cats { display: none; }
-      .search-bar { width: min(180px, 28vw); }
+      .search-bar { width: min(280px, 42vw); }
       .mobile-menu-btn { display: flex; }
       .nav-wrap { gap: 14px; padding: 0 16px; }
     }
     @media (max-width: 640px) {
       .search-bar { display: none; }
+      .cart-word { display: none; }
+      .cart-btn-nav { padding: 8px 10px; }
       .currency-badge span.cur-text { display: none; }
       .brand-logo .logo-text { font-size: 16.5px; }
       .brand-logo .logo-icon { width: 34px; height: 34px; font-size: 16px; }
@@ -1808,7 +1816,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
 
       <button class="cart-btn-nav" onclick="openCart()" aria-label="Open cart">
-        🛒 Cart <div class="cart-count-badge" id="cartCount">0</div>
+        🛒 <span class="cart-word">Cart</span> <div class="cart-count-badge" id="cartCount">0</div>
       </button>
 
       <button class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Open mobile menu">☰</button>
@@ -2441,6 +2449,28 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <script src="/tracking.js"></script>
 <script>
+function fitHeaderNav() {
+  const cats = document.querySelector('.nav-cats');
+  const menu = document.querySelector('.mobile-menu-btn');
+  const right = document.querySelector('.nav-right');
+  if (!cats || !menu || !right) return;
+  if (window.innerWidth <= 1180) {
+    cats.style.display = '';
+    menu.style.display = '';
+    return;
+  }
+  cats.style.display = 'flex';
+  menu.style.display = 'none';
+  const last = cats.lastElementChild;
+  if (last && last.getBoundingClientRect().right > right.getBoundingClientRect().left - 8) {
+    cats.style.display = 'none';
+    menu.style.display = 'flex';
+  }
+}
+fitHeaderNav();
+window.addEventListener('resize', fitHeaderNav);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeaderNav);
+
 // ============================================================
 // CURRENCY DETECTION & CONVERSION
 // ============================================================
