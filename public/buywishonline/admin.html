@@ -296,9 +296,16 @@
     const cats = (data.categories || []).map(c => `${c.category}: ${c.products}`).join(' · ');
     document.getElementById('catalogStatus').textContent = `${data.total || 0} synced` + (cats ? ` · ${cats}` : '');
   }
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
   function itemText(items) {
     const list = Array.isArray(items) ? items : [];
-    return list.map(item => `${item.quantity || 1} × ${item.title || item.product_id}`).join(', ');
+    return list.map(item => `${item.quantity || 1} × ${esc(item.title || item.product_id)}`).join(', ');
   }
   async function loadOrders() {
     const res = await fetch('/api/buywish/admin/orders?scope=all', { headers: authHeaders() });
@@ -312,13 +319,14 @@
     const body = document.getElementById('orders');
     body.innerHTML = (data.orders || []).map(order => {
       const ship = [order.shipping_address, order.shipping_city, order.shipping_state, order.shipping_postal, order.shipping_country].filter(Boolean).join(', ');
+      const note = order.customer_note ? `<div class="muted">Note: ${esc(order.customer_note)}</div>` : '';
       const zendrop = order.zendrop_order_id
         ? `<span class="pill">Linked ${order.zendrop_order_id}</span>`
         : `<span class="pill">${order.zendrop_sync_status || 'not sent'}</span><div class="muted">${order.zendrop_sync_detail || ''}</div>`;
       return `<tr>
         <td><strong>${order.order_number}</strong><div class="muted">${new Date(order.created_at).toLocaleString()}</div></td>
-        <td>${order.customer_name}<div class="muted">${order.customer_email}</div></td>
-        <td>${ship || '—'}</td>
+        <td>${esc(order.customer_name)}<div class="muted">${esc(order.customer_email)}</div>${order.customer_phone ? `<div class="muted">${esc(order.customer_phone)}</div>` : ''}</td>
+        <td>${esc(ship) || '—'}${note}</td>
         <td>${itemText(order.items)}<div class="muted">${order.currency || 'USD'} ${order.total_amount}</div></td>
         <td>${order.payment_status}<div class="muted">${order.fulfillment_status}</div></td>
         <td>${zendrop}</td>
