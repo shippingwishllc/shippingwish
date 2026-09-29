@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accept load tracking — Shipping Wish</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/design-system.css?v=7">
+  <style>
+    body { background:#0f172a; color:#e2e8f0; min-height:100vh; margin:0; font-family:inherit; }
+    .box { max-width:420px; margin:0 auto; padding:28px 18px 48px; }
+    h1 { font-size:22px; margin:0 0 8px; }
+    p { font-size:14px; line-height:1.5; color:#cbd5e1; }
+    .card { background:#1e293b; border:1px solid #334155; border-radius:16px; padding:18px; margin:16px 0; }
+    .lane { font-weight:800; color:#fff; font-size:16px; }
+    .muted { font-size:12px; color:#94a3b8; }
+    .btn-row { display:flex; gap:8px; flex-wrap:wrap; }
+    #msg { font-size:13px; margin-top:12px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="muted">SW TRACK — NOT MACROPOINT / NOT AN ELD DEVICE</div>
+    <h1>Share GPS for this load?</h1>
+    <p>Brokers send this same kind of request so they can see the truck until delivery. Accepting uses <strong>this phone’s location</strong> for this load only.</p>
+    <div class="card">
+      <div class="muted" id="broker">Broker</div>
+      <div class="lane" id="lane">Loading…</div>
+      <div class="muted" id="loadn"></div>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="btn-yes">Accept tracking</button>
+      <button type="button" class="btn btn-secondary" id="btn-no">Decline</button>
+    </div>
+    <p id="msg"></p>
+  </div>
+<script>
+(function () {
+  const t = new URLSearchParams(location.search).get('t') || '';
+  const msg = document.getElementById('msg');
+  function setMsg(text, bad) { msg.textContent = text; msg.style.color = bad ? '#fca5a5' : '#86efac'; }
+  if (!t) { setMsg('Missing tracking link.', true); return; }
+
+  fetch('/api/track-share/accept/' + encodeURIComponent(t))
+    .then((r) => r.json())
+    .then((d) => {
+      const s = d.share || {};
+      document.getElementById('broker').textContent = s.broker_name || 'Broker tracking request';
+      document.getElementById('lane').textContent = (s.pickup || 'Pickup') + ' → ' + (s.delivery || 'Delivery');
+      document.getElementById('loadn').textContent = s.load_number ? ('Load ' + s.load_number + ' · ' + (s.status || '')) : (s.status || '');
+    })
+    .catch(() => setMsg('Could not load this link.', true));
+
+  function ping(lat, lon) {
+    return fetch('/api/track-share/ping/' + encodeURIComponent(t), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ latitude: lat, longitude: lon })
+    });
+  }
+
+  function startGps() {
+    if (!navigator.geolocation) {
+      setMsg('Accepted. This phone has no GPS. Open the driver app later to ping.');
+      return;
+    }
+    const send = (pos) => {
+      ping(pos.coords.latitude, pos.coords.longitude)
+        .then((r) => r.json())
+        .then((d) => {
+          if (!d.ok) return setMsg(d.error || 'Ping failed.', true);
+          setMsg('Tracking on. Last GPS ' + d.gps_lat.toFixed(4) + ', ' + d.gps_lon.toFixed(4) + '. Keep this page open while you drive, or use the driver app.');
+        });
+    };
+    navigator.geolocation.getCurrentPosition(send, () => {
+      setMsg('Accepted without GPS (location permission off). Turn location on and tap Accept again, or ping from the driver app.');
+    }, { enableHighAccuracy: true, timeout: 10000 });
+    navigator.geolocation.watchPosition(send, () => {}, { enableHighAccuracy: true, maximumAge: 15000 });
+  }
+
+  document.getElementById('btn-yes').onclick = async () => {
+    const res = await fetch('/api/track-share/accept/' + encodeURIComponent(t), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const d = await res.json();
+    if (!res.ok) return setMsg(d.error || 'Could not accept.', true);
+    startGps();
+  };
+  document.getElementById('btn-no').onclick = async () => {
+    await fetch('/api/track-share/decline/' + encodeURIComponent(t), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    setMsg('Declined. The broker will not get GPS from this phone.', true);
+  };
+})();
+</script>
+</body>
+</html>

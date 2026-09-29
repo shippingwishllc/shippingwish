@@ -257,6 +257,11 @@
           <button type="button" class="status-btn" data-duty="ON_DUTY_NOT_DRIVING">On duty</button>
         </div>
         <p id="eld-duty-msg" style="font-size:12px;color:var(--text-muted);margin:10px 0 0;">Duty change uses this phone’s GPS. If GPS is denied, status still saves without a fake city.</p>
+        <div id="track-accept-banner" style="display:none;margin-top:14px;padding:12px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;">
+          <strong style="display:block;font-size:13px;color:#9a3412;">Broker sent tracking</strong>
+          <p style="margin:4px 0 8px;font-size:12px;color:#7c2d12;" id="track-accept-copy">Tap Accept to share this load’s GPS. Same as MacroPoint-style tracking — not an ELD plug.</p>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-accept-track">Accept tracking</button>
+        </div>
       </div>
 
       <div class="tms-table-card" style="margin-bottom:var(--space-6);padding:var(--space-5);">

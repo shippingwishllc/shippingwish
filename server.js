@@ -582,6 +582,7 @@ app.use('/api/detention', require('./routes/detention-billing'));   // Automated
 app.use('/api/coi', require('./routes/coi-generator'));             // Instant On-Demand ACORD 25 Certificate of Insurance Desk
 app.use('/api/eld', require('./routes/eld-compliance'));            // Staff software logbook & HOS clocks (not a certified ELD device)
 app.use('/api/eld-connect', require('./routes/eld-connect'));       // Carrier-consent Motive / Samsara / Geotab official API connect
+app.use('/api/track-share', require('./routes/track-share'));       // Driver Accept GPS share for a load (MacroPoint-style, own phones)
 app.use('/api/ifta-tax', require('./routes/ifta-tax'));            // Automated IFTA Fuel Tax Engine, State Mileage Breakdown & Filing PDFs
 app.use('/api/dvir', require('./routes/dvir-safety'));                // FMCSA 49 CFR Part 396 Driver Vehicle Inspection Report (DVIR) & Defect Sign-off
 app.use('/api/dq', require('./routes/driver-qualification'));        // FMCSA 49 CFR Part 391 Driver Qualification (DQ) Compliance Vault
