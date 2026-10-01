@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { enforceTruckSubscriptionLimit, syncTruckLocationToAiDispatch } = require('../utils/carrier-sync');
 
 const router = express.Router();
 
@@ -56,12 +57,34 @@ router.post('/trucks', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Truck number and carrier are required.' });
   }
 
+  // 1. Subscription Guard: Enforce maximum allowed trucks per pricing plan
+  const limitCheck = await enforceTruckSubscriptionLimit(carrier_id, req.user.role);
+  if (!limitCheck.allowed) {
+    return res.status(403).json({
+      error: limitCheck.reason,
+      code: 'TRUCK_LIMIT_REACHED',
+      current_count: limitCheck.currentCount,
+      max_allowed: limitCheck.maxAllowed,
+      upgradeUrl: limitCheck.upgradeUrl || '/pricing'
+    });
+  }
+
   try {
     const result = await pool.query(
       `INSERT INTO trucks (carrier_id, truck_number, vin, plate, insurance_expiry, registration_expiry, inspection_expiry, mileage)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [carrier_id, truck_number, vin || null, plate || null, insurance_expiry || null, registration_expiry || null, inspection_expiry || null, mileage || 0]
     );
+
+    // 2. Synchronize initial empty location & equipment to AI Dispatch Brain
+    if (req.body.empty_zip || req.body.location || req.body.equipment_type || req.body.prefer_destination) {
+      await syncTruckLocationToAiDispatch(carrier_id, {
+        empty_zip: req.body.empty_zip || req.body.location,
+        equipment: req.body.equipment_type,
+        prefer_destination: req.body.prefer_destination
+      }).catch(() => {});
+    }
+
     res.json({ ok: true, truck: result.rows[0] });
   } catch (err) {
     console.error('Create truck error:', err);
@@ -82,6 +105,15 @@ router.put('/trucks/:id', requireAuth, async (req, res) => {
       [truck_number, vin || null, plate || null, insurance_expiry || null, registration_expiry || null, inspection_expiry || null, mileage || 0, status || 'active', req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Truck not found.' });
+
+    if (req.body.empty_zip || req.body.location || req.body.equipment_type || req.body.prefer_destination) {
+      await syncTruckLocationToAiDispatch(result.rows[0].carrier_id, {
+        empty_zip: req.body.empty_zip || req.body.location,
+        equipment: req.body.equipment_type,
+        prefer_destination: req.body.prefer_destination
+      }).catch(() => {});
+    }
+
     res.json({ ok: true, truck: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: 'Could not update truck.' });

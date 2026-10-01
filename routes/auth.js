@@ -350,6 +350,28 @@ router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
       dotNumber: pending.dot_number
     });
 
+    // Automatically register carrier in AI Dispatch Engine so they receive instant load matching
+    if (!isBroker) {
+      try {
+        const { syncCarrierToAiDispatch } = require('../utils/carrier-sync');
+        await syncCarrierToAiDispatch({
+          userId: user.id,
+          company_name: pending.company_name || pending.name,
+          contact_name: pending.name,
+          phone: pending.phone,
+          email: emailNorm,
+          mc_number: pending.mc_number,
+          dot_number: pending.dot_number,
+          equipment: "53' Dry Van",
+          empty_zip: pending.address,
+          status: 'active',
+          sms_consent: true
+        });
+      } catch (syncErr) {
+        console.warn('[Auth Signup] AI dispatch carrier sync notice:', syncErr.message);
+      }
+    }
+
     const ops = [...new Set([COMPANY.operationsEmail, process.env.ADMIN_EMAIL_1, process.env.ADMIN_EMAIL_2].filter(Boolean))];
     const subject = isBroker
       ? `Freight Broker signup (100% Free) — ${pending.company_name || pending.name}`

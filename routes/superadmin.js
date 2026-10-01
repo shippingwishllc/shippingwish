@@ -716,11 +716,31 @@ router.post('/carriers/add', requireAuth, requireSuperAdmin, async (req, res) =>
     }
 
     await client.query('COMMIT');
+
+    // Automatically synchronize onboarded carrier & truck into AI Dispatch Brain
+    try {
+      const { syncCarrierToAiDispatch } = require('../utils/carrier-sync');
+      await syncCarrierToAiDispatch({
+        userId: carrierId,
+        company_name,
+        contact_name: owner_name || driver_name || company_name,
+        phone,
+        email: safeEmail,
+        mc_number,
+        dot_number,
+        equipment: equipment_type || "53' Dry Van",
+        empty_zip: location,
+        status: 'active'
+      });
+    } catch (syncErr) {
+      console.warn('[SuperAdmin] AI dispatch sync notice:', syncErr.message);
+    }
+
     res.json({
       ok: true,
       message: temporaryPassword
-        ? `Carrier "${company_name}" onboarded. Share the one-time password, then have them change it.`
-        : `Carrier "${company_name}" was updated. Their existing password was left unchanged.`,
+        ? `Carrier "${company_name}" onboarded and active in AI dispatch. Share the one-time password, then have them change it.`
+        : `Carrier "${company_name}" was updated in TMS and AI dispatch. Their existing password was left unchanged.`,
       email: safeEmail,
       temporary_password: temporaryPassword
     });

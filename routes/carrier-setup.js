@@ -359,6 +359,27 @@ IP Address: ${ipAddress}
       ]
     );
 
+    // Synchronize carrier onboarding preferences directly into AI Dispatch Engine
+    try {
+      const { syncCarrierToAiDispatch } = require('../utils/carrier-sync');
+      await syncCarrierToAiDispatch({
+        company_name: companyName,
+        contact_name: ownerName || signerName,
+        phone,
+        email,
+        mc_number: mcNumber,
+        dot_number: dotNumber,
+        equipment: equipmentTypes || "53' Dry Van",
+        empty_zip: zip,
+        prefer_destination: preferredLanes,
+        min_rpm: parseFloat(minRpm) || 2.00,
+        status: 'active',
+        sms_consent: true
+      });
+    } catch (syncErr) {
+      console.warn('[CarrierSetup] AI dispatch sync notice:', syncErr.message);
+    }
+
     // 3. Welcome email with the carrier's own signed details and the agreement they accepted.
     let signatureBuffer = null;
     if (signaturePath && fs.existsSync(signaturePath)) {

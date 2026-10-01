@@ -64,6 +64,20 @@ router.post('/', requireAuth, async (req, res) => {
       [driver_id, truck_id, available_date, pickup_location, delivery_preference || '', notes || '', req.user.id]
     );
 
+    // Sync newly scheduled empty location & preference directly to AI Dispatch Brain
+    try {
+      const tInfo = await pool.query('SELECT carrier_id, equipment_type FROM trucks WHERE id = $1', [truck_id]);
+      const carrierId = (tInfo.rows[0] && tInfo.rows[0].carrier_id) || req.user.id;
+      const { syncTruckLocationToAiDispatch } = require('../utils/carrier-sync');
+      await syncTruckLocationToAiDispatch(carrierId, {
+        empty_zip: pickup_location,
+        prefer_destination: delivery_preference,
+        equipment: tInfo.rows[0] ? tInfo.rows[0].equipment_type : null
+      });
+    } catch (syncErr) {
+      console.warn('[LoadPlanning] AI dispatch sync notice:', syncErr.message);
+    }
+
     res.status(201).json({ message: 'Driver load availability scheduled successfully', load_plan: result.rows[0] });
   } catch (err) {
     console.error('Error creating load plan:', err);

@@ -1731,11 +1731,16 @@ async function handleStripeEvent(event) {
       [String(subId), status, periodEnd]
     );
 
-    // Update user status
+    // Update user status & pause/resume AI Dispatch Engine
     if (isCanceled) {
       await pool.query(
         `UPDATE users SET weekly_plan = 'canceled'
          WHERE stripe_customer_id = $1 OR id = (SELECT user_id FROM billing_subscriptions WHERE stripe_subscription_id = $2 LIMIT 1)`,
+        [String(customerId), String(subId)]
+      ).catch(() => {});
+      await pool.query(
+        `UPDATE ai_dispatch_carriers SET status = 'paused', last_sms_status = 'Subscription canceled'
+         WHERE email = (SELECT email FROM users WHERE stripe_customer_id = $1 OR id = (SELECT user_id FROM billing_subscriptions WHERE stripe_subscription_id = $2 LIMIT 1))`,
         [String(customerId), String(subId)]
       ).catch(() => {});
     } else if (status === 'past_due' || status === 'unpaid') {
@@ -1744,10 +1749,20 @@ async function handleStripeEvent(event) {
          WHERE stripe_customer_id = $1 OR id = (SELECT user_id FROM billing_subscriptions WHERE stripe_subscription_id = $2 LIMIT 1)`,
         [String(customerId), String(subId)]
       ).catch(() => {});
+      await pool.query(
+        `UPDATE ai_dispatch_carriers SET status = 'paused', last_sms_status = 'Subscription payment past due'
+         WHERE email = (SELECT email FROM users WHERE stripe_customer_id = $1 OR id = (SELECT user_id FROM billing_subscriptions WHERE stripe_subscription_id = $2 LIMIT 1))`,
+        [String(customerId), String(subId)]
+      ).catch(() => {});
     } else if (status === 'active') {
       await pool.query(
         `UPDATE users SET weekly_plan = 'active', is_suspended = false
          WHERE stripe_customer_id = $1 OR id = (SELECT user_id FROM billing_subscriptions WHERE stripe_subscription_id = $2 LIMIT 1)`,
+        [String(customerId), String(subId)]
+      ).catch(() => {});
+      await pool.query(
+        `UPDATE ai_dispatch_carriers SET status = 'active', last_sms_status = 'Active subscription confirmed'
+         WHERE email = (SELECT email FROM users WHERE stripe_customer_id = $1 OR id = (SELECT user_id FROM billing_subscriptions WHERE stripe_subscription_id = $2 LIMIT 1))`,
         [String(customerId), String(subId)]
       ).catch(() => {});
     }
