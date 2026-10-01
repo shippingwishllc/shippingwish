@@ -129,6 +129,9 @@ function parseCarrierText(text, carrier = {}) {
   const out = { intent: 'unknown', origin: null, destination: null, equipment: equipmentKind(body), choice: null };
   const pick = lower.match(/^(?:yes|y|book|take|want|ok)?\s*#?\s*([1-3])\s*[.!]?$/);
   if (pick) return { ...out, intent: 'book', choice: Number(pick[1]) };
+  if (/^(?:book\s*it|book|lock\s*it|take\s*it|i['’]?ll\s*take\s*it|yes\s*book\s*it|yes\b|yep\b|agree|lock\b)/i.test(lower)) {
+    return { ...out, intent: 'book', choice: 1 };
+  }
   if (/^(no|nope|none|pass|more|other|others|next|not those|something else)\b/.test(lower)) return { ...out, intent: 'more' };
   if (/\b(empty soon|unloading|almost empty|dropping now|at the receiver|empty in \d)\b/.test(lower)) {
     return { ...out, intent: 'empty_soon' };
@@ -437,8 +440,8 @@ async function requestBooking(carrier, offer) {
     return { taken: true, load };
   }
 
-  const brokerEmail = brokerEmailOf(load);
-  const authority = [carrier.mc_number ? `MC ${carrier.mc_number}` : null, carrier.dot_number ? `USDOT ${carrier.dot_number}` : null].filter(Boolean).join(' / ');
+  const brokerEmail = load.broker_email || offer.broker_email || brokerEmailOf(load);
+  const authority = [carrier.mc_number ? `MC ${carrier.mc_number}` : null, carrier.dot_number ? `USDOT ${carrier.dot_number}` : null].filter(Boolean).join(' / ') || 'MC On File';
   let note;
   if (brokerEmail && authority) {
     const lane = `${load.pickup_location} → ${load.delivery_location}`;

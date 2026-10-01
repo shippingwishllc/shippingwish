@@ -546,6 +546,7 @@ app.use('/api/invoices', carrierApiGate, require('./routes/invoices'));
 app.use('/api/portal', carrierApiGate, require('./routes/portal'));
 app.use('/api/loadboard', require('./routes/loadboard'));
 app.use('/api/dispatch-desk', require('./routes/dispatch-desk'));
+app.use('/api/dispatch', require('./routes/dispatch-desk'));
 app.use('/api/outreach', require('./routes/outreach'));
 app.use('/api/census-desk', require('./routes/census-desk'));
 app.use('/api/loadboard/matches', require('./routes/loadboard-matchmaking')); // Smart Freight & Capacity Matchmaking Engine
