@@ -108,11 +108,17 @@
       return;
     }
     tbody.innerHTML = bookings.map((b) => {
+      const isAirport = b.flight_number || /jfk|lga|ewr|teb|airport/i.test(b.pickup_address + ' ' + b.dropoff_address);
+      const badges = [];
+      if (isAirport) badges.push('<span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:0.7rem;font-weight:600;">✈ Airport</span>');
+      if (b.meet_and_greet) badges.push('<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:0.7rem;font-weight:600;">VIP M&amp;G</span>');
+      if (Number(b.child_seats) > 0) badges.push(`<span style="background:#f3e8ff;color:#6b21a8;padding:2px 6px;border-radius:4px;font-size:0.7rem;font-weight:600;">👶 ${b.child_seats} Seat(s)</span>`);
+
       const route = b.service_type === 'hourly'
         ? b.pickup_address + ' (Hourly)'
         : esc(b.pickup_address || '').slice(0, 25) + ' → ' + esc(b.dropoff_address || '').slice(0, 25);
       return `<tr style="cursor:pointer;" data-id="${b.id}">
-        <td><strong>${esc(b.booking_number)}</strong></td>
+        <td><strong>${esc(b.booking_number)}</strong>${badges.length ? `<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;">${badges.join('')}</div>` : ''}</td>
         <td>${esc(b.pickup_date)}<br><small>${esc(b.pickup_time)}</small></td>
         <td>${esc(b.passenger_first_name)} ${esc(b.passenger_last_name)}<br><small>${b.passenger_phone || ''}</small></td>
         <td style="max-width:200px;font-size:0.8rem;">${route}</td>
@@ -136,19 +142,26 @@
     document.getElementById('detail-content').innerHTML = `
       <div style="margin-top:16px;font-size:0.85rem;line-height:1.8;">
         <p><strong>${esc(b.booking_number)}</strong></p>
-        <p>📍 ${b.pickup_address}</p>
-        ${b.dropoff_address ? `<p>📍 ${b.dropoff_address}</p>` : ''}
-        <p>📅 ${esc(b.pickup_date)} at ${esc(b.pickup_time)}</p>
-        <p>👤 ${esc(b.passenger_first_name)} ${esc(b.passenger_last_name)}</p>
-        <p>📧 ${b.passenger_email || '—'}</p>
-        <p>📞 ${b.passenger_phone || '—'}</p>
-        <p>🚗 ${b.vehicle_name || b.vehicle_id}</p>
-        <p>💰 $${parseFloat(b.total_price).toFixed(2)} (${b.payment_status})</p>
-        ${b.trip_notes ? `<p>📝 ${b.trip_notes}</p>` : ''}
-        ${b.internal_notes ? `<p>🔒 ${b.internal_notes}</p>` : ''}
+        <p>📍 <strong>Pickup:</strong> ${b.pickup_address}</p>
+        ${b.dropoff_address ? `<p>📍 <strong>Drop-off:</strong> ${b.dropoff_address}</p>` : ''}
+        <p>📅 <strong>Date/Time:</strong> ${esc(b.pickup_date)} at ${esc(b.pickup_time)}</p>
+        <p>👤 <strong>Passenger:</strong> ${esc(b.passenger_first_name)} ${esc(b.passenger_last_name)}</p>
+        <p>📧 <strong>Email:</strong> ${b.passenger_email || '—'}</p>
+        <p>📞 <strong>Phone:</strong> ${b.passenger_phone || '—'}</p>
+        ${b.flight_number ? `<p>✈️ <strong>Flight:</strong> ${esc(b.flight_number)}</p>` : ''}
+        ${b.meet_and_greet ? `<p>🪧 <strong>VIP Service:</strong> Meet &amp; Greet inside terminal ($30.00)</p>` : ''}
+        ${Number(b.child_seats) > 0 ? `<p>👶 <strong>Child Seats:</strong> ${b.child_seats} provided</p>` : ''}
+        <p>🚗 <strong>Vehicle:</strong> ${b.vehicle_name || b.vehicle_id}</p>
+        <p>💰 <strong>Total:</strong> $${parseFloat(b.total_price).toFixed(2)} (${b.payment_status})</p>
+        <div style="background:#f8fafc;padding:8px 12px;border-radius:6px;margin:8px 0;font-size:0.8rem;color:#475569;">
+          <div>Base: $${Number(b.base_price || 0).toFixed(2)} | Tolls: $${Number(b.tolls || 0).toFixed(2)}</div>
+          <div>Airport Fee: $${Number(b.airport_fee || 0).toFixed(2)} | Gratuity: $${Number(b.gratuity || 0).toFixed(2)}</div>
+        </div>
+        ${b.trip_notes ? `<p>📝 <strong>Trip Notes:</strong> ${b.trip_notes}</p>` : ''}
+        ${b.internal_notes ? `<p>🔒 <strong>Internal Notes:</strong> ${b.internal_notes}</p>` : ''}
         <div style="margin-top:12px;">
           <select id="detail-status" style="padding:6px;border-radius:6px;border:1px solid #ddd;">
-            ${['pending','confirmed','dispatched','en_route','at_pickup','in_progress','completed','cancelled'].map((s) =>
+            ${['pending_operator','offering','operator_accepted','confirmed','dispatched','en_route','at_pickup','in_progress','completed','cancelled'].map((s) =>
               `<option value="${s}" ${s === b.status ? 'selected' : ''}>${s}</option>`
             ).join('')}
           </select>

@@ -87,28 +87,35 @@ async function loadTrips() {
     el.innerHTML = '<p style="color:var(--limo-gray);text-align:center;padding:40px;">No active trips assigned</p>';
     return;
   }
-  el.innerHTML = data.trips.map((t) => `
+  el.innerHTML = data.trips.map((t) => {
+    const badges = [];
+    if (t.flight_number) badges.push(`<span style="background:rgba(56,189,248,0.2);color:#38bdf8;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;">✈ Flight: ${t.flight_number}</span>`);
+    if (t.meet_and_greet) badges.push('<span style="background:rgba(201,162,39,0.2);color:var(--limo-gold);padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;">🪧 VIP Meet &amp; Greet (Terminal Signboard)</span>');
+    if (Number(t.child_seats) > 0) badges.push(`<span style="background:rgba(168,85,247,0.2);color:#c084fc;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;">👶 ${t.child_seats} Child Seat(s) Required</span>`);
+
+    return `
     <div class="drv-card" data-id="${t.id}">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <strong>${t.booking_number}</strong>
-        <span style="color:var(--limo-gold);font-size:0.8rem;font-weight:700;text-transform:uppercase;">${t.status}</span>
+        <span style="color:var(--limo-gold);font-size:0.8rem;font-weight:700;text-transform:uppercase;">${t.status.replaceAll('_', ' ')}</span>
       </div>
+      ${badges.length ? `<div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;">${badges.join('')}</div>` : ''}
       <div class="drv-route">
-        <p>📍 ${t.pickup_address}</p>
-        ${t.dropoff_address ? `<p>📍 ${t.dropoff_address}</p>` : ''}
+        <p>📍 <strong>Pickup:</strong> ${t.pickup_address}</p>
+        ${t.dropoff_address ? `<p style="margin-top:4px;">📍 <strong>Drop-off:</strong> ${t.dropoff_address}</p>` : ''}
       </div>
       <p style="font-size:0.85rem;color:var(--limo-gray);">📅 ${t.pickup_date} ${t.pickup_time}</p>
-      <p style="font-size:0.85rem;">👤 ${t.passenger_first_name} ${t.passenger_last_name} · 📞 ${t.passenger_phone || ''}</p>
+      <p style="font-size:0.85rem;">👤 ${t.passenger_first_name} ${t.passenger_last_name} · 📞 <a href="tel:${t.passenger_phone || ''}" style="color:var(--limo-gold);">${t.passenger_phone || '—'}</a></p>
       <p style="font-size:0.85rem;">🚗 ${t.vehicle_name || ''} · $${parseFloat(t.total_price).toFixed(2)}</p>
-      ${t.trip_notes ? `<p style="font-size:0.8rem;color:var(--limo-gray);margin-top:8px;">📝 ${t.trip_notes}</p>` : ''}
+      ${t.trip_notes ? `<p style="font-size:0.8rem;color:var(--limo-gray);margin-top:8px;">📝 Notes: ${t.trip_notes}</p>` : ''}
       <div class="drv-status-grid">
         <button class="drv-status-btn" onclick="setStatus(${t.id},'en_route')">En Route</button>
         <button class="drv-status-btn" onclick="setStatus(${t.id},'at_pickup')">At Pickup</button>
         <button class="drv-status-btn" onclick="setStatus(${t.id},'in_progress')">In Progress</button>
         <button class="drv-status-btn" onclick="setStatus(${t.id},'completed')">Completed</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 window.setStatus = async (id, status) => {
@@ -119,7 +126,8 @@ window.setStatus = async (id, status) => {
     lng = pos.coords.longitude;
   } catch { /* GPS optional */ }
 
-  await fetch('/api/driver/trips/' + id + '/status', {
+  const apiBase = window.location.pathname.startsWith('/nyclimowish') ? '/api/nyclimo' : '/api';
+  await fetch(apiBase + '/driver/trips/' + id + '/status', {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },

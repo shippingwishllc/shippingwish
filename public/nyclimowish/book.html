@@ -156,9 +156,28 @@
           <div class="limo-field"><label>Luggage</label><input class="limo-input" type="number" id="p-luggage" min="0" max="40" value="1" style="padding-left:16px;"></div>
         </div>
         <div class="limo-field"><label>Flight Number <span style="text-transform:none;letter-spacing:0;font-weight:500;">(airport pickups)</span></label><input class="limo-input" id="p-flight" placeholder="AA 100" maxlength="30" style="padding-left:16px;"></div>
-        <div class="limo-field"><label>Trip Notes</label><textarea class="limo-input" id="p-notes" rows="3" placeholder="Child seats, meeting point, special requests..." style="padding-left:16px;resize:vertical;"></textarea></div>
-        <div class="limo-field" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
-          <input type="checkbox" id="p-child-seats"> <label for="p-child-seats" style="margin:0;text-transform:none;font-size:0.9rem;">Child seats needed?</label>
+        <div class="limo-field"><label>Trip Notes</label><textarea class="limo-input" id="p-notes" rows="3" placeholder="Meeting point, flight details, special requests..." style="padding-left:16px;resize:vertical;"></textarea></div>
+        
+        <div style="background:#f9f9f9;border:1px solid #eee;border-radius:10px;padding:16px;margin:16px 0;">
+          <h4 style="font-size:0.95rem;font-weight:700;margin-bottom:12px;color:var(--limo-gold-dark);">Luxury Options &amp; Add-ons</h4>
+          <div class="limo-field-row" style="margin-bottom:12px;">
+            <div class="limo-field" style="margin:0;">
+              <label style="font-size:0.8rem;">Child Safety Seats ($20 each)</label>
+              <select class="limo-input" id="p-child-seats-select" style="background:#fff;border-color:#ddd;padding-left:12px;">
+                <option value="0">None</option>
+                <option value="1">1 Child Seat (+$20.00)</option>
+                <option value="2">2 Child Seats (+$40.00)</option>
+                <option value="3">3 Child Seats (+$60.00)</option>
+              </select>
+            </div>
+          </div>
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0;">
+            <input type="checkbox" id="p-meet-greet" style="margin-top:3px;accent-color:var(--limo-gold-dark);">
+            <span style="font-size:0.85rem;color:#333;line-height:1.4;">
+              <strong>VIP Meet &amp; Greet inside terminal (+$30.00)</strong><br>
+              <span style="font-size:0.75rem;color:#666;">Chauffeur meets passenger at baggage claim with a customized digital signboard.</span>
+            </span>
+          </label>
         </div>
         <p id="step3-error" class="limo-form-error" role="alert"></p>
         <div class="limo-book-actions">

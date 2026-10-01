@@ -7,7 +7,7 @@ const { requireAuth, requireRole, JWT_SECRET } = require('../middleware/auth');
 const { ensureSchema } = require('../utils/limo-ensure-schema');
 const {
   haversineMiles, estimateDurationMins, quoteAllVehicles, generateBookingNumber,
-  calcPointToPointPrice, calcHourlyPrice
+  calcPointToPointPrice, calcHourlyPrice, detectAirport
 } = require('../utils/limo-pricing');
 const { sendEmail } = require('../utils/mailer');
 const {
@@ -259,14 +259,24 @@ router.post('/quote', async (req, res) => {
       durationMins = route.durationMins;
     }
 
+    const detectedAirport = detectAirport(pickupGeo) || detectAirport(dropoffGeo);
+    const childSeats = Math.max(0, parseInt(body.childSeats || 0, 10));
+    const meetAndGreet = Boolean(body.meetAndGreet);
+    const pricingOptions = {
+      airport: detectedAirport,
+      childSeats,
+      meetAndGreet
+    };
+
     res.json({
       serviceType,
+      airport: detectedAirport ? { code: detectedAirport.code, name: detectedAirport.name } : null,
       distance: { miles, durationMins, isEstimate: route.isEstimate, source: route.source },
       pickup: pickupGeo,
       dropoff: dropoffGeo,
       stops: verifiedStops,
       map: routeMap(serviceType === 'hourly' ? [pickupGeo] : mapPoints),
-      quotes: quoteAllVehicles(vehicles, { serviceType, miles, hours: body.hours || 3 })
+      quotes: quoteAllVehicles(vehicles, { serviceType, miles, hours: body.hours || 3, options: pricingOptions })
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -350,9 +360,19 @@ router.post('/bookings', async (req, res) => {
     if (!Number.isInteger(luggage) || luggage < 0 || luggage > 40) {
       return res.status(400).json({ error: 'Luggage count must be between 0 and 40.' });
     }
+
+    const detectedAirport = detectAirport(pickupGeo) || detectAirport(dropoffGeo);
+    const childSeats = Math.max(0, parseInt(b.childSeats || 0, 10));
+    const meetAndGreet = Boolean(b.meetAndGreet);
+    const pricingOptions = {
+      airport: detectedAirport,
+      childSeats,
+      meetAndGreet
+    };
+
     const pricing = serviceType === 'hourly'
-      ? calcHourlyPrice(vehicle, durationHours)
-      : calcPointToPointPrice(vehicle, miles);
+      ? calcHourlyPrice(vehicle, durationHours, pricingOptions)
+      : calcPointToPointPrice(vehicle, miles, pricingOptions);
     const bookingNumber = generateBookingNumber();
 
     const { rows } = await pool.query(
@@ -361,18 +381,20 @@ router.post('/bookings', async (req, res) => {
          dropoff_address, dropoff_lat, dropoff_lng, stops, pickup_date, pickup_time, duration_hours,
          distance_miles, duration_mins, vehicle_id, passengers, luggage, child_seats,
          passenger_first_name, passenger_last_name, passenger_email, passenger_phone, trip_notes,
-         base_price, tolls, gratuity, total_price, source, referral_base_id, flight_number, is_manual
+         base_price, tolls, gratuity, total_price, source, referral_base_id, flight_number, is_manual,
+         meet_and_greet, airport_fee, child_seat_fee, meet_and_greet_fee
        ) VALUES (
          $1,$2,'pending_operator',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,
-         $19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31
+         $19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35
        ) RETURNING id, booking_number, status, pickup_date, pickup_time, total_price, payment_status`,
       [bookingNumber, serviceType, pickupGeo.formatted, pickupGeo.lat, pickupGeo.lng,
        dropoffGeo?.formatted || '', dropoffGeo?.lat || null, dropoffGeo?.lng || null, JSON.stringify(verifiedStops),
        pickupDate, pickupTime, durationHours, miles, durationMins, vehicle.id,
-       passengers, luggage, Number.parseInt(b.childSeats || 0, 10),
+       passengers, luggage, childSeats,
        firstName, lastName, email, phone, String(b.tripNotes || '').slice(0, 1000),
        pricing.subtotal, pricing.tolls, pricing.gratuity, pricing.total,
-       String(b.source || 'web').slice(0, 40), referralBaseId, String(b.flightNumber || '').slice(0, 30) || null, false]
+       String(b.source || 'web').slice(0, 40), referralBaseId, String(b.flightNumber || '').slice(0, 30) || null, false,
+       meetAndGreet, pricing.airportFee || 0, pricing.childSeatFee || 0, pricing.meetAndGreetFee || 0]
     );
     await pool.query(
       'INSERT INTO limo_booking_status_history (booking_id, status, note) VALUES ($1,$2,$3)',
@@ -485,7 +507,8 @@ router.get('/track/:number', async (req, res) => {
     await ensureSchema();
     const { rows } = await pool.query(
       `SELECT b.booking_number, b.status, b.service_type, b.pickup_address, b.dropoff_address,
-              b.pickup_date, b.pickup_time, b.total_price, b.payment_status, v.name AS vehicle_name,
+              b.pickup_date, b.pickup_time, b.total_price, b.payment_status, b.flight_number,
+              b.meet_and_greet, b.child_seats, v.name AS vehicle_name,
               p.display_name AS operator_name
        FROM limo_bookings b
        LEFT JOIN limo_vehicles v ON v.id = b.vehicle_id

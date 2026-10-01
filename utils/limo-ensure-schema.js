@@ -175,6 +175,10 @@ ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS operator_base_id INTEGER REFE
 ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS referral_base_id INTEGER REFERENCES limo_partner_bases(id) ON DELETE SET NULL;
 ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS accepted_offer_id INTEGER REFERENCES limo_partner_offers(id) ON DELETE SET NULL;
 ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS partner_offer_round INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS meet_and_greet BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS airport_fee NUMERIC(10,2) NOT NULL DEFAULT 0;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS child_seat_fee NUMERIC(10,2) NOT NULL DEFAULT 0;
+ALTER TABLE limo_bookings ADD COLUMN IF NOT EXISTS meet_and_greet_fee NUMERIC(10,2) NOT NULL DEFAULT 0;
 ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS operator_payout_status TEXT NOT NULL DEFAULT 'earned';
 ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS operator_payout_reference TEXT;
 ALTER TABLE limo_commission_ledger ADD COLUMN IF NOT EXISTS operator_paid_at TIMESTAMPTZ;

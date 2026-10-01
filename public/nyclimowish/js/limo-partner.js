@@ -17,12 +17,20 @@
   }
   async function loadOffers(){
     const data=await api('/partner/offers');
-    $('offers').innerHTML=data.offers.length?data.offers.map(o=>`<article class="card">
-      <div class="row"><strong>Offer ${esc(o.booking_number)}</strong><span>Expires ${new Date(o.expires_at).toLocaleString()}</span></div>
-      <p>${esc(o.pickup_address)} → ${esc(o.dropoff_address||'Hourly service')}</p>
-      <p>${esc(o.pickup_date)} at ${esc(o.pickup_time)} · ${esc(o.passengers)} passengers · ${esc(o.vehicle_id)} · Fare $ ${Number(o.total_price).toFixed(2)}</p>
-      <div class="actions"><button data-offer="${o.id}" data-decision="accept">Accept trip</button><button class="secondary" data-offer="${o.id}" data-decision="decline">Decline</button></div>
-    </article>`).join(''):'<p class="muted">No active offers.</p>';
+    $('offers').innerHTML=data.offers.length?data.offers.map(o=>{
+      const badges=[];
+      if(o.flight_number) badges.push(`<span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:700;">✈ Flight: ${esc(o.flight_number)}</span>`);
+      if(o.meet_and_greet) badges.push('<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:700;">🪧 VIP Meet &amp; Greet</span>');
+      if(Number(o.child_seats)>0) badges.push(`<span style="background:#f3e8ff;color:#6b21a8;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:700;">👶 ${o.child_seats} Child Seat(s)</span>`);
+
+      return `<article class="card">
+        <div class="row"><strong>Offer ${esc(o.booking_number)}</strong><span style="color:#b91c1c;font-weight:600;">Expires ${new Date(o.expires_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+        ${badges.length?`<div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;">${badges.join('')}</div>`:''}
+        <p>📍 ${esc(o.pickup_address)} → ${esc(o.dropoff_address||'Hourly service')}</p>
+        <p>📅 ${esc(o.pickup_date)} at ${esc(o.pickup_time)} · ${esc(o.passengers)} passengers · ${esc(o.vehicle_id)} · <strong>Total Fare $${Number(o.total_price).toFixed(2)}</strong></p>
+        <div class="actions"><button data-offer="${o.id}" data-decision="accept">Accept trip</button><button class="secondary" data-offer="${o.id}" data-decision="decline">Decline</button></div>
+      </article>`;
+    }).join(''):'<p class="muted">No active offers.</p>';
     $('offers').querySelectorAll('button[data-offer]').forEach(btn=>btn.addEventListener('click',()=>respond(btn)));
   }
   async function respond(btn){
@@ -35,16 +43,24 @@
   }
   async function loadBookings(){
     const data=await api('/partner/bookings');
-    $('bookings').innerHTML=data.bookings.length?data.bookings.map(b=>`<article class="card">
-      <div class="row"><strong>Ride ${esc(b.booking_number)}</strong><span>${esc(b.status.replaceAll('_',' '))}</span></div>
-      <p>${esc(b.pickup_address)} → ${esc(b.dropoff_address||'Hourly service')}</p>
-      <p>${esc(b.pickup_date)} at ${esc(b.pickup_time)} · ${esc(b.vehicle_id)} · ${esc(b.passengers)} passengers</p>
-      <p>Passenger: ${esc(b.passenger_first_name)} ${esc(b.passenger_last_name)} · ${esc(b.passenger_phone)} · ${esc(b.passenger_email)}</p>
-      ${b.trip_notes?`<p>Notes: ${esc(b.trip_notes)}</p>`:''}
-      <label>Trip status <select data-booking="${b.id}">
-        ${['confirmed','dispatched','en_route','at_pickup','in_progress','completed'].map(s=>`<option value="${s}" ${s===b.status?'selected':''}>${s.replaceAll('_',' ')}</option>`).join('')}
-      </select></label> <button data-save="${b.id}">Update</button>
-    </article>`).join(''):'<p class="muted">No accepted rides are paid and ready for dispatch yet.</p>';
+    $('bookings').innerHTML=data.bookings.length?data.bookings.map(b=>{
+      const badges=[];
+      if(b.flight_number) badges.push(`<span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:700;">✈ Flight: ${esc(b.flight_number)}</span>`);
+      if(b.meet_and_greet) badges.push('<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:700;">🪧 VIP Meet &amp; Greet</span>');
+      if(Number(b.child_seats)>0) badges.push(`<span style="background:#f3e8ff;color:#6b21a8;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:700;">👶 ${b.child_seats} Child Seat(s)</span>`);
+
+      return `<article class="card">
+        <div class="row"><strong>Ride ${esc(b.booking_number)}</strong><span style="font-weight:700;color:#0f766e;">${esc(b.status.replaceAll('_',' ').toUpperCase())}</span></div>
+        ${badges.length?`<div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;">${badges.join('')}</div>`:''}
+        <p>📍 ${esc(b.pickup_address)} → ${esc(b.dropoff_address||'Hourly service')}</p>
+        <p>📅 ${esc(b.pickup_date)} at ${esc(b.pickup_time)} · ${esc(b.vehicle_id)} · ${esc(b.passengers)} passengers</p>
+        <p>👤 Passenger: <strong>${esc(b.passenger_first_name)} ${esc(b.passenger_last_name)}</strong> · 📞 <a href="tel:${esc(b.passenger_phone)}">${esc(b.passenger_phone)}</a> · 📧 ${esc(b.passenger_email)}</p>
+        ${b.trip_notes?`<p>📝 Notes: ${esc(b.trip_notes)}</p>`:''}
+        <label>Trip status <select data-booking="${b.id}" style="padding:6px 10px;border-radius:6px;border:1px solid #cbd5e1;margin:0 8px;">
+          ${['confirmed','dispatched','en_route','at_pickup','in_progress','completed'].map(s=>`<option value="${s}" ${s===b.status?'selected':''}>${s.replaceAll('_',' ')}</option>`).join('')}
+        </select></label> <button data-save="${b.id}">Update</button>
+      </article>`;
+    }).join(''):'<p class="muted">No accepted rides are paid and ready for dispatch yet.</p>';
     $('bookings').querySelectorAll('button[data-save]').forEach(btn=>btn.addEventListener('click',()=>saveStatus(btn)));
   }
   async function saveStatus(btn){

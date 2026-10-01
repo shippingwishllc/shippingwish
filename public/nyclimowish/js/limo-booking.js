@@ -384,22 +384,59 @@
     }, 300);
   }
 
+  function getEffectivePricing(v) {
+    if (!v || !v.pricing) return null;
+    const baseSubtotal = Number(v.pricing.subtotal) || 0;
+    const tolls = Number(v.pricing.tolls) || 0;
+    const airportFee = Number(v.pricing.airportFee) || 0;
+    const childSeats = parseInt($('p-child-seats-select')?.value || '0', 10);
+    const childSeatFee = childSeats * 20;
+    const meetAndGreet = $('p-meet-greet')?.checked || false;
+    const meetAndGreetFee = meetAndGreet ? 30 : 0;
+    const taxableTotal = baseSubtotal + childSeatFee + meetAndGreetFee;
+    const gratuity = Math.round(taxableTotal * 0.20 * 100) / 100;
+    const total = Math.round((taxableTotal + tolls + airportFee + gratuity) * 100) / 100;
+    return {
+      subtotal: baseSubtotal,
+      tolls,
+      airportFee,
+      childSeats,
+      childSeatFee,
+      meetAndGreet,
+      meetAndGreetFee,
+      gratuity,
+      total
+    };
+  }
+
   function renderPassengerSummary() {
     const v = state.selectedVehicle;
     if (!v) return;
+    const effective = getEffectivePricing(v);
     $('summary-vehicle').innerHTML = `<strong>${escapeHtml(v.name)}</strong><br><span style="color:#666;font-size:0.85rem;">${escapeHtml(v.models || '')}</span>`;
-    $('price-breakdown').innerHTML = priceHtml(v.pricing);
-    $('final-price').innerHTML = priceHtml(v.pricing);
+    $('price-breakdown').innerHTML = priceHtml(effective);
+    $('final-price').innerHTML = priceHtml(effective);
   }
 
   function priceHtml(p) {
+    if (!p) return '';
     const tolls = Number(p.tolls) || 0;
+    const airportFee = Number(p.airportFee) || 0;
+    const childSeatFee = Number(p.childSeatFee) || 0;
+    const meetAndGreetFee = Number(p.meetAndGreetFee) || 0;
+
     return `<div class="limo-price-row"><span>Base fare</span><span>$${Number(p.subtotal).toFixed(2)}</span></div>
       ${tolls > 0 ? `<div class="limo-price-row"><span>Tolls</span><span>$${tolls.toFixed(2)}</span></div>` : ''}
-      <div class="limo-price-row"><span>Gratuity (included)</span><span>$${Number(p.gratuity).toFixed(2)}</span></div>
+      ${airportFee > 0 ? `<div class="limo-price-row"><span>Port Authority Airport Access Fee</span><span>$${airportFee.toFixed(2)}</span></div>` : ''}
+      ${childSeatFee > 0 ? `<div class="limo-price-row"><span>Child Safety Seats (${p.childSeats})</span><span>$${childSeatFee.toFixed(2)}</span></div>` : ''}
+      ${meetAndGreetFee > 0 ? `<div class="limo-price-row"><span>VIP Meet &amp; Greet</span><span>$${meetAndGreetFee.toFixed(2)}</span></div>` : ''}
+      <div class="limo-price-row"><span>Gratuity (20% included)</span><span>$${Number(p.gratuity).toFixed(2)}</span></div>
       <div class="limo-price-row total"><span>Total</span><span>$${Number(p.total).toFixed(2)}</span></div>
-      <p style="font-size:0.75rem;color:#999;margin-top:8px;">ℹ All-Inclusive Price</p>`;
+      <p style="font-size:0.75rem;color:#999;margin-top:8px;">ℹ All-Inclusive Guaranteed Rate</p>`;
   }
+
+  $('p-child-seats-select')?.addEventListener('change', () => renderPassengerSummary());
+  $('p-meet-greet')?.addEventListener('change', () => renderPassengerSummary());
 
   $('btn-back-2').addEventListener('click', () => showStep(1));
   $('btn-back-3').addEventListener('click', () => showStep(2));
@@ -419,6 +456,9 @@
 
     $('btn-step3').disabled = true;
     $('btn-step3').textContent = 'Creating booking...';
+
+    const childSeats = parseInt($('p-child-seats-select')?.value || '0', 10);
+    const meetAndGreet = $('p-meet-greet')?.checked || false;
 
     try {
       const res = await fetch('/api/nyclimo/bookings', {
@@ -445,7 +485,8 @@
           flightNumber: $('p-flight').value.trim(),
           passengers: parseInt($('p-passengers').value || '1', 10),
           luggage: parseInt($('p-luggage').value || '0', 10),
-          childSeats: $('p-child-seats').checked ? 1 : 0,
+          childSeats,
+          meetAndGreet,
           referralCode: params.get('ref') || params.get('referral') || undefined
         })
       });

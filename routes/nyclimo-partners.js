@@ -85,10 +85,28 @@ async function dispatchBooking(bookingId, actorId = null) {
 
     for (const partner of created) {
       if (!partner.contact_email) continue;
+      const flightInfo = booking.flight_number ? ` (Flight: ${booking.flight_number})` : '';
+      const extras = [
+        booking.meet_and_greet ? 'VIP Meet & Greet' : '',
+        Number(booking.child_seats) > 0 ? `${booking.child_seats} Child Seat(s)` : ''
+      ].filter(Boolean).join(', ');
+
       require('../utils/mailer').sendEmail({
         to: partner.contact_email,
-        subject: `New NYC Limo Wish operator offer`,
-        html: `<p>A new ride request matches your approved base profile.</p><p>Open the NYC Limo Wish partner portal to review the trip and accept or decline it. The offer expires in 10 minutes.</p><p>Operator offer #${partner.id}</p>`
+        subject: `New NYC Limo Wish Trip Offer #${booking.booking_number}`,
+        html: `<h3>New NYC Limo Wish Ride Offer</h3>
+          <p>A new ride matches your approved TLC-licensed base profile:</p>
+          <table style="border-collapse:collapse;width:100%;max-width:550px;font-size:14px;font-family:sans-serif;">
+            <tr><td style="padding:6px;border-bottom:1px solid #eee;"><strong>Booking #</strong></td><td style="padding:6px;border-bottom:1px solid #eee;">${booking.booking_number}</td></tr>
+            <tr><td style="padding:6px;border-bottom:1px solid #eee;"><strong>Date / Time</strong></td><td style="padding:6px;border-bottom:1px solid #eee;">${booking.pickup_date} at ${booking.pickup_time}</td></tr>
+            <tr><td style="padding:6px;border-bottom:1px solid #eee;"><strong>Pickup</strong></td><td style="padding:6px;border-bottom:1px solid #eee;">${booking.pickup_address}</td></tr>
+            <tr><td style="padding:6px;border-bottom:1px solid #eee;"><strong>Drop-off</strong></td><td style="padding:6px;border-bottom:1px solid #eee;">${booking.dropoff_address || 'As Directed (Hourly)'}</td></tr>
+            <tr><td style="padding:6px;border-bottom:1px solid #eee;"><strong>Vehicle Class</strong></td><td style="padding:6px;border-bottom:1px solid #eee;">${booking.vehicle_id}</td></tr>
+            <tr><td style="padding:6px;border-bottom:1px solid #eee;"><strong>Passengers</strong></td><td style="padding:6px;border-bottom:1px solid #eee;">${booking.passengers || 1} pax${flightInfo}</td></tr>
+            ${extras ? `<tr><td style="padding:6px;border-bottom:1px solid #eee;"><strong>Special Requests</strong></td><td style="padding:6px;border-bottom:1px solid #eee;">${extras}</td></tr>` : ''}
+            <tr><td style="padding:6px;border-bottom:1px solid #eee;"><strong>Total Fare</strong></td><td style="padding:6px;border-bottom:1px solid #eee;">$${Number(booking.total_price).toFixed(2)}</td></tr>
+          </table>
+          <p style="margin-top:16px;">Log in to the NYC Limo Wish Partner Portal to review and accept or decline. This offer expires in 10 minutes.</p>`
       }).catch((err) => console.warn('[LIMO PARTNER OFFER EMAIL]:', err.message));
     }
     return { ok: true, booking_number: booking.booking_number, offer_round: offerRound, offers: created.map(({ contact_email, ...offer }) => offer) };
@@ -317,7 +335,8 @@ router.get('/partner/offers', ...partnerGate, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT o.id, o.status, o.expires_at, o.created_at, b.booking_number, b.service_type,
               b.pickup_address, b.dropoff_address, b.pickup_date, b.pickup_time, b.vehicle_id,
-              b.passengers, b.luggage, b.total_price, o.platform_commission_rate
+              b.passengers, b.luggage, b.total_price, b.flight_number, b.meet_and_greet, b.child_seats,
+              o.platform_commission_rate
        FROM limo_partner_offers o
        JOIN limo_bookings b ON b.id = o.booking_id
        WHERE o.partner_base_id = $1 AND o.status = 'offered' AND o.expires_at > now()
@@ -449,7 +468,7 @@ router.get('/partner/bookings', ...partnerGate, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT id, booking_number, status, service_type, pickup_address, dropoff_address, pickup_date, pickup_time,
               duration_hours, vehicle_id, passengers, luggage, passenger_first_name, passenger_last_name,
-              passenger_email, passenger_phone, trip_notes, total_price
+              passenger_email, passenger_phone, trip_notes, total_price, flight_number, meet_and_greet, child_seats
        FROM limo_bookings
        WHERE operator_base_id = $1 AND payment_status = 'paid' AND status NOT IN ('completed', 'cancelled')
        ORDER BY pickup_date, pickup_time LIMIT 100`,

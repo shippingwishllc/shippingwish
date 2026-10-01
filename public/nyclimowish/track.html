@@ -55,15 +55,28 @@ document.getElementById('track-btn').addEventListener('click', async () => {
   if (!res.ok) { el.innerHTML = '<p style="color:#ef4444;text-align:center;">Booking not found</p>'; return; }
   const b = data.booking;
   const esc = (v) => String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+  
+  const badges = [];
+  if (b.flight_number) badges.push(`<span style="background:rgba(56,189,248,0.2);color:#38bdf8;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;">✈ Flight: ${esc(b.flight_number)}</span>`);
+  if (b.meet_and_greet) badges.push('<span style="background:rgba(201,162,39,0.2);color:var(--limo-gold);padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;">🪧 VIP Meet &amp; Greet</span>');
+  if (Number(b.child_seats) > 0) badges.push(`<span style="background:rgba(168,85,247,0.2);color:#c084fc;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;">👶 ${b.child_seats} Child Seat(s)</span>`);
+
   el.innerHTML = `<div class="limo-widget">
-    <p><strong>${esc(b.booking_number)}</strong> — <span style="color:var(--limo-gold);">${esc(b.status.toUpperCase())}</span></p>
-    <p style="margin-top:12px;font-size:0.9rem;">📍 ${esc(b.pickup_address)}</p>
-    ${b.dropoff_address ? `<p style="font-size:0.9rem;">📍 ${esc(b.dropoff_address)}</p>` : ''}
-    <p style="font-size:0.9rem;">📅 ${esc(b.pickup_date)} at ${esc(b.pickup_time)}</p>
-    <p style="font-size:0.9rem;">🚗 ${esc(b.vehicle_name || '—')}</p>
-    <p style="font-size:0.9rem;">💰 $${esc(parseFloat(b.total_price).toFixed(2))} (${esc(b.payment_status)})</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <strong>${esc(b.booking_number)}</strong>
+      <span style="color:var(--limo-gold);font-weight:700;font-size:0.85rem;">${esc(b.status.replaceAll('_', ' ').toUpperCase())}</span>
+    </div>
+    ${badges.length ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">${badges.join('')}</div>` : ''}
+    <div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:12px;padding-top:12px;">
+      <p style="font-size:0.9rem;">📍 <strong>Pickup:</strong> ${esc(b.pickup_address)}</p>
+      ${b.dropoff_address ? `<p style="font-size:0.9rem;margin-top:6px;">📍 <strong>Drop-off:</strong> ${esc(b.dropoff_address)}</p>` : ''}
+      <p style="font-size:0.9rem;margin-top:6px;">📅 ${esc(b.pickup_date)} at ${esc(b.pickup_time)}</p>
+      <p style="font-size:0.9rem;margin-top:6px;">🚗 <strong>Vehicle:</strong> ${esc(b.vehicle_name || 'Standard')}</p>
+      ${b.operator_name ? `<p style="font-size:0.9rem;margin-top:6px;">🏢 <strong>Operator:</strong> ${esc(b.operator_name)}</p>` : ''}
+      <p style="font-size:0.9rem;margin-top:6px;">💰 <strong>Total:</strong> $${esc(parseFloat(b.total_price).toFixed(2))} (${esc(b.payment_status)})</p>
+    </div>
     ${data.history?.length ? '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.1);padding-top:12px;">' +
-      data.history.map((h) => `<p style="font-size:0.8rem;color:var(--limo-gray);">${h.status} — ${new Date(h.created_at).toLocaleString()}</p>`).join('') + '</div>' : ''}
+      data.history.map((h) => `<p style="font-size:0.8rem;color:var(--limo-gray);margin:4px 0;">${esc(h.status.replaceAll('_', ' '))} — ${new Date(h.created_at).toLocaleString()}</p>`).join('') + '</div>' : ''}
   </div>`;
 });
 if (params.get('ref')) document.getElementById('track-btn').click();
