@@ -68,8 +68,10 @@
     if (!input || input.dataset.bound === '1') return;
     input.dataset.bound = '1';
     input.setAttribute('autocomplete', 'off');
-    const list = input.parentElement?.querySelector('.limo-suggest');
+    const box = input.closest('.limo-address-box') || input.parentElement;
+    const list = box?.querySelector('.limo-suggest');
     let timer = null;
+    let activeIndex = -1;
 
     input.addEventListener('input', () => {
       if (input.dataset.placeLabel !== input.value.trim()) {
@@ -83,11 +85,43 @@
         if (!value) resetToken(input);
         return;
       }
-      timer = setTimeout(() => searchAddress(input, list), 350);
+      timer = setTimeout(() => searchAddress(input, list), 280);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (!list || list.hidden) return;
+      const items = list.querySelectorAll('.limo-suggest-item');
+      if (!items.length) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIndex = (activeIndex + 1) % items.length;
+        updateActiveItem(items, activeIndex);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIndex = (activeIndex - 1 + items.length) % items.length;
+        updateActiveItem(items, activeIndex);
+      } else if (e.key === 'Enter') {
+        if (activeIndex >= 0 && items[activeIndex]) {
+          e.preventDefault();
+          items[activeIndex].click();
+        }
+      } else if (e.key === 'Escape') {
+        hideList(list);
+      }
     });
 
     input.addEventListener('blur', () => {
-      setTimeout(() => hideList(list), 180);
+      setTimeout(() => hideList(list), 220);
+    });
+  }
+
+  function updateActiveItem(items, index) {
+    items.forEach((item, i) => {
+      const active = i === index;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-selected', active ? 'true' : 'false');
+      if (active) item.scrollIntoView({ block: 'nearest' });
     });
   }
 
@@ -111,11 +145,40 @@
         hideList(list);
         return;
       }
-      list.innerHTML = suggestions.map((item, index) =>
-        `<button type="button" data-index="${index}">${escapeHtml(item.mainText || item.label)}${item.secondaryText ? `<small>${escapeHtml(item.secondaryText)}</small>` : ''}</button>`
-      ).join('');
+
+      const isGoogle = suggestions.some((s) => s.source === 'google_places');
+      const footerHtml = isGoogle
+        ? `<div class="limo-suggest-footer">
+             <span class="limo-suggest-source">
+               <span class="limo-suggest-dot dot-google">●</span> Powered by <strong>Google</strong>
+             </span>
+           </div>`
+        : `<div class="limo-suggest-footer">
+             <span class="limo-suggest-source">
+               <span class="limo-suggest-dot dot-brand">●</span> Powered by <strong>NYC Limo Wish</strong>
+             </span>
+           </div>`;
+
+      const listHtml = suggestions.map((item, index) => {
+        const mainText = escapeHtml(item.mainText || item.label || '');
+        const secondaryText = escapeHtml(item.secondaryText || '');
+        return `
+          <button type="button" class="limo-suggest-item" data-index="${index}" role="option">
+            <svg class="limo-suggest-pin" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+            </svg>
+            <div class="limo-suggest-content">
+              <div class="limo-suggest-main">${mainText}</div>
+              ${secondaryText ? `<div class="limo-suggest-sub">${secondaryText}</div>` : ''}
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      list.innerHTML = `<div class="limo-suggest-list" role="listbox">${listHtml}</div>${footerHtml}`;
       list.hidden = false;
-      list.querySelectorAll('button').forEach((button) => {
+
+      list.querySelectorAll('.limo-suggest-item').forEach((button) => {
         button.addEventListener('mousedown', (event) => {
           event.preventDefault();
           const item = suggestions[Number(button.dataset.index)];
@@ -177,6 +240,20 @@
   const params = new URLSearchParams(window.location.search);
   if (params.get('pickup')) $('b-pickup').value = params.get('pickup');
   if (params.get('dropoff')) $('b-dropoff').value = params.get('dropoff');
+  if (params.get('pickupPlaceId')) {
+    $('b-pickup').dataset.placeId = params.get('pickupPlaceId');
+    $('b-pickup').dataset.placeLabel = params.get('pickup') || '';
+  }
+  if (params.get('dropoffPlaceId')) {
+    $('b-dropoff').dataset.placeId = params.get('dropoffPlaceId');
+    $('b-dropoff').dataset.placeLabel = params.get('dropoff') || '';
+  }
+  if (params.get('pickupSessionToken')) {
+    sessions.set($('b-pickup'), params.get('pickupSessionToken'));
+  }
+  if (params.get('dropoffSessionToken')) {
+    sessions.set($('b-dropoff'), params.get('dropoffSessionToken'));
+  }
   if (params.get('pickupDate')) $('b-date').value = params.get('pickupDate');
   if (params.get('pickupTime')) $('b-time').value = params.get('pickupTime');
   if (params.get('serviceType') === 'hourly') setTab('hourly');

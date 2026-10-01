@@ -112,23 +112,90 @@ async function googleAutocomplete(query, sessionToken, key) {
   }).filter(Boolean);
 }
 
-async function nominatimAutocomplete(query) {
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=us`,
-    {
-      headers: { 'User-Agent': 'NYC-Limo-Wish/1.0 (booking)' },
-      signal: AbortSignal.timeout(8000)
-    }
-  );
-  if (!response.ok) return [];
-  const data = await response.json().catch(() => []);
-  return (Array.isArray(data) ? data : []).slice(0, 5).map((item) => ({
+const NYC_AIRPORT_SUGGESTIONS = [
+  {
+    keywords: ['jfk', 'kennedy', 'john f kennedy'],
     placeId: '',
-    label: item.display_name,
-    mainText: item.display_name,
-    secondaryText: '',
-    source: 'openstreetmap'
-  })).filter((item) => item.label);
+    label: 'John F. Kennedy International Airport (JFK), Queens, NY 11430, USA',
+    mainText: 'John F. Kennedy International Airport (JFK)',
+    secondaryText: 'Queens, NY 11430, USA',
+    source: 'google_places'
+  },
+  {
+    keywords: ['lga', 'laguardia', 'la guardia'],
+    placeId: '',
+    label: 'LaGuardia Airport (LGA), Queens, NY 11371, USA',
+    mainText: 'LaGuardia Airport (LGA)',
+    secondaryText: 'Queens, NY 11371, USA',
+    source: 'google_places'
+  },
+  {
+    keywords: ['ewr', 'newark', 'newark airport', 'liberty'],
+    placeId: '',
+    label: 'Newark Liberty International Airport (EWR), 3 Brewster Rd, Newark, NJ 07114, USA',
+    mainText: 'Newark Liberty International Airport (EWR)',
+    secondaryText: '3 Brewster Rd, Newark, NJ 07114, USA',
+    source: 'google_places'
+  },
+  {
+    keywords: ['teb', 'teterboro'],
+    placeId: '',
+    label: 'Teterboro Airport (TEB), 111 Industrial Ave, Teterboro, NJ 07608, USA',
+    mainText: 'Teterboro Airport (TEB)',
+    secondaryText: '111 Industrial Ave, Teterboro, NJ 07608, USA',
+    source: 'google_places'
+  },
+  {
+    keywords: ['hpn', 'westchester'],
+    placeId: '',
+    label: 'Westchester County Airport (HPN), 240 Airport Rd, White Plains, NY 10604, USA',
+    mainText: 'Westchester County Airport (HPN)',
+    secondaryText: '240 Airport Rd, White Plains, NY 10604, USA',
+    source: 'google_places'
+  }
+];
+
+async function nominatimAutocomplete(query) {
+  const qLower = String(query || '').toLowerCase().trim();
+  const airportMatches = NYC_AIRPORT_SUGGESTIONS.filter((a) =>
+    a.keywords.some((k) => qLower.includes(k) || k.includes(qLower))
+  );
+
+  let osmResults = [];
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=us`,
+      {
+        headers: { 'User-Agent': 'NYC-Limo-Wish/1.0 (booking)' },
+        signal: AbortSignal.timeout(8000)
+      }
+    );
+    if (response.ok) {
+      const data = await response.json().catch(() => []);
+      osmResults = (Array.isArray(data) ? data : []).map((item) => {
+        const raw = String(item.display_name || '').trim();
+        if (!raw) return null;
+        const parts = raw.split(', ');
+        const mainText = parts.length > 2 ? parts.slice(0, 2).join(', ') : (parts[0] || raw);
+        const secondaryText = parts.length > 2 ? parts.slice(2).join(', ') : (parts.slice(1).join(', ') || '');
+        return {
+          placeId: '',
+          label: raw,
+          mainText,
+          secondaryText,
+          source: 'openstreetmap'
+        };
+      }).filter(Boolean);
+    }
+  } catch (_) {}
+
+  const combined = [...airportMatches, ...osmResults];
+  const seen = new Set();
+  return combined.filter((item) => {
+    if (!item?.label || seen.has(item.label.toLowerCase())) return false;
+    seen.add(item.label.toLowerCase());
+    return true;
+  }).slice(0, 6);
 }
 
 async function placeDetails(placeId, sessionToken) {
