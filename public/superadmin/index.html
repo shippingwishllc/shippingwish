@@ -607,210 +607,226 @@
 
     /* =========================================================
        RESPONSIVE BREAKPOINTS (Tablets & Mobile Devices)
+    /* =========================================================
+       RESPONSIVE BREAKPOINTS (Tablets & Mobile Devices)
        ========================================================= */
 
-    /* Tablet breakpoint (<= 1024px) */
-    @media (max-width: 1024px) {
-      .topbar {
-        padding: 12px 18px;
-      }
-      .main-content {
-        padding: 18px 14px;
-      }
-      .grid-2 {
-        grid-template-columns: 1fr !important;
-        gap: 16px;
-      }
-      .grid-3 {
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 14px;
-      }
-      .marketing-grid {
-        grid-template-columns: 1fr 1fr;
-      }
+    /* Universal Responsive Safety */
+    html, body {
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+      width: 100% !important;
     }
 
-    /* Mobile Phones breakpoint (<= 768px) */
-    @media (max-width: 768px) {
-      /* Topbar Mobile Layout */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    /* Tablet & Small Laptop (<= 1024px) */
+    @media (max-width: 1024px) {
       .topbar {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 10px 12px;
-        gap: 10px;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 10px 14px !important;
+        gap: 10px !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
       }
 
       .brand-section {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        gap: 8px;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        gap: 8px !important;
+        min-width: 0 !important;
+      }
+
+      .brand-titles {
+        min-width: 0 !important;
+        flex: 1 !important;
       }
 
       .brand-titles h1 {
-        font-size: 14px;
-        letter-spacing: 0.02em;
+        font-size: 15px !important;
+        white-space: normal !important;
+        word-break: break-word !important;
       }
 
       .brand-titles p {
-        display: none; /* Hide 4-brand subtitle on mobile to keep topbar ultra compact */
+        font-size: 10px !important;
+        color: var(--text-muted) !important;
+        line-height: 1.25 !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        margin-top: 2px !important;
       }
 
       .pulse-pill {
-        font-size: 10px;
-        padding: 3px 8px;
-        flex-shrink: 0;
+        font-size: 10px !important;
+        padding: 4px 8px !important;
+        flex-shrink: 0 !important;
       }
 
-      /* Horizontal Swipe Actions Bar for buttons */
       .user-actions {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 4px;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-bottom: 4px !important;
+        scrollbar-width: none !important;
       }
 
       .user-actions::-webkit-scrollbar {
-        height: 3px;
-      }
-      .user-actions::-webkit-scrollbar-thumb {
-        background: rgba(245, 158, 11, 0.3);
-        border-radius: 4px;
+        display: none !important;
       }
 
       .user-badge {
-        flex-shrink: 0;
-        font-size: 11px;
-        padding: 5px 9px;
-        white-space: nowrap;
+        flex-shrink: 0 !important;
+        font-size: 11px !important;
+        padding: 5px 9px !important;
+        white-space: nowrap !important;
       }
 
       .btn-action {
-        flex-shrink: 0;
-        font-size: 11px;
-        padding: 6px 12px;
-        white-space: nowrap;
+        flex-shrink: 0 !important;
+        font-size: 11px !important;
+        padding: 6px 12px !important;
+        white-space: nowrap !important;
       }
 
-      /* Main Content Container */
       .main-content {
-        padding: 12px 8px;
-        max-width: 100vw;
-        box-sizing: border-box;
+        padding: 12px 10px !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
       }
 
-      /* Executive KPI Strip Mobile 2-Column Grid */
       .kpi-strip {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px;
-        margin-bottom: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        margin-bottom: 16px !important;
+        max-width: 100% !important;
       }
 
       .kpi-card {
-        padding: 12px 10px;
-        border-radius: 12px;
+        padding: 12px 10px !important;
+        border-radius: 12px !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
       }
 
       .kpi-label {
-        font-size: 10px;
-        margin-bottom: 4px;
+        font-size: 10px !important;
+        margin-bottom: 4px !important;
+        flex-wrap: wrap !important;
       }
 
       .kpi-value {
-        font-size: 18px;
-        margin-bottom: 4px;
+        font-size: 20px !important;
+        margin-bottom: 4px !important;
+        word-break: break-all !important;
       }
 
       .kpi-sub {
-        font-size: 10px;
-        line-height: 1.25;
+        font-size: 10px !important;
+        line-height: 1.25 !important;
       }
 
-      /* Tabs Mobile Scroll */
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+      }
+
+      .grid-2 > *, .grid-3 > * {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+
       .tab-bar {
-        padding: 4px;
-        gap: 4px;
-        margin-bottom: 16px;
-        -webkit-overflow-scrolling: touch;
+        padding: 4px !important;
+        gap: 4px !important;
+        margin-bottom: 16px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+      }
+
+      .tab-bar::-webkit-scrollbar {
+        display: none !important;
       }
 
       .tab-btn {
-        padding: 7px 11px;
-        font-size: 12px;
-        flex-shrink: 0;
-        border-radius: 6px;
-      }
-
-      /* Cards & Grids Mobile */
-      .grid-2, .grid-3 {
-        grid-template-columns: 1fr !important;
-        gap: 12px;
-        margin-bottom: 16px;
+        padding: 8px 12px !important;
+        font-size: 12px !important;
+        flex-shrink: 0 !important;
+        border-radius: 6px !important;
       }
 
       .content-card {
-        padding: 14px 12px;
-        border-radius: 12px;
-        max-width: 100%;
-        box-sizing: border-box;
-        overflow: hidden;
+        padding: 14px 12px !important;
+        border-radius: 12px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
       }
 
       .card-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 6px;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+        margin-bottom: 12px !important;
+        padding-bottom: 8px !important;
       }
 
       .card-title {
-        font-size: 13.5px;
-        line-height: 1.35;
-        flex-wrap: wrap;
+        font-size: 13.5px !important;
+        line-height: 1.35 !important;
+        flex-wrap: wrap !important;
+        word-break: break-word !important;
       }
 
-      /* Fleet Dispatch Pipeline Mobile */
       .pipeline-grid {
         grid-template-columns: 1fr !important;
         gap: 8px !important;
-        margin-bottom: 14px;
+        margin-bottom: 14px !important;
       }
 
-      .marketing-grid {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
-      }
-
-      /* Tables Horizontal Scroll */
       .table-responsive {
-        width: 100%;
-        max-width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        border-radius: 8px;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        border-radius: 8px !important;
+        display: block !important;
       }
 
       table {
-        min-width: 560px;
-        font-size: 12px;
+        min-width: 480px !important;
+        font-size: 11.5px !important;
       }
 
       thead th {
-        padding: 8px 10px;
-        font-size: 10px;
+        padding: 8px 8px !important;
+        font-size: 10px !important;
       }
 
       tbody td {
-        padding: 9px 10px;
-        font-size: 11.5px;
+        padding: 8px 8px !important;
+        font-size: 11px !important;
       }
 
-      /* Modals Mobile */
+      .badge {
+        white-space: normal !important;
+        word-break: break-word !important;
+        max-width: 100% !important;
+        display: inline-block !important;
+      }
+
       .modal-overlay {
         padding: 12px;
       }
@@ -833,7 +849,6 @@
         gap: 10px;
       }
 
-      /* Toasts Mobile */
       .toast-container {
         bottom: 14px;
         right: 14px;
@@ -846,13 +861,35 @@
       }
     }
 
-    /* Small Screen (< 380px) */
-    @media (max-width: 380px) {
+    /* Small Screen (< 480px) */
+    @media (max-width: 480px) {
+      .topbar {
+        padding: 8px 10px !important;
+      }
+
+      .brand-titles h1 {
+        font-size: 13px !important;
+      }
+
+      .brand-titles p {
+        font-size: 9.5px !important;
+      }
+
       .kpi-strip {
         grid-template-columns: 1fr !important;
+        gap: 8px !important;
       }
-      .brand-titles h1 {
-        font-size: 13px;
+
+      .kpi-value {
+        font-size: 22px !important;
+      }
+
+      .pipeline-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      table {
+        min-width: 420px !important;
       }
     }
   </style>
@@ -1069,19 +1106,19 @@
           <span style="font-size:12px; color:var(--text-muted);">Real-time account webhook health</span>
         </div>
         <div class="grid-2">
-          <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <strong style="color:#ffffff; font-size:14px;">ShippingWish.com TMS Gateway</strong>
-              <span id="stripeSwBadge" class="badge badge-paid">🟢 LIVE PRODUCTION</span>
+          <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:16px; min-width:0; max-width:100%; box-sizing:border-box;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+              <strong style="color:#ffffff; font-size:14px; min-width:0;">ShippingWish.com TMS Gateway</strong>
+              <span id="stripeSwBadge" class="badge badge-paid" style="white-space:normal; text-align:right;">🟢 LIVE PRODUCTION</span>
             </div>
             <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
               Weekly recurring billing plans ($149 / $350 / $500), load factoring payouts, and instant detention invoice processing via Stripe Billing &amp; Webhooks.
             </p>
           </div>
-          <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <strong style="color:#ffffff; font-size:14px;">LoadsNexus.com AI Load Board Gateway</strong>
-              <span id="stripeLnBadge" class="badge badge-unloading">🟡 CONNECTED &bull; ID VERIFICATION IN REVIEW</span>
+          <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:16px; min-width:0; max-width:100%; box-sizing:border-box;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+              <strong style="color:#ffffff; font-size:14px; min-width:0;">LoadsNexus.com AI Load Board Gateway</strong>
+              <span id="stripeLnBadge" class="badge badge-unloading" style="white-space:normal; text-align:right;">🟡 CONNECTED &bull; ID VERIFICATION IN REVIEW</span>
             </div>
             <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
               Dedicated LoadsNexus Stripe account with automated fallback to parent Stripe. Subscriptions for $19 Solo, $39 Team, and $69 Fleet Pass with 24-hr webhook sync.

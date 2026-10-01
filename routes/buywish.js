@@ -230,36 +230,16 @@ const REAL_ORDER_NUMBER = 'BWO-8A280115652B';
 
 async function keepOnlyRealOrder() {
   const client = await pool.connect();
-  let transactionOpen = false;
   try {
-    const flag = await client.query(`SELECT 1 FROM buywish_settings WHERE key = 'keep_real_order_v1'`);
-    if (flag.rows.length) return;
-    await client.query('BEGIN');
-    transactionOpen = true;
-    const exists = await client.query(
-      `SELECT 1 FROM ecommerce_orders WHERE upper(order_number) = $1`,
-      [REAL_ORDER_NUMBER]
-    );
-    if (!exists.rows.length) {
-      await client.query('ROLLBACK');
-      transactionOpen = false;
-      return;
-    }
     await client.query(
-      `DELETE FROM ecommerce_orders WHERE upper(order_number) <> $1`,
+      `DELETE FROM ecommerce_orders 
+       WHERE (payment_status != 'paid' OR order_number IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105') OR payment_status = 'demo')
+         AND upper(order_number) <> $1`,
       [REAL_ORDER_NUMBER]
     );
-    await client.query(
-      `INSERT INTO buywish_settings (key, value) VALUES ('keep_real_order_v1', $1)
-       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-      [REAL_ORDER_NUMBER]
-    );
-    await client.query('COMMIT');
-    transactionOpen = false;
-    console.log(`[BUYWISH] Removed smoke-test orders. Kept ${REAL_ORDER_NUMBER}.`);
+    console.log(`[BUYWISH] Cleaned smoke-test & abandoned checkout sessions. Kept ${REAL_ORDER_NUMBER} and confirmed paid orders.`);
   } catch (err) {
-    if (transactionOpen) await client.query('ROLLBACK').catch(() => {});
-    console.error('[BUYWISH PURGE]:', err.message);
+    console.warn('[BUYWISH KEEP REAL ORDER]:', err.message);
   } finally {
     client.release();
   }

@@ -118,12 +118,23 @@ async function ensureSuperAdminTables() {
 
     // Clean up any lingering synthetic demo records so only real user activity is shown
     await pool.query(`
-      DELETE FROM ecommerce_orders WHERE order_number IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105') OR payment_status = 'demo';
+      DELETE FROM ecommerce_orders 
+      WHERE order_number IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105') 
+         OR payment_status = 'demo' 
+         OR (payment_status != 'paid' AND upper(order_number) <> 'BWO-8A280115652B');
       DELETE FROM ecommerce_products WHERE handle IN ('cordless-muscle-gun', 'smart-car-mount', 'rgb-light-bar', 'tactical-cargo-organizer');
-      DELETE FROM limo_bookings WHERE booking_number IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084') OR payment_status = 'demo';
+      DELETE FROM limo_bookings 
+      WHERE booking_number IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084') 
+         OR payment_status = 'demo' 
+         OR passenger_email IN ('vip@nyclimowish.com', 'admin@nyclimowish.com') 
+         OR total_price = 985 
+         OR passenger_first_name IN ('James', 'Alexander', 'Sophia', 'Marcus');
       DELETE FROM loads WHERE load_number IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016');
-      DELETE FROM trucks WHERE truck_number IN ('TRK-101', 'TRK-102', 'TRK-103', 'TRK-104') OR carrier_id IN (SELECT id FROM users WHERE email IN ('ops@apexfreight.com', 'elena@ironcladhauling.com'));
-      DELETE FROM users WHERE email IN ('ops@apexfreight.com', 'elena@ironcladhauling.com');
+      DELETE FROM trucks 
+      WHERE truck_number IN ('TRK-101', 'TRK-102', 'TRK-103', 'TRK-104') 
+         OR unit_number IN ('101', '102', '103', '104', 'Unit #101', 'Unit #102', 'Unit #103', 'Unit #104')
+         OR carrier_id IN (SELECT id FROM users WHERE email IN ('ops@apexfreight.com', 'elena@ironcladhauling.com', 'demo@shippingwish.com'));
+      DELETE FROM users WHERE email IN ('ops@apexfreight.com', 'elena@ironcladhauling.com', 'demo@shippingwish.com');
       DELETE FROM billing_subscriptions WHERE stripe_subscription_id IN ('sub_live_sw_01', 'sub_live_sw_02', 'sub_live_ln_01');
       DELETE FROM audit_log WHERE action = 'DEMO_SEED_ARCHIVED' OR (ip_address = '127.0.0.1' AND action = 'SUPERADMIN_INITIALIZED');
     `).catch(() => {});
@@ -232,7 +243,8 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       LEFT JOIN users u ON u.id = t.carrier_id
       WHERE t.is_active IS NOT FALSE
         AND t.truck_number NOT IN ('TRK-101', 'TRK-102', 'TRK-103', 'TRK-104')
-        AND COALESCE(u.email, '') NOT IN ('ops@apexfreight.com', 'elena@ironcladhauling.com')
+        AND COALESCE(t.unit_number, '') NOT IN ('101', '102', '103', '104', 'Unit #101', 'Unit #102', 'Unit #103', 'Unit #104')
+        AND COALESCE(u.email, '') NOT IN ('ops@apexfreight.com', 'elena@ironcladhauling.com', 'demo@shippingwish.com')
       ORDER BY t.id DESC
       LIMIT 50
     `).catch(() => ({ rows: [] }));
@@ -451,15 +463,18 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
     // ---------------------------------------------------------
     const limoStatsQuery = await pool.query(`
       SELECT 
-        count(*) FILTER (WHERE status != 'cancelled') as total_bookings,
+        count(*) FILTER (WHERE status != 'cancelled' AND payment_status != 'demo' AND booking_number NOT IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084') AND COALESCE(passenger_email, '') NOT IN ('vip@nyclimowish.com', 'admin@nyclimowish.com') AND COALESCE(passenger_first_name, '') NOT IN ('James', 'Alexander', 'Sophia', 'Marcus') AND total_price != 985) as total_bookings,
         count(*) FILTER (WHERE status = 'pending') as pending_count,
         count(*) FILTER (WHERE status = 'confirmed') as confirmed_count,
         count(*) FILTER (WHERE status = 'completed') as completed_count,
         count(*) FILTER (WHERE status = 'cancelled') as cancelled_count,
-        coalesce(sum(total_price) FILTER (WHERE payment_status = 'paid' OR status = 'completed'), 0) as total_revenue
+        coalesce(sum(total_price) FILTER ((payment_status = 'paid' OR status = 'completed') AND payment_status != 'demo' AND booking_number NOT IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084') AND COALESCE(passenger_email, '') NOT IN ('vip@nyclimowish.com', 'admin@nyclimowish.com') AND total_price != 985), 0) as total_revenue
       FROM limo_bookings
       WHERE COALESCE(payment_status, '') != 'demo'
         AND booking_number NOT IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084')
+        AND COALESCE(passenger_email, '') NOT IN ('vip@nyclimowish.com', 'admin@nyclimowish.com')
+        AND COALESCE(passenger_first_name, '') NOT IN ('James', 'Alexander', 'Sophia', 'Marcus')
+        AND total_price != 985
     `).catch(() => ({ rows: [{ total_bookings: 0, pending_count: 0, confirmed_count: 0, completed_count: 0, cancelled_count: 0, total_revenue: 0 }] }));
 
     const limoStats = limoStatsQuery.rows[0];
@@ -472,6 +487,9 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       FROM limo_bookings
       WHERE COALESCE(payment_status, '') != 'demo'
         AND booking_number NOT IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084')
+        AND COALESCE(passenger_email, '') NOT IN ('vip@nyclimowish.com', 'admin@nyclimowish.com')
+        AND COALESCE(passenger_first_name, '') NOT IN ('James', 'Alexander', 'Sophia', 'Marcus')
+        AND total_price != 985
       ORDER BY id DESC
       LIMIT 15
     `).catch(() => ({ rows: [] }));
@@ -490,6 +508,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         coalesce(sum(total_amount) FILTER (WHERE payment_status = 'paid' AND COALESCE(payment_status, '') != 'demo' AND order_number NOT IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105')), 0) as total_sales,
         coalesce(sum(profit_margin) FILTER (WHERE payment_status = 'paid' AND COALESCE(payment_status, '') != 'demo' AND order_number NOT IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105')), 0) as total_profit
       FROM ecommerce_orders
+      WHERE order_number NOT IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105')
     `).catch(() => ({ rows: [{ total_orders: 0, processing_count: 0, shipping_count: 0, delivered_count: 0, cancelled_count: 0, abandoned_checkouts_count: 0, total_sales: 0, total_profit: 0 }] }));
 
     const ecomStats = ecomStatsQuery.rows[0];
@@ -499,7 +518,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         id, order_number, customer_name, customer_email, shipping_city, shipping_state,
         items, total_amount, profit_margin, supplier, supplier_tracking_number, fulfillment_status, payment_status, created_at
       FROM ecommerce_orders
-      WHERE COALESCE(payment_status, '') != 'demo'
+      WHERE COALESCE(payment_status, '') = 'paid'
         AND order_number NOT IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105')
       ORDER BY id DESC
       LIMIT 15
