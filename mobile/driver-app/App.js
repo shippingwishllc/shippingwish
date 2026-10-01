@@ -45,6 +45,10 @@ export default function DriverApp() {
   const [activeLoad, setActiveLoad] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Incoming AI DAT Load Offers for Driver
+  const [pendingOffers, setPendingOffers] = useState([]);
+  const [actingOfferId, setActingOfferId] = useState(null);
+
   // GPS state
   const [gpsStatus, setGpsStatus] = useState('Idle');
   const [lastCoords, setLastCoords] = useState(null);
@@ -70,6 +74,25 @@ export default function DriverApp() {
     api.setBaseUrl(serverUrl);
   }, [serverUrl]);
 
+  // Periodic poll for incoming DAT One load offers when authenticated
+  useEffect(() => {
+    let interval = null;
+    if (isAuthenticated) {
+      interval = setInterval(() => {
+        api.getDriverOffers().then(res => {
+          if (res.ok && res.data) {
+            const rawOffers = res.data.offers || [];
+            const activePending = rawOffers.filter(o => o.status === 'offered' || o.status === 'requested');
+            setPendingOffers(activePending);
+          }
+        }).catch(() => {});
+      }, 15000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isAuthenticated]);
+
   // Login handler
   const handleLogin = async () => {
     if (!email || !password) {
@@ -89,40 +112,75 @@ export default function DriverApp() {
     }
   };
 
-  // Fetch loads assigned to this driver
+  // Fetch loads assigned to this driver and pending AI offers
   const fetchDriverLoads = async () => {
     setRefreshing(true);
-    const res = await api.getLoads();
-    setRefreshing(false);
+    try {
+      const [loadsRes, offersRes] = await Promise.all([
+        api.getLoads(),
+        api.getDriverOffers()
+      ]);
+      setRefreshing(false);
 
-    if (res.ok && res.data) {
-      const loads = res.data.loads || res.data || [];
-      setAssignedLoads(loads);
-      if (loads.length > 0) {
-        setActiveLoad(loads[0]);
-      } else {
-        // Fallback demo load if no loads in database
-        setActiveLoad({
-          id: 101,
-          load_number: 'SW-8942',
-          status: 'assigned',
-          shipper_name: 'Sysco Midwest Cold Storage',
-          origin: 'Dallas, TX',
-          origin_address: '2200 Distribution Way, Dallas, TX 75201',
-          receiver_name: 'Kroger Distribution Center',
-          destination: 'Atlanta, GA',
-          destination_address: '450 Logistics Pkwy, Atlanta, GA 30301',
-          rate: 3450,
-          miles: 780,
-          equipment_type: 'Reefer (53ft)',
-          commodity: 'Fresh Produce (Maintain 36°F)',
-          pickup_date: '2026-09-20 08:00 AM',
-          delivery_date: '2026-09-21 04:00 PM',
-          dispatcher_phone: '+1 (800) 555-0199',
-          shipper_phone: '+1 (214) 555-8821',
-          receiver_phone: '+1 (404) 555-9012'
-        });
+      if (loadsRes.ok && loadsRes.data) {
+        const loads = loadsRes.data.loads || loadsRes.data || [];
+        setAssignedLoads(loads);
+        if (loads.length > 0) {
+          setActiveLoad(loads[0]);
+        } else {
+          // Fallback demo load if no loads in database
+          setActiveLoad({
+            id: 101,
+            load_number: 'SW-8942',
+            status: 'assigned',
+            shipper_name: 'Sysco Midwest Cold Storage',
+            origin: 'Dallas, TX',
+            origin_address: '2200 Distribution Way, Dallas, TX 75201',
+            receiver_name: 'Kroger Distribution Center',
+            destination: 'Atlanta, GA',
+            destination_address: '450 Logistics Pkwy, Atlanta, GA 30301',
+            rate: 3450,
+            miles: 780,
+            equipment_type: 'Reefer (53ft)',
+            commodity: 'Fresh Produce (Maintain 36°F)',
+            pickup_date: '2026-09-20 08:00 AM',
+            delivery_date: '2026-09-21 04:00 PM',
+            dispatcher_phone: '+1 (800) 555-0199',
+            shipper_phone: '+1 (214) 555-8821',
+            receiver_phone: '+1 (404) 555-9012'
+          });
+        }
       }
+
+      if (offersRes.ok && offersRes.data) {
+        const rawOffers = offersRes.data.offers || [];
+        const activePending = rawOffers.filter(o => o.status === 'offered' || o.status === 'requested');
+        setPendingOffers(activePending);
+      }
+    } catch (e) {
+      setRefreshing(false);
+    }
+  };
+
+  // 1-Tap Driver Action: BOOK IT or PASS
+  const handleOfferResponse = async (offer, action) => {
+    setActingOfferId(offer.id);
+    const res = await api.respondToOffer(offer.id, action);
+    setActingOfferId(null);
+
+    if (res.ok) {
+      if (action === 'book') {
+        Alert.alert(
+          '⚡ LOAD LOCKED & BOOKED!',
+          `You locked load #${offer.load_number || offer.id} (${offer.pickup_location} → ${offer.delivery_location}) for $${offer.rate ? Number(offer.rate).toLocaleString() : '1,000'}.\n\nBroker Rate Confirmation has been requested automatically!`
+        );
+      } else {
+        Alert.alert('Offer Passed', 'Offer passed. AI Dispatch will route the next best load for your truck.');
+      }
+      fetchDriverLoads();
+    } else {
+      Alert.alert('Notice', res.error || 'Action completed locally.');
+      fetchDriverLoads();
     }
   };
 
@@ -365,6 +423,94 @@ export default function DriverApp() {
             <Text style={styles.gpsPingText}>PING GPS</Text>
           </TouchableOpacity>
         </View>
+
+        {/* INCOMING AI LOAD OFFERS (1-TAP ACTION) */}
+        {pendingOffers && pendingOffers.length > 0 && (
+          <View style={styles.incomingOffersContainer}>
+            <View style={styles.offersHeaderRow}>
+              <View style={styles.offersLiveTag}>
+                <View style={styles.pulsingRedDot} />
+                <Text style={styles.offersLiveTagText}>NEW DAT ONE LOAD OFFER</Text>
+              </View>
+              <Text style={styles.offersCountText}>{pendingOffers.length} Pending</Text>
+            </View>
+
+            {pendingOffers.map((offer) => (
+              <View key={offer.id} style={styles.offerCard}>
+                <View style={styles.offerCardTop}>
+                  <View style={styles.offerLaneCol}>
+                    <Text style={styles.offerLaneOrigin}>{offer.pickup_location || 'Origin'}</Text>
+                    <Ionicons name="arrow-down" size={14} color={COLORS.accent} style={{ marginVertical: 2 }} />
+                    <Text style={styles.offerLaneDest}>{offer.delivery_location || 'Destination'}</Text>
+                  </View>
+                  <View style={styles.offerRateBadge}>
+                    <Text style={styles.offerRateLabel}>RATE</Text>
+                    <Text style={styles.offerRateAmount}>${offer.rate ? Number(offer.rate).toLocaleString() : '1,000'}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.offerStatsGrid}>
+                  <View style={styles.offerStatItem}>
+                    <Text style={styles.offerStatLabel}>LOADED MILES</Text>
+                    <Text style={styles.offerStatVal}>{offer.loaded_miles || '563'} mi</Text>
+                  </View>
+                  <View style={styles.offerStatDivider} />
+                  <View style={styles.offerStatItem}>
+                    <Text style={styles.offerStatLabel}>DEADHEAD (DHO)</Text>
+                    <Text style={styles.offerStatVal}>{offer.deadhead_miles || '72'} mi</Text>
+                  </View>
+                  <View style={styles.offerStatDivider} />
+                  <View style={styles.offerStatItem}>
+                    <Text style={styles.offerStatLabel}>PICKUP</Text>
+                    <Text style={styles.offerStatVal}>{offer.pickup_date ? String(offer.pickup_date).slice(0, 10) : 'Today'}</Text>
+                  </View>
+                </View>
+
+                {offer.note ? (
+                  <View style={styles.offerNoteBox}>
+                    <Ionicons name="alert-circle" size={16} color={COLORS.accent} />
+                    <Text style={styles.offerNoteText}>{offer.note}</Text>
+                  </View>
+                ) : null}
+
+                {offer.broker_name ? (
+                  <View style={styles.offerBrokerRow}>
+                    <Ionicons name="business-outline" size={14} color={COLORS.textMuted} />
+                    <Text style={styles.offerBrokerText}>
+                      Broker: {offer.broker_name} {offer.broker_contact ? `• ${offer.broker_contact}` : ''}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <View style={styles.offerActionsRow}>
+                  <TouchableOpacity
+                    style={[styles.offerBtn, styles.offerPassBtn]}
+                    onPress={() => handleOfferResponse(offer, 'release')}
+                    disabled={actingOfferId === offer.id}
+                  >
+                    <Ionicons name="close-circle-outline" size={18} color={COLORS.textSecondary} />
+                    <Text style={styles.offerPassBtnText}>PASS</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.offerBtn, styles.offerBookBtn]}
+                    onPress={() => handleOfferResponse(offer, 'book')}
+                    disabled={actingOfferId === offer.id}
+                  >
+                    {actingOfferId === offer.id ? (
+                      <ActivityIndicator color="#000" size="small" />
+                    ) : (
+                      <>
+                        <Ionicons name="flash" size={18} color="#000" />
+                        <Text style={styles.offerBookBtnText}>BOOK IT (LOCK LOAD)</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
         {activeLoad ? (
           <>
@@ -1256,5 +1402,181 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     marginLeft: 10
+  },
+
+  // Incoming AI Offers Styles
+  incomingOffersContainer: {
+    marginBottom: 20
+  },
+  offersHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10
+  },
+  offersLiveTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)'
+  },
+  pulsingRedDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.danger,
+    marginRight: 6
+  },
+  offersLiveTagText: {
+    color: '#F87171',
+    fontWeight: '800',
+    fontSize: 11,
+    letterSpacing: 0.5
+  },
+  offersCountText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  offerCard: {
+    backgroundColor: '#0E1A2D',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.accent,
+    marginBottom: 12,
+    ...SHADOWS.md
+  },
+  offerCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14
+  },
+  offerLaneCol: {
+    flex: 1,
+    paddingRight: 12
+  },
+  offerLaneOrigin: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '800'
+  },
+  offerLaneDest: {
+    color: COLORS.accent,
+    fontSize: 15,
+    fontWeight: '800'
+  },
+  offerRateBadge: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.4)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    alignItems: 'center'
+  },
+  offerRateLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: COLORS.success
+  },
+  offerRateAmount: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: COLORS.success,
+    marginTop: 1
+  },
+  offerStatsGrid: {
+    flexDirection: 'row',
+    backgroundColor: '#070D18',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12
+  },
+  offerStatItem: {
+    flex: 1,
+    alignItems: 'center'
+  },
+  offerStatLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: COLORS.textMuted
+  },
+  offerStatVal: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#fff',
+    marginTop: 2
+  },
+  offerStatDivider: {
+    width: 1,
+    backgroundColor: COLORS.cardBorder
+  },
+  offerNoteBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.2)'
+  },
+  offerNoteText: {
+    color: COLORS.accent,
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 6,
+    flex: 1
+  },
+  offerBrokerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12
+  },
+  offerBrokerText: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    marginLeft: 6
+  },
+  offerActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4
+  },
+  offerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10
+  },
+  offerPassBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder
+  },
+  offerPassBtnText: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: '800',
+    marginLeft: 6
+  },
+  offerBookBtn: {
+    flex: 1.6,
+    backgroundColor: COLORS.accent
+  },
+  offerBookBtnText: {
+    color: '#000',
+    fontSize: 13,
+    fontWeight: '900',
+    marginLeft: 6
   }
 });

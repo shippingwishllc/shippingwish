@@ -127,6 +127,23 @@ async function runTests() {
     assert(false, `DAT workflow test: ${err.message}`);
   }
 
+  // TEST 8: Broker Rate Confirmation OCR & Automated Audit
+  try {
+    const { parseRateCon, auditRateCon } = require('../utils/ratecon-audit');
+    const sampleRateCon = 'CARRIER RATE CONFIRMATION\nOrder: OGR-99412\nBroker: Ogre Logistics (MC 941285)\nShipper: 100 Main St, Hopkinsville, KY\nReceiver: 500 Gulf Fwy, Dibersville, MS\nTotal Carrier Pay: $1,000.00\nDetention: $50.00/hr after 2 hrs\nTONU: $150\nDRIVER ASSIST REQUIRED AT RECEIVER';
+    const parsedRC = parseRateCon(sampleRateCon);
+    assert(parsedRC.rate === 1000, 'RateCon parser extracted $1,000 agreed rate');
+    assert(parsedRC.origin === 'Hopkinsville, KY', 'RateCon parser extracted Hopkinsville, KY');
+    const auditRes = auditRateCon({ rate: 1000, origin: 'Hopkinsville, KY', destination: 'Dibersville, MS' }, parsedRC);
+    assert(auditRes.passed === true && auditRes.status === 'PASSED', 'RateCon automated audit passed successfully');
+
+    // Test discrepancy catch
+    const underpaidAudit = auditRateCon({ rate: 1000, origin: 'Hopkinsville, KY' }, { rate: 900, origin: 'Hopkinsville, KY' });
+    assert(underpaidAudit.passed === false && underpaidAudit.status === 'DISCREPANCY', 'RateCon audit correctly flagged rate shortage discrepancy ($900 vs $1,000)');
+  } catch (err) {
+    assert(false, `RateCon audit test: ${err.message}`);
+  }
+
   console.log('\n======================================================');
   console.log(`  Tests completed: ${passed} passed, ${failed} failed`);
   console.log('======================================================\n');

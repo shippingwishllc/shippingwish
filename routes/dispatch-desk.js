@@ -10,9 +10,13 @@ const brain = require('../utils/dispatch-brain');
 const { parseDatInput, formatDriverSms } = require('../utils/dat-load-parser');
 const { sendBrandedEmail } = require('../utils/mailer');
 const { COMPANY } = require('../utils/email-templates');
+const multer = require('multer');
+const upload = multer({ limits: { fileSize: 15 * 1024 * 1024 } });
+const { parseRateCon, auditRateCon } = require('../utils/ratecon-audit');
 
 const router = express.Router();
-const staff = [requireAuth, requireRole('admin', 'super_admin')];
+const staff = [requireAuth, requireRole('admin', 'super_admin', 'dispatcher')];
+const driverOrStaff = [requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'driver', 'carrier')];
 
 function maskKey(value) {
   const text = String(value || '');
@@ -242,17 +246,24 @@ router.post('/carriers/:id/empty-soon', ...staff, async (req, res) => {
   }
 });
 
-router.get('/offers', ...staff, async (req, res) => {
+router.get('/offers', ...driverOrStaff, async (req, res) => {
   try {
-    res.json({ ok: true, offers: await brain.listOffers() });
+    let offers = await brain.listOffers();
+    const carrierId = req.query.carrier_id || (req.user && req.user.carrier_id);
+    if (carrierId) {
+      offers = offers.filter(o => String(o.carrier_id) === String(carrierId));
+    }
+    res.json({ ok: true, offers });
   } catch (err) {
     res.status(500).json({ error: 'Could not load dispatch offers.' });
   }
 });
 
-router.post('/offers/:id/booked', ...staff, async (req, res) => {
+router.post('/offers/:id/booked', ...driverOrStaff, async (req, res) => {
   try {
-    const result = await brain.markBooked(req.params.id, String(req.body.note || '').slice(0, 200));
+    const isDriver = req.user && (req.user.role === 'driver' || req.user.role === 'carrier');
+    const note = req.body.note || (isDriver ? `Driver locked load via Mobile App (${req.user.name || req.user.email || 'Driver'})` : '');
+    const result = await brain.markBooked(req.params.id, String(note).slice(0, 200));
     if (!result) return res.status(404).json({ error: 'Offer not found.' });
     res.json({ ok: true, ...result });
   } catch (err) {
@@ -260,9 +271,11 @@ router.post('/offers/:id/booked', ...staff, async (req, res) => {
   }
 });
 
-router.post('/offers/:id/release', ...staff, async (req, res) => {
+router.post('/offers/:id/release', ...driverOrStaff, async (req, res) => {
   try {
-    const result = await brain.releaseOffer(req.params.id, String(req.body.reason || 'Released by staff').slice(0, 200));
+    const isDriver = req.user && (req.user.role === 'driver' || req.user.role === 'carrier');
+    const reason = req.body.reason || (isDriver ? `Driver passed load via Mobile App (${req.user.name || req.user.email || 'Driver'})` : 'Released by staff');
+    const result = await brain.releaseOffer(req.params.id, String(reason).slice(0, 200));
     if (!result) return res.status(404).json({ error: 'Offer not found.' });
     res.json({ ok: true, ...result });
   } catch (err) {
@@ -776,6 +789,76 @@ Confirm availability, ensure rate is locked, and ask them to immediately email t
   } catch (err) {
     console.error('[Broker Call Contact] Error:', err);
     res.status(500).json({ error: 'Could not place broker call: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/dispatch-desk/audit-ratecon
+ * Upload or paste broker Rate Confirmation to automatically audit terms,
+ * verify rate against agreed amount, and optionally auto-book & text driver.
+ */
+router.post('/audit-ratecon', ...staff, upload.single('ratecon_file'), async (req, res) => {
+  try {
+    await ensureBoardSchema();
+    const offerId = req.body.offer_id;
+    const loadId = req.body.load_id;
+    const autoBook = req.body.auto_book !== false && req.body.auto_book !== 'false';
+    const rateconText = req.body.ratecon_text || '';
+
+    // File buffer if uploaded
+    let inputContent = rateconText;
+    if (req.file && req.file.buffer) {
+      inputContent = req.file.buffer;
+    }
+
+    if (!inputContent) {
+      return res.status(400).json({ error: 'Please provide RateCon PDF file or pasted text.' });
+    }
+
+    // Fetch expected load and offer
+    let offer = null;
+    let load = null;
+
+    if (offerId) {
+      const offRes = await pool.query('SELECT * FROM ai_dispatch_offers WHERE id = $1', [offerId]);
+      offer = offRes.rows[0];
+      if (offer) {
+        const loadRes = await pool.query('SELECT * FROM loads WHERE id = $1', [offer.load_id]);
+        load = loadRes.rows[0];
+      }
+    } else if (loadId) {
+      const loadRes = await pool.query('SELECT * FROM loads WHERE id = $1', [loadId]);
+      load = loadRes.rows[0];
+    }
+
+    const expectedLoad = {
+      rate: load ? load.rate : (req.body.expected_rate || 1000),
+      origin: load ? (load.pickup_location || load.origin) : req.body.expected_origin,
+      destination: load ? (load.delivery_location || load.destination) : req.body.expected_destination,
+      equipment_type: load ? load.equipment_type : null
+    };
+
+    const parsedRateCon = parseRateCon(inputContent);
+    const audit = auditRateCon(expectedLoad, parsedRateCon);
+
+    let bookResult = null;
+    if (audit.passed && autoBook && offer && offer.status !== 'booked') {
+      bookResult = await brain.markBooked(offer.id, `RateCon auto-audited: $${parsedRateCon.rate} matches agreed rate`);
+    }
+
+    res.json({
+      ok: true,
+      audit,
+      parsed_ratecon: parsedRateCon,
+      auto_booked: Boolean(bookResult),
+      book_result: bookResult,
+      message: audit.passed 
+        ? (bookResult ? `✓ RateCon verified ($${parsedRateCon.rate}) and offer marked BOOKED! Driver notified.` : `✓ RateCon verified ($${parsedRateCon.rate})! Rate matches.`)
+        : `⚠️ RateCon audit discrepancy flagged: ${audit.discrepancies.map(d => d.message).join(' ')}`
+    });
+  } catch (err) {
+    console.error('[RateCon Audit] Error:', err);
+    res.status(500).json({ error: 'RateCon audit failed: ' + err.message });
   }
 });
 

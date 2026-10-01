@@ -306,7 +306,8 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
     box.innerHTML = rows.map((o) => {
       const approx = o.miles_estimated ? '~' : '';
       const actions = o.status === 'requested' || o.status === 'offered'
-        ? '<div style="margin-top:6px;display:flex;gap:8px;">' +
+        ? '<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">' +
+          '<button type="button" data-audit-rc="' + esc(o.id) + '" style="border:1px solid #2563eb;background:#eff6ff;color:#1d4ed8;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:700;">📄 Audit Broker RateCon (PDF)</button>' +
           '<button type="button" data-booked="' + esc(o.id) + '" style="border:0;background:#16a34a;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Booked (rate con received)</button>' +
           '<button type="button" data-release="' + esc(o.id) + '" style="border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:8px;padding:6px 10px;cursor:pointer;">Release</button></div>'
         : '';
@@ -544,12 +545,15 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
                 </button>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                   <button type="button" onclick="window.emailBrokerAction(${idx})" style="background:#0b1f3a; color:#fff; border:0; border-radius:8px; padding:8px 6px; font-weight:700; font-size:12px; cursor:pointer;" title="Option A: Email broker with carrier setup packet & authority info">
-                    📧 Option A: Email Broker
+                    📧 Option A: Email
                   </button>
                   <button type="button" onclick="window.callBrokerAction(${idx})" style="background:#059669; color:#fff; border:0; border-radius:8px; padding:8px 6px; font-weight:700; font-size:12px; cursor:pointer;" title="Option B: Initiate AI voice call or dispatch bridge">
-                    📞 Option B: Call Broker
+                    📞 Option B: Call
                   </button>
                 </div>
+                <button type="button" onclick="window.auditRateConAction(${idx})" style="background:#475569; color:#fff; border:0; border-radius:8px; padding:8px; font-weight:700; font-size:12px; cursor:pointer;" title="Upload or paste broker RateCon to audit agreed rate ($1,000)">
+                  📄 Audit Broker RateCon (PDF)
+                </button>
               </div>
             </div>
           </div>
@@ -651,6 +655,41 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
         await loadOffers();
       } catch (err) {
         statusEl.innerHTML = `<span style="color:#dc2626;">Error: ${esc(err.message)}</span>`;
+      }
+    };
+
+    window.auditRateConAction = async function(idx) {
+      const load = currentParsedLoads[idx];
+      if (!load) return;
+      const statusEl = document.getElementById(`dat-action-status-${idx}`);
+      const defaultSample = `CARRIER RATE CONFIRMATION\nBroker: ${load.broker_name || 'Verified Broker'}\nOrder #: OGR-${load.load_id || '99412'}\nShipper: 100 Main St, ${load.origin}\nReceiver: 500 Gulf Fwy, ${load.destination}\nTotal Pay: $${load.rate ? Number(load.rate).toLocaleString() : '1,000'}.00\nDetention: $50/hr\nDRIVER ASSIST REQUIRED AT RECEIVER`;
+      const rcText = prompt('Paste broker Rate Confirmation text or terms to audit:', defaultSample);
+      if (!rcText) return;
+
+      statusEl.innerHTML = '<span style="color:#475569;">Auditing RateCon against agreed terms...</span>';
+      try {
+        const data = await api('/api/dispatch-desk/audit-ratecon', {
+          method: 'POST',
+          body: JSON.stringify({
+            offer_id: load.active_offer_id || null,
+            expected_rate: load.rate,
+            expected_origin: load.origin,
+            expected_destination: load.destination,
+            ratecon_text: rcText,
+            auto_book: Boolean(load.active_offer_id)
+          })
+        });
+
+        if (data.audit?.passed) {
+          alert(`✓ RateCon Audit PASSED (Score: ${data.audit.score}/100)!\n\nRate: $${data.parsed_ratecon.rate} matches agreed pay.\nLane: ${data.parsed_ratecon.origin} → ${data.parsed_ratecon.destination}\n\n${data.auto_booked ? 'Status: BOOKED! Driver confirmed via SMS.' : 'Ready to Book.'}`);
+          statusEl.innerHTML = `<span style="color:#166534;">✓ RateCon Verified ($${data.parsed_ratecon.rate})! ${data.auto_booked ? 'Load BOOKED.' : 'Audit passed.'}</span>`;
+          await loadOffers();
+        } else {
+          alert(`⚠️ RATE DISCREPANCY DETECTED:\n\n${data.audit.discrepancies.map(d => d.message).join('\n')}\n\nRecommendation: Request corrected RateCon from broker before dispatching truck.`);
+          statusEl.innerHTML = `<span style="color:#dc2626;">⚠️ RateCon Discrepancy Flagged!</span>`;
+        }
+      } catch (err) {
+        statusEl.innerHTML = `<span style="color:#dc2626;">Audit Error: ${esc(err.message)}</span>`;
       }
     };
     document.body.addEventListener('submit', async (event) => {
@@ -757,6 +796,35 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
       const chat = attr('data-chat');
       const booked = attr('data-booked');
       const release = attr('data-release');
+      const auditRc = attr('data-audit-rc');
+
+      if (auditRc) {
+        const msg = document.getElementById('offers-msg');
+        const defaultSample = `CARRIER RATE CONFIRMATION\nBroker: Verified Broker\nOrder #: OGR-99412\nShipper: 100 Main St, Hopkinsville, KY\nReceiver: 500 Gulf Fwy, Dibersville, MS\nTotal Pay: $1,000.00\nDetention: $50/hr\nDRIVER ASSIST REQUIRED AT RECEIVER`;
+        const rcText = prompt('Paste broker Rate Confirmation text or terms to audit:', defaultSample);
+        if (!rcText) return;
+        msg.textContent = 'Auditing broker Rate Confirmation...';
+        try {
+          const data = await api('/api/dispatch-desk/audit-ratecon', {
+            method: 'POST',
+            body: JSON.stringify({
+              offer_id: auditRc,
+              ratecon_text: rcText,
+              auto_book: true
+            })
+          });
+          if (data.audit?.passed) {
+            alert(`✓ RateCon Audit PASSED (Score: ${data.audit.score}/100)!\n\nRate: $${data.parsed_ratecon.rate} matches agreed rate.\nLane: ${data.parsed_ratecon.origin} → ${data.parsed_ratecon.destination}\n\nStatus: Load automatically BOOKED and driver notified via SMS!`);
+            msg.textContent = data.message;
+          } else {
+            alert(`⚠️ RATE DISCREPANCY DETECTED:\n\n${data.audit.discrepancies.map(d => d.message).join('\n')}\n\nRecommendation: Do not book until broker fixes the rate.`);
+            msg.textContent = 'Discrepancy flagged: ' + data.audit.discrepancies.map(d => d.message).join('; ');
+          }
+          await loadOffers();
+        } catch (err) { msg.textContent = 'Audit error: ' + err.message; }
+        return;
+      }
+
       if (booked || release) {
         const msg = document.getElementById('offers-msg');
         try {

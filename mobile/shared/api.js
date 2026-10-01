@@ -135,6 +135,19 @@ class MobileApiClient {
     });
   }
 
+  // --- Autonomous DAT Dispatch Offers for Drivers ---
+  async getDriverOffers(carrierId = null) {
+    const q = carrierId ? `?carrier_id=${carrierId}` : '';
+    return this.request(`/api/dispatch-desk/offers${q}`, { method: 'GET' });
+  }
+
+  async respondToOffer(offerId, response = 'book') {
+    const endpoint = response === 'book'
+      ? `/api/dispatch-desk/offers/${offerId}/booked`
+      : `/api/dispatch-desk/offers/${offerId}/release`;
+    return this.request(endpoint, { method: 'POST', body: {} });
+  }
+
   async sendGpsPing(latitude, longitude, speed = 0, heading = 0, loadId = null) {
     return this.request('/api/tracking/ping', {
       method: 'POST',
