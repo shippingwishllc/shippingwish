@@ -113,25 +113,50 @@
 
   <!-- Step 2: Vehicle Selection -->
   <div class="book-step" id="step-2" style="display:none;">
+    <div class="limo-step2-header">
+      <h2 class="limo-step2-title">Select Your Vehicle</h2>
+      <button type="button" class="limo-btn-back-top" id="btn-back-top" aria-label="Go back to ride details">◀ BACK</button>
+    </div>
     <div class="limo-book-main">
       <aside class="limo-sidebar">
-        <div class="limo-sidebar-map" id="sidebar-map">Route map</div>
-        <p id="map-note" class="limo-map-note"></p>
-        <div id="sidebar-stats" style="font-size:0.85rem;color:#666;margin-bottom:12px;"></div>
-        <div class="limo-route-line">
-          <div class="limo-route-pin">📍 <span id="sb-pickup">—</span></div>
-          <div id="sb-stops"></div>
-          <div class="limo-route-pin">📍 <span id="sb-dropoff">—</span></div>
+        <div class="limo-sidebar-card limo-map-card">
+          <div class="limo-sidebar-map" id="sidebar-map">Route map</div>
+          <p id="map-note" class="limo-map-note"></p>
+          <div id="sidebar-stats" class="limo-sidebar-metrics"></div>
         </div>
-        <div style="font-size:0.85rem;margin-top:12px;">
-          <div id="sb-datetime">—</div>
-          <div id="sb-duration" style="color:#666;margin-top:4px;"></div>
+        <div class="limo-sidebar-card limo-trip-card">
+          <div class="limo-trip-header">
+            <span class="limo-trip-badge">➔</span>
+            <h4>Pickup Trip Details</h4>
+          </div>
+          <div class="limo-trip-timeline">
+            <div class="limo-timeline-item">
+              <span class="limo-timeline-dot dot-pickup"></span>
+              <div class="limo-timeline-content" id="sb-pickup">—</div>
+            </div>
+            <div id="sb-stops" class="limo-timeline-stops"></div>
+            <div class="limo-timeline-item">
+              <span class="limo-timeline-dot dot-dropoff"></span>
+              <div class="limo-timeline-content" id="sb-dropoff">—</div>
+            </div>
+          </div>
+          <div class="limo-trip-meta">
+            <div class="limo-meta-item">
+              <span class="limo-meta-icon">📅</span>
+              <span id="sb-datetime">—</span>
+            </div>
+            <div class="limo-meta-item" id="sb-duration-wrap" style="display:none;">
+              <span class="limo-meta-icon">⏱️</span>
+              <span id="sb-duration">—</span>
+            </div>
+          </div>
         </div>
       </aside>
-      <div>
-        <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:20px;">Select Your Vehicle</h2>
+      <div class="limo-vehicle-area">
         <div class="limo-vehicle-list" id="vehicle-list"></div>
-        <button type="button" class="limo-btn limo-btn-back" id="btn-back-2">← Edit ride details</button>
+        <div class="limo-vehicle-footer-actions">
+          <button type="button" class="limo-btn limo-btn-back" id="btn-back-2">← Edit ride details</button>
+        </div>
       </div>
     </div>
   </div>

@@ -536,37 +536,434 @@ a:hover { color: var(--limo-gold-light); }
 .limo-form-error { color: #b42318; font-size: 0.85rem; margin: 0 0 10px; }
 .limo-form-error:empty { display: none; }
 .limo-book-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
-#btn-back-2 { margin-top: 16px; }
-.limo-btn-back { background: #fff; color: #333; border: 1px solid #ddd; padding: 12px 18px; }
-.limo-btn-back:hover { border-color: var(--limo-gold); color: var(--limo-gold-dark); }
-.limo-route-line { border-left: 2px solid var(--limo-gold); padding-left: 16px; margin: 12px 0; }
-.limo-route-pin { font-size: 0.85rem; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px; }
+.limo-btn-back { background: #fff; color: #333; border: 1.5px solid #d1d5db; padding: 12px 20px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all var(--transition); }
+.limo-btn-back:hover { border-color: var(--limo-gold); color: var(--limo-gold-dark); background: #fdf8ed; }
 
-.limo-vehicle-list { display: flex; flex-direction: column; gap: 16px; }
-.limo-vehicle-card {
-  background: #fff; border: 2px solid #eee; border-radius: var(--radius-lg); padding: 20px;
-  display: grid; grid-template-columns: 120px 1fr auto; gap: 20px; align-items: center;
-  cursor: pointer; transition: all var(--transition); position: relative; color: var(--limo-black);
+/* STEP 2 HEADER & TOP BACK BUTTON */
+.limo-step2-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid #e5e7eb;
 }
-.limo-vehicle-card:hover { border-color: var(--limo-gold); box-shadow: 0 4px 20px rgba(201,162,39,0.15); }
-.limo-vehicle-card.selected { border-color: var(--limo-gold); background: #fdf8eb; }
-.limo-vehicle-img { width: 120px; height: 70px; background: linear-gradient(135deg, #eee, #ddd); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
-.limo-vehicle-info h4 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
-.limo-vehicle-info p { font-size: 0.8rem; color: #666; }
-.limo-vehicle-badges { display: flex; gap: 6px; margin-bottom: 6px; }
-.limo-badge { padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
-.limo-badge-value { background: #fff3e0; color: #e65100; }
-.limo-badge-rated { background: #e0f2f1; color: #00695c; }
-.limo-badge-popular { background: #fce4ec; color: #c62828; }
-.limo-vehicle-price { text-align: right; }
-.limo-price-original { font-size: 0.85rem; color: var(--limo-danger); text-decoration: line-through; }
-.limo-price-total { font-size: 1.5rem; font-weight: 800; }
-.limo-price-note { font-size: 0.7rem; color: var(--limo-success); display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
-.limo-vehicle-radio { position: absolute; top: 16px; right: 16px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #ccc; }
-.limo-vehicle-card.selected .limo-vehicle-radio { background: var(--limo-success); border-color: var(--limo-success); }
+.limo-step2-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.limo-btn-back-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1.5px solid #111827;
+  color: #111827;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.limo-btn-back-top:hover {
+  background: #111827;
+  color: #ffffff;
+  transform: translateX(-2px);
+}
 
-.limo-amenities { display: flex; gap: 8px; margin-top: 8px; }
-.limo-amenity { width: 28px; height: 28px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; }
+/* SIDEBAR LUXURY CARDS (Map & Pickup Trip Details) */
+.limo-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.limo-sidebar-card {
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+}
+.limo-sidebar-map {
+  width: 100%;
+  height: 220px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-weight: 600;
+}
+.limo-sidebar-map iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.limo-map-note {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin: 6px 0 0;
+}
+.limo-sidebar-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.limo-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+/* Pickup Trip Details Card */
+.limo-trip-card {
+  padding: 20px;
+}
+.limo-trip-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.limo-trip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: #fef3c7;
+  color: #d97706;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.limo-trip-header h4 {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+.limo-trip-timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin: 10px 0 16px;
+  padding-left: 10px;
+}
+.limo-trip-timeline::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: #d1d5db;
+}
+.limo-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  position: relative;
+  padding: 8px 0;
+  z-index: 1;
+}
+.limo-timeline-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+  background: #ffffff;
+  border: 3px solid #111827;
+}
+.limo-timeline-dot.dot-dropoff {
+  border-color: #d97706;
+}
+.limo-timeline-dot.dot-stop {
+  border-color: #6366f1;
+}
+.limo-timeline-content {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.limo-trip-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+.limo-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+.limo-meta-icon {
+  font-size: 0.95rem;
+}
+
+/* VEHICLE LIST & CARDS (Prestige Ride Match) */
+.limo-vehicle-area {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.limo-vehicle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.limo-vehicle-card {
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 22px 26px;
+  display: grid;
+  grid-template-columns: 210px 1fr auto;
+  gap: 24px;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+.limo-vehicle-card:hover {
+  border-color: #c9a227;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+.limo-vehicle-card.selected {
+  border-color: #c9a227;
+  background: #fffdf5;
+  box-shadow: 0 10px 32px rgba(201,162,39,0.2);
+}
+
+/* Radio button top right */
+.limo-vehicle-radio {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+.limo-vehicle-card.selected .limo-vehicle-radio {
+  border-color: #c9a227;
+  background: #c9a227;
+  box-shadow: inset 0 0 0 4px #ffffff;
+}
+
+/* Vehicle image on white background */
+.limo-vehicle-photo-wrap {
+  width: 210px;
+  height: 115px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.limo-vehicle-photo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.12));
+  transition: transform 0.25s ease;
+}
+.limo-vehicle-card:hover .limo-vehicle-photo {
+  transform: scale(1.04);
+}
+
+/* Vehicle Info Center */
+.limo-vehicle-info {
+  display: flex;
+  flex-direction: column;
+}
+.limo-vehicle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.limo-vehicle-badge.badge-value {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+.limo-vehicle-badge.badge-rated {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.limo-vehicle-badge.badge-popular {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+.badge-icon {
+  font-size: 0.75rem;
+}
+.limo-vehicle-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 3px 0;
+  letter-spacing: -0.01em;
+}
+.limo-vehicle-models {
+  font-size: 0.84rem;
+  color: #4b5563;
+  margin: 0 0 10px 0;
+  font-weight: 500;
+}
+
+/* Amenities bar */
+.limo-vehicle-amenities {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.limo-capacity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid #111827;
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: #ffffff;
+}
+.limo-cap-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #111827;
+}
+.limo-cap-divider {
+  width: 1px;
+  height: 13px;
+  background: #d1d5db;
+}
+.limo-amenity-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #111827;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  transition: all 0.15s ease;
+}
+.limo-amenity-circle:hover {
+  background: #111827;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+.limo-ico {
+  width: 15px;
+  height: 15px;
+}
+
+/* Price block */
+.limo-vehicle-price {
+  text-align: right;
+  min-width: 150px;
+}
+.limo-price-original {
+  font-size: 0.95rem;
+  color: #dc2626;
+  text-decoration: line-through;
+  font-weight: 700;
+  margin-bottom: 2px;
+  opacity: 0.85;
+}
+.limo-price-total {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+.limo-price-note {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+.limo-check-svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.limo-vehicle-footer-actions {
+  margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  .limo-vehicle-card {
+    grid-template-columns: 1fr;
+    text-align: left;
+    gap: 16px;
+    padding: 20px;
+  }
+  .limo-vehicle-photo-wrap {
+    width: 100%;
+    height: 140px;
+  }
+  .limo-vehicle-price {
+    text-align: left;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 14px;
+  }
+  .limo-price-note {
+    justify-content: flex-start;
+  }
+}
 
 .limo-passenger-form { background: #fff; border-radius: var(--radius-lg); padding: 32px; color: var(--limo-black); box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
 .limo-passenger-form .limo-input { background: #f9f9f9; color: var(--limo-black); border-color: #ddd; padding-left: 16px; }

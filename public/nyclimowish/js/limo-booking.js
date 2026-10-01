@@ -10,16 +10,63 @@
 
   const sessions = new WeakMap();
 
-  const VEHICLE_ICONS = {
-    business_sedan: '🚗', premium_sedan: '🚗', elitex_suv: '🚙',
-    luxury_suv: '🚙', business_sprinter: '🚌', stretch_limo: '🥂',
-    standard_van: '🚐', party_bus: '🎉'
+  const SVGS = {
+    passenger: '<svg class="limo-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+    luggage: '<svg class="limo-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="15" rx="2"></rect><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="9" y1="11" x2="9" y2="16"></line><line x1="15" y1="11" x2="15" y2="16"></line></svg>',
+    seat: '<svg class="limo-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10a2 2 0 0 1 2 2v8a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V6a2 2 0 0 1 2-2z"></path><path d="M5 14h14"></path><path d="M7 18v3"></path><path d="M17 18v3"></path></svg>',
+    phone: '<svg class="limo-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>',
+    wifi: '<svg class="limo-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>',
+    flight: '<svg class="limo-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"></path></svg>',
+    check: '<svg class="limo-check-svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>'
+  };
+
+  const VEHICLE_CONFIG = {
+    business_sedan: {
+      image: '/nyclimowish/images/fleet/business-sedan.jpg',
+      badge: { text: 'Best Value', icon: '🏷️', cls: 'badge-value' },
+      models: 'Cadillac CT6, Lyriq or similar'
+    },
+    premium_sedan: {
+      image: '/nyclimowish/images/fleet/premium-sedan.jpg',
+      badge: { text: 'Top Rated', icon: '🛡️', cls: 'badge-rated' },
+      models: 'Mercedes S Class and BMW 7 Series'
+    },
+    elitex_suv: {
+      image: '/nyclimowish/images/fleet/elitex-suv.jpg',
+      badge: { text: 'Popular', icon: '🔥', cls: 'badge-popular' },
+      models: 'Cadillac Escalade ESV, Lincoln Navigator or similar'
+    },
+    luxury_suv: {
+      image: '/nyclimowish/images/fleet/luxury-suv.jpg',
+      badge: { text: 'Best Value', icon: '🏷️', cls: 'badge-value' },
+      models: 'Chevrolet Suburban or similar'
+    },
+    standard_van: {
+      image: '/nyclimowish/images/fleet/standard-van.jpg',
+      badge: { text: 'Best Value', icon: '🏷️', cls: 'badge-value' },
+      models: 'Ford Transit Van With Standard Seating'
+    },
+    business_sprinter: {
+      image: '/nyclimowish/images/fleet/business-sprinter.jpg',
+      badge: { text: 'Popular', icon: '🔥', cls: 'badge-popular' },
+      models: 'Mercedes Sprinter With Standard Seating'
+    },
+    stretch_limo: {
+      image: '/nyclimowish/images/fleet/stretch-limo.jpg',
+      badge: null,
+      models: 'Lincoln MKT / Chrysler'
+    },
+    party_bus: {
+      image: '/nyclimowish/images/fleet/party-bus.jpg',
+      badge: { text: 'Best Value', icon: '🏷️', cls: 'badge-value' },
+      models: 'Luxury Party Bus With Executive Lounge Seating'
+    }
   };
 
   const BADGE_MAP = {
-    best_value: ['Best Value', 'limo-badge-value'],
-    top_rated: ['Top Rated', 'limo-badge-rated'],
-    popular: ['Popular', 'limo-badge-popular']
+    best_value: { text: 'Best Value', icon: '🏷️', cls: 'badge-value' },
+    top_rated: { text: 'Top Rated', icon: '🛡️', cls: 'badge-rated' },
+    popular: { text: 'Popular', icon: '🔥', cls: 'badge-popular' }
   };
 
   function $(id) { return document.getElementById(id); }
@@ -311,7 +358,7 @@
     addStop();
   }
 
-  $('btn-step1').addEventListener('click', async () => {
+  async function submitStep1() {
     let pickup = placePayload($('b-pickup'));
     let dropoff = placePayload($('b-dropoff'));
     const stops = collectStops();
@@ -391,7 +438,17 @@
       $('btn-step1').disabled = false;
       $('btn-step1').textContent = 'Continue →';
     }
-  });
+  }
+
+  $('btn-step1').addEventListener('click', submitStep1);
+
+  // Auto-advance directly to Step 2 if user arrived with pickup and dropoff / hourly details
+  const hasPickup = Boolean(params.get('pickup'));
+  const isHourly = params.get('serviceType') === 'hourly' || params.get('type') === 'hourly';
+  const hasDropoff = Boolean(params.get('dropoff'));
+  if (hasPickup && (hasDropoff || isHourly) && params.get('edit') !== '1') {
+    submitStep1();
+  }
 
   function applyVerifiedAddress(input, geo) {
     if (!input || !geo?.formatted) return;
@@ -432,59 +489,112 @@
 
   function renderSidebar() {
     renderMap();
-    $('sb-pickup').textContent = state.pickup;
-    $('sb-dropoff').textContent = state.serviceType === 'hourly' ? 'Hourly Service' : state.dropoff;
-    $('sb-stops').innerHTML = state.stops.map((stop) =>
-      `<div class="limo-route-pin">➕ <span>${escapeHtml(stop)}</span></div>`
-    ).join('');
+    if ($('sb-pickup')) $('sb-pickup').textContent = state.pickup || '—';
+    if ($('sb-dropoff')) $('sb-dropoff').textContent = state.serviceType === 'hourly' ? 'Hourly Service' : (state.dropoff || '—');
+    if ($('sb-stops')) {
+      $('sb-stops').innerHTML = (state.stops || []).map((stop) =>
+        `<div class="limo-timeline-item">
+          <span class="limo-timeline-dot dot-stop"></span>
+          <div class="limo-timeline-content">${escapeHtml(stop)}</div>
+        </div>`
+      ).join('');
+    }
     const d = new Date(state.pickupDate + 'T' + state.pickupTime);
-    $('sb-datetime').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const dateFormatted = !isNaN(d.getTime())
+      ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      : `${state.pickupDate} ${state.pickupTime}`;
+    if ($('sb-datetime')) $('sb-datetime').textContent = dateFormatted;
+
     if (state.serviceType === 'hourly') {
-      $('sb-duration').textContent = state.hours + ' hours';
-      $('sidebar-stats').textContent = '';
+      if ($('sb-duration')) $('sb-duration').textContent = state.hours + ' hours duration';
+      if ($('sb-duration-wrap')) $('sb-duration-wrap').style.display = 'flex';
+      if ($('sidebar-stats')) {
+        $('sidebar-stats').innerHTML = `<span class="limo-stat-pill">⏱️ ${state.hours} hours</span> <span class="limo-stat-pill">⭐️ Hourly Charter</span>`;
+      }
     } else {
-      $('sb-duration').textContent = '';
+      if ($('sb-duration-wrap')) $('sb-duration-wrap').style.display = 'none';
       const hours = Math.floor(state.durationMins / 60);
       const mins = state.durationMins % 60;
-      $('sidebar-stats').textContent = state.miles + ' mi · ' + hours + 'h ' + mins + 'm · ' + (state.routeIsEstimate ? 'estimated route' : 'driving route');
+      const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+      if ($('sidebar-stats')) {
+        $('sidebar-stats').innerHTML = `<span class="limo-stat-pill">📍 ${state.miles} mi</span> <span class="limo-stat-pill">⏱️ ${durationStr}</span>`;
+      }
     }
+  }
+
+  function getVehicleBadge(q) {
+    if (q.badge && BADGE_MAP[q.badge]) {
+      const b = BADGE_MAP[q.badge];
+      return `<div class="limo-vehicle-badge ${b.cls}"><span class="badge-icon">${b.icon}</span> ${b.text}</div>`;
+    }
+    const cfg = VEHICLE_CONFIG[q.id];
+    if (cfg?.badge) {
+      return `<div class="limo-vehicle-badge ${cfg.badge.cls}"><span class="badge-icon">${cfg.badge.icon}</span> ${cfg.badge.text}</div>`;
+    }
+    return '';
   }
 
   function renderVehicles() {
     $('vehicle-list').innerHTML = state.quotes.map((q) => {
-      const badge = q.badge ? BADGE_MAP[q.badge] : null;
-      const icon = VEHICLE_ICONS[q.id] || '🚗';
-      return `<div class="limo-vehicle-card" data-id="${q.id}">
-        <div class="limo-vehicle-img">${icon}</div>
+      const cfg = VEHICLE_CONFIG[q.id] || {};
+      const imgUrl = q.image_url || cfg.image || '/nyclimowish/images/fleet/business-sedan.jpg';
+      const models = escapeHtml(q.models || cfg.models || '');
+      const badgeHtml = getVehicleBadge(q);
+      const isSelected = state.selectedVehicle && state.selectedVehicle.id === q.id;
+
+      return `<div class="limo-vehicle-card ${isSelected ? 'selected' : ''}" data-id="${q.id}" role="button" tabindex="0">
+        <div class="limo-vehicle-radio" role="radio" aria-checked="${isSelected ? 'true' : 'false'}"></div>
+        <div class="limo-vehicle-photo-wrap">
+          <img src="${imgUrl}" class="limo-vehicle-photo" alt="${escapeHtml(q.name)}" loading="lazy">
+        </div>
         <div class="limo-vehicle-info">
-          ${badge ? `<div class="limo-vehicle-badges"><span class="limo-badge ${badge[1]}">${badge[0]}</span></div>` : ''}
-          <h4>${escapeHtml(q.name)}</h4>
-          <p>${escapeHtml(q.models || '')}</p>
-          <div class="limo-amenities">
-            <span class="limo-amenity" title="Passengers">👤 ${q.passengers}</span>
-            <span class="limo-amenity" title="Luggage">🧳 ${q.luggage}</span>
-            <span class="limo-amenity" title="WiFi">📶</span>
-            <span class="limo-amenity" title="Water">💧</span>
+          ${badgeHtml}
+          <h3 class="limo-vehicle-name">${escapeHtml(q.name)}</h3>
+          <p class="limo-vehicle-models">${models}</p>
+          <div class="limo-vehicle-amenities">
+            <div class="limo-capacity-pill">
+              <span class="limo-cap-item" title="${q.passengers} Passengers">
+                ${SVGS.passenger}
+                <span>${q.passengers}</span>
+              </span>
+              <span class="limo-cap-divider"></span>
+              <span class="limo-cap-item" title="${q.luggage} Luggage Capacity">
+                ${SVGS.luggage}
+                <span>${q.luggage}</span>
+              </span>
+            </div>
+            <div class="limo-amenity-circle" title="Premium Leather Interior">${SVGS.seat}</div>
+            <div class="limo-amenity-circle" title="Direct Chauffeur Connection">${SVGS.phone}</div>
+            <div class="limo-amenity-circle" title="Complimentary High-Speed Wi-Fi">${SVGS.wifi}</div>
+            <div class="limo-amenity-circle" title="Real-Time Flight Tracking">${SVGS.flight}</div>
           </div>
         </div>
         <div class="limo-vehicle-price">
           ${q.pricing.original > q.pricing.total ? `<div class="limo-price-original">$${q.pricing.original.toFixed(2)}</div>` : ''}
           <div class="limo-price-total">$${q.pricing.total.toFixed(2)}</div>
-          <div class="limo-price-note">✓ Gratuity included</div>
+          <div class="limo-price-note">${SVGS.check} Gratuity included</div>
         </div>
-        <div class="limo-vehicle-radio"></div>
       </div>`;
     }).join('');
 
     document.querySelectorAll('.limo-vehicle-card').forEach((card) => {
       card.addEventListener('click', () => selectVehicle(card.dataset.id));
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectVehicle(card.dataset.id);
+        }
+      });
     });
   }
 
   function selectVehicle(id) {
     state.selectedVehicle = state.quotes.find((q) => q.id === id);
     document.querySelectorAll('.limo-vehicle-card').forEach((c) => {
-      c.classList.toggle('selected', c.dataset.id === id);
+      const isCard = c.dataset.id === id;
+      c.classList.toggle('selected', isCard);
+      const radio = c.querySelector('.limo-vehicle-radio');
+      if (radio) radio.setAttribute('aria-checked', isCard ? 'true' : 'false');
     });
 
     setTimeout(() => {
@@ -493,7 +603,7 @@
       $('p-passengers').max = String(capacity);
       if (Number($('p-passengers').value) > capacity) $('p-passengers').value = String(capacity);
       showStep(3);
-    }, 300);
+    }, 280);
   }
 
   function getEffectivePricing(v) {
@@ -550,8 +660,9 @@
   $('p-child-seats-select')?.addEventListener('change', () => renderPassengerSummary());
   $('p-meet-greet')?.addEventListener('change', () => renderPassengerSummary());
 
-  $('btn-back-2').addEventListener('click', () => showStep(1));
-  $('btn-back-3').addEventListener('click', () => showStep(2));
+  $('btn-back-2')?.addEventListener('click', () => showStep(1));
+  $('btn-back-top')?.addEventListener('click', () => showStep(1));
+  $('btn-back-3')?.addEventListener('click', () => showStep(2));
 
   $('btn-step3').addEventListener('click', async () => {
     const first = $('p-first').value.trim();
