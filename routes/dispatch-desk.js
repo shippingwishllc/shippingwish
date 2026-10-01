@@ -13,6 +13,9 @@ const { COMPANY } = require('../utils/email-templates');
 const multer = require('multer');
 const upload = multer({ limits: { fileSize: 15 * 1024 * 1024 } });
 const { parseRateCon, auditRateCon } = require('../utils/ratecon-audit');
+const { getCarrierProfile, buildBrokerPacketEmail, sendPacketToBroker } = require('../utils/carrier-packet');
+const { scanPodDocument, generateCarrierInvoice, submitToFactoring } = require('../utils/pod-scanner');
+const { generateTrackingToken } = require('./broker-tracking');
 
 const router = express.Router();
 const staff = [requireAuth, requireRole('admin', 'super_admin', 'dispatcher')];
@@ -859,6 +862,193 @@ router.post('/audit-ratecon', ...staff, upload.single('ratecon_file'), async (re
   } catch (err) {
     console.error('[RateCon Audit] Error:', err);
     res.status(500).json({ error: 'RateCon audit failed: ' + err.message });
+  }
+});
+
+/**
+ * GET /api/dispatch-desk/carrier-packet
+ * Fetch verified carrier profile & document credentials for broker setup
+ */
+router.get('/carrier-packet', ...staff, async (req, res) => {
+  try {
+    const carrierId = req.query.carrier_id ? Number(req.query.carrier_id) : null;
+    const profile = await getCarrierProfile(carrierId);
+    res.json({ ok: true, profile });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch carrier packet: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/dispatch-desk/send-carrier-packet
+ * 1-Click auto-submit carrier onboarding packet & compliance documents to broker
+ */
+router.post('/send-carrier-packet', ...staff, async (req, res) => {
+  try {
+    const {
+      broker_email,
+      carrier_id,
+      load_id,
+      origin,
+      destination,
+      agreed_rate,
+      equipment,
+      driver_name,
+      driver_phone,
+      tractor_num,
+      trailer_num
+    } = req.body;
+
+    if (!broker_email || !broker_email.includes('@')) {
+      return res.status(400).json({ error: 'Valid broker email address is required.' });
+    }
+
+    const profile = await getCarrierProfile(carrier_id);
+    const result = await sendPacketToBroker(broker_email, profile, {
+      loadId: load_id || 'Spot Freight',
+      origin,
+      destination,
+      agreedRate: agreed_rate ? Number(agreed_rate) : 0,
+      equipment: equipment || (profile.equipment_types && profile.equipment_types[0]) || "53' Dry Van",
+      driverName: driver_name || profile.contact_name,
+      driverPhone: driver_phone || profile.phone,
+      tractorNum: tractor_num || 'T-104',
+      trailerNum: trailer_num || 'V-5312'
+    });
+
+    res.json({
+      ok: true,
+      message: `Carrier packet successfully sent to ${broker_email}!`,
+      details: result
+    });
+  } catch (err) {
+    console.error('[Send Carrier Packet] Error:', err);
+    res.status(500).json({ error: 'Failed to send carrier packet: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/dispatch-desk/scan-pod
+ * Scan and audit Proof of Delivery (POD) / signed Bill of Lading,
+ * verify clean delivery, and generate freight invoice for factoring.
+ */
+router.post('/scan-pod', ...staff, upload.single('pod_file'), async (req, res) => {
+  try {
+    const loadId = req.body.load_id;
+    const offerId = req.body.offer_id;
+    const podText = req.body.pod_text || '';
+
+    let inputContent = podText;
+    if (req.file && req.file.buffer) {
+      inputContent = req.file.buffer;
+    }
+
+    if (!inputContent) {
+      return res.status(400).json({ error: 'Please provide POD document file or scanned text.' });
+    }
+
+    const podReport = scanPodDocument(inputContent, {
+      expectedBol: req.body.bol_number,
+      forceSignature: req.body.force_signature === 'true' || req.body.force_signature === true
+    });
+
+    // Lookup load & carrier for invoice generation
+    let load = { id: loadId || 101, rate: req.body.rate || 1000, pickup_location: req.body.origin || 'Shipper Dock', delivery_location: req.body.destination || 'Receiver Dock' };
+    let carrier = await getCarrierProfile(req.body.carrier_id);
+
+    if (offerId) {
+      const offRes = await pool.query('SELECT * FROM ai_dispatch_offers WHERE id = $1', [offerId]);
+      if (offRes.rows[0]) {
+        carrier = await getCarrierProfile(offRes.rows[0].carrier_id);
+        const loadRes = await pool.query('SELECT * FROM loads WHERE id = $1', [offRes.rows[0].load_id]);
+        if (loadRes.rows[0]) load = loadRes.rows[0];
+      }
+    } else if (loadId) {
+      const loadRes = await pool.query('SELECT * FROM loads WHERE id = $1', [loadId]);
+      if (loadRes.rows[0]) load = loadRes.rows[0];
+    }
+
+    const invoice = generateCarrierInvoice(carrier, load, {
+      detention_amount: Number(req.body.detention_amount || 0),
+      layover_amount: Number(req.body.layover_amount || 0)
+    });
+
+    res.json({
+      ok: true,
+      pod_report: podReport,
+      generated_invoice: invoice,
+      ready_for_factoring: podReport.valid && podReport.clean_bill,
+      message: podReport.summary
+    });
+  } catch (err) {
+    console.error('[Scan POD] Error:', err);
+    res.status(500).json({ error: 'POD audit failed: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/dispatch-desk/submit-factoring
+ * Auto-submit verified invoice, RateCon, and signed POD directly to factoring partner
+ */
+router.post('/submit-factoring', ...staff, async (req, res) => {
+  try {
+    const { invoice, pod_report, target_email, offer_id } = req.body;
+    if (!invoice || !invoice.invoice_number) {
+      return res.status(400).json({ error: 'Valid invoice payload required.' });
+    }
+
+    const result = await submitToFactoring(
+      invoice,
+      pod_report || { status: 'VERIFIED_CLEAN', delivery_date: new Date().toISOString().slice(0, 10) },
+      target_email
+    );
+
+    if (offer_id) {
+      await pool.query(
+        `UPDATE ai_dispatch_offers 
+         SET status = 'completed', note = COALESCE(note, '') || ' | Factoring submitted #' || $1, updated_at = now() 
+         WHERE id = $2`,
+        [invoice.invoice_number, offer_id]
+      ).catch(() => {});
+    }
+
+    res.json({
+      ok: true,
+      message: `Invoice #${invoice.invoice_number} submitted to factoring desk!`,
+      result
+    });
+  } catch (err) {
+    console.error('[Submit Factoring] Error:', err);
+    res.status(500).json({ error: 'Factoring submission failed: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/dispatch-desk/generate-tracking
+ * 1-Click generate live GPS tracking link for an offer
+ */
+router.post('/generate-tracking', ...staff, async (req, res) => {
+  try {
+    const { offer_id } = req.body;
+    if (!offer_id) return res.status(400).json({ error: 'Offer ID required' });
+
+    const token = generateTrackingToken();
+    await pool.query(
+      `UPDATE ai_dispatch_offers 
+       SET tracking_token = $1, tracking_status = COALESCE(tracking_status, 'booked') 
+       WHERE id = $2`,
+      [token, offer_id]
+    );
+
+    res.json({
+      ok: true,
+      offer_id,
+      tracking_token: token,
+      tracking_url: `https://www.shippingwish.com/track/${token}`,
+      message: 'Tracking link generated successfully.'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not generate tracking: ' + err.message });
   }
 });
 

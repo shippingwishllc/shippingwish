@@ -519,6 +519,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Live Public Freight Broker Tracking Route
+app.get(['/track/:token', '/tracking/:token'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'tracking.html'));
+});
+
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // Security: Protect /uploads — require authentication so sensitive carrier files are not publicly scrapable
@@ -559,6 +564,7 @@ app.use('/api/employees', require('./routes/employees')); // Admin HR Employee M
 app.use('/api/load-planning', carrierApiGate, require('./routes/load_planning'));
 app.use('/api/notifications', carrierApiGate, require('./routes/notifications'));
 app.use('/api/tracking', carrierApiGate, require('./routes/tracking'));
+app.use('/api/broker-tracking', require('./routes/broker-tracking')); // Public Token-Secured Broker Tracking & Check-Call Desk
 app.use('/api/audit-logs', require('./routes/audit'));            // System security audit log viewer
 app.use('/api/trash', require('./routes/trash'));                 // Admin-only soft-delete trash & restore
 app.use('/api/messages', carrierApiGate, require('./routes/messages'));

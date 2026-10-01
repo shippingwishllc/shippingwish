@@ -195,17 +195,28 @@ function buildOutreachEmail(contact, step) {
   return contact.kind === 'broker' ? brokerEmail(contact, step) : carrierEmail(contact, step);
 }
 
-const OUTREACH_FACTS = `Shipping Wish LLC (shippingwish.com), ${COMPANY.address}, phone ${COMPANY.phone}.
-- Shipping Wish gives small U.S. trucking companies a named operations manager who looks for loads with brokers, handles broker setup packets, rate confirmations, and paperwork.
-- The carrier keeps the broker pay. Shipping Wish charges a flat weekly plan, not a percentage. One truck is $149 per week. Two to five trucks is $350 per week. Six or more trucks is $500 per week. The first 7 days are free with $0 due today. Plans: ${SW_URL}/pricing
-- The carrier or owner approves every load. Nothing is booked without their yes.
-- LoadsNexus (loadsnexus.com) is the load board run by Shipping Wish LLC. Carriers pay $19 per month for the Solo Pass. Brokers post loads free, with no contract and no listing fee.
-- LoadsNexus listings come from brokers who post them. The number of loads changes day to day.
-- Brokers can post at ${LN_URL}/post-load or reply by email with open loads: pickup city and state, delivery city and state, equipment, rate, and pickup date.`;
+const OUTREACH_FACTS = `Shipping Wish LLC (shippingwish.com), ${COMPANY.address}, phone ${COMPANY.phone}, toll-free +1-800-580-3101.
+- Shipping Wish provides motor carriers and owner-operators with an Autonomous 24/7 AI Dispatch Manager backed by a dedicated human operations support desk available 24/7/365.
+- 0% Commission: The carrier keeps 100% of the broker pay. Shipping Wish charges a flat weekly plan, NEVER a percentage of gross earnings.
+- Pricing: 1 truck is $149/week. 2-5 trucks is $350/week. 6+ trucks is $500/week. First 7 days are completely free ($0 due today). Plans: ${SW_URL}/pricing.
+- 1-Click DAT Matcher: High-paying spot loads matched to your truck equipment, empty ZIP, and max deadhead.
+- 1-Tap Driver Booking: Driver gets load offers by SMS or mobile app showing loaded miles, RPM, and profit. Driver approves every load before booking.
+- 10-Second Broker Packet Setup: Instant automated submission of W-9, COI, and MC Authority to brokers so you never lose a load while doing paperwork on the road.
+- RateCon OCR Audit: AI audits broker rate confirmations before you sign to catch rate cuts, ensure $50/hr detention, and verify $250 TONU terms.
+- Live Broker GPS Tracking: Eliminates broker check-calls by giving brokers a secure live tracking link and automated milestone updates.
+- Same-Day Factoring: Snap a photo of the signed BOL on delivery; AI verifies the signature, generates the invoice, and auto-submits to factoring for fast pay.
+- Equipment: 53' Dry Van, 53' Reefer, Flatbed, 26' Box Truck, Sprinters, Hotshots.
+- LoadsNexus (loadsnexus.com) is the load board run by Shipping Wish LLC ($19/mo Solo Pass for carriers, 100% free load posting for brokers).`;
+
+function buildCarrierSmsPitch(contact) {
+  const company = titleCase(contact.company_name);
+  return `Shipping Wish: Hi ${company}, tired of dispatchers taking 8-10% of your check? Get an Autonomous 24/7 AI Dispatch Manager + live human support for flat $149/wk (0% cut). 1-click DAT loads, 10-sec broker packets & instant factoring. 7 days free ($0 today): ${SW_URL}/pricing Reply STOP to opt out.`;
+}
 
 module.exports = {
   stepsFor,
   buildOutreachEmail,
+  buildCarrierSmsPitch,
   titleCase,
   OUTREACH_FACTS
 };
