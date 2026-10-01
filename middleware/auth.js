@@ -67,7 +67,7 @@ function requireSuperAdmin(req, res, next) {
 async function optionalAuth(req, res, next) {
   const token = extractToken(req);
   if (!token) {
-    req.user = null;
+    if (!req.user) req.user = null;
     return next();
   }
   try {

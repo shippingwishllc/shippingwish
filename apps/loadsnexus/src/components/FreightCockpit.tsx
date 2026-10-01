@@ -473,6 +473,44 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
 
   const rateMetrics = calculateRates();
 
+  // AI Smart Matchmaker & Triangulation Engine State
+  const [matchOrigin, setMatchOrigin] = useState('Chicago, IL');
+  const [matchDest, setMatchDest] = useState('Dallas, TX');
+  const [matchEquip, setMatchEquip] = useState("53' Dry Van");
+  const [matchMinRpm, setMatchMinRpm] = useState('2.80');
+  const [truckMatches, setTruckMatches] = useState<any[]>([]);
+  const [triangulationData, setTriangulationData] = useState<any>(null);
+  const [liveCorridorPairs, setLiveCorridorPairs] = useState<any[]>([]);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
+  const [matchSubTab, setMatchSubTab] = useState<'matches' | 'triangulate' | 'corridors'>('matches');
+
+  const runMatchEngine = async () => {
+    setIsLoadingMatches(true);
+    try {
+      const q = new URLSearchParams({
+        origin: matchOrigin,
+        destination: matchDest,
+        equipment_type: matchEquip,
+        min_rpm: matchMinRpm,
+      });
+
+      const [resMatches, resTri, resLive] = await Promise.all([
+        fetch(`/api/loadboard/matches/truck?${q.toString()}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null),
+        fetch(`/api/loadboard/matches/triangulate?home_base=${encodeURIComponent(matchOrigin)}&turnaround_city=${encodeURIComponent(matchDest)}&equipment_type=${encodeURIComponent(matchEquip)}&min_rpm=${encodeURIComponent(matchMinRpm)}`, { credentials: 'include' }).then(r => r.ok ? r.json() : null),
+        fetch(`/api/loadboard/matches/live-board`, { credentials: 'include' }).then(r => r.ok ? r.json() : null),
+      ]);
+
+      if (resMatches?.matches) setTruckMatches(resMatches.matches);
+      if (resTri?.strategies) setTriangulationData(resTri);
+      if (resLive?.pairs) setLiveCorridorPairs(resLive.pairs);
+      showToast('AI Matchmaking & Triangulation Engine computed optimal freight corridors.');
+    } catch {
+      showToast('Could not compute matches.');
+    } finally {
+      setIsLoadingMatches(false);
+    }
+  };
+
   const handleCapacitySearch = () => {
     let filtered = SAMPLE_CAPACITY_TRUCKS;
     if (capEquip && capEquip !== 'all') {
@@ -1147,6 +1185,27 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
 
               <button
                 type="button"
+                onClick={() => {
+                  setActiveTab('ai-matchmaker');
+                  if (truckMatches.length === 0) runMatchEngine();
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
+                  activeTab === 'ai-matchmaker'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
+                    : isLight
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                }`}
+              >
+                <span>⚡</span>
+                <span>AI Matchmaker &amp; Triangulation</span>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950 animate-pulse">
+                  Smart Match
+                </span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveTab('live-spot-board')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
                   activeTab === 'live-spot-board'
@@ -1178,6 +1237,27 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
                 <span>Live Spot Board</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950">
                   4,850+ Live
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('ai-matchmaker');
+                  if (truckMatches.length === 0) runMatchEngine();
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
+                  activeTab === 'ai-matchmaker'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/30'
+                    : isLight
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                }`}
+              >
+                <span>⚡</span>
+                <span>AI Matchmaker &amp; Triangulation</span>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950 animate-pulse">
+                  Smart Match
                 </span>
               </button>
 
@@ -2235,6 +2315,308 @@ print(response.json()) # Returns: {"ok": true, "load_id": "SW-109281", "status":
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* TAB: AI MATCHMAKER & TRIANGULATION ENGINE */}
+        {activeTab === 'ai-matchmaker' && (
+          <div className="space-y-6">
+            {/* Header Card */}
+            <div className={`rounded-2xl p-6 ${cardBg}`}>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h3 className={`text-lg font-bold flex items-center gap-2 ${textTitle}`}>
+                    <span>⚡</span>
+                    <span>LoadsNexus™ AI Smart Freight Matchmaker &amp; Triangulation</span>
+                  </h3>
+                  <p className={`text-xs mt-1 ${textSub}`}>
+                    Automated deadhead minimization, rate per mile optimization, and 3-leg triangular backhaul matching.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMatchSubTab('matches')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      matchSubTab === 'matches'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : isLight
+                        ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    🎯 Load Matches ({truckMatches.length})
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMatchSubTab('triangulate')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      matchSubTab === 'triangulate'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : isLight
+                        ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    🔄 Triangulation Optimizer
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMatchSubTab('corridors')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      matchSubTab === 'corridors'
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : isLight
+                        ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    🌐 Live Corridor Pairs
+                  </button>
+                </div>
+              </div>
+
+              {/* Match Criteria Form */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs mb-4">
+                <div>
+                  <label className={`block text-[11px] font-bold mb-1 ${textSub}`}>Empty Truck Location</label>
+                  <input
+                    type="text"
+                    value={matchOrigin}
+                    onChange={(e) => setMatchOrigin(e.target.value)}
+                    placeholder="e.g. Chicago, IL"
+                    className={`w-full rounded-xl px-3 py-2 font-semibold outline-none ${inputBg}`}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-[11px] font-bold mb-1 ${textSub}`}>Preferred Destination / Turnaround</label>
+                  <input
+                    type="text"
+                    value={matchDest}
+                    onChange={(e) => setMatchDest(e.target.value)}
+                    placeholder="e.g. Dallas, TX"
+                    className={`w-full rounded-xl px-3 py-2 font-semibold outline-none ${inputBg}`}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-[11px] font-bold mb-1 ${textSub}`}>Equipment</label>
+                  <select
+                    value={matchEquip}
+                    onChange={(e) => setMatchEquip(e.target.value)}
+                    className={`w-full rounded-xl px-3 py-2 font-semibold outline-none ${inputBg} cursor-pointer`}
+                  >
+                    <option value="53' Dry Van">53' Dry Van</option>
+                    <option value="53' Reefer">53' Reefer</option>
+                    <option value="Flatbed">Flatbed / Step Deck</option>
+                    <option value="Box Truck">26' Box Truck</option>
+                    <option value="Power Only">Power Only</option>
+                    <option value="Hotshot">Hotshot</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className={`block text-[11px] font-bold mb-1 ${textSub}`}>Target Min RPM ($/mi)</label>
+                  <select
+                    value={matchMinRpm}
+                    onChange={(e) => setMatchMinRpm(e.target.value)}
+                    className={`w-full rounded-xl px-3 py-2 font-semibold outline-none ${inputBg} cursor-pointer`}
+                  >
+                    <option value="2.50">$2.50 / mi</option>
+                    <option value="2.80">$2.80 / mi</option>
+                    <option value="3.00">$3.00 / mi</option>
+                    <option value="3.50">$3.50 / mi</option>
+                    <option value="4.00">$4.00 / mi</option>
+                  </select>
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={runMatchEngine}
+                    disabled={isLoadingMatches}
+                    className="w-full py-2 px-4 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isLoadingMatches ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span>Matching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>⚡ Run Match Engine</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-Tab 1: Ranked Load Matches */}
+            {matchSubTab === 'matches' && (
+              <div className={`rounded-2xl p-6 ${cardBg}`}>
+                <h4 className={`text-sm font-bold mb-4 flex items-center justify-between ${textTitle}`}>
+                  <span>🎯 Top Load Matches Ranked by Net Profit &amp; Deadhead</span>
+                  <span className="text-xs font-semibold text-emerald-600">
+                    {truckMatches.length} Matches Found
+                  </span>
+                </h4>
+
+                {truckMatches.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500 text-xs">
+                    Click "Run Match Engine" to scan 50 states for compatible high-RPM loads.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {truckMatches.map((m, idx) => (
+                      <div
+                        key={m.id || idx}
+                        className={`p-4 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${innerCardBg} border-slate-200/80 hover:border-blue-400`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-blue-600 text-white font-black text-sm shrink-0">
+                            <span>{m.match_score || 95}%</span>
+                            <span className="text-[9px] uppercase font-bold text-blue-200">Match</span>
+                          </div>
+
+                          <div>
+                            <div className={`font-bold text-sm flex items-center gap-2 ${textTitle}`}>
+                              <span>{m.origin}</span>
+                              <span className="text-blue-500">➔</span>
+                              <span>{m.destination}</span>
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                                {m.equipment_type}
+                              </span>
+                            </div>
+
+                            <div className={`text-xs mt-1 flex flex-wrap items-center gap-3 ${textSub}`}>
+                              <span>Deadhead to Pickup: <strong className="text-emerald-600 font-bold">{m.deadhead_miles || 15} mi</strong></span>
+                              <span>·</span>
+                              <span>Trip: <strong>{m.miles || 650} mi</strong></span>
+                              <span>·</span>
+                              <span>Broker: <strong>{m.broker_name}</strong> ({m.broker_rating || 'A+'})</span>
+                              <span>·</span>
+                              <span>Days to Pay: <strong>{m.days_to_pay || 21}d</strong></span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 self-end md:self-center">
+                          <div className="text-right">
+                            <div className="text-lg font-black text-emerald-600">
+                              ${Number(m.rate || 0).toLocaleString()}
+                            </div>
+                            <div className={`text-[11px] font-bold ${textSub}`}>
+                              ${Number(m.rpm || (m.rate / (m.miles || 1))).toFixed(2)}/mi
+                            </div>
+                          </div>
+
+                          <a
+                            href={`/api/loadboard/loads/${encodeURIComponent(m.id || 'SW-2601')}/ratecon-pdf?origin=${encodeURIComponent(m.origin)}&destination=${encodeURIComponent(m.destination)}&rate=${m.rate}&miles=${m.miles}&equipment=${encodeURIComponent(m.equipment_type)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all"
+                          >
+                            📄 RateCon PDF
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Sub-Tab 2: Triangulation & Backhaul Optimizer */}
+            {matchSubTab === 'triangulate' && (
+              <div className="space-y-4">
+                {triangulationData?.strategies?.map((strat: any, sIdx: number) => (
+                  <div key={strat.type || sIdx} className={`rounded-2xl p-6 ${cardBg} border border-slate-200/80`}>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-black text-purple-600">{strat.name}</span>
+                          {strat.rpm_lift_vs_direct && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              {strat.rpm_lift_vs_direct} RPM Lift
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-xs mt-0.5 ${textSub}`}>
+                          Total Trip: <strong>{strat.total_miles} miles</strong> · Deadhead: <strong>{strat.deadhead_miles} miles</strong> · Est. Fuel: <strong>${strat.estimated_fuel_cost}</strong>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className={`text-xs ${textSub}`}>Total Gross Pay</div>
+                          <div className="text-xl font-black text-emerald-600">${Number(strat.total_gross_revenue).toLocaleString()}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-xs ${textSub}`}>Blended RPM</div>
+                          <div className="text-lg font-black text-blue-600">${strat.blended_rpm}/mi</div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-xs ${textSub}`}>Est. Net Profit</div>
+                          <div className="text-lg font-black text-purple-600">${Number(strat.estimated_net_profit).toLocaleString()} ({strat.profit_margin})</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Legs Timeline */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {strat.legs?.map((leg: any) => (
+                        <div key={leg.leg} className={`p-4 rounded-xl border border-slate-200/60 ${innerCardBg}`}>
+                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1">
+                            <span className="uppercase text-purple-600">Leg {leg.leg}: {leg.type}</span>
+                            <span>{leg.miles} mi</span>
+                          </div>
+                          <div className={`font-bold text-sm mb-1 ${textTitle}`}>
+                            {leg.origin} ➔ {leg.destination}
+                          </div>
+                          <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-slate-200/60">
+                            <span className="font-extrabold text-emerald-600">${leg.rate?.toLocaleString()} (${leg.rpm}/mi)</span>
+                            <span className={`text-[11px] truncate max-w-[140px] ${textSub}`}>{leg.broker}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Sub-Tab 3: Live Corridor Pairs */}
+            {matchSubTab === 'corridors' && (
+              <div className={`rounded-2xl p-6 ${cardBg}`}>
+                <h4 className={`text-sm font-bold mb-4 flex items-center justify-between ${textTitle}`}>
+                  <span>🌐 Live High-Volume Matched Freight Corridors</span>
+                  <span className="text-xs font-semibold text-blue-600">Active High-Demand Lanes</span>
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {liveCorridorPairs.map((p, idx) => (
+                    <div key={idx} className={`p-4 rounded-xl border border-slate-200/80 ${innerCardBg}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`font-bold text-sm ${textTitle}`}>{p.lane}</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-white">
+                          {p.match_confidence} Match
+                        </span>
+                      </div>
+                      <div className={`text-xs space-y-1 ${textSub}`}>
+                        <div>Rate: <strong className="text-emerald-600 font-bold">{p.best_load_rate}</strong> · Equipment: <strong>{p.equipment}</strong></div>
+                        <div>Broker: <strong>{p.broker}</strong></div>
+                        <div>Matched Truck: <strong>{p.matched_carrier}</strong> ({p.carrier_status})</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

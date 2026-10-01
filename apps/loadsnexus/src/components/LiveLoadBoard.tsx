@@ -44,6 +44,8 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
   const [localOrigin, setLocalOrigin] = useState(filter.origin || '');
   const [localDest, setLocalDest] = useState(filter.destination || '');
   const [localEquip, setLocalEquip] = useState(filter.equipment || 'all');
+  const [localMinRpm, setLocalMinRpm] = useState<number | undefined>(filter.minRpm);
+  const [localSort, setLocalSort] = useState<string>(filter.sort || 'rpm_desc');
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [coveredMap, setCoveredMap] = useState<Record<string, number>>({});
   const [, setTicker] = useState(0);
@@ -158,6 +160,8 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
       origin: localOrigin,
       destination: localDest,
       equipment: localEquip,
+      minRpm: localMinRpm,
+      sort: localSort,
     });
   };
 
@@ -165,7 +169,9 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
     setLocalOrigin('');
     setLocalDest('');
     setLocalEquip('all');
-    onFilterChange({ origin: '', destination: '', equipment: 'all' });
+    setLocalMinRpm(undefined);
+    setLocalSort('rpm_desc');
+    onFilterChange({ origin: '', destination: '', equipment: 'all', minRpm: undefined, sort: 'rpm_desc' });
   };
 
   // Filter out covered loads older than 8 seconds (8,000ms)
@@ -370,6 +376,26 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                 <option value="Cargo Van">Cargo Van / Sprinter</option>
                 <option value="Power Only">Power Only</option>
                 <option value="Hotshot">Hotshot</option>
+              </select>
+              <select
+                value={localMinRpm !== undefined ? String(localMinRpm) : ''}
+                onChange={(e) => setLocalMinRpm(e.target.value ? parseFloat(e.target.value) : undefined)}
+                className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-900 w-28 focus:outline-none focus:border-blue-500 cursor-pointer"
+              >
+                <option value="">Any RPM</option>
+                <option value="2.50">$2.50+/mi</option>
+                <option value="3.00">$3.00+/mi</option>
+                <option value="3.50">$3.50+/mi</option>
+              </select>
+              <select
+                value={localSort}
+                onChange={(e) => setLocalSort(e.target.value)}
+                className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-900 w-32 focus:outline-none focus:border-blue-500 cursor-pointer"
+              >
+                <option value="rpm_desc">Sort: High RPM</option>
+                <option value="rate_desc">Sort: High Rate</option>
+                <option value="miles_asc">Sort: Short Haul</option>
+                <option value="recent">Sort: Newest</option>
               </select>
               <button
                 type="submit"

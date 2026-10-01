@@ -230,6 +230,12 @@ export const App: React.FC = () => {
       if (searchParams.equipment && searchParams.equipment !== 'all') {
         params.append('equipmentType', searchParams.equipment);
       }
+      if (searchParams.minRpm) {
+        params.append('minRpm', String(searchParams.minRpm));
+      }
+      if (searchParams.sort) {
+        params.append('sort', searchParams.sort);
+      }
 
       const res = await fetch(`/api/loadboard/search?${params.toString()}`, { credentials: 'include' });
       const data = await res.json();
@@ -239,7 +245,7 @@ export const App: React.FC = () => {
       } else if (!searchParams.origin && !searchParams.destination) {
         setLoads(INITIAL_FALLBACK_LOADS);
       } else {
-        setLoads([]);
+        setLoads(data?.loads || []);
       }
     } catch {
       // Keep existing loads on network failure
@@ -392,6 +398,28 @@ export const App: React.FC = () => {
           }
         } catch {}
       });
+
+      eventSource.addEventListener('load_updated', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data && data.id) {
+            setLoads((prev) =>
+              prev.map((l) =>
+                l.id === data.id || l.load_number === data.id
+                  ? { ...l, ...data }
+                  : l
+              )
+            );
+          }
+        } catch {}
+      });
+
+      eventSource.onerror = () => {
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+        }
+      };
     } catch {}
 
     return () => {

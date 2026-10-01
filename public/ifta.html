@@ -29,7 +29,10 @@
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Automated state mileage calculation, fuel receipt vault, &amp; audit reporting</p>
       </div>
 
-      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <button class="btn btn-secondary btn-sm" onclick="exportIftaCsv()">
+          📥 Export CSV
+        </button>
+
         <button class="btn btn-secondary btn-sm" onclick="window.print()">
           🖨️ Print IFTA Return
         </button>
@@ -120,13 +123,16 @@
                 <tr>
                   <th>State / Jurisdiction</th>
                   <th>Total Miles</th>
-                  <th>Gallons Purchased</th>
-                  <th>Total Fuel Spend</th>
                   <th>Taxable Miles %</th>
+                  <th>Taxable Gallons</th>
+                  <th>Gallons Paid</th>
+                  <th>Net Taxable Gal</th>
+                  <th>Tax Rate</th>
+                  <th>Est. Tax Due</th>
                 </tr>
               </thead>
               <tbody id="ifta-report-tbody">
-                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">Loading IFTA quarterly report...</td></tr>
+                <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">Loading IFTA quarterly report...</td></tr>
               </tbody>
             </table>
           </div>
@@ -277,25 +283,39 @@
 
         const states = data.states || [];
         if (!states.length) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">No miles or fuel receipts logged for Q${quarter} ${year}.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">No miles or fuel receipts logged for Q${quarter} ${year}.</td></tr>`;
           return;
         }
 
-        tbody.innerHTML = states.map(s => `
+        tbody.innerHTML = states.map(s => {
+          const taxDue = parseFloat(s.tax_due || 0);
+          const taxClass = taxDue > 0 ? 'color:var(--color-amber-500);' : (taxDue < 0 ? 'color:var(--color-emerald-500);' : 'color:var(--text-muted);');
+          const taxLabel = taxDue < 0 ? `-$${Math.abs(taxDue).toFixed(2)} (Credit)` : `$${taxDue.toFixed(2)}`;
+          return `
           <tr>
             <td><strong style="color:var(--text-primary);">${escapeHtml(s.state)}</strong></td>
             <td>${(s.total_miles || 0).toLocaleString()} mi</td>
-            <td>${(s.total_gallons || 0).toLocaleString()} gal</td>
-            <td><strong>$${parseFloat(s.total_cost || 0).toFixed(2)}</strong></td>
             <td>${data.totalMiles > 0 ? (((s.total_miles || 0) / data.totalMiles) * 100).toFixed(1) + '%' : '0%'}</td>
+            <td>${parseFloat(s.taxable_gallons || 0).toFixed(1)} gal</td>
+            <td>${parseFloat(s.paid_gallons || s.total_gallons || 0).toFixed(1)} gal</td>
+            <td>${parseFloat(s.net_taxable_gallons || 0).toFixed(1)} gal</td>
+            <td>$${parseFloat(s.tax_rate || 0.28).toFixed(4)}/gal</td>
+            <td><strong style="${taxClass}">${taxLabel}</strong></td>
           </tr>
-        `).join('');
+        `;
+        }).join('');
       } else {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load IFTA report. Sign in again or call operations.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load IFTA report. Sign in again or call operations.</td></tr>`;
       }
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load IFTA report.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Could not load IFTA report.</td></tr>`;
     }
+  }
+
+  function exportIftaCsv() {
+    const year = document.getElementById('ifta-year').value;
+    const quarter = document.getElementById('ifta-quarter').value;
+    window.location.href = `/api/ifta/export?year=${year}&quarter=${quarter}`;
   }
 
   async function loadFuelLogs() {

@@ -438,8 +438,20 @@ router.get('/:id/pdf', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'You do not have access to this invoice.' });
     }
 
-    const filepath = path.join(PDF_DIR, inv.pdf_filename);
-    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'PDF file not found.' });
+    const candidateDirs = [
+      PUBLIC_INVOICE_DIR,
+      path.join(__dirname, '..', 'public', 'invoices'),
+      path.join(__dirname, '..', 'invoices_pdf')
+    ];
+    let filepath = null;
+    for (const dir of candidateDirs) {
+      const candidate = path.join(dir, inv.pdf_filename);
+      if (fs.existsSync(candidate)) {
+        filepath = candidate;
+        break;
+      }
+    }
+    if (!filepath) return res.status(404).json({ error: 'PDF file not found.' });
 
     res.download(filepath, inv.pdf_filename);
   } catch (err) {

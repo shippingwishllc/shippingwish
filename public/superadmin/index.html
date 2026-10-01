@@ -587,6 +587,274 @@
       from { transform: translateX(100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
     }
+
+    /* Fleet Pipeline Grid */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    /* Marketing Generator Grid */
+    .marketing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 12px;
+      margin-bottom: 16px;
+      align-items: end;
+    }
+
+    /* =========================================================
+       RESPONSIVE BREAKPOINTS (Tablets & Mobile Devices)
+       ========================================================= */
+
+    /* Tablet breakpoint (<= 1024px) */
+    @media (max-width: 1024px) {
+      .topbar {
+        padding: 12px 18px;
+      }
+      .main-content {
+        padding: 18px 14px;
+      }
+      .grid-2 {
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+      }
+      .grid-3 {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
+      }
+      .marketing-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* Mobile Phones breakpoint (<= 768px) */
+    @media (max-width: 768px) {
+      /* Topbar Mobile Layout */
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px 12px;
+        gap: 10px;
+      }
+
+      .brand-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 8px;
+      }
+
+      .brand-titles h1 {
+        font-size: 14px;
+        letter-spacing: 0.02em;
+      }
+
+      .brand-titles p {
+        display: none; /* Hide 4-brand subtitle on mobile to keep topbar ultra compact */
+      }
+
+      .pulse-pill {
+        font-size: 10px;
+        padding: 3px 8px;
+        flex-shrink: 0;
+      }
+
+      /* Horizontal Swipe Actions Bar for buttons */
+      .user-actions {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+      }
+
+      .user-actions::-webkit-scrollbar {
+        height: 3px;
+      }
+      .user-actions::-webkit-scrollbar-thumb {
+        background: rgba(245, 158, 11, 0.3);
+        border-radius: 4px;
+      }
+
+      .user-badge {
+        flex-shrink: 0;
+        font-size: 11px;
+        padding: 5px 9px;
+        white-space: nowrap;
+      }
+
+      .btn-action {
+        flex-shrink: 0;
+        font-size: 11px;
+        padding: 6px 12px;
+        white-space: nowrap;
+      }
+
+      /* Main Content Container */
+      .main-content {
+        padding: 12px 8px;
+        max-width: 100vw;
+        box-sizing: border-box;
+      }
+
+      /* Executive KPI Strip Mobile 2-Column Grid */
+      .kpi-strip {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .kpi-card {
+        padding: 12px 10px;
+        border-radius: 12px;
+      }
+
+      .kpi-label {
+        font-size: 10px;
+        margin-bottom: 4px;
+      }
+
+      .kpi-value {
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+
+      .kpi-sub {
+        font-size: 10px;
+        line-height: 1.25;
+      }
+
+      /* Tabs Mobile Scroll */
+      .tab-bar {
+        padding: 4px;
+        gap: 4px;
+        margin-bottom: 16px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .tab-btn {
+        padding: 7px 11px;
+        font-size: 12px;
+        flex-shrink: 0;
+        border-radius: 6px;
+      }
+
+      /* Cards & Grids Mobile */
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .content-card {
+        padding: 14px 12px;
+        border-radius: 12px;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+      }
+
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+      }
+
+      .card-title {
+        font-size: 13.5px;
+        line-height: 1.35;
+        flex-wrap: wrap;
+      }
+
+      /* Fleet Dispatch Pipeline Mobile */
+      .pipeline-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+        margin-bottom: 14px;
+      }
+
+      .marketing-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+
+      /* Tables Horizontal Scroll */
+      .table-responsive {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 8px;
+      }
+
+      table {
+        min-width: 560px;
+        font-size: 12px;
+      }
+
+      thead th {
+        padding: 8px 10px;
+        font-size: 10px;
+      }
+
+      tbody td {
+        padding: 9px 10px;
+        font-size: 11.5px;
+      }
+
+      /* Modals Mobile */
+      .modal-overlay {
+        padding: 12px;
+      }
+
+      .modal-content, .modal-content.wide {
+        padding: 20px 14px;
+        max-width: 100%;
+        border-radius: 14px;
+        max-height: 92vh;
+        overflow-y: auto;
+      }
+
+      .modal-close {
+        top: 14px;
+        right: 14px;
+      }
+
+      .form-grid-2 {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+      }
+
+      /* Toasts Mobile */
+      .toast-container {
+        bottom: 14px;
+        right: 14px;
+        left: 14px;
+      }
+
+      .toast {
+        padding: 10px 14px;
+        font-size: 12px;
+      }
+    }
+
+    /* Small Screen (< 380px) */
+    @media (max-width: 380px) {
+      .kpi-strip {
+        grid-template-columns: 1fr !important;
+      }
+      .brand-titles h1 {
+        font-size: 13px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -766,7 +1034,7 @@
           <div class="card-header">
             <h3 class="card-title">Fleet Dispatch Pipeline <span class="tag">Real-Time</span></h3>
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:18px;">
+          <div class="pipeline-grid">
             <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px; text-align:center;">
               <div style="font-size:11px; color:#a7f3d0; font-weight:700;">🟢 EMPTY / NEED LOADS</div>
               <div id="overviewEmptyCount" style="font-size:24px; font-weight:800; color:#34d399; font-family:'JetBrains Mono', monospace;">0</div>
@@ -1278,12 +1546,14 @@
     <div id="tab-ecom" class="tab-panel">
       <div class="grid-3" style="margin-bottom:20px;">
         <div class="content-card">
-          <div class="card-title" style="margin-bottom:8px;">Total Store Orders</div>
+          <div class="card-title" style="margin-bottom:8px;">Paid Store Orders</div>
           <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono';" id="ecomOrdersCount">0</div>
-          <div style="font-size:12px; color:var(--text-muted);">Zendrop direct supplier pipeline</div>
+          <div style="font-size:12px; color:var(--text-muted);">
+            <span id="ecomAbandonedCount" style="color:var(--gold-light); font-weight:700;">0</span> abandoned checkout clicks
+          </div>
         </div>
         <div class="content-card">
-          <div class="card-title" style="margin-bottom:8px;">Gross Sales</div>
+          <div class="card-title" style="margin-bottom:8px;">Verified Paid Sales</div>
           <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#60a5fa;" id="ecomSales">$0</div>
           <div style="font-size:12px; color:var(--text-muted);"><span id="ecomInTransit">0</span> orders in transit</div>
         </div>
@@ -1307,12 +1577,13 @@
                   <th>Order #</th>
                   <th>Customer</th>
                   <th>Total</th>
+                  <th>Payment</th>
                   <th>Zendrop Tracking</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody id="ecomOrdersBody">
-                <tr><td colspan="5" style="text-align:center; padding:20px;">Loading orders...</td></tr>
+                <tr><td colspan="6" style="text-align:center; padding:20px;">Loading orders...</td></tr>
               </tbody>
             </table>
           </div>
@@ -1385,7 +1656,7 @@
         <div class="card-header">
           <h3 class="card-title">⚡ Multi-Brand AI Marketing Campaign Generator</h3>
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; margin-bottom:16px; align-items:end;">
+        <div class="marketing-grid">
           <div>
             <label style="font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">BRAND</label>
             <select id="mktBrand" class="status-select" style="width:100%; padding:9px;">
@@ -1798,8 +2069,11 @@
       document.getElementById('matrixLnSubs').textContent = (ln.active_subscribers || 0) + ' Paying Members';
       document.getElementById('matrixLnRevenue').textContent = fmtMoney(ln.mrr_dollars) + ' / mo';
       document.getElementById('matrixLimoBookings').textContent = (limo.total_bookings || 0) + ' Total Rides';
-      document.getElementById('matrixLimoRev').textContent = fmtMoney(limo.revenue_dollars);
-      document.getElementById('matrixEcomOrders').textContent = (ecom.total_orders || 0) + ' Orders';
+      const ecomPaidCount = ecom.total_orders || 0;
+      const ecomAbCount = ecom.abandoned_checkouts || 0;
+      document.getElementById('matrixEcomOrders').textContent = ecomAbCount > 0 
+        ? `${ecomPaidCount} Paid (${ecomAbCount} abandoned)` 
+        : `${ecomPaidCount} Orders`;
       document.getElementById('matrixEcomRev').textContent = fmtMoney(ecom.sales_dollars);
 
       document.getElementById('overviewEmptyCount').textContent = exec.trucks_empty || 0;
@@ -1868,6 +2142,8 @@
 
       // BuyWishOnline Tab
       document.getElementById('ecomOrdersCount').textContent = ecom.total_orders || 0;
+      const ecomAbBadge = document.getElementById('ecomAbandonedCount');
+      if (ecomAbBadge) ecomAbBadge.textContent = ecom.abandoned_checkouts || 0;
       document.getElementById('ecomSales').textContent = fmtMoney(ecom.sales_dollars);
       document.getElementById('ecomInTransit').textContent = ecom.in_transit || 0;
       document.getElementById('ecomProfit').textContent = fmtMoney(ecom.profit_dollars);
@@ -2292,29 +2568,38 @@
     function renderEcomOrders(orders) {
       const tbody = document.getElementById('ecomOrdersBody');
       if (!orders.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No e-commerce orders yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">No e-commerce orders yet.</td></tr>';
         return;
       }
-      tbody.innerHTML = orders.map(o => `
-        <tr>
-          <td><strong>${o.order_number}</strong></td>
-          <td>${o.customer_name}<br><span style="font-size:11px; color:var(--text-muted);">${o.shipping_city}, ${o.shipping_state}</span></td>
-          <td><strong>${fmtMoney(o.total_amount)}</strong></td>
-          <td>
-            ${o.supplier_tracking_number 
-              ? `<a href="https://t.17track.net/en#nums=${o.supplier_tracking_number}" target="_blank" style="color:var(--blue-accent); font-family:monospace; text-decoration:none;">${o.supplier_tracking_number} ↗</a>` 
-              : '<span style="color:var(--text-subtle);">Awaiting Fulfillment</span>'}
-          </td>
-          <td>
-            <select class="status-select" onchange="updateEcomStatus(${o.id}, this.value)">
-              <option value="processing" ${o.fulfillment_status === 'processing' ? 'selected' : ''}>Processing</option>
-              <option value="in_transit" ${o.fulfillment_status === 'in_transit' ? 'selected' : ''}>In Transit</option>
-              <option value="delivered" ${o.fulfillment_status === 'delivered' ? 'selected' : ''}>Delivered</option>
-              <option value="cancelled" ${o.fulfillment_status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-            </select>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = orders.map(o => {
+        const isPaid = o.payment_status === 'paid';
+        const payBadge = isPaid
+          ? '<span class="badge badge-paid">🟢 Paid</span>'
+          : '<span class="badge badge-unloading">🟡 Abandoned / Unpaid</span>';
+
+        return `
+          <tr>
+            <td><strong>${escapeHtml(o.order_number)}</strong></td>
+            <td>${escapeHtml(o.customer_name || 'Customer')}<br><span style="font-size:11px; color:var(--text-muted);">${escapeHtml(o.shipping_city || '')}, ${escapeHtml(o.shipping_state || '')}</span></td>
+            <td><strong>${fmtMoney(o.total_amount)}</strong></td>
+            <td>${payBadge}</td>
+            <td>
+              ${o.supplier_tracking_number 
+                ? `<a href="https://t.17track.net/en#nums=${encodeURIComponent(o.supplier_tracking_number)}" target="_blank" style="color:var(--blue-accent); font-family:monospace; text-decoration:none;">${escapeHtml(o.supplier_tracking_number)} ↗</a>` 
+                : '<span style="color:var(--text-subtle);">Awaiting Fulfillment</span>'}
+            </td>
+            <td>
+              <select class="status-select" onchange="updateEcomStatus(${o.id}, this.value)">
+                <option value="awaiting_payment" ${o.fulfillment_status === 'awaiting_payment' ? 'selected' : ''}>Awaiting Payment</option>
+                <option value="processing" ${o.fulfillment_status === 'processing' ? 'selected' : ''}>Processing</option>
+                <option value="in_transit" ${o.fulfillment_status === 'in_transit' ? 'selected' : ''}>In Transit</option>
+                <option value="delivered" ${o.fulfillment_status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                <option value="cancelled" ${o.fulfillment_status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     window.updateEcomStatus = async function(orderId, fulfillment_status) {

@@ -806,6 +806,7 @@ if (require.main === module) {
     .then(backfillCarrierTrials)
     .then(seedAdminUsers)
     .then(runTrashAutoPurge)
+    .catch((err) => console.warn('[STARTUP] Initialization note:', err.message))
     .then(() => {
       app.listen(PORT, () => {
         console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);

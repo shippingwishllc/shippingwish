@@ -116,7 +116,17 @@ async function ensureSuperAdminTables() {
       );
     `).catch(() => {});
 
-    // Do not seed synthetic audit history, limo rides, carriers, trucks, freight loads, or billing subscriptions.
+    // Clean up any lingering synthetic demo records so only real user activity is shown
+    await pool.query(`
+      DELETE FROM ecommerce_orders WHERE order_number IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105') OR payment_status = 'demo';
+      DELETE FROM ecommerce_products WHERE handle IN ('cordless-muscle-gun', 'smart-car-mount', 'rgb-light-bar', 'tactical-cargo-organizer');
+      DELETE FROM limo_bookings WHERE booking_number IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084') OR payment_status = 'demo';
+      DELETE FROM loads WHERE load_number IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016');
+      DELETE FROM trucks WHERE truck_number IN ('TRK-101', 'TRK-102', 'TRK-103', 'TRK-104') OR carrier_id IN (SELECT id FROM users WHERE email IN ('ops@apexfreight.com', 'elena@ironcladhauling.com'));
+      DELETE FROM users WHERE email IN ('ops@apexfreight.com', 'elena@ironcladhauling.com');
+      DELETE FROM billing_subscriptions WHERE stripe_subscription_id IN ('sub_live_sw_01', 'sub_live_sw_02', 'sub_live_ln_01');
+      DELETE FROM audit_log WHERE action = 'DEMO_SEED_ARCHIVED' OR (ip_address = '127.0.0.1' AND action = 'SUPERADMIN_INITIALIZED');
+    `).catch(() => {});
 
     tablesInitialized = true;
   } catch (err) {
@@ -144,6 +154,8 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         sum(amount_cents) as total_cents
       FROM billing_subscriptions
       WHERE plan_key NOT LIKE 'loadboard_%'
+        AND stripe_subscription_id NOT IN ('sub_live_sw_01', 'sub_live_sw_02', 'sub_live_ln_01')
+        AND status NOT IN ('canceled')
       GROUP BY status, plan_key, amount_cents, interval
     `).catch(() => ({ rows: [] }));
 
@@ -190,8 +202,10 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         u.created_at,
         count(t.id) as truck_count
       FROM users u
-      LEFT JOIN trucks t ON t.carrier_id = u.id
-      WHERE u.role IN ('carrier', 'carrier_admin') AND u.deleted_at IS NULL
+      LEFT JOIN trucks t ON t.carrier_id = u.id AND t.is_active IS NOT FALSE AND t.truck_number NOT IN ('TRK-101', 'TRK-102', 'TRK-103', 'TRK-104')
+      WHERE u.role IN ('carrier', 'carrier_admin') 
+        AND u.deleted_at IS NULL
+        AND u.email NOT IN ('ops@apexfreight.com', 'elena@ironcladhauling.com')
       GROUP BY u.id, u.name, u.company_name, u.email, u.phone, u.mc_number, u.dot_number, u.weekly_plan, u.created_at
       ORDER BY u.created_at DESC
       LIMIT 25
@@ -217,6 +231,8 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       FROM trucks t
       LEFT JOIN users u ON u.id = t.carrier_id
       WHERE t.is_active IS NOT FALSE
+        AND t.truck_number NOT IN ('TRK-101', 'TRK-102', 'TRK-103', 'TRK-104')
+        AND COALESCE(u.email, '') NOT IN ('ops@apexfreight.com', 'elena@ironcladhauling.com')
       ORDER BY t.id DESC
       LIMIT 50
     `).catch(() => ({ rows: [] }));
@@ -260,6 +276,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       FROM loads l
       LEFT JOIN users c ON c.id = l.carrier_id
       LEFT JOIN users d ON d.id = l.dispatcher_id
+      WHERE l.load_number NOT IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
       ORDER BY l.id DESC
       LIMIT 50
     `).catch(() => ({ rows: [] }));
@@ -352,6 +369,8 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         a.payload
       FROM audit_log a
       LEFT JOIN users u ON u.id = a.user_id
+      WHERE a.action NOT IN ('DEMO_SEED_ARCHIVED')
+        AND NOT (a.ip_address = '127.0.0.1' AND a.action = 'SUPERADMIN_INITIALIZED')
       ORDER BY a.id DESC
       LIMIT 30
     `).catch(() => ({ rows: [] }));
@@ -368,6 +387,8 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         sum(amount_cents) as total_cents
       FROM billing_subscriptions
       WHERE plan_key LIKE 'loadboard_%'
+        AND stripe_subscription_id NOT IN ('sub_live_sw_01', 'sub_live_sw_02', 'sub_live_ln_01')
+        AND status NOT IN ('canceled')
       GROUP BY plan_key, status, amount_cents
     `).catch(() => ({ rows: [] }));
 
@@ -400,6 +421,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         count(*) FILTER (WHERE status::text IN ('booked', 'covered', 'delivered', 'in_transit', 'dispatched', 'paid')) as covered_loads,
         coalesce(sum(rate) FILTER (WHERE rate > 0), 0) as total_freight_valuation
       FROM loads
+      WHERE load_number NOT IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
     `).catch(() => ({ rows: [{ total_loads: 0, available_loads: 0, covered_loads: 0, total_freight_valuation: 0 }] }));
 
     const loadStats = loadsStatsQuery.rows[0];
@@ -419,6 +441,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         delivery_date,
         broker_name
       FROM loads
+      WHERE load_number NOT IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
       ORDER BY id DESC
       LIMIT 20
     `).catch(() => ({ rows: [] }));
@@ -428,13 +451,15 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
     // ---------------------------------------------------------
     const limoStatsQuery = await pool.query(`
       SELECT 
-        count(*) as total_bookings,
+        count(*) FILTER (WHERE status != 'cancelled') as total_bookings,
         count(*) FILTER (WHERE status = 'pending') as pending_count,
         count(*) FILTER (WHERE status = 'confirmed') as confirmed_count,
         count(*) FILTER (WHERE status = 'completed') as completed_count,
         count(*) FILTER (WHERE status = 'cancelled') as cancelled_count,
         coalesce(sum(total_price) FILTER (WHERE payment_status = 'paid' OR status = 'completed'), 0) as total_revenue
       FROM limo_bookings
+      WHERE COALESCE(payment_status, '') != 'demo'
+        AND booking_number NOT IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084')
     `).catch(() => ({ rows: [{ total_bookings: 0, pending_count: 0, confirmed_count: 0, completed_count: 0, cancelled_count: 0, total_revenue: 0 }] }));
 
     const limoStats = limoStatsQuery.rows[0];
@@ -445,6 +470,8 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         pickup_date, pickup_time, passenger_first_name, passenger_last_name,
         passenger_phone, passenger_email, vehicle_id, total_price, status, payment_status, created_at
       FROM limo_bookings
+      WHERE COALESCE(payment_status, '') != 'demo'
+        AND booking_number NOT IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084')
       ORDER BY id DESC
       LIMIT 15
     `).catch(() => ({ rows: [] }));
@@ -454,29 +481,36 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
     // ---------------------------------------------------------
     const ecomStatsQuery = await pool.query(`
       SELECT 
-        count(*) as total_orders,
-        count(*) FILTER (WHERE fulfillment_status = 'processing') as processing_count,
-        count(*) FILTER (WHERE fulfillment_status = 'in_transit') as shipping_count,
-        count(*) FILTER (WHERE fulfillment_status = 'delivered') as delivered_count,
-        count(*) FILTER (WHERE fulfillment_status = 'cancelled') as cancelled_count,
-        coalesce(sum(total_amount), 0) as total_sales,
-        coalesce(sum(profit_margin), 0) as total_profit
+        count(*) FILTER (WHERE payment_status = 'paid' AND COALESCE(payment_status, '') != 'demo' AND order_number NOT IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105')) as total_orders,
+        count(*) FILTER (WHERE payment_status = 'paid' AND fulfillment_status = 'processing') as processing_count,
+        count(*) FILTER (WHERE payment_status = 'paid' AND fulfillment_status = 'in_transit') as shipping_count,
+        count(*) FILTER (WHERE payment_status = 'paid' AND fulfillment_status = 'delivered') as delivered_count,
+        count(*) FILTER (WHERE fulfillment_status = 'cancelled' AND COALESCE(payment_status, '') != 'demo') as cancelled_count,
+        count(*) FILTER (WHERE payment_status != 'paid' AND fulfillment_status = 'awaiting_payment' AND COALESCE(payment_status, '') != 'demo' AND order_number NOT IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105')) as abandoned_checkouts_count,
+        coalesce(sum(total_amount) FILTER (WHERE payment_status = 'paid' AND COALESCE(payment_status, '') != 'demo' AND order_number NOT IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105')), 0) as total_sales,
+        coalesce(sum(profit_margin) FILTER (WHERE payment_status = 'paid' AND COALESCE(payment_status, '') != 'demo' AND order_number NOT IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105')), 0) as total_profit
       FROM ecommerce_orders
-    `).catch(() => ({ rows: [{ total_orders: 0, processing_count: 0, shipping_count: 0, delivered_count: 0, cancelled_count: 0, total_sales: 0, total_profit: 0 }] }));
+    `).catch(() => ({ rows: [{ total_orders: 0, processing_count: 0, shipping_count: 0, delivered_count: 0, cancelled_count: 0, abandoned_checkouts_count: 0, total_sales: 0, total_profit: 0 }] }));
 
     const ecomStats = ecomStatsQuery.rows[0];
 
     const recentEcomOrders = await pool.query(`
       SELECT 
         id, order_number, customer_name, customer_email, shipping_city, shipping_state,
-        items, total_amount, profit_margin, supplier, supplier_tracking_number, fulfillment_status, created_at
+        items, total_amount, profit_margin, supplier, supplier_tracking_number, fulfillment_status, payment_status, created_at
       FROM ecommerce_orders
+      WHERE COALESCE(payment_status, '') != 'demo'
+        AND order_number NOT IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105')
       ORDER BY id DESC
       LIMIT 15
     `).catch(() => ({ rows: [] }));
 
     const winningProducts = await pool.query(`
-      SELECT * FROM ecommerce_products WHERE is_active = true ORDER BY trend_score DESC LIMIT 10
+      SELECT * FROM ecommerce_products 
+      WHERE is_active = true 
+        AND handle NOT IN ('cordless-muscle-gun', 'smart-car-mount', 'rgb-light-bar', 'tactical-cargo-organizer')
+      ORDER BY trend_score DESC 
+      LIMIT 10
     `).catch(() => ({ rows: [] }));
 
     // ---------------------------------------------------------
@@ -544,7 +578,8 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         trucks_unloading_tomorrow: trucksUnloadingTomorrow,
         active_loads_valuation: parseFloat(loadStats.total_freight_valuation || 0),
         total_limo_rides: parseInt(limoStats.total_bookings, 10),
-        total_ecom_orders: parseInt(ecomStats.total_orders, 10)
+        total_ecom_orders: parseInt(ecomStats.total_orders, 10),
+        abandoned_checkouts: parseInt(ecomStats.abandoned_checkouts_count || 0, 10)
       },
       shipping_wish: {
         active_subscribers: swActiveSubsCount,
@@ -587,6 +622,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       },
       buywish_online: {
         total_orders: parseInt(ecomStats.total_orders, 10),
+        abandoned_checkouts: parseInt(ecomStats.abandoned_checkouts_count || 0, 10),
         processing: parseInt(ecomStats.processing_count, 10),
         in_transit: parseInt(ecomStats.shipping_count, 10),
         delivered: parseInt(ecomStats.delivered_count, 10),

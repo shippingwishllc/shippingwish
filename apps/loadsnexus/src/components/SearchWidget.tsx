@@ -11,13 +11,15 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({ onSearch, onOpenPost
   const [origin, setOrigin] = useState('Chicago, IL');
   const [destination, setDestination] = useState('Dallas, TX');
   const [equipment, setEquipment] = useState("53' Dry Van");
+  const [minRpm, setMinRpm] = useState<number | undefined>(undefined);
+  const [sort, setSort] = useState<string>('rpm_desc');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === 'capacity') {
       onOpenPostFreight({ origin, dest: destination });
     } else {
-      onSearch({ origin, destination, equipment });
+      onSearch({ origin, destination, equipment, minRpm, sort });
       const target = document.getElementById('live-board-section');
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -133,6 +135,50 @@ export const SearchWidget: React.FC<SearchWidgetProps> = ({ onSearch, onOpenPost
           </button>
         </div>
       </form>
+
+      {/* Quick Filters: Min RPM & Sorting */}
+      {mode === 'loads' && (
+        <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 font-semibold">Min Rate/Mile:</span>
+            <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+              {[
+                { label: 'Any', val: undefined },
+                { label: '$2.50+', val: 2.5 },
+                { label: '$3.00+', val: 3.0 },
+                { label: '$3.50+', val: 3.5 }
+              ].map(opt => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => setMinRpm(opt.val)}
+                  className={`px-2.5 py-1 rounded-md font-bold transition-all ${
+                    minRpm === opt.val
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 font-semibold">Sort:</span>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 font-semibold text-slate-800 outline-none cursor-pointer"
+            >
+              <option value="rpm_desc">Highest RPM ($/mi)</option>
+              <option value="rate_desc">Highest Total Pay ($)</option>
+              <option value="miles_asc">Shortest Haul</option>
+              <option value="recent">Newest Posted</option>
+            </select>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

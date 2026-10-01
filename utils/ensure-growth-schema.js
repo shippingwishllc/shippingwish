@@ -198,6 +198,16 @@ async function ensureGrowthSchema() {
   }
 
   try {
+    const fs = require('fs');
+    const path = require('path');
+    const sqlV7 = fs.readFileSync(path.join(__dirname, '../sql/migrations/v7_archive_synthetic_seed_rows.sql'), 'utf8');
+    const { ok, failed } = await runStatements(sqlV7, 'SYNTHETIC_PURGE_V7');
+    console.log(`[SYNTHETIC_PURGE_V7] Schema v7 applied (${ok} ok, ${failed} skipped)`);
+  } catch (err) {
+    console.warn('[SYNTHETIC_PURGE_V7] Schema apply skipped:', err.message);
+  }
+
+  try {
     await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS broker_email TEXT');
     await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS driver_approval_status TEXT DEFAULT \'pending\'');
     await pool.query('ALTER TABLE load_offers ADD COLUMN IF NOT EXISTS broker_negotiation_status TEXT DEFAULT \'idle\'');

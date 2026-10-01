@@ -43,6 +43,8 @@ export interface SearchFilter {
   origin: string;
   destination: string;
   equipment: string;
+  minRpm?: number;
+  sort?: 'rpm_desc' | 'rate_desc' | 'miles_asc' | 'miles_desc' | 'recent' | string;
 }
 
 export interface PostFreightForm {
