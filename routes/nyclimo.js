@@ -234,6 +234,14 @@ router.post('/quote', async (req, res) => {
 
     if (serviceType === 'hourly') {
       durationMins = (parseFloat(body.hours) || 3) * 60;
+      if (body.dropoff) {
+        dropoffGeo = await resolvePoint({
+          placeId: body.dropoffPlaceId,
+          sessionToken: body.dropoffSessionToken,
+          address: body.dropoff
+        });
+        if (dropoffGeo) mapPoints.push(dropoffGeo);
+      }
     } else {
       dropoffGeo = await resolvePoint({
         placeId: body.dropoffPlaceId,
@@ -335,6 +343,13 @@ router.post('/bookings', async (req, res) => {
         return res.status(400).json({ error: 'Hourly bookings must be between 1 and 24 hours.' });
       }
       durationMins = Math.round(durationHours * 60);
+      if (b.dropoff) {
+        dropoffGeo = await resolvePoint({
+          placeId: b.dropoffPlaceId,
+          sessionToken: b.dropoffSessionToken,
+          address: b.dropoff
+        });
+      }
     } else {
       dropoffGeo = await resolvePoint({
         placeId: b.dropoffPlaceId,

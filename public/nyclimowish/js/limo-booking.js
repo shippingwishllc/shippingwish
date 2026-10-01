@@ -278,14 +278,42 @@
       t.classList.toggle('active', t.dataset.tab === type);
     });
     const hourly = type === 'hourly';
-    $('b-dropoff-wrap').style.display = hourly ? 'none' : 'block';
-    $('b-stops-wrap').style.display = hourly ? 'none' : 'block';
+    $('b-dropoff-wrap').style.display = 'block';
     $('b-duration-wrap').style.display = hourly ? 'block' : 'none';
+    $('b-stops-wrap').style.display = hourly ? 'none' : 'block';
+    if ($('b-same-as-pickup')) {
+      $('b-same-as-pickup').style.display = hourly ? 'inline-block' : 'none';
+    }
+  }
+
+  $('b-same-as-pickup')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const pVal = $('b-pickup').value.trim();
+    if (!pVal) {
+      $('b-pickup').focus();
+      return;
+    }
+    $('b-dropoff').value = pVal;
+    $('b-dropoff').dataset.placeId = $('b-pickup').dataset.placeId || '';
+    $('b-dropoff').dataset.placeLabel = $('b-pickup').dataset.placeLabel || pVal;
+
+    const btn = $('b-same-as-pickup');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1200);
+  });
+
+  if (params.get('addStop') === '1') {
+    addStop();
   }
 
   $('btn-step1').addEventListener('click', async () => {
-    const pickup = placePayload($('b-pickup'));
-    const dropoff = placePayload($('b-dropoff'));
+    let pickup = placePayload($('b-pickup'));
+    let dropoff = placePayload($('b-dropoff'));
     const stops = collectStops();
     state.pickup = pickup.address;
     state.dropoff = dropoff.address;
@@ -298,6 +326,13 @@
     if (!state.pickup || !state.pickupDate || !state.pickupTime) {
       showError('step1-error', 'Please fill in pickup, date, and time.');
       return;
+    }
+    if (state.serviceType === 'hourly' && !state.dropoff) {
+      state.dropoff = state.pickup;
+      $('b-dropoff').value = state.pickup;
+      $('b-dropoff').dataset.placeId = $('b-pickup').dataset.placeId || '';
+      $('b-dropoff').dataset.placeLabel = $('b-pickup').dataset.placeLabel || state.pickup;
+      dropoff = placePayload($('b-dropoff'));
     }
     if (state.serviceType === 'point_to_point' && !state.dropoff) {
       showError('step1-error', 'Please enter a drop-off location.');

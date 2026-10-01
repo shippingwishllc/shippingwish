@@ -66,18 +66,6 @@
             <div class="limo-suggest" hidden></div>
           </div>
         </div>
-        <div class="limo-field" id="b-dropoff-wrap">
-          <label>Drop-off Location</label>
-          <div class="limo-address-box">
-            <span class="limo-field-icon">📍</span>
-            <input class="limo-input limo-address" id="b-dropoff" placeholder="Enter drop-off address" autocomplete="off" style="background:#f9f9f9;color:#000;border-color:#ddd;">
-            <div class="limo-suggest" hidden></div>
-          </div>
-        </div>
-        <div id="b-stops-wrap">
-          <div id="b-stops"></div>
-          <button type="button" class="limo-stop-add" id="btn-add-stop">+ Add a stop</button>
-        </div>
         <div class="limo-field" id="b-duration-wrap" style="display:none;">
           <label>Duration</label>
           <span class="limo-field-icon">⏱</span>
@@ -89,6 +77,19 @@
             <option value="6">6 hours</option>
             <option value="8">8 hours</option>
           </select>
+        </div>
+        <div class="limo-field" id="b-dropoff-wrap">
+          <label>Drop-off Location</label>
+          <div class="limo-address-box has-pill">
+            <span class="limo-field-icon">📍</span>
+            <input class="limo-input limo-address" id="b-dropoff" placeholder="Enter drop-off address" autocomplete="off" style="background:#f9f9f9;color:#000;border-color:#ddd;">
+            <button type="button" class="limo-field-pill-btn" id="b-same-as-pickup" style="display:none;" title="Same as pickup address">Same as Pickup</button>
+            <div class="limo-suggest" hidden></div>
+          </div>
+        </div>
+        <div id="b-stops-wrap">
+          <div id="b-stops"></div>
+          <button type="button" class="limo-stop-add" id="btn-add-stop">+ Add a stop</button>
         </div>
         <div class="limo-field-row">
           <div class="limo-field">

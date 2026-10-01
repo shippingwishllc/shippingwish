@@ -289,6 +289,43 @@ a:hover { color: var(--limo-gold-light); }
 .limo-field-icon { position: absolute; left: 14px; bottom: 14px; color: var(--limo-gold); font-size: 1rem; pointer-events: none; }
 .limo-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .limo-field-add { position: absolute; right: 8px; bottom: 8px; padding: 6px 12px; font-size: 0.7rem; background: rgba(201,162,39,0.15); color: var(--limo-gold); border: 1px solid rgba(201,162,39,0.3); border-radius: 20px; cursor: pointer; }
+
+/* In-field Luxury Pill Buttons (Add Stop / Same as Pickup) */
+.limo-field-pill-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  padding: 5px 12px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--limo-gold);
+  color: #0d0d0d;
+  border: 1px solid var(--limo-gold);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  line-height: 1.25;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+.limo-field-pill-btn:hover {
+  background: var(--limo-gold-light);
+  transform: translateY(-50%) scale(1.03);
+  box-shadow: 0 4px 12px rgba(201,162,39,0.35);
+}
+.limo-field-pill-btn.copied {
+  background: #2e7d32;
+  border-color: #2e7d32;
+  color: #ffffff;
+}
+.limo-address-box.has-pill .limo-input {
+  padding-right: 124px;
+  text-overflow: ellipsis;
+}
 .limo-note { font-size: 0.75rem; color: var(--limo-gray); display: flex; align-items: center; gap: 6px; margin: 12px 0; }
 
 /* SECTIONS */

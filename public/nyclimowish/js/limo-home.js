@@ -13,6 +13,9 @@
   dateInput.value = tomorrow.toISOString().split('T')[0];
   timeInput.value = '12:00';
 
+  const heroSameAsPickup = document.getElementById('heroSameAsPickup');
+  const heroAddStop = document.getElementById('heroAddStop');
+
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       tabs.forEach((t) => t.classList.remove('active'));
@@ -20,11 +23,15 @@
       const type = tab.dataset.tab;
       serviceType.value = type;
       if (type === 'hourly') {
-        dropoffField.style.display = 'none';
         durationField.style.display = 'block';
-      } else {
         dropoffField.style.display = 'block';
+        if (heroSameAsPickup) heroSameAsPickup.style.display = 'inline-block';
+        dropoffInput.required = false;
+      } else {
         durationField.style.display = 'none';
+        dropoffField.style.display = 'block';
+        if (heroSameAsPickup) heroSameAsPickup.style.display = 'none';
+        dropoffInput.required = true;
       }
     });
   });
@@ -205,8 +212,46 @@
   bindAddressAutocomplete(pickupInput, pickupPlaceId, pickupSessionToken);
   bindAddressAutocomplete(dropoffInput, dropoffPlaceId, dropoffSessionToken);
 
+  if (heroSameAsPickup) {
+    heroSameAsPickup.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pVal = pickupInput.value.trim();
+      if (!pVal) {
+        pickupInput.focus();
+        return;
+      }
+      dropoffInput.value = pVal;
+      dropoffInput.dataset.placeId = pickupInput.dataset.placeId || '';
+      dropoffInput.dataset.placeLabel = pickupInput.dataset.placeLabel || pVal;
+      if (dropoffPlaceId) dropoffPlaceId.value = pickupPlaceId?.value || pickupInput.dataset.placeId || '';
+      if (dropoffSessionToken) dropoffSessionToken.value = pickupSessionToken?.value || '';
+
+      const orig = heroSameAsPickup.textContent;
+      heroSameAsPickup.textContent = 'Copied ✓';
+      heroSameAsPickup.classList.add('copied');
+      setTimeout(() => {
+        heroSameAsPickup.textContent = orig;
+        heroSameAsPickup.classList.remove('copied');
+      }, 1200);
+    });
+  }
+
+  if (heroAddStop) {
+    heroAddStop.addEventListener('click', (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams(new FormData(form));
+      params.set('addStop', '1');
+      window.location.href = '/book?' + params.toString();
+    });
+  }
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    if (serviceType.value === 'hourly' && !dropoffInput.value.trim() && pickupInput.value.trim()) {
+      dropoffInput.value = pickupInput.value.trim();
+      if (dropoffPlaceId) dropoffPlaceId.value = pickupPlaceId?.value || pickupInput.dataset.placeId || '';
+      if (dropoffSessionToken) dropoffSessionToken.value = pickupSessionToken?.value || '';
+    }
     const params = new URLSearchParams(new FormData(form));
     window.location.href = '/book?' + params.toString();
   });

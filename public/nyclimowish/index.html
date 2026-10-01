@@ -155,23 +155,13 @@
         <input type="hidden" name="serviceType" id="serviceType" value="point_to_point">
         <div class="limo-field">
           <label>Pickup Location</label>
-          <div class="limo-address-box">
+          <div class="limo-address-box has-pill">
             <span class="limo-field-icon">📍</span>
             <input class="limo-input limo-address" name="pickup" id="pickup" placeholder="Enter pickup address" required autocomplete="off">
+            <button type="button" class="limo-field-pill-btn" id="heroAddStop" title="Add a stop">Add Stop</button>
             <input type="hidden" name="pickupPlaceId" id="pickupPlaceId">
             <input type="hidden" name="pickupSessionToken" id="pickupSessionToken">
             <div class="limo-suggest" id="pickup-suggest" hidden></div>
-          </div>
-          <button type="button" class="limo-field-add" id="addStop" style="display:none;">Add Stop</button>
-        </div>
-        <div class="limo-field" id="dropoff-field">
-          <label>Drop-off Location</label>
-          <div class="limo-address-box">
-            <span class="limo-field-icon">📍</span>
-            <input class="limo-input limo-address" name="dropoff" id="dropoff" placeholder="Enter drop-off address" autocomplete="off">
-            <input type="hidden" name="dropoffPlaceId" id="dropoffPlaceId">
-            <input type="hidden" name="dropoffSessionToken" id="dropoffSessionToken">
-            <div class="limo-suggest" id="dropoff-suggest" hidden></div>
           </div>
         </div>
         <div class="limo-field" id="duration-field" style="display:none;">
@@ -187,6 +177,17 @@
             <option value="10">10 hours</option>
             <option value="12">12 hours</option>
           </select>
+        </div>
+        <div class="limo-field" id="dropoff-field">
+          <label>Drop-off Location</label>
+          <div class="limo-address-box has-pill" id="dropoff-address-box">
+            <span class="limo-field-icon">📍</span>
+            <input class="limo-input limo-address" name="dropoff" id="dropoff" placeholder="Enter drop-off address" autocomplete="off">
+            <button type="button" class="limo-field-pill-btn" id="heroSameAsPickup" style="display:none;" title="Same as pickup address">Same as Pickup</button>
+            <input type="hidden" name="dropoffPlaceId" id="dropoffPlaceId">
+            <input type="hidden" name="dropoffSessionToken" id="dropoffSessionToken">
+            <div class="limo-suggest" id="dropoff-suggest" hidden></div>
+          </div>
         </div>
         <div class="limo-field-row">
           <div class="limo-field">
