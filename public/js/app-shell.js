@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '29';
+  const SIDEBAR_VERSION = '30';
   // #endregion
 
   function clearRoleCache() {
@@ -105,7 +105,10 @@
     auditlog:   svgIcon(`<rect x="4" y="3" width="14" height="18" rx="2" fill="#64748b" opacity=".15" stroke="#64748b" stroke-width="1.7"/><path d="M8 8h8M8 12h8M8 16h5" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/><circle cx="17" cy="16" r="3" fill="#f59e0b"/><path d="M16 16l.8.8 1.4-1.4" stroke="#1e293b" stroke-width="1.2" stroke-linecap="round"/>`),
     webcms:     svgIcon(`<circle cx="12" cy="12" r="9" stroke="#0ea5e9" stroke-width="1.7" fill="none"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20" stroke="#0ea5e9" stroke-width="1.5" fill="none"/>`),
     blog:       svgIcon(`<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="#f472b6" stroke-width="1.7" fill="none"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="#f472b6" stroke-width="1.7" fill="none"/>`),
-    settings:   svgIcon(`<circle cx="12" cy="12" r="3" stroke="#e2e8f0" stroke-width="1.7" fill="none"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="#e2e8f0" stroke-width="1.5" fill="none"/>`)
+    settings:   svgIcon(`<circle cx="12" cy="12" r="3" stroke="#e2e8f0" stroke-width="1.7" fill="none"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="#e2e8f0" stroke-width="1.5" fill="none"/>`),
+    tasks:      svgIcon(`<path d="M9 11l3 3L22 4" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="#10b981" stroke-width="1.8" fill="none"/>`),
+    calculator: svgIcon(`<rect x="4" y="2" width="16" height="20" rx="3" stroke="#f59e0b" stroke-width="1.8" fill="none"/><rect x="7" y="5" width="10" height="4" rx="1" fill="#f59e0b" opacity=".3"/><circle cx="8" cy="13" r="1" fill="#f59e0b"/><circle cx="12" cy="13" r="1" fill="#f59e0b"/><circle cx="16" cy="13" r="1" fill="#f59e0b"/><circle cx="8" cy="17" r="1" fill="#f59e0b"/><circle cx="12" cy="17" r="1" fill="#f59e0b"/><circle cx="16" cy="17" r="1" fill="#f59e0b"/>`),
+    profile:    svgIcon(`<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#38bdf8" stroke-width="1.8" fill="none"/><circle cx="12" cy="7" r="4" stroke="#38bdf8" stroke-width="1.8" fill="none"/>`)
   };
 
   const STAFF_LINKS = [
@@ -139,60 +142,73 @@
     { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: IC.blog, label: 'Blog Manager', adminOnly: true }
   ];
 
+  const HR_LINKS = [
+    { section: 'HR & Personnel' },
+    { key: 'staff', href: '/staff-management', icon: IC.staff, label: 'Company Staff' },
+    { key: 'documents', href: '/documents', icon: IC.docs, label: 'Document Vault' },
+    { key: 'census', href: '/census-desk', icon: IC.census, label: 'Directory Desk' },
+    { section: 'Payroll & Operations' },
+    { key: 'invoices', href: '/invoices', icon: IC.billing, label: 'Payroll & Billing' },
+    { key: 'fleet', href: '/fleet', icon: IC.truck, label: 'Drivers & Fleet' },
+    { section: 'Communications' },
+    { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Email Inbox' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Inbox' }
+  ];
+
   const DISPATCHER_LINKS = [
     { section: 'Dispatch Desk' },
-    { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: '🎧', label: 'Dispatch Desk' },
-    { key: 'fleets', navId: 'nav-tab-fleets', href: '/dispatcher-dashboard#fleets', icon: '🚛', label: 'Assigned Fleets' },
-    { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Match' },
-    { key: 'planning', href: '/load-planning', icon: '📅', label: 'Truck Load Planning' },
-    { key: 'fleet', href: '/fleet', icon: '🚚', label: 'Fleet & Drivers' },
-    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' },
-    { key: 'documents', href: '/documents', icon: '📄', label: 'RateCons & BOLs' },
+    { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: IC.headset, label: 'Dispatch Desk' },
+    { key: 'fleets', navId: 'nav-tab-fleets', href: '/dispatcher-dashboard#fleets', icon: IC.truck, label: 'Assigned Fleets' },
+    { key: 'loadboard', href: '/load-booking', icon: IC.target, label: 'Load Board & AI Match' },
+    { key: 'planning', href: '/load-planning', icon: IC.planning, label: 'Truck Load Planning' },
+    { key: 'fleet', href: '/fleet', icon: IC.truck, label: 'Fleet & Drivers' },
+    { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' },
+    { key: 'documents', href: '/documents', icon: IC.docs, label: 'RateCons & BOLs' },
     { section: 'Communications' },
-    { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Replies' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: '📱', label: 'Driver SMS' }
+    { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Replies' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'Driver SMS' }
   ];
 
   const SALES_REP_LINKS = [
     { section: 'Sales & Acquisition' },
-    { key: 'crm', href: '/sales-dashboard', icon: '📈', label: 'Sales CRM & Leads' },
-    { key: 'leads', navId: 'nav-tab-leads', href: '/sales-dashboard#leads', icon: '🎯', label: 'Carrier Pipeline' },
-    { key: 'tasks', navId: 'nav-tab-tasks', href: '/sales-dashboard#tasks', icon: '📋', label: 'Follow-up Tasks' },
-    { key: 'census', href: '/census-desk', icon: '🗂️', label: 'DOT Census Desk' },
-    { key: 'voice-calls', href: '/voice-calls', icon: '📞', label: 'AI Cold Calling & Audio' },
+    { key: 'crm', href: '/sales-dashboard', icon: IC.chart, label: 'Sales CRM & Leads' },
+    { key: 'leads', navId: 'nav-tab-leads', href: '/sales-dashboard#leads', icon: IC.target, label: 'Carrier Pipeline' },
+    { key: 'tasks', navId: 'nav-tab-tasks', href: '/sales-dashboard#tasks', icon: IC.tasks, label: 'Follow-up Tasks' },
+    { key: 'census', href: '/census-desk', icon: IC.census, label: 'DOT Census Desk' },
+    { key: 'voice-calls', href: '/voice-calls', icon: IC.phone, label: 'AI Cold Calling & Audio' },
     { section: 'Inbound' },
-    { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Email Replies' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: '📱', label: 'Carrier SMS Inbound' },
-    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' }
+    { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Email Replies' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'Carrier SMS Inbound' },
+    { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' }
   ];
 
   const CARRIER_LINKS = [
     { section: 'Your company' },
-    { key: 'home', href: '/carrier-overview', icon: '📊', label: 'Fleet home' },
-    { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Bidding' },
-    { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Trucks & drivers' },
-    { key: 'planning', href: '/load-planning', icon: '📅', label: 'Empty truck / next load' },
-    { key: 'documents', href: '/documents', icon: '📄', label: 'Documents' },
-    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker credit check' },
+    { key: 'home', href: '/carrier-overview', icon: IC.chart, label: 'Fleet home' },
+    { key: 'loadboard', href: '/load-booking', icon: IC.target, label: 'Load Board & AI Bidding' },
+    { key: 'fleet', href: '/fleet', icon: IC.truck, label: 'Trucks & drivers' },
+    { key: 'planning', href: '/load-planning', icon: IC.planning, label: 'Empty truck / next load' },
+    { key: 'documents', href: '/documents', icon: IC.docs, label: 'Documents' },
+    { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker credit check' },
     { section: 'Money' },
-    { key: 'invoices', href: '/invoices', icon: '💳', label: 'Service billing' },
-    { key: 'ifta', href: '/ifta', icon: '⛽', label: 'IFTA & fuel' },
+    { key: 'invoices', href: '/invoices', icon: IC.billing, label: 'Service billing' },
+    { key: 'ifta', href: '/ifta', icon: IC.fuel, label: 'IFTA & fuel' },
     { section: 'On the road' },
-    { key: 'driver', href: '/driver-app', icon: '📱', label: 'Driver phone app' }
+    { key: 'driver', href: '/driver-app', icon: IC.phone, label: 'Driver phone app' }
   ];
 
   const DRIVER_LINKS = [
     { section: 'Road' },
-    { key: 'driver', href: '/driver-app', icon: '📱', label: 'My load' }
+    { key: 'driver', href: '/driver-app', icon: IC.truck, label: 'My load' }
   ];
 
   const LOADBOARD_MEMBER_LINKS = [
     { section: 'Self-Dispatch AI Suite' },
-    { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Live AI Load Board' },
-    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Credit & FMCSA Check' },
-    { key: 'calculator', href: '/services#calculator', icon: '📈', label: 'RPM & Lane Calculator' },
+    { key: 'loadboard', href: '/load-booking', icon: IC.target, label: 'Live AI Load Board' },
+    { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Credit & FMCSA Check' },
+    { key: 'calculator', href: '/services#calculator', icon: IC.calculator, label: 'RPM & Lane Calculator' },
     { section: 'My Account' },
-    { key: 'home', href: '/carrier-overview', icon: '⚙️', label: 'Subscription & Profile' }
+    { key: 'home', href: '/carrier-overview', icon: IC.profile, label: 'Subscription & Profile' }
   ];
 
   const PAGE_KEY = {
@@ -316,6 +332,7 @@
     }
     if (role === 'dispatcher') return DISPATCHER_LINKS;
     if (role === 'sales_rep') return SALES_REP_LINKS;
+    if (role === 'hr') return HR_LINKS;
 
     const staff = STAFF_LINKS.filter((item) => {
       if (item.superAdminOnly) return role === 'super_admin';
