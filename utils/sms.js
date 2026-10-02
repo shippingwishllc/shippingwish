@@ -11,11 +11,14 @@ const START_WORDS = new Set(['start', 'yes', 'unstop', 'subscribe']);
 const HELP_WORDS = new Set(['help', 'info']);
 
 function normalizePhone(raw) {
-  const digits = String(raw || '').replace(/\D/g, '');
+  const trimmed = String(raw || '').trim();
+  const digits = trimmed.replace(/\D/g, '');
   if (!digits) return '';
   if (digits.length === 10) return '+1' + digits;
   if (digits.length === 11 && digits.startsWith('1')) return '+' + digits;
-  if (String(raw || '').trim().startsWith('+')) return '+' + digits;
+  if (digits.length === 11 && digits.startsWith('03')) return '+92' + digits.slice(1);
+  if (digits.length === 12 && digits.startsWith('92')) return '+' + digits;
+  if (trimmed.startsWith('+')) return '+' + digits;
   return '+' + digits;
 }
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -184,10 +184,12 @@
             <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Template Presets</label>
             <select onchange="applyWhatsAppTemplate(this.value)" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
               <option value="custom">Custom Message (Blank)</option>
-              <option value="welcome">Shipping Wish — 24/7 Dedicated Dispatch Welcome ($0 Free Trial)</option>
-              <option value="loadsnexus">LoadsNexus — $19/mo Solo Load Board Pass Link</option>
-              <option value="checkin">Dispatcher Morning Check-In (Are you empty today?)</option>
-              <option value="ratecon">Rate Confirmation &amp; Load Packet Dispatch</option>
+              <option value="test">🧪 Plain Test Message</option>
+              <option value="loadoffer">🚛 Company Format: Official Load Offer &amp; Rate</option>
+              <option value="welcome">🌟 Shipping Wish — 24/7 Dedicated Dispatch Welcome ($0 Free Trial)</option>
+              <option value="loadsnexus">📦 LoadsNexus — $19/mo Solo Load Board Pass Link</option>
+              <option value="checkin">📍 Dispatcher Morning Check-In (Are you empty today?)</option>
+              <option value="ratecon">📋 Rate Confirmation &amp; Load Packet Dispatch</option>
             </select>
           </div>
 
@@ -477,7 +479,22 @@
   window.applyWhatsAppTemplate = function (val) {
     const txt = document.getElementById('new-wa-body');
     if (!txt) return;
-    if (val === 'welcome') {
+    if (val === 'test') {
+      txt.value = 'Hello! This is an official live WhatsApp verification test from Shipping Wish Operations Desk. Please reply to confirm receipt.';
+    } else if (val === 'loadoffer') {
+      txt.value = `🚛 SHIPPING WISH DISPATCH | LOAD OFFER
+Load ID: #SW-98421
+Origin: Chicago, IL
+Destination: Atlanta, GA
+Equipment: 53' Dry Van / Reefer
+Rate: $2,850.00 (All-in)
+Miles: 715 mi ($3.98/mi)
+Weight: 38,000 lbs
+Commodity: General Freight
+
+Please reply ACCEPT to receive the Rate Confirmation or CALL (917) 737-0021 for quick dispatch.
+Shipping Wish LLC — www.shippingwish.com`;
+    } else if (val === 'welcome') {
       txt.value = 'Hello! Welcome to Shipping Wish 24/7 Logistics & Dedicated Dispatch operations on WhatsApp. Test our personal dispatcher for 1 week at $0 (Zero Risk Free Trial). How can our dispatch desk assist your fleet today?';
     } else if (val === 'loadsnexus') {
       txt.value = 'Hello, here is the LoadsNexus link for direct broker loads. The Solo Pass is $19/mo: https://www.loadsnexus.com';
