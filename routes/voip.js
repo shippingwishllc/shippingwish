@@ -55,7 +55,7 @@ async function sendTwilioSms(toNumber, message) {
   }
   const body = appendLegalFooter(message);
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
-    return { status: 'logged', sid: null, body };
+    return { status: 'not_configured', sid: null, error: 'Twilio credentials (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN) are not set in Vercel environment variables.' };
   }
   const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
   const payload = {
@@ -77,11 +77,11 @@ async function sendTwilioSms(toNumber, message) {
 }
 
 async function sendTwilioWhatsApp(toNumber, message) {
-  const rawFrom = String(process.env.TWILIO_WHATSAPP_FROM || process.env.TWILIO_FROM_NUMBER || '').trim();
+  const rawFrom = String(process.env.TWILIO_WHATSAPP_FROM || process.env.TWILIO_FROM_NUMBER || '+16094696004').trim();
   const to = normalizePhone(toNumber);
-  if (!rawFrom || !to) return { status: 'not_configured', sid: null, error: 'Twilio WhatsApp numbers not configured' };
+  if (!to) return { status: 'twilio_error', sid: null, error: 'Recipient phone number is invalid' };
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
-    return { status: 'logged', sid: null };
+    return { status: 'not_configured', sid: null, error: 'Twilio credentials (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN) are not set in Vercel environment variables.' };
   }
   if (await isSmsOptedOut(to)) return { status: 'opted_out', sid: null };
   const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
