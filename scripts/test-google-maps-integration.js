@@ -70,6 +70,19 @@ async function run() {
     assert(false, `Maps Embed API error: ${err.message}`);
   }
 
+  // 6. Test Routes API computeRouteMatrix (Modern Distance Matrix)
+  try {
+    const matrix = await gm.computeRouteMatrix('Hopkinsville, KY', [
+      'Nashville, TN',
+      'Louisville, KY',
+      'Dibersville, MS'
+    ]);
+    assert(Array.isArray(matrix) && matrix.length === 3, `computeRouteMatrix compared 1 truck vs 3 candidate destinations in single batch`);
+    assert(matrix[0] && matrix[0].miles > 50 && matrix[0].miles < 100, `First destination (Nashville, TN) calculated: ${matrix[0] ? matrix[0].miles : 0} miles`);
+  } catch (err) {
+    assert(false, `computeRouteMatrix error: ${err.message}`);
+  }
+
   console.log('\n======================================================');
   console.log(`  Google Maps Tests: ${passed}/${total} Passed (${Math.round((passed/total)*100)}%)`);
   console.log('======================================================\n');

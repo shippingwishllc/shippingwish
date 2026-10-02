@@ -142,6 +142,112 @@ async function computeHighwayRoute(origin, destination, intermediates = []) {
 }
 
 /**
+ * Compare 1 origin (truck) against multiple destinations (candidate loads)
+ * simultaneously via Routes API computeRouteMatrix (New Distance Matrix)
+ */
+async function computeRouteMatrix(origin, destinations = []) {
+  const key = googleMapsKey();
+  const cleanOrigin = String(origin || '').trim();
+  const validDests = (Array.isArray(destinations) ? destinations : [])
+    .map(d => String(d || '').trim())
+    .filter(Boolean)
+    .slice(0, 25);
+
+  if (!cleanOrigin || validDests.length === 0) {
+    return [];
+  }
+
+  if (key) {
+    try {
+      const payload = {
+        origins: [{ waypoint: { address: cleanOrigin } }],
+        destinations: validDests.map(d => ({ waypoint: { address: d } })),
+        travelMode: 'DRIVE'
+      };
+
+      const res = await requestJson({
+        method: 'POST',
+        url: 'https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix',
+        headers: {
+          'X-Goog-Api-Key': key,
+          'X-Goog-FieldMask': 'originIndex,destinationIndex,duration,distanceMeters,status'
+        },
+        body: payload,
+        timeout: 12000
+      });
+
+      if (Array.isArray(res.data)) {
+        return res.data.map(item => {
+          const destIdx = typeof item.destinationIndex === 'number' ? item.destinationIndex : 0;
+          const meters = item.distanceMeters || 0;
+          const miles = Math.round(meters / 1609.34);
+          const seconds = parseInt(item.duration || '0', 10);
+          const hours = parseFloat((seconds / 3600).toFixed(1));
+
+          return {
+            destination: validDests[destIdx],
+            destinationIndex: destIdx,
+            miles,
+            hours,
+            status: item.status?.code === 0 || !item.status?.code ? 'OK' : 'ERROR'
+          };
+        }).sort((a, b) => a.destinationIndex - b.destinationIndex);
+      }
+    } catch (err) {
+      console.warn('[GoogleMaps] computeRouteMatrix notice:', err.message);
+    }
+  }
+
+  return validDests.map((dest, idx) => ({
+    destination: dest,
+    destinationIndex: idx,
+    miles: 500,
+    hours: 9.0,
+    status: 'FALLBACK'
+  }));
+}
+
+/**
+ * Validate physical US postal address & dock deliverability
+ * via Google Address Validation API
+ */
+async function validateAddress(addressLines = []) {
+  const key = googleMapsKey();
+  const lines = (Array.isArray(addressLines) ? addressLines : [addressLines])
+    .map(l => String(l || '').trim())
+    .filter(Boolean);
+
+  if (lines.length === 0 || !key) return null;
+
+  try {
+    const res = await requestJson({
+      method: 'POST',
+      url: `https://addressvalidation.googleapis.com/v1:validateAddress?key=${key}`,
+      body: {
+        address: { addressLines: lines }
+      },
+      timeout: 10000
+    });
+
+    if (res.statusCode === 200 && res.data?.result) {
+      const r = res.data.result;
+      return {
+        is_valid: Boolean(r.verdict?.hasUnconfirmedComponents === false),
+        formatted_address: r.address?.formattedAddress || lines.join(', '),
+        usps_standardized: r.uspsData?.standardizedAddress || null,
+        cass_certified: Boolean(r.uspsData?.dpvConfirmation === 'Y'),
+        is_commercial: r.metadata?.business === true,
+        verdict: r.verdict
+      };
+    }
+  } catch (err) {
+    console.warn('[GoogleMaps] Address validation notice:', err.message);
+  }
+
+  return null;
+}
+
+/**
  * Autocomplete address, city, state, or logistics facility
  * via Google Places API (New v1:places:autocomplete)
  */
@@ -293,6 +399,8 @@ function fallbackHaversineRoute(origin, destination) {
 module.exports = {
   googleMapsKey,
   computeHighwayRoute,
+  computeRouteMatrix,
+  validateAddress,
   searchPlaceAutocomplete,
   geocodeAddress,
   getEmbedDirectionsUrl

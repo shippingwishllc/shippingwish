@@ -27,6 +27,19 @@
   <link rel="icon" href="/nyclimowish/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/nyclimowish/apple-touch-icon.png">
   <link rel="stylesheet" href="/css/limo.css">
+  <script>
+    (function () {
+      try {
+        var p = new URLSearchParams(window.location.search);
+        var hasPickup = Boolean(p.get('pickup'));
+        var isHourly = p.get('serviceType') === 'hourly' || p.get('type') === 'hourly';
+        var hasDropoff = Boolean(p.get('dropoff'));
+        if (hasPickup && (hasDropoff || isHourly) && p.get('edit') !== '1') {
+          document.documentElement.classList.add('limo-preloading-step2');
+        }
+      } catch (_) {}
+    })();
+  </script>
 </head>
 <body class="limo-light">
   <!-- Google Tag Manager (noscript) -->
@@ -37,7 +50,7 @@
 
 <header class="limo-book-header">
   <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
-    <a href="/" class="limo-logo" style="color:var(--limo-black);">NYC <span>LIMO</span> WISH</a>
+    <a href="/" class="limo-logo" style="color:#ffffff;text-decoration:none;font-size:1.35rem;font-weight:800;letter-spacing:0.04em;">NYC <span style="color:var(--limo-gold);">LIMO</span> WISH</a>
     <div class="limo-steps">
       <div class="limo-step active" data-step="1"><span class="limo-step-num">1</span> Ride Details</div>
       <div class="limo-step" data-step="2"><span class="limo-step-num">2</span> Vehicle</div>
@@ -113,47 +126,127 @@
 
   <!-- Step 2: Vehicle Selection -->
   <div class="book-step" id="step-2" style="display:none;">
-    <div class="limo-step2-header">
-      <h2 class="limo-step2-title">Select Your Vehicle</h2>
-      <button type="button" class="limo-btn-back-top" id="btn-back-top" aria-label="Go back to ride details">◀ BACK</button>
+    <div class="limo-sub-topbar">
+      <div class="limo-sub-topbar-inner">
+        <h2 class="limo-step2-title">Select Your Vehicle</h2>
+        <button type="button" class="limo-btn-back-top" id="btn-back-top" aria-label="Go back to ride details">◀ BACK</button>
+      </div>
     </div>
     <div class="limo-book-main">
       <aside class="limo-sidebar">
+        <!-- Map Card -->
         <div class="limo-sidebar-card limo-map-card">
-          <div class="limo-sidebar-map" id="sidebar-map">Route map</div>
-          <p id="map-note" class="limo-map-note"></p>
-          <div id="sidebar-stats" class="limo-sidebar-metrics"></div>
+          <div class="limo-sidebar-map" id="sidebar-map">
+            <div class="limo-map-placeholder">
+              <span class="limo-map-spin">📍</span>
+              <span>Calculating route...</span>
+            </div>
+          </div>
+          <div id="sidebar-stats" class="limo-map-metrics-strip">
+            <div class="limo-map-metric">
+              <svg class="limo-stat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <span id="stat-miles">0.0 mi</span>
+            </div>
+            <div class="limo-map-metric">
+              <svg class="limo-stat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span id="stat-duration">0 hour 0 min</span>
+            </div>
+          </div>
         </div>
+
+        <!-- Pickup Trip Details Card -->
         <div class="limo-sidebar-card limo-trip-card">
           <div class="limo-trip-header">
             <span class="limo-trip-badge">➔</span>
             <h4>Pickup Trip Details</h4>
           </div>
           <div class="limo-trip-timeline">
-            <div class="limo-timeline-item">
-              <span class="limo-timeline-dot dot-pickup"></span>
-              <div class="limo-timeline-content" id="sb-pickup">—</div>
+            <!-- Pickup Stop -->
+            <div class="limo-timeline-stop">
+              <div class="limo-stop-marker">
+                <div class="limo-pin-badge pin-pickup">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                  </svg>
+                </div>
+                <div class="limo-route-track"></div>
+              </div>
+              <div class="limo-stop-info">
+                <div class="limo-stop-main" id="sb-pickup-main">Pickup Location</div>
+                <div class="limo-stop-sub" id="sb-pickup-sub">—</div>
+              </div>
             </div>
-            <div id="sb-stops" class="limo-timeline-stops"></div>
-            <div class="limo-timeline-item">
-              <span class="limo-timeline-dot dot-dropoff"></span>
-              <div class="limo-timeline-content" id="sb-dropoff">—</div>
+
+            <!-- Intermediate Stops (if any) -->
+            <div id="sb-stops-container"></div>
+
+            <!-- Dropoff Stop -->
+            <div class="limo-timeline-stop stop-dropoff">
+              <div class="limo-stop-marker">
+                <div class="limo-pin-badge pin-dropoff">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="limo-stop-info">
+                <div class="limo-stop-main" id="sb-dropoff-main">Drop-off Location</div>
+                <div class="limo-stop-sub" id="sb-dropoff-sub">—</div>
+              </div>
             </div>
           </div>
+
           <div class="limo-trip-meta">
             <div class="limo-meta-item">
               <span class="limo-meta-icon">📅</span>
-              <span id="sb-datetime">—</span>
+              <span id="sb-meta-date">—</span>
             </div>
-            <div class="limo-meta-item" id="sb-duration-wrap" style="display:none;">
+            <div class="limo-meta-item">
+              <span class="limo-meta-icon">🕒</span>
+              <span id="sb-meta-time">—</span>
+            </div>
+            <div class="limo-meta-item" id="sb-duration-wrap">
               <span class="limo-meta-icon">⏱️</span>
               <span id="sb-duration">—</span>
             </div>
           </div>
         </div>
       </aside>
+
       <div class="limo-vehicle-area">
-        <div class="limo-vehicle-list" id="vehicle-list"></div>
+        <div class="limo-vehicle-list" id="vehicle-list">
+          <div class="limo-fleet-loading-state">
+            <div class="limo-loader-spinner"></div>
+            <p class="limo-loader-title">Finding available luxury vehicles for your route...</p>
+            <p class="limo-loader-sub">Calculating live Google distance, routes, and best guaranteed rates</p>
+            <div class="limo-skeleton-card">
+              <div class="limo-skeleton-img"></div>
+              <div class="limo-skeleton-info">
+                <div class="limo-skeleton-line short"></div>
+                <div class="limo-skeleton-line title"></div>
+                <div class="limo-skeleton-line sub"></div>
+                <div class="limo-skeleton-pills"></div>
+              </div>
+              <div class="limo-skeleton-price"></div>
+            </div>
+            <div class="limo-skeleton-card">
+              <div class="limo-skeleton-img"></div>
+              <div class="limo-skeleton-info">
+                <div class="limo-skeleton-line short"></div>
+                <div class="limo-skeleton-line title"></div>
+                <div class="limo-skeleton-line sub"></div>
+                <div class="limo-skeleton-pills"></div>
+              </div>
+              <div class="limo-skeleton-price"></div>
+            </div>
+          </div>
+        </div>
         <div class="limo-vehicle-footer-actions">
           <button type="button" class="limo-btn limo-btn-back" id="btn-back-2">← Edit ride details</button>
         </div>

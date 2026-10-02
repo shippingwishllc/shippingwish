@@ -358,6 +358,18 @@
     addStop();
   }
 
+  function splitAddress(addr) {
+    if (!addr) return { main: '—', sub: '' };
+    const commaIndex = addr.indexOf(',');
+    if (commaIndex !== -1) {
+      return {
+        main: addr.slice(0, commaIndex).trim(),
+        sub: addr.slice(commaIndex + 1).trim()
+      };
+    }
+    return { main: addr.trim(), sub: '' };
+  }
+
   async function submitStep1() {
     let pickup = placePayload($('b-pickup'));
     let dropoff = placePayload($('b-dropoff'));
@@ -371,6 +383,8 @@
     showError('step1-error', '');
 
     if (!state.pickup || !state.pickupDate || !state.pickupTime) {
+      document.documentElement.classList.remove('limo-preloading-step2');
+      showStep(1);
       showError('step1-error', 'Please fill in pickup, date, and time.');
       return;
     }
@@ -382,6 +396,8 @@
       dropoff = placePayload($('b-dropoff'));
     }
     if (state.serviceType === 'point_to_point' && !state.dropoff) {
+      document.documentElement.classList.remove('limo-preloading-step2');
+      showStep(1);
       showError('step1-error', 'Please enter a drop-off location.');
       return;
     }
@@ -429,10 +445,13 @@
       state.mapUrl = safeMapUrl(data.map?.embedUrl);
       state.mapProvider = state.mapUrl ? (data.map?.provider || 'none') : 'none';
 
+      document.documentElement.classList.remove('limo-preloading-step2');
       renderSidebar();
       renderVehicles();
       showStep(2);
     } catch (err) {
+      document.documentElement.classList.remove('limo-preloading-step2');
+      showStep(1);
       showError('step1-error', err.message || 'Could not calculate pricing.');
     } finally {
       $('btn-step1').disabled = false;
@@ -470,10 +489,13 @@
 
   function renderMap() {
     const box = $('sidebar-map');
-    box.textContent = '';
+    if (!box) return;
+    box.innerHTML = '';
     if (!state.mapUrl) {
-      box.textContent = 'Route map';
-      $('map-note').textContent = '';
+      box.innerHTML = `<div class="limo-map-placeholder">
+        <span class="limo-map-spin">📍</span>
+        <span>Route map loading...</span>
+      </div>`;
       return;
     }
     const frame = document.createElement('iframe');
@@ -482,43 +504,78 @@
     frame.referrerPolicy = 'origin';
     frame.src = state.mapUrl;
     box.appendChild(frame);
-    $('map-note').textContent = state.mapProvider === 'google_embed'
-      ? 'Map: Google Maps Embed'
-      : 'Map: OpenStreetMap';
   }
 
   function renderSidebar() {
     renderMap();
-    if ($('sb-pickup')) $('sb-pickup').textContent = state.pickup || '—';
-    if ($('sb-dropoff')) $('sb-dropoff').textContent = state.serviceType === 'hourly' ? 'Hourly Service' : (state.dropoff || '—');
-    if ($('sb-stops')) {
-      $('sb-stops').innerHTML = (state.stops || []).map((stop) =>
-        `<div class="limo-timeline-item">
-          <span class="limo-timeline-dot dot-stop"></span>
-          <div class="limo-timeline-content">${escapeHtml(stop)}</div>
-        </div>`
-      ).join('');
-    }
-    const d = new Date(state.pickupDate + 'T' + state.pickupTime);
-    const dateFormatted = !isNaN(d.getTime())
-      ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-      : `${state.pickupDate} ${state.pickupTime}`;
-    if ($('sb-datetime')) $('sb-datetime').textContent = dateFormatted;
 
+    // Pickup address
+    const pSplit = splitAddress(state.pickup);
+    if ($('sb-pickup-main')) $('sb-pickup-main').textContent = pSplit.main || state.pickup || '—';
+    if ($('sb-pickup-sub')) $('sb-pickup-sub').textContent = pSplit.sub || '';
+
+    // Dropoff address
     if (state.serviceType === 'hourly') {
-      if ($('sb-duration')) $('sb-duration').textContent = state.hours + ' hours duration';
-      if ($('sb-duration-wrap')) $('sb-duration-wrap').style.display = 'flex';
-      if ($('sidebar-stats')) {
-        $('sidebar-stats').innerHTML = `<span class="limo-stat-pill">⏱️ ${state.hours} hours</span> <span class="limo-stat-pill">⭐️ Hourly Charter</span>`;
+      const isCustomDrop = Boolean(state.dropoff && state.dropoff !== state.pickup);
+      if ($('sb-dropoff-main')) {
+        $('sb-dropoff-main').textContent = isCustomDrop ? splitAddress(state.dropoff).main : 'Hourly Charter Service';
+      }
+      if ($('sb-dropoff-sub')) {
+        $('sb-dropoff-sub').textContent = isCustomDrop ? splitAddress(state.dropoff).sub : `${state.hours} hours dedicated chauffeur on standby`;
       }
     } else {
-      if ($('sb-duration-wrap')) $('sb-duration-wrap').style.display = 'none';
+      const dSplit = splitAddress(state.dropoff);
+      if ($('sb-dropoff-main')) $('sb-dropoff-main').textContent = dSplit.main || state.dropoff || '—';
+      if ($('sb-dropoff-sub')) $('sb-dropoff-sub').textContent = dSplit.sub || '';
+    }
+
+    // Intermediate stops
+    if ($('sb-stops-container')) {
+      $('sb-stops-container').innerHTML = (state.stops || []).map((stop) => {
+        const sSplit = splitAddress(stop);
+        return `<div class="limo-timeline-stop stop-intermediate">
+          <div class="limo-stop-marker">
+            <div class="limo-pin-badge pin-stop">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+            </div>
+            <div class="limo-route-track"></div>
+          </div>
+          <div class="limo-stop-info">
+            <div class="limo-stop-main">${escapeHtml(sSplit.main)}</div>
+            <div class="limo-stop-sub">${escapeHtml(sSplit.sub)}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Date & Time formatting
+    const d = new Date(state.pickupDate + 'T' + state.pickupTime);
+    if (!isNaN(d.getTime())) {
+      if ($('sb-meta-date')) {
+        $('sb-meta-date').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      if ($('sb-meta-time')) {
+        $('sb-meta-time').textContent = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      }
+    } else {
+      if ($('sb-meta-date')) $('sb-meta-date').textContent = state.pickupDate || '—';
+      if ($('sb-meta-time')) $('sb-meta-time').textContent = state.pickupTime || '—';
+    }
+
+    // Distance and Duration under map
+    if (state.serviceType === 'hourly') {
+      if ($('sb-duration')) $('sb-duration').textContent = `${state.hours} hours duration`;
+      if ($('sb-duration-wrap')) $('sb-duration-wrap').style.display = 'flex';
+      if ($('stat-miles')) $('stat-miles').textContent = `${state.hours} hours`;
+      if ($('stat-duration')) $('stat-duration').textContent = 'Hourly Charter';
+    } else {
       const hours = Math.floor(state.durationMins / 60);
       const mins = state.durationMins % 60;
-      const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
-      if ($('sidebar-stats')) {
-        $('sidebar-stats').innerHTML = `<span class="limo-stat-pill">📍 ${state.miles} mi</span> <span class="limo-stat-pill">⏱️ ${durationStr}</span>`;
-      }
+      const durationStr = hours > 0 ? `${hours} hour ${mins} min` : `${mins} min`;
+      if ($('sb-duration')) $('sb-duration').textContent = `${durationStr} estimated`;
+      if ($('sb-duration-wrap')) $('sb-duration-wrap').style.display = 'flex';
+      if ($('stat-miles')) $('stat-miles').textContent = `${state.miles} mi`;
+      if ($('stat-duration')) $('stat-duration').textContent = durationStr;
     }
   }
 

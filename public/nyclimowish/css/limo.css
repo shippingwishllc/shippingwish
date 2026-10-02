@@ -539,19 +539,34 @@ a:hover { color: var(--limo-gold-light); }
 .limo-btn-back { background: #fff; color: #333; border: 1.5px solid #d1d5db; padding: 12px 20px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all var(--transition); }
 .limo-btn-back:hover { border-color: var(--limo-gold); color: var(--limo-gold-dark); background: #fdf8ed; }
 
-/* STEP 2 HEADER & TOP BACK BUTTON */
-.limo-step2-header {
+/* Anti-blink preloader for direct step 2 transitions */
+html.limo-preloading-step2 #step-1 {
+  display: none !important;
+}
+html.limo-preloading-step2 #step-2 {
+  display: block !important;
+}
+
+/* STEP 2 SUB-TOPBAR & BACK BUTTON (Prestige Ride Match) */
+.limo-sub-topbar {
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  width: 100%;
+  padding: 14px 0;
+  margin-bottom: 24px;
+}
+.limo-sub-topbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
-  padding-bottom: 14px;
-  border-bottom: 1.5px solid #e5e7eb;
 }
 .limo-step2-title {
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   font-weight: 800;
-  color: #111827;
+  color: #0f172a;
   margin: 0;
   letter-spacing: -0.02em;
 }
@@ -559,21 +574,23 @@ a:hover { color: var(--limo-gold-light); }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #ffffff;
-  border: 1.5px solid #111827;
-  color: #111827;
-  padding: 8px 18px;
-  border-radius: 8px;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 7px 18px;
+  border-radius: 6px;
   font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.18s ease;
 }
 .limo-btn-back-top:hover {
-  background: #111827;
-  color: #ffffff;
+  background: #ffffff;
+  border-color: #94a3b8;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   transform: translateX(-2px);
 }
 
@@ -593,14 +610,14 @@ a:hover { color: var(--limo-gold-light); }
 .limo-sidebar-map {
   width: 100%;
   height: 220px;
-  background: #f3f4f6;
+  background: #f8fafc;
   border-radius: 12px;
   overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: #64748b;
   font-weight: 600;
 }
 .limo-sidebar-map iframe {
@@ -608,31 +625,50 @@ a:hover { color: var(--limo-gold-light); }
   height: 100%;
   border: 0;
 }
-.limo-map-note {
-  font-size: 0.72rem;
-  color: #9ca3af;
-  margin: 6px 0 0;
-}
-.limo-sidebar-metrics {
+.limo-map-placeholder {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-.limo-stat-pill {
-  display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #374151;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+.limo-map-spin {
+  font-size: 1.6rem;
+  animation: limo-bounce 1.4s infinite ease-in-out;
+}
+@keyframes limo-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
-/* Pickup Trip Details Card */
+/* Under-Map Metric Strip (0.0 mi / 0 hour 0 min) */
+.limo-map-metrics-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 14px;
+}
+.limo-map-metric {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.limo-stat-ico {
+  width: 18px;
+  height: 18px;
+  color: var(--limo-gold-dark, #b8860b);
+  flex-shrink: 0;
+}
+
+/* PICKUP TRIP DETAILS CARD & ANIMATED TIMELINE */
 .limo-trip-card {
   padding: 20px;
 }
@@ -642,7 +678,7 @@ a:hover { color: var(--limo-gold-light); }
   gap: 10px;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #f1f5f9;
 }
 .limo-trip-badge {
   display: inline-flex;
@@ -650,8 +686,8 @@ a:hover { color: var(--limo-gold-light); }
   justify-content: center;
   width: 26px;
   height: 26px;
-  background: #fef3c7;
-  color: #d97706;
+  background: #111827;
+  color: #ffffff;
   border-radius: 6px;
   font-weight: 800;
   font-size: 0.85rem;
@@ -659,52 +695,115 @@ a:hover { color: var(--limo-gold-light); }
 .limo-trip-header h4 {
   font-size: 0.98rem;
   font-weight: 800;
-  color: #111827;
+  color: #0f172a;
   margin: 0;
 }
 .limo-trip-timeline {
   display: flex;
   flex-direction: column;
   position: relative;
-  margin: 10px 0 16px;
-  padding-left: 10px;
+  margin: 4px 0 12px;
 }
-.limo-trip-timeline::before {
-  content: '';
-  position: absolute;
-  left: 16px;
-  top: 14px;
-  bottom: 14px;
-  width: 2px;
-  background: #d1d5db;
-}
-.limo-timeline-item {
+.limo-timeline-stop {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 14px;
   position: relative;
-  padding: 8px 0;
-  z-index: 1;
 }
-.limo-timeline-dot {
+.limo-stop-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 28px;
+  flex-shrink: 0;
+  position: relative;
+}
+.limo-pin-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.limo-pin-badge svg {
   width: 14px;
   height: 14px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 3px;
-  background: #ffffff;
-  border: 3px solid #111827;
 }
-.limo-timeline-dot.dot-dropoff {
-  border-color: #d97706;
+.limo-pin-badge.pin-pickup {
+  background: #111827;
+  color: #ffffff;
 }
-.limo-timeline-dot.dot-stop {
-  border-color: #6366f1;
+.limo-pin-badge.pin-dropoff {
+  background: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%);
+  color: #ffffff;
 }
-.limo-timeline-content {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #1f2937;
+.limo-pin-badge.pin-stop {
+  background: #3b82f6;
+  color: #ffffff;
+}
+.limo-route-track {
+  width: 3px;
+  flex: 1;
+  min-height: 48px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  margin: 4px 0;
+  position: relative;
+  overflow: hidden;
+}
+/* Glowing animated beam travelling down the route line from pickup to dropoff */
+.limo-route-track::after {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(180deg, rgba(212,175,55,0) 0%, rgba(212,175,55,0.95) 70%, #ffffff 100%);
+  box-shadow: 0 0 8px rgba(212,175,55,0.8);
+  animation: limo-beam-travel 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes limo-beam-travel {
+  0% {
+    top: -40px;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+.limo-stop-info {
+  padding-top: 2px;
+  padding-bottom: 20px;
+  flex: 1;
+  min-width: 0;
+}
+.limo-timeline-stop.stop-dropoff .limo-stop-info {
+  padding-bottom: 4px;
+}
+.limo-stop-main {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.35;
+  margin-bottom: 3px;
+  word-break: break-word;
+}
+.limo-stop-sub {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #64748b;
   line-height: 1.4;
   word-break: break-word;
 }
@@ -712,8 +811,11 @@ a:hover { color: var(--limo-gold-light); }
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-top: 12px;
-  border-top: 1px solid #f3f4f6;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-top: 14px;
 }
 .limo-meta-item {
   display: flex;
@@ -721,10 +823,97 @@ a:hover { color: var(--limo-gold-light); }
   gap: 8px;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #4b5563;
+  color: #334155;
 }
 .limo-meta-icon {
   font-size: 0.95rem;
+}
+
+/* SKELETON LOADER (Anti-blink Step 2 loading state) */
+.limo-fleet-loading-state {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 6px 0 16px;
+}
+.limo-loader-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3.5px solid #e2e8f0;
+  border-top-color: #c9a227;
+  border-radius: 50%;
+  animation: limo-spin 0.8s linear infinite;
+  margin: 12px auto 4px;
+}
+@keyframes limo-spin {
+  to { transform: rotate(360deg); }
+}
+.limo-loader-title {
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+.limo-loader-sub {
+  text-align: center;
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0 0 12px;
+}
+.limo-skeleton-card {
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 22px 26px;
+  display: grid;
+  grid-template-columns: 210px 1fr 140px;
+  gap: 24px;
+  align-items: center;
+}
+.limo-skeleton-img {
+  width: 100%;
+  height: 110px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 10px;
+  animation: limo-shimmer 1.6s infinite;
+}
+.limo-skeleton-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.limo-skeleton-line {
+  height: 14px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: limo-shimmer 1.6s infinite;
+}
+.limo-skeleton-line.short { width: 35%; height: 12px; }
+.limo-skeleton-line.title { width: 75%; height: 20px; }
+.limo-skeleton-line.sub { width: 50%; }
+.limo-skeleton-pills {
+  width: 60%;
+  height: 18px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: limo-shimmer 1.6s infinite;
+}
+.limo-skeleton-price {
+  width: 100px;
+  height: 38px;
+  margin-left: auto;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: limo-shimmer 1.6s infinite;
+}
+@keyframes limo-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* VEHICLE LIST & CARDS (Prestige Ride Match) */
@@ -950,6 +1139,14 @@ a:hover { color: var(--limo-gold-light); }
     text-align: left;
     gap: 16px;
     padding: 20px;
+  }
+  .limo-skeleton-card {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 20px;
+  }
+  .limo-skeleton-price {
+    margin-left: 0;
   }
   .limo-vehicle-photo-wrap {
     width: 100%;
