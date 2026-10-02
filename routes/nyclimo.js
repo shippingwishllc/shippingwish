@@ -14,7 +14,8 @@ const {
   autocompletePlaces, placeDetails, routeMap, cleanPlaceId, cleanSessionToken
 } = require('../utils/limo-places');
 const {
-  getLimoSender, getLimoReplyTo, buildRideRequestReceivedHtml, buildRideConfirmedHtml
+  getLimoSender, getLimoReplyTo, buildRideRequestReceivedHtml, buildRideConfirmedHtml,
+  buildOperatorAcceptedHtml, buildRideStatusUpdateHtml
 } = require('../utils/limo-email-templates');
 
 const APP_URL = (process.env.APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
@@ -696,6 +697,84 @@ async function handleStripeWebhook(event) {
     }).catch((err) => console.warn('[LIMO CONFIRMATION EMAIL]:', err.message));
   }
 }
+
+router.post('/test-emails', async (req, res) => {
+  const targetEmail = req.body?.email || 'shippingwishllc@gmail.com';
+  const passengerName = req.body?.name || 'VIP Guest';
+  const [firstName, ...rest] = passengerName.split(' ');
+  const lastName = rest.join(' ') || 'Chauffeur Client';
+
+  const sampleBooking = {
+    id: 8888,
+    booking_number: 'NLW-TEST-VIP' + Math.floor(1000 + Math.random() * 9000),
+    passenger_first_name: firstName,
+    passenger_last_name: lastName,
+    passenger_email: targetEmail,
+    passenger_phone: '+1 (917) 737-0021',
+    service_type: 'point_to_point',
+    pickup_address: 'John F. Kennedy International Airport (JFK), Terminal 4, Queens, NY',
+    dropoff_address: 'The Plaza Hotel, 768 5th Ave, New York, NY 10019',
+    pickup_date: '2026-10-06',
+    pickup_time: '14:30',
+    duration_hours: 3,
+    passengers: 2,
+    luggage: 2,
+    base_price: '185.00',
+    tolls: '21.50',
+    gratuity: '37.00',
+    total_price: '243.50',
+    status: 'pending_operator',
+    payment_status: 'unpaid'
+  };
+
+  const sampleVehicle = {
+    name: 'Premium Executive Sedan',
+    models: 'Mercedes-Benz S-Class / BMW 7 Series'
+  };
+
+  const results = {};
+  try {
+    results.requestReceived = await sendEmail({
+      to: targetEmail,
+      from: getLimoSender(),
+      replyTo: getLimoReplyTo(),
+      subject: `Ride request received — ${sampleBooking.booking_number}`,
+      html: buildRideRequestReceivedHtml(sampleBooking, sampleVehicle, APP_URL)
+    });
+  } catch (e1) { results.requestReceivedError = e1.message; }
+
+  try {
+    results.operatorAccepted = await sendEmail({
+      to: targetEmail,
+      from: getLimoSender(),
+      replyTo: getLimoReplyTo(),
+      subject: `A licensed operator accepted — ${sampleBooking.booking_number}`,
+      html: buildOperatorAcceptedHtml(sampleBooking, APP_URL)
+    });
+  } catch (e2) { results.operatorAcceptedError = e2.message; }
+
+  try {
+    results.rideConfirmed = await sendEmail({
+      to: targetEmail,
+      from: getLimoSender(),
+      replyTo: getLimoReplyTo(),
+      subject: `Ride confirmed — ${sampleBooking.booking_number}`,
+      html: buildRideConfirmedHtml(sampleBooking, sampleVehicle, APP_URL)
+    });
+  } catch (e3) { results.rideConfirmedError = e3.message; }
+
+  try {
+    results.statusEnRoute = await sendEmail({
+      to: targetEmail,
+      from: getLimoSender(),
+      replyTo: getLimoReplyTo(),
+      subject: `Ride update: EN ROUTE — ${sampleBooking.booking_number}`,
+      html: buildRideStatusUpdateHtml(sampleBooking, 'en_route', APP_URL)
+    });
+  } catch (e4) { results.statusEnRouteError = e4.message; }
+
+  res.json({ ok: true, recipient: targetEmail, results, bookingNumber: sampleBooking.booking_number });
+});
 
 module.exports = router;
 module.exports.handleStripeWebhook = handleStripeWebhook;
