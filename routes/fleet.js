@@ -78,11 +78,13 @@ router.get('/carriers', requireAuth, async (req, res) => {
   }
 });
 
-// List dispatchers (for assignment dropdown)
+// List dispatchers & admins (for assignment dropdown)
 router.get('/dispatchers', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, email FROM users WHERE role = 'dispatcher' AND is_suspended IS NOT TRUE ORDER BY name ASC`
+      `SELECT id, name, email, role FROM users 
+       WHERE role IN ('dispatcher', 'admin', 'super_admin') AND is_suspended IS NOT TRUE 
+       ORDER BY CASE WHEN role = 'dispatcher' THEN 1 WHEN role = 'admin' THEN 2 ELSE 3 END, name ASC`
     );
     res.json({ dispatchers: result.rows });
   } catch (err) {

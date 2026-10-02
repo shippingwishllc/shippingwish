@@ -281,9 +281,9 @@
             <input type="password" class="form-input" id="carrier-password" name="password" required placeholder="••••••••">
           </div>
           <div class="form-group">
-            <label class="form-label" for="carrier-dispatcher-select">Assign to Dispatcher</label>
+            <label class="form-label" for="carrier-dispatcher-select">Assign to Dispatcher <span style="font-weight:400;font-size:11px;color:var(--text-muted);">(Optional)</span></label>
             <select class="form-select" id="carrier-dispatcher-select" name="dispatcher_id">
-              <option value="">-- Choose Internal Dispatcher --</option>
+              <option value="">🛡️ Direct Admin Operations (No Dispatcher Required)</option>
             </select>
           </div>
         </div>
@@ -351,9 +351,9 @@
             <input type="password" class="form-input" id="edit-carrier-password" name="password" placeholder="Leave blank to keep unchanged">
           </div>
           <div class="form-group">
-            <label class="form-label" for="edit-carrier-dispatcher-select">Assign to Dispatcher</label>
+            <label class="form-label" for="edit-carrier-dispatcher-select">Assign to Dispatcher <span style="font-weight:400;font-size:11px;color:var(--text-muted);">(Optional)</span></label>
             <select class="form-select" id="edit-carrier-dispatcher-select" name="dispatcher_id">
-              <option value="">-- No Dispatcher Assigned --</option>
+              <option value="">🛡️ Direct Admin Operations (No Dispatcher Required)</option>
             </select>
           </div>
         </div>
@@ -726,14 +726,16 @@
       if (res.ok) {
         const data = await res.json();
         allDispatchers = data.dispatchers || [];
-        const opts = '<option value="">-- Choose Internal Dispatcher --</option>' +
-          allDispatchers.map(d => `<option value="${d.id}">${escapeHtml(d.name)} (${escapeHtml(d.email)})</option>`).join('');
+        const opts = '<option value="">🛡️ Direct Admin Operations (No Dispatcher Required)</option>' +
+          allDispatchers.map(d => {
+            const roleTag = d.role === 'super_admin' ? '[Super Admin]' : d.role === 'admin' ? '[Admin]' : '[Dispatcher]';
+            return `<option value="${d.id}">${escapeHtml(d.name)} ${roleTag} (${escapeHtml(d.email)})</option>`;
+          }).join('');
         
         const sel1 = document.getElementById('carrier-dispatcher-select');
         const sel2 = document.getElementById('edit-carrier-dispatcher-select');
         if (sel1) sel1.innerHTML = opts;
-        if (sel2) sel2.innerHTML = '<option value="">-- No Dispatcher Assigned --</option>' +
-          allDispatchers.map(d => `<option value="${d.id}">${escapeHtml(d.name)} (${escapeHtml(d.email)})</option>`).join('');
+        if (sel2) sel2.innerHTML = opts;
       }
     } catch (e) {
       console.error('Could not load dispatchers:', e);
@@ -802,8 +804,8 @@
 
     tbody.innerHTML = filtered.map(c => {
       const dispBadge = c.dispatcher_name
-        ? `<span class="badge badge-dispatcher">👤 ${escapeHtml(c.dispatcher_name)}</span>`
-        : `<span class="badge badge-booked">Unassigned</span>`;
+        ? `<span class="badge badge-dispatcher">🎧 ${escapeHtml(c.dispatcher_name)}</span>`
+        : `<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;font-weight:700;">🛡️ Direct Admin Operations</span>`;
       const fee = c.dispatch_fee_percent ? `${c.dispatch_fee_percent}%` : '5.0%';
       const mcDot = [c.mc_number ? 'MC: ' + c.mc_number : '', c.dot_number ? 'DOT: ' + c.dot_number : ''].filter(Boolean).join('<br>') || 'N/A';
 
