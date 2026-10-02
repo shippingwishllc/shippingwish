@@ -773,7 +773,18 @@ router.post('/test-emails', async (req, res) => {
     });
   } catch (e4) { results.statusEnRouteError = e4.message; }
 
-  res.json({ ok: true, recipient: targetEmail, results, bookingNumber: sampleBooking.booking_number });
+  res.json({
+    ok: true,
+    recipient: targetEmail,
+    debug: {
+      sender: getLimoSender(),
+      replyTo: getLimoReplyTo(),
+      env_NYCLIMO_MAIL_FROM: process.env.NYCLIMO_MAIL_FROM || null,
+      env_MAIL_FROM: process.env.MAIL_FROM || null
+    },
+    results,
+    bookingNumber: sampleBooking.booking_number
+  });
 });
 
 module.exports = router;
