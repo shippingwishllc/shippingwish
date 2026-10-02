@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Admin | Shipping Wish TMS</title>
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .settings-grid { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: start; }
+    @media (max-width: 768px) { .settings-grid { grid-template-columns: 1fr; } }
+    .settings-nav { background: var(--surface-raised); border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden; position: sticky; top: 16px; }
+    .settings-nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; text-decoration: none; }
+    .settings-nav-item:hover { background: var(--surface-hover); color: var(--text-primary); }
+    .settings-nav-item.active { background: rgba(245,158,11,0.08); color: var(--color-amber-600); border-left-color: var(--color-amber-500); }
+    .settings-nav-item svg { flex-shrink: 0; opacity: 0.8; }
+    .settings-section { display: none; }
+    .settings-section.active { display: block; }
+    .settings-card { background: var(--surface-raised); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 24px; margin-bottom: 20px; }
+    .settings-card-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
+    .settings-card-desc { font-size: 12px; color: var(--text-muted); margin: 0 0 20px; }
+    .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border-subtle); }
+    .settings-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .settings-row-info { flex: 1; }
+    .settings-row-label { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+    .settings-row-hint { font-size: 12px; color: var(--text-muted); }
+    .toggle-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: var(--border-default); border-radius: 24px; cursor: pointer; transition: 0.2s; }
+    .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s; }
+    .toggle-switch input:checked + .toggle-slider { background: var(--color-amber-500); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-input { width: 100%; padding: 9px 12px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-base); color: var(--text-primary); font-size: 13px; }
+    .form-input:focus { outline: none; border-color: var(--color-amber-500); box-shadow: 0 0 0 3px rgba(245,158,11,0.12); }
+    .settings-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+    .badge-green { background: rgba(34,197,94,0.12); color: #16a34a; }
+    .badge-red { background: rgba(239,68,68,0.1); color: #dc2626; }
+    .badge-amber { background: rgba(245,158,11,0.12); color: #d97706; }
+    .danger-zone { border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius-xl); padding: 20px; background: rgba(239,68,68,0.03); }
+    .danger-zone-title { font-size: 14px; font-weight: 700; color: #dc2626; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+    .save-bar { position: sticky; bottom: 0; background: var(--surface-raised); border-top: 1px solid var(--border-default); padding: 12px 24px; display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 8px; border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
+    .color-swatch-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+    .color-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.15s; }
+    .color-swatch.selected { border-color: var(--text-primary); transform: scale(1.15); }
+    #settings-toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 12px 20px; border-radius: var(--radius-lg); font-size: 13px; font-weight: 600; display: none; align-items: center; gap: 8px; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Settings</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">System configuration — Admin & SuperAdmin only</p>
+      </div>
+      <div style="margin-left:auto;">
+        <span id="header-role-badge" class="settings-badge badge-amber">Super Admin</span>
+      </div>
+    </header>
+
+    <main class="app-content" style="padding-top:20px;">
+      <div class="settings-grid">
+
+        <!-- Left Nav -->
+        <nav class="settings-nav" aria-label="Settings sections">
+          <a class="settings-nav-item active" data-section="general" onclick="switchSection('general',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            General
+          </a>
+          <a class="settings-nav-item" data-section="notifications" onclick="switchSection('notifications',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            Notifications
+          </a>
+          <a class="settings-nav-item" data-section="security" onclick="switchSection('security',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V6L12 2Z" stroke="currentColor" stroke-width="1.7"/></svg>
+            Security & Access
+          </a>
+          <a class="settings-nav-item" data-section="branding" onclick="switchSection('branding',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.7"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            Branding
+          </a>
+          <a class="settings-nav-item" data-section="integrations" onclick="switchSection('integrations',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            Integrations
+          </a>
+          <a class="settings-nav-item" data-section="billing" onclick="switchSection('billing',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.5"/></svg>
+            Billing & Plan
+          </a>
+          <a class="settings-nav-item" data-section="trash-policy" onclick="switchSection('trash-policy',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Trash & Retention
+          </a>
+        </nav>
+
+        <!-- Right Panel -->
+        <div>
+
+          <!-- GENERAL -->
+          <div id="section-general" class="settings-section active">
+            <div class="settings-card">
+              <p class="settings-card-title">Company Information</p>
+              <p class="settings-card-desc">Core company profile shown across TMS, invoices, and emails.</p>
+              <div class="form-group">
+                <label>Company Name</label>
+                <input type="text" class="form-input" id="cfg-company-name" placeholder="Shipping Wish LLC">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                  <label>MC Number</label>
+                  <input type="text" class="form-input" id="cfg-mc" placeholder="MC-123456">
+                </div>
+                <div class="form-group">
+                  <label>DOT Number</label>
+                  <input type="text" class="form-input" id="cfg-dot" placeholder="DOT-9876543">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Company Phone</label>
+                <input type="text" class="form-input" id="cfg-phone" placeholder="+1 (212) 555-0100">
+              </div>
+              <div class="form-group">
+                <label>Company Email</label>
+                <input type="email" class="form-input" id="cfg-email" placeholder="ops@shippingwish.com">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label>Company Address</label>
+                <input type="text" class="form-input" id="cfg-address" placeholder="123 Freight Ave, New York, NY 10001">
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <p class="settings-card-title">Load & Operations Defaults</p>
+              <p class="settings-card-desc">Default values used when creating new loads and shipments.</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                  <label>Default Load Status</label>
+                  <select class="form-input" id="cfg-default-status">
+                    <option value="pending">Pending</option>
+                    <option value="booked">Booked</option>
+                    <option value="dispatched">Dispatched</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Default Equipment Type</label>
+                  <select class="form-input" id="cfg-default-equip">
+                    <option value="dry_van">Dry Van (53ft)</option>
+                    <option value="reefer">Reefer</option>
+                    <option value="flatbed">Flatbed</option>
+                    <option value="step_deck">Step Deck</option>
+                  </select>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Auto-assign dispatcher on load creation</div>
+                  <div class="settings-row-hint">Assign the creating dispatcher to new loads automatically</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-auto-assign" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Require rate confirmation before dispatch</div>
+                  <div class="settings-row-hint">Loads cannot be dispatched without a signed rate con</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-require-ratecon">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="save-bar" style="position:static;border:none;padding:0;margin:0;justify-content:flex-start;">
+                <button class="btn btn-primary" onclick="saveSettings('general')">💾 Save General Settings</button>
+                <span id="save-status-general" style="font-size:12px;color:var(--text-muted);"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- NOTIFICATIONS -->
+          <div id="section-notifications" class="settings-section">
+            <div class="settings-card">
+              <p class="settings-card-title">Email Notifications</p>
+              <p class="settings-card-desc">Choose which events trigger automatic email alerts to your team.</p>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">New load created</div>
+                  <div class="settings-row-hint">Notify dispatchers when a new load is added</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="notif-new-load" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Load delivered</div>
+                  <div class="settings-row-hint">Notify accounting when a load status changes to Delivered</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="notif-delivered" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">New carrier application</div>
+                  <div class="settings-row-hint">Notify admins when a carrier completes onboarding</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="notif-carrier-app" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Invoice past due</div>
+                  <div class="settings-row-hint">Remind accounting team of unpaid invoices after 30 days</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="notif-invoice-due"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Carrier insurance expiring</div>
+                  <div class="settings-row-hint">Alert 30 days before a carrier's COI expires</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="notif-insurance" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <p class="settings-card-title">SMS / Text Alerts</p>
+              <p class="settings-card-desc">Send text message alerts for critical operational events.</p>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Driver check-call missed</div>
+                  <div class="settings-row-hint">SMS dispatcher if driver misses a scheduled check-call</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="sms-checkcall" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Load status update to carrier</div>
+                  <div class="settings-row-hint">Auto-SMS carrier when load is dispatched or delivered</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="sms-status-update"><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="save-bar" style="position:static;border:none;padding:0;margin:0;justify-content:flex-start;">
+                <button class="btn btn-primary" onclick="saveSettings('notifications')">💾 Save Notification Settings</button>
+                <span id="save-status-notifications" style="font-size:12px;color:var(--text-muted);"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECURITY -->
+          <div id="section-security" class="settings-section">
+            <div class="settings-card">
+              <p class="settings-card-title">Authentication & Login</p>
+              <p class="settings-card-desc">Control how staff and external users sign in to the portal.</p>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Require 2FA for Admins</div>
+                  <div class="settings-row-hint">Force two-factor authentication for admin and super-admin accounts</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="sec-2fa-admin" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Require 2FA for all staff</div>
+                  <div class="settings-row-hint">Extend 2FA requirement to dispatchers, sales reps, HR</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="sec-2fa-staff"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Auto-logout after inactivity</div>
+                  <div class="settings-row-hint">Log out portal sessions after 60 minutes of inactivity</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="sec-auto-logout" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="form-group" style="margin-top:16px;">
+                <label>Session Timeout (minutes)</label>
+                <input type="number" class="form-input" id="sec-timeout" value="60" min="15" max="480" style="max-width:180px;">
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <p class="settings-card-title">Role Permissions Overview</p>
+              <p class="settings-card-desc">Quick reference — who can do what across the TMS.</p>
+              <table class="tms-table-v2" style="font-size:12px;">
+                <thead><tr><th>Action</th><th>SuperAdmin</th><th>Admin</th><th>HR</th><th>Dispatcher</th><th>Sales</th></tr></thead>
+                <tbody>
+                  <tr><td>Delete Loads</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+                  <tr><td>Delete Users</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+                  <tr><td>Delete CRM Leads</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+                  <tr><td>Delete Emails</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+                  <tr><td>Delete Fleet/Drivers</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+                  <tr><td>Create Staff Users</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+                  <tr><td>View Audit Logs</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+                  <tr><td>Billing & Invoices</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+                  <tr><td>View Calls & SMS</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="settings-card">
+              <p class="settings-card-title danger-zone-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="#dc2626" stroke-width="1.7"/><line x1="12" y1="9" x2="12" y2="13" stroke="#dc2626" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="#dc2626"/></svg>
+                Danger Zone
+              </p>
+              <div class="danger-zone">
+                <div class="settings-row">
+                  <div class="settings-row-info">
+                    <div class="settings-row-label" style="color:#dc2626;">Run Manual Trash Purge</div>
+                    <div class="settings-row-hint">Permanently delete all items older than the retention period right now</div>
+                  </div>
+                  <button class="btn btn-danger btn-sm" onclick="runManualPurge()">Run Purge</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BRANDING -->
+          <div id="section-branding" class="settings-section">
+            <div class="settings-card">
+              <p class="settings-card-title">Brand Colors</p>
+              <p class="settings-card-desc">Accent color used across the portal sidebar and UI highlights.</p>
+              <div class="settings-row-label" style="margin-bottom:8px;">Primary Accent Color</div>
+              <div class="color-swatch-row" id="color-swatches">
+                <div class="color-swatch selected" data-color="#f59e0b" style="background:#f59e0b;" onclick="selectColor(this)" title="Amber (Default)"></div>
+                <div class="color-swatch" data-color="#6366f1" style="background:#6366f1;" onclick="selectColor(this)" title="Indigo"></div>
+                <div class="color-swatch" data-color="#10b981" style="background:#10b981;" onclick="selectColor(this)" title="Emerald"></div>
+                <div class="color-swatch" data-color="#3b82f6" style="background:#3b82f6;" onclick="selectColor(this)" title="Blue"></div>
+                <div class="color-swatch" data-color="#ef4444" style="background:#ef4444;" onclick="selectColor(this)" title="Red"></div>
+                <div class="color-swatch" data-color="#a855f7" style="background:#a855f7;" onclick="selectColor(this)" title="Purple"></div>
+                <div class="color-swatch" data-color="#0ea5e9" style="background:#0ea5e9;" onclick="selectColor(this)" title="Sky"></div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <p class="settings-card-title">Portal Tagline</p>
+              <p class="settings-card-desc">Shown under "Shipping Wish" in the sidebar brand area.</p>
+              <div class="form-group" style="margin-bottom:0;">
+                <label>Tagline / Subtitle</label>
+                <input type="text" class="form-input" id="cfg-tagline" placeholder="OPERATIONS" maxlength="24">
+                <small style="color:var(--text-muted);font-size:11px;margin-top:4px;display:block;">Max 24 characters. Displayed in ALL CAPS.</small>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="save-bar" style="position:static;border:none;padding:0;margin:0;justify-content:flex-start;">
+                <button class="btn btn-primary" onclick="saveSettings('branding')">💾 Save Branding</button>
+                <span id="save-status-branding" style="font-size:12px;color:var(--text-muted);"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- INTEGRATIONS -->
+          <div id="section-integrations" class="settings-section">
+            <div class="settings-card">
+              <p class="settings-card-title">Google Maps Platform</p>
+              <p class="settings-card-desc">Powers address validation, route optimization, and fleet tracking across the TMS.</p>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">API Status</div>
+                  <div class="settings-row-hint">Places API, Routes API, Geocoding API, Address Validation</div>
+                </div>
+                <span class="settings-badge badge-green">✅ Active</span>
+              </div>
+              <div class="form-group" style="margin-top:12px;">
+                <label>Google Maps API Key</label>
+                <input type="password" class="form-input" id="cfg-gmaps-key" placeholder="AIza…" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <p class="settings-card-title">Twilio (SMS & VoIP)</p>
+              <p class="settings-card-desc">SMS outreach, driver alerts, and AI calling engine.</p>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">SMS Service</div>
+                  <div class="settings-row-hint">Carrier outreach and driver SMS</div>
+                </div>
+                <span id="twilio-status" class="settings-badge badge-amber">Checking…</span>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">VoIP / AI Calling</div>
+                  <div class="settings-row-hint">AI cold calling and dispatch voice</div>
+                </div>
+                <span id="voip-status" class="settings-badge badge-amber">Checking…</span>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <p class="settings-card-title">FMCSA / DOT Data Feed</p>
+              <p class="settings-card-desc">Live carrier safety scores, authority status, and DOT census lookup.</p>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">FMCSA API</div>
+                </div>
+                <span class="settings-badge badge-green">✅ Connected</span>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Auto-refresh carrier scores</div>
+                  <div class="settings-row-hint">Re-check FMCSA safety scores every 30 days automatically</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="fmcsa-auto-refresh" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- BILLING -->
+          <div id="section-billing" class="settings-section">
+            <div class="settings-card">
+              <p class="settings-card-title">Current Plan</p>
+              <p class="settings-card-desc">Your active Shipping Wish TMS subscription.</p>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Plan</div>
+                </div>
+                <span class="settings-badge badge-green" id="current-plan-badge">Enterprise TMS</span>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Active Staff Seats</div>
+                  <div class="settings-row-hint">Dispatchers, Sales Reps, HR, Admins</div>
+                </div>
+                <strong id="seat-count" style="font-size:13px;">—</strong>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Active Carriers Onboarded</div>
+                </div>
+                <strong id="carrier-count" style="font-size:13px;">—</strong>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Total Loads (All Time)</div>
+                </div>
+                <strong id="load-count" style="font-size:13px;">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- TRASH POLICY -->
+          <div id="section-trash-policy" class="settings-section">
+            <div class="settings-card">
+              <p class="settings-card-title">Data Retention Policy</p>
+              <p class="settings-card-desc">Control how long soft-deleted items remain in Trash before permanent purge.</p>
+              <div class="form-group">
+                <label>Trash Retention Period (days)</label>
+                <input type="number" class="form-input" id="trash-retention-days" value="30" min="7" max="365" style="max-width:180px;">
+                <small style="font-size:11px;color:var(--text-muted);margin-top:4px;display:block;">Min 7 days · Max 365 days. Items older than this are auto-purged overnight.</small>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Auto-purge expired trash overnight</div>
+                  <div class="settings-row-hint">Run cleanup every night at 2:00 AM server time</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="trash-auto-purge" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Require "DELETE_FOREVER" confirmation for permanent deletes</div>
+                  <div class="settings-row-hint">Admins must type a confirmation string before permanent deletion</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" id="trash-confirm-string" checked disabled><span class="toggle-slider"></span></label>
+              </div>
+
+              <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-subtle);">
+                <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Current Trash Summary</div>
+                <div id="trash-summary-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center;">
+                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-total">—</div><div style="font-size:11px;color:var(--text-muted);">Total</div></div>
+                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-loads">—</div><div style="font-size:11px;color:var(--text-muted);">Loads</div></div>
+                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-users">—</div><div style="font-size:11px;color:var(--text-muted);">Accounts</div></div>
+                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-emails">—</div><div style="font-size:11px;color:var(--text-muted);">Emails</div></div>
+                </div>
+              </div>
+
+              <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+                <button class="btn btn-primary" onclick="saveSettings('trash-policy')">💾 Save Retention Policy</button>
+                <a href="/trash" class="btn btn-secondary btn-sm">Open Trash →</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="settings-toast" style="display:none;"></div>
+
+<script>
+  // --- Auth guard ---
+  async function checkAuth() {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/login'; return false; }
+    const data = await res.json();
+    const role = data.user && data.user.role;
+    if (!['admin', 'super_admin'].includes(role)) {
+      alert('Settings page is Admin-only.');
+      window.location.href = '/admin-dashboard';
+      return false;
+    }
+    const badge = document.getElementById('header-role-badge');
+    if (badge) badge.textContent = role === 'super_admin' ? 'Super Admin' : 'Admin';
+    return true;
+  }
+
+  // --- Nav switching ---
+  function switchSection(id, el) {
+    document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'));
+    const sec = document.getElementById('section-' + id);
+    if (sec) sec.classList.add('active');
+    if (el) el.classList.add('active');
+  }
+
+  // --- Toast helper ---
+  function showToast(msg, ok) {
+    const t = document.getElementById('settings-toast');
+    t.textContent = (ok ? '✅ ' : '❌ ') + msg;
+    t.style.display = 'flex';
+    setTimeout(() => { t.style.display = 'none'; }, 3000);
+  }
+
+  // --- Save (stub — extend per setting) ---
+  function saveSettings(section) {
+    const el = document.getElementById('save-status-' + section);
+    if (el) { el.textContent = 'Saved ✓'; setTimeout(() => el.textContent = '', 3000); }
+    showToast('Settings saved successfully.', true);
+  }
+
+  // --- Color picker ---
+  function selectColor(el) {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    const color = el.dataset.color;
+    document.documentElement.style.setProperty('--color-amber-500', color);
+    showToast('Accent color updated (preview only — save to persist)', true);
+  }
+
+  // --- Manual purge ---
+  async function runManualPurge() {
+    if (!confirm('This will permanently delete all trash items older than the retention period. This CANNOT be undone. Continue?')) return;
+    const res = await fetch('/api/trash/run-auto-purge', { method: 'POST', credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) showToast(`Purge complete. Removed ${JSON.stringify(data.purged || {})}`, true);
+    else showToast(data.error || 'Purge failed.', false);
+    loadTrashStats();
+  }
+
+  // --- Load trash stats ---
+  async function loadTrashStats() {
+    const res = await fetch('/api/trash/counts', { credentials: 'include' });
+    if (!res.ok) return;
+    const c = await res.json();
+    document.getElementById('ts-total').textContent = c.total || 0;
+    document.getElementById('ts-loads').textContent = c.loads || 0;
+    document.getElementById('ts-users').textContent = c.users || 0;
+    document.getElementById('ts-emails').textContent = c.emails || 0;
+  }
+
+  // --- Load billing stats ---
+  async function loadBillingStats() {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) return;
+    const d = await res.json();
+    // Placeholder counts — extend with real API calls
+    document.getElementById('seat-count').textContent = '—';
+    document.getElementById('carrier-count').textContent = '—';
+    document.getElementById('load-count').textContent = '—';
+  }
+
+  // --- Boot ---
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!await checkAuth()) return;
+    loadTrashStats();
+    loadBillingStats();
+  });
+</script>
+<script src="/js/app-shell.js?v=29"></script>
+</body>
+</html>

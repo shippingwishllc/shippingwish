@@ -342,6 +342,9 @@ app.use((req, res, next) => {
   if (p === '/superadmin-login' || p === '/superadmin-login.html') {
     return res.sendFile(path.join(__dirname, 'public', 'superadmin-login.html'));
   }
+  if (p === '/settings' || p === '/settings.html') {
+    return res.sendFile(path.join(__dirname, 'public', 'settings.html'));
+  }
 
   // 1. LoadsNexus Domain (loadsnexus.com)
   if (host.includes('loadsnexus') || p.startsWith('/loadsnexus')) {

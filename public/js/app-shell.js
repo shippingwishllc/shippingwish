@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '28';
+  const SIDEBAR_VERSION = '29';
   // #endregion
 
   function clearRoleCache() {
@@ -77,34 +77,66 @@
       </div>`;
   }
 
+  // SVG icon helper — renders a crisp 18×18 inline SVG
+  function svgIcon(paths, color, viewBox) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="${viewBox||'0 0 24 24'}" fill="none" style="flex-shrink:0;vertical-align:middle">${paths}</svg>`;
+  }
+
+  const IC = {
+    crown:      svgIcon(`<path d="M3 19h18M5 10l2 5h10l2-5-4 2-3-5-3 5-4-2Z" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" fill="none"/><circle cx="5" cy="9" r="1.5" fill="#f59e0b"/><circle cx="19" cy="9" r="1.5" fill="#f59e0b"/><circle cx="12" cy="5" r="1.5" fill="#f59e0b"/>`),
+    overview:   svgIcon(`<rect x="3" y="3" width="8" height="8" rx="2" fill="#6366f1" opacity=".9"/><rect x="13" y="3" width="8" height="8" rx="2" fill="#6366f1" opacity=".6"/><rect x="3" y="13" width="8" height="8" rx="2" fill="#6366f1" opacity=".6"/><rect x="13" y="13" width="8" height="8" rx="2" fill="#6366f1" opacity=".3"/>`),
+    shield:     svgIcon(`<path d="M12 3L4 7v5c0 4.5 3.5 8.2 8 9 4.5-.8 8-4.5 8-9V7L12 3Z" fill="#ef4444" opacity=".15" stroke="#ef4444" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`),
+    headset:    svgIcon(`<path d="M4 13a8 8 0 1 1 16 0" stroke="#38bdf8" stroke-width="1.8" fill="none"/><rect x="2" y="13" width="3" height="5" rx="1.5" fill="#38bdf8"/><rect x="19" y="13" width="3" height="5" rx="1.5" fill="#38bdf8"/><path d="M19 18v1a4 4 0 0 1-4 4h-2" stroke="#38bdf8" stroke-width="1.8" fill="none"/>`),
+    robot:      svgIcon(`<rect x="4" y="8" width="16" height="12" rx="3" fill="#a78bfa" opacity=".2" stroke="#a78bfa" stroke-width="1.7"/><circle cx="9" cy="13" r="1.5" fill="#a78bfa"/><circle cx="15" cy="13" r="1.5" fill="#a78bfa"/><path d="M9 17h6" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><path d="M12 5v3M9 5h6" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>`),
+    target:     svgIcon(`<circle cx="12" cy="12" r="9" stroke="#f97316" stroke-width="1.7" fill="none"/><circle cx="12" cy="12" r="5" stroke="#f97316" stroke-width="1.7" fill="none"/><circle cx="12" cy="12" r="2" fill="#f97316"/>`),
+    handshake:  svgIcon(`<path d="M6 9l3 3 3-3 3 3 3-3" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M3 9h18" stroke="#10b981" stroke-width="1.7" stroke-linecap="round"/><path d="M5 9V6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" stroke="#10b981" stroke-width="1.7" fill="none"/><path d="M5 15v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3" stroke="#10b981" stroke-width="1.7" fill="none"/>`),
+    truck:      svgIcon(`<rect x="1" y="8" width="14" height="10" rx="2" fill="#0ea5e9" opacity=".15" stroke="#0ea5e9" stroke-width="1.7"/><path d="M15 12l3 3v3H9" stroke="#0ea5e9" stroke-width="1.7" fill="none"/><path d="M15 12l-1.5-4H9" stroke="#0ea5e9" stroke-width="1.7" fill="none"/><circle cx="5" cy="19" r="2" fill="#0ea5e9"/><circle cx="18" cy="19" r="2" fill="#0ea5e9"/>`),
+    chart:      svgIcon(`<polyline points="3,17 8,11 13,14 21,6" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><polyline points="16,6 21,6 21,11" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`),
+    census:     svgIcon(`<rect x="4" y="2" width="16" height="20" rx="2" fill="#8b5cf6" opacity=".12" stroke="#8b5cf6" stroke-width="1.7"/><path d="M8 7h8M8 11h8M8 15h5" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round"/>`),
+    phone:      svgIcon(`<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 3 6a2 2 0 0 1 2-2" fill="#f43f5e" opacity=".15" stroke="#f43f5e" stroke-width="1.7"/>`),
+    inbox:      svgIcon(`<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" fill="#06b6d4" opacity=".12" stroke="#06b6d4" stroke-width="1.7"/><polyline points="2,6 12,13 22,6" stroke="#06b6d4" stroke-width="1.7" fill="none"/>`),
+    sms:        svgIcon(`<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" fill="#4ade80" opacity=".15" stroke="#4ade80" stroke-width="1.7"/><path d="M8 10h.01M12 10h.01M16 10h.01" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>`),
+    trash:      svgIcon(`<polyline points="3,6 5,6 21,6" stroke="#94a3b8" stroke-width="1.7" stroke-linecap="round"/><path d="M19 6l-1 14H6L5 6" stroke="#94a3b8" stroke-width="1.7" fill="none"/><path d="M10 11v6M14 11v6" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/><path d="M9 6V4h6v2" stroke="#94a3b8" stroke-width="1.7" fill="none"/>`),
+    staff:      svgIcon(`<circle cx="9" cy="7" r="3" stroke="#f59e0b" stroke-width="1.7" fill="none"/><circle cx="17" cy="9" r="2.5" stroke="#f59e0b" stroke-width="1.5" fill="none" opacity=".7"/><path d="M3 20a6 6 0 0 1 12 0" stroke="#f59e0b" stroke-width="1.7" fill="none"/><path d="M17 12a4 4 0 0 1 4 4" stroke="#f59e0b" stroke-width="1.5" fill="none" opacity=".7"/>`),
+    billing:    svgIcon(`<rect x="2" y="5" width="20" height="14" rx="2" fill="#10b981" opacity=".1" stroke="#10b981" stroke-width="1.7"/><path d="M2 10h20" stroke="#10b981" stroke-width="1.5"/><path d="M6 15h4M14 15h4" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/>`),
+    fuel:       svgIcon(`<path d="M4 20V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v14" stroke="#f97316" stroke-width="1.7" fill="none"/><path d="M2 20h14M16 8l2 2a2 2 0 0 1 0 4v4" stroke="#f97316" stroke-width="1.7" stroke-linecap="round" fill="none"/><path d="M7 9h6" stroke="#f97316" stroke-width="1.5" stroke-linecap="round"/>`),
+    docs:       svgIcon(`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" fill="#a78bfa" opacity=".12" stroke="#a78bfa" stroke-width="1.7"/><polyline points="14,2 14,8 20,8" stroke="#a78bfa" stroke-width="1.7" fill="none"/><line x1="8" y1="13" x2="16" y2="13" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="17" x2="13" y2="17" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>`),
+    planning:   svgIcon(`<rect x="3" y="4" width="18" height="18" rx="2" fill="#38bdf8" opacity=".1" stroke="#38bdf8" stroke-width="1.7"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#38bdf8" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="15" r="2" fill="#38bdf8" opacity=".8"/>`),
+    auditlog:   svgIcon(`<rect x="4" y="3" width="14" height="18" rx="2" fill="#64748b" opacity=".15" stroke="#64748b" stroke-width="1.7"/><path d="M8 8h8M8 12h8M8 16h5" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/><circle cx="17" cy="16" r="3" fill="#f59e0b"/><path d="M16 16l.8.8 1.4-1.4" stroke="#1e293b" stroke-width="1.2" stroke-linecap="round"/>`),
+    webcms:     svgIcon(`<circle cx="12" cy="12" r="9" stroke="#0ea5e9" stroke-width="1.7" fill="none"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20" stroke="#0ea5e9" stroke-width="1.5" fill="none"/>`),
+    blog:       svgIcon(`<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="#f472b6" stroke-width="1.7" fill="none"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="#f472b6" stroke-width="1.7" fill="none"/>`),
+    settings:   svgIcon(`<circle cx="12" cy="12" r="3" stroke="#e2e8f0" stroke-width="1.7" fill="none"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="#e2e8f0" stroke-width="1.5" fill="none"/>`)
+  };
+
   const STAFF_LINKS = [
     { section: 'Executive Command' },
-    { key: 'superadmin', href: '/superadmin', icon: '👑', label: 'Command Center (4-Brand)', superAdminOnly: true },
+    { key: 'superadmin', href: '/superadmin', icon: IC.crown, label: 'Command Center (4-Brand)', superAdminOnly: true },
     { section: 'Operations' },
-    { key: 'overview', navId: 'nav-tab-loads', href: '/admin-dashboard', icon: '📊', label: 'Overview & Loads' },
-    { key: 'loadnexus', href: '/admin-loadnexus', icon: '🛡️', label: 'LoadNexus Command' },
-    { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: '🎧', label: 'Dispatch Desk' },
-    { key: 'ai-dispatch', href: '/ai-dispatch', icon: '🤖', label: 'AI Dispatch', adminOnly: true },
-    { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Match' },
-    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' },
-    { key: 'fleet', href: '/fleet', icon: '🚛', label: 'Fleet & Drivers' },
+    { key: 'overview', navId: 'nav-tab-loads', href: '/admin-dashboard', icon: IC.overview, label: 'Overview & Loads' },
+    { key: 'loadnexus', href: '/admin-loadnexus', icon: IC.shield, label: 'LoadNexus Command' },
+    { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: IC.headset, label: 'Dispatch Desk' },
+    { key: 'ai-dispatch', href: '/ai-dispatch', icon: IC.robot, label: 'AI Dispatch', adminOnly: true },
+    { key: 'loadboard', href: '/load-booking', icon: IC.target, label: 'Load Board & AI Match' },
+    { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' },
+    { key: 'fleet', href: '/fleet', icon: IC.truck, label: 'Fleet & Drivers' },
     { section: 'Sales & Staff' },
-    { key: 'crm', href: '/crm-sales', icon: '📈', label: 'Sales CRM & Leads' },
-    { key: 'census', href: '/census-desk', icon: '🗂️', label: 'Census Desk' },
-    { key: 'voice-calls', href: '/voice-calls', icon: '📞', label: 'AI Calls & Audio' },
-    { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Replies' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: '📱', label: 'SMS Replies' },
-    { key: 'trash', href: '/trash', icon: '🗑️', label: 'Trash', adminOnly: true },
-    { key: 'staff', href: '/staff-management', icon: '👔', label: 'Company Staff', adminOnly: true },
+    { key: 'crm', href: '/crm-sales', icon: IC.chart, label: 'Sales CRM & Leads' },
+    { key: 'census', href: '/census-desk', icon: IC.census, label: 'Census Desk' },
+    { key: 'voice-calls', href: '/voice-calls', icon: IC.phone, label: 'AI Calls & Audio' },
+    { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Replies' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Replies' },
+    { key: 'trash', href: '/trash', icon: IC.trash, label: 'Trash', adminOnly: true },
+    { key: 'staff', href: '/staff-management', icon: IC.staff, label: 'Company Staff', adminOnly: true },
     { section: 'Accounting' },
-    { key: 'invoices', href: '/invoices', icon: '💳', label: 'Invoices & Billing', adminOnly: true },
-    { key: 'ifta', href: '/ifta', icon: '⛽', label: 'IFTA & Fuel', adminOnly: true },
-    { key: 'documents', href: '/documents', icon: '📄', label: 'Document Vault' },
-    { key: 'planning', href: '/load-planning', icon: '📅', label: 'Load Planning' },
+    { key: 'invoices', href: '/invoices', icon: IC.billing, label: 'Invoices & Billing', adminOnly: true },
+    { key: 'ifta', href: '/ifta', icon: IC.fuel, label: 'IFTA & Fuel', adminOnly: true },
+    { key: 'documents', href: '/documents', icon: IC.docs, label: 'Document Vault' },
+    { key: 'planning', href: '/load-planning', icon: IC.planning, label: 'Load Planning' },
     { section: 'System' },
-    { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: '🛡️', label: 'Audit Logs', adminOnly: true },
-    { key: 'settings', navId: 'nav-tab-settings', href: '/admin-dashboard#settings', icon: '🌐', label: 'Website CMS', adminOnly: true },
-    { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: '📰', label: 'Blog Manager', adminOnly: true }
+    { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: IC.auditlog, label: 'Audit Logs', adminOnly: true },
+    { key: 'settings', href: '/settings', icon: IC.settings, label: 'Settings', adminOnly: true },
+    { key: 'webcms', navId: 'nav-tab-settings', href: '/admin-dashboard#settings', icon: IC.webcms, label: 'Website CMS', adminOnly: true },
+    { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: IC.blog, label: 'Blog Manager', adminOnly: true }
   ];
 
   const DISPATCHER_LINKS = [
@@ -186,7 +218,8 @@
     'carrier-overview.html': 'home',
     'dashboard.html': 'home',
     'driver-app.html': 'driver',
-    'trash.html': 'trash'
+    'trash.html': 'trash',
+    'settings.html': 'settings'
   };
 
   function pageName() {
