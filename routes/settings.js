@@ -124,4 +124,122 @@ router.put('/', requireAuth, requireRole('admin', 'super_admin'), async (req, re
   }
 });
 
+function maskSecret(val) {
+  if (!val || typeof val !== 'string') return '';
+  const s = val.trim();
+  if (s.length <= 8) return '••••••••';
+  return s.slice(0, 4) + '••••••••' + s.slice(-4);
+}
+
+// GET /api/settings/integrations (Admin & SuperAdmin only)
+router.get('/integrations', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    await loadSettingsFromDB();
+    const gmapsKey = memorySettings.google_maps_api_key || process.env.GOOGLE_MAPS_API_KEY || '';
+    const twilioSid = memorySettings.twilio_account_sid || process.env.TWILIO_ACCOUNT_SID || '';
+    const twilioToken = memorySettings.twilio_auth_token || process.env.TWILIO_AUTH_TOKEN || '';
+    const twilioFrom = memorySettings.twilio_from_number || process.env.TWILIO_FROM_NUMBER || '+16094696004';
+    const twilioMsgSid = memorySettings.twilio_messaging_service_sid || process.env.TWILIO_MESSAGING_SERVICE_SID || '';
+    const whatsappFrom = memorySettings.twilio_whatsapp_from || process.env.TWILIO_WHATSAPP_FROM || '';
+    const voipProvider = memorySettings.voip_provider || process.env.VOIP_PROVIDER || 'Vapi';
+    const vapiApiKey = memorySettings.vapi_api_key || process.env.VAPI_API_KEY || '';
+    const vapiPhoneId = memorySettings.vapi_phone_number_id || process.env.VAPI_PHONE_NUMBER_ID || '';
+    const transferNumber = memorySettings.mightycall_transfer_number || process.env.MIGHTYCALL_TRANSFER_NUMBER || '';
+    const openaiKey = memorySettings.openai_api_key || process.env.OPENAI_API_KEY || '';
+    const resendKey = memorySettings.resend_api_key || process.env.RESEND_API_KEY || '';
+    const emailFrom = memorySettings.email_from_address || process.env.EMAIL_FROM || 'dispatch@shippingwish.com';
+    const emailFromName = memorySettings.email_from_name || 'Shipping Wish Dispatch';
+
+    res.json({
+      ok: true,
+      integrations: {
+        google_maps_api_key: maskSecret(gmapsKey),
+        google_maps_has_key: Boolean(gmapsKey),
+        twilio_account_sid: maskSecret(twilioSid),
+        twilio_has_sid: Boolean(twilioSid),
+        twilio_auth_token: maskSecret(twilioToken),
+        twilio_has_token: Boolean(twilioToken),
+        twilio_from_number: twilioFrom,
+        twilio_messaging_service_sid: twilioMsgSid,
+        twilio_whatsapp_from: whatsappFrom,
+        voip_provider: voipProvider,
+        vapi_api_key: maskSecret(vapiApiKey),
+        vapi_has_key: Boolean(vapiApiKey),
+        vapi_phone_number_id: vapiPhoneId,
+        mightycall_transfer_number: transferNumber,
+        openai_api_key: maskSecret(openaiKey),
+        openai_has_key: Boolean(openaiKey),
+        resend_api_key: maskSecret(resendKey),
+        resend_has_key: Boolean(resendKey),
+        email_from_address: emailFrom,
+        email_from_name: emailFromName
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load integrations.' });
+  }
+});
+
+// PUT /api/settings/integrations (Admin & SuperAdmin only)
+router.put('/integrations', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  const body = req.body || {};
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT now()
+      );
+    `);
+
+    const allowed = [
+      'google_maps_api_key',
+      'twilio_account_sid',
+      'twilio_auth_token',
+      'twilio_from_number',
+      'twilio_messaging_service_sid',
+      'twilio_whatsapp_from',
+      'voip_provider',
+      'vapi_api_key',
+      'vapi_phone_number_id',
+      'mightycall_transfer_number',
+      'openai_api_key',
+      'resend_api_key',
+      'email_from_address',
+      'email_from_name'
+    ];
+
+    for (const key of allowed) {
+      if (body[key] === undefined) continue;
+      const val = String(body[key] || '').trim();
+      // Don't overwrite with mask dots
+      if (val.includes('••••••••')) continue;
+      memorySettings[key] = val;
+      await pool.query(
+        `INSERT INTO site_settings (key, value, updated_at)
+         VALUES ($1, $2, now())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+        [key, val]
+      );
+    }
+
+    res.json({ ok: true, message: 'API and Integration settings saved successfully.' });
+  } catch (err) {
+    console.error('Error saving integration settings:', err);
+    res.status(500).json({ error: 'Could not save integration settings.' });
+  }
+});
+
+function getAppSetting(key, fallback = '') {
+  if (memorySettings && memorySettings[key] !== undefined && memorySettings[key] !== '') {
+    return memorySettings[key];
+  }
+  const envKey = String(key || '').toUpperCase();
+  if (process.env[envKey] !== undefined && process.env[envKey] !== '') {
+    return process.env[envKey];
+  }
+  return fallback;
+}
+
 module.exports = router;
+module.exports.getAppSetting = getAppSetting;

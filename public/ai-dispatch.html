@@ -175,15 +175,16 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
         <div id="offers-list" style="font-size:13px;color:#475569;">Loading…</div>
       </section>
 
-      <!-- Load Board API sources status — configured in Settings → API Integrations -->
-      <section style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:16px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="#0284c7" stroke-width="1.8" stroke-linecap="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="#0284c7" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:700;color:#0369a1;margin-bottom:2px;">Load Board API Sources</div>
-          <div id="ai-dispatch-api-summary" style="font-size:12px;color:#0369a1;">Loading connected APIs…</div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:18px;">🎯</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#1e293b;">Load Board API Ingestion</div>
+            <div style="font-size:12px;color:#64748b;">Licensed JSON APIs (DAT One, Truckstop, 123Loadboard, custom feeds) are configured and managed in Settings.</div>
+          </div>
         </div>
-        <a href="/settings#integrations" style="background:#0284c7;color:#fff;border:0;border-radius:10px;padding:8px 14px;font-weight:700;font-size:12px;text-decoration:none;white-space:nowrap;">⚙️ Manage APIs in Settings</a>
-      </section>
+        <a href="/settings" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#2563eb;background:#eff6ff;padding:6px 12px;border-radius:8px;text-decoration:none;border:1px solid #bfdbfe;">⚙️ Manage APIs in Settings &rarr;</a>
+      </div>
 
       <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
@@ -260,23 +261,26 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
     }
     return true;
   }
-  async function loadApiSummary() {
-    const el = document.getElementById('ai-dispatch-api-summary');
-    if (!el) return;
-    try {
-      const data = await api('/api/dispatch-desk/sources');
-      const count = (data.sources || []).length;
-      const active = (data.sources || []).filter(s => s.last_status === 'ok').length;
-      if (!count) {
-        el.textContent = 'No load board APIs connected. Configure in Settings → Integrations.';
-      } else {
-        el.textContent = `${count} API source${count !== 1 ? 's' : ''} connected · ${active} active · Loads are being fetched automatically.`;
-      }
-    } catch (e) {
-      el.textContent = 'Could not load API status.';
+  async function loadSources() {
+    const box = document.getElementById('source-list');
+    if (!box) return;
+    const data = await api('/api/dispatch-desk/sources');
+    if (!data.sources.length) {
+      box.textContent = 'No licensed API is connected. Broker posts can still appear on the board.';
+      return;
     }
+    box.innerHTML = data.sources.map((row) => {
+      const when = row.last_sync_at ? new Date(row.last_sync_at).toLocaleString() : 'not synced';
+      return '<div style="padding:10px 0;border-top:1px solid #e2e8f0;">' +
+        '<strong>' + esc(row.name) + '</strong> · ' + esc(row.base_url) +
+        '<br><span style="color:#64748b;">Key ' + esc(row.api_key || 'not set') + ' · ' + esc(row.last_status || 'waiting') + ' · ' + esc(when) +
+        (row.last_error ? ' · ' + esc(row.last_error) : '') + '</span>' +
+        '<div style="margin-top:6px;display:flex;gap:8px;">' +
+        '<button type="button" data-sync="' + esc(row.id) + '" style="border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Sync now</button>' +
+        '<button type="button" data-remove="' + esc(row.id) + '" style="border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:8px;padding:6px 10px;cursor:pointer;">Remove</button>' +
+        '</div></div>';
+    }).join('');
   }
-
   async function loadCarriers() {
     const box = document.getElementById('carrier-list');
     const data = await api('/api/dispatch-desk/carriers');
@@ -438,14 +442,12 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
   }
   document.addEventListener('DOMContentLoaded', async () => {
     if (!(await guard())) return;
-    loadApiSummary().catch(() => {});
     try { await loadCarriers(); }
-    catch (err) { console.error('loadCarriers error:', err); }
+    catch (err) { console.warn('Could not load carriers:', err); }
     loadOffers().catch((err) => { document.getElementById('offers-msg').textContent = err.message; });
     document.getElementById('offers-refresh').addEventListener('click', () => loadOffers().catch((err) => { document.getElementById('offers-msg').textContent = err.message; }));
     document.getElementById('try-run').addEventListener('click', runPreview);
     document.getElementById('try-text').addEventListener('keydown', (event) => { if (event.key === 'Enter') runPreview(); });
-
 
     // DAT One Autonomous Dispatch Hub
     const sampleDatLoadText = `𝗗𝗛𝗢: 72\n𝗟𝗼𝗮𝗱𝗲𝗱 𝗠𝗶𝗹𝗲𝘀 : 563\n\n𝗙𝗿𝗼𝗺: Hopkinsville KY\n𝗧𝗼: DIBERSVILLE MS\n\n𝗣𝗶𝗰𝗸𝘂𝗽: TODAY BEFORE 5PM\n𝗗𝗲𝗹𝗶𝘃𝗲𝗿y: TOMORROW 8 TO 3PM\n\n𝗪𝗲𝗶𝗴𝗵t: 2500\nRATE: 1000\nDRIVER ASSIST AT RECEIVER`;
@@ -917,18 +919,22 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
       } catch (err) { msg.textContent = err.message; }
     });
 
-    document.getElementById('source-form').addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const msg = document.getElementById('source-msg');
-      const body = Object.fromEntries(new FormData(event.target).entries());
-      try {
-        await api('/api/dispatch-desk/sources', { method: 'POST', body: JSON.stringify(body) });
-        event.target.reset();
-        event.target.header_name.value = 'Authorization';
-        msg.textContent = 'API saved. Press Sync now to pull the first loads.';
-        await loadSources();
-      } catch (err) { msg.textContent = err.message; }
-    });
+    const sourceFormEl = document.getElementById('source-form');
+    if (sourceFormEl) {
+      sourceFormEl.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const msg = document.getElementById('source-msg') || { textContent: '' };
+        const body = Object.fromEntries(new FormData(event.target).entries());
+        try {
+          await api('/api/dispatch-desk/sources', { method: 'POST', body: JSON.stringify(body) });
+          event.target.reset();
+          event.target.header_name.value = 'Authorization';
+          msg.textContent = 'API saved. Press Sync now to pull the first loads.';
+          await loadSources();
+        } catch (err) { msg.textContent = err.message; }
+      });
+    }
+
     document.getElementById('carrier-form').addEventListener('submit', async (event) => {
       event.preventDefault();
       const msg = document.getElementById('carrier-msg');
@@ -940,6 +946,18 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
         await loadCarriers();
       } catch (err) { msg.textContent = err.message; }
     });
+
+    const syncDueEl = document.getElementById('sync-due');
+    if (syncDueEl) {
+      syncDueEl.addEventListener('click', async () => {
+        const msg = document.getElementById('source-msg') || { textContent: '' };
+        try {
+          await api('/api/dispatch-desk/sources/sync-due', { method: 'POST', body: '{}' });
+          msg.textContent = 'Refresh finished.';
+          await loadSources();
+        } catch (err) { msg.textContent = err.message; }
+      });
+    }
     document.getElementById('start-all').addEventListener('click', async () => {
       const msg = document.getElementById('carrier-msg');
       try {
@@ -1031,6 +1049,12 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
         if (consent) {
           await api('/api/dispatch-desk/carriers/' + consent + '/consent', { method: 'POST', body: '{}' });
           await loadCarriers();
+        } else if (sync) {
+          await api('/api/dispatch-desk/sources/' + sync + '/sync', { method: 'POST', body: '{}' });
+          await loadSources();
+        } else if (remove) {
+          await api('/api/dispatch-desk/sources/' + remove, { method: 'DELETE' });
+          await loadSources();
         } else if (start) {
           await api('/api/dispatch-desk/carriers/' + start + '/start', { method: 'POST', body: '{}' });
           await loadCarriers();
@@ -1039,7 +1063,7 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
           await loadCarriers();
         }
       } catch (err) {
-        document.getElementById('carrier-msg').textContent = err.message;
+        document.getElementById(start || pause || consent ? 'carrier-msg' : 'source-msg').textContent = err.message;
       }
     });
   });

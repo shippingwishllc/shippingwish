@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Settings — Admin | Shipping Wish TMS</title>
+  <title>Settings — System Integrations & Configuration | Shipping Wish TMS</title>
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/css/design-system.css">
   <style>
-    .settings-grid { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: start; }
-    @media (max-width: 768px) { .settings-grid { grid-template-columns: 1fr; } }
+    .settings-grid { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
+    @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } }
     .settings-nav { background: var(--surface-raised); border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden; position: sticky; top: 16px; }
-    .settings-nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; text-decoration: none; }
+    .settings-nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; text-decoration: none; user-select: none; }
     .settings-nav-item:hover { background: var(--surface-hover); color: var(--text-primary); }
     .settings-nav-item.active { background: rgba(245,158,11,0.08); color: var(--color-amber-600); border-left-color: var(--color-amber-500); }
-    .settings-nav-item svg { flex-shrink: 0; opacity: 0.8; }
+    .settings-nav-item svg { flex-shrink: 0; opacity: 0.85; }
     .settings-section { display: none; }
     .settings-section.active { display: block; }
-    .settings-card { background: var(--surface-raised); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 24px; margin-bottom: 20px; }
-    .settings-card-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
-    .settings-card-desc { font-size: 12px; color: var(--text-muted); margin: 0 0 20px; }
+    .settings-card { background: var(--surface-raised); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 22px; margin-bottom: 20px; }
+    .settings-card-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+    .settings-card-desc { font-size: 12px; color: var(--text-muted); margin: 0 0 18px; }
     .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border-subtle); }
     .settings-row:last-child { border-bottom: none; padding-bottom: 0; }
     .settings-row-info { flex: 1; }
@@ -33,20 +33,31 @@
     .toggle-switch input:checked + .toggle-slider { background: var(--color-amber-500); }
     .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
     .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .form-input { width: 100%; padding: 9px 12px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-base); color: var(--text-primary); font-size: 13px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-input { width: 100%; padding: 9px 12px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-base); color: var(--text-primary); font-size: 13px; box-sizing: border-box; }
     .form-input:focus { outline: none; border-color: var(--color-amber-500); box-shadow: 0 0 0 3px rgba(245,158,11,0.12); }
-    .settings-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+    .settings-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; }
     .badge-green { background: rgba(34,197,94,0.12); color: #16a34a; }
     .badge-red { background: rgba(239,68,68,0.1); color: #dc2626; }
     .badge-amber { background: rgba(245,158,11,0.12); color: #d97706; }
+    .badge-blue { background: rgba(37,99,235,0.12); color: #2563eb; }
+    .badge-muted { background: rgba(148,163,184,0.15); color: #64748b; }
+    .api-card { background: var(--surface-base); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 12px; transition: border-color 0.15s; }
+    .api-card:hover { border-color: var(--color-amber-400); }
+    .api-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+    .api-card-name { font-size: 14px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
+    .api-card-url { font-size: 12px; color: var(--text-muted); font-family: monospace; word-break: break-all; margin-bottom: 8px; }
+    .api-card-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); align-items: center; }
+    .api-card-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .preset-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; background: var(--surface-base); border: 1px solid var(--border-default); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; margin-right: 6px; margin-bottom: 6px; }
+    .preset-pill:hover { border-color: var(--color-amber-500); color: var(--text-primary); background: rgba(245,158,11,0.08); }
     .danger-zone { border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius-xl); padding: 20px; background: rgba(239,68,68,0.03); }
     .danger-zone-title { font-size: 14px; font-weight: 700; color: #dc2626; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
-    .save-bar { position: sticky; bottom: 0; background: var(--surface-raised); border-top: 1px solid var(--border-default); padding: 12px 24px; display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 8px; border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
+    .save-bar { display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-top: 16px; }
+    #settings-toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 12px 20px; border-radius: var(--radius-lg); font-size: 13px; font-weight: 600; display: none; align-items: center; gap: 8px; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
     .color-swatch-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
     .color-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.15s; }
     .color-swatch.selected { border-color: var(--text-primary); transform: scale(1.15); }
-    #settings-toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 12px 20px; border-radius: var(--radius-lg); font-size: 13px; font-weight: 600; display: none; align-items: center; gap: 8px; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
   </style>
 </head>
 <body class="app-body">
@@ -57,10 +68,10 @@
   <div class="app-main">
     <header class="app-header">
       <div>
-        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Settings</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">System configuration — Admin & SuperAdmin only</p>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;">Settings &amp; Integrations</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Central API hub, multi load-boards, SMS, voice, and system configuration</p>
       </div>
-      <div style="margin-left:auto;">
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
         <span id="header-role-badge" class="settings-badge badge-amber">Super Admin</span>
       </div>
     </header>
@@ -70,46 +81,306 @@
 
         <!-- Left Nav -->
         <nav class="settings-nav" aria-label="Settings sections">
-          <a class="settings-nav-item active" data-section="general" onclick="switchSection('general',this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-            General
+          <a class="settings-nav-item active" data-section="loadboards" onclick="switchSection('loadboards',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+            Load Board APIs
           </a>
-          <a class="settings-nav-item" data-section="notifications" onclick="switchSection('notifications',this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-            Notifications
+          <a class="settings-nav-item" data-section="twilio-sms" onclick="switchSection('twilio-sms',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" stroke="currentColor" stroke-width="1.8"/></svg>
+            Twilio &amp; SMS
+          </a>
+          <a class="settings-nav-item" data-section="whatsapp" onclick="switchSection('whatsapp',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" stroke="currentColor" stroke-width="1.8"/></svg>
+            WhatsApp Business
+          </a>
+          <a class="settings-nav-item" data-section="voice-ai" onclick="switchSection('voice-ai',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 3 6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.8"/></svg>
+            AI Calling &amp; Audio
+          </a>
+          <a class="settings-nav-item" data-section="google-maps" onclick="switchSection('google-maps',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><polygon points="1,6 1,22 8,18 16,22 23,18 23,2 16,6 8,2" stroke="currentColor" stroke-width="1.8" fill="none"/><line x1="8" y1="2" x2="8" y2="18" stroke="currentColor" stroke-width="1.8"/><line x1="16" y1="6" x2="16" y2="22" stroke="currentColor" stroke-width="1.8"/></svg>
+            Google Maps Platform
+          </a>
+          <a class="settings-nav-item" data-section="ai-models" onclick="switchSection('ai-models',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="4" y="8" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="13" r="1.5" fill="currentColor"/><circle cx="15" cy="13" r="1.5" fill="currentColor"/><path d="M12 4v4M9 4h6" stroke="currentColor" stroke-width="1.8"/></svg>
+            AI Engine (OpenAI)
+          </a>
+          <a class="settings-nav-item" data-section="email-mailer" onclick="switchSection('email-mailer',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8"/><polyline points="2,6 12,13 22,6" stroke="currentColor" stroke-width="1.8"/></svg>
+            Email &amp; Mailer
+          </a>
+          <a class="settings-nav-item" data-section="general" onclick="switchSection('general',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+            General Company
           </a>
           <a class="settings-nav-item" data-section="security" onclick="switchSection('security',this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V6L12 2Z" stroke="currentColor" stroke-width="1.7"/></svg>
-            Security & Access
-          </a>
-          <a class="settings-nav-item" data-section="branding" onclick="switchSection('branding',this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.7"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-            Branding
-          </a>
-          <a class="settings-nav-item" data-section="integrations" onclick="switchSection('integrations',this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-            Integrations
-          </a>
-          <a class="settings-nav-item" data-section="billing" onclick="switchSection('billing',this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.5"/></svg>
-            Billing & Plan
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V6L12 2Z" stroke="currentColor" stroke-width="1.8"/></svg>
+            Security &amp; Permissions
           </a>
           <a class="settings-nav-item" data-section="trash-policy" onclick="switchSection('trash-policy',this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Trash & Retention
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Trash &amp; Data Retention
           </a>
         </nav>
 
-        <!-- Right Panel -->
+        <!-- Right Content Panel -->
         <div>
 
-          <!-- GENERAL -->
-          <div id="section-general" class="settings-section active">
+          <!-- 1. MULTI LOAD-BOARD APIS -->
+          <div id="section-loadboards" class="settings-section active">
             <div class="settings-card">
-              <p class="settings-card-title">Company Information</p>
-              <p class="settings-card-desc">Core company profile shown across TMS, invoices, and emails.</p>
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:8px;">
+                <div>
+                  <h2 class="settings-card-title">🎯 Licensed Load-Board APIs</h2>
+                  <p class="settings-card-desc" style="margin-bottom:0;">Connect multiple load boards (DAT One, Truckstop, 123Loadboard, custom JSON feeds). All connected feeds ingest into your board automatically.</p>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-sync-all-boards" onclick="syncAllDueBoards()">🔄 Sync All Active Boards</button>
+                </div>
+              </div>
+
+              <!-- Quick Presets -->
+              <div style="margin:14px 0 16px;">
+                <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-right:6px;">Quick Presets:</span>
+                <button type="button" class="preset-pill" onclick="applyBoardPreset('DAT One','https://api.dat.com/v1/loads','Authorization')">⚡ DAT One</button>
+                <button type="button" class="preset-pill" onclick="applyBoardPreset('Truckstop.com','https://api.truckstop.com/v2/loads','Authorization')">🚛 Truckstop.com</button>
+                <button type="button" class="preset-pill" onclick="applyBoardPreset('123Loadboard','https://api.123loadboard.com/loads','x-api-key')">🎯 123Loadboard</button>
+                <button type="button" class="preset-pill" onclick="applyBoardPreset('CH Robinson Feeds','https://api.chrobinson.com/loads/v1','Authorization')">📦 CH Robinson</button>
+                <button type="button" class="preset-pill" onclick="applyBoardPreset('Custom JSON Broker Feed','https://broker.example.com/api/loads','Authorization')">🌐 Custom Feed</button>
+              </div>
+
+              <!-- Add New Form -->
+              <form id="board-api-form" onsubmit="saveLoadBoardApi(event)" style="background:var(--surface-base);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:16px;margin-bottom:20px;">
+                <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px;">➕ Connect a New Load Board API</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Board Name *</label>
+                    <input type="text" class="form-input" id="board-name" required placeholder="e.g. DAT One Direct API">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>HTTPS JSON Endpoint URL *</label>
+                    <input type="url" class="form-input" id="board-url" required placeholder="https://api.example.com/loads">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Header Name</label>
+                    <input type="text" class="form-input" id="board-header" value="Authorization" placeholder="Authorization or x-api-key">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>API Key / Secret Token</label>
+                    <input type="password" class="form-input" id="board-key" placeholder="Bearer eyJhbGci... or api_key" autocomplete="off">
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                  <span id="board-form-status" style="font-size:12px;color:var(--color-amber-600);font-weight:600;"></span>
+                  <button type="submit" class="btn btn-primary btn-sm">Connect &amp; Save Board</button>
+                </div>
+              </form>
+
+              <!-- Connected Boards List -->
+              <div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+                <span>Connected Load Boards</span>
+                <span id="connected-boards-count" class="settings-badge badge-blue">0 Connected</span>
+              </div>
+              <div id="connected-boards-list">
+                <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">Loading connected load boards…</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. TWILIO SMS -->
+          <div id="section-twilio-sms" class="settings-section">
+            <div class="settings-card">
+              <h2 class="settings-card-title">📱 Twilio SMS &amp; Text Messaging</h2>
+              <p class="settings-card-desc">Powers automated driver check-calls, morning dispatch text blasts, and broker communications.</p>
+              
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group">
+                  <label>Twilio Account SID</label>
+                  <input type="text" class="form-input" id="int-twilio-sid" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                </div>
+                <div class="form-group">
+                  <label>Twilio Auth Token</label>
+                  <input type="password" class="form-input" id="int-twilio-token" placeholder="••••••••••••••••" autocomplete="off">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group">
+                  <label>Outbound SMS Phone Number</label>
+                  <input type="text" class="form-input" id="int-twilio-from" placeholder="+1 (609) 469-6004">
+                </div>
+                <div class="form-group">
+                  <label>Messaging Service SID (Optional)</label>
+                  <input type="text" class="form-input" id="int-twilio-msg-sid" placeholder="MGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                </div>
+              </div>
+
+              <div class="settings-row" style="background:var(--surface-base);padding:12px 14px;border-radius:var(--radius-md);margin-top:10px;">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Twilio Inbound SMS Webhook URL</div>
+                  <div class="settings-row-hint" style="font-family:monospace;font-size:11px;color:var(--text-primary);">https://shippingwish.com/api/sms/inbound</div>
+                </div>
+                <span class="settings-badge badge-green">HTTP POST</span>
+              </div>
+
+              <div class="save-bar">
+                <button type="button" class="btn btn-primary" onclick="saveIntegrationCategory('twilio-sms')">💾 Save Twilio Settings</button>
+                <span id="save-status-twilio-sms" style="font-size:12px;color:var(--text-muted);"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. WHATSAPP BUSINESS -->
+          <div id="section-whatsapp" class="settings-section">
+            <div class="settings-card">
+              <h2 class="settings-card-title">💬 WhatsApp Business Messaging</h2>
+              <p class="settings-card-desc">Enable dispatchers and drivers to receive rate confirmations, load tracking links, and updates via WhatsApp.</p>
+
               <div class="form-group">
-                <label>Company Name</label>
+                <label>WhatsApp Outbound Number / Sender</label>
+                <input type="text" class="form-input" id="int-whatsapp-from" placeholder="whatsapp:+16094696004">
+                <small style="color:var(--text-muted);font-size:11px;margin-top:4px;display:block;">Must be in international E.164 format prefixed with <code>whatsapp:</code></small>
+              </div>
+
+              <div class="settings-row" style="background:var(--surface-base);padding:12px 14px;border-radius:var(--radius-md);margin-top:10px;">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">WhatsApp Inbound Webhook URL</div>
+                  <div class="settings-row-hint" style="font-family:monospace;font-size:11px;color:var(--text-primary);">https://shippingwish.com/api/sms/inbound</div>
+                </div>
+                <span class="settings-badge badge-green">Connected</span>
+              </div>
+
+              <div class="save-bar">
+                <button type="button" class="btn btn-primary" onclick="saveIntegrationCategory('whatsapp')">💾 Save WhatsApp Settings</button>
+                <span id="save-status-whatsapp" style="font-size:12px;color:var(--text-muted);"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. VOICE AI & AUDIO CALLING -->
+          <div id="section-voice-ai" class="settings-section">
+            <div class="settings-card">
+              <h2 class="settings-card-title">📞 AI Calling, Audio &amp; VoIP Engine</h2>
+              <p class="settings-card-desc">Manages AI Cold Calling, Carrier check-calls, and Dispatch desk phone routing.</p>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group">
+                  <label>Voice Provider</label>
+                  <select class="form-input" id="int-voip-provider">
+                    <option value="Vapi">Vapi AI (Recommended)</option>
+                    <option value="Bland">Bland AI</option>
+                    <option value="Retell">Retell AI</option>
+                    <option value="Twilio Voice">Twilio Voice</option>
+                    <option value="OpenPhone">OpenPhone</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Voice API Key (Vapi / Provider)</label>
+                  <input type="password" class="form-input" id="int-vapi-key" placeholder="••••••••••••••••" autocomplete="off">
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group">
+                  <label>Voice Assistant Phone ID / Number</label>
+                  <input type="text" class="form-input" id="int-vapi-phone-id" placeholder="Phone ID or +1 (xxx) xxx-xxxx">
+                </div>
+                <div class="form-group">
+                  <label>Human Escalation Transfer Number</label>
+                  <input type="text" class="form-input" id="int-transfer-number" placeholder="+1 (917) 737-0021">
+                </div>
+              </div>
+
+              <div class="save-bar">
+                <button type="button" class="btn btn-primary" onclick="saveIntegrationCategory('voice-ai')">💾 Save Voice Settings</button>
+                <span id="save-status-voice-ai" style="font-size:12px;color:var(--text-muted);"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. GOOGLE MAPS PLATFORM -->
+          <div id="section-google-maps" class="settings-section">
+            <div class="settings-card">
+              <h2 class="settings-card-title">🗺️ Google Maps Platform</h2>
+              <p class="settings-card-desc">Powers address auto-complete, USPS CASS address validation, route calculation, and fleet distance matrix.</p>
+
+              <div class="form-group">
+                <label>Google Maps Platform API Key</label>
+                <input type="password" class="form-input" id="int-gmaps-key" placeholder="AIzaSy..." autocomplete="off">
+              </div>
+
+              <div style="background:var(--surface-base);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:14px;margin-top:14px;">
+                <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:8px;">Enabled Services on Key:</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:12px;">
+                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Places API (New)</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Routes API</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Geocoding API</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Address Validation API</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Maps JavaScript API</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Maps Embed API</strong></div>
+                </div>
+              </div>
+
+              <div class="save-bar">
+                <button type="button" class="btn btn-primary" onclick="saveIntegrationCategory('google-maps')">💾 Save Google Maps Key</button>
+                <span id="save-status-google-maps" style="font-size:12px;color:var(--text-muted);"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. AI ENGINE -->
+          <div id="section-ai-models" class="settings-section">
+            <div class="settings-card">
+              <h2 class="settings-card-title">🤖 AI Engine (OpenAI / Language Models)</h2>
+              <p class="settings-card-desc">Drives intelligent load matching, DAT text parsing into loads, driver SMS intent extraction, and automated replies.</p>
+
+              <div class="form-group">
+                <label>OpenAI API Key</label>
+                <input type="password" class="form-input" id="int-openai-key" placeholder="sk-..." autocomplete="off">
+              </div>
+
+              <div class="save-bar">
+                <button type="button" class="btn btn-primary" onclick="saveIntegrationCategory('ai-models')">💾 Save AI Key</button>
+                <span id="save-status-ai-models" style="font-size:12px;color:var(--text-muted);"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 7. EMAIL MAILER -->
+          <div id="section-email-mailer" class="settings-section">
+            <div class="settings-card">
+              <h2 class="settings-card-title">✉️ Email &amp; Outbound Mailer</h2>
+              <p class="settings-card-desc">Sends rate confirmations, broker invoices, onboarding packets, and carrier notifications.</p>
+
+              <div class="form-group">
+                <label>Resend / Mailer API Key</label>
+                <input type="password" class="form-input" id="int-resend-key" placeholder="re_..." autocomplete="off">
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group">
+                  <label>Sender From Email Address</label>
+                  <input type="email" class="form-input" id="int-email-from" placeholder="dispatch@shippingwish.com">
+                </div>
+                <div class="form-group">
+                  <label>Sender From Name</label>
+                  <input type="text" class="form-input" id="int-email-from-name" placeholder="Shipping Wish Operations">
+                </div>
+              </div>
+
+              <div class="save-bar">
+                <button type="button" class="btn btn-primary" onclick="saveIntegrationCategory('email-mailer')">💾 Save Email Settings</button>
+                <span id="save-status-email-mailer" style="font-size:12px;color:var(--text-muted);"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 8. GENERAL COMPANY -->
+          <div id="section-general" class="settings-section">
+            <div class="settings-card">
+              <h2 class="settings-card-title">🏢 Company Profile &amp; Contact</h2>
+              <p class="settings-card-desc">Shown across official TMS paperwork, RateCons, and billing receipts.</p>
+              <div class="form-group">
+                <label>Company Legal Name</label>
                 <input type="text" class="form-input" id="cfg-company-name" placeholder="Shipping Wish LLC">
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -118,454 +389,83 @@
                   <input type="text" class="form-input" id="cfg-mc" placeholder="MC-123456">
                 </div>
                 <div class="form-group">
-                  <label>DOT Number</label>
+                  <label>USDOT Number</label>
                   <input type="text" class="form-input" id="cfg-dot" placeholder="DOT-9876543">
                 </div>
               </div>
               <div class="form-group">
-                <label>Company Phone</label>
-                <input type="text" class="form-input" id="cfg-phone" placeholder="+1 (212) 555-0100">
+                <label>Operations Phone</label>
+                <input type="text" class="form-input" id="cfg-phone" placeholder="+1 (917) 737-0021">
               </div>
               <div class="form-group">
-                <label>Company Email</label>
-                <input type="email" class="form-input" id="cfg-email" placeholder="ops@shippingwish.com">
+                <label>Dispatch Desk Email</label>
+                <input type="email" class="form-input" id="cfg-email" placeholder="dispatch@shippingwish.com">
               </div>
               <div class="form-group" style="margin-bottom:0;">
-                <label>Company Address</label>
-                <input type="text" class="form-input" id="cfg-address" placeholder="123 Freight Ave, New York, NY 10001">
+                <label>Registered Office Address</label>
+                <input type="text" class="form-input" id="cfg-address" placeholder="19266 Coastal Hwy, Rehoboth Beach, DE 19971">
               </div>
-            </div>
 
-            <div class="settings-card">
-              <p class="settings-card-title">Load & Operations Defaults</p>
-              <p class="settings-card-desc">Default values used when creating new loads and shipments.</p>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div class="form-group">
-                  <label>Default Load Status</label>
-                  <select class="form-input" id="cfg-default-status">
-                    <option value="pending">Pending</option>
-                    <option value="booked">Booked</option>
-                    <option value="dispatched">Dispatched</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Default Equipment Type</label>
-                  <select class="form-input" id="cfg-default-equip">
-                    <option value="dry_van">Dry Van (53ft)</option>
-                    <option value="reefer">Reefer</option>
-                    <option value="flatbed">Flatbed</option>
-                    <option value="step_deck">Step Deck</option>
-                  </select>
-                </div>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Auto-assign dispatcher on load creation</div>
-                  <div class="settings-row-hint">Assign the creating dispatcher to new loads automatically</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggle-auto-assign" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Require rate confirmation before dispatch</div>
-                  <div class="settings-row-hint">Loads cannot be dispatched without a signed rate con</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggle-require-ratecon">
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-            </div>
-
-            <div class="settings-card">
-              <div class="save-bar" style="position:static;border:none;padding:0;margin:0;justify-content:flex-start;">
-                <button class="btn btn-primary" onclick="saveSettings('general')">💾 Save General Settings</button>
+              <div class="save-bar">
+                <button type="button" class="btn btn-primary" onclick="saveCompanyProfile()">💾 Save Company Profile</button>
                 <span id="save-status-general" style="font-size:12px;color:var(--text-muted);"></span>
               </div>
             </div>
           </div>
 
-          <!-- NOTIFICATIONS -->
-          <div id="section-notifications" class="settings-section">
-            <div class="settings-card">
-              <p class="settings-card-title">Email Notifications</p>
-              <p class="settings-card-desc">Choose which events trigger automatic email alerts to your team.</p>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">New load created</div>
-                  <div class="settings-row-hint">Notify dispatchers when a new load is added</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="notif-new-load" checked><span class="toggle-slider"></span></label>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Load delivered</div>
-                  <div class="settings-row-hint">Notify accounting when a load status changes to Delivered</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="notif-delivered" checked><span class="toggle-slider"></span></label>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">New carrier application</div>
-                  <div class="settings-row-hint">Notify admins when a carrier completes onboarding</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="notif-carrier-app" checked><span class="toggle-slider"></span></label>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Invoice past due</div>
-                  <div class="settings-row-hint">Remind accounting team of unpaid invoices after 30 days</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="notif-invoice-due"><span class="toggle-slider"></span></label>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Carrier insurance expiring</div>
-                  <div class="settings-row-hint">Alert 30 days before a carrier's COI expires</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="notif-insurance" checked><span class="toggle-slider"></span></label>
-              </div>
-            </div>
-
-            <div class="settings-card">
-              <p class="settings-card-title">SMS / Text Alerts</p>
-              <p class="settings-card-desc">Send text message alerts for critical operational events.</p>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Driver check-call missed</div>
-                  <div class="settings-row-hint">SMS dispatcher if driver misses a scheduled check-call</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="sms-checkcall" checked><span class="toggle-slider"></span></label>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Load status update to carrier</div>
-                  <div class="settings-row-hint">Auto-SMS carrier when load is dispatched or delivered</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="sms-status-update"><span class="toggle-slider"></span></label>
-              </div>
-            </div>
-
-            <div class="settings-card">
-              <div class="save-bar" style="position:static;border:none;padding:0;margin:0;justify-content:flex-start;">
-                <button class="btn btn-primary" onclick="saveSettings('notifications')">💾 Save Notification Settings</button>
-                <span id="save-status-notifications" style="font-size:12px;color:var(--text-muted);"></span>
-              </div>
-            </div>
-          </div>
-
-          <!-- SECURITY -->
+          <!-- 9. SECURITY & ACCESS -->
           <div id="section-security" class="settings-section">
             <div class="settings-card">
-              <p class="settings-card-title">Authentication & Login</p>
-              <p class="settings-card-desc">Control how staff and external users sign in to the portal.</p>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Require 2FA for Admins</div>
-                  <div class="settings-row-hint">Force two-factor authentication for admin and super-admin accounts</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="sec-2fa-admin" checked><span class="toggle-slider"></span></label>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Require 2FA for all staff</div>
-                  <div class="settings-row-hint">Extend 2FA requirement to dispatchers, sales reps, HR</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="sec-2fa-staff"><span class="toggle-slider"></span></label>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Auto-logout after inactivity</div>
-                  <div class="settings-row-hint">Log out portal sessions after 60 minutes of inactivity</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="sec-auto-logout" checked><span class="toggle-slider"></span></label>
-              </div>
-              <div class="form-group" style="margin-top:16px;">
-                <label>Session Timeout (minutes)</label>
-                <input type="number" class="form-input" id="sec-timeout" value="60" min="15" max="480" style="max-width:180px;">
-              </div>
-            </div>
-
-            <div class="settings-card">
-              <p class="settings-card-title">Role Permissions Overview</p>
-              <p class="settings-card-desc">Quick reference — who can do what across the TMS.</p>
-              <table class="tms-table-v2" style="font-size:12px;">
-                <thead><tr><th>Action</th><th>SuperAdmin</th><th>Admin</th><th>HR</th><th>Dispatcher</th><th>Sales</th></tr></thead>
+              <h2 class="settings-card-title">🔒 Role Permissions &amp; Data Deletion Lock</h2>
+              <p class="settings-card-desc">Strict system boundaries enforced across backend APIs.</p>
+              
+              <table class="tms-table-v2" style="font-size:12px;margin-bottom:16px;">
+                <thead><tr><th>Data Item</th><th>SuperAdmin</th><th>Admin</th><th>HR</th><th>Dispatcher</th><th>Sales Rep</th></tr></thead>
                 <tbody>
-                  <tr><td>Delete Loads</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-                  <tr><td>Delete Users</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
-                  <tr><td>Delete CRM Leads</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-                  <tr><td>Delete Emails</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-                  <tr><td>Delete Fleet/Drivers</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-                  <tr><td>Create Staff Users</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
-                  <tr><td>View Audit Logs</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-                  <tr><td>Billing & Invoices</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-                  <tr><td>View Calls & SMS</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td></tr>
+                  <tr><td>Delete Company / Users</td><td>✅ Allowed</td><td>❌ Blocked</td><td>❌ Blocked</td><td>❌ Blocked</td><td>❌ Blocked</td></tr>
+                  <tr><td>Delete Loads</td><td>✅ Soft-Delete</td><td>✅ Soft-Delete</td><td>❌ Blocked</td><td>❌ Blocked</td><td>❌ Blocked</td></tr>
+                  <tr><td>Delete CRM Leads</td><td>✅ Allowed</td><td>✅ Allowed</td><td>❌ Blocked</td><td>❌ Blocked</td><td>❌ Blocked</td></tr>
+                  <tr><td>Delete Fleet / Drivers</td><td>✅ Allowed</td><td>✅ Allowed</td><td>❌ Blocked</td><td>❌ Blocked</td><td>❌ Blocked</td></tr>
+                  <tr><td>Delete Emails</td><td>✅ Allowed</td><td>✅ Allowed</td><td>❌ Blocked</td><td>❌ Blocked</td><td>❌ Blocked</td></tr>
+                  <tr><td>VoIP Calls &amp; SMS History</td><td>🔒 Permanent</td><td>🔒 Permanent</td><td>🔒 Permanent</td><td>🔒 Permanent</td><td>🔒 Permanent</td></tr>
+                  <tr><td>Configure System APIs</td><td>✅ Full Access</td><td>✅ Full Access</td><td>❌ Blocked</td><td>❌ Blocked</td><td>❌ Blocked</td></tr>
                 </tbody>
               </table>
-            </div>
 
-            <div class="settings-card">
-              <p class="settings-card-title danger-zone-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="#dc2626" stroke-width="1.7"/><line x1="12" y1="9" x2="12" y2="13" stroke="#dc2626" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="#dc2626"/></svg>
-                Danger Zone
-              </p>
-              <div class="danger-zone">
-                <div class="settings-row">
-                  <div class="settings-row-info">
-                    <div class="settings-row-label" style="color:#dc2626;">Run Manual Trash Purge</div>
-                    <div class="settings-row-hint">Permanently delete all items older than the retention period right now</div>
-                  </div>
-                  <button class="btn btn-danger btn-sm" onclick="runManualPurge()">Run Purge</button>
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">Two-Factor Authentication (2FA) for Admins</div>
+                  <div class="settings-row-hint">Mandatory SMS/App 2FA verification on sign-in</div>
                 </div>
+                <span class="settings-badge badge-green">Enforced</span>
               </div>
             </div>
           </div>
 
-          <!-- BRANDING -->
-          <div id="section-branding" class="settings-section">
-            <div class="settings-card">
-              <p class="settings-card-title">Brand Colors</p>
-              <p class="settings-card-desc">Accent color used across the portal sidebar and UI highlights.</p>
-              <div class="settings-row-label" style="margin-bottom:8px;">Primary Accent Color</div>
-              <div class="color-swatch-row" id="color-swatches">
-                <div class="color-swatch selected" data-color="#f59e0b" style="background:#f59e0b;" onclick="selectColor(this)" title="Amber (Default)"></div>
-                <div class="color-swatch" data-color="#6366f1" style="background:#6366f1;" onclick="selectColor(this)" title="Indigo"></div>
-                <div class="color-swatch" data-color="#10b981" style="background:#10b981;" onclick="selectColor(this)" title="Emerald"></div>
-                <div class="color-swatch" data-color="#3b82f6" style="background:#3b82f6;" onclick="selectColor(this)" title="Blue"></div>
-                <div class="color-swatch" data-color="#ef4444" style="background:#ef4444;" onclick="selectColor(this)" title="Red"></div>
-                <div class="color-swatch" data-color="#a855f7" style="background:#a855f7;" onclick="selectColor(this)" title="Purple"></div>
-                <div class="color-swatch" data-color="#0ea5e9" style="background:#0ea5e9;" onclick="selectColor(this)" title="Sky"></div>
-              </div>
-            </div>
-
-            <div class="settings-card">
-              <p class="settings-card-title">Portal Tagline</p>
-              <p class="settings-card-desc">Shown under "Shipping Wish" in the sidebar brand area.</p>
-              <div class="form-group" style="margin-bottom:0;">
-                <label>Tagline / Subtitle</label>
-                <input type="text" class="form-input" id="cfg-tagline" placeholder="OPERATIONS" maxlength="24">
-                <small style="color:var(--text-muted);font-size:11px;margin-top:4px;display:block;">Max 24 characters. Displayed in ALL CAPS.</small>
-              </div>
-            </div>
-
-            <div class="settings-card">
-              <div class="save-bar" style="position:static;border:none;padding:0;margin:0;justify-content:flex-start;">
-                <button class="btn btn-primary" onclick="saveSettings('branding')">💾 Save Branding</button>
-                <span id="save-status-branding" style="font-size:12px;color:var(--text-muted);"></span>
-              </div>
-            </div>
-          </div>
-
-          <!-- INTEGRATIONS -->
-          <div id="section-integrations" class="settings-section">
-
-            <!-- Load Board APIs -->
-            <div class="settings-card">
-              <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:4px;">
-                <div>
-                  <p class="settings-card-title" style="margin-bottom:2px;">🎯 Load Board API Sources</p>
-                  <p class="settings-card-desc" style="margin:0;">Connect any licensed load board with a JSON REST API (DAT, Truckstop, 123Loadboard, Convoy, etc.). All sources feed loads into AI Dispatch automatically.</p>
-                </div>
-                <button class="btn btn-secondary btn-sm" onclick="syncAllApis()" id="btn-sync-all">🔄 Sync All Now</button>
-              </div>
-              <div style="background:var(--surface-base);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:16px;margin:16px 0;">
-                <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:12px;">➕ Add New Load Board API</div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end;">
-                  <div class="form-group" style="margin:0;"><label>Board Name</label><input type="text" class="form-input" id="lb-name" placeholder="DAT One, Truckstop…"></div>
-                  <div class="form-group" style="margin:0;"><label>HTTPS JSON URL</label><input type="url" class="form-input" id="lb-url" placeholder="https://api.example.com/loads"></div>
-                  <div class="form-group" style="margin:0;"><label>Header Name</label><input type="text" class="form-input" id="lb-header" value="Authorization"></div>
-                  <div class="form-group" style="margin:0;"><label>API Key / Token</label><input type="password" class="form-input" id="lb-key" autocomplete="off" placeholder="Bearer token…"></div>
-                  <div><button class="btn btn-primary" onclick="addLoadBoardApi()">Save API</button></div>
-                </div>
-                <p id="lb-msg" style="font-size:12px;color:#dc2626;margin:8px 0 0;min-height:1.2em;"></p>
-              </div>
-              <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">Connected APIs</div>
-              <div id="lb-list"><div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Loading…</div></div>
-            </div>
-
-            <!-- Twilio SMS -->
-            <div class="settings-card">
-              <p class="settings-card-title">📱 Twilio — SMS</p>
-              <p class="settings-card-desc">Carrier outreach, driver load offers, check-calls, STOP opt-out, and AI dispatch text replies.</p>
-              <div class="settings-row">
-                <div class="settings-row-info"><div class="settings-row-label">SMS Status</div><div class="settings-row-hint">Inbound &amp; outbound SMS</div></div>
-                <span id="twilio-sms-status" class="settings-badge badge-amber">Checking…</span>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
-                <div class="form-group" style="margin:0;"><label>Account SID</label><input type="password" class="form-input" id="twilio-sid" placeholder="ACxxxxxxxxxxxxxxxx" autocomplete="off"></div>
-                <div class="form-group" style="margin:0;"><label>Auth Token</label><input type="password" class="form-input" id="twilio-token" placeholder="••••••••" autocomplete="off"></div>
-                <div class="form-group" style="margin:0;"><label>SMS Phone Number</label><input type="text" class="form-input" id="twilio-from" placeholder="+12125550100"></div>
-                <div class="form-group" style="margin:0;"><label>Daily SMS Limit</label><input type="number" class="form-input" id="twilio-daily-limit" value="300" min="1" max="10000"></div>
-              </div>
-              <div class="settings-row" style="margin-top:8px;">
-                <div class="settings-row-info"><div class="settings-row-label">TCPA Hours Enforcement (9am–5pm local)</div><div class="settings-row-hint">Required by law — cannot be disabled</div></div>
-                <label class="toggle-switch"><input type="checkbox" id="twilio-tcpa" checked disabled><span class="toggle-slider"></span></label>
-              </div>
-              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('twilio-sms')">💾 Save Twilio SMS</button></div>
-            </div>
-
-            <!-- VoIP / AI Calling -->
-            <div class="settings-card">
-              <p class="settings-card-title">📞 Twilio — VoIP &amp; AI Calling</p>
-              <p class="settings-card-desc">Click-to-call from dispatcher desk, AI cold calling for carrier acquisition, and inbound call routing.</p>
-              <div class="settings-row">
-                <div class="settings-row-info"><div class="settings-row-label">VoIP Status</div><div class="settings-row-hint">AI calls and dispatcher click-to-call</div></div>
-                <span id="voip-status" class="settings-badge badge-amber">Checking…</span>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
-                <div class="form-group" style="margin:0;"><label>Voice Number</label><input type="text" class="form-input" id="voip-number" placeholder="+12125550199"></div>
-                <div class="form-group" style="margin:0;"><label>AI Calling Daily Limit</label><input type="number" class="form-input" id="voip-daily-limit" value="50" min="1" max="500"></div>
-              </div>
-              <div class="settings-row" style="margin-top:8px;">
-                <div class="settings-row-info"><div class="settings-row-label">Record all calls (90-day compliance storage)</div></div>
-                <label class="toggle-switch"><input type="checkbox" id="voip-record" checked><span class="toggle-slider"></span></label>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info"><div class="settings-row-label">AI Calling enabled (carrier acquisition)</div><div class="settings-row-hint">Automated AI calls to prospects from Census Desk</div></div>
-                <label class="toggle-switch"><input type="checkbox" id="voip-ai-calls" checked><span class="toggle-slider"></span></label>
-              </div>
-              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('voip')">💾 Save VoIP Settings</button></div>
-            </div>
-
-            <!-- WhatsApp -->
-            <div class="settings-card">
-              <p class="settings-card-title">💬 WhatsApp Business API</p>
-              <p class="settings-card-desc">Load offers, check-calls, and updates to drivers &amp; carriers via WhatsApp (Twilio Sandbox or Meta WABA).</p>
-              <div class="settings-row">
-                <div class="settings-row-info"><div class="settings-row-label">WhatsApp Status</div></div>
-                <span id="wa-status" class="settings-badge badge-red">Not Connected</span>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
-                <div class="form-group" style="margin:0;"><label>WhatsApp From Number</label><input type="text" class="form-input" id="wa-from" placeholder="whatsapp:+14155238886"></div>
-                <div class="form-group" style="margin:0;"><label>Provider</label><select class="form-input" id="wa-provider"><option value="twilio">Twilio WhatsApp Sandbox</option><option value="meta">Meta WABA (Production)</option></select></div>
-              </div>
-              <div class="settings-row" style="margin-top:8px;">
-                <div class="settings-row-info"><div class="settings-row-label">Enable WhatsApp messaging</div><div class="settings-row-hint">Falls back to SMS if WhatsApp fails</div></div>
-                <label class="toggle-switch"><input type="checkbox" id="wa-enabled"><span class="toggle-slider"></span></label>
-              </div>
-              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('whatsapp')">💾 Save WhatsApp</button></div>
-            </div>
-
-            <!-- Google Maps -->
-            <div class="settings-card">
-              <p class="settings-card-title">🗺️ Google Maps Platform</p>
-              <p class="settings-card-desc">Address validation, route optimization, fleet tracking, and distance matrix across the TMS.</p>
-              <div class="settings-row">
-                <div class="settings-row-info"><div class="settings-row-label">API Status</div><div class="settings-row-hint">Places, Routes, Geocoding, Address Validation, Maps JS</div></div>
-                <span class="settings-badge badge-green">✅ Active</span>
-              </div>
-              <div class="form-group" style="margin-top:14px;"><label>Google Maps API Key</label><input type="password" class="form-input" id="cfg-gmaps-key" placeholder="AIza…" autocomplete="off"></div>
-              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Validate addresses on every load creation</div></div><label class="toggle-switch"><input type="checkbox" id="gmaps-validate" checked><span class="toggle-slider"></span></label></div>
-              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('gmaps')">💾 Save Google Maps Key</button></div>
-            </div>
-
-            <!-- Email -->
-            <div class="settings-card">
-              <p class="settings-card-title">✉️ Email Service (Resend)</p>
-              <p class="settings-card-desc">Broker outreach, carrier onboarding, invoice delivery, and FMCSA acquisition email campaigns.</p>
-              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Email Status</div></div><span id="email-status" class="settings-badge badge-amber">Checking…</span></div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
-                <div class="form-group" style="margin:0;"><label>Resend API Key</label><input type="password" class="form-input" id="resend-key" placeholder="re_xxxxxxxxxxxx" autocomplete="off"></div>
-                <div class="form-group" style="margin:0;"><label>From Email Address</label><input type="email" class="form-input" id="resend-from" placeholder="ops@shippingwish.com"></div>
-              </div>
-              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('email')">💾 Save Email Settings</button></div>
-            </div>
-
-            <!-- FMCSA -->
-            <div class="settings-card">
-              <p class="settings-card-title">🛡️ FMCSA / DOT Data Feed</p>
-              <p class="settings-card-desc">Live carrier safety scores, authority status, insurance verification, and DOT census lookup.</p>
-              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">FMCSA API</div></div><span class="settings-badge badge-green">✅ Connected</span></div>
-              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Auto-refresh carrier safety scores (every 30 days)</div></div><label class="toggle-switch"><input type="checkbox" id="fmcsa-auto-refresh" checked><span class="toggle-slider"></span></label></div>
-              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Block UNSATISFACTORY-rated carriers from dispatch</div></div><label class="toggle-switch"><input type="checkbox" id="fmcsa-block-unsafe" checked><span class="toggle-slider"></span></label></div>
-            </div>
-
-            <!-- OpenAI -->
-            <div class="settings-card">
-              <p class="settings-card-title">🤖 AI Engine (OpenAI)</p>
-              <p class="settings-card-desc">Driver text parsing, automated broker email replies, and AI cold calling scripts.</p>
-              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">OpenAI Status</div></div><span id="ai-status" class="settings-badge badge-amber">Checking…</span></div>
-              <div class="form-group" style="margin-top:14px;"><label>OpenAI API Key</label><input type="password" class="form-input" id="openai-key" placeholder="sk-…" autocomplete="off"></div>
-              <div class="form-group"><label>AI Model</label><select class="form-input" id="openai-model"><option value="gpt-4o-mini">GPT-4o Mini (Fast, Cost-effective)</option><option value="gpt-4o">GPT-4o (Most Capable)</option><option value="gpt-3.5-turbo">GPT-3.5 Turbo (Legacy)</option></select></div>
-              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('ai')">💾 Save AI Settings</button></div>
-            </div>
-
-          </div>
-<!-- BILLING -->
-          <div id="section-billing" class="settings-section">
-            <div class="settings-card">
-              <p class="settings-card-title">Current Plan</p>
-              <p class="settings-card-desc">Your active Shipping Wish TMS subscription.</p>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Plan</div>
-                </div>
-                <span class="settings-badge badge-green" id="current-plan-badge">Enterprise TMS</span>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Active Staff Seats</div>
-                  <div class="settings-row-hint">Dispatchers, Sales Reps, HR, Admins</div>
-                </div>
-                <strong id="seat-count" style="font-size:13px;">—</strong>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Active Carriers Onboarded</div>
-                </div>
-                <strong id="carrier-count" style="font-size:13px;">—</strong>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Total Loads (All Time)</div>
-                </div>
-                <strong id="load-count" style="font-size:13px;">—</strong>
-              </div>
-            </div>
-          </div>
-
-          <!-- TRASH POLICY -->
+          <!-- 10. TRASH & DATA RETENTION -->
           <div id="section-trash-policy" class="settings-section">
             <div class="settings-card">
-              <p class="settings-card-title">Data Retention Policy</p>
-              <p class="settings-card-desc">Control how long soft-deleted items remain in Trash before permanent purge.</p>
+              <h2 class="settings-card-title">🗑️ Trash Retention &amp; Recovery</h2>
+              <p class="settings-card-desc">Soft-deleted records are preserved safely before automatic purge.</p>
+
               <div class="form-group">
-                <label>Trash Retention Period (days)</label>
+                <label>Trash Retention Period (Days)</label>
                 <input type="number" class="form-input" id="trash-retention-days" value="30" min="7" max="365" style="max-width:180px;">
-                <small style="font-size:11px;color:var(--text-muted);margin-top:4px;display:block;">Min 7 days · Max 365 days. Items older than this are auto-purged overnight.</small>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Auto-purge expired trash overnight</div>
-                  <div class="settings-row-hint">Run cleanup every night at 2:00 AM server time</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="trash-auto-purge" checked><span class="toggle-slider"></span></label>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Require "DELETE_FOREVER" confirmation for permanent deletes</div>
-                  <div class="settings-row-hint">Admins must type a confirmation string before permanent deletion</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="trash-confirm-string" checked disabled><span class="toggle-slider"></span></label>
+                <small style="font-size:11px;color:var(--text-muted);margin-top:4px;display:block;">Default: 30 days. Soft-deleted items stay recoverable until this time.</small>
               </div>
 
               <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-subtle);">
-                <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Current Trash Summary</div>
-                <div id="trash-summary-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center;">
-                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-total">—</div><div style="font-size:11px;color:var(--text-muted);">Total</div></div>
-                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-loads">—</div><div style="font-size:11px;color:var(--text-muted);">Loads</div></div>
-                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-users">—</div><div style="font-size:11px;color:var(--text-muted);">Accounts</div></div>
-                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-emails">—</div><div style="font-size:11px;color:var(--text-muted);">Emails</div></div>
+                <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Live Trash Bin Summary</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;text-align:center;">
+                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-total">0</div><div style="font-size:11px;color:var(--text-muted);">Total in Trash</div></div>
+                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-loads">0</div><div style="font-size:11px;color:var(--text-muted);">Loads</div></div>
+                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-users">0</div><div style="font-size:11px;color:var(--text-muted);">Accounts</div></div>
+                  <div class="settings-card" style="margin:0;padding:12px;"><div style="font-size:22px;font-weight:800;" id="ts-emails">0</div><div style="font-size:11px;color:var(--text-muted);">Emails</div></div>
                 </div>
               </div>
 
-              <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-                <button class="btn btn-primary" onclick="saveSettings('trash-policy')">💾 Save Retention Policy</button>
-                <a href="/trash" class="btn btn-secondary btn-sm">Open Trash →</a>
+              <div style="margin-top:20px;display:flex;gap:12px;align-items:center;">
+                <a href="/trash" class="btn btn-secondary btn-sm">Open Full Trash Bin &rarr;</a>
               </div>
             </div>
           </div>
@@ -576,18 +476,27 @@
   </div>
 </div>
 
-<!-- Toast -->
-<div id="settings-toast" style="display:none;"></div>
+<div id="settings-toast"></div>
 
 <script>
-  // --- Auth guard ---
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  function showToast(msg, ok) {
+    const t = document.getElementById('settings-toast');
+    t.textContent = (ok ? '✅ ' : '❌ ') + msg;
+    t.style.display = 'flex';
+    setTimeout(() => { t.style.display = 'none'; }, 3200);
+  }
+
   async function checkAuth() {
     const res = await fetch('/api/me', { credentials: 'include' });
     if (!res.ok) { window.location.href = '/login'; return false; }
     const data = await res.json();
     const role = data.user && data.user.role;
     if (!['admin', 'super_admin'].includes(role)) {
-      alert('Settings page is Admin-only.');
+      alert('Access restricted to Administrators.');
       window.location.href = '/admin-dashboard';
       return false;
     }
@@ -596,7 +505,6 @@
     return true;
   }
 
-  // --- Nav switching ---
   function switchSection(id, el) {
     document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'));
@@ -605,182 +513,312 @@
     if (el) el.classList.add('active');
   }
 
-  // --- Toast helper ---
-  function showToast(msg, ok) {
-    const t = document.getElementById('settings-toast');
-    t.textContent = (ok ? '✅ ' : '❌ ') + msg;
-    t.style.display = 'flex';
-    setTimeout(() => { t.style.display = 'none'; }, 3000);
+  // Preset chips for load boards
+  function applyBoardPreset(name, url, header) {
+    document.getElementById('board-name').value = name;
+    document.getElementById('board-url').value = url;
+    document.getElementById('board-header').value = header;
+    document.getElementById('board-key').focus();
   }
 
-  // --- Save (stub — extend per setting) ---
-  function saveSettings(section) {
-    const el = document.getElementById('save-status-' + section);
-    if (el) { el.textContent = 'Saved ✓'; setTimeout(() => el.textContent = '', 3000); }
-    showToast('Settings saved successfully.', true);
-  }
-
-  // --- Color picker ---
-  function selectColor(el) {
-    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-    el.classList.add('selected');
-    const color = el.dataset.color;
-    document.documentElement.style.setProperty('--color-amber-500', color);
-    showToast('Accent color updated (preview only — save to persist)', true);
-  }
-
-  // --- Manual purge ---
-  async function runManualPurge() {
-    if (!confirm('This will permanently delete all trash items older than the retention period. This CANNOT be undone. Continue?')) return;
-    const res = await fetch('/api/trash/run-auto-purge', { method: 'POST', credentials: 'include' });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) showToast(`Purge complete. Removed ${JSON.stringify(data.purged || {})}`, true);
-    else showToast(data.error || 'Purge failed.', false);
-    loadTrashStats();
-  }
-
-  // --- Load trash stats ---
-  async function loadTrashStats() {
-    const res = await fetch('/api/trash/counts', { credentials: 'include' });
-    if (!res.ok) return;
-    const c = await res.json();
-    document.getElementById('ts-total').textContent = c.total || 0;
-    document.getElementById('ts-loads').textContent = c.loads || 0;
-    document.getElementById('ts-users').textContent = c.users || 0;
-    document.getElementById('ts-emails').textContent = c.emails || 0;
-  }
-
-  // --- Load billing stats ---
-  async function loadBillingStats() {
-    const res = await fetch('/api/me', { credentials: 'include' });
-    if (!res.ok) return;
-    const d = await res.json();
-    // Placeholder counts — extend with real API calls
-    document.getElementById('seat-count').textContent = '—';
-    document.getElementById('carrier-count').textContent = '—';
-    document.getElementById('load-count').textContent = '—';
-  }
-
-  // --- Load Board APIs ---
-  async function loadLoadBoardApis() {
-    const box = document.getElementById('lb-list');
-    if (!box) return;
+  // --- Load Boards Management ---
+  async function loadConnectedBoards() {
+    const box = document.getElementById('connected-boards-list');
+    const countBadge = document.getElementById('connected-boards-count');
     try {
       const res = await fetch('/api/dispatch-desk/sources', { credentials: 'include' });
       const data = await res.json();
       const sources = data.sources || [];
+      countBadge.textContent = sources.length + ' Connected';
+      
       if (!sources.length) {
-        box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">No load board APIs connected yet. Add your first one above.</div>';
+        box.innerHTML = `<div style="text-align:center;padding:24px;border:1px dashed var(--border-default);border-radius:var(--radius-lg);color:var(--text-muted);font-size:13px;">
+          No licensed load board APIs connected yet.<br><span style="font-size:12px;">Add DAT One, Truckstop, or custom broker JSON feeds above to automatically pull loads.</span>
+        </div>`;
         return;
       }
+
       box.innerHTML = sources.map(row => {
-        const when = row.last_sync_at ? new Date(row.last_sync_at).toLocaleString() : 'Not synced yet';
-        const statusColor = row.last_status === 'ok' ? '#16a34a' : row.last_status === 'error' ? '#dc2626' : '#d97706';
-        const keyMasked = row.api_key ? row.api_key.replace(/./g, '•').slice(0, 12) + '…' : 'No key set';
-        return `
-          <div style="padding:14px;border:1px solid var(--border-default);border-radius:var(--radius-lg);margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:220px;">
-              <div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:4px;">${esc(row.name)}</div>
-              <div style="font-size:12px;color:var(--text-muted);word-break:break-all;">${esc(row.base_url)}</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Key: ${esc(keyMasked)} · Header: ${esc(row.header_name || 'Authorization')}</div>
-              <div style="font-size:11px;margin-top:4px;">
-                <span style="color:${statusColor};font-weight:700;">${esc(row.last_status || 'waiting')}</span>
-                · Last sync: ${esc(when)}
-                ${row.last_error ? `<span style="color:#dc2626;"> · Error: ${esc(row.last_error.slice(0, 80))}</span>` : ''}
-              </div>
+        const when = row.last_sync_at ? new Date(row.last_sync_at).toLocaleString() : 'Never synced';
+        const isHealthy = row.last_status === 'ok' || row.last_status === 'success';
+        const badgeCls = isHealthy ? 'badge-green' : (row.last_error ? 'badge-red' : 'badge-amber');
+        const badgeText = isHealthy ? '🟢 Active' : (row.last_error ? '🔴 Error' : '🟡 ' + (row.last_status || 'Waiting'));
+
+        return `<div class="api-card">
+          <div class="api-card-header">
+            <div class="api-card-name">
+              <span>🎯</span>
+              <span>${esc(row.name)}</span>
+              <span class="settings-badge ${badgeCls}">${badgeText}</span>
             </div>
-            <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
-              <button onclick="syncOneApi(${row.id})" style="background:var(--surface-base);border:1px solid var(--border-default);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">🔄 Sync</button>
-              <button onclick="deleteLoadBoardApi(${row.id}, '${esc(row.name)}')" style="background:#fff;border:1px solid #fecaca;color:#dc2626;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">🗑 Remove</button>
+            <div class="api-card-actions">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="syncSingleBoard(${row.id})">🔄 Sync Now</button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="removeLoadBoard(${row.id}, '${esc(row.name)}')">🗑️ Remove</button>
             </div>
-          </div>`;
+          </div>
+          <div class="api-card-url">${esc(row.base_url)}</div>
+          <div class="api-card-meta">
+            <span><strong>Header:</strong> ${esc(row.header_name || 'Authorization')}</span>
+            <span><strong>Key:</strong> ${esc(row.api_key || 'Not set')}</span>
+            <span><strong>Last Sync:</strong> ${esc(when)}</span>
+            ${row.last_error ? `<span style="color:#dc2626;font-weight:600;">Error: ${esc(row.last_error)}</span>` : ''}
+          </div>
+        </div>`;
       }).join('');
-    } catch (e) {
-      box.innerHTML = `<div style="color:#dc2626;font-size:13px;">Error loading APIs: ${esc(e.message)}</div>`;
+    } catch (err) {
+      box.innerHTML = `<div style="color:#dc2626;padding:12px;">Error loading boards: ${esc(err.message)}</div>`;
     }
   }
 
-  function esc(v) {
-    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
+  async function saveLoadBoardApi(e) {
+    e.preventDefault();
+    const statusEl = document.getElementById('board-form-status');
+    statusEl.textContent = 'Connecting and verifying endpoint…';
 
-  async function addLoadBoardApi() {
-    const name = document.getElementById('lb-name').value.trim();
-    const base_url = document.getElementById('lb-url').value.trim();
-    const header_name = document.getElementById('lb-header').value.trim() || 'Authorization';
-    const api_key = document.getElementById('lb-key').value.trim();
-    const msg = document.getElementById('lb-msg');
-    if (!name || !base_url) { msg.textContent = 'Board name and URL are required.'; return; }
+    const payload = {
+      name: document.getElementById('board-name').value.trim(),
+      base_url: document.getElementById('board-url').value.trim(),
+      header_name: document.getElementById('board-header').value.trim() || 'Authorization',
+      api_key: document.getElementById('board-key').value.trim()
+    };
+
     try {
       const res = await fetch('/api/dispatch-desk/sources', {
-        method: 'POST', credentials: 'include',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, base_url, header_name, api_key })
+        credentials: 'include',
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save');
-      msg.style.color = '#16a34a';
-      msg.textContent = `✅ "${name}" added successfully!`;
-      document.getElementById('lb-name').value = '';
-      document.getElementById('lb-url').value = '';
-      document.getElementById('lb-key').value = '';
-      document.getElementById('lb-header').value = 'Authorization';
-      loadLoadBoardApis();
-      setTimeout(() => { msg.textContent = ''; msg.style.color = '#dc2626'; }, 3000);
-    } catch (e) {
-      msg.textContent = e.message;
+      if (!res.ok) throw new Error(data.error || 'Failed to connect API');
+
+      document.getElementById('board-api-form').reset();
+      document.getElementById('board-header').value = 'Authorization';
+      statusEl.textContent = 'Connected successfully!';
+      setTimeout(() => statusEl.textContent = '', 3000);
+      showToast(`Connected "${payload.name}" successfully!`, true);
+      await loadConnectedBoards();
+    } catch (err) {
+      statusEl.textContent = err.message;
+      showToast(err.message, false);
     }
   }
 
-  async function deleteLoadBoardApi(id, name) {
-    if (!confirm(`Remove "${name}" from load board API sources? This will stop fetching loads from this board.`)) return;
-    const res = await fetch(`/api/dispatch-desk/sources/${id}`, { method: 'DELETE', credentials: 'include' });
-    if (res.ok) { showToast(`"${name}" removed.`, true); loadLoadBoardApis(); }
-    else showToast('Failed to remove API.', false);
-  }
-
-  async function syncOneApi(id) {
-    showToast('Syncing…', true);
-    const res = await fetch(`/api/dispatch-desk/sources/${id}/sync`, { method: 'POST', credentials: 'include' });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) { showToast(`Sync done: ${data.loaded || 0} loads fetched.`, true); loadLoadBoardApis(); }
-    else showToast(data.error || 'Sync failed.', false);
-  }
-
-  async function syncAllApis() {
-    const btn = document.getElementById('btn-sync-all');
-    if (btn) btn.textContent = '⏳ Syncing…';
-    const res = await fetch('/api/dispatch-desk/sources/sync-due', { method: 'POST', credentials: 'include' });
-    const data = await res.json().catch(() => ({}));
-    if (btn) btn.textContent = '🔄 Sync All Now';
-    if (res.ok) { showToast('All APIs synced!', true); loadLoadBoardApis(); }
-    else showToast(data.error || 'Sync failed.', false);
-  }
-
-  // --- Integration save stub (extend per integration with real API) ---
-  function saveIntegration(key) {
-    showToast(`${key} settings saved (configure via server env vars for full activation).`, true);
-  }
-
-  // --- Hash-based section navigation ---
-  function checkHash() {
-    const hash = location.hash.replace('#', '');
-    if (hash) {
-      const el = document.querySelector(`.settings-nav-item[data-section="${hash}"]`);
-      if (el) switchSection(hash, el);
+  async function syncSingleBoard(id) {
+    showToast('Syncing load board…', true);
+    try {
+      const res = await fetch(`/api/dispatch-desk/sources/${id}/sync`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Sync failed');
+      showToast('Load board synced successfully!', true);
+      await loadConnectedBoards();
+    } catch (err) {
+      showToast(err.message, false);
+      await loadConnectedBoards();
     }
   }
 
-  // --- Boot ---
+  async function syncAllDueBoards() {
+    const btn = document.getElementById('btn-sync-all-boards');
+    btn.disabled = true;
+    btn.textContent = 'Syncing all…';
+    try {
+      const res = await fetch('/api/dispatch-desk/sources/sync-due', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Batch sync failed');
+      showToast('All active load boards refreshed!', true);
+      await loadConnectedBoards();
+    } catch (err) {
+      showToast(err.message, false);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔄 Sync All Active Boards';
+    }
+  }
+
+  async function removeLoadBoard(id, name) {
+    if (!confirm(`Are you sure you want to disconnect and delete "${name}"?\nExisting loads from this source will be expired.`)) return;
+    try {
+      const res = await fetch(`/api/dispatch-desk/sources/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Could not remove load board');
+      showToast(`Removed "${name}".`, true);
+      await loadConnectedBoards();
+    } catch (err) {
+      showToast(err.message, false);
+    }
+  }
+
+  // --- External Integrations Loading & Saving ---
+  async function loadIntegrations() {
+    try {
+      const res = await fetch('/api/settings/integrations', { credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok || !data.integrations) return;
+      const it = data.integrations;
+
+      // Twilio
+      if (it.twilio_account_sid) document.getElementById('int-twilio-sid').value = it.twilio_account_sid;
+      if (it.twilio_auth_token) document.getElementById('int-twilio-token').placeholder = 'Configured (••••••••)';
+      if (it.twilio_from_number) document.getElementById('int-twilio-from').value = it.twilio_from_number;
+      if (it.twilio_messaging_service_sid) document.getElementById('int-twilio-msg-sid').value = it.twilio_messaging_service_sid;
+
+      // WhatsApp
+      if (it.twilio_whatsapp_from) document.getElementById('int-whatsapp-from').value = it.twilio_whatsapp_from;
+
+      // Voice
+      if (it.voip_provider) document.getElementById('int-voip-provider').value = it.voip_provider;
+      if (it.vapi_api_key) document.getElementById('int-vapi-key').placeholder = 'Configured (••••••••)';
+      if (it.vapi_phone_number_id) document.getElementById('int-vapi-phone-id').value = it.vapi_phone_number_id;
+      if (it.mightycall_transfer_number) document.getElementById('int-transfer-number').value = it.mightycall_transfer_number;
+
+      // Google Maps
+      if (it.google_maps_api_key) document.getElementById('int-gmaps-key').placeholder = 'Configured (••••••••)';
+
+      // AI Models
+      if (it.openai_api_key) document.getElementById('int-openai-key').placeholder = 'Configured (••••••••)';
+
+      // Email Mailer
+      if (it.resend_api_key) document.getElementById('int-resend-key').placeholder = 'Configured (••••••••)';
+      if (it.email_from_address) document.getElementById('int-email-from').value = it.email_from_address;
+      if (it.email_from_name) document.getElementById('int-email-from-name').value = it.email_from_name;
+    } catch (err) {
+      console.warn('Could not load integrations:', err);
+    }
+  }
+
+  async function saveIntegrationCategory(cat) {
+    const statusEl = document.getElementById('save-status-' + cat);
+    if (statusEl) statusEl.textContent = 'Saving…';
+
+    const payload = {};
+    if (cat === 'twilio-sms') {
+      const sid = document.getElementById('int-twilio-sid').value.trim();
+      const token = document.getElementById('int-twilio-token').value.trim();
+      const from = document.getElementById('int-twilio-from').value.trim();
+      const msgSid = document.getElementById('int-twilio-msg-sid').value.trim();
+      if (sid) payload.twilio_account_sid = sid;
+      if (token && !token.includes('••••')) payload.twilio_auth_token = token;
+      if (from) payload.twilio_from_number = from;
+      if (msgSid) payload.twilio_messaging_service_sid = msgSid;
+    } else if (cat === 'whatsapp') {
+      const wFrom = document.getElementById('int-whatsapp-from').value.trim();
+      if (wFrom) payload.twilio_whatsapp_from = wFrom;
+    } else if (cat === 'voice-ai') {
+      payload.voip_provider = document.getElementById('int-voip-provider').value;
+      const vKey = document.getElementById('int-vapi-key').value.trim();
+      if (vKey && !vKey.includes('••••')) payload.vapi_api_key = vKey;
+      payload.vapi_phone_number_id = document.getElementById('int-vapi-phone-id').value.trim();
+      payload.mightycall_transfer_number = document.getElementById('int-transfer-number').value.trim();
+    } else if (cat === 'google-maps') {
+      const gKey = document.getElementById('int-gmaps-key').value.trim();
+      if (gKey && !gKey.includes('••••')) payload.google_maps_api_key = gKey;
+    } else if (cat === 'ai-models') {
+      const oKey = document.getElementById('int-openai-key').value.trim();
+      if (oKey && !oKey.includes('••••')) payload.openai_api_key = oKey;
+    } else if (cat === 'email-mailer') {
+      const rKey = document.getElementById('int-resend-key').value.trim();
+      if (rKey && !rKey.includes('••••')) payload.resend_api_key = rKey;
+      payload.email_from_address = document.getElementById('int-email-from').value.trim();
+      payload.email_from_name = document.getElementById('int-email-from-name').value.trim();
+    }
+
+    try {
+      const res = await fetch('/api/settings/integrations', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save settings');
+      if (statusEl) { statusEl.textContent = 'Saved ✓'; setTimeout(() => statusEl.textContent = '', 3000); }
+      showToast('Integration settings updated!', true);
+    } catch (err) {
+      if (statusEl) statusEl.textContent = 'Error';
+      showToast(err.message, false);
+    }
+  }
+
+  // --- Company Profile Loading & Saving ---
+  async function loadCompanyProfile() {
+    try {
+      const res = await fetch('/api/settings', { credentials: 'include' });
+      const data = await res.json();
+      if (data && data.settings) {
+        const s = data.settings;
+        if (s.company_name) document.getElementById('cfg-company-name').value = s.company_name;
+        if (s.phone_number) document.getElementById('cfg-phone').value = s.phone_number;
+        if (s.dispatch_email) document.getElementById('cfg-email').value = s.dispatch_email;
+        if (s.address) document.getElementById('cfg-address').value = s.address;
+      }
+    } catch (_) {}
+  }
+
+  async function saveCompanyProfile() {
+    const statusEl = document.getElementById('save-status-general');
+    if (statusEl) statusEl.textContent = 'Saving…';
+    const payload = {
+      company_name: document.getElementById('cfg-company-name').value.trim(),
+      phone_number: document.getElementById('cfg-phone').value.trim(),
+      dispatch_email: document.getElementById('cfg-email').value.trim(),
+      address: document.getElementById('cfg-address').value.trim()
+    };
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Save failed');
+      if (statusEl) { statusEl.textContent = 'Saved ✓'; setTimeout(() => statusEl.textContent = '', 3000); }
+      showToast('Company profile saved!', true);
+    } catch (err) {
+      if (statusEl) statusEl.textContent = 'Error';
+      showToast(err.message, false);
+    }
+  }
+
+  // --- Trash Stats ---
+  async function loadTrashStats() {
+    try {
+      const res = await fetch('/api/trash/counts', { credentials: 'include' });
+      if (!res.ok) return;
+      const c = await res.json();
+      document.getElementById('ts-total').textContent = c.total || 0;
+      document.getElementById('ts-loads').textContent = c.loads || 0;
+      document.getElementById('ts-users').textContent = c.users || 0;
+      document.getElementById('ts-emails').textContent = c.emails || 0;
+    } catch (_) {}
+  }
+
   document.addEventListener('DOMContentLoaded', async () => {
     if (!await checkAuth()) return;
-    loadTrashStats();
-    loadBillingStats();
-    loadLoadBoardApis();
-    checkHash();
+    await loadConnectedBoards();
+    await loadIntegrations();
+    await loadCompanyProfile();
+    await loadTrashStats();
+
+    // Support direct hash navigation e.g. /settings#google-maps or /settings#twilio
+    const hash = (location.hash || '').replace('#', '').toLowerCase();
+    if (hash) {
+      const target = document.querySelector(`.settings-nav-item[data-section="${hash}"]`);
+      if (target) switchSection(hash, target);
+    }
   });
 </script>
-
 <script src="/js/app-shell.js?v=29"></script>
 </body>
 </html>
