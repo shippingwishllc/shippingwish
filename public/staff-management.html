@@ -222,11 +222,17 @@
       if (!user || !user.role) { window.location.href = '/login'; return; }
       const role = (user.role || '').toLowerCase();
       IS_ADMIN = role === 'admin' || role === 'super_admin';
-      const isAuthorized = ['admin', 'super_admin', 'superadmin', 'dispatcher', 'sales_rep'].includes(role) || (user.email && user.email.toLowerCase().includes('admin'));
+      const isAuthorized = ['admin', 'super_admin', 'superadmin', 'hr'].includes(role) || (user.email && user.email.toLowerCase().includes('admin'));
       
       if (!isAuthorized) {
-        alert('Access Restricted. Only Admins can access Company Staff Management.');
-        window.location.href = '/admin-dashboard';
+        alert('Access Restricted. Only Admins and HR can access Company Staff Management.');
+        if (role === 'dispatcher') {
+          window.location.replace('/dispatcher-dashboard');
+        } else if (role === 'sales_rep') {
+          window.location.replace('/sales-dashboard');
+        } else {
+          window.location.replace('/carrier-overview');
+        }
         return;
       }
       

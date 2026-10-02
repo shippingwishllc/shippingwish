@@ -15,7 +15,7 @@ async function ensureBrokerTeamTables() {
   `).catch(() => {});
 }
 
-// Ensure the caller is an authorized broker account
+// Ensure the caller is an authorized primary broker account
 async function requireBrokerAdmin(req, res, next) {
   if (!req.user) {
     return res.status(401).json({ error: 'Authentication required.' });
@@ -23,6 +23,9 @@ async function requireBrokerAdmin(req, res, next) {
   const role = req.user.role;
   if (!['broker', 'admin', 'super_admin'].includes(role)) {
     return res.status(403).json({ error: 'Only broker admin accounts can manage team sub-users.' });
+  }
+  if (req.user.parent_user_id || req.user.weekly_plan === 'broker_subuser') {
+    return res.status(403).json({ error: 'Sub-users cannot create or manage other team members. Only primary Broker Admin accounts have this authority.' });
   }
   next();
 }

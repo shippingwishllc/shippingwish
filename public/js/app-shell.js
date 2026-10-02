@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '26';
+  const SIDEBAR_VERSION = '28';
   // #endregion
 
   function clearRoleCache() {
@@ -95,16 +95,43 @@
     { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Replies' },
     { key: 'sms-inbox', href: '/sms-inbox', icon: '📱', label: 'SMS Replies' },
     { key: 'trash', href: '/trash', icon: '🗑️', label: 'Trash', adminOnly: true },
-    { key: 'staff', href: '/staff-management', icon: '👔', label: 'Company Staff' },
+    { key: 'staff', href: '/staff-management', icon: '👔', label: 'Company Staff', adminOnly: true },
     { section: 'Accounting' },
-    { key: 'invoices', href: '/invoices', icon: '💳', label: 'Invoices & Billing' },
-    { key: 'ifta', href: '/ifta', icon: '⛽', label: 'IFTA & Fuel' },
+    { key: 'invoices', href: '/invoices', icon: '💳', label: 'Invoices & Billing', adminOnly: true },
+    { key: 'ifta', href: '/ifta', icon: '⛽', label: 'IFTA & Fuel', adminOnly: true },
     { key: 'documents', href: '/documents', icon: '📄', label: 'Document Vault' },
     { key: 'planning', href: '/load-planning', icon: '📅', label: 'Load Planning' },
     { section: 'System' },
-    { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: '🛡️', label: 'Audit Logs' },
-    { key: 'settings', navId: 'nav-tab-settings', href: '/admin-dashboard#settings', icon: '🌐', label: 'Website CMS' },
-    { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: '📰', label: 'Blog Manager' }
+    { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: '🛡️', label: 'Audit Logs', adminOnly: true },
+    { key: 'settings', navId: 'nav-tab-settings', href: '/admin-dashboard#settings', icon: '🌐', label: 'Website CMS', adminOnly: true },
+    { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: '📰', label: 'Blog Manager', adminOnly: true }
+  ];
+
+  const DISPATCHER_LINKS = [
+    { section: 'Dispatch Desk' },
+    { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: '🎧', label: 'Dispatch Desk' },
+    { key: 'fleets', navId: 'nav-tab-fleets', href: '/dispatcher-dashboard#fleets', icon: '🚛', label: 'Assigned Fleets' },
+    { key: 'loadboard', href: '/load-booking', icon: '🎯', label: 'Load Board & AI Match' },
+    { key: 'planning', href: '/load-planning', icon: '📅', label: 'Truck Load Planning' },
+    { key: 'fleet', href: '/fleet', icon: '🚚', label: 'Fleet & Drivers' },
+    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' },
+    { key: 'documents', href: '/documents', icon: '📄', label: 'RateCons & BOLs' },
+    { section: 'Communications' },
+    { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Replies' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: '📱', label: 'Driver SMS' }
+  ];
+
+  const SALES_REP_LINKS = [
+    { section: 'Sales & Acquisition' },
+    { key: 'crm', href: '/sales-dashboard', icon: '📈', label: 'Sales CRM & Leads' },
+    { key: 'leads', navId: 'nav-tab-leads', href: '/sales-dashboard#leads', icon: '🎯', label: 'Carrier Pipeline' },
+    { key: 'tasks', navId: 'nav-tab-tasks', href: '/sales-dashboard#tasks', icon: '📋', label: 'Follow-up Tasks' },
+    { key: 'census', href: '/census-desk', icon: '🗂️', label: 'DOT Census Desk' },
+    { key: 'voice-calls', href: '/voice-calls', icon: '📞', label: 'AI Cold Calling & Audio' },
+    { section: 'Inbound' },
+    { key: 'inbox', href: '/inbox', icon: '📬', label: 'Carrier Email Replies' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: '📱', label: 'Carrier SMS Inbound' },
+    { key: 'brokers', href: '/brokers', icon: '🤝', label: 'Broker Directory' }
   ];
 
   const CARRIER_LINKS = [
@@ -254,6 +281,9 @@
       if (isLoadboardSubscriber()) return LOADBOARD_MEMBER_LINKS;
       return CARRIER_LINKS;
     }
+    if (role === 'dispatcher') return DISPATCHER_LINKS;
+    if (role === 'sales_rep') return SALES_REP_LINKS;
+
     const staff = STAFF_LINKS.filter((item) => {
       if (item.superAdminOnly) return role === 'super_admin';
       if (!item.adminOnly) return true;
@@ -282,9 +312,9 @@
     const driver = CURRENT_ROLE === 'driver';
     const loadboardSub = isLoadboardSubscriber();
     const active = activeKey();
-    const tag = driver ? 'Driver app' : loadboardSub ? 'AI Load Pass' : carrier ? 'Your TMS' : 'Operations';
-    const home = driver ? '/driver-app' : loadboardSub ? '/load-booking' : carrier ? '/carrier-overview' : '/admin-dashboard';
-    const links = driver ? DRIVER_LINKS : loadboardSub ? LOADBOARD_MEMBER_LINKS : carrier ? CARRIER_LINKS : STAFF_LINKS.concat(extraLinks());
+    const tag = driver ? 'Driver app' : loadboardSub ? 'AI Load Pass' : carrier ? 'Your TMS' : (CURRENT_ROLE === 'dispatcher' ? 'Dispatch Desk' : (CURRENT_ROLE === 'sales_rep' ? 'Sales CRM' : 'Operations'));
+    const home = driver ? '/driver-app' : loadboardSub ? '/load-booking' : carrier ? '/carrier-overview' : (CURRENT_ROLE === 'dispatcher' ? '/dispatcher-dashboard' : (CURRENT_ROLE === 'sales_rep' ? '/sales-dashboard' : '/admin-dashboard'));
+    const links = linkItemsForRole(CURRENT_ROLE);
     return `
       <div class="sidebar-nav-scroll">
         <a href="${home}" class="sidebar-brand">

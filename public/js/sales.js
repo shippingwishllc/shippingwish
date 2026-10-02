@@ -17,9 +17,16 @@ async function checkAuth() {
       return;
     }
     const data = await res.json();
-    document.getElementById('user-display-name').textContent = `${data.user.name} (${data.user.role})`;
+    const role = (data.user?.role || '').toLowerCase();
+    if (!['sales_rep', 'admin', 'super_admin'].includes(role)) {
+      if (role === 'dispatcher') window.location.replace('/dispatcher-dashboard');
+      else if (['carrier', 'driver'].includes(role)) window.location.replace('/carrier-overview');
+      else window.location.replace('/login');
+      return;
+    }
+    document.getElementById('user-display-name').textContent = `${data.user.name} (${data.user.role.toUpperCase()})`;
     if (document.getElementById('sales-avatar-initials')) {
-      const initials = data.user.name.split(' ').map(n=>n[0]).join('').toUpperCase();
+      const initials = (data.user.name || 'SR').split(' ').map(n=>n[0]).join('').toUpperCase();
       document.getElementById('sales-avatar-initials').textContent = initials || 'SR';
     }
   } catch (err) {

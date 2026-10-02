@@ -1032,8 +1032,8 @@ router.post('/change-password', requireAuth, async (req, res) => {
   }
 });
 
-// ADMIN & SUPER ADMIN: List all users (with role filter)
-router.get('/users', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+// ADMIN, SUPER ADMIN & HR: List all users (with role filter)
+router.get('/users', requireAuth, requireRole('admin', 'super_admin', 'hr'), async (req, res) => {
   try {
     const { role } = req.query;
     let query = `SELECT id, name, email, role, company_name, phone, mc_number, dot_number, is_suspended, signup_ip, created_at FROM users WHERE deleted_at IS NULL`;
@@ -1050,11 +1050,15 @@ router.get('/users', requireAuth, requireRole('admin', 'super_admin'), async (re
   }
 });
 
-// ADMIN & SUPER ADMIN: Create Dispatcher, Sales Rep, Admin, or Carrier account
-router.post('/users', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+// ADMIN, SUPER ADMIN & HR: Create Dispatcher, Sales Rep, Admin, or Carrier account
+router.post('/users', requireAuth, requireRole('admin', 'super_admin', 'hr'), async (req, res) => {
   const { name, email, password, role, company_name, phone, mc_number, dot_number, address } = req.body;
   if (!name || !email || !password || !role) {
     return res.status(400).json({ error: 'Name, email, password, and role are required.' });
+  }
+
+  if ((role === 'admin' || role === 'super_admin') && req.user.role === 'hr') {
+    return res.status(403).json({ error: 'HR managers cannot create Admin or SuperAdmin accounts.' });
   }
   
   if (role === 'super_admin') {
@@ -1090,14 +1094,17 @@ router.post('/users', requireAuth, requireRole('admin', 'super_admin'), async (r
   }
 });
 
-// ADMIN & SUPER ADMIN: Suspend/Unsuspend user
-router.patch('/users/:id/suspend', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+// ADMIN, SUPER ADMIN & HR: Suspend/Unsuspend user
+router.patch('/users/:id/suspend', requireAuth, requireRole('admin', 'super_admin', 'hr'), async (req, res) => {
   const { suspended } = req.body;
   try {
     const check = await pool.query('SELECT role FROM users WHERE id = $1 AND deleted_at IS NULL', [req.params.id]);
     if (!check.rows.length) return res.status(404).json({ error: 'User not found.' });
     if (check.rows[0].role === 'super_admin' && req.user.role !== 'super_admin') {
       return res.status(403).json({ error: 'Cannot modify a Super Admin account.' });
+    }
+    if (check.rows[0].role === 'admin' && req.user.role === 'hr') {
+      return res.status(403).json({ error: 'HR managers cannot suspend Admin accounts.' });
     }
     await pool.query('UPDATE users SET is_suspended = $1 WHERE id = $2', [Boolean(suspended), req.params.id]);
     res.json({ ok: true, is_suspended: Boolean(suspended) });
@@ -1106,13 +1113,16 @@ router.patch('/users/:id/suspend', requireAuth, requireRole('admin', 'super_admi
   }
 });
 
-// ADMIN & SUPER ADMIN: Toggle suspend user
-router.patch('/users/:id/toggle-suspend', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+// ADMIN, SUPER ADMIN & HR: Toggle suspend user
+router.patch('/users/:id/toggle-suspend', requireAuth, requireRole('admin', 'super_admin', 'hr'), async (req, res) => {
   try {
     const check = await pool.query('SELECT role, is_suspended FROM users WHERE id = $1 AND deleted_at IS NULL', [req.params.id]);
     if (!check.rows.length) return res.status(404).json({ error: 'User not found.' });
     if (check.rows[0].role === 'super_admin' && req.user.role !== 'super_admin') {
       return res.status(403).json({ error: 'Cannot modify a Super Admin account.' });
+    }
+    if (check.rows[0].role === 'admin' && req.user.role === 'hr') {
+      return res.status(403).json({ error: 'HR managers cannot suspend Admin accounts.' });
     }
     const newStatus = !check.rows[0].is_suspended;
     await pool.query('UPDATE users SET is_suspended = $1 WHERE id = $2', [newStatus, req.params.id]);
@@ -1123,8 +1133,8 @@ router.patch('/users/:id/toggle-suspend', requireAuth, requireRole('admin', 'sup
   }
 });
 
-// ADMIN & SUPER ADMIN: Reset a user's password directly from Staff Management
-router.patch('/users/:id/password', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+// ADMIN, SUPER ADMIN & HR: Reset a user's password directly from Staff Management
+router.patch('/users/:id/password', requireAuth, requireRole('admin', 'super_admin', 'hr'), async (req, res) => {
   const { new_password } = req.body;
   if (!new_password || String(new_password).length < 8) {
     return res.status(400).json({ error: 'New password must be at least 8 characters long.' });
@@ -1134,6 +1144,9 @@ router.patch('/users/:id/password', requireAuth, requireRole('admin', 'super_adm
     if (!check.rows.length) return res.status(404).json({ error: 'User not found.' });
     if (check.rows[0].role === 'super_admin' && req.user.role !== 'super_admin') {
       return res.status(403).json({ error: 'Only Super Admin can reset a Super Admin password.' });
+    }
+    if (check.rows[0].role === 'admin' && req.user.role === 'hr') {
+      return res.status(403).json({ error: 'HR managers cannot reset Admin passwords.' });
     }
     const hash = await bcrypt.hash(new_password, 10);
     await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.params.id]);
