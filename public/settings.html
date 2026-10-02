@@ -362,61 +362,140 @@
 
           <!-- INTEGRATIONS -->
           <div id="section-integrations" class="settings-section">
+
+            <!-- Load Board APIs -->
             <div class="settings-card">
-              <p class="settings-card-title">Google Maps Platform</p>
-              <p class="settings-card-desc">Powers address validation, route optimization, and fleet tracking across the TMS.</p>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">API Status</div>
-                  <div class="settings-row-hint">Places API, Routes API, Geocoding API, Address Validation</div>
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:4px;">
+                <div>
+                  <p class="settings-card-title" style="margin-bottom:2px;">🎯 Load Board API Sources</p>
+                  <p class="settings-card-desc" style="margin:0;">Connect any licensed load board with a JSON REST API (DAT, Truckstop, 123Loadboard, Convoy, etc.). All sources feed loads into AI Dispatch automatically.</p>
                 </div>
-                <span class="settings-badge badge-green">✅ Active</span>
+                <button class="btn btn-secondary btn-sm" onclick="syncAllApis()" id="btn-sync-all">🔄 Sync All Now</button>
               </div>
-              <div class="form-group" style="margin-top:12px;">
-                <label>Google Maps API Key</label>
-                <input type="password" class="form-input" id="cfg-gmaps-key" placeholder="AIza…" autocomplete="off">
+              <div style="background:var(--surface-base);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:16px;margin:16px 0;">
+                <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:12px;">➕ Add New Load Board API</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end;">
+                  <div class="form-group" style="margin:0;"><label>Board Name</label><input type="text" class="form-input" id="lb-name" placeholder="DAT One, Truckstop…"></div>
+                  <div class="form-group" style="margin:0;"><label>HTTPS JSON URL</label><input type="url" class="form-input" id="lb-url" placeholder="https://api.example.com/loads"></div>
+                  <div class="form-group" style="margin:0;"><label>Header Name</label><input type="text" class="form-input" id="lb-header" value="Authorization"></div>
+                  <div class="form-group" style="margin:0;"><label>API Key / Token</label><input type="password" class="form-input" id="lb-key" autocomplete="off" placeholder="Bearer token…"></div>
+                  <div><button class="btn btn-primary" onclick="addLoadBoardApi()">Save API</button></div>
+                </div>
+                <p id="lb-msg" style="font-size:12px;color:#dc2626;margin:8px 0 0;min-height:1.2em;"></p>
               </div>
+              <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">Connected APIs</div>
+              <div id="lb-list"><div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Loading…</div></div>
             </div>
 
+            <!-- Twilio SMS -->
             <div class="settings-card">
-              <p class="settings-card-title">Twilio (SMS & VoIP)</p>
-              <p class="settings-card-desc">SMS outreach, driver alerts, and AI calling engine.</p>
+              <p class="settings-card-title">📱 Twilio — SMS</p>
+              <p class="settings-card-desc">Carrier outreach, driver load offers, check-calls, STOP opt-out, and AI dispatch text replies.</p>
               <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">SMS Service</div>
-                  <div class="settings-row-hint">Carrier outreach and driver SMS</div>
-                </div>
-                <span id="twilio-status" class="settings-badge badge-amber">Checking…</span>
+                <div class="settings-row-info"><div class="settings-row-label">SMS Status</div><div class="settings-row-hint">Inbound &amp; outbound SMS</div></div>
+                <span id="twilio-sms-status" class="settings-badge badge-amber">Checking…</span>
               </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+                <div class="form-group" style="margin:0;"><label>Account SID</label><input type="password" class="form-input" id="twilio-sid" placeholder="ACxxxxxxxxxxxxxxxx" autocomplete="off"></div>
+                <div class="form-group" style="margin:0;"><label>Auth Token</label><input type="password" class="form-input" id="twilio-token" placeholder="••••••••" autocomplete="off"></div>
+                <div class="form-group" style="margin:0;"><label>SMS Phone Number</label><input type="text" class="form-input" id="twilio-from" placeholder="+12125550100"></div>
+                <div class="form-group" style="margin:0;"><label>Daily SMS Limit</label><input type="number" class="form-input" id="twilio-daily-limit" value="300" min="1" max="10000"></div>
+              </div>
+              <div class="settings-row" style="margin-top:8px;">
+                <div class="settings-row-info"><div class="settings-row-label">TCPA Hours Enforcement (9am–5pm local)</div><div class="settings-row-hint">Required by law — cannot be disabled</div></div>
+                <label class="toggle-switch"><input type="checkbox" id="twilio-tcpa" checked disabled><span class="toggle-slider"></span></label>
+              </div>
+              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('twilio-sms')">💾 Save Twilio SMS</button></div>
+            </div>
+
+            <!-- VoIP / AI Calling -->
+            <div class="settings-card">
+              <p class="settings-card-title">📞 Twilio — VoIP &amp; AI Calling</p>
+              <p class="settings-card-desc">Click-to-call from dispatcher desk, AI cold calling for carrier acquisition, and inbound call routing.</p>
               <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">VoIP / AI Calling</div>
-                  <div class="settings-row-hint">AI cold calling and dispatch voice</div>
-                </div>
+                <div class="settings-row-info"><div class="settings-row-label">VoIP Status</div><div class="settings-row-hint">AI calls and dispatcher click-to-call</div></div>
                 <span id="voip-status" class="settings-badge badge-amber">Checking…</span>
               </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+                <div class="form-group" style="margin:0;"><label>Voice Number</label><input type="text" class="form-input" id="voip-number" placeholder="+12125550199"></div>
+                <div class="form-group" style="margin:0;"><label>AI Calling Daily Limit</label><input type="number" class="form-input" id="voip-daily-limit" value="50" min="1" max="500"></div>
+              </div>
+              <div class="settings-row" style="margin-top:8px;">
+                <div class="settings-row-info"><div class="settings-row-label">Record all calls (90-day compliance storage)</div></div>
+                <label class="toggle-switch"><input type="checkbox" id="voip-record" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info"><div class="settings-row-label">AI Calling enabled (carrier acquisition)</div><div class="settings-row-hint">Automated AI calls to prospects from Census Desk</div></div>
+                <label class="toggle-switch"><input type="checkbox" id="voip-ai-calls" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('voip')">💾 Save VoIP Settings</button></div>
             </div>
 
+            <!-- WhatsApp -->
             <div class="settings-card">
-              <p class="settings-card-title">FMCSA / DOT Data Feed</p>
-              <p class="settings-card-desc">Live carrier safety scores, authority status, and DOT census lookup.</p>
+              <p class="settings-card-title">💬 WhatsApp Business API</p>
+              <p class="settings-card-desc">Load offers, check-calls, and updates to drivers &amp; carriers via WhatsApp (Twilio Sandbox or Meta WABA).</p>
               <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">FMCSA API</div>
-                </div>
-                <span class="settings-badge badge-green">✅ Connected</span>
+                <div class="settings-row-info"><div class="settings-row-label">WhatsApp Status</div></div>
+                <span id="wa-status" class="settings-badge badge-red">Not Connected</span>
               </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Auto-refresh carrier scores</div>
-                  <div class="settings-row-hint">Re-check FMCSA safety scores every 30 days automatically</div>
-                </div>
-                <label class="toggle-switch"><input type="checkbox" id="fmcsa-auto-refresh" checked><span class="toggle-slider"></span></label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+                <div class="form-group" style="margin:0;"><label>WhatsApp From Number</label><input type="text" class="form-input" id="wa-from" placeholder="whatsapp:+14155238886"></div>
+                <div class="form-group" style="margin:0;"><label>Provider</label><select class="form-input" id="wa-provider"><option value="twilio">Twilio WhatsApp Sandbox</option><option value="meta">Meta WABA (Production)</option></select></div>
               </div>
+              <div class="settings-row" style="margin-top:8px;">
+                <div class="settings-row-info"><div class="settings-row-label">Enable WhatsApp messaging</div><div class="settings-row-hint">Falls back to SMS if WhatsApp fails</div></div>
+                <label class="toggle-switch"><input type="checkbox" id="wa-enabled"><span class="toggle-slider"></span></label>
+              </div>
+              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('whatsapp')">💾 Save WhatsApp</button></div>
             </div>
-          </div>
 
-          <!-- BILLING -->
+            <!-- Google Maps -->
+            <div class="settings-card">
+              <p class="settings-card-title">🗺️ Google Maps Platform</p>
+              <p class="settings-card-desc">Address validation, route optimization, fleet tracking, and distance matrix across the TMS.</p>
+              <div class="settings-row">
+                <div class="settings-row-info"><div class="settings-row-label">API Status</div><div class="settings-row-hint">Places, Routes, Geocoding, Address Validation, Maps JS</div></div>
+                <span class="settings-badge badge-green">✅ Active</span>
+              </div>
+              <div class="form-group" style="margin-top:14px;"><label>Google Maps API Key</label><input type="password" class="form-input" id="cfg-gmaps-key" placeholder="AIza…" autocomplete="off"></div>
+              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Validate addresses on every load creation</div></div><label class="toggle-switch"><input type="checkbox" id="gmaps-validate" checked><span class="toggle-slider"></span></label></div>
+              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('gmaps')">💾 Save Google Maps Key</button></div>
+            </div>
+
+            <!-- Email -->
+            <div class="settings-card">
+              <p class="settings-card-title">✉️ Email Service (Resend)</p>
+              <p class="settings-card-desc">Broker outreach, carrier onboarding, invoice delivery, and FMCSA acquisition email campaigns.</p>
+              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Email Status</div></div><span id="email-status" class="settings-badge badge-amber">Checking…</span></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+                <div class="form-group" style="margin:0;"><label>Resend API Key</label><input type="password" class="form-input" id="resend-key" placeholder="re_xxxxxxxxxxxx" autocomplete="off"></div>
+                <div class="form-group" style="margin:0;"><label>From Email Address</label><input type="email" class="form-input" id="resend-from" placeholder="ops@shippingwish.com"></div>
+              </div>
+              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('email')">💾 Save Email Settings</button></div>
+            </div>
+
+            <!-- FMCSA -->
+            <div class="settings-card">
+              <p class="settings-card-title">🛡️ FMCSA / DOT Data Feed</p>
+              <p class="settings-card-desc">Live carrier safety scores, authority status, insurance verification, and DOT census lookup.</p>
+              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">FMCSA API</div></div><span class="settings-badge badge-green">✅ Connected</span></div>
+              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Auto-refresh carrier safety scores (every 30 days)</div></div><label class="toggle-switch"><input type="checkbox" id="fmcsa-auto-refresh" checked><span class="toggle-slider"></span></label></div>
+              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Block UNSATISFACTORY-rated carriers from dispatch</div></div><label class="toggle-switch"><input type="checkbox" id="fmcsa-block-unsafe" checked><span class="toggle-slider"></span></label></div>
+            </div>
+
+            <!-- OpenAI -->
+            <div class="settings-card">
+              <p class="settings-card-title">🤖 AI Engine (OpenAI)</p>
+              <p class="settings-card-desc">Driver text parsing, automated broker email replies, and AI cold calling scripts.</p>
+              <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">OpenAI Status</div></div><span id="ai-status" class="settings-badge badge-amber">Checking…</span></div>
+              <div class="form-group" style="margin-top:14px;"><label>OpenAI API Key</label><input type="password" class="form-input" id="openai-key" placeholder="sk-…" autocomplete="off"></div>
+              <div class="form-group"><label>AI Model</label><select class="form-input" id="openai-model"><option value="gpt-4o-mini">GPT-4o Mini (Fast, Cost-effective)</option><option value="gpt-4o">GPT-4o (Most Capable)</option><option value="gpt-3.5-turbo">GPT-3.5 Turbo (Legacy)</option></select></div>
+              <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveIntegration('ai')">💾 Save AI Settings</button></div>
+            </div>
+
+          </div>
+<!-- BILLING -->
           <div id="section-billing" class="settings-section">
             <div class="settings-card">
               <p class="settings-card-title">Current Plan</p>
@@ -582,13 +661,126 @@
     document.getElementById('load-count').textContent = '—';
   }
 
+  // --- Load Board APIs ---
+  async function loadLoadBoardApis() {
+    const box = document.getElementById('lb-list');
+    if (!box) return;
+    try {
+      const res = await fetch('/api/dispatch-desk/sources', { credentials: 'include' });
+      const data = await res.json();
+      const sources = data.sources || [];
+      if (!sources.length) {
+        box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">No load board APIs connected yet. Add your first one above.</div>';
+        return;
+      }
+      box.innerHTML = sources.map(row => {
+        const when = row.last_sync_at ? new Date(row.last_sync_at).toLocaleString() : 'Not synced yet';
+        const statusColor = row.last_status === 'ok' ? '#16a34a' : row.last_status === 'error' ? '#dc2626' : '#d97706';
+        const keyMasked = row.api_key ? row.api_key.replace(/./g, '•').slice(0, 12) + '…' : 'No key set';
+        return `
+          <div style="padding:14px;border:1px solid var(--border-default);border-radius:var(--radius-lg);margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:220px;">
+              <div style="font-weight:700;font-size:13px;color:var(--text-primary);margin-bottom:4px;">${esc(row.name)}</div>
+              <div style="font-size:12px;color:var(--text-muted);word-break:break-all;">${esc(row.base_url)}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Key: ${esc(keyMasked)} · Header: ${esc(row.header_name || 'Authorization')}</div>
+              <div style="font-size:11px;margin-top:4px;">
+                <span style="color:${statusColor};font-weight:700;">${esc(row.last_status || 'waiting')}</span>
+                · Last sync: ${esc(when)}
+                ${row.last_error ? `<span style="color:#dc2626;"> · Error: ${esc(row.last_error.slice(0, 80))}</span>` : ''}
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+              <button onclick="syncOneApi(${row.id})" style="background:var(--surface-base);border:1px solid var(--border-default);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">🔄 Sync</button>
+              <button onclick="deleteLoadBoardApi(${row.id}, '${esc(row.name)}')" style="background:#fff;border:1px solid #fecaca;color:#dc2626;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">🗑 Remove</button>
+            </div>
+          </div>`;
+      }).join('');
+    } catch (e) {
+      box.innerHTML = `<div style="color:#dc2626;font-size:13px;">Error loading APIs: ${esc(e.message)}</div>`;
+    }
+  }
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function addLoadBoardApi() {
+    const name = document.getElementById('lb-name').value.trim();
+    const base_url = document.getElementById('lb-url').value.trim();
+    const header_name = document.getElementById('lb-header').value.trim() || 'Authorization';
+    const api_key = document.getElementById('lb-key').value.trim();
+    const msg = document.getElementById('lb-msg');
+    if (!name || !base_url) { msg.textContent = 'Board name and URL are required.'; return; }
+    try {
+      const res = await fetch('/api/dispatch-desk/sources', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, base_url, header_name, api_key })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save');
+      msg.style.color = '#16a34a';
+      msg.textContent = `✅ "${name}" added successfully!`;
+      document.getElementById('lb-name').value = '';
+      document.getElementById('lb-url').value = '';
+      document.getElementById('lb-key').value = '';
+      document.getElementById('lb-header').value = 'Authorization';
+      loadLoadBoardApis();
+      setTimeout(() => { msg.textContent = ''; msg.style.color = '#dc2626'; }, 3000);
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  }
+
+  async function deleteLoadBoardApi(id, name) {
+    if (!confirm(`Remove "${name}" from load board API sources? This will stop fetching loads from this board.`)) return;
+    const res = await fetch(`/api/dispatch-desk/sources/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (res.ok) { showToast(`"${name}" removed.`, true); loadLoadBoardApis(); }
+    else showToast('Failed to remove API.', false);
+  }
+
+  async function syncOneApi(id) {
+    showToast('Syncing…', true);
+    const res = await fetch(`/api/dispatch-desk/sources/${id}/sync`, { method: 'POST', credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) { showToast(`Sync done: ${data.loaded || 0} loads fetched.`, true); loadLoadBoardApis(); }
+    else showToast(data.error || 'Sync failed.', false);
+  }
+
+  async function syncAllApis() {
+    const btn = document.getElementById('btn-sync-all');
+    if (btn) btn.textContent = '⏳ Syncing…';
+    const res = await fetch('/api/dispatch-desk/sources/sync-due', { method: 'POST', credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+    if (btn) btn.textContent = '🔄 Sync All Now';
+    if (res.ok) { showToast('All APIs synced!', true); loadLoadBoardApis(); }
+    else showToast(data.error || 'Sync failed.', false);
+  }
+
+  // --- Integration save stub (extend per integration with real API) ---
+  function saveIntegration(key) {
+    showToast(`${key} settings saved (configure via server env vars for full activation).`, true);
+  }
+
+  // --- Hash-based section navigation ---
+  function checkHash() {
+    const hash = location.hash.replace('#', '');
+    if (hash) {
+      const el = document.querySelector(`.settings-nav-item[data-section="${hash}"]`);
+      if (el) switchSection(hash, el);
+    }
+  }
+
   // --- Boot ---
   document.addEventListener('DOMContentLoaded', async () => {
     if (!await checkAuth()) return;
     loadTrashStats();
     loadBillingStats();
+    loadLoadBoardApis();
+    checkHash();
   });
 </script>
+
 <script src="/js/app-shell.js?v=29"></script>
 </body>
 </html>
