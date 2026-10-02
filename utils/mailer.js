@@ -297,8 +297,8 @@ function formatReplyFromAddress(toEmail) {
   return `${name} <${addr}>`;
 }
 
-async function sendEmail({ to, subject, html, text, from }) {
-  return sendBrandedEmail({ to, subject, html, text, from: from || mailFrom() });
+async function sendEmail({ to, subject, html, text, from, replyTo, transactional, attachments, cc }) {
+  return sendBrandedEmail({ to, subject, html, text, from: from || mailFrom(), replyTo, transactional, attachments, cc });
 }
 
 module.exports = {

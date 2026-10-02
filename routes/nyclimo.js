@@ -13,6 +13,9 @@ const { sendEmail } = require('../utils/mailer');
 const {
   autocompletePlaces, placeDetails, routeMap, cleanPlaceId, cleanSessionToken
 } = require('../utils/limo-places');
+const {
+  getLimoSender, getLimoReplyTo, buildRideRequestReceivedHtml, buildRideConfirmedHtml
+} = require('../utils/limo-email-templates');
 
 const APP_URL = (process.env.APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
 
@@ -417,11 +420,13 @@ router.post('/bookings', async (req, res) => {
       [rows[0].id, 'pending_operator', 'Booking request received; a verified operator must accept before payment.']
     );
     const dispatch = await require('./nyclimo-partners').dispatchBooking(rows[0].id);
-    const current = await pool.query('SELECT id, booking_number, status, pickup_date, pickup_time, base_price, tolls, gratuity, total_price, payment_status, passenger_email FROM limo_bookings WHERE id = $1', [rows[0].id]);
+    const current = await pool.query('SELECT * FROM limo_bookings WHERE id = $1', [rows[0].id]);
     const createdBooking = current.rows[0] || rows[0];
     if (!dispatch.ok && process.env.OPS_EMAIL) {
       await sendEmail({
         to: process.env.OPS_EMAIL,
+        from: getLimoSender(),
+        replyTo: getLimoReplyTo(),
         subject: 'NYC Limo Wish needs operator dispatch — ' + rows[0].booking_number,
         html: '<p>No verified operator was automatically matched for booking ' + rows[0].booking_number + '.</p><p>Open the dispatcher portal to review and resend offers.</p>'
       }).catch((err) => console.warn('[LIMO DISPATCH ALERT]:', err.message));
@@ -429,8 +434,10 @@ router.post('/bookings', async (req, res) => {
     if (createdBooking.passenger_email) {
       await sendEmail({
         to: createdBooking.passenger_email,
+        from: getLimoSender(),
+        replyTo: getLimoReplyTo(),
         subject: 'Ride request received — ' + createdBooking.booking_number,
-        html: '<p>Your ride request has been received. We will notify you when a licensed operator accepts it and payment is ready.</p><p>Reference: ' + createdBooking.booking_number + '</p><p><a href="' + APP_URL + '/track?ref=' + encodeURIComponent(createdBooking.booking_number) + '">Track your ride</a></p>'
+        html: buildRideRequestReceivedHtml(createdBooking, vehicle, APP_URL)
       }).catch((err) => console.warn('[LIMO BOOKING EMAIL]:', err.message));
     }
     res.status(201).json({ booking: createdBooking, dispatch: { accepted: dispatch.ok, pending: !dispatch.ok } });
@@ -673,10 +680,19 @@ async function handleStripeWebhook(event) {
   await pool.query('INSERT INTO limo_booking_status_history (booking_id, status, note) VALUES ($1,$2,$3)', [bookingId, 'confirmed', 'Payment received after licensed operator acceptance']);
   const { rows } = await pool.query('SELECT * FROM limo_bookings WHERE id = $1', [bookingId]);
   if (rows[0]?.passenger_email) {
+    let vehicleObj = null;
+    if (rows[0].vehicle_id) {
+      try {
+        const vRes = await pool.query('SELECT * FROM limo_vehicles WHERE id = $1', [rows[0].vehicle_id]);
+        vehicleObj = vRes.rows[0] || null;
+      } catch (_) {}
+    }
     await sendEmail({
       to: rows[0].passenger_email,
+      from: getLimoSender(),
+      replyTo: getLimoReplyTo(),
       subject: `Ride confirmed — ${rows[0].booking_number}`,
-      html: `<p>Your payment is complete and your ride is confirmed with a licensed operator.</p><p>${rows[0].pickup_address}<br>${rows[0].pickup_date} ${rows[0].pickup_time}</p><p>Reference: ${rows[0].booking_number}</p>`
+      html: buildRideConfirmedHtml(rows[0], vehicleObj || {}, APP_URL)
     }).catch((err) => console.warn('[LIMO CONFIRMATION EMAIL]:', err.message));
   }
 }

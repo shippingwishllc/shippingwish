@@ -4,6 +4,11 @@ const crypto = require('crypto');
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { ensureSchema } = require('../utils/limo-ensure-schema');
+const {
+  getLimoSender, getLimoReplyTo, buildOperatorAcceptedHtml, buildRideStatusUpdateHtml
+} = require('../utils/limo-email-templates');
+
+const APP_URL = (process.env.APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
 
 const router = express.Router();
 async function dispatchBooking(bookingId, actorId = null) {
@@ -93,6 +98,8 @@ async function dispatchBooking(bookingId, actorId = null) {
 
       require('../utils/mailer').sendEmail({
         to: partner.contact_email,
+        from: getLimoSender(),
+        replyTo: getLimoReplyTo(),
         subject: `New NYC Limo Wish Trip Offer #${booking.booking_number}`,
         html: `<h3>New NYC Limo Wish Ride Offer</h3>
           <p>A new ride matches your approved TLC-licensed base profile:</p>
@@ -440,8 +447,10 @@ router.post('/partner/offers/:id/respond', ...partnerGate, async (req, res) => {
     if (booking.passenger_email) {
       await require('../utils/mailer').sendEmail({
         to: booking.passenger_email,
+        from: getLimoSender(),
+        replyTo: getLimoReplyTo(),
         subject: `A licensed operator accepted — ${booking.booking_number}`,
-        html: `<p>Your ride request was accepted by a licensed operator base.</p><p>${booking.pickup_address}<br>${booking.pickup_date} ${booking.pickup_time}</p><p>Continue to secure payment on the booking page to confirm your trip.</p>`
+        html: buildOperatorAcceptedHtml(booking, APP_URL)
       }).catch((err) => console.warn('[LIMO OPERATOR ACCEPTANCE EMAIL]:', err.message));
     }
     res.json({ ok: true, status: 'operator_accepted', booking_number: booking.booking_number });
@@ -514,8 +523,10 @@ router.post('/partner/bookings/:id/status', ...partnerGate, async (req, res) => 
     if (booking.passenger_email) {
       await require('../utils/mailer').sendEmail({
         to: booking.passenger_email,
+        from: getLimoSender(),
+        replyTo: getLimoReplyTo(),
         subject: 'Ride update — ' + booking.booking_number,
-        html: '<p>Your ride status is now <strong>' + status.replaceAll('_', ' ') + '</strong>.</p><p>Reference: ' + booking.booking_number + '</p><p><a href="https://www.nyclimowish.com/track?ref=' + encodeURIComponent(booking.booking_number) + '">View current ride status</a></p>'
+        html: buildRideStatusUpdateHtml(booking, status, APP_URL)
       }).catch((err) => console.warn('[LIMO STATUS EMAIL]:', err.message));
     }
     res.json({ ok: true, status, commission });
