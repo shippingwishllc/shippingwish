@@ -248,7 +248,7 @@ router.post('/send', requireAuth, staffOnly, async (req, res) => {
     });
 
     if (sent.status === 'twilio_error') {
-      return res.status(502).json({ error: 'Twilio could not dispatch message. Check credentials.' });
+      return res.status(400).json({ error: sent.error || 'Twilio could not dispatch message. Check phone number format.' });
     }
     if (sent.status === 'opted_out') {
       return res.status(409).json({ error: 'This number is opted out.' });
@@ -291,7 +291,7 @@ router.post('/reply', requireAuth, staffOnly, async (req, res) => {
     });
 
     if (sent.status === 'twilio_error') {
-      return res.status(502).json({ error: 'Twilio could not send message. Check credentials.' });
+      return res.status(400).json({ error: sent.error || 'Twilio could not send message. Check phone number format.' });
     }
     if (sent.status === 'opted_out') {
       return res.status(409).json({ error: 'This number is opted out.' });

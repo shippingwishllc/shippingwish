@@ -67,26 +67,36 @@ async function sendTwilioSms(toNumber, message) {
   } else {
     payload.from = process.env.TWILIO_FROM_NUMBER || '+16094696004';
   }
-  const twilioMsg = await twilio.messages.create(payload);
-  return { status: 'sent', sid: twilioMsg.sid, body };
+  try {
+    const twilioMsg = await twilio.messages.create(payload);
+    return { status: 'sent', sid: twilioMsg.sid, body };
+  } catch (err) {
+    console.error('Twilio SMS error:', err.message);
+    return { status: 'twilio_error', error: err.message, sid: null, body };
+  }
 }
 
 async function sendTwilioWhatsApp(toNumber, message) {
   const rawFrom = String(process.env.TWILIO_WHATSAPP_FROM || process.env.TWILIO_FROM_NUMBER || '').trim();
   const to = normalizePhone(toNumber);
-  if (!rawFrom || !to) return { status: 'not_configured', sid: null };
+  if (!rawFrom || !to) return { status: 'not_configured', sid: null, error: 'Twilio WhatsApp numbers not configured' };
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
     return { status: 'logged', sid: null };
   }
   if (await isSmsOptedOut(to)) return { status: 'opted_out', sid: null };
   const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
   const from = rawFrom.startsWith('whatsapp:') ? rawFrom : `whatsapp:${normalizePhone(rawFrom) || rawFrom}`;
-  const twilioMsg = await twilio.messages.create({
-    from,
-    to: `whatsapp:${to}`,
-    body: String(message || '').slice(0, 1000)
-  });
-  return { status: 'sent', sid: twilioMsg.sid };
+  try {
+    const twilioMsg = await twilio.messages.create({
+      from,
+      to: `whatsapp:${to}`,
+      body: String(message || '').slice(0, 1000)
+    });
+    return { status: 'sent', sid: twilioMsg.sid };
+  } catch (err) {
+    console.error('Twilio WhatsApp error:', err.message);
+    return { status: 'twilio_error', error: err.message, sid: null };
+  }
 }
 
 async function sendTemplatedSms({ lead_id, to_number, template_key, company_name, user, load_summary }) {
