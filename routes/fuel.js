@@ -54,15 +54,19 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// Delete fuel log
+// Delete fuel log (Admins or owning carrier only)
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    if (req.user.role === 'carrier') {
-      await pool.query('DELETE FROM fuel_purchases WHERE id = $1 AND carrier_id = $2', [req.params.id, req.user.id]);
-    } else {
+    if (['admin', 'super_admin'].includes(req.user.role)) {
       await pool.query('DELETE FROM fuel_purchases WHERE id = $1', [req.params.id]);
+      return res.json({ ok: true, message: 'Fuel record deleted.' });
     }
-    res.json({ ok: true });
+    if (['carrier', 'carrier_admin'].includes(req.user.role)) {
+      const del = await pool.query('DELETE FROM fuel_purchases WHERE id = $1 AND carrier_id = $2', [req.params.id, req.user.id]);
+      if (del.rowCount === 0) return res.status(404).json({ error: 'Fuel log not found.' });
+      return res.json({ ok: true, message: 'Fuel record deleted.' });
+    }
+    return res.status(403).json({ error: 'Access denied. You do not have permission to delete fuel records.' });
   } catch (err) {
     res.status(500).json({ error: 'Could not delete fuel record.' });
   }

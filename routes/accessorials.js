@@ -61,8 +61,8 @@ router.patch('/:id/approve', requireAuth, requireRole('dispatcher', 'admin', 'su
   }
 });
 
-// Delete accessorial
-router.delete('/:id', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
+// Delete accessorial (Admin & SuperAdmin only)
+router.delete('/:id', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     await pool.query('DELETE FROM load_accessorials WHERE id = $1', [req.params.id]);
     res.json({ ok: true });

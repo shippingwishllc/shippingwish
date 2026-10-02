@@ -914,10 +914,11 @@ router.put('/leads/:id/status', requireAuth, async (req, res) => {
   }
 });
 
-router.delete('/leads/:id', requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
+// ADMIN & SUPER ADMIN: Delete lead
+router.delete('/leads/:id', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     await pool.query('DELETE FROM crm_leads WHERE id = $1', [req.params.id]);
-    res.json({ ok: true });
+    res.json({ ok: true, message: 'Lead deleted successfully.' });
   } catch (err) {
     res.status(500).json({ error: 'Could not delete lead' });
   }

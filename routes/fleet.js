@@ -10,9 +10,12 @@ async function assertOwnedFleetRow(req, table, id) {
   if (!allowed[table]) return { status: 400, error: 'Invalid fleet table.' };
   const r = await pool.query(`SELECT carrier_id FROM ${table} WHERE id = $1`, [id]);
   if (!r.rows.length) return { status: 404, error: 'Not found.' };
+  const carrier_id = r.rows[0].carrier_id;
   const staff = ['dispatcher', 'admin', 'super_admin'].includes(req.user.role);
-  if (staff) return { ok: true };
-  if (req.user.role === 'carrier' && r.rows[0].carrier_id === req.user.id) return { ok: true };
+  if (staff) return { ok: true, carrier_id };
+  if (['carrier', 'carrier_admin'].includes(req.user.role) && carrier_id === req.user.id) {
+    return { ok: true, carrier_id };
+  }
   return { status: 403, error: 'You can only change your own fleet.' };
 }
 
@@ -120,13 +123,16 @@ router.put('/trucks/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Delete truck
+// Delete truck (Admin or owning carrier only)
 router.delete('/trucks/:id', requireAuth, async (req, res) => {
   try {
     const gate = await assertOwnedFleetRow(req, 'trucks', req.params.id);
     if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
+    if (!['admin', 'super_admin'].includes(req.user.role) && gate.carrier_id !== req.user.id) {
+      return res.status(403).json({ error: 'Permission denied. Only Admins or the owning carrier can delete trucks.' });
+    }
     await pool.query('DELETE FROM trucks WHERE id = $1', [req.params.id]);
-    res.json({ ok: true });
+    res.json({ ok: true, message: 'Truck deleted successfully.' });
   } catch (err) {
     res.status(500).json({ error: 'Could not delete truck.' });
   }
@@ -194,13 +200,16 @@ router.put('/trailers/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Delete trailer
+// Delete trailer (Admin or owning carrier only)
 router.delete('/trailers/:id', requireAuth, async (req, res) => {
   try {
     const gate = await assertOwnedFleetRow(req, 'trailers', req.params.id);
     if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
+    if (!['admin', 'super_admin'].includes(req.user.role) && gate.carrier_id !== req.user.id) {
+      return res.status(403).json({ error: 'Permission denied. Only Admins or the owning carrier can delete trailers.' });
+    }
     await pool.query('DELETE FROM trailers WHERE id = $1', [req.params.id]);
-    res.json({ ok: true });
+    res.json({ ok: true, message: 'Trailer deleted successfully.' });
   } catch (err) {
     res.status(500).json({ error: 'Could not delete trailer.' });
   }
@@ -275,11 +284,14 @@ router.put('/drivers/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Delete driver
+// Delete driver (Admin or owning carrier only)
 router.delete('/drivers/:id', requireAuth, async (req, res) => {
   try {
     const gate = await assertOwnedFleetRow(req, 'drivers', req.params.id);
     if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
+    if (!['admin', 'super_admin'].includes(req.user.role) && gate.carrier_id !== req.user.id) {
+      return res.status(403).json({ error: 'Permission denied. Only Admins or the owning carrier can remove drivers.' });
+    }
     await pool.query(
       'UPDATE drivers SET deleted_at = now(), deleted_by = $2 WHERE id = $1 AND deleted_at IS NULL',
       [req.params.id, req.user.id]
