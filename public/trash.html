@@ -258,6 +258,7 @@
     }).join('');
 
     const pager = document.getElementById('trash-pagination');
+    if (!pager) return;
     pager.style.display = 'flex';
     const start = (trashPageNum - 1) * TRASH_PER_PAGE + 1;
     const end = Math.min(trashPageNum * TRASH_PER_PAGE, trashTotal);
@@ -267,40 +268,83 @@
   }
 
   async function purgeItem(type, id) {
-    if (!confirm('Permanently delete this item? This cannot be undone.')) return;
-    const res = await fetch('/api/trash/purge-permanent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ type, id, confirm: 'DELETE_FOREVER' })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert(data.error || 'Could not permanently delete.');
-      return;
+    const ok = await (window.swConfirm ? window.swConfirm({
+      title: 'Permanently Delete Forever?',
+      message: 'This record will be permanently purged from the database. This action cannot be undone.',
+      icon: '🗑️',
+      confirmText: 'Yes, Delete Forever',
+      danger: true
+    }) : Promise.resolve(confirm('Permanently delete this item? This cannot be undone.')));
+
+    if (!ok) return;
+
+    try {
+      const res = await fetch('/api/trash/purge-permanent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ type, id, confirm: 'DELETE_FOREVER' })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (window.swToast) window.swToast(data.error || 'Could not permanently delete.', 'error');
+        else alert(data.error || 'Could not permanently delete.');
+        return;
+      }
+      if (window.swToast) window.swToast('Record permanently deleted from database.', 'success');
+      await loadTrashCounts();
+      await loadTrash();
+    } catch (err) {
+      if (window.swToast) window.swToast('Network error while deleting.', 'error');
     }
-    alert(data.message || 'Permanently deleted.');
-    await loadTrashCounts();
-    await loadTrash();
   }
 
   async function restoreItem(type, id) {
-    if (!confirm('Restore this item? It will appear again in the live system.')) return;
-    const res = await fetch('/api/trash/restore', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ type, id })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert(data.error || 'Could not restore.');
-      return;
+    const ok = await (window.swConfirm ? window.swConfirm({
+      title: 'Restore Record?',
+      message: 'This item will be restored and will immediately appear active again in your live operations.',
+      icon: '🔄',
+      confirmText: 'Restore Record',
+      danger: false
+    }) : Promise.resolve(confirm('Restore this item?')));
+
+    if (!ok) return;
+
+    try {
+      const res = await fetch('/api/trash/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ type, id })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (window.swToast) window.swToast(data.error || 'Could not restore.', 'error');
+        else alert(data.error || 'Could not restore.');
+        return;
+      }
+      if (window.swToast) window.swToast('Record restored successfully!', 'success');
+      await loadTrashCounts();
+      await loadTrash();
+    } catch (err) {
+      if (window.swToast) window.swToast('Network error while restoring.', 'error');
     }
-    alert(data.message || 'Restored.');
-    await loadTrashCounts();
-    await loadTrash();
   }
+
+  // Explicit window bindings so inline onclicks never fail after SPA navigation
+  window.switchTrashTab = switchTrashTab;
+  window.restoreItem = restoreItem;
+  window.purgeItem = purgeItem;
+  window.trashPage = trashPage;
+
+  // Event delegation fallback for tabs and action buttons
+  document.addEventListener('click', (e) => {
+    const tabBtn = e.target.closest('#trash-tabs button[data-type]');
+    if (tabBtn) {
+      e.preventDefault();
+      switchTrashTab(tabBtn.dataset.type, tabBtn);
+    }
+  });
 
   document.addEventListener('DOMContentLoaded', async () => {
     if (!await checkAuth()) return;
@@ -308,6 +352,6 @@
     await loadTrash();
   });
 </script>
-<script src="/js/app-shell.js?v=20"></script>
+<script src="/js/app-shell.js?v=31"></script>
 </body>
 </html>

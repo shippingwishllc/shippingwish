@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '30';
+  const SIDEBAR_VERSION = '31';
   // #endregion
 
   function clearRoleCache() {
@@ -76,6 +76,109 @@
         </div>
       </div>`;
   }
+
+  // --- Universal Centered Modal & Toast Dialog System ---
+  function ensureModalContainer() {
+    let wrap = document.getElementById('sw-modal-root');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'sw-modal-root';
+      document.body.appendChild(wrap);
+    }
+    return wrap;
+  }
+
+  window.swModal = function (opts) {
+    return new Promise((resolve) => {
+      const {
+        title = 'Confirmation',
+        message = 'Are you sure you want to proceed?',
+        icon = '⚠️',
+        confirmText = 'Proceed',
+        cancelText = 'Cancel',
+        danger = false,
+        showCancel = true
+      } = (typeof opts === 'string' ? { message: opts } : opts || {});
+
+      const root = ensureModalContainer();
+      const iconClass = danger ? 'sw-modal-icon-danger' : (confirmText.toLowerCase().includes('restore') ? 'sw-modal-icon-success' : 'sw-modal-icon-warning');
+
+      const modalHtml = `
+        <div class="sw-modal-overlay" id="sw-active-modal">
+          <div class="sw-modal-card">
+            <div class="sw-modal-icon-wrap ${iconClass}">${icon}</div>
+            <h3 class="sw-modal-title">${title}</h3>
+            <p class="sw-modal-text">${message}</p>
+            <div class="sw-modal-buttons">
+              ${showCancel ? `<button type="button" class="sw-modal-btn sw-modal-btn-cancel" id="sw-modal-cancel-btn">${cancelText}</button>` : ''}
+              <button type="button" class="sw-modal-btn ${danger ? 'sw-modal-btn-danger' : 'sw-modal-btn-primary'}" id="sw-modal-confirm-btn">${confirmText}</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      root.innerHTML = modalHtml;
+
+      const overlay = document.getElementById('sw-active-modal');
+      const confirmBtn = document.getElementById('sw-modal-confirm-btn');
+      const cancelBtn = document.getElementById('sw-modal-cancel-btn');
+
+      function cleanup(val) {
+        if (!overlay) return resolve(val);
+        overlay.classList.add('closing');
+        setTimeout(() => {
+          root.innerHTML = '';
+          resolve(val);
+        }, 120);
+      }
+
+      confirmBtn.focus();
+      confirmBtn.addEventListener('click', () => cleanup(true));
+      if (cancelBtn) cancelBtn.addEventListener('click', () => cleanup(false));
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) cleanup(false);
+      });
+      const onEsc = (e) => {
+        if (e.key === 'Escape') {
+          document.removeEventListener('keydown', onEsc);
+          cleanup(false);
+        }
+      };
+      document.addEventListener('keydown', onEsc);
+    });
+  };
+
+  window.swConfirm = function (opts) {
+    if (typeof opts === 'string') opts = { message: opts };
+    return window.swModal(opts);
+  };
+
+  window.swAlert = function (opts) {
+    if (typeof opts === 'string') opts = { message: opts, showCancel: false, confirmText: 'OK' };
+    else opts = { ...opts, showCancel: false, confirmText: opts.confirmText || 'OK' };
+    return window.swModal(opts);
+  };
+
+  window.swToast = function (message, type = 'success') {
+    let wrap = document.getElementById('sw-toast-root');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'sw-toast-root';
+      document.body.appendChild(wrap);
+    }
+    const icon = type === 'error' ? '❌' : (type === 'warning' ? '⚠️' : '✅');
+    const toast = document.createElement('div');
+    toast.className = 'sw-toast-wrap';
+    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    wrap.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.transition = 'opacity 0.25s, transform 0.25s';
+      toast.style.opacity = '0';
+      toast.style.transform = 'translate(-50%, -10px)';
+      setTimeout(() => toast.remove(), 250);
+    }, 2800);
+  };
 
   // SVG icon helper — renders a crisp 18×18 inline SVG
   function svgIcon(paths, color, viewBox) {
@@ -746,7 +849,7 @@
           /document\.addEventListener\s*\(\s*['"]DOMContentLoaded['"]\s*,/g,
           '__swRun('
         );
-        s.textContent = `try { (function(){\n${code}\n})(); } catch(e) { console.error('[APP_SHELL_EXEC]', e); }`;
+        s.textContent = `try {\n${code}\n} catch(e) { console.error('[APP_SHELL_EXEC]', e); }`;
       }
       document.body.appendChild(s);
     });

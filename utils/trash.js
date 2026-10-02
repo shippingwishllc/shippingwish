@@ -82,6 +82,12 @@ async function permanentlyDeleteUser(id) {
   await pool.query('DELETE FROM dispatcher_carriers WHERE carrier_id = $1', [id]).catch(() => {});
   await pool.query('DELETE FROM billing_subscriptions WHERE user_id = $1', [id]).catch(() => {});
   await pool.query('DELETE FROM signup_pending WHERE lower(email) = lower((SELECT email FROM users WHERE id = $1))', [id]).catch(() => {});
+  await pool.query('UPDATE users SET parent_user_id = NULL WHERE parent_user_id = $1', [id]).catch(() => {});
+  await pool.query('UPDATE loads SET deleted_by = NULL WHERE deleted_by = $1', [id]).catch(() => {});
+  await pool.query('UPDATE users SET deleted_by = NULL WHERE deleted_by = $1', [id]).catch(() => {});
+  await pool.query('UPDATE drivers SET deleted_by = NULL WHERE deleted_by = $1', [id]).catch(() => {});
+  await pool.query('UPDATE email_inbound SET deleted_by = NULL WHERE deleted_by = $1', [id]).catch(() => {});
+  await pool.query('UPDATE audit_logs SET user_id = NULL WHERE user_id = $1', [id]).catch(() => {});
   const res = await pool.query('DELETE FROM users WHERE id = $1 AND deleted_at IS NOT NULL', [id]);
   return res.rowCount > 0;
 }
