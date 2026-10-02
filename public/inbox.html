@@ -11,50 +11,50 @@
   <style>
     :root {
       --inbox-page-items: 7;
-      --inbox-item-h: 84px;
-      --inbox-item-gap: 8px;
-      --inbox-list-h: calc(var(--inbox-page-items) * var(--inbox-item-h) + (var(--inbox-page-items) - 1) * var(--inbox-item-gap));
-      --inbox-pane-h: calc(var(--inbox-list-h) + 52px);
+      --inbox-item-gap: 10px;
     }
-    .inbox-layout { display:grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr); gap:16px; align-items:stretch; }
+    .inbox-layout { display:grid; grid-template-columns: minmax(320px, 1fr) minmax(380px, 1.4fr); gap:16px; align-items:stretch; }
     @media (max-width: 900px) { .inbox-layout { grid-template-columns: 1fr; } }
     .inbox-list-col { display:flex; flex-direction:column; min-height:0; }
     .inbox-list-card {
-      display:flex; flex-direction:column; padding:12px;
-      height:var(--inbox-pane-h); min-height:var(--inbox-pane-h); max-height:var(--inbox-pane-h);
-      overflow:hidden;
+      display:flex; flex-direction:column; padding:14px;
+      min-height:700px; max-height:850px;
       background: #ffffff;
       border: 1px solid var(--border-default, #e2e8f0);
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      border-radius: 12px;
     }
     #inbox-list {
       display:flex; flex-direction:column; gap:var(--inbox-item-gap);
-      height:var(--inbox-list-h); min-height:var(--inbox-list-h); max-height:var(--inbox-list-h);
-      overflow:hidden; flex-shrink:0;
+      overflow-y:auto; overflow-x:hidden; flex:1; min-height:0;
+      padding-right:4px;
     }
     .inbox-pagination {
       display:flex; justify-content:space-between; align-items:center; gap:12px;
-      padding-top:10px; margin-top:auto; border-top:1px solid var(--border-default, #e2e8f0);
+      padding-top:12px; margin-top:auto; border-top:1px solid var(--border-default, #e2e8f0);
       font-size:12px; color:var(--text-muted); flex-wrap:wrap; flex-shrink:0;
     }
     .inbox-pagination .pager-btns { display:flex; gap:8px; }
     .inbox-item {
-      border:1px solid var(--border-default, #e2e8f0); border-radius:12px; padding:10px 14px;
+      border:1px solid var(--border-default, #e2e8f0); border-radius:12px; padding:12px 14px;
       cursor:pointer; text-align:left; background:#ffffff; width:100%;
-      height:var(--inbox-item-h); min-height:var(--inbox-item-h); max-height:var(--inbox-item-h);
-      overflow:hidden; flex-shrink:0;
+      height:auto; min-height:98px;
+      flex-shrink:0;
       transition: all 0.15s ease;
+      display:flex; flex-direction:column; gap:4px;
+      box-sizing:border-box;
     }
     .inbox-item-preview {
-      font-size:12px; color:#64748b; margin-top:4px;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      font-size:12px; color:#64748b; line-height:1.45; margin-top:2px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow:hidden;
     }
     .inbox-item:hover { border-color: var(--color-amber-500, #f59e0b); box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05); }
-    .inbox-item.active { border-color: var(--color-amber-500, #f59e0b); background: #fffbeb; box-shadow: 0 0 0 1px #f59e0b; }
-    .inbox-item.unread { background: #fefce8; border-left: 3.5px solid #d97706; }
+    .inbox-item.active { border-color: var(--color-amber-500, #f59e0b); background: #fffbeb; box-shadow: 0 0 0 1.5px #f59e0b; }
+    .inbox-item.unread { background: #fefce8; border-left: 4px solid #d97706; }
     .msg-panel {
       border:1px solid var(--border-default, #e2e8f0); border-radius:12px;
-      height:var(--inbox-pane-h); min-height:var(--inbox-pane-h); max-height:var(--inbox-pane-h);
+      min-height:700px; max-height:850px;
       background: #ffffff;
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
       display:flex; flex-direction:column; overflow:hidden; padding:16px;
@@ -86,7 +86,6 @@
     @media (max-width: 900px) {
       .inbox-list-card, .msg-panel { height:auto; min-height:auto; max-height:none; }
       #inbox-list { height:auto; min-height:auto; max-height:none; overflow:visible; }
-      .inbox-item { height:auto; min-height:84px; max-height:none; }
     }
     .inbox-page-content {
       padding-top: var(--space-6);
@@ -100,28 +99,41 @@
   <script src="/js/app-shell-boot.js"></script>
 
   <div class="app-main">
-    <header class="app-header">
+    <header class="app-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
       <div>
-        <h1 id="inbox-title" style="font-size:var(--text-lg);font-weight:800;margin:0;">Shipping Wish mail</h1>
-        <p id="inbox-subtitle" style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">One inbound webhook receives every brand. Open a brand, then Inbox, Sent, Draft, Spam, or Trash.</p>
+        <h1 id="inbox-title" style="font-size:var(--text-lg);font-weight:800;margin:0;">Carrier Replies &amp; Email Inbox</h1>
+        <p id="inbox-subtitle" style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Omnichannel centralized mailbox for carrier email replies across all brands</p>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div class="search-input-group" style="min-width:280px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="inbox-search-input" placeholder="Search emails, senders, subject..." oninput="onInboxSearch(this.value)">
+        </div>
         <button class="btn btn-primary btn-sm" type="button" onclick="openComposeModal()" style="font-weight:800;">✏️ Compose Email</button>
-        <span id="brand-switch" style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" type="button" data-brand="shippingwish.com" onclick="selectBrand('shippingwish.com')">Shipping Wish</button>
-          <button class="btn btn-secondary btn-sm" type="button" data-brand="loadsnexus.com" onclick="selectBrand('loadsnexus.com')">LoadsNexus</button>
-          <button class="btn btn-secondary btn-sm" type="button" data-brand="nyclimowish.com" onclick="selectBrand('nyclimowish.com')">NYC Limo Wish</button>
-          <button class="btn btn-secondary btn-sm" type="button" data-brand="buywishonline.com" onclick="selectBrand('buywishonline.com')">BuyWish</button>
-        </span>
-        <button class="btn btn-primary btn-sm" type="button" id="btn-folder-inbox" onclick="selectFolder('inbox')">📥 Inbox</button>
-        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-sent" onclick="selectFolder('sent')">📤 Sent</button>
-        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-draft" onclick="selectFolder('draft')">📝 Draft</button>
-        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-spam" onclick="selectFolder('spam')">🚫 Spam</button>
-        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-trash" onclick="selectFolder('trash')">🗑️ Trash</button>
-        <button class="btn btn-secondary btn-sm" type="button" id="btn-folder-unread" onclick="loadInbox(true, 1, 'inbound')">📬 Unread</button>
       </div>
     </header>
+
     <main class="app-content inbox-page-content">
+      <!-- FOLDER & BRAND CONTROLS -->
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;background:var(--bg-card-subtle);padding:8px 12px;border-radius:var(--radius-lg);border:1px solid var(--border-default);">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;" id="folder-tab-group">
+          <button class="btn btn-primary btn-sm folder-btn" type="button" id="btn-folder-inbox" onclick="selectFolder('inbox')">📥 Inbox</button>
+          <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-sent" onclick="selectFolder('sent')">📤 Sent</button>
+          <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-draft" onclick="selectFolder('draft')">📝 Draft</button>
+          <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-spam" onclick="selectFolder('spam')">🚫 Spam</button>
+          <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-trash" onclick="selectFolder('trash')">🗑️ Trash</button>
+          <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-unread" onclick="loadInbox(true, 1, 'inbound')">📬 Unread Only</button>
+        </div>
+
+        <div id="brand-switch" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-right:4px;">Brand:</span>
+          <button class="btn btn-primary btn-sm brand-tab-btn" type="button" data-brand="shippingwish.com" onclick="selectBrand('shippingwish.com')">Shipping Wish</button>
+          <button class="btn btn-secondary btn-sm brand-tab-btn" type="button" data-brand="loadsnexus.com" onclick="selectBrand('loadsnexus.com')">LoadsNexus</button>
+          <button class="btn btn-secondary btn-sm brand-tab-btn" type="button" data-brand="nyclimowish.com" onclick="selectBrand('nyclimowish.com')">NYC Limo Wish</button>
+          <button class="btn btn-secondary btn-sm brand-tab-btn" type="button" data-brand="buywishonline.com" onclick="selectBrand('buywishonline.com')">BuyWish</button>
+        </div>
+      </div>
+
       <div class="inbox-kpi-row">
         <div class="inbox-kpi-card">
           <div class="inbox-kpi-icon unread">📬</div>
@@ -158,6 +170,68 @@
         </div>
       </div>
     </main>
+
+    <!-- MODAL: COMPOSE EMAIL (Inside app-main for SPA router preservation) -->
+    <div id="modal-compose-email" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:16px;" onclick="closeComposeModal()">
+      <div style="background:#ffffff;border-radius:16px;max-width:620px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;" onclick="event.stopPropagation()">
+        <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">✏️ New Email Message</h3>
+            <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Send branded dispatch, billing, or load agreement email</p>
+          </div>
+          <button type="button" onclick="closeComposeModal()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#94a3b8;">✕</button>
+        </div>
+
+        <form id="form-compose-email" onsubmit="submitComposeEmail(event)" style="padding:20px;">
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">From Sender Address *</label>
+            <select id="compose-from" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
+              <option value="Shipping Wish Operations <operations@shippingwish.com>">Shipping Wish Operations &lt;operations@shippingwish.com&gt;</option>
+              <option value="Shipping Wish Billing <billing@shippingwish.com>">Shipping Wish Billing &lt;billing@shippingwish.com&gt;</option>
+              <option value="LoadsNexus Dispatch <dispatch@loadsnexus.com>">LoadsNexus Dispatch &lt;dispatch@loadsnexus.com&gt;</option>
+              <option value="LoadsNexus Billing <billing@loadsnexus.com>">LoadsNexus Billing &lt;billing@loadsnexus.com&gt;</option>
+              <option value="NYC Limo Wish <info@nyclimowish.com>">NYC Limo Wish &lt;info@nyclimowish.com&gt;</option>
+              <option value="BuyWishOnline <support@buywishonline.com>">BuyWishOnline &lt;support@buywishonline.com&gt;</option>
+              <option value="BuyWishOnline Orders <orders@buywishonline.com>">BuyWishOnline Orders &lt;orders@buywishonline.com&gt;</option>
+              <option value="BuyWishOnline Billing <billing@buywishonline.com>">BuyWishOnline Billing &lt;billing@buywishonline.com&gt;</option>
+              <option value="BuyWishOnline Alerts <alerts@buywishonline.com>">BuyWishOnline Alerts &lt;alerts@buywishonline.com&gt;</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">To Recipient Email *</label>
+            <input type="email" id="compose-to" required placeholder="e.g. dispatch@carrierfleet.com" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;" />
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Template Preset</label>
+            <select id="compose-tpl" onchange="applyEmailTemplate(this.value)" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
+              <option value="custom">Custom Message (Blank)</option>
+              <option value="trial">Shipping Wish — 7-Day Dedicated Dispatch Free Trial ($0)</option>
+              <option value="packet">Carrier Onboarding Packet &amp; Setup</option>
+              <option value="ratecon">Rate Confirmation Follow-Up &amp; Dispatch</option>
+              <option value="loadsnexus">LoadsNexus™ — $19/mo Unlimited Load Board Pass</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Subject *</label>
+            <input type="text" id="compose-subject" required placeholder="Enter email subject..." style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;" />
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Message Body *</label>
+            <textarea id="compose-body" required rows="7" placeholder="Type your email message..." style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13.5px;line-height:1.5;outline:none;resize:vertical;"></textarea>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #e2e8f0;padding-top:14px;">
+            <button type="button" class="btn btn-secondary" onclick="closeComposeModal()">Cancel</button>
+            <button type="button" class="btn btn-secondary" onclick="saveComposeDraft()">Save draft</button>
+            <button type="submit" id="btn-send-compose" class="btn btn-primary" style="font-weight:800;">🚀 Send Email Now</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
 <script>
@@ -214,27 +288,52 @@
     return m.company_name || m.owner_name || m.from_email || 'Unknown sender';
   }
 
+  let inboxSearchTerm = '';
+  function onInboxSearch(val) {
+    inboxSearchTerm = (val || '').trim().toLowerCase();
+    renderInboxList();
+  }
+
   function renderInboxList() {
     const list = document.getElementById('inbox-list');
-    if (!messagesCache.length) {
+    let filtered = messagesCache || [];
+    if (inboxSearchTerm) {
+      filtered = filtered.filter(m => {
+        const title = (contactTitle(m) || '').toLowerCase();
+        const email = (m.peer_email || m.from_email || '').toLowerCase();
+        const subj = (m.subject || '').toLowerCase();
+        const snippet = (previewText(m) || '').toLowerCase();
+        return title.includes(inboxSearchTerm) || email.includes(inboxSearchTerm) || subj.includes(inboxSearchTerm) || snippet.includes(inboxSearchTerm);
+      });
+    }
+
+    if (!filtered.length) {
+      if (inboxSearchTerm) {
+        list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No emails matching "<strong>' + escapeHtml(inboxSearchTerm) + '</strong>".</p>';
+        return;
+      }
       const label = BRAND_LABELS[currentDomain] || 'this mailbox';
       list.innerHTML = '<p class="text-muted" style="padding:32px;text-align:center;">No mail in ' + escapeHtml(label) + ' / ' + escapeHtml(currentFolder) + '.</p>';
       return;
     }
-    list.innerHTML = messagesCache.map(m => `
+
+    list.innerHTML = filtered.map(m => {
+      const dt = m.created_at ? new Date(m.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      return `
       <button type="button" class="inbox-item ${m.is_read ? '' : 'unread'} ${selectedId === m.id ? 'active' : ''}" onclick="openMessage(${m.id})">
-        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-          <div style="font-weight:800;display:flex;align-items:center;gap:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div style="font-weight:700;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-main,#0f172a);">
             ${m.direction === 'outbound' ? '<span class="badge badge-paid" style="font-size:9px;padding:2px 6px;">↗ Sent</span>' : '<span class="badge badge-booked" style="font-size:9px;padding:2px 6px;">📥 Inbound</span>'}
-            <span>${escapeHtml(contactTitle(m))}</span>
+            <span style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(contactTitle(m))}</span>
           </div>
-          <div style="font-size:11px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</div>
+          <div style="font-size:11px;color:var(--text-muted);font-weight:500;">${escapeHtml(dt)}</div>
         </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${escapeHtml(m.peer_email || m.from_email || '')}</div>
-        <div style="font-size:13px;margin-top:6px;font-weight:600;">${escapeHtml(m.subject || '(no subject)')}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;" class="inbox-item-preview">${escapeHtml(previewText(m))}</div>
+        <div style="font-size:11.5px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(m.peer_email || m.from_email || '')}</div>
+        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(m.subject || '(no subject)')}</div>
+        <div class="inbox-item-preview">${escapeHtml(previewText(m))}</div>
       </button>
-    `).join('');
+    `;
+    }).join('');
   }
 
   function renderPagination() {
@@ -804,6 +903,7 @@
       if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server to save draft.', icon: 'error' });
     }
   };
+  window.onInboxSearch = onInboxSearch;
   window.loadInbox = loadInbox;
   window.openMessage = openMessage;
   window.goInboxPage = goInboxPage;
@@ -832,68 +932,6 @@
 })();
 </script>
 
-<!-- MODAL: COMPOSE EMAIL -->
-<div id="modal-compose-email" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:16px;" onclick="closeComposeModal()">
-  <div style="background:#ffffff;border-radius:16px;max-width:620px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;" onclick="event.stopPropagation()">
-    <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
-      <div>
-        <h3 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">✏️ New Email Message</h3>
-        <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Send branded dispatch, billing, or load agreement email</p>
-      </div>
-      <button type="button" onclick="closeComposeModal()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#94a3b8;">✕</button>
-    </div>
-
-    <form id="form-compose-email" onsubmit="submitComposeEmail(event)" style="padding:20px;">
-      <div style="margin-bottom:12px;">
-        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">From Sender Address *</label>
-        <select id="compose-from" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
-          <option value="Shipping Wish Operations <operations@shippingwish.com>">Shipping Wish Operations &lt;operations@shippingwish.com&gt;</option>
-          <option value="Shipping Wish Billing <billing@shippingwish.com>">Shipping Wish Billing &lt;billing@shippingwish.com&gt;</option>
-          <option value="LoadsNexus Dispatch <dispatch@loadsnexus.com>">LoadsNexus Dispatch &lt;dispatch@loadsnexus.com&gt;</option>
-          <option value="LoadsNexus Billing <billing@loadsnexus.com>">LoadsNexus Billing &lt;billing@loadsnexus.com&gt;</option>
-          <option value="NYC Limo Wish <info@nyclimowish.com>">NYC Limo Wish &lt;info@nyclimowish.com&gt;</option>
-          <option value="BuyWishOnline <support@buywishonline.com>">BuyWishOnline &lt;support@buywishonline.com&gt;</option>
-          <option value="BuyWishOnline Orders <orders@buywishonline.com>">BuyWishOnline Orders &lt;orders@buywishonline.com&gt;</option>
-          <option value="BuyWishOnline Billing <billing@buywishonline.com>">BuyWishOnline Billing &lt;billing@buywishonline.com&gt;</option>
-          <option value="BuyWishOnline Alerts <alerts@buywishonline.com>">BuyWishOnline Alerts &lt;alerts@buywishonline.com&gt;</option>
-        </select>
-      </div>
-
-      <div style="margin-bottom:12px;">
-        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">To Recipient Email *</label>
-        <input type="email" id="compose-to" required placeholder="e.g. dispatch@carrierfleet.com" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;" />
-      </div>
-
-      <div style="margin-bottom:12px;">
-        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Template Preset</label>
-        <select id="compose-tpl" onchange="applyEmailTemplate(this.value)" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
-          <option value="custom">Custom Message (Blank)</option>
-          <option value="trial">Shipping Wish — 7-Day Dedicated Dispatch Free Trial ($0)</option>
-          <option value="packet">Carrier Onboarding Packet &amp; Setup</option>
-          <option value="ratecon">Rate Confirmation Follow-Up &amp; Dispatch</option>
-          <option value="loadsnexus">LoadsNexus™ — $19/mo Unlimited Load Board Pass</option>
-        </select>
-      </div>
-
-      <div style="margin-bottom:12px;">
-        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Subject *</label>
-        <input type="text" id="compose-subject" required placeholder="Enter email subject..." style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;" />
-      </div>
-
-      <div style="margin-bottom:16px;">
-        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Message Body *</label>
-        <textarea id="compose-body" required rows="7" placeholder="Type your email message..." style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13.5px;line-height:1.5;outline:none;resize:vertical;"></textarea>
-      </div>
-
-      <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #e2e8f0;padding-top:14px;">
-        <button type="button" class="btn btn-secondary" onclick="closeComposeModal()">Cancel</button>
-        <button type="button" class="btn btn-secondary" onclick="saveComposeDraft()">Save draft</button>
-        <button type="submit" id="btn-send-compose" class="btn btn-primary" style="font-weight:800;">🚀 Send Email Now</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script src="/js/app-shell.js?v=33"></script>
+<script src="/js/app-shell.js?v=34"></script>
 </body>
 </html>

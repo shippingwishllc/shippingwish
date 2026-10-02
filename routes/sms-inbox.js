@@ -14,22 +14,31 @@ const {
 const router = express.Router();
 const staffOnly = requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep');
 
-async function sendOutboundSms({ to_number, body, lead_id, user }) {
-  const { sendTwilioSms } = require('./voip');
-  const sent = await sendTwilioSms(to_number, body);
+async function sendOutboundMessage({ to_number, body, lead_id, user, channel = 'sms' }) {
+  const { sendTwilioSms, sendTwilioWhatsApp } = require('./voip');
+  let sent;
+  const isWa = channel === 'whatsapp' || String(to_number).startsWith('whatsapp:');
+  const cleanTo = String(to_number).replace(/^whatsapp:/, '').trim();
+
+  if (isWa) {
+    sent = await sendTwilioWhatsApp(cleanTo, body);
+  } else {
+    sent = await sendTwilioSms(cleanTo, body);
+  }
   const bodySent = sent.body || body;
 
   if (sent.status === 'sent' || sent.status === 'logged') {
     await logSmsMessage({
       direction: 'outbound',
-      from_number: OUR_NUMBER,
-      to_number,
+      from_number: isWa ? (process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:' + OUR_NUMBER) : OUR_NUMBER,
+      to_number: isWa ? ('whatsapp:' + cleanTo) : cleanTo,
       body: bodySent,
       lead_id,
       sent_by: user?.id,
       twilio_sid: sent.sid,
       disposition: sent.status,
-      is_read: true
+      is_read: true,
+      channel: isWa ? 'whatsapp' : 'sms'
     });
   }
 
@@ -42,8 +51,11 @@ async function sendOutboundSms({ to_number, body, lead_id, user }) {
     ).catch(() => {});
   }
 
-  return sent;
+  return { ...sent, channel: isWa ? 'whatsapp' : 'sms' };
 }
+
+// Backward compatibility alias
+const sendOutboundSms = sendOutboundMessage;
 
 // GET /api/sms/inbox — conversation threads
 router.get('/', requireAuth, staffOnly, async (req, res) => {
@@ -89,13 +101,14 @@ router.get('/', requireAuth, staffOnly, async (req, res) => {
         SELECT
           CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END AS peer_phone,
           right(regexp_replace(CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END, '[^0-9]', '', 'g'), 10) AS peer_tail,
-          body, direction, created_at, lead_id, is_read, from_number
+          body, direction, created_at, lead_id, is_read, from_number,
+          COALESCE(channel, CASE WHEN from_number LIKE 'whatsapp:%' OR to_number LIKE 'whatsapp:%' THEN 'whatsapp' ELSE 'sms' END) AS channel
         FROM sms_messages
       ),
       latest AS (
         SELECT DISTINCT ON (peer_tail)
           peer_phone, peer_tail, body AS last_body, direction AS last_direction,
-          created_at AS last_at, lead_id
+          created_at AS last_at, lead_id, channel AS last_channel
         FROM base
         ORDER BY peer_tail, created_at DESC
       ),
@@ -160,7 +173,8 @@ router.get('/thread', requireAuth, staffOnly, async (req, res) => {
     const normalized = phone.replace(/\s/g, '');
 
     const messages = await pool.query(
-      `SELECT sm.*, u.name AS sent_by_name
+      `SELECT sm.*, COALESCE(sm.channel, CASE WHEN sm.from_number LIKE 'whatsapp:%' OR sm.to_number LIKE 'whatsapp:%' THEN 'whatsapp' ELSE 'sms' END) AS channel,
+              u.name AS sent_by_name
        FROM sms_messages sm
        LEFT JOIN users u ON u.id = sm.sent_by
        WHERE right(regexp_replace(
@@ -210,28 +224,31 @@ router.post('/thread/read', requireAuth, staffOnly, async (req, res) => {
   }
 });
 
-// POST /api/sms/inbox/reply
-router.post('/reply', requireAuth, staffOnly, async (req, res) => {
-  const { phone, body, lead_id } = req.body || {};
-  if (!phone || !String(body || '').trim()) {
-    return res.status(400).json({ error: 'phone and body are required' });
+// POST /api/sms/inbox/send — new outbound SMS or WhatsApp
+router.post('/send', requireAuth, staffOnly, async (req, res) => {
+  const { to_number, body, lead_id, channel } = req.body || {};
+  if (!to_number || !String(body || '').trim()) {
+    return res.status(400).json({ error: 'Recipient phone number and message body are required' });
   }
 
-  if (await isPhoneOptedOut(phone)) {
-    return res.status(409).json({ error: 'This number replied STOP. Cannot send SMS.' });
+  const cleanTo = String(to_number).replace(/^whatsapp:/, '').trim();
+  if (await isPhoneOptedOut(cleanTo)) {
+    return res.status(409).json({ error: 'This number replied STOP and is opted out.' });
   }
 
   try {
     const text = String(body).trim();
-    const sent = await sendOutboundSms({
-      to_number: phone,
+    const isWa = channel === 'whatsapp' || String(to_number).startsWith('whatsapp:');
+    const sent = await sendOutboundMessage({
+      to_number: cleanTo,
       body: text,
       lead_id: lead_id || null,
-      user: req.user
+      user: req.user,
+      channel: isWa ? 'whatsapp' : 'sms'
     });
 
     if (sent.status === 'twilio_error') {
-      return res.status(502).json({ error: 'Twilio could not send SMS. Check Vercel env vars.' });
+      return res.status(502).json({ error: 'Twilio could not dispatch message. Check credentials.' });
     }
     if (sent.status === 'opted_out') {
       return res.status(409).json({ error: 'This number is opted out.' });
@@ -240,11 +257,55 @@ router.post('/reply', requireAuth, staffOnly, async (req, res) => {
     res.json({
       ok: true,
       status: sent.status,
-      message: sent.status === 'sent' ? 'SMS sent.' : `SMS logged (${sent.status})`,
+      channel: sent.channel,
+      message: `${sent.channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} message dispatched.`,
       body: sent.body || text
     });
   } catch (err) {
-    console.error('SMS reply error:', err);
+    console.error('Send message error:', err);
+    res.status(500).json({ error: err.message || 'Failed to dispatch message.' });
+  }
+});
+
+// POST /api/sms/inbox/reply
+router.post('/reply', requireAuth, staffOnly, async (req, res) => {
+  const { phone, body, lead_id, channel } = req.body || {};
+  if (!phone || !String(body || '').trim()) {
+    return res.status(400).json({ error: 'phone and body are required' });
+  }
+
+  const cleanPhone = String(phone).replace(/^whatsapp:/, '').trim();
+  if (await isPhoneOptedOut(cleanPhone)) {
+    return res.status(409).json({ error: 'This number replied STOP. Cannot send message.' });
+  }
+
+  try {
+    const text = String(body).trim();
+    const isWa = channel === 'whatsapp' || String(phone).startsWith('whatsapp:');
+    const sent = await sendOutboundMessage({
+      to_number: cleanPhone,
+      body: text,
+      lead_id: lead_id || null,
+      user: req.user,
+      channel: isWa ? 'whatsapp' : 'sms'
+    });
+
+    if (sent.status === 'twilio_error') {
+      return res.status(502).json({ error: 'Twilio could not send message. Check credentials.' });
+    }
+    if (sent.status === 'opted_out') {
+      return res.status(409).json({ error: 'This number is opted out.' });
+    }
+
+    res.json({
+      ok: true,
+      status: sent.status,
+      channel: sent.channel,
+      message: `${sent.channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} sent.`,
+      body: sent.body || text
+    });
+  } catch (err) {
+    console.error('Message reply error:', err);
     res.status(500).json({ error: 'Failed to send reply.' });
   }
 });

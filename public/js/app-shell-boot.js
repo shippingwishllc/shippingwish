@@ -39,7 +39,7 @@
   var aside = document.getElementById('app-sidebar') || document.querySelector('.app-sidebar');
   if (!aside) return;
   try {
-    var BOOT_VER = '33';
+    var BOOT_VER = '34';
     if (sessionStorage.getItem('sw_sidebar_ver') !== BOOT_VER) return;
     var role = sessionStorage.getItem('sw_portal_role');
     var html = sessionStorage.getItem('sw_sidebar_html');

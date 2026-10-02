@@ -42,6 +42,7 @@ async function ensureSmsMessagesTable() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `).catch(() => {});
+  await pool.query(`ALTER TABLE sms_messages ADD COLUMN IF NOT EXISTS channel TEXT DEFAULT 'sms'`).catch(() => {});
   const check = await pool.query(`SELECT to_regclass('public.sms_messages') AS t`);
   if (!check.rows[0]?.t) {
     throw new Error('sms_messages table missing after ensure');
@@ -144,7 +145,8 @@ async function logSmsMessage({
   sent_by,
   twilio_sid,
   disposition,
-  is_read
+  is_read,
+  channel
 }) {
   try {
     await ensureSmsMessagesTable();
@@ -155,21 +157,28 @@ async function logSmsMessage({
       lid = lead?.id || null;
     }
     const readFlag = typeof is_read === 'boolean' ? is_read : direction === 'outbound';
+    const isWa = channel === 'whatsapp' || String(from_number).startsWith('whatsapp:') || String(to_number).startsWith('whatsapp:');
+    const finalChannel = isWa ? 'whatsapp' : (channel || 'sms');
+
+    const cleanFrom = isWa ? from_number : (normalizePhone(from_number) || from_number);
+    const cleanTo = isWa ? to_number : (normalizePhone(to_number) || to_number);
+
     const r = await pool.query(
       `INSERT INTO sms_messages (
-        lead_id, direction, from_number, to_number, body, twilio_sid, disposition, is_read, sent_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        lead_id, direction, from_number, to_number, body, twilio_sid, disposition, is_read, sent_by, channel
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *`,
       [
         lid,
         direction,
-        normalizePhone(from_number) || from_number,
-        normalizePhone(to_number) || to_number,
+        cleanFrom,
+        cleanTo,
         String(body || '').slice(0, 1600),
         twilio_sid || null,
         disposition || null,
         readFlag,
-        sent_by || null
+        sent_by || null,
+        finalChannel
       ]
     );
     return r.rows[0];

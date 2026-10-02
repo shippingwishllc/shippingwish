@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '33';
+  const SIDEBAR_VERSION = '34';
   // #endregion
 
   function clearRoleCache() {
@@ -231,7 +231,7 @@
     { key: 'census', href: '/census-desk', icon: IC.census, label: 'Census Desk' },
     { key: 'voice-calls', href: '/voice-calls', icon: IC.phone, label: 'AI Calls & Audio' },
     { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Replies' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Replies' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS & WhatsApp' },
     { section: 'Accounting' },
     { key: 'invoices', href: '/invoices', icon: IC.billing, label: 'Invoices & Billing', adminOnly: true },
     { key: 'ifta', href: '/ifta', icon: IC.fuel, label: 'IFTA & Fuel', adminOnly: true },
@@ -255,7 +255,7 @@
     { key: 'fleet', href: '/fleet', icon: IC.truck, label: 'Drivers & Fleet' },
     { section: 'Communications' },
     { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Email Inbox' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Inbox' }
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS & WhatsApp' }
   ];
 
   const DISPATCHER_LINKS = [
@@ -269,7 +269,7 @@
     { key: 'documents', href: '/documents', icon: IC.docs, label: 'RateCons & BOLs' },
     { section: 'Communications' },
     { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Replies' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'Driver SMS' }
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS & WhatsApp' }
   ];
 
   const SALES_REP_LINKS = [
@@ -281,7 +281,7 @@
     { key: 'voice-calls', href: '/voice-calls', icon: IC.phone, label: 'AI Cold Calling & Audio' },
     { section: 'Inbound' },
     { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Email Replies' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'Carrier SMS Inbound' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS & WhatsApp' },
     { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' }
   ];
 
