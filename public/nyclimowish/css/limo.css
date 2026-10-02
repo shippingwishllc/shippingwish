@@ -24,17 +24,22 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html, body, body.limo, body.limo-light, input, button, select, textarea {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body.limo {
-  font-family: var(--font-sans);
   background: var(--limo-black);
   color: var(--limo-white);
   line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
 }
 
 body.limo-light {
-  background: #f5f5f5;
-  color: var(--limo-black);
+  background: #f1f5f9;
+  color: #0f172a;
+  line-height: 1.6;
 }
 
 a { color: var(--limo-gold); text-decoration: none; transition: color var(--transition); }
@@ -609,7 +614,7 @@ html.limo-preloading-step2 #step-2 {
 }
 .limo-sidebar-map {
   width: 100%;
-  height: 220px;
+  height: 290px;
   background: #f8fafc;
   border-radius: 12px;
   overflow: hidden;
@@ -624,6 +629,7 @@ html.limo-preloading-step2 #step-2 {
   width: 100%;
   height: 100%;
   border: 0;
+  pointer-events: none;
 }
 .limo-map-placeholder {
   display: flex;
@@ -867,13 +873,13 @@ html.limo-preloading-step2 #step-2 {
   border-radius: 16px;
   padding: 22px 26px;
   display: grid;
-  grid-template-columns: 210px 1fr 140px;
-  gap: 24px;
+  grid-template-columns: 260px 1fr 140px;
+  gap: 28px;
   align-items: center;
 }
 .limo-skeleton-img {
   width: 100%;
-  height: 110px;
+  height: 140px;
   background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
   background-size: 200% 100%;
   border-radius: 10px;
@@ -931,10 +937,10 @@ html.limo-preloading-step2 #step-2 {
   background: #ffffff;
   border: 1.5px solid #e5e7eb;
   border-radius: 16px;
-  padding: 22px 26px;
+  padding: 24px 28px;
   display: grid;
-  grid-template-columns: 210px 1fr auto;
-  gap: 24px;
+  grid-template-columns: 260px 1fr auto;
+  gap: 28px;
   align-items: center;
   position: relative;
   cursor: pointer;
@@ -973,8 +979,8 @@ html.limo-preloading-step2 #step-2 {
 
 /* Vehicle image on white background */
 .limo-vehicle-photo-wrap {
-  width: 210px;
-  height: 115px;
+  width: 260px;
+  height: 145px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -986,7 +992,8 @@ html.limo-preloading-step2 #step-2 {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.12));
+  mix-blend-mode: multiply;
+  filter: contrast(1.03) brightness(1.02);
   transition: transform 0.25s ease;
 }
 .limo-vehicle-card:hover .limo-vehicle-photo {

@@ -490,6 +490,83 @@
   function renderMap() {
     const box = $('sidebar-map');
     if (!box) return;
+
+    // Check if Google Maps JS API is loaded
+    if (window.google && window.google.maps) {
+      try {
+        box.innerHTML = '';
+        const map = new google.maps.Map(box, {
+          center: { lat: 40.7128, lng: -74.0060 },
+          zoom: 12,
+          disableDefaultUI: true,
+          gestureHandling: 'none',
+          mapTypeControl: false,
+          fullscreenControl: false,
+          streetViewControl: false,
+          zoomControl: false,
+          styles: [
+            { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+            { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+            { featureType: 'road', elementType: 'geometry', stylers: [{ lightness: 15 }] }
+          ]
+        });
+
+        const origin = state.pickup;
+        const destination = (state.serviceType === 'hourly' && (!state.dropoff || state.dropoff === state.pickup))
+          ? null
+          : state.dropoff;
+
+        if (origin && destination) {
+          const directionsService = new google.maps.DirectionsService();
+          const directionsRenderer = new google.maps.DirectionsRenderer({
+            map,
+            suppressMarkers: false,
+            polylineOptions: {
+              strokeColor: '#c9a227',
+              strokeWeight: 5,
+              strokeOpacity: 0.95
+            }
+          });
+          const waypoints = (state.stops || []).map((s) => ({ location: s, stopover: true }));
+          directionsService.route({
+            origin,
+            destination,
+            waypoints,
+            travelMode: google.maps.TravelMode.DRIVING
+          }, (res, status) => {
+            if (status === google.maps.DirectionsStatus.OK) {
+              directionsRenderer.setDirections(res);
+            } else {
+              fallbackEmbed(box);
+            }
+          });
+          return;
+        } else if (origin) {
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ address: origin }, (results, status) => {
+            if (status === 'OK' && results && results[0]) {
+              map.setCenter(results[0].geometry.location);
+              map.setZoom(14);
+              new google.maps.Marker({
+                map,
+                position: results[0].geometry.location,
+                title: origin
+              });
+            } else {
+              fallbackEmbed(box);
+            }
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn('[MAPS JS API]:', err);
+      }
+    }
+
+    fallbackEmbed(box);
+  }
+
+  function fallbackEmbed(box) {
     box.innerHTML = '';
     if (!state.mapUrl) {
       box.innerHTML = `<div class="limo-map-placeholder">
@@ -503,6 +580,7 @@
     frame.loading = 'lazy';
     frame.referrerPolicy = 'origin';
     frame.src = state.mapUrl;
+    frame.style.pointerEvents = 'none';
     box.appendChild(frame);
   }
 
@@ -562,21 +640,23 @@
       if ($('sb-meta-time')) $('sb-meta-time').textContent = state.pickupTime || '—';
     }
 
-    // Distance and Duration under map
-    if (state.serviceType === 'hourly') {
-      if ($('sb-duration')) $('sb-duration').textContent = `${state.hours} hours duration`;
-      if ($('sb-duration-wrap')) $('sb-duration-wrap').style.display = 'flex';
-      if ($('stat-miles')) $('stat-miles').textContent = `${state.hours} hours`;
-      if ($('stat-duration')) $('stat-duration').textContent = 'Hourly Charter';
-    } else {
-      const hours = Math.floor(state.durationMins / 60);
-      const mins = state.durationMins % 60;
-      const durationStr = hours > 0 ? `${hours} hour ${mins} min` : `${mins} min`;
-      if ($('sb-duration')) $('sb-duration').textContent = `${durationStr} estimated`;
-      if ($('sb-duration-wrap')) $('sb-duration-wrap').style.display = 'flex';
-      if ($('stat-miles')) $('stat-miles').textContent = `${state.miles} mi`;
-      if ($('stat-duration')) $('stat-duration').textContent = durationStr;
+    // Distance and Duration under map (Prestige Ride style)
+    const hours = Math.floor(state.durationMins / 60);
+    const mins = state.durationMins % 60;
+    let durationStr = '0 hour 0 min';
+    if (state.durationMins > 0) {
+      durationStr = hours > 0 ? `${hours} hour ${mins} min` : `${mins} min`;
     }
+    const milesStr = (state.miles && state.miles > 0) ? `${state.miles} mi` : '0.0 mi';
+
+    if ($('stat-miles')) $('stat-miles').textContent = milesStr;
+    if ($('stat-duration')) $('stat-duration').textContent = durationStr;
+    if ($('sb-duration')) {
+      $('sb-duration').textContent = state.serviceType === 'hourly'
+        ? `${state.hours} hours charter`
+        : durationStr;
+    }
+    if ($('sb-duration-wrap')) $('sb-duration-wrap').style.display = 'flex';
   }
 
   function getVehicleBadge(q) {
