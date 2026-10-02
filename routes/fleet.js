@@ -25,6 +25,190 @@ function getCarrierScope(req) {
   return req.query.carrierId || null;
 }
 
+// ================= CARRIER CLIENT COMPANIES =================
+
+// List carriers
+router.get('/carriers', requireAuth, async (req, res) => {
+  try {
+    let query, params = [];
+    if (req.user.role === 'carrier') {
+      query = `
+        SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
+               u.dispatch_fee_percent, u.equipment_category, u.billing_notes, u.is_suspended, u.created_at,
+               dc.dispatcher_id, disp.name AS dispatcher_name, disp.email AS dispatcher_email,
+               (SELECT COUNT(*) FROM trucks WHERE carrier_id = u.id) AS truck_count,
+               (SELECT COUNT(*) FROM drivers WHERE carrier_id = u.id AND deleted_at IS NULL) AS driver_count
+        FROM users u
+        LEFT JOIN dispatcher_carriers dc ON dc.carrier_id = u.id
+        LEFT JOIN users disp ON dc.dispatcher_id = disp.id
+        WHERE u.id = $1 AND u.role = 'carrier'`;
+      params = [req.user.id];
+    } else if (req.user.role === 'dispatcher') {
+      query = `
+        SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
+               u.dispatch_fee_percent, u.equipment_category, u.billing_notes, u.is_suspended, u.created_at,
+               dc.dispatcher_id, disp.name AS dispatcher_name, disp.email AS dispatcher_email,
+               (SELECT COUNT(*) FROM trucks WHERE carrier_id = u.id) AS truck_count,
+               (SELECT COUNT(*) FROM drivers WHERE carrier_id = u.id AND deleted_at IS NULL) AS driver_count
+        FROM users u
+        LEFT JOIN dispatcher_carriers dc ON dc.carrier_id = u.id
+        LEFT JOIN users disp ON dc.dispatcher_id = disp.id
+        WHERE u.role = 'carrier' AND (dc.dispatcher_id = $1 OR dc.dispatcher_id IS NULL)
+        ORDER BY u.created_at DESC`;
+      params = [req.user.id];
+    } else {
+      query = `
+        SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
+               u.dispatch_fee_percent, u.equipment_category, u.billing_notes, u.is_suspended, u.created_at,
+               dc.dispatcher_id, disp.name AS dispatcher_name, disp.email AS dispatcher_email,
+               (SELECT COUNT(*) FROM trucks WHERE carrier_id = u.id) AS truck_count,
+               (SELECT COUNT(*) FROM drivers WHERE carrier_id = u.id AND deleted_at IS NULL) AS driver_count
+        FROM users u
+        LEFT JOIN dispatcher_carriers dc ON dc.carrier_id = u.id
+        LEFT JOIN users disp ON dc.dispatcher_id = disp.id
+        WHERE u.role = 'carrier'
+        ORDER BY u.created_at DESC`;
+      params = [];
+    }
+    const result = await pool.query(query, params);
+    res.json({ carriers: result.rows });
+  } catch (err) {
+    console.error('List fleet carriers error:', err);
+    res.status(500).json({ error: 'Could not load carrier companies.' });
+  }
+});
+
+// List dispatchers (for assignment dropdown)
+router.get('/dispatchers', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, email FROM users WHERE role = 'dispatcher' AND is_suspended IS NOT TRUE ORDER BY name ASC`
+    );
+    res.json({ dispatchers: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load dispatchers.' });
+  }
+});
+
+// Create carrier client company
+router.post('/carriers', requireAuth, async (req, res) => {
+  if (!['admin', 'super_admin', 'dispatcher'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Permission denied. Only staff can create carrier companies.' });
+  }
+
+  const { company_name, owner_name, email, password, phone, mc_number, dot_number, dispatcher_id, dispatch_fee_percent } = req.body;
+
+  if (!company_name || !phone || !email || !password) {
+    return res.status(400).json({ error: 'Company Name, Phone, Email, and Password are required.' });
+  }
+
+  const bcrypt = require('bcryptjs');
+  const safeEmail = email.trim().toLowerCase();
+
+  try {
+    const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1)', [safeEmail]);
+    if (existing.rows.length) {
+      return res.status(409).json({ error: 'A user account with this email already exists.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const feeNum = parseFloat(dispatch_fee_percent) || 5.0;
+
+    const userRes = await pool.query(
+      `INSERT INTO users (name, company_name, email, phone, mc_number, dot_number, role, password_hash, dispatch_fee_percent)
+       VALUES ($1, $2, $3, $4, $5, $6, 'carrier', $7, $8)
+       RETURNING id, name, company_name, email, phone, mc_number, dot_number, role, dispatch_fee_percent, created_at`,
+      [owner_name || company_name, company_name, safeEmail, phone, mc_number || null, dot_number || null, passwordHash, feeNum]
+    );
+    const carrier = userRes.rows[0];
+
+    // Assign dispatcher if provided
+    const targetDispatcherId = dispatcher_id || (req.user.role === 'dispatcher' ? req.user.id : null);
+    if (targetDispatcherId) {
+      await pool.query(
+        `INSERT INTO dispatcher_carriers (dispatcher_id, carrier_id) VALUES ($1, $2)
+         ON CONFLICT (dispatcher_id, carrier_id) DO NOTHING`,
+        [targetDispatcherId, carrier.id]
+      ).catch(() => {});
+    }
+
+    // Synchronize to ai_dispatch_carriers for AI Dispatch auto-matching
+    await pool.query(
+      `INSERT INTO ai_dispatch_carriers (company_name, contact_name, phone, email, mc_number, dot_number, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, true)
+       ON CONFLICT (company_name) DO UPDATE SET phone = EXCLUDED.phone, email = EXCLUDED.email, is_active = true`,
+      [company_name, owner_name || company_name, phone, safeEmail, mc_number || null, dot_number || null]
+    ).catch(() => {});
+
+    res.json({ ok: true, carrier });
+  } catch (err) {
+    console.error('Create carrier error:', err);
+    res.status(500).json({ error: err.message || 'Could not create carrier company.' });
+  }
+});
+
+// Update carrier client company
+router.put('/carriers/:id', requireAuth, async (req, res) => {
+  if (!['admin', 'super_admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Permission denied.' });
+  }
+  const { company_name, owner_name, email, password, phone, mc_number, dot_number, dispatcher_id, dispatch_fee_percent, is_suspended } = req.body;
+  const carrierId = req.params.id;
+
+  try {
+    const bcrypt = require('bcryptjs');
+    let hashUpdate = '';
+    let params = [owner_name || company_name, company_name, phone, mc_number || null, dot_number || null, parseFloat(dispatch_fee_percent) || 5.0, is_suspended === true || is_suspended === 'true', carrierId];
+
+    if (password && password.length >= 4) {
+      const hash = await bcrypt.hash(password, 10);
+      params.push(hash);
+      hashUpdate = `, password_hash = $${params.length}`;
+    }
+
+    if (email) {
+      params.push(email.trim().toLowerCase());
+      hashUpdate += `, email = $${params.length}`;
+    }
+
+    const result = await pool.query(
+      `UPDATE users
+       SET name = $1, company_name = $2, phone = $3, mc_number = $4, dot_number = $5, dispatch_fee_percent = $6, is_suspended = $7 ${hashUpdate}
+       WHERE id = $8 AND role = 'carrier'
+       RETURNING id, name, company_name, email, phone, mc_number, dot_number, dispatch_fee_percent, is_suspended`,
+      params
+    );
+
+    if (!result.rows.length) return res.status(404).json({ error: 'Carrier not found.' });
+
+    if (dispatcher_id !== undefined) {
+      await pool.query('DELETE FROM dispatcher_carriers WHERE carrier_id = $1', [carrierId]);
+      if (dispatcher_id) {
+        await pool.query('INSERT INTO dispatcher_carriers (dispatcher_id, carrier_id) VALUES ($1, $2)', [dispatcher_id, carrierId]);
+      }
+    }
+
+    res.json({ ok: true, carrier: result.rows[0] });
+  } catch (err) {
+    console.error('Update carrier error:', err);
+    res.status(500).json({ error: 'Could not update carrier company.' });
+  }
+});
+
+// Delete / suspend carrier company
+router.delete('/carriers/:id', requireAuth, async (req, res) => {
+  if (!['admin', 'super_admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Permission denied.' });
+  }
+  const carrierId = req.params.id;
+  try {
+    await pool.query(`UPDATE users SET is_suspended = true, deleted_at = now() WHERE id = $1 AND role = 'carrier'`, [carrierId]);
+    res.json({ ok: true, message: 'Carrier company deactivated.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not remove carrier.' });
+  }
+});
+
 // ================= TRUCKS =================
 
 // List trucks
@@ -245,7 +429,7 @@ router.get('/drivers', requireAuth, async (req, res) => {
 
 // Create driver
 router.post('/drivers', requireAuth, async (req, res) => {
-  const { name, phone, email, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status } = req.body;
+  const { name, phone, email, password, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status } = req.body;
   const carrier_id = req.user.role === 'carrier' ? req.user.id : req.body.carrier_id;
 
   if (!name || !carrier_id) {
@@ -253,12 +437,41 @@ router.post('/drivers', requireAuth, async (req, res) => {
   }
 
   try {
+    let userId = null;
+    const safeEmail = email ? String(email).trim().toLowerCase() : null;
+
+    if (safeEmail && password && password.length >= 4) {
+      const bcrypt = require('bcryptjs');
+      const existingUser = await pool.query('SELECT id, role FROM users WHERE lower(email) = lower($1)', [safeEmail]);
+      if (existingUser.rows.length) {
+        if (existingUser.rows[0].role === 'driver') {
+          userId = existingUser.rows[0].id;
+          const hash = await bcrypt.hash(password, 10);
+          await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, userId]);
+        }
+      } else {
+        const hash = await bcrypt.hash(password, 10);
+        const cRow = await pool.query('SELECT company_name, name FROM users WHERE id = $1', [carrier_id]);
+        const compName = cRow.rows[0] ? (cRow.rows[0].company_name || cRow.rows[0].name) : 'Shipping Wish Fleet';
+        const insUser = await pool.query(
+          `INSERT INTO users (name, email, password_hash, role, company_name, phone, organization_id)
+           VALUES ($1, $2, $3, 'driver', $4, $5, $6) RETURNING id`,
+          [name, safeEmail, hash, compName, phone || null, carrier_id]
+        );
+        userId = insUser.rows[0].id;
+      }
+    }
+
+    await pool.query(
+      `ALTER TABLE drivers ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL`
+    ).catch(() => {});
+
     const result = await pool.query(
-      `INSERT INTO drivers (carrier_id, name, phone, email, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-      [carrier_id, name, phone || null, email || null, license_number || null, cdl_expiry || null, medical_expiry || null, assigned_truck_id || null, assigned_trailer_id || null, status || 'available']
+      `INSERT INTO drivers (carrier_id, name, phone, email, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [carrier_id, name, phone || null, safeEmail || null, license_number || null, cdl_expiry || null, medical_expiry || null, assigned_truck_id || null, assigned_trailer_id || null, status || 'available', userId]
     );
-    res.json({ ok: true, driver: result.rows[0] });
+    res.json({ ok: true, driver: result.rows[0], user_created: !!userId });
   } catch (err) {
     console.error('Create driver error:', err);
     res.status(500).json({ error: 'Could not create driver.' });
@@ -267,19 +480,46 @@ router.post('/drivers', requireAuth, async (req, res) => {
 
 // Update driver
 router.put('/drivers/:id', requireAuth, async (req, res) => {
-  const { name, phone, email, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status } = req.body;
+  const { name, phone, email, password, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status } = req.body;
   try {
     const gate = await assertOwnedFleetRow(req, 'drivers', req.params.id);
     if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
+
+    let userId = null;
+    const safeEmail = email ? String(email).trim().toLowerCase() : null;
+
+    if (password && password.length >= 4) {
+      const bcrypt = require('bcryptjs');
+      const hash = await bcrypt.hash(password, 10);
+      const drRow = await pool.query('SELECT user_id, email, name, carrier_id FROM drivers WHERE id = $1', [req.params.id]);
+      if (drRow.rows.length && drRow.rows[0].user_id) {
+        userId = drRow.rows[0].user_id;
+        await pool.query('UPDATE users SET password_hash = $1, email = COALESCE($2, email) WHERE id = $3', [hash, safeEmail, userId]);
+      } else if (safeEmail) {
+        const cRow = await pool.query('SELECT company_name, name FROM users WHERE id = $1', [drRow.rows[0]?.carrier_id || gate.carrier_id]);
+        const compName = cRow.rows[0] ? (cRow.rows[0].company_name || cRow.rows[0].name) : 'Shipping Wish Fleet';
+        const insUser = await pool.query(
+          `INSERT INTO users (name, email, password_hash, role, company_name, phone, organization_id)
+           VALUES ($1, $2, $3, 'driver', $4, $5, $6)
+           ON CONFLICT (lower(email)) DO UPDATE SET password_hash = EXCLUDED.password_hash
+           RETURNING id`,
+          [name, safeEmail, hash, compName, phone || null, gate.carrier_id]
+        );
+        userId = insUser.rows[0]?.id;
+      }
+    }
+
     const result = await pool.query(
       `UPDATE drivers
        SET name = $1, phone = $2, email = $3, license_number = $4, cdl_expiry = $5, medical_expiry = $6,
-           assigned_truck_id = $7, assigned_trailer_id = $8, status = $9
-       WHERE id = $10 RETURNING *`,
-      [name, phone || null, email || null, license_number || null, cdl_expiry || null, medical_expiry || null, assigned_truck_id || null, assigned_trailer_id || null, status || 'available', req.params.id]
+           assigned_truck_id = $7, assigned_trailer_id = $8, status = $9,
+           user_id = COALESCE($10, user_id)
+       WHERE id = $11 RETURNING *`,
+      [name, phone || null, safeEmail || null, license_number || null, cdl_expiry || null, medical_expiry || null, assigned_truck_id || null, assigned_trailer_id || null, status || 'available', userId, req.params.id]
     );
     res.json({ ok: true, driver: result.rows[0] });
   } catch (err) {
+    console.error('Update driver error:', err);
     res.status(500).json({ error: 'Could not update driver.' });
   }
 });

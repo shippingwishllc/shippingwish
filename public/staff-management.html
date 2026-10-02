@@ -68,11 +68,11 @@
 
         <div class="stat-kpi-card">
           <div class="stat-kpi-top">
-            <span class="stat-kpi-title">Carriers &amp; Drivers</span>
-            <div class="stat-kpi-icon">🚛</div>
+            <span class="stat-kpi-title">Administrators</span>
+            <div class="stat-kpi-icon">🛡️</div>
           </div>
-          <div class="stat-kpi-val" id="kpi-total-carriers">0</div>
-          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Registered carrier accounts</div>
+          <div class="stat-kpi-val" id="kpi-total-admins">0</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Executive &amp; system admins</div>
         </div>
       </div>
 
@@ -84,7 +84,6 @@
             <button class="btn btn-sm btn-secondary filter-role-btn" data-role="dispatcher" onclick="filterByRole('dispatcher', this)">Dispatchers</button>
             <button class="btn btn-sm btn-secondary filter-role-btn" data-role="sales_rep" onclick="filterByRole('sales_rep', this)">Sales Reps</button>
             <button class="btn btn-sm btn-secondary filter-role-btn" data-role="admin" onclick="filterByRole('admin', this)">Admins</button>
-            <button class="btn btn-sm btn-secondary filter-role-btn" data-role="carrier" onclick="filterByRole('carrier', this)">Carriers</button>
           </div>
 
           <div class="search-input-group" style="min-width:280px;">
@@ -121,7 +120,7 @@
 <div class="modal-backdrop" id="add-user-modal">
   <div class="modal modal-md">
     <div class="modal-header">
-      <h2>+ Add Staff Member or User</h2>
+      <h2>+ Add Company Staff Member</h2>
       <button onclick="closeModal('add-user-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
     </div>
     <div class="modal-body">
@@ -149,8 +148,6 @@
               <option value="sales_rep">Sales Representative</option>
               <option value="admin">Admin</option>
               <option value="super_admin">Super Admin</option>
-              <option value="carrier">Carrier Client</option>
-              <option value="driver">Driver</option>
             </select>
           </div>
         </div>
@@ -248,18 +245,21 @@
       const res = await fetch('/api/users', { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
-        usersData = (data.users || []).map(u => ({
-          id: u.id,
-          name: u.name || 'N/A',
-          email: u.email,
-          role: u.role || 'user',
-          company: u.company_name || 'Shipping Wish LLC',
-          phone: u.phone || 'N/A',
-          mcNumber: u.mc_number || 'N/A',
-          dotNumber: u.dot_number || 'N/A',
-          isSuspended: u.is_suspended || false,
-          created: (u.created_at || '').split('T')[0] || '2026-08-20'
-        }));
+        const staffRoles = ['admin', 'super_admin', 'dispatcher', 'sales_rep', 'hr'];
+        usersData = (data.users || [])
+          .filter(u => staffRoles.includes(u.role))
+          .map(u => ({
+            id: u.id,
+            name: u.name || 'N/A',
+            email: u.email,
+            role: u.role || 'user',
+            company: u.company_name || 'Shipping Wish LLC',
+            phone: u.phone || 'N/A',
+            mcNumber: u.mc_number || 'N/A',
+            dotNumber: u.dot_number || 'N/A',
+            isSuspended: u.is_suspended || false,
+            created: (u.created_at || '').split('T')[0] || '2026-08-20'
+          }));
       } else {
         renderMockUsers();
       }
@@ -282,12 +282,16 @@
     const total = usersData.length;
     const dispatchers = usersData.filter(u => u.role === 'dispatcher').length;
     const sales = usersData.filter(u => u.role === 'sales_rep').length;
-    const carriers = usersData.filter(u => ['carrier', 'driver'].includes(u.role)).length;
+    const admins = usersData.filter(u => ['admin', 'super_admin'].includes(u.role)).length;
 
-    document.getElementById('kpi-total-staff').textContent = total;
-    document.getElementById('kpi-active-dispatchers').textContent = dispatchers;
-    document.getElementById('kpi-active-sales').textContent = sales;
-    document.getElementById('kpi-total-carriers').textContent = carriers;
+    const elTotal = document.getElementById('kpi-total-staff');
+    if (elTotal) elTotal.textContent = total;
+    const elDisp = document.getElementById('kpi-active-dispatchers');
+    if (elDisp) elDisp.textContent = dispatchers;
+    const elSales = document.getElementById('kpi-active-sales');
+    if (elSales) elSales.textContent = sales;
+    const elAdmins = document.getElementById('kpi-total-admins');
+    if (elAdmins) elAdmins.textContent = admins;
   }
 
   function renderUsersTable() {
