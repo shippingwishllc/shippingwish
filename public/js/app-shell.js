@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '31';
+  const SIDEBAR_VERSION = '32';
   // #endregion
 
   function clearRoleCache() {
@@ -215,7 +215,7 @@
   };
 
   const STAFF_LINKS = [
-    { section: 'Executive Command' },
+    { section: 'Executive Command', superAdminOnly: true },
     { key: 'superadmin', href: '/superadmin', icon: IC.crown, label: 'Command Center (4-Brand)', superAdminOnly: true },
     { section: 'Operations' },
     { key: 'overview', navId: 'nav-tab-loads', href: '/admin-dashboard', icon: IC.overview, label: 'Overview & Loads' },
@@ -437,10 +437,13 @@
     if (role === 'sales_rep') return SALES_REP_LINKS;
     if (role === 'hr') return HR_LINKS;
 
+    const isSuper = role === 'super_admin';
+    const isAdmin = role === 'admin' || isSuper;
+
     const staff = STAFF_LINKS.filter((item) => {
-      if (item.superAdminOnly) return role === 'super_admin';
-      if (!item.adminOnly) return true;
-      return role === 'admin' || role === 'super_admin';
+      if (item.superAdminOnly) return isSuper;
+      if (item.adminOnly) return isAdmin;
+      return true;
     });
     return staff.concat(extraLinks());
   }
@@ -692,6 +695,9 @@
   function sidebarNeedsRebuild(aside) {
     try {
       if (sessionStorage.getItem('sw_sidebar_ver') !== SIDEBAR_VERSION) return true;
+      const cachedRole = sessionStorage.getItem(ROLE_CACHE_KEY);
+      if (cachedRole !== 'super_admin' && aside.querySelector('a[href="/superadmin"]')) return true;
+      if (cachedRole === 'super_admin' && !aside.querySelector('a[href="/superadmin"]')) return true;
     } catch (_) { /* ignore */ }
     return !aside.querySelector('a.sidebar-nav-link[href="/census-desk"]');
   }
@@ -784,9 +790,11 @@
     if (!a || a.target === '_blank' || a.hasAttribute('download')) return false;
     const raw = a.getAttribute('href');
     if (!raw || raw.startsWith('javascript:')) return false;
+    if (raw.startsWith('/superadmin') || raw === '/superadmin') return false;
     try {
       const url = new URL(a.href, location.origin);
       if (url.origin !== location.origin) return false;
+      if (url.pathname === '/superadmin' || url.pathname.startsWith('/superadmin/')) return false;
       if (url.pathname === location.pathname && url.hash) return false;
       if (!document.querySelector('.app-shell .app-main')) return false;
       if (url.pathname === '/inbox' || url.pathname === '/inbox.html') return false;
@@ -898,12 +906,7 @@
         shellPrefetchCache.delete(key);
       }
       const doc = new DOMParser().parseFromString(html, 'text/html');
-      const apply = () => applyShellDocument(doc);
-      if (document.startViewTransition) {
-        await document.startViewTransition(apply);
-      } else {
-        apply();
-      }
+      applyShellDocument(doc);
       if (!opts || !opts.noHistory) {
         history.pushState({ swShell: true }, '', url.pathname + url.search + url.hash);
       }
@@ -932,7 +935,52 @@
   function setupShellNav() {
     document.addEventListener('click', (e) => {
       const a = e.target.closest('.app-sidebar a[href]');
-      if (!a || !isShellNavLink(a)) return;
+      if (!a) return;
+      const raw = a.getAttribute('href') || '';
+      if (raw.startsWith('/superadmin') || raw === '/superadmin') {
+        // Direct browser navigation for full-screen Multi-Brand SuperAdmin Command Center
+        return;
+      }
+      if (!isShellNavLink(a)) return;
+
+      const url = new URL(a.href, location.origin);
+
+      // Same-page tab optimization: if already on this page (e.g. /admin-dashboard), switch tab instantly without lag or re-fetch!
+      if (url.pathname === location.pathname) {
+        e.preventDefault();
+        const h = (url.hash || '').replace('#', '').toLowerCase();
+        if (pageName() === 'admin-dashboard.html' && typeof window.switchAdminTab === 'function') {
+          const tab = ['audit', 'settings', 'blog', 'loads', 'carriers', 'dispatchers', 'users'].includes(h) ? h : 'loads';
+          window.switchAdminTab(tab);
+          history.pushState({ swShell: true }, '', url.pathname + (h ? '#' + h : ''));
+          const aside = document.querySelector('.app-sidebar');
+          if (aside) syncActiveNav(aside);
+          return;
+        }
+        if (pageName() === 'dispatcher-dashboard.html' && typeof window.switchDeskTab === 'function') {
+          window.switchDeskTab(h === 'fleets' ? 'fleets' : 'desk');
+          history.pushState({ swShell: true }, '', url.pathname + (h ? '#' + h : ''));
+          const aside = document.querySelector('.app-sidebar');
+          if (aside) syncActiveNav(aside);
+          return;
+        }
+        if (pageName() === 'sales-dashboard.html' && typeof window.switchSalesTab === 'function') {
+          window.switchSalesTab(h === 'tasks' ? 'tasks' : 'leads');
+          history.pushState({ swShell: true }, '', url.pathname + (h ? '#' + h : ''));
+          const aside = document.querySelector('.app-sidebar');
+          if (aside) syncActiveNav(aside);
+          return;
+        }
+        if (pageName() === 'carrier-overview.html' && typeof window.switchCarrierTab === 'function') {
+          window.switchCarrierTab(h === 'loads' ? 'loads' : 'cockpit');
+          history.pushState({ swShell: true }, '', url.pathname + (h ? '#' + h : ''));
+          const aside = document.querySelector('.app-sidebar');
+          if (aside) syncActiveNav(aside);
+          return;
+        }
+        return;
+      }
+
       e.preventDefault();
       shellNavigate(a.href);
     });
@@ -997,9 +1045,9 @@
         if (CURRENT_ROLE) sessionStorage.setItem(ROLE_CACHE_KEY, CURRENT_ROLE);
         if (CURRENT_PLAN) sessionStorage.setItem(PLAN_CACHE_KEY, CURRENT_PLAN);
 
-        const navReady = aside.classList.contains('shell-content-ready')
-          && aside.querySelectorAll('a.sidebar-nav-link').length > 0;
-        const skipRebuild = CURRENT_ROLE && CURRENT_ROLE === prevRole && CURRENT_PLAN === prevPlan && navReady;
+        const superMismatch = (CURRENT_ROLE === 'super_admin' && !aside.querySelector('a[href="/superadmin"]'))
+          || (CURRENT_ROLE !== 'super_admin' && !!aside.querySelector('a[href="/superadmin"]'));
+        const skipRebuild = CURRENT_ROLE && CURRENT_ROLE === prevRole && CURRENT_PLAN === prevPlan && navReady && !superMismatch;
 
         if (skipRebuild) {
           syncActiveNav(aside);
