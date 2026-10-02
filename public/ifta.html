@@ -348,13 +348,27 @@
   }
 
   async function deleteFuel(id) {
-    if (!confirm('Are you sure you want to delete this fuel receipt record?')) return;
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Delete Fuel Receipt?',
+          message: 'Are you sure you want to delete this fuel receipt record?',
+          confirmText: 'Delete Receipt',
+          confirmColor: 'danger',
+          icon: 'trash'
+        })
+      : confirm('Are you sure you want to delete this fuel receipt record?');
+    if (!ok) return;
+
     try {
-      await fetch(`/api/fuel/${id}`, { method: 'DELETE', credentials: 'include' });
-      loadFuelLogs();
-      loadIftaReport();
+      const res = await fetch(`/api/fuel/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) {
+        if (window.swToast) window.swToast('Fuel receipt deleted', 'info');
+        loadFuelLogs();
+        loadIftaReport();
+      }
     } catch (e) {}
   }
+  window.deleteFuel = deleteFuel;
 
   function openNewFuelModal() {
     const modal = document.getElementById('new-fuel-modal');
@@ -429,6 +443,6 @@
   }
 </script>
 
-<script src="/js/app-shell.js?v=20"></script>
+<script src="/js/app-shell.js?v=31"></script>
 </body>
 </html>

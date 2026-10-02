@@ -228,7 +228,7 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
     </main>
   </div>
 </div>
-<script src="/js/app-shell.js?v=25"></script>
+<script src="/js/app-shell.js?v=31"></script>
 <script>
   function esc(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -830,7 +830,15 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
 
         if (data.ready_for_factoring) {
           const inv = data.generated_invoice;
-          const confirmSubmit = confirm(`✓ POD AUDIT VERIFIED CLEAN!\n\nSignature: Confirmed (Receiver signed on ${data.pod_report.delivery_date})\nOS&D Exceptions: Clean bill (Zero damage/shortage)\nInvoice Generated: #${inv.invoice_number} ($${inv.total_due.toLocaleString()})\n\nWould you like to auto-submit this invoice bundle directly to your Factoring Provider (${inv.remit_to.factoring_company})?`);
+          const confirmSubmit = window.swConfirm
+            ? await window.swConfirm({
+                title: 'POD Audit Verified Clean!',
+                message: `Signature: Confirmed (Receiver signed on ${data.pod_report.delivery_date})\nOS&D Exceptions: Clean bill (Zero damage/shortage)\nInvoice Generated: #${inv.invoice_number} ($${inv.total_due.toLocaleString()})\n\nWould you like to auto-submit this invoice bundle directly to your Factoring Provider (${inv.remit_to.factoring_company})?`,
+                confirmText: 'Submit to Factoring',
+                confirmColor: 'success',
+                icon: 'check'
+              })
+            : confirm(`✓ POD AUDIT VERIFIED CLEAN!\n\nSignature: Confirmed (Receiver signed on ${data.pod_report.delivery_date})\nOS&D Exceptions: Clean bill (Zero damage/shortage)\nInvoice Generated: #${inv.invoice_number} ($${inv.total_due.toLocaleString()})\n\nWould you like to auto-submit this invoice bundle directly to your Factoring Provider (${inv.remit_to.factoring_company})?`);
           
           if (confirmSubmit) {
             statusEl.innerHTML = '<span style="color:#475569;">Submitting to factoring desk...</span>';
@@ -843,7 +851,15 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
                 offer_id: load.active_offer_id || null
               })
             });
-            alert(`🎉 FACTORING FUNDING SUBMITTED!\n\nInvoice #${inv.invoice_number} ($${inv.total_due.toLocaleString()}) has been submitted to ${inv.remit_to.remit_email} with RateCon and Clean Signed POD.\n\nSame-day pay scheduled!`);
+            if (window.swAlert) {
+              await window.swAlert({
+                title: 'Factoring Funding Submitted!',
+                message: `Invoice #${inv.invoice_number} ($${inv.total_due.toLocaleString()}) has been submitted to ${inv.remit_to.remit_email} with RateCon and Clean Signed POD.\n\nSame-day pay scheduled!`,
+                icon: 'info'
+              });
+            } else {
+              alert(`🎉 FACTORING FUNDING SUBMITTED!\n\nInvoice #${inv.invoice_number} ($${inv.total_due.toLocaleString()}) has been submitted to ${inv.remit_to.remit_email} with RateCon and Clean Signed POD.\n\nSame-day pay scheduled!`);
+            }
             statusEl.innerHTML = `<span style="color:#166534;">✓ Factoring submitted (#${inv.invoice_number})! Payout pending.</span>`;
             await loadOffers();
           } else {
@@ -1002,13 +1018,33 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
         const msg = document.getElementById('offers-msg');
         try {
           if (booked) {
-            if (!confirm('Only press Booked after the broker sent the rate confirmation. Text the driver BOOKED now?')) return;
+            const ok = window.swConfirm
+              ? await window.swConfirm({
+                  title: 'Confirm Load Booked?',
+                  message: 'Only press Booked after the broker has sent the official rate confirmation. Text the driver BOOKED now?',
+                  confirmText: 'Confirm & Text Driver',
+                  confirmColor: 'success',
+                  icon: 'check'
+                })
+              : confirm('Only press Booked after the broker sent the rate confirmation. Text the driver BOOKED now?');
+            if (!ok) return;
             const data = await api('/api/dispatch-desk/offers/' + booked + '/booked', { method: 'POST', body: '{}' });
             msg.textContent = 'Booked. Driver text: ' + data.sms + '.';
+            if (window.swToast) window.swToast('Load marked as booked!', 'success');
           } else {
-            if (!confirm('Release this load and send the driver the next best loads?')) return;
+            const ok = window.swConfirm
+              ? await window.swConfirm({
+                  title: 'Release Load?',
+                  message: 'Release this load and send the driver the next best loads?',
+                  confirmText: 'Release Load',
+                  confirmColor: 'warning',
+                  icon: 'warning'
+                })
+              : confirm('Release this load and send the driver the next best loads?');
+            if (!ok) return;
             const data = await api('/api/dispatch-desk/offers/' + release + '/release', { method: 'POST', body: '{}' });
             msg.textContent = data.sms === 'held_for_hours' ? 'Released. The driver is outside texting hours or has no consent, so tell them yourself.' : 'Released and the driver got the next loads.';
+            if (window.swToast) window.swToast('Load released', 'info');
           }
           await loadOffers();
         } catch (err) { msg.textContent = err.message; }

@@ -599,12 +599,24 @@
       return;
     }
     if (act === 'delete') {
-      if (!confirm('Remove ' + member.company_name + ' from this directory?')) return;
+      const ok = window.swConfirm
+        ? await window.swConfirm({
+            title: 'Remove Directory Member?',
+            message: `Remove ${member.company_name || 'this carrier'} from this directory?`,
+            confirmText: 'Remove Member',
+            confirmColor: 'danger',
+            icon: 'trash'
+          })
+        : confirm('Remove ' + member.company_name + ' from this directory?');
+      if (!ok) return;
+
       const res = await api('/api/census-desk/directories/' + openId + '/members/' + id, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (window.swAlert) return window.swAlert({ title: 'Error', message: data.error || 'Could not delete.', icon: 'error' });
         return alert(data.error || 'Could not delete.');
       }
+      if (window.swToast) window.swToast('Member removed from directory', 'info');
       allMembers = allMembers.filter((m) => Number(m.id) !== Number(id));
       renderMembers();
       loadDirs();
@@ -644,10 +656,21 @@
   });
   document.getElementById('btn-crm').addEventListener('click', () => postMembers('import-crm'));
   document.getElementById('btn-delete').addEventListener('click', async () => {
-    if (!openId || !confirm('Delete this directory?')) return;
+    if (!openId) return;
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Delete Directory?',
+          message: 'Are you sure you want to permanently delete this directory?',
+          confirmText: 'Delete Directory',
+          confirmColor: 'danger',
+          icon: 'trash'
+        })
+      : confirm('Delete this directory?');
+    if (!ok) return;
     await api('/api/census-desk/directories/' + openId, { method: 'DELETE' });
     openId = null;
     document.getElementById('cd-open').style.display = 'none';
+    if (window.swToast) window.swToast('Directory deleted', 'info');
     loadDirs();
   });
   document.getElementById('btn-result-prev').addEventListener('click', () => {
@@ -697,6 +720,6 @@
   });
 })();
 </script>
-<script src="/js/app-shell.js?v=26"></script>
+<script src="/js/app-shell.js?v=31"></script>
 </body>
 </html>

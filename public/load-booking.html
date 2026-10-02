@@ -2504,7 +2504,7 @@
   function loadAppShellScript() {
     if (document.querySelector('script[src*="app-shell.js"]')) return;
     const s = document.createElement('script');
-    s.src = '/js/app-shell.js?v=22';
+    s.src = '/js/app-shell.js?v=31';
     document.body.appendChild(s);
   }
 
@@ -3864,7 +3864,17 @@ ${p.contactName} | ${p.carrierCompany} (MC# ${p.carrierMc})`;
   }
 
   async function respondOffer(offerId, response) {
-    if (!confirm(`Are you sure you want to ${response} this load offer?`)) return;
+    const isAccept = response === 'accepted';
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: isAccept ? 'Approve Load Offer?' : 'Decline Load Offer?',
+          message: isAccept ? 'Are you sure you want to approve this load offer?' : 'Are you sure you want to decline this load offer?',
+          confirmText: isAccept ? 'Approve Offer' : 'Decline Offer',
+          confirmColor: isAccept ? 'primary' : 'danger',
+          icon: isAccept ? 'info' : 'warning'
+        })
+      : confirm(`Are you sure you want to ${response} this load offer?`);
+    if (!ok) return;
 
     try {
       const res = await fetch(`/api/loadboard/offers/${offerId}/respond`, {
@@ -3875,13 +3885,19 @@ ${p.contactName} | ${p.carrierCompany} (MC# ${p.carrierMc})`;
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Could not update offer status.');
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: data.error || 'Could not update offer status.', icon: 'error' });
+        else alert(data.error || 'Could not update offer status.');
       } else {
-        alert(`Offer #${offerId} ${response}! ${data.negotiation ? data.negotiation.message : ''}`);
+        if (window.swToast) {
+          window.swToast(`Offer #${offerId} ${response}!`, 'success');
+        } else {
+          alert(`Offer #${offerId} ${response}! ${data.negotiation ? data.negotiation.message : ''}`);
+        }
         loadOffers();
       }
     } catch (e) {
-      alert('Network error while responding to offer.');
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Network error while responding to offer.', icon: 'error' });
+      else alert('Network error while responding to offer.');
     }
   }
 

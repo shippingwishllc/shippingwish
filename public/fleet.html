@@ -400,14 +400,24 @@
     const trTab = document.getElementById('fleet-tab-trucks');
     const tlTab = document.getElementById('fleet-tab-trailers');
 
-    drBtn.className = tabName === 'drivers' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
-    trBtn.className = tabName === 'trucks' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
-    tlBtn.className = tabName === 'trailers' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
+    if (drBtn) drBtn.className = tabName === 'drivers' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
+    if (trBtn) trBtn.className = tabName === 'trucks' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
+    if (tlBtn) tlBtn.className = tabName === 'trailers' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
 
-    drTab.style.display = tabName === 'drivers' ? 'block' : 'none';
-    trTab.style.display = tabName === 'trucks' ? 'block' : 'none';
-    tlTab.style.display = tabName === 'trailers' ? 'block' : 'none';
+    if (drTab) drTab.style.display = tabName === 'drivers' ? 'block' : 'none';
+    if (trTab) trTab.style.display = tabName === 'trucks' ? 'block' : 'none';
+    if (tlTab) tlTab.style.display = tabName === 'trailers' ? 'block' : 'none';
   }
+  window.switchFleetTab = switchFleetTab;
+
+  document.addEventListener('click', (e) => {
+    const dr = e.target.closest('#tab-btn-drivers');
+    if (dr) { e.preventDefault(); switchFleetTab('drivers'); return; }
+    const tr = e.target.closest('#tab-btn-trucks');
+    if (tr) { e.preventDefault(); switchFleetTab('trucks'); return; }
+    const tl = e.target.closest('#tab-btn-trailers');
+    if (tl) { e.preventDefault(); switchFleetTab('trailers'); return; }
+  });
 
   async function loadDrivers() {
     const tbody = document.getElementById('drivers-table-body');
@@ -508,22 +518,105 @@
     }
   }
 
-  async function deleteDriver(id) { if(confirm('Move driver to Trash? Shipping Wish admin can restore from Trash.')) { await fetch(`/api/fleet/drivers/${id}`, {method:'DELETE', credentials: 'include'}); loadDrivers(); } }
-  async function deleteTruck(id) { if(confirm('Delete truck record?')) { await fetch(`/api/fleet/trucks/${id}`, {method:'DELETE', credentials: 'include'}); loadTrucks(); } }
-  async function deleteTrailer(id) { if(confirm('Delete trailer record?')) { await fetch(`/api/fleet/trailers/${id}`, {method:'DELETE', credentials: 'include'}); loadTrailers(); } }
+  async function deleteDriver(id) {
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Move Driver to Trash?',
+          message: 'This driver will be moved to the Trash. Shipping Wish admins can restore it at any time.',
+          confirmText: 'Move to Trash',
+          confirmColor: 'danger',
+          icon: 'trash'
+        })
+      : confirm('Move driver to Trash?');
+    if (!ok) return;
+    try {
+      const res = await fetch(`/api/fleet/drivers/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) {
+        if (window.swToast) window.swToast('Driver moved to trash', 'info');
+        loadDrivers();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: err.error || 'Failed to delete driver.', icon: 'error' });
+      }
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server.', icon: 'error' });
+    }
+  }
+
+  async function deleteTruck(id) {
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Delete Truck Record?',
+          message: 'Are you sure you want to remove this truck from the fleet roster?',
+          confirmText: 'Delete Truck',
+          confirmColor: 'danger',
+          icon: 'trash'
+        })
+      : confirm('Delete truck record?');
+    if (!ok) return;
+    try {
+      const res = await fetch(`/api/fleet/trucks/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) {
+        if (window.swToast) window.swToast('Truck deleted successfully', 'info');
+        loadTrucks();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: err.error || 'Failed to delete truck.', icon: 'error' });
+      }
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server.', icon: 'error' });
+    }
+  }
+
+  async function deleteTrailer(id) {
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Delete Trailer Record?',
+          message: 'Are you sure you want to remove this trailer from the fleet roster?',
+          confirmText: 'Delete Trailer',
+          confirmColor: 'danger',
+          icon: 'trash'
+        })
+      : confirm('Delete trailer record?');
+    if (!ok) return;
+    try {
+      const res = await fetch(`/api/fleet/trailers/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) {
+        if (window.swToast) window.swToast('Trailer deleted successfully', 'info');
+        loadTrailers();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: err.error || 'Failed to delete trailer.', icon: 'error' });
+      }
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server.', icon: 'error' });
+    }
+  }
 
   async function inviteDriver(id) {
     const hint = ((window.__fleetDrivers || []).find((d) => d.id === id) || {}).email || '';
     const email = prompt('Driver email for the phone app login:', hint);
     if (!email) return;
-    const res = await fetch(`/api/fleet/drivers/${id}/invite`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email })
-    });
-    const data = await res.json().catch(() => ({}));
-    alert(data.message || data.error || 'Invite finished');
+    try {
+      const res = await fetch(`/api/fleet/drivers/${id}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (window.swAlert) {
+        await window.swAlert({
+          title: res.ok ? 'Invitation Sent' : 'Notice',
+          message: data.message || data.error || 'Invite processed.',
+          icon: res.ok ? 'info' : 'warning'
+        });
+      } else {
+        alert(data.message || data.error || 'Invite finished');
+      }
+    } catch (err) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Failed to send invite.', icon: 'error' });
+    }
   }
   window.inviteDriver = inviteDriver;
 
@@ -557,7 +650,12 @@
       credentials: 'include',
       body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
     });
-    if (res.ok) { e.target.reset(); loadDrivers(); closeModal('new-driver-modal'); }
+    if (res.ok) {
+      e.target.reset();
+      loadDrivers();
+      closeModal('new-driver-modal');
+      if (window.swToast) window.swToast('Driver added successfully', 'success');
+    }
   });
 
   document.getElementById('new-truck-form').addEventListener('submit', async (e) => {
@@ -568,7 +666,12 @@
       credentials: 'include',
       body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
     });
-    if (res.ok) { e.target.reset(); loadTrucks(); closeModal('new-truck-modal'); }
+    if (res.ok) {
+      e.target.reset();
+      loadTrucks();
+      closeModal('new-truck-modal');
+      if (window.swToast) window.swToast('Truck added successfully', 'success');
+    }
   });
 
   document.getElementById('new-trailer-form').addEventListener('submit', async (e) => {
@@ -579,7 +682,12 @@
       credentials: 'include',
       body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
     });
-    if (res.ok) { e.target.reset(); loadTrailers(); closeModal('new-trailer-modal'); }
+    if (res.ok) {
+      e.target.reset();
+      loadTrailers();
+      closeModal('new-trailer-modal');
+      if (window.swToast) window.swToast('Trailer added successfully', 'success');
+    }
   });
 
   function escapeHtml(str) {
@@ -601,6 +709,6 @@
   }
 </script>
 
-<script src="/js/app-shell.js?v=20"></script>
+<script src="/js/app-shell.js?v=31"></script>
 </body>
 </html>

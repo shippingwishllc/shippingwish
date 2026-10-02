@@ -1082,11 +1082,31 @@
   });
 
   async function deleteLead(id) {
-    if (confirm('Delete lead record?')) {
-      await fetch(`/api/crm/leads/${id}`, { method: 'DELETE', credentials: 'include' });
-      loadLeads();
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Delete Lead Record?',
+          message: 'Are you sure you want to remove this sales lead?',
+          confirmText: 'Delete Lead',
+          confirmColor: 'danger',
+          icon: 'trash'
+        })
+      : confirm('Delete lead record?');
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/api/crm/leads/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) {
+        if (window.swToast) window.swToast('Lead deleted successfully', 'info');
+        loadLeads();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: err.error || 'Failed to delete lead.', icon: 'error' });
+      }
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server.', icon: 'error' });
     }
   }
+  window.deleteLead = deleteLead;
 
   document.getElementById('add-lead-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1495,22 +1515,45 @@
   }
 
   async function sendWeeklyLink(leadId) {
-    if (!confirm('Create a weekly Stripe billing link and email it to this carrier?')) return;
-    const res = await fetch('/api/billing/weekly-link', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ lead_id: leadId, plan_key: 'solo_weekly', send_email: true })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (data.url) {
-      alert((data.message || 'Link ready') + '\n\n' + data.url);
-    } else {
-      alert(data.error || 'Could not create billing link');
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Send Stripe Billing Link?',
+          message: 'Create a weekly Stripe billing link and email it to this carrier?',
+          confirmText: 'Send Billing Link',
+          confirmColor: 'primary',
+          icon: 'info'
+        })
+      : confirm('Create a weekly Stripe billing link and email it to this carrier?');
+    if (!ok) return;
+
+    try {
+      const res = await fetch('/api/billing/weekly-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ lead_id: leadId, plan_key: 'solo_weekly', send_email: true })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.url) {
+        if (window.swAlert) {
+          await window.swAlert({ title: 'Billing Link Ready', message: `${data.message || 'Link generated and emailed.'}\n\nURL: ${data.url}`, icon: 'info' });
+        } else {
+          alert((data.message || 'Link ready') + '\n\n' + data.url);
+        }
+      } else {
+        if (window.swAlert) {
+          await window.swAlert({ title: 'Notice', message: data.error || 'Could not create billing link', icon: 'error' });
+        } else {
+          alert(data.error || 'Could not create billing link');
+        }
+      }
+      loadLeads();
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not contact billing service.', icon: 'error' });
     }
-    loadLeads();
   }
 
+  window.sendWeeklyLink = sendWeeklyLink;
   window.searchLeadsTable = searchLeadsTable;
   window.triggerFmcsaFromTableSearch = triggerFmcsaFromTableSearch;
   window.clearFmcsaSearch = clearFmcsaSearch;
@@ -1539,6 +1582,6 @@
   }
 </script>
 
-<script src="/js/app-shell.js?v=26"></script>
+<script src="/js/app-shell.js?v=31"></script>
 </body>
 </html>

@@ -363,22 +363,43 @@
   }
 
   async function respondOffer(id, response) {
-    if (!confirm(response === 'accepted' ? 'Approve this load? Shipping Wish AI will automatically email the broker to bid and negotiate the best rate for your MC.' : 'Decline this offer?')) return;
-    const res = await fetch(`/api/loadboard/offers/${id}/respond`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ response })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert(data.error || 'Could not respond');
-      return;
+    const isAccept = response === 'accepted';
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: isAccept ? 'Approve Load Offer?' : 'Decline Load Offer?',
+          message: isAccept
+            ? 'Shipping Wish AI will automatically email the broker to bid and negotiate the best rate for your MC.'
+            : 'Are you sure you want to decline this load offer?',
+          confirmText: isAccept ? 'Approve Load' : 'Decline Offer',
+          confirmColor: isAccept ? 'primary' : 'danger',
+          icon: isAccept ? 'info' : 'warning'
+        })
+      : confirm(isAccept ? 'Approve this load? Shipping Wish AI will automatically email the broker to bid and negotiate the best rate for your MC.' : 'Decline this offer?');
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/api/loadboard/offers/${id}/respond`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ response })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: data.error || 'Could not respond', icon: 'error' });
+        else alert(data.error || 'Could not respond');
+        return;
+      }
+      if (data.negotiation && data.negotiation.message) {
+        if (window.swAlert) await window.swAlert({ title: 'Negotiation Update', message: data.negotiation.message, icon: 'info' });
+        else alert(data.negotiation.message);
+      } else {
+        if (window.swToast) window.swToast(`Offer ${response} successfully`, 'success');
+      }
+      loadCarrierCockpitData();
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not contact server.', icon: 'error' });
     }
-    if (data.negotiation && data.negotiation.message) {
-      alert(data.negotiation.message);
-    }
-    loadCarrierCockpitData();
   }
   window.respondOffer = respondOffer;
 
@@ -455,12 +476,20 @@
   }
 
   async function handleCancelSubscriptionClick() {
-    const ok = confirm(
-      "Are you sure you want to cancel your subscription?\n\n" +
-      "• If you cancel within your 7-day trial, your card will NEVER be charged ($0.00).\n" +
-      "• Your carrier portal access, AI load board, and TMS features will end immediately.\n\n" +
-      "Click OK to confirm cancellation."
-    );
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Cancel Subscription?',
+          message: 'Are you sure you want to cancel your subscription?\n\n• If you cancel within your 7-day trial, your card will NEVER be charged ($0.00).\n• Your carrier portal access, AI load board, and TMS features will end immediately.',
+          confirmText: 'Confirm Cancellation',
+          confirmColor: 'danger',
+          icon: 'warning'
+        })
+      : confirm(
+          "Are you sure you want to cancel your subscription?\n\n" +
+          "• If you cancel within your 7-day trial, your card will NEVER be charged ($0.00).\n" +
+          "• Your carrier portal access, AI load board, and TMS features will end immediately.\n\n" +
+          "Click OK to confirm cancellation."
+        );
     if (!ok) return;
 
     const btn = document.getElementById('btn-cancel-subscription');
@@ -477,7 +506,8 @@
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Could not cancel subscription. Please contact support.');
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: data.error || 'Could not cancel subscription. Please contact support.', icon: 'error' });
+        else alert(data.error || 'Could not cancel subscription. Please contact support.');
         if (btn) {
           btn.disabled = false;
           btn.textContent = '❌ Cancel Subscription';
@@ -485,10 +515,19 @@
         return;
       }
 
-      alert('Your subscription has been canceled. Your card was not charged, and your portal access has been revoked.');
+      if (window.swAlert) {
+        await window.swAlert({
+          title: 'Subscription Cancelled',
+          message: 'Your subscription has been canceled. Your card was not charged, and your portal access has been revoked.',
+          icon: 'info'
+        });
+      } else {
+        alert('Your subscription has been canceled. Your card was not charged, and your portal access has been revoked.');
+      }
       window.location.href = '/login?canceled=1';
     } catch (err) {
-      alert('Network error while canceling subscription. Please try again or contact support.');
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Network error while canceling subscription. Please try again or contact support.', icon: 'error' });
+      else alert('Network error while canceling subscription. Please try again or contact support.');
       if (btn) {
         btn.disabled = false;
         btn.textContent = '❌ Cancel Subscription';
@@ -511,6 +550,6 @@
     }
   }
 </script>
-<script src="/js/app-shell.js?v=20"></script>
+<script src="/js/app-shell.js?v=31"></script>
 </body>
 </html>

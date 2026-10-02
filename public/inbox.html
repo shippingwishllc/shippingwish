@@ -507,23 +507,50 @@
     const ta = document.getElementById('reply-text-' + id);
     const message = (ta && ta.value || '').trim();
     if (!message) {
-      alert('Write a reply message first.');
+      if (window.swAlert) {
+        await window.swAlert({ title: 'Message Required', message: 'Write a reply message first.', icon: 'warning' });
+      } else {
+        alert('Write a reply message first.');
+      }
       return;
     }
-    if (!confirm('Send this reply from the inbox address shown above?')) return;
-    const res = await fetch('/api/email/inbox/' + id + '/reply', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ message })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert([data.error || 'Could not send reply', data.hint].filter(Boolean).join('\n\n'));
-      return;
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Send Email Reply?',
+          message: 'Are you sure you want to send this reply now to the recipient?',
+          confirmText: 'Send Reply',
+          confirmColor: 'primary',
+          icon: 'info'
+        })
+      : confirm('Send this reply from the inbox address shown above?');
+    if (!ok) return;
+
+    try {
+      const res = await fetch('/api/email/inbox/' + id + '/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = [data.error || 'Could not send reply', data.hint].filter(Boolean).join('\n\n');
+        if (window.swAlert) {
+          await window.swAlert({ title: 'Send Failed', message: msg, icon: 'error' });
+        } else {
+          alert(msg);
+        }
+        return;
+      }
+      if (window.swToast) {
+        window.swToast('Reply sent successfully', 'success');
+      } else {
+        alert(data.message || 'Reply sent');
+      }
+      if (ta) ta.value = '';
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server to send reply.', icon: 'error' });
     }
-    alert(data.message || 'Reply sent');
-    if (ta) ta.value = '';
   }
 
   function stripHtml(html) {
@@ -533,57 +560,93 @@
   }
 
   async function spamEmail(id, spam) {
-    const res = await fetch('/api/email/inbox/' + id + '/spam', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ spam: spam !== false })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert(data.error || 'Could not update spam.');
-      return;
-    }
-    if (selectedId === id) {
-      selectedId = null;
-      document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">Select a message on the left.</p>';
-    }
-    loadInbox(unreadOnlyFilter);
+    try {
+      const res = await fetch('/api/email/inbox/' + id + '/spam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ spam: spam !== false })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: data.error || 'Could not update spam.', icon: 'error' });
+        return;
+      }
+      if (selectedId === id) {
+        selectedId = null;
+        document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">Select a message on the left.</p>';
+      }
+      if (window.swToast) window.swToast('Spam preference updated', 'info');
+      loadInbox(unreadOnlyFilter);
+    } catch (e) {}
   }
 
   async function deleteDraft(id) {
     const draftId = id > 30000000 ? id - 30000000 : id;
-    if (!confirm('Delete this draft?')) return;
-    const res = await fetch('/api/email/drafts/' + draftId, { method: 'DELETE', credentials: 'include' });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert(data.error || 'Could not delete draft.');
-      return;
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Delete Draft?',
+          message: 'Are you sure you want to delete this draft?',
+          confirmText: 'Delete Draft',
+          confirmColor: 'danger',
+          icon: 'trash'
+        })
+      : confirm('Delete this draft?');
+    if (!ok) return;
+
+    try {
+      const res = await fetch('/api/email/drafts/' + draftId, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: data.error || 'Could not delete draft.', icon: 'error' });
+        return;
+      }
+      if (selectedId === id) {
+        selectedId = null;
+        document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">Select a message on the left.</p>';
+      }
+      if (window.swToast) window.swToast('Draft deleted', 'info');
+      loadInbox(false, 1, 'draft', currentDomain);
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server.', icon: 'error' });
     }
-    if (selectedId === id) {
-      selectedId = null;
-      document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">Select a message on the left.</p>';
-    }
-    loadInbox(false, 1, 'draft', currentDomain);
   }
 
   async function trashEmail(id) {
-    if (!confirm('Move this email to Trash? Only admins can restore from the Trash page.')) return;
-    const res = await fetch('/api/email/inbox/' + id, { method: 'DELETE', credentials: 'include' });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert(data.error || 'Could not move to trash.');
-      return;
-    }
-    if (selectedId === id) {
-      selectedId = null;
-      document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">Select a reply on the left.</p>';
-    }
-    loadInbox(unreadOnlyFilter);
-    if (IS_ADMIN) {
-      alert('Email moved to Trash. Click the 🗑️ Trash button (top right) or sidebar → Trash to restore.');
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Move Email to Trash?',
+          message: 'Move this email to Trash? Shipping Wish admins can restore it at any time.',
+          confirmText: 'Move to Trash',
+          confirmColor: 'danger',
+          icon: 'trash'
+        })
+      : confirm('Move this email to Trash? Only admins can restore from the Trash page.');
+    if (!ok) return;
+
+    try {
+      const res = await fetch('/api/email/inbox/' + id, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: data.error || 'Could not move to trash.', icon: 'error' });
+        return;
+      }
+      if (selectedId === id) {
+        selectedId = null;
+        document.getElementById('msg-panel').innerHTML = '<p class="text-muted" style="margin:0;">Select a reply on the left.</p>';
+      }
+      loadInbox(unreadOnlyFilter);
+      if (window.swToast) {
+        window.swToast('Email moved to Trash', 'info');
+      }
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server.', icon: 'error' });
     }
   }
+
+  window.sendReply = sendReply;
+  window.trashEmail = trashEmail;
+  window.deleteDraft = deleteDraft;
 
   function sanitizeIframeHtml(html) {
     if (!html) return '';
@@ -692,11 +755,19 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to send email');
-      alert(`✅ ${data.message || 'Email sent successfully!'}`);
+      if (window.swToast) {
+        window.swToast('Email sent successfully!', 'success');
+      } else {
+        alert(`✅ ${data.message || 'Email sent successfully!'}`);
+      }
       closeComposeModal();
       selectFolder('sent');
     } catch (err) {
-      alert(`⚠️ ${err.message}`);
+      if (window.swAlert) {
+        await window.swAlert({ title: 'Sending Failed', message: err.message, icon: 'error' });
+      } else {
+        alert(`⚠️ ${err.message}`);
+      }
     } finally {
       btn.disabled = false;
       btn.textContent = '🚀 Send Email Now';
@@ -708,26 +779,30 @@
   window.spamEmail = spamEmail;
   window.deleteDraft = deleteDraft;
   window.saveComposeDraft = async function () {
-    const res = await fetch('/api/email/drafts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        domain: currentDomain,
-        from: document.getElementById('compose-from').value,
-        to: document.getElementById('compose-to').value,
-        subject: document.getElementById('compose-subject').value,
-        message: document.getElementById('compose-body').value
-      })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert(data.error || 'Could not save draft.');
-      return;
+    try {
+      const res = await fetch('/api/email/drafts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          domain: currentDomain,
+          from: document.getElementById('compose-from').value,
+          to: document.getElementById('compose-to').value,
+          subject: document.getElementById('compose-subject').value,
+          message: document.getElementById('compose-body').value
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (window.swAlert) await window.swAlert({ title: 'Error', message: data.error || 'Could not save draft.', icon: 'error' });
+        return;
+      }
+      if (window.swToast) window.swToast('Draft saved successfully', 'success');
+      closeComposeModal();
+      selectFolder('draft');
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server to save draft.', icon: 'error' });
     }
-    alert(data.message || 'Draft saved.');
-    closeComposeModal();
-    selectFolder('draft');
   };
   window.loadInbox = loadInbox;
   window.openMessage = openMessage;
@@ -819,6 +894,6 @@
   </div>
 </div>
 
-<script src="/js/app-shell.js?v=22"></script>
+<script src="/js/app-shell.js?v=31"></script>
 </body>
 </html>

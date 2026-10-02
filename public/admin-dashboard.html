@@ -552,17 +552,38 @@
   async function trashLoad(id) {
     const load = allLoads.find((l) => l.id === id);
     const label = load ? load.load_number : id;
-    if (!confirm(`Move load ${label} to Trash? Restore from Trash page if this was a mistake.`)) return;
-    const res = await fetch(`/api/loads/${id}`, { method: 'DELETE', credentials: 'include' });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert(data.error || 'Could not move load to trash.');
-      return;
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: `Move Load #${label} to Trash?`,
+          message: 'This load will be moved to the Trash. You or any authorized administrator can restore it at any time.',
+          confirmText: 'Move to Trash',
+          confirmColor: 'danger',
+          icon: 'trash'
+        })
+      : confirm(`Move load ${label} to Trash? Restore from Trash page if this was a mistake.`);
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/api/loads/${id}`, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (window.swAlert) {
+          await window.swAlert({ title: 'Error', message: data.error || 'Could not move load to trash.', icon: 'error' });
+        } else {
+          alert(data.error || 'Could not move load to trash.');
+        }
+        return;
+      }
+      allLoads = allLoads.filter((l) => l.id !== id);
+      renderLoadsTable(allLoads);
+      if (window.swToast) {
+        window.swToast(`Load #${label} moved to Trash`, 'info');
+      }
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server.', icon: 'error' });
     }
-    allLoads = allLoads.filter((l) => l.id !== id);
-    renderLoadsTable(allLoads);
-    alert(data.message || 'Load moved to Trash.');
   }
+  window.trashLoad = trashLoad;
 
   async function loadAuditLogs() {
     const tbody = document.getElementById('audit-tbody');
@@ -796,12 +817,25 @@
   }
 
   async function deleteBlogPost(id) {
-    if (!confirm('Are you sure you want to delete this blog post?')) return;
+    const ok = window.swConfirm
+      ? await window.swConfirm({
+          title: 'Delete Blog Post?',
+          message: 'Are you sure you want to permanently delete this blog post?',
+          confirmText: 'Delete Post',
+          confirmColor: 'danger',
+          icon: 'trash'
+        })
+      : confirm('Are you sure you want to delete this blog post?');
+    if (!ok) return;
     try {
-      await fetch(`/api/blog/${id}`, { method: 'DELETE', credentials: 'include' });
-      loadAdminBlogPosts();
+      const res = await fetch(`/api/blog/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) {
+        if (window.swToast) window.swToast('Blog post deleted', 'info');
+        loadAdminBlogPosts();
+      }
     } catch (e) {}
   }
+  window.deleteBlogPost = deleteBlogPost;
 
   async function logout() {
     try {
@@ -817,6 +851,6 @@
     }
   }
 </script>
-<script src="/js/app-shell.js?v=25"></script>
+<script src="/js/app-shell.js?v=31"></script>
 </body>
 </html>

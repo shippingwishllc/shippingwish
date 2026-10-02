@@ -294,18 +294,26 @@
   async function sendReply() {
     const text = document.getElementById('reply-text')?.value?.trim();
     if (!text || !selectedPhone) return;
-    const res = await fetch('/api/sms/inbox/reply', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ phone: selectedPhone, body: text, lead_id: activeLeadId })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert(data.error || 'Could not send SMS');
-      return;
+    try {
+      const res = await fetch('/api/sms/inbox/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone: selectedPhone, body: text, lead_id: activeLeadId })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (window.swAlert) await window.swAlert({ title: 'Send Error', message: data.error || 'Could not send SMS', icon: 'error' });
+        else alert(data.error || 'Could not send SMS');
+        return;
+      }
+      if (window.swToast) window.swToast('SMS sent successfully', 'success');
+      const input = document.getElementById('reply-text');
+      if (input) input.value = '';
+      await openThread(selectedPhone);
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not contact SMS service.', icon: 'error' });
     }
-    await openThread(selectedPhone);
   }
 
   window.swLoadSmsThreads = loadThreads;
@@ -386,12 +394,20 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to send text');
-      alert('✅ SMS dispatched successfully via +1 (609) 469-6004!');
+      if (window.swToast) {
+        window.swToast('SMS dispatched successfully!', 'success');
+      } else {
+        alert('✅ SMS dispatched successfully via +1 (609) 469-6004!');
+      }
       closeNewSmsModal();
       await fetchThreads();
       openThread(to);
     } catch (err) {
-      alert(`⚠️ ${err.message}`);
+      if (window.swAlert) {
+        await window.swAlert({ title: 'SMS Failed', message: err.message, icon: 'error' });
+      } else {
+        alert(`⚠️ ${err.message}`);
+      }
     } finally {
       btn.disabled = false;
       btn.textContent = '🚀 Send SMS';
@@ -442,6 +458,6 @@
   </div>
 </div>
 
-<script src="/js/app-shell.js?v=20"></script>
+<script src="/js/app-shell.js?v=31"></script>
 </body>
 </html>
