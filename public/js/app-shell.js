@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '32';
+  const SIDEBAR_VERSION = '33';
   // #endregion
 
   function clearRoleCache() {
@@ -223,24 +223,24 @@
     { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: IC.headset, label: 'Dispatch Desk' },
     { key: 'ai-dispatch', href: '/ai-dispatch', icon: IC.robot, label: 'AI Dispatch', adminOnly: true },
     { key: 'loadboard', href: '/load-booking', icon: IC.target, label: 'Load Board & AI Match' },
+    { key: 'planning', href: '/load-planning', icon: IC.planning, label: 'Load Planning' },
     { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' },
     { key: 'fleet', href: '/fleet', icon: IC.truck, label: 'Fleet & Drivers' },
-    { section: 'Sales & Staff' },
+    { section: 'Sales & Communications' },
     { key: 'crm', href: '/crm-sales', icon: IC.chart, label: 'Sales CRM & Leads' },
     { key: 'census', href: '/census-desk', icon: IC.census, label: 'Census Desk' },
     { key: 'voice-calls', href: '/voice-calls', icon: IC.phone, label: 'AI Calls & Audio' },
     { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Replies' },
     { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Replies' },
-    { key: 'trash', href: '/trash', icon: IC.trash, label: 'Trash', adminOnly: true },
-    { key: 'staff', href: '/staff-management', icon: IC.staff, label: 'Company Staff', adminOnly: true },
     { section: 'Accounting' },
     { key: 'invoices', href: '/invoices', icon: IC.billing, label: 'Invoices & Billing', adminOnly: true },
     { key: 'ifta', href: '/ifta', icon: IC.fuel, label: 'IFTA & Fuel', adminOnly: true },
     { key: 'documents', href: '/documents', icon: IC.docs, label: 'Document Vault' },
-    { key: 'planning', href: '/load-planning', icon: IC.planning, label: 'Load Planning' },
     { section: 'System' },
-    { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: IC.auditlog, label: 'Audit Logs', adminOnly: true },
+    { key: 'staff', href: '/staff-management', icon: IC.staff, label: 'Company Staff', adminOnly: true },
     { key: 'settings', href: '/settings', icon: IC.settings, label: 'Settings', adminOnly: true },
+    { key: 'trash', href: '/trash', icon: IC.trash, label: 'Trash', adminOnly: true },
+    { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: IC.auditlog, label: 'Audit Logs', adminOnly: true },
     { key: 'webcms', navId: 'nav-tab-settings', href: '/admin-dashboard#settings', icon: IC.webcms, label: 'Website CMS', adminOnly: true },
     { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: IC.blog, label: 'Blog Manager', adminOnly: true }
   ];
