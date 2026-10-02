@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '34';
+  const SIDEBAR_VERSION = '35';
   // #endregion
 
   function clearRoleCache() {
@@ -199,6 +199,7 @@
     phone:      svgIcon(`<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 3 6a2 2 0 0 1 2-2" fill="#f43f5e" opacity=".15" stroke="#f43f5e" stroke-width="1.7"/>`),
     inbox:      svgIcon(`<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" fill="#06b6d4" opacity=".12" stroke="#06b6d4" stroke-width="1.7"/><polyline points="2,6 12,13 22,6" stroke="#06b6d4" stroke-width="1.7" fill="none"/>`),
     sms:        svgIcon(`<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" fill="#4ade80" opacity=".15" stroke="#4ade80" stroke-width="1.7"/><path d="M8 10h.01M12 10h.01M16 10h.01" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>`),
+    whatsapp:   svgIcon(`<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" fill="#22c55e" opacity=".18" stroke="#22c55e" stroke-width="1.8"/><path d="M9.5 9.5c.3-.5.7-.5 1-.2l1.2 1.5c.2.3.2.7 0 1l-.6.6c.4.8 1.1 1.5 1.9 1.9l.6-.6c.3-.2.7-.2 1 0l1.5 1.2c.3.3.3.7-.2 1-.8.5-1.7.5-2.6.1-2.4-1-4.3-2.9-5.3-5.3-.4-.9-.4-1.8.1-2.6z" fill="#22c55e"/>`),
     trash:      svgIcon(`<polyline points="3,6 5,6 21,6" stroke="#94a3b8" stroke-width="1.7" stroke-linecap="round"/><path d="M19 6l-1 14H6L5 6" stroke="#94a3b8" stroke-width="1.7" fill="none"/><path d="M10 11v6M14 11v6" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/><path d="M9 6V4h6v2" stroke="#94a3b8" stroke-width="1.7" fill="none"/>`),
     staff:      svgIcon(`<circle cx="9" cy="7" r="3" stroke="#f59e0b" stroke-width="1.7" fill="none"/><circle cx="17" cy="9" r="2.5" stroke="#f59e0b" stroke-width="1.5" fill="none" opacity=".7"/><path d="M3 20a6 6 0 0 1 12 0" stroke="#f59e0b" stroke-width="1.7" fill="none"/><path d="M17 12a4 4 0 0 1 4 4" stroke="#f59e0b" stroke-width="1.5" fill="none" opacity=".7"/>`),
     billing:    svgIcon(`<rect x="2" y="5" width="20" height="14" rx="2" fill="#10b981" opacity=".1" stroke="#10b981" stroke-width="1.7"/><path d="M2 10h20" stroke="#10b981" stroke-width="1.5"/><path d="M6 15h4M14 15h4" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/>`),
@@ -231,7 +232,8 @@
     { key: 'census', href: '/census-desk', icon: IC.census, label: 'Census Desk' },
     { key: 'voice-calls', href: '/voice-calls', icon: IC.phone, label: 'AI Calls & Audio' },
     { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Replies' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS & WhatsApp' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Inbox' },
+    { key: 'whatsapp', href: '/whatsapp', icon: IC.whatsapp, label: 'WhatsApp Chat' },
     { section: 'Accounting' },
     { key: 'invoices', href: '/invoices', icon: IC.billing, label: 'Invoices & Billing', adminOnly: true },
     { key: 'ifta', href: '/ifta', icon: IC.fuel, label: 'IFTA & Fuel', adminOnly: true },
@@ -255,7 +257,8 @@
     { key: 'fleet', href: '/fleet', icon: IC.truck, label: 'Drivers & Fleet' },
     { section: 'Communications' },
     { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Email Inbox' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS & WhatsApp' }
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Inbox' },
+    { key: 'whatsapp', href: '/whatsapp', icon: IC.whatsapp, label: 'WhatsApp Chat' }
   ];
 
   const DISPATCHER_LINKS = [
@@ -269,7 +272,8 @@
     { key: 'documents', href: '/documents', icon: IC.docs, label: 'RateCons & BOLs' },
     { section: 'Communications' },
     { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Replies' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS & WhatsApp' }
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Inbox' },
+    { key: 'whatsapp', href: '/whatsapp', icon: IC.whatsapp, label: 'WhatsApp Chat' }
   ];
 
   const SALES_REP_LINKS = [
@@ -281,7 +285,8 @@
     { key: 'voice-calls', href: '/voice-calls', icon: IC.phone, label: 'AI Cold Calling & Audio' },
     { section: 'Inbound' },
     { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Email Replies' },
-    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS & WhatsApp' },
+    { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Inbox' },
+    { key: 'whatsapp', href: '/whatsapp', icon: IC.whatsapp, label: 'WhatsApp Chat' },
     { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' }
   ];
 
@@ -328,6 +333,8 @@
     'inbox.html': 'inbox',
     'voice-calls.html': 'voice-calls',
     'sms-inbox.html': 'sms-inbox',
+    'whatsapp.html': 'whatsapp',
+    'whatsapp': 'whatsapp',
     'staff-management.html': 'staff',
     'invoices.html': 'invoices',
     'ifta.html': 'ifta',
@@ -797,7 +804,11 @@
       if (url.pathname === '/superadmin' || url.pathname.startsWith('/superadmin/')) return false;
       if (url.pathname === location.pathname && url.hash) return false;
       if (!document.querySelector('.app-shell .app-main')) return false;
-      if (url.pathname === '/inbox' || url.pathname === '/inbox.html') return false;
+      if (
+        url.pathname === '/inbox' || url.pathname === '/inbox.html' ||
+        url.pathname === '/whatsapp' || url.pathname === '/whatsapp.html' ||
+        url.pathname === '/sms-inbox' || url.pathname === '/sms-inbox.html'
+      ) return false;
       return true;
     } catch (_) {
       return false;

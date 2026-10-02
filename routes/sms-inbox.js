@@ -68,18 +68,26 @@ router.get('/', requireAuth, staffOnly, async (req, res) => {
     await ensureSmsMessagesTable();
     await backfillFromVoipLogs();
 
+    const channelFilter = req.query.channel ? String(req.query.channel).trim().toLowerCase() : null;
+    const channelSql = (channelFilter === 'whatsapp' || channelFilter === 'sms')
+      ? `AND l.last_channel = '${channelFilter}'`
+      : '';
+
     const countRes = await pool.query(`
-      WITH latest AS (
-        SELECT DISTINCT ON (
-          right(regexp_replace(CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END, '[^0-9]', '', 'g'), 10)
-        )
+      WITH base AS (
+        SELECT
+          CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END AS peer_phone,
           right(regexp_replace(CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END, '[^0-9]', '', 'g'), 10) AS peer_tail,
-          direction,
-          is_read
+          body, direction, created_at, lead_id, is_read, from_number,
+          COALESCE(channel, CASE WHEN from_number LIKE 'whatsapp:%' OR to_number LIKE 'whatsapp:%' THEN 'whatsapp' ELSE 'sms' END) AS channel
         FROM sms_messages
-        ORDER BY
-          right(regexp_replace(CASE WHEN direction = 'inbound' THEN from_number ELSE to_number END, '[^0-9]', '', 'g'), 10),
-          created_at DESC
+      ),
+      latest AS (
+        SELECT DISTINCT ON (peer_tail)
+          peer_phone, peer_tail, body AS last_body, direction AS last_direction,
+          created_at AS last_at, lead_id, channel AS last_channel
+        FROM base
+        ORDER BY peer_tail, created_at DESC
       ),
       unread AS (
         SELECT right(regexp_replace(from_number, '[^0-9]', '', 'g'), 10) AS peer_tail,
@@ -91,7 +99,9 @@ router.get('/', requireAuth, staffOnly, async (req, res) => {
       SELECT COUNT(*)::int AS count
       FROM latest l
       LEFT JOIN unread u USING (peer_tail)
-      ${unreadOnly ? 'WHERE COALESCE(u.unread_count, 0) > 0' : ''}
+      WHERE 1=1
+      ${unreadOnly ? 'AND COALESCE(u.unread_count, 0) > 0' : ''}
+      ${channelSql}
     `);
     const total = countRes.rows[0]?.count || 0;
 
@@ -128,7 +138,9 @@ router.get('/', requireAuth, staffOnly, async (req, res) => {
       FROM latest l
       LEFT JOIN unread u USING (peer_tail)
       LEFT JOIN crm_leads cl ON cl.id = l.lead_id
-      ${unreadOnly ? 'WHERE COALESCE(u.unread_count, 0) > 0' : ''}
+      WHERE 1=1
+      ${unreadOnly ? 'AND COALESCE(u.unread_count, 0) > 0' : ''}
+      ${channelSql}
       ORDER BY l.last_at DESC
       LIMIT $1 OFFSET $2
       `,
@@ -315,19 +327,25 @@ router.get('/stats', requireAuth, staffOnly, async (req, res) => {
   try {
     await ensureSmsMessagesTable();
     await backfillFromVoipLogs();
-    const [unread, outboundToday, threads, optedOut] = await Promise.all([
+    const [unread, outboundToday, threads, optedOut, waUnread, waOutboundToday, waThreads] = await Promise.all([
       pool.query(`SELECT COUNT(*)::int AS c FROM sms_messages WHERE direction='inbound' AND is_read=FALSE`),
       pool.query(`SELECT COUNT(*)::int AS c FROM sms_messages WHERE direction='outbound' AND created_at >= CURRENT_DATE`),
       pool.query(`
         SELECT COUNT(DISTINCT CASE WHEN direction='inbound' THEN from_number ELSE to_number END)::int AS c
         FROM sms_messages`),
-      pool.query(`SELECT COUNT(*)::int AS c FROM sms_optouts`)
+      pool.query(`SELECT COUNT(*)::int AS c FROM sms_optouts`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM sms_messages WHERE direction='inbound' AND is_read=FALSE AND (channel='whatsapp' OR from_number LIKE 'whatsapp:%')`),
+      pool.query(`SELECT COUNT(*)::int AS c FROM sms_messages WHERE direction='outbound' AND created_at >= CURRENT_DATE AND (channel='whatsapp' OR to_number LIKE 'whatsapp:%')`),
+      pool.query(`SELECT COUNT(DISTINCT CASE WHEN direction='inbound' THEN from_number ELSE to_number END)::int AS c FROM sms_messages WHERE (channel='whatsapp' OR from_number LIKE 'whatsapp:%' OR to_number LIKE 'whatsapp:%')`)
     ]);
     res.json({
       unread: unread.rows[0]?.c || 0,
       sent_today: outboundToday.rows[0]?.c || 0,
       threads: threads.rows[0]?.c || 0,
-      opted_out: optedOut.rows[0]?.c || 0
+      opted_out: optedOut.rows[0]?.c || 0,
+      unread_wa: waUnread.rows[0]?.c || 0,
+      sent_today_wa: waOutboundToday.rows[0]?.c || 0,
+      threads_wa: waThreads.rows[0]?.c || 0
     });
   } catch (err) {
     res.json({ unread: 0, sent_today: 0, threads: 0, opted_out: 0 });

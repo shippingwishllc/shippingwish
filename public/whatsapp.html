@@ -1,0 +1,587 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Business Desk | Shipping Wish TMS</title>
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/design-system.css?v=20">
+  <style>
+    :root {
+      --wa-green: #15803d;
+      --wa-light: #dcfce7;
+      --wa-accent: #22c55e;
+      --inbox-pane-h: 740px;
+    }
+    .wa-layout { display:grid; grid-template-columns: minmax(320px, 1fr) minmax(380px, 1.4fr); gap:16px; align-items:stretch; }
+    @media (max-width: 900px) { .wa-layout { grid-template-columns: 1fr; } }
+    .wa-list-col { display:flex; flex-direction:column; min-height:0; }
+    .wa-list-card {
+      display:flex; flex-direction:column; padding:14px;
+      min-height:var(--inbox-pane-h); max-height:860px;
+      overflow:hidden;
+    }
+    #wa-thread-list {
+      display:flex; flex-direction:column; gap:8px;
+      flex:1; min-height:0;
+      overflow-y:auto; padding-right:4px;
+    }
+    .wa-pagination {
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding-top:12px; margin-top:auto; border-top:1px solid var(--border-default, #e2e8f0);
+      font-size:12px; color:var(--text-muted); flex-wrap:wrap; flex-shrink:0;
+    }
+    .wa-thread-item {
+      border:1px solid var(--border-default, #e2e8f0); border-radius:12px; padding:12px 14px;
+      cursor:pointer; text-align:left; background:#ffffff; width:100%;
+      min-height:88px; height:auto; flex-shrink:0;
+      transition: all 0.15s ease;
+      display:flex; flex-direction:column; gap:4px;
+      box-sizing:border-box;
+    }
+    .wa-thread-item:hover { border-color: var(--wa-accent); box-shadow: 0 2px 6px rgba(34, 197, 94, 0.12); }
+    .wa-thread-item.active { border-color: var(--wa-green); background: #f0fdf4; box-shadow: 0 0 0 1.5px var(--wa-green); }
+    .wa-thread-item.unread { background: #f0fdf4; border-left: 4px solid var(--wa-green); }
+    .wa-preview {
+      font-size:12px; color:#475569; line-height:1.45; margin-top:2px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow:hidden;
+    }
+    .badge-wa-tag {
+      background:#dcfce7; color:#15803d; font-size:10px; font-weight:700;
+      padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;
+    }
+    .wa-chat-panel {
+      border:1px solid var(--border-default, #e2e8f0); border-radius:12px;
+      min-height:var(--inbox-pane-h); max-height:860px;
+      background: #fafaf9;
+      display:flex; flex-direction:column; overflow:hidden; padding:16px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+    .wa-panel-empty { margin:auto; text-align:center; color:var(--text-muted); padding:32px; font-size:14px; }
+    .wa-scroll-area {
+      flex:1; min-height:0; overflow-y:auto; padding:14px 8px;
+      display:flex; flex-direction:column; gap:12px;
+      background: #f8fafc; border-radius:10px;
+    }
+    .wa-bubble {
+      max-width:82%; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.5;
+      white-space:pre-wrap; word-break:break-word; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+    .wa-bubble.out {
+      align-self:flex-end; background:#15803d; color:#ffffff; border-bottom-right-radius:4px;
+    }
+    .wa-bubble.in {
+      align-self:flex-start; background:#ffffff; color:#0f172a; border-bottom-left-radius:4px;
+      border: 1px solid #e2e8f0;
+    }
+    .wa-meta { font-size:10.5px; opacity:0.85; margin-top:4px; display:flex; align-items:center; gap:6px; }
+    .wa-reply-box { flex-shrink:0; margin-top:12px; padding-top:12px; border-top:1px solid var(--border-default, #e2e8f0); }
+    .wa-reply-box textarea {
+      width:100%; min-height:84px; border-radius:10px; border:1px solid var(--border-default, #cbd5e1);
+      padding:10px 12px; font-family:inherit; font-size:13.5px; resize:vertical; box-sizing:border-box; outline:none;
+    }
+    .wa-reply-box textarea:focus { border-color: var(--wa-green); box-shadow: 0 0 0 2px rgba(34,197,94,0.15); }
+    .wa-btn-send {
+      background:#15803d; color:#ffffff; border:none; border-radius:8px; padding:8px 16px;
+      font-size:13px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+      transition: background 0.15s ease;
+    }
+    .wa-btn-send:hover { background:#166534; }
+    .wa-btn-send:disabled { opacity:0.6; cursor:not-allowed; }
+    .wa-page-content { padding-top: var(--space-6); padding-bottom: var(--space-6); }
+    @media (max-width: 900px) {
+      .wa-list-card, .wa-chat-panel { height:auto; min-height:auto; max-height:none; }
+      #wa-thread-list { height:auto; min-height:auto; max-height:360px; }
+    }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+
+  <div class="app-main">
+    <header class="app-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;display:flex;align-items:center;gap:8px;">
+          <span>🟢 WhatsApp Business Desk</span>
+          <span class="badge-wa-tag" style="font-size:11px;">Twilio Verified API</span>
+        </h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Official two-way WhatsApp communications across carriers, owner-operators, and drivers</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <div class="search-input-group" style="min-width:280px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="wa-search-input" placeholder="Search contact, phone, message..." oninput="onWhatsAppSearch(this.value)">
+        </div>
+        <button class="btn btn-sm wa-btn-send" type="button" onclick="openNewWhatsAppModal()">💬 New WhatsApp</button>
+        <a href="/sms-inbox" class="btn btn-secondary btn-sm">📱 Open SMS Inbox</a>
+      </div>
+    </header>
+
+    <main class="app-content wa-page-content">
+      <!-- STATS KPI ROW -->
+      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
+        <div class="stat-kpi-card" style="border-top:3px solid #15803d;">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Active WhatsApp Chats</span><div class="stat-kpi-icon" style="background:#dcfce7;color:#15803d;">🟢</div></div>
+          <div class="stat-kpi-val" id="kpi-wa-threads">0</div>
+        </div>
+        <div class="stat-kpi-card" style="border-top:3px solid #16a34a;">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Unread WhatsApp</span><div class="stat-kpi-icon" style="background:#dcfce7;color:#16a34a;">📬</div></div>
+          <div class="stat-kpi-val" id="kpi-wa-unread">0</div>
+        </div>
+        <div class="stat-kpi-card" style="border-top:3px solid #0284c7;">
+          <div class="stat-kpi-top"><span class="stat-kpi-title">Sent Today</span><div class="stat-kpi-icon">📤</div></div>
+          <div class="stat-kpi-val" id="kpi-wa-sent">0</div>
+        </div>
+      </div>
+
+      <!-- MAIN LAYOUT -->
+      <div class="wa-layout">
+        <div class="wa-list-col">
+          <div class="tms-table-card wa-list-card">
+            <div id="wa-thread-list"><p class="text-muted" style="padding:28px;text-align:center;">Loading WhatsApp conversations…</p></div>
+            <div class="wa-pagination" id="wa-pagination" style="display:none;">
+              <span id="wa-page-info">—</span>
+              <div style="display:flex;gap:8px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="wa-prev-btn" onclick="goWaPage(-1)">← Previous</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="wa-next-btn" onclick="goWaPage(1)">Next →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="wa-chat-panel" id="wa-chat-panel">
+          <p class="wa-panel-empty">Select a WhatsApp conversation on the left or click <strong>💬 New WhatsApp</strong>.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- MODAL: NEW WHATSAPP MESSAGE (Inside app-main for SPA navigation retention) -->
+    <div id="modal-new-whatsapp" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:16px;" onclick="closeNewWhatsAppModal()">
+      <div style="background:#ffffff;border-radius:16px;max-width:520px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;" onclick="event.stopPropagation()">
+        <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#f0fdf4;">
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:800;color:#14532d;display:flex;align-items:center;gap:6px;">
+              <span>🟢 New Twilio WhatsApp Message</span>
+            </h3>
+            <p style="margin:2px 0 0;font-size:12px;color:#166534;">Official WhatsApp outbound to carrier or driver</p>
+          </div>
+          <button type="button" onclick="closeNewWhatsAppModal()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#94a3b8;">✕</button>
+        </div>
+
+        <form onsubmit="submitNewWhatsApp(event)" style="padding:20px;">
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Recipient Phone Number *</label>
+            <input type="tel" id="new-wa-to" required placeholder="e.g. +1 (800) 555-0199 or 2145550199" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;" />
+            <span style="font-size:11px;color:var(--text-muted);margin-top:2px;display:block;">Recipient will receive message directly on their WhatsApp.</span>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Template Presets</label>
+            <select onchange="applyWhatsAppTemplate(this.value)" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
+              <option value="custom">Custom Message (Blank)</option>
+              <option value="welcome">Shipping Wish — 24/7 Dedicated Dispatch Welcome ($0 Free Trial)</option>
+              <option value="loadsnexus">LoadsNexus — $19/mo Solo Load Board Pass Link</option>
+              <option value="checkin">Dispatcher Morning Check-In (Are you empty today?)</option>
+              <option value="ratecon">Rate Confirmation &amp; Load Packet Dispatch</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:4px;text-transform:uppercase;">Message Text *</label>
+            <textarea id="new-wa-body" required rows="5" placeholder="Type WhatsApp message..." style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13.5px;line-height:1.5;outline:none;resize:vertical;"></textarea>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #e2e8f0;padding-top:14px;">
+            <button type="button" class="btn btn-secondary" onclick="closeNewWhatsAppModal()">Cancel</button>
+            <button type="submit" id="btn-submit-new-wa" class="wa-btn-send">🟢 Send WhatsApp</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var PAGE_SIZE = 12;
+  var threads = [];
+  var selectedPhone = null;
+  var currentPage = 1;
+  var totalPages = 1;
+  var waSearchTerm = '';
+  var activeLeadId = null;
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  async function checkAuth() {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) { window.location.href = '/login'; return false; }
+    const role = (await res.json()).user?.role;
+    if (['carrier', 'carrier_admin', 'driver'].includes(role)) {
+      window.location.href = '/carrier-overview';
+      return false;
+    }
+    return true;
+  }
+
+  async function loadWaStats() {
+    try {
+      const res = await fetch('/api/sms/inbox/stats', { credentials: 'include' });
+      if (!res.ok) return;
+      const s = await res.json();
+      const elThreads = document.getElementById('kpi-wa-threads');
+      const elUnread = document.getElementById('kpi-wa-unread');
+      const elSent = document.getElementById('kpi-wa-sent');
+      if (elThreads) elThreads.textContent = s.threads_wa || s.threads || 0;
+      if (elUnread) elUnread.textContent = s.unread_wa || s.unread || 0;
+      if (elSent) elSent.textContent = s.sent_today_wa || s.sent_today || 0;
+    } catch (e) { /* ignore */ }
+  }
+
+  function onWhatsAppSearch(val) {
+    waSearchTerm = (val || '').trim().toLowerCase();
+    renderWaThreadList();
+  }
+
+  function renderWaThreadList() {
+    const el = document.getElementById('wa-thread-list');
+    if (!el) return;
+
+    // Filter by WhatsApp channel
+    let filtered = (threads || []).filter(t => t.last_channel === 'whatsapp' || String(t.peer_phone).startsWith('whatsapp:'));
+
+    if (waSearchTerm) {
+      filtered = filtered.filter(t => {
+        const title = (t.company_name || t.owner_name || '').toLowerCase();
+        const phone = (t.peer_phone || '').toLowerCase();
+        const body = (t.last_body || '').toLowerCase();
+        return title.includes(waSearchTerm) || phone.includes(waSearchTerm) || body.includes(waSearchTerm);
+      });
+    }
+
+    if (!filtered.length) {
+      if (waSearchTerm) {
+        el.innerHTML = '<p class="text-muted" style="padding:28px;text-align:center;">No WhatsApp chats matching "<strong>' + escapeHtml(waSearchTerm) + '</strong>".</p>';
+      } else {
+        el.innerHTML = '<p class="text-muted" style="padding:28px;text-align:center;">No WhatsApp conversations yet.<br><br>Click <strong>💬 New WhatsApp</strong> above to send the first message to any carrier.</p>';
+      }
+      const pager = document.getElementById('wa-pagination');
+      if (pager) pager.style.display = 'none';
+      return;
+    }
+
+    el.innerHTML = filtered.map((t) => {
+      const title = t.company_name || t.owner_name || t.peer_phone;
+      const cleanPhone = String(t.peer_phone || '').replace(/^whatsapp:/, '');
+      const active = selectedPhone && (t.peer_phone === selectedPhone || cleanPhone === selectedPhone) ? 'active' : '';
+      const unread = t.unread_count > 0 ? 'unread' : '';
+      const badge = t.unread_count > 0 ? `<span class="badge badge-new" style="font-size:10px;padding:1px 6px;">${t.unread_count} new</span>` : '';
+      const dir = t.last_direction === 'outbound' ? '↗ Sent' : '↙ Received';
+      const phoneEsc = escapeHtml(t.peer_phone).replace(/'/g, "\\'");
+      return `
+      <button type="button" class="wa-thread-item ${active} ${unread}" onclick="openWaThread('${phoneEsc}')">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+          <strong style="font-size:13.5px;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">${escapeHtml(title)}</strong>
+          <span style="font-size:10px;color:var(--text-muted);white-space:nowrap;">${dir}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11.5px;color:var(--text-muted);">
+          <span>${escapeHtml(cleanPhone)}</span>
+          <div style="display:flex;gap:4px;">${badge}</div>
+        </div>
+        <div class="wa-preview">${escapeHtml(t.last_body || '')}</div>
+      </button>`;
+    }).join('');
+
+    const pager = document.getElementById('wa-pagination');
+    if (!pager) return;
+    pager.style.display = 'flex';
+    document.getElementById('wa-page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+    const prevBtn = document.getElementById('wa-prev-btn');
+    const nextBtn = document.getElementById('wa-next-btn');
+    if (prevBtn) prevBtn.disabled = currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+  }
+
+  async function fetchWaThreads() {
+    const listEl = document.getElementById('wa-thread-list');
+    try {
+      const qs = new URLSearchParams({ page: String(currentPage), perPage: String(PAGE_SIZE), channel: 'whatsapp' });
+      const res = await fetch('/api/sms/inbox?' + qs.toString(), { credentials: 'include' });
+      const rawText = await res.text();
+      let data = {};
+      try { data = JSON.parse(rawText); } catch (e) {
+        if (listEl) listEl.innerHTML = '<p class="text-muted" style="padding:24px;">Please refresh the page.</p>';
+        return;
+      }
+      if (!res.ok) {
+        if (listEl) listEl.innerHTML = '<p class="text-muted" style="padding:24px;">' + escapeHtml(data.error || 'Could not load WhatsApp chats.') + '</p>';
+        return;
+      }
+      threads = data.threads || [];
+      totalPages = data.totalPages || 1;
+      renderWaThreadList();
+      await loadWaStats();
+    } catch (err) {
+      if (listEl) listEl.innerHTML = '<p class="text-muted" style="padding:24px;">Check your connection and refresh.</p>';
+    }
+  }
+
+  function goWaPage(delta) {
+    const next = currentPage + delta;
+    if (next < 1 || next > totalPages) return;
+    currentPage = next;
+    fetchWaThreads();
+  }
+
+  async function openWaThread(phone) {
+    selectedPhone = phone;
+    renderWaThreadList();
+    const panel = document.getElementById('wa-chat-panel');
+    if (!panel) return;
+    panel.innerHTML = '<p class="wa-panel-empty">Loading WhatsApp conversation…</p>';
+
+    try {
+      const res = await fetch('/api/sms/inbox/thread?phone=' + encodeURIComponent(phone), { credentials: 'include' });
+      const rawText = await res.text();
+      let data = {};
+      try { data = JSON.parse(rawText); } catch(e) {
+        panel.innerHTML = '<p class="wa-panel-empty">Could not parse conversation.</p>';
+        return;
+      }
+      if (!res.ok) {
+        panel.innerHTML = '<p class="wa-panel-empty">' + escapeHtml(data.error || 'Could not load conversation') + '</p>';
+        return;
+      }
+
+      activeLeadId = data.lead?.id || null;
+      const title = data.lead?.company_name || data.lead?.owner_name || data.peer_phone;
+      const cleanPhone = String(data.peer_phone || '').replace(/^whatsapp:/, '');
+
+      const bubbles = (data.messages || []).map((m) => {
+        const cls = m.direction === 'outbound' ? 'wa-bubble out' : 'wa-bubble in';
+        const when = m.created_at ? new Date(m.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+        const who = m.direction === 'outbound' ? (m.sent_by_name || 'You (Operations)') : (data.lead?.company_name || 'Carrier');
+
+        return `
+          <div class="${cls}">
+            <div>${escapeHtml(m.body)}</div>
+            <div class="wa-meta">
+              <span>${escapeHtml(who)}</span>
+              <span>&bull;</span>
+              <span>${when}</span>
+            </div>
+          </div>`;
+      }).join('') || '<p class="text-muted" style="text-align:center;padding:32px;">No messages in this WhatsApp chat yet.</p>';
+
+      panel.innerHTML = `
+        <div style="flex-shrink:0;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div>
+            <h2 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:8px;">
+              <span>${escapeHtml(title)}</span>
+              <span class="badge-wa-tag">🟢 WhatsApp</span>
+            </h2>
+            <p style="margin:4px 0 0;font-size:12px;color:var(--text-muted);">${escapeHtml(cleanPhone)}</p>
+          </div>
+          <div>
+            ${data.lead?.id ? `<a href="/crm-sales?search=${encodeURIComponent(cleanPhone)}" class="btn btn-secondary btn-sm" style="font-size:11px;">Open in CRM →</a>` : ''}
+          </div>
+        </div>
+        <div class="wa-scroll-area" id="wa-msg-scroll">${bubbles}</div>
+        <div class="wa-reply-box">
+          <textarea id="wa-reply-text" placeholder="Type WhatsApp reply message…"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+            <button type="button" id="btn-send-wa-reply" class="wa-btn-send" onclick="sendWhatsAppReply()">
+              🟢 Send WhatsApp →
+            </button>
+          </div>
+        </div>`;
+
+      const scroll = document.getElementById('wa-msg-scroll');
+      if (scroll) scroll.scrollTop = scroll.scrollHeight;
+
+      await fetch('/api/sms/inbox/thread/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone })
+      });
+      await loadWaStats();
+      fetchWaThreads();
+    } catch (err) {
+      panel.innerHTML = '<p class="wa-panel-empty">Could not load WhatsApp conversation. Refresh and try again.</p>';
+    }
+  }
+
+  async function sendWhatsAppReply() {
+    const text = document.getElementById('wa-reply-text')?.value?.trim();
+    if (!text || !selectedPhone) return;
+
+    const btn = document.getElementById('btn-send-wa-reply');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+
+    try {
+      const res = await fetch('/api/sms/inbox/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          phone: selectedPhone,
+          body: text,
+          lead_id: activeLeadId,
+          channel: 'whatsapp'
+        })
+      });
+      const rawText = await res.text();
+      let data = {};
+      try { data = JSON.parse(rawText); } catch(e) {
+        throw new Error(res.ok ? 'Unexpected response format' : `Server error (${res.status})`);
+      }
+      if (!res.ok) {
+        if (window.swAlert) await window.swAlert({ title: 'WhatsApp Error', message: data.error || 'Could not send WhatsApp message', icon: 'error' });
+        else alert(data.error || 'Could not send WhatsApp message');
+        return;
+      }
+      if (window.swToast) window.swToast('🟢 WhatsApp message dispatched!', 'success');
+      const input = document.getElementById('wa-reply-text');
+      if (input) input.value = '';
+      await openWaThread(selectedPhone);
+    } catch (e) {
+      if (window.swAlert) await window.swAlert({ title: 'Network Error', message: e.message || 'Could not contact WhatsApp service.', icon: 'error' });
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '🟢 Send WhatsApp →'; }
+    }
+  }
+
+  window.openWaThread = openWaThread;
+  window.sendWhatsAppReply = sendWhatsAppReply;
+  window.goWaPage = goWaPage;
+  window.onWhatsAppSearch = onWhatsAppSearch;
+
+  window.openNewWhatsAppModal = function () {
+    const modal = document.getElementById('modal-new-whatsapp');
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeNewWhatsAppModal = function () {
+    const modal = document.getElementById('modal-new-whatsapp');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.applyWhatsAppTemplate = function (val) {
+    const txt = document.getElementById('new-wa-body');
+    if (!txt) return;
+    if (val === 'welcome') {
+      txt.value = 'Hello! Welcome to Shipping Wish 24/7 Logistics & Dedicated Dispatch operations on WhatsApp. Test our personal dispatcher for 1 week at $0 (Zero Risk Free Trial). How can our dispatch desk assist your fleet today?';
+    } else if (val === 'loadsnexus') {
+      txt.value = 'Hello, here is the LoadsNexus link for direct broker loads. The Solo Pass is $19/mo: https://www.loadsnexus.com';
+    } else if (val === 'checkin') {
+      txt.value = 'Hello! Shipping Wish dispatch operations checking in. Are you empty today and looking for high-paying loads? Let us know your equipment and location.';
+    } else if (val === 'ratecon') {
+      txt.value = 'Hello, this is Shipping Wish operations following up on your load agreement and Rate Confirmation. Please confirm receipt so we can finalize driver dispatch.';
+    }
+  };
+
+  window.submitNewWhatsApp = async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-new-wa');
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    const to = document.getElementById('new-wa-to').value.trim();
+    const body = document.getElementById('new-wa-body').value.trim();
+
+    try {
+      const res = await fetch('/api/sms/inbox/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ to_number: to, body, channel: 'whatsapp' })
+      });
+      const rawText = await res.text();
+      let data = {};
+      try { data = JSON.parse(rawText); } catch(jsonErr) {
+        throw new Error(res.ok ? 'Unexpected response format' : `Server error (${res.status})`);
+      }
+      if (!res.ok) throw new Error(data.error || 'Failed to dispatch WhatsApp message');
+      if (window.swToast) {
+        window.swToast('🟢 WhatsApp message dispatched successfully!', 'success');
+      } else {
+        alert('✅ WhatsApp message dispatched successfully!');
+      }
+      closeNewWhatsAppModal();
+      await fetchWaThreads();
+      openWaThread(to);
+    } catch (err) {
+      if (window.swAlert) {
+        await window.swAlert({ title: 'WhatsApp Failed', message: err.message, icon: 'error' });
+      } else {
+        alert(`⚠️ ${err.message}`);
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  };
+
+  async function bootWhatsAppPage() {
+    if (!await checkAuth()) return;
+    await fetchWaThreads();
+    await loadWaStats();
+    const params = new URLSearchParams(window.location.search);
+    const phone = params.get('phone');
+    if (phone) openWaThread(phone);
+
+    // Auto-poll every 8 seconds for live WhatsApp incoming messages
+    setInterval(async () => {
+      await fetchWaThreads();
+      await loadWaStats();
+      if (selectedPhone) {
+        try {
+          const res = await fetch('/api/sms/inbox/thread?phone=' + encodeURIComponent(selectedPhone));
+          if (res.ok) {
+            const data = await res.json();
+            const scrollEl = document.getElementById('wa-msg-scroll');
+            if (scrollEl && data.messages) {
+              const isAtBottom = (scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 60);
+              const bubbles = data.messages.map((m) => {
+                const cls = m.direction === 'outbound' ? 'wa-bubble out' : 'wa-bubble in';
+                const when = m.created_at ? new Date(m.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+                const who = m.direction === 'outbound' ? (m.sent_by_name || 'You (Operations)') : (data.lead?.company_name || 'Carrier');
+                return `
+                  <div class="${cls}">
+                    <div>${escapeHtml(m.body)}</div>
+                    <div class="wa-meta">
+                      <span>${escapeHtml(who)}</span>
+                      <span>&bull;</span>
+                      <span>${when}</span>
+                    </div>
+                  </div>`;
+              }).join('');
+              scrollEl.innerHTML = bubbles;
+              if (isAtBottom) scrollEl.scrollTop = scrollEl.scrollHeight;
+            }
+          }
+        } catch (e) {}
+      }
+    }, 8000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootWhatsAppPage);
+  } else {
+    bootWhatsAppPage();
+  }
+})();
+</script>
+
+<script src="/js/app-shell.js?v=35"></script>
+</body>
+</html>

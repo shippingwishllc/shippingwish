@@ -1498,14 +1498,25 @@ html {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
 }
 
 .sidebar-nav-scroll::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+  width: 5px;
+}
+
+.sidebar-nav-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
+}
+
+.sidebar-nav-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
 }
 
 .sidebar-foot {

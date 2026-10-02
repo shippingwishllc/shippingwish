@@ -114,39 +114,44 @@
     </header>
 
     <main class="app-content inbox-page-content">
-      <!-- FOLDER & BRAND CONTROLS -->
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;background:var(--bg-card-subtle);padding:8px 12px;border-radius:var(--radius-lg);border:1px solid var(--border-default);">
-        <div style="display:flex;gap:4px;flex-wrap:wrap;" id="folder-tab-group">
-          <button class="btn btn-primary btn-sm folder-btn" type="button" id="btn-folder-inbox" onclick="selectFolder('inbox')">📥 Inbox</button>
-          <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-sent" onclick="selectFolder('sent')">📤 Sent</button>
-          <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-draft" onclick="selectFolder('draft')">📝 Draft</button>
-          <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-spam" onclick="selectFolder('spam')">🚫 Spam</button>
-          <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-trash" onclick="selectFolder('trash')">🗑️ Trash</button>
-          <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-unread" onclick="loadInbox(true, 1, 'inbound')">📬 Unread Only</button>
-        </div>
-
-        <div id="brand-switch" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
-          <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-right:4px;">Brand:</span>
-          <button class="btn btn-primary btn-sm brand-tab-btn" type="button" data-brand="shippingwish.com" onclick="selectBrand('shippingwish.com')">Shipping Wish</button>
-          <button class="btn btn-secondary btn-sm brand-tab-btn" type="button" data-brand="loadsnexus.com" onclick="selectBrand('loadsnexus.com')">LoadsNexus</button>
-          <button class="btn btn-secondary btn-sm brand-tab-btn" type="button" data-brand="nyclimowish.com" onclick="selectBrand('nyclimowish.com')">NYC Limo Wish</button>
-          <button class="btn btn-secondary btn-sm brand-tab-btn" type="button" data-brand="buywishonline.com" onclick="selectBrand('buywishonline.com')">BuyWish</button>
-        </div>
-      </div>
-
-      <div class="inbox-kpi-row">
-        <div class="inbox-kpi-card">
-          <div class="inbox-kpi-icon unread">📬</div>
-          <div>
-            <div class="inbox-kpi-val" id="kpi-unread">0</div>
-            <div class="inbox-kpi-label">Unread replies</div>
+      <!-- UNIFIED CONTROL & KPI ROW (Fills empty space with folders & brands) -->
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:16px;background:var(--bg-elevated,#ffffff);border:1px solid var(--border-default,#e2e8f0);border-radius:14px;padding:12px 18px;box-shadow:0 1px 3px rgba(15,23,42,0.04);">
+        <!-- LEFT: KPI COUNTERS -->
+        <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="inbox-kpi-icon unread" style="width:38px;height:38px;font-size:18px;">📬</div>
+            <div>
+              <div class="inbox-kpi-val" id="kpi-unread" style="font-size:20px;">0</div>
+              <div class="inbox-kpi-label">Unread Replies</div>
+            </div>
+          </div>
+          <div style="height:36px;width:1px;background:var(--border-default,#e2e8f0);"></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="inbox-kpi-icon total" style="width:38px;height:38px;font-size:18px;">✉️</div>
+            <div>
+              <div class="inbox-kpi-val" id="kpi-total" style="font-size:20px;">0</div>
+              <div class="inbox-kpi-label">Total Loaded</div>
+            </div>
           </div>
         </div>
-        <div class="inbox-kpi-card">
-          <div class="inbox-kpi-icon total">✉️</div>
-          <div>
-            <div class="inbox-kpi-val" id="kpi-total">0</div>
-            <div class="inbox-kpi-label">Total Loaded</div>
+
+        <!-- RIGHT: FOLDER & BRAND BUTTONS FITTING PERFECTLY IN THE PREVIOUSLY EMPTY SPACE -->
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+          <div style="display:flex;gap:4px;flex-wrap:wrap;" id="folder-tab-group">
+            <button class="btn btn-primary btn-sm folder-btn" type="button" id="btn-folder-inbox" onclick="selectFolder('inbox')">📥 Inbox</button>
+            <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-sent" onclick="selectFolder('sent')">📤 Sent</button>
+            <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-draft" onclick="selectFolder('draft')">📝 Draft</button>
+            <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-spam" onclick="selectFolder('spam')">🚫 Spam</button>
+            <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-trash" onclick="selectFolder('trash')">🗑️ Trash</button>
+            <button class="btn btn-secondary btn-sm folder-btn" type="button" id="btn-folder-unread" onclick="loadInbox(true, 1, 'inbound')">📬 Unread Only</button>
+          </div>
+
+          <div id="brand-switch" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+            <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-right:4px;">Brand:</span>
+            <button class="btn btn-primary btn-sm brand-tab-btn" type="button" data-brand="shippingwish.com" onclick="selectBrand('shippingwish.com')">Shipping Wish</button>
+            <button class="btn btn-secondary btn-sm brand-tab-btn" type="button" data-brand="loadsnexus.com" onclick="selectBrand('loadsnexus.com')">LoadsNexus</button>
+            <button class="btn btn-secondary btn-sm brand-tab-btn" type="button" data-brand="nyclimowish.com" onclick="selectBrand('nyclimowish.com')">NYC Limo Wish</button>
+            <button class="btn btn-secondary btn-sm brand-tab-btn" type="button" data-brand="buywishonline.com" onclick="selectBrand('buywishonline.com')">BuyWish</button>
           </div>
         </div>
       </div>
@@ -389,7 +394,7 @@
       btn.classList.toggle('btn-secondary', !active);
     });
     const title = document.getElementById('inbox-title');
-    if (title) title.textContent = (BRAND_LABELS[currentDomain] || 'Mail') + ' mail';
+    if (title) title.textContent = (BRAND_LABELS[currentDomain] || 'Shipping Wish') + ' — Carrier Email Inbox';
   }
 
   function selectBrand(domain) {
@@ -932,6 +937,6 @@
 })();
 </script>
 
-<script src="/js/app-shell.js?v=34"></script>
+<script src="/js/app-shell.js?v=35"></script>
 </body>
 </html>
