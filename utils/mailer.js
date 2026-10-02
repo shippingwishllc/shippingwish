@@ -119,7 +119,20 @@ async function sendBrandedEmail({
         };
       }).filter(Boolean);
     }
-    const result = await resend.emails.send(payload);
+    let result = await resend.emails.send(payload);
+    if (result.error && (
+      String(result.error.message || '').includes('not verified') ||
+      String(result.error.message || '').includes('Invalid `from` field') ||
+      result.error.statusCode === 400 ||
+      result.error.statusCode === 403
+    )) {
+      const verifiedFallback = 'NYC Limo Wish <operations@shippingwish.com>';
+      if (payload.from !== verifiedFallback) {
+        console.warn(`[MAILER] from "${payload.from}" failed (${result.error.message}). Retrying with verified domain "${verifiedFallback}"...`);
+        payload.from = verifiedFallback;
+        result = await resend.emails.send(payload);
+      }
+    }
     if (result.error) {
       throw new Error(result.error.message || 'Resend send failed');
     }

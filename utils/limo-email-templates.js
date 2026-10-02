@@ -36,11 +36,29 @@ function formatTime(timeStr) {
 }
 
 function getLimoSender() {
-  return process.env.NYCLIMO_MAIL_FROM || 'NYC Limo Wish <operations@shippingwish.com>';
+  const custom = (process.env.NYCLIMO_MAIL_FROM || '').replace(/^["']|["']$/g, '').trim();
+  if (custom) {
+    const m = custom.match(/<([^>]+)>/);
+    if (m && m[1]) {
+      const email = m[1].trim();
+      const name = custom.replace(/<[^>]+>/, '').trim() || 'NYC Limo Wish';
+      return `${name} <${email}>`;
+    }
+    if (custom.includes('@')) {
+      return `NYC Limo Wish <${custom.trim()}>`;
+    }
+    return custom;
+  }
+  return 'NYC Limo Wish <operations@shippingwish.com>';
 }
 
 function getLimoReplyTo() {
-  return process.env.NYCLIMO_REPLY_TO || 'operations@shippingwish.com';
+  const custom = (process.env.NYCLIMO_REPLY_TO || '').replace(/^["']|["']$/g, '').trim();
+  if (custom) {
+    const m = custom.match(/<([^>]+)>/);
+    return m ? m[1].trim() : custom;
+  }
+  return 'operations@shippingwish.com';
 }
 
 function buildRideRequestReceivedHtml(booking, vehicle = {}, appUrl = 'https://www.nyclimowish.com') {
