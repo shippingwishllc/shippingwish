@@ -448,6 +448,36 @@
     openNewBrokerModal();
   }
 
+  async function deleteBroker(id) {
+    const ok = await (window.swConfirm ? window.swConfirm({
+      title: 'Delete Broker?',
+      message: 'Are you sure you want to remove this broker from your directory?',
+      icon: '🗑️',
+      confirmText: 'Yes, Delete',
+      danger: true
+    }) : Promise.resolve(confirm('Are you sure you want to delete this broker?')));
+
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/api/brokers/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (window.swToast) window.swToast(data.error || 'Failed to delete broker', 'error');
+        else alert(data.error || 'Failed to delete broker');
+        return;
+      }
+      if (window.swToast) window.swToast('Broker deleted successfully', 'success');
+      loadBrokersList();
+    } catch (err) {
+      if (window.swToast) window.swToast('Network error while deleting broker', 'error');
+    }
+  }
+  window.deleteBroker = deleteBroker;
+
   function openNewBrokerModal() { document.getElementById('new-broker-modal').classList.add('open'); }
   function closeNewBrokerModal() { document.getElementById('new-broker-modal').classList.remove('open'); }
 
@@ -459,6 +489,7 @@
     const res = await fetch('/api/brokers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(body)
     });
     const data = await res.json();
@@ -466,14 +497,16 @@
       closeNewBrokerModal();
       e.target.reset();
       loadBrokersList();
-      alert('✅ Broker saved successfully to directory!');
+      if (window.swToast) window.swToast('Broker saved successfully to directory!', 'success');
+      else alert('Broker saved successfully to directory!');
     } else {
-      alert(data.error || 'Failed to save broker');
+      if (window.swToast) window.swToast(data.error || 'Failed to save broker', 'error');
+      else alert(data.error || 'Failed to save broker');
     }
   });
 
   document.addEventListener('DOMContentLoaded', initBrokers);
 </script>
-<script src="/js/app-shell.js?v=20"></script>
+<script src="/js/app-shell.js?v=31"></script>
 </body>
 </html>
