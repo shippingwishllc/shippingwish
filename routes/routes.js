@@ -3,6 +3,14 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const axios = require('axios');
 
+const {
+  googleMapsKey,
+  computeHighwayRoute,
+  searchPlaceAutocomplete,
+  geocodeAddress,
+  getEmbedDirectionsUrl
+} = require('../utils/google-maps');
+
 // Helper: Haversine Distance Fallback (Miles)
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
   const R = 3958.8; // Earth radius in miles
@@ -43,11 +51,34 @@ const CITY_COORDINATES = {
 
 // GET /api/routes/config - Check API key status
 router.get('/config', requireAuth, (req, res) => {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_ROUTE_OPTIMIZATION_API_KEY;
+  const apiKey = googleMapsKey();
   res.json({
     google_maps_configured: Boolean(apiKey),
-    active_services: ['Route Optimization API', 'Truck Directions', 'HOS Compliance Calculator', 'Live Fuel Estimate']
+    active_services: ['Routes API (New v2)', 'Places API (New v1)', 'Geocoding API', 'Maps Embed API']
   });
+});
+
+// POST /api/routes/autocomplete - Search Places/Cities via Google Places API (New)
+router.post('/autocomplete', requireAuth, async (req, res) => {
+  try {
+    const { input, sessionToken } = req.body;
+    const suggestions = await searchPlaceAutocomplete(input, sessionToken);
+    res.json({ ok: true, suggestions });
+  } catch (err) {
+    res.status(500).json({ error: 'Autocomplete failed: ' + err.message });
+  }
+});
+
+// GET /api/routes/geocode - Geocode address or city
+router.get('/geocode', requireAuth, async (req, res) => {
+  try {
+    const address = req.query.address;
+    if (!address) return res.status(400).json({ error: 'Address query parameter required' });
+    const geo = await geocodeAddress(address);
+    res.json({ ok: Boolean(geo), data: geo });
+  } catch (err) {
+    res.status(500).json({ error: 'Geocoding failed: ' + err.message });
+  }
 });
 
 // POST /api/routes/optimize - Main Route & RPM Optimization Endpoint
@@ -59,39 +90,26 @@ router.post('/optimize', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Origin and Destination are required' });
     }
 
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_ROUTE_OPTIMIZATION_API_KEY;
     let loadedMiles = 0;
     let deadheadMiles = 0;
     let driveHours = 0;
     let routePolyline = '';
     let isGoogleLive = false;
 
-    if (apiKey) {
-      try {
-        // Call Google Directions API / Route Optimization
-        const googleUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${apiKey}`;
-        const response = await axios.get(googleUrl);
+    // 1. Live Google Routes API (v2) Highway Route Calculation
+    const googleRoute = await computeHighwayRoute(origin, destination, waypoints);
+    if (googleRoute && googleRoute.miles > 0) {
+      loadedMiles = googleRoute.miles;
+      driveHours = googleRoute.hours;
+      routePolyline = googleRoute.polyline;
+      isGoogleLive = Boolean(googleRoute.isGoogleLive);
 
-        if (response.data.status === 'OK' && response.data.routes.length > 0) {
-          const route = response.data.routes[0];
-          const leg = route.legs[0];
-
-          loadedMiles = Math.round(leg.distance.value / 1609.34); // Convert meters to miles
-          driveHours = parseFloat((leg.duration.value / 3600).toFixed(1)); // Convert seconds to hours
-          routePolyline = route.overview_polyline ? route.overview_polyline.points : '';
-          isGoogleLive = true;
-
-          // Deadhead calculation if deadhead origin provided
-          if (deadhead_origin && deadhead_origin.toLowerCase() !== origin.toLowerCase()) {
-            const dhUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(deadhead_origin)}&destination=${encodeURIComponent(origin)}&key=${apiKey}`;
-            const dhRes = await axios.get(dhUrl);
-            if (dhRes.data.status === 'OK' && dhRes.data.routes.length > 0) {
-              deadheadMiles = Math.round(dhRes.data.routes[0].legs[0].distance.value / 1609.34);
-            }
-          }
+      // Deadhead calculation if deadhead origin provided
+      if (deadhead_origin && deadhead_origin.toLowerCase().trim() !== origin.toLowerCase().trim()) {
+        const dhRoute = await computeHighwayRoute(deadhead_origin, origin);
+        if (dhRoute && dhRoute.miles > 0) {
+          deadheadMiles = dhRoute.miles;
         }
-      } catch (gErr) {
-        console.warn('Google Maps API call failed, using smart fallback calculation:', gErr.message);
       }
     }
 
@@ -139,7 +157,8 @@ router.post('/optimize', requireAuth, async (req, res) => {
         total_miles: totalMiles,
         est_drive_hours: driveHours,
         required_hos_breaks: requiredHosBreaks,
-        polyline: routePolyline
+        polyline: routePolyline,
+        embed_map_url: getEmbedDirectionsUrl({ origin, destination, waypoints })
       },
       financials: {
         gross_pay: payNum,

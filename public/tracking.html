@@ -232,7 +232,18 @@
       <!-- Injected dynamically -->
     </div>
 
-    <div id="map"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;margin-bottom:8px;">
+      <div style="display:flex;gap:8px;">
+        <button id="btnGoogleMap" onclick="switchMapView('google')" style="padding:6px 12px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">🗺️ Google Highway Route</button>
+        <button id="btnGpsMap" onclick="switchMapView('gps')" style="padding:6px 12px;background:#e2e8f0;color:#475569;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">🛰️ GPS Breadcrumb</button>
+      </div>
+      <span style="font-size:11px;color:#94a3b8;font-weight:500;">Powered by Google Maps Platform</span>
+    </div>
+
+    <div id="googleMapContainer" style="display:block;margin-top:8px;">
+      <iframe id="googleMapIframe" src="about:blank" width="100%" height="340" style="border:1px solid #cbd5e1; border-radius:10px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+    <div id="map" style="display:none;"></div>
   </div>
 
   <div class="grid-layout">
@@ -325,7 +336,17 @@
       `;
     }
 
-    // Init Leaflet Map
+    // Update Google Maps Embed Route
+    const iframe = document.getElementById('googleMapIframe');
+    if (t.embed_map_url) {
+      if (iframe.src !== t.embed_map_url) {
+        iframe.src = t.embed_map_url;
+      }
+    } else {
+      switchMapView('gps');
+    }
+
+    // Init Leaflet GPS Map
     const lat = t.gps.lat || 36.8656;
     const lng = t.gps.lng || -87.4886;
     if (!mapInstance) {
@@ -338,6 +359,32 @@
         .openPopup();
     } else {
       mapInstance.setView([lat, lng], 7);
+    }
+  }
+
+  function switchMapView(view) {
+    const googleBox = document.getElementById('googleMapContainer');
+    const gpsBox = document.getElementById('map');
+    const btnGoogle = document.getElementById('btnGoogleMap');
+    const btnGps = document.getElementById('btnGpsMap');
+
+    if (view === 'google') {
+      googleBox.style.display = 'block';
+      gpsBox.style.display = 'none';
+      btnGoogle.style.background = '#2563eb';
+      btnGoogle.style.color = '#fff';
+      btnGps.style.background = '#e2e8f0';
+      btnGps.style.color = '#475569';
+    } else {
+      googleBox.style.display = 'none';
+      gpsBox.style.display = 'block';
+      btnGps.style.background = '#2563eb';
+      btnGps.style.color = '#fff';
+      btnGoogle.style.background = '#e2e8f0';
+      btnGoogle.style.color = '#475569';
+      if (mapInstance) {
+        setTimeout(() => mapInstance.invalidateSize(), 200);
+      }
     }
   }
 

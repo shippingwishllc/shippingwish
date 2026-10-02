@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const pool = require('../db');
 const { sendBrandedEmail } = require('../utils/mailer');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { getEmbedDirectionsUrl } = require('../utils/google-maps');
 
 const router = express.Router();
 
@@ -171,7 +172,11 @@ router.get('/:token', async (req, res) => {
           { key: 'at_receiver', label: 'Arrived at Receiver', completed: ['at_receiver', 'delivered'].includes(record.tracking_status) },
           { key: 'delivered', label: 'Delivered & Signed POD', completed: record.tracking_status === 'delivered' }
         ],
-        check_calls: Array.isArray(record.check_calls_log) ? record.check_calls_log : []
+        check_calls: Array.isArray(record.check_calls_log) ? record.check_calls_log : [],
+        embed_map_url: getEmbedDirectionsUrl({
+          origin: record.pickup_location,
+          destination: record.delivery_location
+        })
       }
     });
   } catch (err) {
