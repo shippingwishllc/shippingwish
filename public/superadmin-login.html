@@ -579,12 +579,17 @@
           startResendCooldown();
         } else if (data.user && (data.user.role === 'super_admin' || data.user.is_super_admin)) {
           // Direct login (if 2FA was bypass - standard redirects to superadmin)
-          showAlert('Authentication confirmed. Entering Command Center...', 'success');
+          showAlert('Authentication confirmed. Entering Executive Command Center...', 'success');
           setTimeout(() => {
             window.location.href = '/superadmin';
           }, 600);
+        } else if (data.user && (data.user.role === 'admin' || data.user.role === 'dispatcher' || data.user.role === 'sales_rep')) {
+          showAlert('Authentication confirmed. Entering Management Portal...', 'success');
+          setTimeout(() => {
+            window.location.href = (data.user.role === 'admin') ? '/admin-dashboard' : ((data.user.role === 'dispatcher') ? '/dispatcher-dashboard' : '/sales-dashboard');
+          }, 600);
         } else {
-          showAlert('Access restricted: SuperAdmin privileges required.', 'error');
+          showAlert('Access restricted: Administrative privileges required.', 'error');
           step1Btn.disabled = false;
           step1Btn.innerHTML = '<span>Verify Credentials &amp; Request OTP</span> <span>&rarr;</span>';
         }
@@ -631,12 +636,12 @@
           return;
         }
 
-        showAlert('2FA Verified! Launching Executive Command Center...', 'success');
+        showAlert('2FA Verified! Launching Command Center...', 'success');
         clearInterval(countdownInterval);
         clearInterval(resendInterval);
 
         setTimeout(() => {
-          window.location.href = data.redirect || '/superadmin';
+          window.location.href = data.redirect || (data.user?.role === 'admin' ? '/admin-dashboard' : '/superadmin');
         }, 700);
 
       } catch (err) {
@@ -689,6 +694,28 @@
       if (e.target.value.length === 6) {
         step2Btn.focus();
       }
+    });
+
+    // Check if transferred from /login with active 2FA pending
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const storedToken = sessionStorage.getItem('sw_2fa_temp_token');
+        const storedEmail = sessionStorage.getItem('sw_2fa_masked_email');
+        const urlParams = new URLSearchParams(window.location.search);
+        if (storedToken && urlParams.get('step') === '2fa') {
+          currentTempToken = storedToken;
+          maskedEmailSpan.textContent = storedEmail || 'your email';
+          step1Form.style.display = 'none';
+          step2Container.style.display = 'block';
+          showAlert('Security OTP dispatched to ' + (storedEmail || 'your email') + '. Enter code below.', 'info');
+          otpInput.value = '';
+          otpInput.focus();
+          startOtpTimer();
+          startResendCooldown();
+          sessionStorage.removeItem('sw_2fa_temp_token');
+          sessionStorage.removeItem('sw_2fa_masked_email');
+        }
+      } catch (_) {}
     });
   </script>
 </body>

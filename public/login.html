@@ -487,13 +487,17 @@
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In →';
       } else if (data.requires_2fa) {
-        // SuperAdmin Two-Factor Authentication required
+        // Two-Factor Authentication required for administrative / protected accounts
         submitBtn.textContent = '2FA Required — Transferring...';
         alertBox.textContent = 'Two-Factor Authentication required. Redirecting to Executive Gateway...';
         alertBox.className = 'form-alert info';
         alertBox.style.display = 'block';
+        try {
+          if (data.temp_token) sessionStorage.setItem('sw_2fa_temp_token', data.temp_token);
+          if (data.email_masked || email) sessionStorage.setItem('sw_2fa_masked_email', data.email_masked || email);
+        } catch (_) {}
         setTimeout(() => {
-          window.location.href = '/superadmin-login';
+          window.location.href = '/superadmin-login?step=2fa';
         }, 500);
       } else {
         const role = data.user?.role || 'carrier';

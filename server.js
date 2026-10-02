@@ -791,6 +791,26 @@ async function seedAdminUsers() {
         console.log('[SEED] Super admin account created from SUPER_ADMIN_EMAIL.');
       }
     }
+
+    // Auto-ensure configured ADMIN_EMAILS exist as admin accounts
+    const adminEmails = [process.env.ADMIN_EMAIL_1, process.env.ADMIN_EMAIL_2].filter(Boolean);
+    const initialAdminPass = process.env.SUPER_ADMIN_PASSWORD || 'ShippingWish2026!';
+    for (const rawEmail of adminEmails) {
+      const email = String(rawEmail).trim().toLowerCase();
+      if (!email) continue;
+      const userRes = await pool.query('SELECT id, role, password_hash FROM users WHERE lower(email) = lower($1)', [email]);
+      if (userRes.rows.length === 0) {
+        const hash = await bcrypt.hash(initialAdminPass, 10);
+        const namePart = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        await pool.query(
+          `INSERT INTO users (name, email, password_hash, role, company_name, phone)
+           VALUES ($1, $2, $3, 'admin', 'Shipping Wish Executive HQ', $4)
+           ON CONFLICT (email) DO NOTHING`,
+          [`${namePart} (Admin)`, email, hash, process.env.COMPANY_PHONE || '+1 (917) 737-0021']
+        );
+        console.log(`[SEED] Auto-seeded configured admin account: ${email}`);
+      }
+    }
   } catch (err) {
     console.error('[SEED] Admin seed check:', err.message);
   }

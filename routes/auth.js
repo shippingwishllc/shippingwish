@@ -798,12 +798,14 @@ router.post('/auth/2fa/verify', rateLimit(10, 60000), async (req, res) => {
     const token = signToken(user, sessionInfo.sessionId);
     setAuthCookie(res, token);
 
+    const targetRedirect = (row.role === 'admin') ? '/admin-dashboard' : ((row.role === 'dispatcher') ? '/dispatcher-dashboard' : ((row.role === 'sales_rep') ? '/sales-dashboard' : '/superadmin'));
+
     return res.json({
       ok: true,
       token,
       user,
-      redirect: '/superadmin',
-      message: 'SuperAdmin 2FA verification successful. Access granted.'
+      redirect: targetRedirect,
+      message: 'Authentication successful. Access granted.'
     });
   } catch (err) {
     console.error('[AUTH 2FA verify error]:', err);
@@ -1088,14 +1090,57 @@ router.post('/users', requireAuth, requireRole('admin', 'super_admin'), async (r
   }
 });
 
-// SUPER ADMIN: Suspend/Unsuspend user
-router.patch('/users/:id/suspend', requireAuth, requireSuperAdmin, async (req, res) => {
+// ADMIN & SUPER ADMIN: Suspend/Unsuspend user
+router.patch('/users/:id/suspend', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   const { suspended } = req.body;
   try {
+    const check = await pool.query('SELECT role FROM users WHERE id = $1 AND deleted_at IS NULL', [req.params.id]);
+    if (!check.rows.length) return res.status(404).json({ error: 'User not found.' });
+    if (check.rows[0].role === 'super_admin' && req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Cannot modify a Super Admin account.' });
+    }
     await pool.query('UPDATE users SET is_suspended = $1 WHERE id = $2', [Boolean(suspended), req.params.id]);
-    res.json({ ok: true });
+    res.json({ ok: true, is_suspended: Boolean(suspended) });
   } catch (err) {
     res.status(500).json({ error: 'Could not update user status.' });
+  }
+});
+
+// ADMIN & SUPER ADMIN: Toggle suspend user
+router.patch('/users/:id/toggle-suspend', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const check = await pool.query('SELECT role, is_suspended FROM users WHERE id = $1 AND deleted_at IS NULL', [req.params.id]);
+    if (!check.rows.length) return res.status(404).json({ error: 'User not found.' });
+    if (check.rows[0].role === 'super_admin' && req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Cannot modify a Super Admin account.' });
+    }
+    const newStatus = !check.rows[0].is_suspended;
+    await pool.query('UPDATE users SET is_suspended = $1 WHERE id = $2', [newStatus, req.params.id]);
+    res.json({ ok: true, is_suspended: newStatus });
+  } catch (err) {
+    console.error('Toggle suspend error:', err);
+    res.status(500).json({ error: 'Could not update user status.' });
+  }
+});
+
+// ADMIN & SUPER ADMIN: Reset a user's password directly from Staff Management
+router.patch('/users/:id/password', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  const { new_password } = req.body;
+  if (!new_password || String(new_password).length < 8) {
+    return res.status(400).json({ error: 'New password must be at least 8 characters long.' });
+  }
+  try {
+    const check = await pool.query('SELECT role FROM users WHERE id = $1 AND deleted_at IS NULL', [req.params.id]);
+    if (!check.rows.length) return res.status(404).json({ error: 'User not found.' });
+    if (check.rows[0].role === 'super_admin' && req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only Super Admin can reset a Super Admin password.' });
+    }
+    const hash = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.params.id]);
+    res.json({ ok: true, message: 'Password updated successfully!' });
+  } catch (err) {
+    console.error('Reset user password error:', err);
+    res.status(500).json({ error: 'Could not reset password.' });
   }
 });
 

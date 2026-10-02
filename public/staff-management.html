@@ -175,11 +175,36 @@
   </div>
 </div>
 
+<!-- ================= RESET USER PASSWORD MODAL ================= -->
+<div class="modal-backdrop" id="reset-password-modal">
+  <div class="modal modal-sm" style="max-width:440px;">
+    <div class="modal-header">
+      <h2>Reset User Password</h2>
+      <button onclick="closeModal('reset-password-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="reset-password-form" onsubmit="submitResetPassword(event)">
+        <input type="hidden" id="resetUserId">
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+          Set a new password for <strong id="resetUserEmail" style="color:var(--text-primary);">user</strong>:
+        </p>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label required" for="newStaffPassword">New Password (min 8 chars)</label>
+          <input type="password" id="newStaffPassword" class="form-input" required minlength="8" placeholder="••••••••">
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;">
+          <button type="button" onclick="closeModal('reset-password-modal')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="btn-submit-reset-pw" class="btn btn-primary">Save New Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script src="/js/notifications-bell.js"></script>
 <script>
   let usersData = [];
   let currentRoleFilter = 'all';
-  let IS_ADMIN = false;
   let IS_ADMIN = false;
 
   document.addEventListener('DOMContentLoaded', async () => {
@@ -290,6 +315,7 @@
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             ${IS_ADMIN ? `<button class="btn btn-light btn-sm" onclick="toggleSuspend(${u.id})">${u.isSuspended ? 'Unsuspend' : 'Suspend'}</button>
+            <button class="btn btn-light btn-sm" onclick="openResetPasswordModal(${u.id}, '${escapeHtml(u.email)}')">Reset Password</button>
             <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteUser(${u.id})">Move to trash</button>` : '<span style="font-size:11px;color:var(--text-muted);">Admin only</span>'}
           </div>
         </td>
@@ -321,6 +347,50 @@
     openModal('add-user-modal');
   }
 
+  function openResetPasswordModal(id, email) {
+    const userIdInput = document.getElementById('resetUserId');
+    const userEmailSpan = document.getElementById('resetUserEmail');
+    const passwordInput = document.getElementById('newStaffPassword');
+    if (userIdInput) userIdInput.value = id;
+    if (userEmailSpan) userEmailSpan.textContent = email || 'user';
+    if (passwordInput) passwordInput.value = '';
+    openModal('reset-password-modal');
+  }
+
+  async function submitResetPassword(e) {
+    e.preventDefault();
+    const id = document.getElementById('resetUserId').value;
+    const new_password = document.getElementById('newStaffPassword').value;
+    const btn = document.getElementById('btn-submit-reset-pw');
+
+    if (!new_password || new_password.length < 8) {
+      alert('Password must be at least 8 characters long.');
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+    try {
+      const res = await fetch(`/api/users/${id}/password`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ new_password })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        alert(data.message || 'Password reset successfully! The user can now log in with the new password.');
+        closeModal('reset-password-modal');
+      } else {
+        alert(data.error || 'Failed to reset password.');
+      }
+    } catch (err) {
+      alert('Network error while resetting password.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Save New Password'; }
+    }
+  }
+
   function openModal(id) {
     const el = document.getElementById(id);
     if (el) { el.style.display = 'flex'; el.classList.add('open'); }
@@ -332,37 +402,68 @@
   }
 
   async function toggleSuspend(id) {
-    await fetch(`/api/users/${id}/toggle-suspend`, { method: 'PATCH', credentials: 'include' });
-    fetchUsers();
+    try {
+      const res = await fetch(`/api/users/${id}/toggle-suspend`, { method: 'PATCH', credentials: 'include' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Could not update user status.');
+      }
+      await fetchUsers();
+    } catch (e) {
+      console.error(e);
+      alert('Network error updating user status.');
+    }
   }
 
   async function deleteUser(id) {
     if (!confirm('Move this account to Trash? Only admins can restore from the Trash page.')) return;
-    await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
-    fetchUsers();
+    try {
+      const res = await fetch(`/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Could not delete user.');
+      }
+      await fetchUsers();
+    } catch (e) {
+      console.error(e);
+      alert('Network error deleting user.');
+    }
   }
 
   document.getElementById('add-user-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Creating...'; }
+
     const payload = {
-      name: document.getElementById('userName').value,
-      email: document.getElementById('userEmail').value,
+      name: document.getElementById('userName').value.trim(),
+      email: document.getElementById('userEmail').value.trim(),
       password: document.getElementById('userPassword').value,
       role: document.getElementById('userRole').value,
-      company_name: document.getElementById('userCompany').value,
-      phone: document.getElementById('userPhone').value
+      company_name: document.getElementById('userCompany').value.trim(),
+      phone: document.getElementById('userPhone').value.trim()
     };
 
-    const res = await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(payload)
-    });
-    if (res.ok) {
-      closeModal('add-user-modal');
-      e.target.reset();
-      fetchUsers();
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        closeModal('add-user-modal');
+        e.target.reset();
+        await fetchUsers();
+        alert('User account created successfully! The user can now log in.');
+      } else {
+        alert(data.error || 'Failed to create user account.');
+      }
+    } catch (err) {
+      alert('Network communication error while creating user.');
+    } finally {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create User Account →'; }
     }
   });
 
