@@ -32,7 +32,7 @@ router.get('/', requireAuth, adminOnly, async (req, res) => {
                 l.deleted_at, u.name AS carrier_name, u.company_name AS carrier_company,
                 du.name AS deleted_by_name
          FROM loads l
-         JOIN users u ON u.id = l.carrier_id
+         LEFT JOIN users u ON u.id = l.carrier_id
          LEFT JOIN users du ON du.id = l.deleted_by
          WHERE l.deleted_at IS NOT NULL
          ORDER BY l.deleted_at DESC
@@ -62,7 +62,7 @@ router.get('/', requireAuth, adminOnly, async (req, res) => {
                 u.name AS carrier_name, u.company_name AS carrier_company,
                 du.name AS deleted_by_name
          FROM drivers d
-         JOIN users u ON u.id = d.carrier_id
+         LEFT JOIN users u ON u.id = d.carrier_id
          LEFT JOIN users du ON du.id = d.deleted_by
          WHERE d.deleted_at IS NOT NULL
          ORDER BY d.deleted_at DESC

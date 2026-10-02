@@ -131,7 +131,7 @@ router.get('/directories/:id', async (req, res) => {
   }
 });
 
-router.delete('/directories/:id', requireRole('admin', 'super_admin'), async (req, res) => {
+router.delete('/directories/:id', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const ok = await directories.deleteDirectory(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Directory not found.' });
@@ -330,7 +330,7 @@ router.patch('/directories/:id/members/:memberId', async (req, res) => {
   }
 });
 
-router.delete('/directories/:id/members/:memberId', requireRole('admin', 'super_admin'), async (req, res) => {
+router.delete('/directories/:id/members/:memberId', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const ok = await directories.deleteMember(req.params.id, req.params.memberId);
     if (!ok) return res.status(404).json({ error: 'Carrier not found in this directory.' });
