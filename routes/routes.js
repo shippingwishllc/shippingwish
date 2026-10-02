@@ -6,6 +6,8 @@ const axios = require('axios');
 const {
   googleMapsKey,
   computeHighwayRoute,
+  computeRouteMatrix,
+  validateAddress,
   searchPlaceAutocomplete,
   geocodeAddress,
   getEmbedDirectionsUrl
@@ -54,7 +56,15 @@ router.get('/config', requireAuth, (req, res) => {
   const apiKey = googleMapsKey();
   res.json({
     google_maps_configured: Boolean(apiKey),
-    active_services: ['Routes API (New v2)', 'Places API (New v1)', 'Geocoding API', 'Maps Embed API']
+    active_services: [
+      'Routes API (New v2:computeRoutes)',
+      'Routes API (New v2:computeRouteMatrix)',
+      'Places API (New v1)',
+      'Address Validation API (CASS-certified)',
+      'Geocoding API',
+      'Maps Embed API',
+      'Maps JavaScript API'
+    ]
   });
 });
 
@@ -78,6 +88,33 @@ router.get('/geocode', requireAuth, async (req, res) => {
     res.json({ ok: Boolean(geo), data: geo });
   } catch (err) {
     res.status(500).json({ error: 'Geocoding failed: ' + err.message });
+  }
+});
+
+// POST /api/routes/validate-address - Verify postal and dock deliverability
+router.post('/validate-address', requireAuth, async (req, res) => {
+  try {
+    const { address, addressLines } = req.body;
+    const lines = addressLines || (address ? [address] : []);
+    if (!lines.length) return res.status(400).json({ error: 'Address or addressLines required' });
+    const validation = await validateAddress(lines);
+    res.json({ ok: Boolean(validation), validation });
+  } catch (err) {
+    res.status(500).json({ error: 'Address validation failed: ' + err.message });
+  }
+});
+
+// POST /api/routes/matrix - 1-to-Many Multi-Destination Highway Matrix
+router.post('/matrix', requireAuth, async (req, res) => {
+  try {
+    const { origin, destinations } = req.body;
+    if (!origin || !Array.isArray(destinations) || destinations.length === 0) {
+      return res.status(400).json({ error: 'Origin and destinations array required' });
+    }
+    const matrix = await computeRouteMatrix(origin, destinations);
+    res.json({ ok: true, origin, matrix });
+  } catch (err) {
+    res.status(500).json({ error: 'Matrix calculation failed: ' + err.message });
   }
 });
 

@@ -83,6 +83,16 @@ async function run() {
     assert(false, `computeRouteMatrix error: ${err.message}`);
   }
 
+  // 7. Test Address Validation API (CASS deliverability)
+  try {
+    const val = await gm.validateAddress(['1600 Amphitheatre Pkwy', 'Mountain View, CA 94043']);
+    assert(Boolean(val), 'Address Validation API verified live');
+    assert(val && val.formatted_address.includes('Amphitheatre'), `Address formatted by USPS standards: ${val ? val.formatted_address : ''}`);
+    assert(val && Boolean(val.cass_certified), 'Address confirmed CASS-certified delivery point');
+  } catch (err) {
+    assert(false, `validateAddress error: ${err.message}`);
+  }
+
   console.log('\n======================================================');
   console.log(`  Google Maps Tests: ${passed}/${total} Passed (${Math.round((passed/total)*100)}%)`);
   console.log('======================================================\n');
