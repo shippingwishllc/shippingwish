@@ -84,6 +84,7 @@ async function googleAutocomplete(query, sessionToken, key) {
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': key,
+      'Referer': 'https://www.nyclimowish.com/',
       'X-Goog-FieldMask': 'suggestions.placePrediction.placeId,suggestions.placePrediction.text.text,suggestions.placePrediction.structuredFormat.mainText.text,suggestions.placePrediction.structuredFormat.secondaryText.text'
     },
     body: JSON.stringify({
@@ -207,6 +208,7 @@ async function placeDetails(placeId, sessionToken) {
   const response = await fetch(url, {
     headers: {
       'X-Goog-Api-Key': key,
+      'Referer': 'https://www.nyclimowish.com/',
       'X-Goog-FieldMask': 'id,formattedAddress,location'
     },
     signal: AbortSignal.timeout(8000)

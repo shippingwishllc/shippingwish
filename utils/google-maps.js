@@ -26,6 +26,7 @@ function requestJson({ method = 'GET', url, headers = {}, body = null, timeout =
 
       const reqHeaders = {
         'Accept': 'application/json',
+        'Referer': 'https://www.shippingwish.com/',
         ...headers
       };
 
@@ -307,6 +308,45 @@ async function geocodeAddress(address) {
   if (!clean || !key) return null;
 
   try {
+    // 1. Primary: Places API (New) Text Search (supports HTTP referrers restriction)
+    const placeRes = await requestJson({
+      method: 'POST',
+      url: 'https://places.googleapis.com/v1/places:searchText',
+      headers: {
+        'X-Goog-Api-Key': key,
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.addressComponents'
+      },
+      body: { textQuery: clean },
+      timeout: 10000
+    });
+
+    if (placeRes.data?.places && placeRes.data.places.length > 0) {
+      const p = placeRes.data.places[0];
+      const loc = p.location || {};
+
+      let city = '';
+      let state = '';
+      let zip = '';
+
+      for (const comp of p.addressComponents || []) {
+        const types = comp.types || [];
+        if (types.includes('locality')) city = comp.longText || comp.shortText;
+        if (types.includes('administrative_area_level_1')) state = comp.shortText || comp.longText;
+        if (types.includes('postal_code')) zip = comp.shortText || comp.longText;
+      }
+
+      return {
+        formatted_address: p.formattedAddress || clean,
+        lat: loc.latitude,
+        lng: loc.longitude,
+        city: city || p.displayName?.text || '',
+        state,
+        zip,
+        isGoogleLive: true
+      };
+    }
+
+    // 2. Fallback: Classic Geocoding API (if key is unrestricted)
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(clean)}&key=${key}`;
     const res = await requestJson({
       method: 'GET',

@@ -158,6 +158,7 @@ async function getRouteMetrics(points) {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': key,
+        'Referer': 'https://www.nyclimowish.com/',
         'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration'
       },
       body: JSON.stringify({
