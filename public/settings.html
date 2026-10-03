@@ -894,7 +894,7 @@
         statusEl.innerHTML = `
           <div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;padding:12px 14px;color:#065f46;">
             <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;">
-              <span>🟢</span> Call Outbound Connected! Ringing ${esc(phone)} now.
+              <span>🟢</span> Vapi ne call request accept kar li — ${esc(phone)} par dial ho raha hai.
             </div>
             <div style="font-size:12px;margin-top:4px;color:#047857;line-height:1.4;">
               <strong>Persona:</strong> ${esc(assistant)}<br>
@@ -905,6 +905,7 @@
         `;
       }
       showToast('Outbound call dispatched! Phone is ringing.', true);
+      if (data.result && data.result.callId) pollVoiceCallStatus(data.result.callId);
     } catch (err) {
       if (statusEl) {
         statusEl.innerHTML = `
@@ -919,6 +920,53 @@
         btn.disabled = false;
         btn.innerHTML = origText;
       }
+    }
+  }
+
+  function explainVapiReason(reason) {
+    const r = String(reason || '').toLowerCase();
+    if (!r) return '';
+    if (r.includes('customer-did-not-answer') || r.includes('no-answer')) return 'Phone ring hua lekin call pick nahi hui.';
+    if (r.includes('customer-busy')) return 'Number busy tha.';
+    if (r.includes('voicemail')) return 'Call voicemail par chali gayi.';
+    if (r.includes('customer-ended-call')) return 'Aap ne call khatam ki — call successfully connect hui thi.';
+    if (r.includes('assistant-ended-call') || r.includes('silence-timed-out')) return 'AI ne call khatam ki (silence ya conversation complete).';
+    if (r.includes('twilio') || r.includes('sip') || r.includes('outbound')) return 'Twilio ne call connect nahi ki. Twilio Console > Monitor > Logs > Calls mein error dekhein (trial account sirf verified numbers ko call kar sakta hai, ya Geo Permissions / balance issue).';
+    if (r.includes('credit') || r.includes('billing') || r.includes('wallet')) return 'Vapi account mein credits/billing issue hai. dashboard.vapi.ai > Billing check karein.';
+    if (r.includes('key') || r.includes('auth') || r.includes('credential')) return 'Provider key (OpenAI/ElevenLabs/Twilio) Vapi mein invalid hai.';
+    return '';
+  }
+
+  async function pollVoiceCallStatus(callId) {
+    const statusEl = document.getElementById('test-voice-call-status');
+    if (!statusEl) return;
+    let box = document.getElementById('voice-live-status-line');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'voice-live-status-line';
+      box.style.cssText = 'margin-top:8px;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;';
+      statusEl.appendChild(box);
+    }
+    for (let i = 0; i < 30; i++) {
+      try {
+        const res = await fetch('/api/driver-assistant/vapi-call/' + encodeURIComponent(callId), { credentials: 'include' });
+        const d = await res.json();
+        if (!res.ok) { box.innerHTML = '⚠️ Status check failed: ' + esc(d.error || res.status); return; }
+        if (d.status === 'ended') {
+          const why = explainVapiReason(d.endedReason);
+          const good = /customer-ended-call|assistant-ended-call/.test(d.endedReason || '');
+          box.style.background = good ? '#ecfdf5' : '#fef2f2';
+          box.style.borderColor = good ? '#6ee7b7' : '#fca5a5';
+          box.style.color = good ? '#065f46' : '#991b1b';
+          box.innerHTML = `📴 Call ended — <code>${esc(d.endedReason || 'unknown')}</code>${why ? '<br>' + esc(why) : ''}`;
+          return;
+        }
+        box.innerHTML = `📡 Live status: <strong>${esc(d.status || 'queued')}</strong> (updating…)`;
+      } catch (e) {
+        box.innerHTML = '⚠️ Status check error: ' + esc(e.message);
+        return;
+      }
+      await new Promise(r => setTimeout(r, 3000));
     }
   }
 

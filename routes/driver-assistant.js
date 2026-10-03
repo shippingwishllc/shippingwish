@@ -117,4 +117,15 @@ router.post('/test-vapi-call', requireAuth, staffOnly, async (req, res) => {
   }
 });
 
+// GET /api/driver-assistant/vapi-call/:id — Live Vapi call status (diagnostics)
+router.get('/vapi-call/:id', requireAuth, staffOnly, async (req, res) => {
+  try {
+    const result = await driverAssistant.getVapiCallStatus(req.params.id);
+    if (!result.ok) return res.status(400).json({ error: result.error });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch call status: ' + err.message });
+  }
+});
+
 module.exports = router;

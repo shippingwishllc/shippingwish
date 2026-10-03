@@ -703,6 +703,35 @@ async function tick() {
   }
 }
 
+/**
+ * Fetch live status of a Vapi call (status + endedReason) for diagnostics
+ */
+async function getVapiCallStatus(callId) {
+  let vapiApiKey = String(process.env.VAPI_API_KEY || '').trim();
+  if (!vapiApiKey) {
+    try {
+      const { rows } = await pool.query("SELECT value FROM site_settings WHERE key = 'vapi_api_key'");
+      if (rows[0] && rows[0].value) vapiApiKey = rows[0].value.trim();
+    } catch (_) {}
+  }
+  if (!vapiApiKey) return { ok: false, error: 'Vapi API key not configured.' };
+
+  const res = await fetch(`https://api.vapi.ai/call/${encodeURIComponent(callId)}`, {
+    headers: { Authorization: `Bearer ${vapiApiKey}` }
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return { ok: false, error: data.message || `Vapi error ${res.status}` };
+  return {
+    ok: true,
+    id: data.id,
+    status: data.status,
+    endedReason: data.endedReason || null,
+    cost: data.cost,
+    startedAt: data.startedAt,
+    endedAt: data.endedAt
+  };
+}
+
 module.exports = {
   ensureDriverAssistantSchema,
   runMorningDriverCheckins,
@@ -713,5 +742,6 @@ module.exports = {
   onLoadStatusChanged,
   sendAssistantMessage,
   triggerVapiCall,
+  getVapiCallStatus,
   tick
 };
