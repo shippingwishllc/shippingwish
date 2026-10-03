@@ -205,11 +205,15 @@
             <select onchange="applyWhatsAppTemplate(this.value)" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;outline:none;">
               <option value="custom">Custom Message (Blank)</option>
               <option value="test">🧪 Plain Test Message</option>
-              <option value="loadoffer">🚛 Company Format: Official Load Offer &amp; Rate</option>
-              <option value="welcome">🌟 Shipping Wish — 24/7 Dedicated Dispatch Welcome ($0 Free Trial)</option>
-              <option value="loadsnexus">📦 LoadsNexus — $19/mo Solo Load Board Pass Link</option>
-              <option value="checkin">📍 Dispatcher Morning Check-In (Are you empty today?)</option>
-              <option value="ratecon">📋 Rate Confirmation &amp; Load Packet Dispatch</option>
+              <option value="loadoffer">🚛 Template 1: Load Offer (DHO, Miles, Rate, Notes)</option>
+              <option value="checkin">📍 Template 2: Morning Check-In (Equipment &amp; Location)</option>
+              <option value="ratecon">📋 Template 3: Rate Confirmation Follow-Up</option>
+              <option value="dispatch">📦 Template 4: Trip Details &amp; Dispatch Instructions</option>
+              <option value="checkcall">🚚 Template 5: In-Transit Check-Call Update</option>
+              <option value="pod">📸 Template 6: Signed POD / BOL Request</option>
+              <option value="onboarding">📄 Template 7: Carrier Setup &amp; Onboarding Packet</option>
+              <option value="marketing_trial">🌟 Marketing 1: 7-Day Dedicated Dispatch Free Trial ($0 Fee)</option>
+              <option value="marketing_solo">📦 Marketing 2: LoadsNexus Solo Broker Load Pass ($19/mo)</option>
             </select>
           </div>
 
@@ -499,7 +503,9 @@
   window.applyWhatsAppTemplate = function (val) {
     const txt = document.getElementById('new-wa-body');
     if (!txt) return;
-    if (val === 'test') {
+    if (val === 'custom') {
+      txt.value = '';
+    } else if (val === 'test') {
       txt.value = 'Hello! This is an official live WhatsApp verification test from Shipping Wish Operations Desk. Please reply to confirm receipt.';
     } else if (val === 'loadoffer') {
       txt.value = `🚛 *SHIPPING WISH DISPATCH | LOAD OFFER*
@@ -519,14 +525,108 @@
 
 Please reply *ACCEPT* to book this load or call *(917) 737-0021*.
 Shipping Wish LLC — www.shippingwish.com`;
-    } else if (val === 'welcome') {
-      txt.value = 'Hello! Welcome to Shipping Wish 24/7 Logistics & Dedicated Dispatch operations on WhatsApp. Test our personal dispatcher for 1 week at $0 (Zero Risk Free Trial). How can our dispatch desk assist your fleet today?';
-    } else if (val === 'loadsnexus') {
-      txt.value = 'Hello, here is the LoadsNexus link for direct broker loads. The Solo Pass is $19/mo: https://www.loadsnexus.com';
     } else if (val === 'checkin') {
-      txt.value = 'Hello! Shipping Wish dispatch operations checking in. Are you empty today and looking for high-paying loads? Let us know your equipment and location.';
+      txt.value = `📍 *SHIPPING WISH DISPATCH | MORNING CHECK-IN*
+
+Hello! This is Shipping Wish Dispatch operations checking in for today.
+
+*Status:* Are you empty today or looking for a reload?
+
+Please reply with your current *location* and *equipment type* so our team can match high-paying freight for your fleet.
+Call or text: *(917) 737-0021*
+Shipping Wish LLC — www.shippingwish.com`;
     } else if (val === 'ratecon') {
-      txt.value = 'Hello, this is Shipping Wish operations following up on your load agreement and Rate Confirmation. Please confirm receipt so we can finalize driver dispatch.';
+      txt.value = `📋 *SHIPPING WISH DISPATCH | RATE CONFIRMATION*
+
+Hello, this is Shipping Wish operations following up on your load agreement.
+
+*Load ID:* SW-4821
+*Route:* Hopkinsville, KY to D'Iberville, MS
+*Rate:* $1,000
+
+Please review the Rate Confirmation sent to your email, sign it, and reply *CONFIRMED* so we can finalize driver dispatch.
+Call: *(917) 737-0021*
+Shipping Wish LLC — www.shippingwish.com`;
+    } else if (val === 'dispatch') {
+      txt.value = `📦 *SHIPPING WISH DISPATCH | TRIP DETAILS*
+
+Your load is confirmed. Here are your dispatch details:
+
+*Load ID:* SW-4821
+*Shipper:* 120 Logistics Pkwy, Hopkinsville, KY
+*Receiver:* 450 Commerce Blvd, D'Iberville, MS
+*Pickup Window:* Today before 5:00 PM
+*Delivery Window:* Tomorrow 8:00 AM - 3:00 PM
+
+*Notes:* Call dispatcher upon arrival and departure.
+Dispatch Desk: *(917) 737-0021*
+Shipping Wish LLC — www.shippingwish.com`;
+    } else if (val === 'checkcall') {
+      txt.value = `🚚 *SHIPPING WISH DISPATCH | CHECK-CALL UPDATE*
+
+Hello driver, this is Shipping Wish operations with a routine in-transit check-call.
+
+*Load ID:* SW-4821
+*Destination:* D'Iberville, MS
+
+Please reply with your current *mile marker / city* and estimated *ETA* to receiver. Safe travels!
+Dispatch Hotline: *(917) 737-0021*
+Shipping Wish LLC — www.shippingwish.com`;
+    } else if (val === 'pod') {
+      txt.value = `📸 *SHIPPING WISH DISPATCH | POD / BOL REQUEST*
+
+Hello driver, congratulations on completing delivery!
+
+*Load ID:* SW-4821
+*Receiver:* D'Iberville, MS
+
+Please take a clear photo of the signed *Proof of Delivery (POD / BOL)* with receiver stamp and reply with it here for quick invoice processing.
+Thank you for rolling with Shipping Wish!
+Accounting Desk: *(917) 737-0021*
+Shipping Wish LLC — www.shippingwish.com`;
+    } else if (val === 'onboarding') {
+      txt.value = `📄 *SHIPPING WISH DISPATCH | CARRIER ONBOARDING*
+
+Hello! Welcome to Shipping Wish Carrier Network.
+
+To get your fleet approved for our direct shipper and broker freight:
+*Required Documents:*
+1. Active MC / DOT Authority
+2. Certificate of Insurance (COI) with $100k Cargo & $1M Auto
+3. Signed W-9 Form & Voided Check (for Direct Deposit)
+
+Please reply to this chat or email documents to: *dispatch@shippingwish.com*
+Onboarding Desk: *(917) 737-0021*
+Shipping Wish LLC — www.shippingwish.com`;
+    } else if (val === 'marketing_trial') {
+      txt.value = `🌟 *SHIPPING WISH | 24/7 DEDICATED DISPATCH*
+
+Hello! Keep your trucks loaded with high-paying freight.
+
+*Dedicated Dispatching Services:*
+• Top-dollar rate negotiation (No cheap loads)
+• Direct shipper & verified broker freight access
+• 100% paperless billing, invoicing & factor setup
+• 24/7 round-the-clock dispatcher support
+
+*Special Carrier Offer:* Test our dedicated dispatcher for 7 days at *$0 setup fee* (Zero-risk trial).
+Reply *START* or call *(917) 737-0021* to speak with our head dispatcher today.
+Shipping Wish LLC — www.shippingwish.com`;
+    } else if (val === 'marketing_solo') {
+      txt.value = `📦 *LOADSNEXUS | FREIGHT NETWORK PASS*
+
+Hello carrier! Looking for more verified broker freight for your fleet?
+
+Get unlimited access to real-time verified broker freight and direct load opportunities with the LoadsNexus Solo Pass for only *$19/month*.
+
+*Features:*
+• Instant load matching & route alerts
+• Direct broker contact info (No hidden middlemen)
+• Fast carrier setup & 1-click booking
+
+Activate your pass today at: *https://www.loadsnexus.com*
+Support Desk: *(917) 737-0021*
+LoadsNexus by Shipping Wish LLC`;
     }
   };
 
