@@ -602,7 +602,7 @@ Speak concisely in 1 to 2 sentences.`;
         }
       } : {}),
       endCallMessage: 'Thank you for your time. Have a safe day!',
-      recordingEnabled: true
+      artifactPlan: { recordingEnabled: true }
     }
   });
 
@@ -617,9 +617,10 @@ Speak concisely in 1 to 2 sentences.`;
     });
 
     let data = await res.json().catch(() => ({}));
+    const msgOf = (d) => Array.isArray(d.message) ? d.message.join('; ') : String(d.message || d.error || '');
     
     // If voice provider failed (e.g. ElevenLabs not linked in Vapi account), retry with Vapi default voice
-    if (!res.ok && data.message && (data.message.includes('voice') || data.message.includes('elevenlabs') || data.message.includes('Voice'))) {
+    if (!res.ok && /voice|elevenlabs|11labs/i.test(msgOf(data))) {
       res = await fetch('https://api.vapi.ai/call/phone', {
         method: 'POST',
         headers: {
@@ -631,7 +632,7 @@ Speak concisely in 1 to 2 sentences.`;
       data = await res.json().catch(() => ({}));
     }
 
-    if (!res.ok) throw new Error(data.message || `Vapi error ${res.status}`);
+    if (!res.ok) throw new Error(`Vapi ${res.status}: ${msgOf(data) || 'unknown error'}`);
 
     return { ok: true, callId: data.id, provider: 'vapi', assistant: assistantName, phone: targetPhone };
   } catch (err) {

@@ -199,7 +199,7 @@ router.post('/outbound', requireAuth, async (req, res) => {
             }
           } : {}),
           endCallMessage: "Thank you for your time. Have a safe drive!",
-          recordingEnabled: true
+          artifactPlan: { recordingEnabled: true }
         }
       });
 
@@ -213,9 +213,10 @@ router.post('/outbound', requireAuth, async (req, res) => {
       });
 
       let vapiData = await vapiRes.json().catch(() => ({}));
+      const msgOf = (d) => Array.isArray(d.message) ? d.message.join('; ') : String(d.message || d.error || '');
 
       // Fallback if 11labs voice fails in Vapi workspace
-      if (!vapiRes.ok && vapiData.message && (vapiData.message.includes('voice') || vapiData.message.includes('elevenlabs') || vapiData.message.includes('Voice'))) {
+      if (!vapiRes.ok && /voice|elevenlabs|11labs/i.test(msgOf(vapiData))) {
         vapiRes = await fetch('https://api.vapi.ai/call/phone', {
           method: 'POST',
           headers: {
@@ -228,7 +229,7 @@ router.post('/outbound', requireAuth, async (req, res) => {
       }
 
       if (!vapiRes.ok) {
-        throw new Error(vapiData.message || `Vapi error ${vapiRes.status}`);
+        throw new Error(`Vapi ${vapiRes.status}: ${msgOf(vapiData) || 'unknown error'}`);
       }
 
       // Log call into database
