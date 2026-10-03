@@ -300,6 +300,42 @@
                 <button type="button" id="btn-save-voice-ai" class="btn btn-primary" onclick="saveIntegrationCategory('voice-ai')">💾 Save Voice Settings</button>
                 <span id="save-status-voice-ai" style="font-size:12.5px;"></span>
               </div>
+
+              <!-- LIVE VOICE AI TEST CALL TOOL -->
+              <div style="margin-top:24px;padding:18px;background:var(--surface-base);border:1px solid #cbd5e1;border-radius:var(--radius-lg);box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+                  <div style="font-weight:700;font-size:14px;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:18px;">🧪</span>
+                    <span>Live Voice AI Test Call Desk</span>
+                  </div>
+                  <span style="font-size:11px;background:#e0f2fe;color:#0369a1;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #bae6fd;">Instant Live Dial</span>
+                </div>
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;line-height:1.5;">
+                  Test any AI voice persona live on your phone right now. Select a scenario, verify your number, and click <strong>Call Now</strong>. Vapi AI will immediately dial your phone through your Twilio number.
+                </p>
+
+                <div style="display:grid;grid-template-columns:1fr 1.3fr auto;gap:12px;align-items:end;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-size:11.5px;font-weight:700;">Target Phone Number</label>
+                    <input type="text" class="form-input" id="test-voice-phone" value="+19177370021" placeholder="+1 (917) 737-0021" style="font-weight:600;">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-size:11.5px;font-weight:700;">AI Persona &amp; Scenario</label>
+                    <select class="form-input" id="test-voice-scenario" style="font-weight:600;">
+                      <option value="morning_checkin">🚚 Driver Morning Check-in (Sarah — Dispatch Desk)</option>
+                      <option value="carrier_pitch">🤝 Carrier Closer (Alex — 0% Commission &amp; $0 Trial)</option>
+                      <option value="loadsnexus_broker">📦 Broker Freight Coverage (Jordan — LoadsNexus)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <button type="button" class="btn btn-primary" id="btn-trigger-test-call" onclick="runTestVoiceCall()" style="white-space:nowrap;padding:9px 18px;font-weight:700;background:#0284c7;border-color:#0284c7;">
+                      📞 Call Now
+                    </button>
+                  </div>
+                </div>
+
+                <div id="test-voice-call-status" style="margin-top:12px;"></div>
+              </div>
             </div>
           </div>
 
@@ -812,6 +848,77 @@
         btn.disabled = false;
       }
       showToast(err.message, false);
+    }
+  }
+
+  // --- Live Voice AI Test Call Desk ---
+  async function runTestVoiceCall() {
+    const phoneInput = document.getElementById('test-voice-phone');
+    const scenarioSelect = document.getElementById('test-voice-scenario');
+    const statusEl = document.getElementById('test-voice-call-status');
+    const btn = document.getElementById('btn-trigger-test-call');
+
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+    const scenario = scenarioSelect ? scenarioSelect.value : 'morning_checkin';
+
+    if (!phone) {
+      if (statusEl) {
+        statusEl.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;padding:8px 12px;border-radius:6px;font-weight:700;font-size:12px;">❌ Please enter a phone number.</div>';
+      }
+      return;
+    }
+
+    const origText = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Dialing…';
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `<div style="background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;">⏳ Calling ${esc(phone)} via Vapi AI... Please hold on.</div>`;
+    }
+
+    try {
+      const res = await fetch('/api/driver-assistant/test-vapi-call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone, scenario, driver_name: 'Partner' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to place call');
+
+      const callId = data.result && data.result.callId ? data.result.callId : 'Active';
+      const assistant = data.result && data.result.assistant ? data.result.assistant : 'Voice AI';
+
+      if (statusEl) {
+        statusEl.innerHTML = `
+          <div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;padding:12px 14px;color:#065f46;">
+            <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;">
+              <span>🟢</span> Call Outbound Connected! Ringing ${esc(phone)} now.
+            </div>
+            <div style="font-size:12px;margin-top:4px;color:#047857;line-height:1.4;">
+              <strong>Persona:</strong> ${esc(assistant)}<br>
+              <strong>Vapi Call ID:</strong> <code style="font-size:11px;background:#d1fae5;padding:1px 4px;border-radius:4px;">${esc(callId)}</code><br>
+              Apne mobile phone par aati hui call ko receive karein aur AI ke sath direct baat karein!
+            </div>
+          </div>
+        `;
+      }
+      showToast('Outbound call dispatched! Phone is ringing.', true);
+    } catch (err) {
+      if (statusEl) {
+        statusEl.innerHTML = `
+          <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;color:#991b1b;font-size:12px;">
+            <strong>❌ Call Failed:</strong> ${esc(err.message)}
+          </div>
+        `;
+      }
+      showToast(err.message, false);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = origText;
+      }
     }
   }
 

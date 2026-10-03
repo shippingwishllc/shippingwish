@@ -99,15 +99,18 @@ Shipping Wish Operations`;
 
 // POST /api/driver-assistant/test-vapi-call — Test Vapi AI voice check-call
 router.post('/test-vapi-call', requireAuth, staffOnly, async (req, res) => {
-  const { phone, driver_name } = req.body || {};
+  const { phone, driver_name, scenario } = req.body || {};
   if (!phone) return res.status(400).json({ error: 'Phone number is required.' });
 
   try {
     const callRes = await driverAssistant.triggerVapiCall({
       phone,
-      driverName: driver_name || 'Driver',
-      scenario: 'morning_checkin'
+      driverName: driver_name || 'Partner',
+      scenario: scenario || 'morning_checkin'
     });
+    if (!callRes.ok) {
+      return res.status(400).json({ error: callRes.error || callRes.reason || 'Vapi call failed' });
+    }
     res.json({ ok: true, result: callRes });
   } catch (err) {
     res.status(500).json({ error: 'Vapi call trigger failed: ' + err.message });
