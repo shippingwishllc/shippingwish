@@ -148,16 +148,17 @@
     </div>
     <div class="limo-widget limo-widget-hero" id="hero-widget">
       <div class="limo-tabs">
-        <button class="limo-tab active" data-tab="point_to_point">Point-to-Point</button>
-        <button class="limo-tab" data-tab="hourly">Hourly</button>
+        <button type="button" class="limo-tab active" data-tab="point_to_point">Point-to-Point</button>
+        <button type="button" class="limo-tab" data-tab="hourly">Hourly</button>
       </div>
       <form id="hero-book-form" action="/book">
         <input type="hidden" name="serviceType" id="serviceType" value="point_to_point">
         <div class="limo-field">
-          <label>Pickup Location</label>
           <div class="limo-address-box has-pill">
-            <span class="limo-field-icon">📍</span>
-            <input class="limo-input limo-address" name="pickup" id="pickup" placeholder="Enter pickup address" required autocomplete="off">
+            <span class="limo-field-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            </span>
+            <input class="limo-input limo-address" name="pickup" id="pickup" placeholder="Pickup Location" required autocomplete="off">
             <button type="button" class="limo-field-pill-btn" id="heroAddStop" title="Add a stop">Add Stop</button>
             <input type="hidden" name="pickupPlaceId" id="pickupPlaceId">
             <input type="hidden" name="pickupSessionToken" id="pickupSessionToken">
@@ -165,44 +166,60 @@
           </div>
         </div>
         <div class="limo-field" id="duration-field" style="display:none;">
-          <label>Duration</label>
-          <span class="limo-field-icon">⏱</span>
-          <select class="limo-input" name="hours" id="hours">
-            <option value="2">2 hours</option>
-            <option value="3" selected>3 hours</option>
-            <option value="4">4 hours</option>
-            <option value="5">5 hours</option>
-            <option value="6">6 hours</option>
-            <option value="8">8 hours</option>
-            <option value="10">10 hours</option>
-            <option value="12">12 hours</option>
-          </select>
+          <div class="limo-address-box">
+            <span class="limo-field-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </span>
+            <select class="limo-input" name="hours" id="hours">
+              <option value="2">2 hours</option>
+              <option value="3" selected>3 hours</option>
+              <option value="4">4 hours</option>
+              <option value="5">5 hours</option>
+              <option value="6">6 hours</option>
+              <option value="8">8 hours</option>
+              <option value="10">10 hours</option>
+              <option value="12">12 hours</option>
+            </select>
+          </div>
         </div>
         <div class="limo-field" id="dropoff-field">
-          <label>Drop-off Location</label>
           <div class="limo-address-box has-pill" id="dropoff-address-box">
-            <span class="limo-field-icon">📍</span>
-            <input class="limo-input limo-address" name="dropoff" id="dropoff" placeholder="Enter drop-off address" autocomplete="off">
+            <span class="limo-field-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            </span>
+            <input class="limo-input limo-address" name="dropoff" id="dropoff" placeholder="Drop-off Location" autocomplete="off">
             <button type="button" class="limo-field-pill-btn" id="heroSameAsPickup" style="display:none;" title="Same as pickup address">Same as Pickup</button>
             <input type="hidden" name="dropoffPlaceId" id="dropoffPlaceId">
             <input type="hidden" name="dropoffSessionToken" id="dropoffSessionToken">
             <div class="limo-suggest" id="dropoff-suggest" hidden></div>
           </div>
         </div>
-        <div class="limo-field-row">
-          <div class="limo-field">
-            <label>Date</label>
-            <span class="limo-field-icon">📅</span>
-            <input class="limo-input" type="date" name="pickupDate" id="pickupDate" required>
+        <div class="limo-field-row limo-date-time-row">
+          <div class="limo-field" style="margin-bottom:0;">
+            <div class="limo-address-box">
+              <span class="limo-field-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              </span>
+              <input class="limo-input" type="date" name="pickupDate" id="pickupDate" required>
+            </div>
           </div>
-          <div class="limo-field">
-            <label>Time</label>
-            <span class="limo-field-icon">🕐</span>
-            <input class="limo-input" type="time" name="pickupTime" id="pickupTime" required>
+          <div class="limo-field" style="margin-bottom:0;">
+            <div class="limo-address-box">
+              <span class="limo-field-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </span>
+              <input class="limo-input" type="time" name="pickupTime" id="pickupTime" required>
+            </div>
           </div>
         </div>
-        <p class="limo-note">🕐 Chauffeur wait 15 minutes complimentary</p>
-        <button type="submit" class="limo-btn limo-btn-gold limo-btn-block">🔍 Find My Ride</button>
+        <p class="limo-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="flex-shrink:0;opacity:0.85;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Chauffeur wait 15 minutes complimentary
+        </p>
+        <button type="submit" class="limo-btn limo-btn-gold limo-btn-block limo-btn-find-ride" id="heroFindRideBtn">
+          <span>FIND MY RIDE</span>
+          <svg class="limo-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="8.01"></line></svg>
+        </button>
       </form>
     </div>
   </div>

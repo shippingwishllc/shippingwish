@@ -252,9 +252,20 @@
       if (dropoffPlaceId) dropoffPlaceId.value = pickupPlaceId?.value || pickupInput.dataset.placeId || '';
       if (dropoffSessionToken) dropoffSessionToken.value = pickupSessionToken?.value || '';
     }
-    const params = new URLSearchParams(new FormData(form));
-    window.location.href = '/book?' + params.toString();
+    const btn = form.querySelector('.limo-btn-find-ride') || form.querySelector('button[type="submit"]');
+    if (btn) btn.classList.add('is-animating');
+    setTimeout(() => {
+      const params = new URLSearchParams(new FormData(form));
+      window.location.href = '/book?' + params.toString();
+    }, 260);
   });
+
+  const heroFindBtn = form.querySelector('.limo-btn-find-ride');
+  if (heroFindBtn) {
+    heroFindBtn.addEventListener('pointerdown', () => {
+      heroFindBtn.classList.add('is-animating');
+    });
+  }
 
   const params = new URLSearchParams(window.location.search);
   if (params.get('pickup') && pickupInput) pickupInput.value = params.get('pickup');
