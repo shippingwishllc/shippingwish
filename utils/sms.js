@@ -72,9 +72,26 @@ function startConfirmReply() {
   );
 }
 
+function isInvalidOrFakeNumber(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits || digits.length < 10) return true;
+  // All repeating digits (e.g. 0000000000, 1111111111, 5555555555, 9999999999)
+  if (/^(\d)\1+$/.test(digits)) return true;
+  // Sequential dummy test digits
+  if (digits.includes('1234567890') || digits.includes('0123456789')) return true;
+  // Fictitious 555 exchange numbers in NANP
+  const tail = digits.slice(-10);
+  if (tail.startsWith('555') || tail.slice(3, 6) === '555') return true;
+  // In US NANP, valid area codes never start with 0 or 1
+  if (digits.length === 10 && (digits[0] === '0' || digits[0] === '1')) return true;
+  if (digits.length === 11 && digits[0] === '1' && (digits[1] === '0' || digits[1] === '1')) return true;
+  return false;
+}
+
 module.exports = {
   SMS_LEGAL_FOOTER,
   normalizePhone,
+  isInvalidOrFakeNumber,
   isStopKeyword,
   isStartKeyword,
   isHelpKeyword,

@@ -7,6 +7,7 @@ const staffOnly = requireRole('admin', 'super_admin', 'dispatcher', 'sales_rep')
 const { SMS_TEMPLATES, COMPANY } = require('../utils/email-templates');
 const {
   normalizePhone,
+  isInvalidOrFakeNumber,
   appendLegalFooter,
   isStopKeyword,
   isStartKeyword,
@@ -50,6 +51,9 @@ async function removeSmsOptOut(phone) {
 
 async function sendTwilioSms(toNumber, message) {
   const to = normalizePhone(toNumber) || toNumber;
+  if (!to || isInvalidOrFakeNumber(to)) {
+    return { status: 'skipped', sid: null, error: 'Skipped invalid / dummy / unroutable phone number.' };
+  }
   if (await isSmsOptedOut(to)) {
     return { status: 'opted_out', sid: null };
   }
@@ -72,6 +76,13 @@ async function sendTwilioSms(toNumber, message) {
     return { status: 'sent', sid: twilioMsg.sid, body };
   } catch (err) {
     console.error('Twilio SMS error:', err.message);
+    const msg = String(err.message || '').toLowerCase();
+    const code = err.code || err.status;
+    if (code === 30006 || msg.includes('30006') || msg.includes('landline')) {
+      await addSmsOptOut(to, 'LANDLINE').catch(() => {});
+    } else if (code === 30005 || msg.includes('30005') || code === 21211 || msg.includes('unreachable') || msg.includes('unknown')) {
+      await addSmsOptOut(to, 'INVALID_HANDSET').catch(() => {});
+    }
     return { status: 'twilio_error', error: err.message, sid: null, body };
   }
 }
@@ -79,7 +90,7 @@ async function sendTwilioSms(toNumber, message) {
 async function sendTwilioWhatsApp(toNumber, message) {
   const rawFrom = String(process.env.TWILIO_WHATSAPP_FROM || process.env.TWILIO_FROM_NUMBER || '+16094696004').trim();
   const to = normalizePhone(toNumber);
-  if (!to) return { status: 'twilio_error', sid: null, error: 'Recipient phone number is invalid' };
+  if (!to || isInvalidOrFakeNumber(to)) return { status: 'twilio_error', sid: null, error: 'Recipient phone number is invalid or dummy' };
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
     return { status: 'not_configured', sid: null, error: 'Twilio credentials (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN) are not set in Vercel environment variables.' };
   }
