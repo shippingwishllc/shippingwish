@@ -131,6 +131,7 @@ app.use((req, res, next) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') return next();
   const p = req.path;
   if (p.startsWith('/api') || p.startsWith('/uploads')) return next();
+  if (p.startsWith('/nyclimowish') || p.startsWith('/loadsnexus') || p.startsWith('/buywishonline')) return next();
   if (p === '/index.html') return res.redirect(301, '/' + requestQuery(req));
   if (p.endsWith('.html')) return res.redirect(301, p.slice(0, -5) + requestQuery(req));
   next();
