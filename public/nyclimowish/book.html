@@ -53,22 +53,22 @@
 
 
 <header class="limo-book-header">
-  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
-    <a href="/" class="limo-logo" style="color:#ffffff;text-decoration:none;font-size:1.35rem;font-weight:800;letter-spacing:0.04em;">NYC <span style="color:var(--limo-gold);">LIMO</span> WISH</a>
+  <div class="limo-book-header-inner">
+    <a href="/" class="limo-logo">NYC <span style="color:var(--limo-gold);">LIMO</span> WISH</a>
     <div class="limo-steps">
-      <div class="limo-step active" data-step="1"><span class="limo-step-num">1</span> Ride Details</div>
-      <div class="limo-step" data-step="2"><span class="limo-step-num">2</span> Vehicle</div>
-      <div class="limo-step" data-step="3"><span class="limo-step-num">3</span> Passenger</div>
-      <div class="limo-step" data-step="4"><span class="limo-step-num">4</span> Payment</div>
+      <div class="limo-step active" data-step="1"><span class="limo-step-num">1</span> <span class="limo-step-label">Ride Details</span></div>
+      <div class="limo-step" data-step="2"><span class="limo-step-num">2</span> <span class="limo-step-label">Vehicle</span></div>
+      <div class="limo-step" data-step="3"><span class="limo-step-num">3</span> <span class="limo-step-label">Passenger</span></div>
+      <div class="limo-step" data-step="4"><span class="limo-step-num">4</span> <span class="limo-step-label">Payment</span></div>
     </div>
-    <a href="/login" class="limo-btn limo-btn-gold" style="padding:8px 18px;font-size:0.75rem;">Login</a>
+    <a href="/login" class="limo-btn limo-btn-gold limo-header-login-btn">Login</a>
   </div>
 </header>
 
 <main id="book-app">
   <!-- Step 1: Ride Details -->
   <div class="book-step" id="step-1">
-    <div style="max-width:640px;margin:40px auto;padding:0 24px;">
+    <div class="limo-step1-wrap">
       <h1 style="text-align:center;font-size:1.8rem;font-weight:800;margin-bottom:8px;color:var(--limo-gold-dark);">Book Your NYC Limo Wish Now!</h1>
       <div class="limo-widget" style="background:#fff;border-color:#eee;color:var(--limo-black);margin-top:32px;">
         <div class="limo-tabs">
@@ -313,7 +313,7 @@
 
   <!-- Step 4: Payment -->
   <div class="book-step" id="step-4" style="display:none;">
-    <div style="max-width:640px;margin:60px auto;padding:0 24px;text-align:center;">
+    <div class="limo-step4-wrap">
       <div style="font-size:4rem;margin-bottom:16px;">💳</div>
       <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:8px;">Secure Payment</h2>
       <p style="color:#666;margin-bottom:24px;">You'll be redirected to Stripe for secure payment processing.</p>
