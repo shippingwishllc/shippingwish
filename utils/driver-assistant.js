@@ -289,23 +289,18 @@ async function runMorningDriverCheckins() {
       // ==========================================
       // SCENARIO 1: DRIVER IS LOADED / IN-TRANSIT
       // ==========================================
-      const delLoc = activeLoad.delivery_location || 'your delivery destination';
+      const delLoc = activeLoad.delivery_location || 'Destination';
       const delTime = activeLoad.delivery_time ? ` by ${activeLoad.delivery_time}` : '';
-      const delDateStr = activeLoad.delivery_date ? new Date(activeLoad.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'scheduled window';
+      const delDateStr = activeLoad.delivery_date ? new Date(activeLoad.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Today';
 
-      const msg = `🚛 *SHIPPING WISH DISPATCH | MORNING GREETING*
+      const msg = `🚛 *Good morning, ${target.name}!*
 
-Good morning, ${target.name}! Have a safe and smooth drive today.
-
-*Active Load:* #${activeLoad.load_number}
+*Load:* #${activeLoad.load_number}
 *Destination:* ${delLoc}
-*Delivery Window:* ${delDateStr}${delTime}
+*Delivery:* ${delDateStr}${delTime}
 
-Our dispatch desk is already monitoring market rates and searching for high-paying reload freight near your destination so you roll straight into your next run once empty.
-
-Drive safe and safe travels!
-Dispatch Hotline: (917) 737-0021
-Shipping Wish Operations`;
+Working on your reload now. Drive safe!
+Dispatch: (917) 737-0021`;
 
       const res = await sendAssistantMessage({
         phone: rawPhone,
@@ -322,19 +317,12 @@ Shipping Wish Operations`;
       // ==========================================
       // SCENARIO 2: DRIVER IS EMPTY / AVAILABLE
       // ==========================================
-      const msg = `📍 *SHIPPING WISH DISPATCH | MORNING CHECK-IN*
+      const msg = `📍 *Morning Check-in | Shipping Wish*
 
-Good morning, ${target.name}! Hope you have a great day ahead.
+Good morning, ${target.name}! Empty today?
 
-*Status:* Are you empty and ready for a load today?
-
-Please reply with:
-1. Current *empty ZIP code / City*
-2. Preferred *destination / direction*
-
-Our dispatch desk has freight ready for your fleet.
-Call or text: (917) 737-0021
-Shipping Wish Operations`;
+Reply with your *Current ZIP* and *where you want to go*. Freight is ready!
+Dispatch: (917) 737-0021`;
 
       const res = await sendAssistantMessage({
         phone: rawPhone,
@@ -380,21 +368,15 @@ async function onLoadBooked(loadId) {
   const pickupTime = load.pickup_time ? ` at ${load.pickup_time}` : '';
   const pickupDateStr = load.pickup_date ? new Date(load.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Today';
 
-  const body = `📋 *SHIPPING WISH DISPATCH | LOAD ASSIGNED*
+  const body = `📋 *Load Assigned: #${load.load_number}*
 
-Hello ${recipientName}, you have been assigned Load *#${load.load_number}*!
-
-*Pickup:* ${load.pickup_location}
-*Pickup Window:* ${pickupDateStr}${pickupTime}
-*Shipper:* ${load.pickup_company || 'Logistics Facility'}
-
-*Destination:* ${load.delivery_location}
+*Pickup:* ${load.pickup_location} (${pickupDateStr}${pickupTime})
+*Shipper:* ${load.pickup_company || 'Shipper'}
+*Delivery:* ${load.delivery_location}
 *Weight:* ${load.weight ? Number(load.weight).toLocaleString() + ' lbs' : 'Standard'}
-*Commodity:* ${load.commodity || 'General Freight'}
 
-Please reply *CONFIRMED* when you start rolling towards the shipper. Safe driving!
-Dispatch Hotline: (917) 737-0021
-Shipping Wish Operations`;
+Reply *CONFIRMED* when rolling. Safe drive!
+Dispatch: (917) 737-0021`;
 
   return sendAssistantMessage({
     phone,
@@ -433,19 +415,16 @@ async function onLoadInTransit(loadId) {
 
   const recipientName = load.driver_name || load.company_name || 'Driver';
   const delTime = load.delivery_time ? ` by ${load.delivery_time}` : '';
-  const delDateStr = load.delivery_date ? new Date(load.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Scheduled window';
-  const milesText = load.miles ? `\n*Total Trip:* ${Math.round(Number(load.miles))} miles` : '';
+  const delDateStr = load.delivery_date ? new Date(load.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Scheduled';
+  const milesText = load.miles ? `\n*Miles:* ${Math.round(Number(load.miles))} mi` : '';
 
-  const body = `🚚 *SHIPPING WISH DISPATCH | LOAD IN-TRANSIT*
+  const body = `🚚 *In-Transit | Load #${load.load_number}*
 
-Hello ${recipientName}, Load *#${load.load_number}* has departed the shipper!
+*To:* ${load.delivery_location}
+*Delivery:* ${delDateStr}${delTime}${milesText}
 
-*Heading to:* ${load.delivery_location}
-*Delivery Window:* ${delDateStr}${delTime}${milesText}
-
-Have a safe journey! Please reply with your ETA if you encounter any weather or traffic delays.
-Dispatch Hotline: (917) 737-0021
-Shipping Wish Operations`;
+Drive safe! Reply with any road delays or ETA update.
+Dispatch: (917) 737-0021`;
 
   return sendAssistantMessage({
     phone,
@@ -505,30 +484,20 @@ async function onLoadDelivered(loadId) {
     const nextPickTime = nextLoad.pickup_time ? ` at ${nextLoad.pickup_time}` : '';
     const nextPickDate = nextLoad.pickup_date ? new Date(nextLoad.pickup_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Upcoming';
 
-    body = `🎉 *SHIPPING WISH DISPATCH | DELIVERY COMPLETED*
+    body = `🎉 *Delivered! Good job ${recipientName}.*
 
-Great job ${recipientName}! Congratulations on safely completing delivery for Load *#${load.load_number}* at ${load.delivery_location}.
+*Next Load #${nextLoad.load_number} is Ready:*
+*Pickup:* ${nextLoad.pickup_location} (${nextPickDate}${nextPickTime})
+*Delivery:* ${nextLoad.delivery_location}
 
-*YOUR NEXT LOAD IS READY!*
-
-*Next Load:* #${nextLoad.load_number}
-*Next Pickup:* ${nextLoad.pickup_location}
-*Pickup Window:* ${nextPickDate}${nextPickTime}
-*Destination:* ${nextLoad.delivery_location}
-
-Roll safe towards your next shipper!
-Dispatch Hotline: (917) 737-0021
-Shipping Wish Operations`;
+Roll safe to next shipper!
+Dispatch: (917) 737-0021`;
 
   } else {
-    body = `🎉 *SHIPPING WISH DISPATCH | DELIVERY COMPLETED*
+    body = `🎉 *Delivered! Good job ${recipientName}.*
 
-Great job ${recipientName}! Congratulations on safely completing delivery for Load *#${load.load_number}* at ${load.delivery_location}.
-
-Please reply with your *empty time* and *current ZIP code* so our dispatch team can immediately book your next high-paying reload!
-
-Dispatch Hotline: (917) 737-0021
-Shipping Wish Operations`;
+Reply with your *Empty ZIP & Time* so we can book your reload now!
+Dispatch: (917) 737-0021`;
   }
 
   return sendAssistantMessage({
