@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '35';
+  const SIDEBAR_VERSION = '36';
   // #endregion
 
   function clearRoleCache() {
@@ -53,12 +53,15 @@
   function loadingSidebarHtml() {
     return `
       <div class="sidebar-nav-scroll sidebar-shell-pending">
-        <div class="sidebar-brand">
-          <div class="nav-logo-mark">SW</div>
-          <div>
-            <div class="sidebar-brand-name">Shipping Wish</div>
-            <div class="sidebar-brand-tag">Portal</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:6px;">
+          <div class="sidebar-brand" style="flex:1;min-width:0;margin-bottom:0;">
+            <div class="nav-logo-mark">SW</div>
+            <div>
+              <div class="sidebar-brand-name">Shipping Wish</div>
+              <div class="sidebar-brand-tag">Portal</div>
+            </div>
           </div>
+          <button type="button" class="sidebar-close-btn" id="sidebar-close-btn" aria-label="Close navigation" title="Close navigation">✕</button>
         </div>
         <p class="sidebar-shell-placeholder" aria-live="polite">Loading your menu…</p>
       </div>
@@ -480,13 +483,16 @@
     const links = linkItemsForRole(CURRENT_ROLE);
     return `
       <div class="sidebar-nav-scroll">
-        <a href="${home}" class="sidebar-brand">
-          <div class="nav-logo-mark">SW</div>
-          <div>
-            <div class="sidebar-brand-name">Shipping Wish</div>
-            <div class="sidebar-brand-tag">${tag}</div>
-          </div>
-        </a>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:6px;">
+          <a href="${home}" class="sidebar-brand" style="flex:1;min-width:0;margin-bottom:0;">
+            <div class="nav-logo-mark">SW</div>
+            <div>
+              <div class="sidebar-brand-name">Shipping Wish</div>
+              <div class="sidebar-brand-tag">${tag}</div>
+            </div>
+          </a>
+          <button type="button" class="sidebar-close-btn" id="sidebar-close-btn" aria-label="Close navigation" title="Close navigation">✕</button>
+        </div>
         ${renderLinks(links, active)}
       </div>
       <div class="sidebar-foot">
@@ -534,7 +540,7 @@
     setText('carrier-name-nav', user.company_name || name);
     setText('carrier-role-nav', role);
     setText('carrier-name-display', user.company_name || name);
-    const avatarIds = ['user-avatar-initials', 'disp-avatar-initials', 'crm-avatar', 'sales-avatar-initials', 'carrier-avatar-initials', 'fleet-avatar-initials', 'ifta-avatar-initials', 'inv-avatar', 'doc-avatar', 'broker-avatar'];
+    const avatarIds = ['user-avatar-initials', 'disp-avatar-initials', 'crm-avatar', 'sales-avatar-initials', 'carrier-avatar-initials', 'fleet-avatar-initials', 'ifta-avatar-initials', 'inv-avatar', 'doc-avatar', 'broker-avatar', 'mobile-avatar-initials'];
     avatarIds.forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.textContent = av;
@@ -737,27 +743,99 @@
     }
   }
 
+  function toggleMobileSidebar(force) {
+    const aside = document.getElementById('app-sidebar') || document.querySelector('.app-sidebar');
+    const backdrop = document.querySelector('.app-sidebar-backdrop');
+    const btn = document.getElementById('app-mobile-toggle');
+    if (!aside) return;
+    const currentlyOpen = aside.classList.contains('is-open');
+    const shouldOpen = typeof force === 'boolean' ? force : !currentlyOpen;
+    aside.classList.toggle('is-open', shouldOpen);
+    if (backdrop) backdrop.classList.toggle('is-open', shouldOpen);
+    document.body.classList.toggle('sidebar-drawer-active', shouldOpen);
+    if (btn) btn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+  }
+  window.swToggleSidebar = toggleMobileSidebar;
+
   function mountMobile() {
-    if (document.querySelector('.app-mobile-bar')) return;
+    let bar = document.querySelector('.app-mobile-bar');
     const shell = document.querySelector('.app-shell, .app-layout');
-    if (!shell) return;
-    const bar = document.createElement('div');
-    bar.className = 'app-mobile-bar';
-    bar.innerHTML = '<button type="button" class="app-mobile-toggle" aria-label="Open menu">☰</button><strong>Shipping Wish</strong>';
-    shell.parentNode.insertBefore(bar, shell);
+    const aside = document.getElementById('app-sidebar') || document.querySelector('.app-sidebar');
 
-    const backdrop = document.createElement('div');
-    backdrop.className = 'app-sidebar-backdrop';
-    document.body.appendChild(backdrop);
+    if (!bar && shell) {
+      bar = document.createElement('header');
+      bar.className = 'app-mobile-bar';
+      bar.id = 'app-mobile-bar';
+      const home = CURRENT_ROLE === 'driver' ? '/driver-app' : (isLoadboardSubscriber() ? '/load-booking' : (isCarrierRole(CURRENT_ROLE) ? '/carrier-overview' : (CURRENT_ROLE === 'dispatcher' ? '/dispatcher-dashboard' : (CURRENT_ROLE === 'sales_rep' ? '/sales-dashboard' : '/admin-dashboard'))));
+      const tag = CURRENT_ROLE === 'driver' ? 'Driver app' : (isLoadboardSubscriber() ? 'AI Load Pass' : (isCarrierRole(CURRENT_ROLE) ? 'Your TMS' : (CURRENT_ROLE === 'dispatcher' ? 'Dispatch Desk' : (CURRENT_ROLE === 'sales_rep' ? 'Sales CRM' : 'Operations'))));
+      bar.innerHTML = `
+        <button type="button" class="app-mobile-toggle" id="app-mobile-toggle" aria-label="Open Navigation Menu" aria-expanded="false">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <a href="${home}" class="app-mobile-brand">
+          <div class="nav-logo-mark" style="width:28px;height:28px;font-size:11px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--color-amber-500);color:#0f172a;font-weight:900;">SW</div>
+          <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+            <strong style="font-size:14px;font-weight:800;color:#fff;">Shipping Wish</strong>
+            <span class="badge-tag" id="mobile-brand-tag">${tag}</span>
+          </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="avatar" id="mobile-avatar-initials" onclick="window.swToggleSidebar ? window.swToggleSidebar() : null" style="cursor:pointer;width:30px;height:30px;font-size:11px;border-radius:50%;background:var(--color-amber-500);color:#0f172a;font-weight:800;display:flex;align-items:center;justify-content:center;">SW</div>
+        </div>
+      `;
+      shell.parentNode.insertBefore(bar, shell);
+    }
 
-    const aside = document.querySelector('.app-sidebar');
-    const toggle = () => {
-      if (!aside) return;
-      aside.classList.toggle('is-open');
-      backdrop.classList.toggle('is-open');
-    };
-    bar.querySelector('button').addEventListener('click', toggle);
-    backdrop.addEventListener('click', toggle);
+    let backdrop = document.querySelector('.app-sidebar-backdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.className = 'app-sidebar-backdrop';
+      document.body.appendChild(backdrop);
+    }
+
+    if (bar && !bar.dataset.mobileBound) {
+      bar.dataset.mobileBound = '1';
+      const toggleBtn = bar.querySelector('.app-mobile-toggle');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleMobileSidebar();
+        });
+      }
+    }
+
+    if (backdrop && !backdrop.dataset.mobileBound) {
+      backdrop.dataset.mobileBound = '1';
+      backdrop.addEventListener('click', () => toggleMobileSidebar(false));
+    }
+
+    if (aside && !aside.dataset.mobileNavBound) {
+      aside.dataset.mobileNavBound = '1';
+      aside.addEventListener('click', (e) => {
+        const closeBtn = e.target.closest('#sidebar-close-btn, .sidebar-close-btn');
+        if (closeBtn) {
+          e.preventDefault();
+          toggleMobileSidebar(false);
+          return;
+        }
+        const navLink = e.target.closest('a.sidebar-nav-link, a.sidebar-brand');
+        if (navLink && window.innerWidth <= 1024) {
+          setTimeout(() => toggleMobileSidebar(false), 80);
+        }
+      });
+    }
+
+    if (!window.__swEscDrawerBound) {
+      window.__swEscDrawerBound = true;
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') toggleMobileSidebar(false);
+      });
+    }
   }
 
   function applyPageHash() {
@@ -1095,6 +1173,11 @@
         // #endregion
         applyPageHash();
         fillUser(data && data.user);
+        const mobileTagEl = document.getElementById('mobile-brand-tag');
+        if (mobileTagEl) {
+          const tag = CURRENT_ROLE === 'driver' ? 'Driver app' : (isLoadboardSubscriber() ? 'AI Load Pass' : (isCarrierRole(CURRENT_ROLE) ? 'Your TMS' : (CURRENT_ROLE === 'dispatcher' ? 'Dispatch Desk' : (CURRENT_ROLE === 'sales_rep' ? 'Sales CRM' : 'Operations'))));
+          mobileTagEl.textContent = tag;
+        }
         if (CURRENT_ROLE === 'carrier' || CURRENT_ROLE === 'carrier_admin') {
           const p = pageName();
           if (p === 'dashboard.html') window.location.replace('/carrier-overview');
