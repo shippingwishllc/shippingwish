@@ -561,8 +561,8 @@ async function triggerVapiCall({ phone, driverName, scenario = 'morning_checkin'
     return { ok: false, reason: 'VAPI_API_KEY is not set. Please save it in ERP Settings (Settings > AI Calling) first.' };
   }
 
-  // Setup persona and prompt based on scenario
-  let assistantName = 'Sarah — Shipping Wish Dispatch';
+  // Setup persona and prompt based on scenario (Keep names <= 30 chars for Vapi)
+  let assistantName = 'Sarah - Dispatch';
   let firstMessage = `Good morning ${driverName || ''}! This is Sarah with Shipping Wish operations desk checking in. Are you empty today and ready for your next load?`;
   let systemPrompt = `You are Sarah, an energetic and polite logistics assistant at Shipping Wish LLC dispatch desk (shippingwish.com, phone: +1-917-737-0021).
 You are calling driver ${driverName || 'driver'}.
@@ -570,13 +570,13 @@ Purpose: Morning status check-in to confirm if they are empty today, what their 
 Our dispatch team is ready to book their next load. Speak naturally, keep sentences short and conversational (1 to 2 sentences max).`;
 
   if (scenario === 'carrier_pitch') {
-    assistantName = 'Alex — Shipping Wish Dispatch Manager';
+    assistantName = 'Alex - Closer';
     firstMessage = `Hi! This is Alex with Shipping Wish Logistics operations. Am I speaking with the fleet owner or manager?`;
     systemPrompt = `You are Alex, an experienced and friendly truck dispatch manager at Shipping Wish LLC (shippingwish.com, toll-free: +1-800-580-3101).
 Your objective: Introduce our 24/7 Autonomous AI Dispatch Manager backed by our dedicated human operations desk, explain our 0% commission service, and get them to test us with our 7-Day $0 Free Trial.
 Speak naturally, keep sentences short and conversational (1 to 2 sentences max).`;
   } else if (scenario === 'loadsnexus_broker') {
-    assistantName = 'Jordan — LoadsNexus Freight Exchange';
+    assistantName = 'Jordan - Broker';
     firstMessage = `Hi, this is Jordan with LoadsNexus freight exchange. Do you have any open spot freight that needs reliable truck capacity covered today?`;
     systemPrompt = `You are Jordan at LoadsNexus (loadsnexus.com).
 Your objective: Get freight brokers and 3PLs to post their spot freight for 100% FREE on our exchange.
@@ -584,11 +584,11 @@ Speak concisely in 1 to 2 sentences.`;
   }
 
   const buildPayload = (useVoice = true) => ({
-    name: `Test Call to ${targetPhone} (${assistantName})`,
+    name: `SW Test Call`.slice(0, 38),
     phoneNumberId: vapiPhoneId || undefined,
-    customer: { number: targetPhone, name: driverName || 'Partner' },
+    customer: { number: targetPhone, name: String(driverName || 'Partner').slice(0, 38) },
     assistant: {
-      name: assistantName,
+      name: assistantName.slice(0, 38),
       firstMessage: firstMessage,
       model: {
         provider: 'openai',

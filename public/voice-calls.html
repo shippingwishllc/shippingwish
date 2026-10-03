@@ -573,7 +573,12 @@
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Call failed');
+      if (!res.ok) {
+        if (data.error === 'TCPA_HOURS_BLOCKED') {
+          throw new Error(`Calling hours blocked (TCPA 9 AM - 5 PM recipient local time).\n${data.message || ''}${data.suggested_schedule_time ? '\nNext allowed: ' + new Date(data.suggested_schedule_time).toLocaleString() : ''}`);
+        }
+        throw new Error(data.message || data.error || 'Call failed');
+      }
       alert(`✅ ${data.message || 'AI Voice call successfully initiated!'}`);
       closeTriggerCallModal();
       loadCallsHistory();

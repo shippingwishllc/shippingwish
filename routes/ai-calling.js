@@ -24,6 +24,7 @@ const MIGHTYCALL_TRANSFER_NUMBER = process.env.MIGHTYCALL_TRANSFER_NUMBER || pro
 const VOICE_PROMPTS = {
   shippingwish: {
     name: 'Alex — Senior Dispatch Manager at Shipping Wish LLC',
+    shortName: 'Alex - Dispatch',
     firstMessage: "Hi this is Alex with Shipping Wish Logistics operations. Am I speaking with the fleet owner or manager for {{company_name}}?",
     systemPrompt: `You are Alex, an experienced, friendly, and assertive American truck dispatch manager at Shipping Wish LLC (shippingwish.com, toll-free: +1-800-580-3101).
 Your objective: Introduce our 24/7 Autonomous AI Dispatch Manager backed by our dedicated human operations support desk, explain how we solve carriers' biggest daily headaches, and get them to test us with our 7-Day $0 Free Trial.
@@ -53,6 +54,7 @@ CONVERSATION RULES:
   },
   loadsnexus_carrier: {
     name: 'Jordan — Freight Growth Specialist at LoadsNexus™',
+    shortName: 'Jordan - Carrier',
     firstMessage: "Hello! This is Jordan with LoadsNexus freight network. Are you looking for high-paying loads for your {{equipment_type}} today?",
     systemPrompt: `You are Jordan, Freight Growth Specialist at LoadsNexus™ (loadsnexus.com, powered by Shipping Wish LLC).
 Your objective: Explain the LoadsNexus $19/month Solo Pass to motor carriers.
@@ -71,6 +73,7 @@ CONVERSATION RULES:
   },
   loadsnexus_broker: {
     name: 'Jordan — Broker Network Specialist at LoadsNexus™',
+    shortName: 'Jordan - Broker',
     firstMessage: "Hi, this is Jordan with LoadsNexus freight exchange. Do you have any open spot freight that needs reliable truck capacity covered today?",
     systemPrompt: `You are Jordan at LoadsNexus™ (loadsnexus.com).
 Your objective: Get freight brokers and 3PLs to post their spot freight for 100% FREE on our exchange.
@@ -135,21 +138,35 @@ router.post('/outbound', requireAuth, async (req, res) => {
   }
   const config = VOICE_PROMPTS[promptKey] || VOICE_PROMPTS.shippingwish;
 
-  const vapiApiKey = process.env.VAPI_API_KEY;
-  const vapiPhoneId = process.env.VAPI_PHONE_NUMBER_ID;
+  let vapiApiKey = String(process.env.VAPI_API_KEY || '').trim();
+  let vapiPhoneId = String(process.env.VAPI_PHONE_NUMBER_ID || '').trim();
+
+  // If not in env, check database site_settings
+  if (!vapiApiKey || !vapiPhoneId) {
+    try {
+      const { rows } = await pool.query(
+        "SELECT key, value FROM site_settings WHERE key IN ('vapi_api_key', 'vapi_phone_number_id')"
+      );
+      for (const r of rows) {
+        if (r.key === 'vapi_api_key' && r.value && !vapiApiKey) vapiApiKey = r.value.trim();
+        if (r.key === 'vapi_phone_number_id' && r.value && !vapiPhoneId) vapiPhoneId = r.value.trim();
+      }
+    } catch (_) {}
+  }
 
   // 3. Dispatch via Vapi.ai if key exists
   if (vapiApiKey) {
     try {
-      const vapiPayload = {
-        name: `Outbound AI Call to ${name} (${brand})`,
+      const assistantName = (config.shortName || 'Alex - Dispatch').slice(0, 38);
+      const buildVapiPayload = (useVoice = true) => ({
+        name: `SW Call to ${name}`.slice(0, 38),
         phoneNumberId: vapiPhoneId || undefined,
         customer: {
           number: to_phone,
-          name: name
+          name: String(name || 'Partner').slice(0, 38)
         },
         assistant: {
-          name: config.name,
+          name: assistantName,
           firstMessage: config.firstMessage
             .replace('{{company_name}}', company_name)
             .replace('{{equipment_type}}', equipment_type),
@@ -175,25 +192,40 @@ router.post('/outbound', requireAuth, async (req, res) => {
               }
             ]
           },
-          voice: {
-            provider: '11labs',
-            voiceId: '21m00Tcm4TlvDq8ikWAM' // Rachel / American natural dispatcher
-          },
+          ...(useVoice ? {
+            voice: {
+              provider: '11labs',
+              voiceId: '21m00Tcm4TlvDq8ikWAM' // Rachel / American natural dispatcher
+            }
+          } : {}),
           endCallMessage: "Thank you for your time. Have a safe drive!",
           recordingEnabled: true
         }
-      };
+      });
 
-      const vapiRes = await fetch('https://api.vapi.ai/call/phone', {
+      let vapiRes = await fetch('https://api.vapi.ai/call/phone', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${vapiApiKey.trim()}`
         },
-        body: JSON.stringify(vapiPayload)
+        body: JSON.stringify(buildVapiPayload(true))
       });
 
-      const vapiData = await vapiRes.json();
+      let vapiData = await vapiRes.json().catch(() => ({}));
+
+      // Fallback if 11labs voice fails in Vapi workspace
+      if (!vapiRes.ok && vapiData.message && (vapiData.message.includes('voice') || vapiData.message.includes('elevenlabs') || vapiData.message.includes('Voice'))) {
+        vapiRes = await fetch('https://api.vapi.ai/call/phone', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${vapiApiKey.trim()}`
+          },
+          body: JSON.stringify(buildVapiPayload(false))
+        });
+        vapiData = await vapiRes.json().catch(() => ({}));
+      }
 
       if (!vapiRes.ok) {
         throw new Error(vapiData.message || `Vapi error ${vapiRes.status}`);
