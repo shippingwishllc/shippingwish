@@ -104,7 +104,7 @@
   <script src="/js/app-shell-boot.js"></script>
 
   <div class="app-main">
-    <header class="app-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <header class="app-header">
       <div>
         <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;display:flex;align-items:center;gap:8px;">
           <span>🟢 WhatsApp Business Desk</span>
@@ -112,30 +112,50 @@
         </h1>
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Official two-way WhatsApp communications across carriers, owner-operators, and drivers</p>
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <div class="search-input-group" style="min-width:280px;">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="wa-search-input" placeholder="Search contact, phone, message..." oninput="onWhatsAppSearch(this.value)">
-        </div>
-        <button class="btn btn-sm wa-btn-send" type="button" onclick="openNewWhatsAppModal()">💬 New WhatsApp</button>
-        <a href="/sms-inbox" class="btn btn-secondary btn-sm">📱 Open SMS Inbox</a>
-      </div>
     </header>
 
     <main class="app-content wa-page-content">
-      <!-- STATS KPI ROW -->
-      <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
-        <div class="stat-kpi-card" style="border-top:3px solid #15803d;">
-          <div class="stat-kpi-top"><span class="stat-kpi-title">Active WhatsApp Chats</span><div class="stat-kpi-icon" style="background:#dcfce7;color:#15803d;">🟢</div></div>
-          <div class="stat-kpi-val" id="kpi-wa-threads">0</div>
+      <!-- UNIFIED CONTROL & KPI ROW -->
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:16px;background:var(--bg-elevated,#ffffff);border:1px solid var(--border-default,#e2e8f0);border-radius:14px;padding:12px 18px;box-shadow:0 1px 3px rgba(15,23,42,0.04);">
+        <!-- LEFT: KPI METRICS -->
+        <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:18px;">🟢</div>
+            <div>
+              <div style="font-size:20px;font-weight:800;color:var(--text-primary);line-height:1.2;" id="kpi-wa-threads">0</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Active Chats</div>
+            </div>
+          </div>
+
+          <div style="height:32px;width:1px;background:var(--border-default,#e2e8f0);"></div>
+
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:18px;">📬</div>
+            <div>
+              <div style="font-size:20px;font-weight:800;color:var(--text-primary);line-height:1.2;" id="kpi-wa-unread">0</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Unread Messages</div>
+            </div>
+          </div>
+
+          <div style="height:32px;width:1px;background:var(--border-default,#e2e8f0);"></div>
+
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;font-size:18px;">📤</div>
+            <div>
+              <div style="font-size:20px;font-weight:800;color:var(--text-primary);line-height:1.2;" id="kpi-wa-sent">0</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Sent Today</div>
+            </div>
+          </div>
         </div>
-        <div class="stat-kpi-card" style="border-top:3px solid #16a34a;">
-          <div class="stat-kpi-top"><span class="stat-kpi-title">Unread WhatsApp</span><div class="stat-kpi-icon" style="background:#dcfce7;color:#16a34a;">📬</div></div>
-          <div class="stat-kpi-val" id="kpi-wa-unread">0</div>
-        </div>
-        <div class="stat-kpi-card" style="border-top:3px solid #0284c7;">
-          <div class="stat-kpi-top"><span class="stat-kpi-title">Sent Today</span><div class="stat-kpi-icon">📤</div></div>
-          <div class="stat-kpi-val" id="kpi-wa-sent">0</div>
+
+        <!-- RIGHT: SEARCH & ACTION BUTTONS (Neat, balanced, and matching /inbox) -->
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div style="position:relative;display:inline-flex;align-items:center;">
+            <span style="position:absolute;left:10px;font-size:13px;pointer-events:none;color:#94a3b8;">🔍</span>
+            <input type="text" id="wa-search-input" placeholder="Search contact, phone, text..." oninput="onWhatsAppSearch(this.value)" style="padding-left:32px;padding-right:12px;font-size:13px;height:36px;min-width:250px;border-radius:8px;border:1px solid #cbd5e1;outline:none;background:#f8fafc;" />
+          </div>
+          <button class="btn btn-sm wa-btn-send" type="button" onclick="openNewWhatsAppModal()" style="height:36px;padding:0 16px;display:inline-flex;align-items:center;gap:6px;font-weight:700;">💬 New WhatsApp</button>
+          <a href="/sms-inbox" class="btn btn-secondary btn-sm" style="height:36px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;">📱 Open SMS Inbox</a>
         </div>
       </div>
 
