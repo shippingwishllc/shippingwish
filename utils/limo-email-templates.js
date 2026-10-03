@@ -36,7 +36,7 @@ function formatTime(timeStr) {
 }
 
 function getLimoSender() {
-  const custom = (process.env.NYCLIMO_MAIL_FROM || '').replace(/^["']|["']$/g, '').trim();
+  const custom = (process.env.NYCLIMO_MAIL_FROM || process.env.NYCLIMO_FROM_EMAIL || process.env.NYCLIMO_SENDER || '').replace(/^["']|["']$/g, '').trim();
   if (custom) {
     const m = custom.match(/<([^>]+)>/);
     if (m && m[1]) {
@@ -47,10 +47,6 @@ function getLimoSender() {
     if (custom.includes('@')) {
       return `NYC Limo Wish <${custom.trim()}>`;
     }
-function getLimoSender() {
-  const custom = (process.env.NYCLIMO_FROM_EMAIL || process.env.NYCLIMO_SENDER || '').replace(/^["']|["']$/g, '').trim();
-  if (custom) {
-    if (!custom.includes('<')) return `NYC Limo Wish <${custom}>`;
     return custom;
   }
   return 'NYC Limo Wish <operations@nyclimowish.com>';
