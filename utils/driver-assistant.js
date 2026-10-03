@@ -569,13 +569,27 @@ async function onLoadStatusChanged(loadId, newStatus, oldStatus) {
  * Optional Vapi AI Voice Call trigger hook
  */
 async function triggerVapiCall({ phone, driverName, scenario = 'morning_checkin', details = {} }) {
-  const vapiApiKey = String(process.env.VAPI_API_KEY || '').trim();
-  const vapiPhoneId = String(process.env.VAPI_PHONE_NUMBER_ID || '').trim();
+  let vapiApiKey = String(process.env.VAPI_API_KEY || '').trim();
+  let vapiPhoneId = String(process.env.VAPI_PHONE_NUMBER_ID || '').trim();
+
+  // If not in env, check database site_settings (saved via Settings dashboard)
+  if (!vapiApiKey) {
+    try {
+      const { rows } = await pool.query(
+        "SELECT key, value FROM site_settings WHERE key IN ('vapi_api_key', 'vapi_phone_number_id')"
+      );
+      for (const r of rows) {
+        if (r.key === 'vapi_api_key' && r.value) vapiApiKey = r.value.trim();
+        if (r.key === 'vapi_phone_number_id' && r.value) vapiPhoneId = r.value.trim();
+      }
+    } catch (_) {}
+  }
+
   const targetPhone = cleanPhone(phone);
 
   if (!targetPhone) return { ok: false, error: 'Invalid phone' };
   if (!vapiApiKey) {
-    return { ok: false, reason: 'VAPI_API_KEY not configured in environment.' };
+    return { ok: false, reason: 'VAPI_API_KEY is not set. You can enter it in ERP Settings (/settings.html) or Vercel Environment variables.' };
   }
 
   const prompt = `You are Sarah, an energetic and polite logistics assistant at Shipping Wish LLC dispatch desk.
