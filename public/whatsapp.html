@@ -154,6 +154,7 @@
             <span style="position:absolute;left:10px;font-size:13px;pointer-events:none;color:#94a3b8;">🔍</span>
             <input type="text" id="wa-search-input" placeholder="Search contact, phone, text..." oninput="onWhatsAppSearch(this.value)" style="padding-left:32px;padding-right:12px;font-size:13px;height:36px;min-width:250px;border-radius:8px;border:1px solid #cbd5e1;outline:none;background:#f8fafc;" />
           </div>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="triggerMorningSweep()" title="Scan ERP drivers in their local morning window and send loaded greeting or empty check-in" style="height:36px;padding:0 13px;display:inline-flex;align-items:center;gap:6px;border-color:#86efac;color:#166534;background:#f0fdf4;font-weight:600;">⚡ Morning Sweep</button>
           <button class="btn btn-sm wa-btn-send" type="button" onclick="openNewWhatsAppModal()" style="height:36px;padding:0 16px;display:inline-flex;align-items:center;gap:6px;font-weight:700;">💬 New WhatsApp</button>
           <a href="/sms-inbox" class="btn btn-secondary btn-sm" style="height:36px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;">📱 Open SMS Inbox</a>
         </div>
@@ -670,6 +671,33 @@ LoadsNexus by Shipping Wish LLC`;
     } finally {
       btn.disabled = false;
       btn.textContent = origText;
+    }
+  };
+
+  window.triggerMorningSweep = async function () {
+    if (!confirm('Run Automated Morning Driver Sweep for ERP drivers in their local US morning window?')) return;
+    try {
+      if (window.swToast) window.swToast('⏳ Scanning active drivers and local timezones…', 'info');
+      const res = await fetch('/api/driver-assistant/run-morning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Morning sweep failed');
+      if (window.swToast) {
+        window.swToast(`✅ ${data.message}`, 'success');
+      } else {
+        alert(`✅ ${data.message}`);
+      }
+      await fetchWaThreads();
+      await loadWaStats();
+    } catch (err) {
+      if (window.swAlert) {
+        await window.swAlert({ title: 'Morning Sweep Notice', message: err.message, icon: 'warning' });
+      } else {
+        alert('Notice: ' + err.message);
+      }
     }
   };
 

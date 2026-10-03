@@ -143,6 +143,11 @@ router.post('/', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'),
 
     auditLog(req.user.id, 'LOAD_CREATE', 'load', id, { loadNumber, carrierId, rate: numRate }, getClientIp(req));
 
+    try {
+      const driverAssistant = require('../utils/driver-assistant');
+      driverAssistant.onLoadBooked(id).catch((err) => console.warn('[DRIVER-ASSISTANT] booked notify:', err.message));
+    } catch (_) {}
+
     res.json({ ok: true, id, loadNumber });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -344,6 +349,11 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
     }
 
     auditLog(req.user.id, 'LOAD_STATUS_CHANGE', 'load', id, { oldStatus: load.current_status, newStatus: status, notes }, getClientIp(req));
+
+    try {
+      const driverAssistant = require('../utils/driver-assistant');
+      driverAssistant.onLoadStatusChanged(id, status, load.current_status).catch((err) => console.warn('[DRIVER-ASSISTANT] status change notify:', err.message));
+    } catch (_) {}
 
     res.json({ ok: true });
   } catch (err) {

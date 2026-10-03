@@ -558,6 +558,7 @@ app.use('/api/portal', carrierApiGate, require('./routes/portal'));
 app.use('/api/loadboard', require('./routes/loadboard'));
 app.use('/api/dispatch-desk', require('./routes/dispatch-desk'));
 app.use('/api/dispatch', require('./routes/dispatch-desk'));
+app.use('/api/driver-assistant', require('./routes/driver-assistant')); // Autonomous AI Driver Assistant & Lifecycle Automation
 app.use('/api/outreach', require('./routes/outreach'));
 app.use('/api/census-desk', require('./routes/census-desk'));
 app.use('/api/loadboard/matches', require('./routes/loadboard-matchmaking')); // Smart Freight & Capacity Matchmaking Engine
@@ -849,6 +850,7 @@ if (require.main === module) {
             dispatchDesk.syncDueSources().catch((err) => console.warn('[LOADBOARD] sync:', err.message));
             dispatchDesk.sendDueMorningTexts().catch((err) => console.warn('[AI-DISPATCH] morning:', err.message));
             dispatchDesk.sendDueEmptySoonOffers().catch((err) => console.warn('[AI-DISPATCH] empty-soon:', err.message));
+            require('./utils/driver-assistant').tick().catch((err) => console.warn('[DRIVER-ASSISTANT] tick:', err.message));
             require('./utils/outreach-engine').tick().catch((err) => console.warn('[OUTREACH] tick:', err.message));
           }, 60000);
         }

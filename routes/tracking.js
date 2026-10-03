@@ -125,6 +125,11 @@ router.post('/ping', requireAuth, async (req, res) => {
       }).catch(() => {});
 
       auditLog(driverId, 'LOAD_STATUS_UPDATE_GPS', 'load', resolvedLoadId, { oldStatus: load.status, newStatus: status, locationName }, getClientIp(req));
+
+      try {
+        const driverAssistant = require('../utils/driver-assistant');
+        driverAssistant.onLoadStatusChanged(resolvedLoadId, status, load.status).catch((err) => console.warn('[DRIVER-ASSISTANT] GPS status change notify:', err.message));
+      } catch (_) {}
     }
 
     res.json({ ok: true, event: eventRes.rows[0], loadId: resolvedLoadId });

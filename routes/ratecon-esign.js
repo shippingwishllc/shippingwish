@@ -349,6 +349,11 @@ router.post('/:id/ratecon/sign', requireAuth, async (req, res) => {
 
     auditLog(req.user.id, 'RATECON_DIGITALLY_SIGNED', 'load', loadId, { signer_name: signer_name.trim(), signerIp, signatureHash }, signerIp);
 
+    try {
+      const driverAssistant = require('../utils/driver-assistant');
+      driverAssistant.onLoadBooked(loadId).catch((err) => console.warn('[DRIVER-ASSISTANT] ratecon signed notify:', err.message));
+    } catch (_) {}
+
     res.json({
       ok: true,
       message: 'Rate Confirmation signed successfully. Contract is now legally executed.',
