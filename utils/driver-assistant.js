@@ -301,11 +301,11 @@ Good morning, ${target.name}! Have a safe and smooth drive today.
 *Destination:* ${delLoc}
 *Delivery Window:* ${delDateStr}${delTime}
 
-Our dispatch desk is already monitoring market rates and searching for high-paying reload freight near your destination so you roll straight into your next run.
+Our dispatch desk is already monitoring market rates and searching for high-paying reload freight near your destination so you roll straight into your next run once empty.
 
 Drive safe and safe travels!
-Hotline: (917) 737-0021
-Shipping Wish LLC — www.shippingwish.com`;
+Dispatch Hotline: (917) 737-0021
+Shipping Wish Operations`;
 
       const res = await sendAssistantMessage({
         phone: rawPhone,
@@ -332,9 +332,9 @@ Please reply with:
 1. Current *empty ZIP code / City*
 2. Preferred *destination / direction*
 
-Our dispatch desk has direct shipper and verified broker freight ready for your fleet.
+Our dispatch desk has freight ready for your fleet.
 Call or text: (917) 737-0021
-Shipping Wish LLC — www.shippingwish.com`;
+Shipping Wish Operations`;
 
       const res = await sendAssistantMessage({
         phone: rawPhone,
@@ -389,11 +389,12 @@ Hello ${recipientName}, you have been assigned Load *#${load.load_number}*!
 *Shipper:* ${load.pickup_company || 'Logistics Facility'}
 
 *Destination:* ${load.delivery_location}
-*Weight:* ${load.weight ? Number(load.weight).toLocaleString() + ' lbs' : 'Standard'} | *Commodity:* ${load.commodity || 'General Freight'}
+*Weight:* ${load.weight ? Number(load.weight).toLocaleString() + ' lbs' : 'Standard'}
+*Commodity:* ${load.commodity || 'General Freight'}
 
 Please reply *CONFIRMED* when you start rolling towards the shipper. Safe driving!
 Dispatch Hotline: (917) 737-0021
-Shipping Wish LLC — www.shippingwish.com`;
+Shipping Wish Operations`;
 
   return sendAssistantMessage({
     phone,
@@ -444,7 +445,7 @@ Hello ${recipientName}, Load *#${load.load_number}* has departed the shipper!
 
 Have a safe journey! Please reply with your ETA if you encounter any weather or traffic delays.
 Dispatch Hotline: (917) 737-0021
-Shipping Wish LLC — www.shippingwish.com`;
+Shipping Wish Operations`;
 
   return sendAssistantMessage({
     phone,
@@ -509,6 +510,7 @@ async function onLoadDelivered(loadId) {
 Great job ${recipientName}! Congratulations on safely completing delivery for Load *#${load.load_number}* at ${load.delivery_location}.
 
 *YOUR NEXT LOAD IS READY!*
+
 *Next Load:* #${nextLoad.load_number}
 *Next Pickup:* ${nextLoad.pickup_location}
 *Pickup Window:* ${nextPickDate}${nextPickTime}
@@ -516,7 +518,7 @@ Great job ${recipientName}! Congratulations on safely completing delivery for Lo
 
 Roll safe towards your next shipper!
 Dispatch Hotline: (917) 737-0021
-Shipping Wish LLC — www.shippingwish.com`;
+Shipping Wish Operations`;
 
   } else {
     body = `🎉 *SHIPPING WISH DISPATCH | DELIVERY COMPLETED*
@@ -524,8 +526,9 @@ Shipping Wish LLC — www.shippingwish.com`;
 Great job ${recipientName}! Congratulations on safely completing delivery for Load *#${load.load_number}* at ${load.delivery_location}.
 
 Please reply with your *empty time* and *current ZIP code* so our dispatch team can immediately book your next high-paying reload!
+
 Dispatch Hotline: (917) 737-0021
-Shipping Wish LLC — www.shippingwish.com`;
+Shipping Wish Operations`;
   }
 
   return sendAssistantMessage({

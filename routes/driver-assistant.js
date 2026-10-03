@@ -78,8 +78,8 @@ Good morning, ${name || 'Driver'}! Have a safe and smooth drive today.
 *Delivery Window:* Today 3:00 PM
 
 Our dispatch desk is already monitoring market rates and finding top reloads near your destination. Safe travels!
-Hotline: (917) 737-0021
-Shipping Wish LLC — www.shippingwish.com`;
+Dispatch Hotline: (917) 737-0021
+Shipping Wish Operations`;
 
       result = await driverAssistant.sendAssistantMessage({
         phone,
