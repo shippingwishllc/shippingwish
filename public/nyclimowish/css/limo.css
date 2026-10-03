@@ -96,7 +96,7 @@ a:hover { color: var(--limo-gold-light); }
   top: 100%;
   left: 0;
   transform: translateX(-40px);
-  width: min(880px, 94vw);
+  width: min(980px, 95vw);
   z-index: 1200;
   padding-top: 14px; /* invisible bridge so menu stays open */
 }
@@ -117,110 +117,113 @@ a:hover { color: var(--limo-gold-light); }
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 1fr 220px;
+  grid-template-columns: 1fr 240px;
   background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.09);
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24), 0 4px 16px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 .limo-mega-main {
-  padding: 24px 26px;
+  padding: 26px 30px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   background: #ffffff;
 }
 .limo-mega-section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1.5px solid #f1f5f9;
-  padding-bottom: 8px;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 10px;
   margin-bottom: 2px;
 }
 .limo-mega-heading {
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #0f172a;
+  color: #000000;
   font-family: var(--font-sans);
 }
 .limo-mega-motto {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-family: var(--font-serif);
   font-style: italic;
   font-weight: 700;
-  color: #b8860b;
+  color: #c28b12;
 }
 .limo-mega-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px 14px;
+  gap: 8px 16px;
 }
 .limo-mega-col {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
+.limo-mega a,
 .limo-mega-link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 10px;
+  gap: 12px;
+  padding: 8px 10px;
   border-radius: 8px;
-  color: #1e293b !important;
-  font-size: 0.83rem;
-  font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
+  color: #0a0a0a !important;
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
   text-decoration: none;
   transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
 }
+.limo-mega a:hover,
 .limo-mega-link:hover {
-  background: #fdfaf2;
-  color: #b8860b !important;
+  background: #fffcf2 !important;
+  color: #c28b12 !important;
   transform: translateX(2px);
 }
 .limo-mega-ico {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  color: #475569;
+  color: #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition: all 0.16s ease;
 }
-.limo-mega-link:hover .limo-mega-ico {
+.limo-mega-link:hover .limo-mega-ico,
+.limo-mega a:hover .limo-mega-ico {
   background: #fef3c7;
   border-color: #fde68a;
-  color: #b8860b;
+  color: #c28b12;
 }
 .limo-mega-link-partner {
   background: rgba(201, 162, 39, 0.08);
-  border: 1px dashed rgba(201, 162, 39, 0.4);
+  border: 1px dashed rgba(201, 162, 39, 0.45);
 }
 .limo-mega-subbar {
-  background: #faf7ef;
+  background: #fbf7ed;
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 9px 14px;
   margin-top: 4px;
-  border-left: 3px solid #b8860b;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  border-left: 4px solid #d89f25;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #0f172a;
+  color: #000000;
 }
 .limo-mega-sidebar {
-  padding: 24px 20px;
+  padding: 26px 22px;
   background: #fafaf9;
-  border-left: 1px solid #f0f0ee;
+  border-left: 1px solid #ecece8;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -230,11 +233,11 @@ a:hover { color: var(--limo-gold-light); }
   flex-direction: column;
 }
 .limo-mega-side-title {
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #0f172a;
+  color: #000000;
   margin: 0 0 10px;
 }
 .limo-mega-side-grid {
@@ -243,33 +246,36 @@ a:hover { color: var(--limo-gold-light); }
   gap: 6px 10px;
 }
 .limo-mega-side-link {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: #475569 !important;
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
   text-decoration: none;
-  padding: 3px 0;
+  text-transform: none !important;
+  padding: 4px 0;
   transition: color 0.16s ease;
 }
 .limo-mega-side-link:hover {
-  color: #b8860b !important;
-  font-weight: 700;
+  color: #c28b12 !important;
+  font-weight: 800 !important;
 }
 .limo-mega-quote-box {
   margin-top: auto;
-  padding: 12px 10px;
-  background: #fdfbf5;
-  border: 1px solid #f3e8c8;
-  border-radius: 10px;
+  padding: 16px 14px;
+  background: #111111;
+  border: 1.5px solid #d89f25;
+  border-radius: 12px;
   text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
 }
 .limo-mega-quote {
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   font-family: var(--font-serif);
   font-style: italic;
-  font-weight: 700;
-  color: #b8860b;
+  font-weight: 800;
+  color: #f7d368 !important;
   line-height: 1.35;
   margin: 0;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 .limo-mobile-acc-btn {
   background: none; border: none; width: 100%; text-align: left;
@@ -1667,22 +1673,45 @@ body.limo-menu-open { overflow: hidden; }
   .limo-widget-hero .limo-field-row.limo-date-time-row {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
+    gap: 12px !important;
     width: 100% !important;
-    margin-bottom: 12px !important;
+    margin-bottom: 14px !important;
   }
-  .limo-date-time-row .limo-field {
+  .limo-widget-hero .limo-date-time-row .limo-field {
     width: 100% !important;
     margin-bottom: 0 !important;
+    position: relative !important;
   }
-  .limo-date-time-row .limo-input {
-    min-width: 0 !important;
-    padding-left: 38px !important;
-    padding-right: 8px !important;
-    font-size: 0.86rem !important;
+  .limo-widget-hero .limo-date-time-row .limo-input {
+    width: 100% !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 10px 10px 10px 44px !important;
+    padding-left: 44px !important;
+    font-size: 15px !important;
+    border-radius: 8px !important;
+    background: #1e1e1e !important;
+    border: 1px solid #4a4a4a !important;
+    color: #ffffff !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    box-sizing: border-box !important;
   }
-  .limo-date-time-row .limo-field-icon {
-    left: 11px !important;
+  .limo-widget-hero .limo-date-time-row .limo-field-icon {
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #cbd5e1 !important;
+    z-index: 2 !important;
+  }
+  .limo-widget-hero input[type="date"]::-webkit-date-and-time-value,
+  .limo-widget-hero input[type="time"]::-webkit-date-and-time-value {
+    text-align: left !important;
+    line-height: normal !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #ffffff !important;
   }
 
   /* CRITICAL: Turn off sticky on mobile so sidebar NEVER overlaps forms or inputs */
@@ -1726,7 +1755,7 @@ body.limo-menu-open { overflow: hidden; }
   .limo-date-time-row {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
+    gap: 12px !important;
     width: 100% !important;
   }
 
@@ -1734,12 +1763,42 @@ body.limo-menu-open { overflow: hidden; }
   .limo-passenger-form .limo-input,
   .limo-passenger-form select.limo-input,
   .limo-passenger-form textarea.limo-input,
-  .limo-widget .limo-input,
-  .limo-widget select.limo-input {
+  .limo-widget:not(.limo-widget-hero) .limo-input,
+  .limo-widget:not(.limo-widget-hero) select.limo-input {
     font-size: 16px !important;
     padding: 12px 14px !important;
     width: 100% !important;
     box-sizing: border-box !important;
+  }
+
+  /* Hero inputs explicit padding-left so icons NEVER collide with placeholder text */
+  .limo-widget-hero .limo-input {
+    font-size: 16px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 12px 14px 12px 48px !important;
+    padding-left: 48px !important;
+    border-radius: 8px !important;
+    background: #1e1e1e !important;
+    border: 1px solid #4a4a4a !important;
+    color: #ffffff !important;
+    box-sizing: border-box !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+  .limo-widget-hero .limo-address-box.has-pill .limo-input {
+    padding-right: 104px !important;
+    padding-left: 48px !important;
+  }
+  .limo-widget-hero .limo-field-icon {
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    bottom: auto !important;
+    color: #cbd5e1 !important;
+    z-index: 2 !important;
+    pointer-events: none !important;
   }
 
   .limo-book-actions {
