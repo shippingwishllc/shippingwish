@@ -705,6 +705,54 @@ async function tick() {
 }
 
 /**
+ * Diagnose Vapi setup: key validity, phone number ID, linked provider number
+ */
+async function diagnoseVapi() {
+  let vapiApiKey = String(process.env.VAPI_API_KEY || '').trim();
+  let vapiPhoneId = String(process.env.VAPI_PHONE_NUMBER_ID || '').trim();
+  let source = vapiApiKey ? 'env' : 'settings-db';
+  try {
+    const { rows } = await pool.query(
+      "SELECT key, value FROM site_settings WHERE key IN ('vapi_api_key', 'vapi_phone_number_id')"
+    );
+    for (const r of rows) {
+      if (r.key === 'vapi_api_key' && r.value && !vapiApiKey) vapiApiKey = r.value.trim();
+      if (r.key === 'vapi_phone_number_id' && r.value && !vapiPhoneId) vapiPhoneId = r.value.trim();
+    }
+  } catch (e) {
+    return { ok: false, step: 'database', error: 'Could not read site_settings: ' + e.message };
+  }
+
+  const out = {
+    ok: false,
+    keySource: source,
+    keyPresent: Boolean(vapiApiKey),
+    keyPreview: vapiApiKey ? vapiApiKey.slice(0, 4) + '…' + vapiApiKey.slice(-4) : null,
+    keyLength: vapiApiKey.length,
+    phoneIdPresent: Boolean(vapiPhoneId),
+    phoneId: vapiPhoneId || null
+  };
+  if (!vapiApiKey) return { ...out, step: 'key', error: 'Vapi API key saved nahi hai.' };
+  if (!vapiPhoneId) return { ...out, step: 'phone', error: 'Vapi Phone Number ID saved nahi hai.' };
+
+  // 1) Validate key by listing phone numbers
+  const listRes = await fetch('https://api.vapi.ai/phone-number', { headers: { Authorization: `Bearer ${vapiApiKey}` } });
+  const listData = await listRes.json().catch(() => ({}));
+  if (!listRes.ok) {
+    return { ...out, step: 'key', httpStatus: listRes.status, error: `API key Vapi ne reject ki (${listRes.status}): ${Array.isArray(listData.message) ? listData.message.join('; ') : (listData.message || 'unauthorized')}. Private Key use karein, Public nahi.` };
+  }
+  const numbers = Array.isArray(listData) ? listData : (listData.results || []);
+  out.accountNumbers = numbers.map(n => ({ id: n.id, number: n.number, provider: n.provider, name: n.name }));
+
+  const match = numbers.find(n => n.id === vapiPhoneId);
+  if (!match) {
+    return { ...out, step: 'phone', error: 'Saved Phone Number ID is Vapi account mein nahi mila. Neeche list se sahi ID copy karein.' };
+  }
+  out.phone = { id: match.id, number: match.number, provider: match.provider, status: match.status, name: match.name };
+  return { ...out, ok: true, message: 'Vapi key aur Phone ID dono sahi hain.' };
+}
+
+/**
  * Fetch live status of a Vapi call (status + endedReason) for diagnostics
  */
 async function getVapiCallStatus(callId) {
@@ -744,5 +792,6 @@ module.exports = {
   sendAssistantMessage,
   triggerVapiCall,
   getVapiCallStatus,
+  diagnoseVapi,
   tick
 };

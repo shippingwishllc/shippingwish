@@ -128,4 +128,13 @@ router.get('/vapi-call/:id', requireAuth, staffOnly, async (req, res) => {
   }
 });
 
+// GET /api/driver-assistant/vapi-diagnose — Verify Vapi key + phone ID
+router.get('/vapi-diagnose', requireAuth, staffOnly, async (req, res) => {
+  try {
+    res.json(await driverAssistant.diagnoseVapi());
+  } catch (err) {
+    res.status(500).json({ ok: false, error: 'Diagnose failed: ' + err.message });
+  }
+});
+
 module.exports = router;
