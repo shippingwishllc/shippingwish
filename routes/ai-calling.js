@@ -275,11 +275,112 @@ router.post('/outbound', requireAuth, async (req, res) => {
   });
 });
 
+// Schema check for AI Voice Calls table
+let schemaReady = false;
+async function ensureAiCallingSchema() {
+  if (schemaReady) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ai_dispatch_calls (
+        id SERIAL PRIMARY KEY,
+        call_sid VARCHAR(80) UNIQUE NOT NULL,
+        driver_name VARCHAR(150) NOT NULL,
+        driver_phone VARCHAR(50) NOT NULL,
+        carrier_name VARCHAR(150) DEFAULT 'Independent Contractor',
+        trigger_type VARCHAR(50) DEFAULT 'AI_OUTBOUND_VAPI',
+        call_status VARCHAR(50) DEFAULT 'COMPLETED',
+        duration_seconds INT DEFAULT 0,
+        recording_url TEXT,
+        transcript TEXT,
+        summary TEXT,
+        call_sentiment VARCHAR(50) DEFAULT 'CALM',
+        audio_hash VARCHAR(100) DEFAULT '',
+        created_at TIMESTAMP DEFAULT now(),
+        updated_at TIMESTAMP DEFAULT now()
+      );
+      ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS transcript TEXT;
+      ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS summary TEXT;
+      ALTER TABLE ai_dispatch_calls ALTER COLUMN recording_url TYPE TEXT;
+    `);
+    schemaReady = true;
+  } catch (e) {
+    console.warn('[AI Calling] Schema check note:', e.message);
+  }
+}
+
+/**
+ * Sync recent calls from Vapi directly to DB so history is always 100% complete
+ */
+async function syncVapiCallsToDb() {
+  let vapiApiKey = String(process.env.VAPI_API_KEY || '').trim();
+  if (!vapiApiKey) {
+    try {
+      const { rows } = await pool.query("SELECT value FROM site_settings WHERE key = 'vapi_api_key'");
+      if (rows[0] && rows[0].value) vapiApiKey = rows[0].value.trim();
+    } catch (_) {}
+  }
+  if (!vapiApiKey) return;
+
+  try {
+    const res = await fetch('https://api.vapi.ai/call?limit=25', {
+      headers: { Authorization: `Bearer ${vapiApiKey}` }
+    });
+    const calls = await res.json().catch(() => []);
+    if (!Array.isArray(calls)) return;
+
+    for (const c of calls) {
+      if (!c.id) continue;
+      const recUrl = c.recordingUrl || c.stereoRecordingUrl || null;
+      let duration = c.duration || 0;
+      if (!duration && c.endedAt && c.startedAt) {
+        duration = Math.max(0, Math.round((new Date(c.endedAt) - new Date(c.startedAt)) / 1000));
+      }
+      const transcript = c.transcript || (Array.isArray(c.messages) ? c.messages.map(m => `${m.role === 'assistant' ? '🤖 AI' : '👤 ' + (m.role || 'User')}: ${m.message}`).join('\n\n') : '');
+      const summary = c.summary || c.analysis?.summary || '';
+      const phone = c.customer?.number || '+19177370021';
+      const name = c.customer?.name || (c.assistant?.name ? `Lead (${c.assistant.name})` : 'Driver / Carrier');
+      const sentiment = c.analysis?.structuredData?.sentiment || (c.endedReason ? String(c.endedReason).replace(/-/g, ' ').toUpperCase() : 'CALM');
+      const status = c.status === 'ended' ? 'COMPLETED' : (c.status === 'in-progress' ? 'IN_PROGRESS' : 'QUEUED');
+
+      await pool.query(`
+        INSERT INTO ai_dispatch_calls (
+          call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, duration_seconds, recording_url, transcript, summary, call_sentiment, audio_hash, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, COALESCE($13, now()))
+        ON CONFLICT (call_sid) DO UPDATE SET
+          call_status = EXCLUDED.call_status,
+          duration_seconds = CASE WHEN EXCLUDED.duration_seconds > 0 THEN EXCLUDED.duration_seconds ELSE ai_dispatch_calls.duration_seconds END,
+          recording_url = COALESCE(EXCLUDED.recording_url, ai_dispatch_calls.recording_url),
+          transcript = COALESCE(NULLIF(EXCLUDED.transcript, ''), ai_dispatch_calls.transcript),
+          summary = COALESCE(NULLIF(EXCLUDED.summary, ''), ai_dispatch_calls.summary),
+          call_sentiment = COALESCE(EXCLUDED.call_sentiment, ai_dispatch_calls.call_sentiment),
+          updated_at = now()
+      `, [
+        c.id,
+        name,
+        phone,
+        'Fleet Carrier',
+        c.type === 'inboundPhoneCall' ? 'AI_INBOUND_DISPATCH' : 'AI_OUTBOUND_VAPI',
+        status,
+        duration,
+        recUrl,
+        transcript,
+        summary,
+        sentiment,
+        `vapi-${c.id}`,
+        c.createdAt || c.startedAt || null
+      ]).catch(() => {});
+    }
+  } catch (err) {
+    console.warn('[AI Calling] Vapi history sync note:', err.message);
+  }
+}
+
 /**
  * POST /api/ai-calling/webhook
  * Vapi.ai Webhook listener: receives call transcripts, sentiment, and auto-enqueues follow-ups
  */
 router.post('/webhook', async (req, res) => {
+  await ensureAiCallingSchema();
   const event = req.body?.message || req.body;
   const eventType = event.type || event.status;
 
@@ -288,26 +389,38 @@ router.post('/webhook', async (req, res) => {
       const call = event.call || {};
       const transcript = event.transcript || '';
       const summary = event.summary || '';
-      const recordingUrl = event.recordingUrl || '';
+      const recordingUrl = event.recordingUrl || event.stereoRecordingUrl || '';
       const customerPhone = call.customer?.number || event.customer?.number;
       const customerName = call.customer?.name || 'Carrier Partner';
 
-      // Update call in DB
+      // Upsert call in DB
       if (call.id) {
         await pool.query(
-          `UPDATE ai_dispatch_calls
-           SET call_status = 'COMPLETED',
-               duration_seconds = $1,
-               recording_url = $2,
-               call_sentiment = $3
-           WHERE call_sid = $4`,
+          `INSERT INTO ai_dispatch_calls (
+             call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, duration_seconds, recording_url, transcript, summary, call_sentiment, audio_hash
+           ) VALUES ($1, $2, $3, $4, $5, 'COMPLETED', $6, $7, $8, $9, $10, $11)
+           ON CONFLICT (call_sid) DO UPDATE SET
+             call_status = 'COMPLETED',
+             duration_seconds = EXCLUDED.duration_seconds,
+             recording_url = COALESCE(EXCLUDED.recording_url, ai_dispatch_calls.recording_url),
+             transcript = COALESCE(NULLIF(EXCLUDED.transcript, ''), ai_dispatch_calls.transcript),
+             summary = COALESCE(NULLIF(EXCLUDED.summary, ''), ai_dispatch_calls.summary),
+             call_sentiment = EXCLUDED.call_sentiment,
+             updated_at = now()`,
           [
+            call.id,
+            customerName,
+            customerPhone || '+19177370021',
+            'Fleet Carrier',
+            'AI_OUTBOUND_VAPI',
             event.durationSeconds || 60,
             recordingUrl,
-            event.analysis?.structuredData?.sentiment || 'CALM',
-            call.id
+            transcript,
+            summary,
+            event.analysis?.structuredData?.sentiment || 'COMPLETED',
+            `vapi-${call.id}`
           ]
-        ).catch(() => {});
+        ).catch((e) => console.warn('[Webhook] DB save error:', e.message));
       }
 
       // Detect positive interest from transcript
@@ -340,10 +453,14 @@ router.post('/webhook', async (req, res) => {
  */
 router.get('/history', requireAuth, async (req, res) => {
   try {
+    await ensureAiCallingSchema();
+    // Two-way sync: automatically fetch recent calls from Vapi API into DB
+    await syncVapiCallsToDb();
+
     const result = await pool.query(`
-      SELECT id, call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, duration_seconds, recording_url, call_sentiment, created_at
+      SELECT id, call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, duration_seconds, recording_url, transcript, summary, call_sentiment, created_at
       FROM ai_dispatch_calls
-      ORDER BY id DESC LIMIT 50
+      ORDER BY created_at DESC, id DESC LIMIT 50
     `);
     res.json({ ok: true, calls: result.rows });
   } catch (err) {

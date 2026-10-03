@@ -987,10 +987,53 @@
           box.style.background = good ? '#ecfdf5' : '#fef2f2';
           box.style.borderColor = good ? '#6ee7b7' : '#fca5a5';
           box.style.color = good ? '#065f46' : '#991b1b';
-          box.innerHTML = `📴 Call ended — <code>${esc(d.endedReason || 'unknown')}</code>${why ? '<br>' + esc(why) : ''}`;
+          
+          let audioHtml = '';
+          if (d.recordingUrl) {
+            audioHtml = `
+              <div style="margin-top:10px;padding:10px;background:#fff;border-radius:6px;border:1px solid #cbd5e1;">
+                <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#1e293b;display:flex;align-items:center;gap:6px;">
+                  <span>🎧</span> Listen to Call Audio Recording (${d.duration || 0}s):
+                </div>
+                <audio controls autoplay style="width:100%;height:36px;" src="${esc(d.recordingUrl)}"></audio>
+              </div>
+            `;
+          }
+
+          let transcriptHtml = '';
+          if (d.transcript) {
+            transcriptHtml = `
+              <details open style="margin-top:8px;background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:8px 12px;">
+                <summary style="font-weight:700;cursor:pointer;color:#0369a1;font-size:12px;">📄 View Call Transcript Dialogue</summary>
+                <pre style="margin-top:8px;font-size:11.5px;background:#f8fafc;padding:10px;border-radius:4px;white-space:pre-wrap;line-height:1.5;color:#334155;">${esc(d.transcript)}</pre>
+              </details>
+            `;
+          }
+
+          box.innerHTML = `
+            <div>📴 Call ended — <code>${esc(d.endedReason || 'completed')}</code> (Duration: ${d.duration || 0}s)${why ? '<br>' + esc(why) : ''}</div>
+            ${audioHtml}
+            ${transcriptHtml}
+            <div style="margin-top:8px;">
+              <a href="/voice-calls" target="_blank" style="font-size:12px;color:#2563eb;font-weight:700;text-decoration:none;">
+                ➡️ Open in AI Voice Calls &amp; Audio Recordings Dashboard &raquo;
+              </a>
+            </div>
+          `;
           return;
         }
-        box.innerHTML = `📡 Live status: <strong>${esc(d.status || 'queued')}</strong> (updating…)`;
+
+        if (d.status === 'in-progress') {
+          box.style.background = '#f0fdf4';
+          box.style.borderColor = '#86efac';
+          box.style.color = '#15803d';
+          box.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;box-shadow:0 0 8px #22c55e;"></span> 🟢 <strong>Live Call Connected &amp; Talking</strong> (In Progress...)</span>`;
+        } else {
+          box.style.background = '#f8fafc';
+          box.style.borderColor = '#e2e8f0';
+          box.style.color = '#334155';
+          box.innerHTML = `📡 Live status: <strong>${esc(d.status || 'ringing')}</strong> (calling phone…)`;
+        }
       } catch (e) {
         box.innerHTML = '⚠️ Status check error: ' + esc(e.message);
         return;

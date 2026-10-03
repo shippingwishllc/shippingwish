@@ -563,24 +563,41 @@ async function triggerVapiCall({ phone, driverName, scenario = 'morning_checkin'
 
   // Setup persona and prompt based on scenario (Keep names <= 30 chars for Vapi)
   let assistantName = 'Sarah - Dispatch';
-  let firstMessage = `Good morning ${driverName || ''}! This is Sarah with Shipping Wish operations desk checking in. Are you empty today and ready for your next load?`;
-  let systemPrompt = `You are Sarah, an energetic and polite logistics assistant at Shipping Wish LLC dispatch desk (shippingwish.com, phone: +1-917-737-0021).
-You are calling driver ${driverName || 'driver'}.
-Purpose: Morning status check-in to confirm if they are empty today, what their current ZIP code or city is, and what lane or destination they want to run to next.
-Our dispatch team is ready to book their next load. Speak naturally, keep sentences short and conversational (1 to 2 sentences max).`;
+  let firstMessage = `Good morning! This is Sarah with Shipping Wish operations desk checking in. Are you empty today and ready for your next load?`;
+  let systemPrompt = `You are Sarah, a cheerful, sharp, and highly experienced American truck dispatch coordinator at Shipping Wish LLC (shippingwish.com, phone: +1-917-737-0021).
+You are calling driver/carrier ${driverName || 'partner'} for a morning dispatch check-in.
+
+CORE BEHAVIOR RULES:
+1. VOICEMAIL & ANSWERING MACHINE:
+   If you detect an automated voicemail greeting, answering machine, or hear "leave a message", leave this exact warm, natural voicemail and then hang up immediately:
+   "Hey, this is Sarah with Shipping Wish dispatch. Just checking in on your truck for today. Whenever you take a break or get empty, shoot us a text or give us a call back at 917-737-0021 so we can get your reload lined up. Safe travels!"
+   Hang up immediately after leaving this message.
+
+2. LIVE DRIVER CONVERSATION:
+   - Speak with warm, upbeat, and professional energy like an experienced dispatcher talking to a trusted trucker.
+   - Keep each response short (1 to 2 concise sentences maximum). Truckers are busy and appreciate quick, direct communication.
+   - Use natural conversational acknowledgments ("Awesome", "Gotcha", "Understood", "Sounds good").
+   - If Driver is Driving: Say "No problem at all, keep your eyes on the road! I will text you our direct line so you can reach out when you are parked safely."
+   - If Driver is Empty: Ask "Where's the truck sitting right now (city or ZIP)? And where are you trying to run next?"
+   - If Driver gives location & destination: Say "Got it, Atlanta empty heading Midwest. Our booking desk is hunting top-dollar freight for that lane right now with zero broker fee cuts. I'll have the team text you rate options directly."
+   - If Driver is Loaded: Ask what their expected delivery time is today so dispatch can have a reload waiting for them when they unload.`;
 
   if (scenario === 'carrier_pitch') {
     assistantName = 'Alex - Closer';
     firstMessage = `Hi! This is Alex with Shipping Wish Logistics operations. Am I speaking with the fleet owner or manager?`;
-    systemPrompt = `You are Alex, an experienced and friendly truck dispatch manager at Shipping Wish LLC (shippingwish.com, toll-free: +1-800-580-3101).
+    systemPrompt = `You are Alex, an assertive, experienced, and friendly truck dispatch manager at Shipping Wish LLC (shippingwish.com, toll-free: +1-800-580-3101).
 Your objective: Introduce our 24/7 Autonomous AI Dispatch Manager backed by our dedicated human operations desk, explain our 0% commission service, and get them to test us with our 7-Day $0 Free Trial.
-Speak naturally, keep sentences short and conversational (1 to 2 sentences max).`;
+
+VOICEMAIL: If you hit voicemail, say:
+"Hi, this is Alex with Shipping Wish dispatch. We're offering owner-operators a 7-day zero-dollar trial with zero percent commission on your gross. Call us back at 800-580-3101 or visit shippingwish.com. Have a great day!" and hang up.
+
+LIVE RULES: Keep answers short, direct, conversational (1-2 sentences). You never take 8-10% like other dispatchers; you charge a flat weekly rate and give a 7-day $0 trial.`;
   } else if (scenario === 'loadsnexus_broker') {
     assistantName = 'Jordan - Broker';
     firstMessage = `Hi, this is Jordan with LoadsNexus freight exchange. Do you have any open spot freight that needs reliable truck capacity covered today?`;
     systemPrompt = `You are Jordan at LoadsNexus (loadsnexus.com).
 Your objective: Get freight brokers and 3PLs to post their spot freight for 100% FREE on our exchange.
-Speak concisely in 1 to 2 sentences.`;
+Speak concisely in 1 to 2 sentences. If they hit voicemail, leave a brief notice that posting spot loads is 100% free with vetted carriers.`;
   }
 
   const buildPayload = (useVoice = true) => ({
@@ -633,6 +650,23 @@ Speak concisely in 1 to 2 sentences.`;
     }
 
     if (!res.ok) throw new Error(`Vapi ${res.status}: ${msgOf(data) || 'unknown error'}`);
+
+    // Immediately log into ai_dispatch_calls table so it appears in history
+    if (data.id) {
+      await pool.query(`
+        INSERT INTO ai_dispatch_calls (
+          call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, audio_hash
+        ) VALUES ($1, $2, $3, $4, $5, 'INITIATED', $6)
+        ON CONFLICT (call_sid) DO NOTHING
+      `, [
+        data.id,
+        driverName || 'Partner',
+        targetPhone,
+        'Fleet Carrier',
+        `DRIVER_ASSISTANT_${String(scenario || 'checkin').toUpperCase()}`,
+        `vapi-${data.id}`
+      ]).catch(() => {});
+    }
 
     return { ok: true, callId: data.id, provider: 'vapi', assistant: assistantName, phone: targetPhone };
   } catch (err) {
@@ -770,12 +804,55 @@ async function getVapiCallStatus(callId) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { ok: false, error: data.message || `Vapi error ${res.status}` };
+
+  const recUrl = data.recordingUrl || data.stereoRecordingUrl || null;
+  let duration = data.duration || 0;
+  if (!duration && data.endedAt && data.startedAt) {
+    duration = Math.max(0, Math.round((new Date(data.endedAt) - new Date(data.startedAt)) / 1000));
+  }
+  const transcript = data.transcript || (Array.isArray(data.messages) ? data.messages.map(m => `${m.role === 'assistant' ? '🤖 Sarah' : '👤 ' + (m.role || 'Driver')}: ${m.message}`).join('\n\n') : '');
+  const summary = data.summary || data.analysis?.summary || '';
+  const sentiment = data.analysis?.structuredData?.sentiment || (data.endedReason ? String(data.endedReason).replace(/-/g, ' ').toUpperCase() : 'CALM');
+
+  if (data.id) {
+    await pool.query(`
+      INSERT INTO ai_dispatch_calls (
+        call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, duration_seconds, recording_url, transcript, summary, call_sentiment, audio_hash
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      ON CONFLICT (call_sid) DO UPDATE SET
+        call_status = EXCLUDED.call_status,
+        duration_seconds = CASE WHEN EXCLUDED.duration_seconds > 0 THEN EXCLUDED.duration_seconds ELSE ai_dispatch_calls.duration_seconds END,
+        recording_url = COALESCE(EXCLUDED.recording_url, ai_dispatch_calls.recording_url),
+        transcript = COALESCE(NULLIF(EXCLUDED.transcript, ''), ai_dispatch_calls.transcript),
+        summary = COALESCE(NULLIF(EXCLUDED.summary, ''), ai_dispatch_calls.summary),
+        call_sentiment = EXCLUDED.call_sentiment,
+        updated_at = now()
+    `, [
+      data.id,
+      data.customer?.name || 'Driver / Carrier',
+      data.customer?.number || '+19177370021',
+      'Fleet Carrier',
+      'AI_OUTBOUND_VAPI',
+      data.status === 'ended' ? 'COMPLETED' : (data.status === 'in-progress' ? 'IN_PROGRESS' : 'QUEUED'),
+      duration,
+      recUrl,
+      transcript,
+      summary,
+      sentiment,
+      `vapi-${data.id}`
+    ]).catch(() => {});
+  }
+
   return {
     ok: true,
     id: data.id,
     status: data.status,
     endedReason: data.endedReason || null,
     cost: data.cost,
+    duration,
+    recordingUrl: recUrl,
+    transcript,
+    summary,
     startedAt: data.startedAt,
     endedAt: data.endedAt
   };

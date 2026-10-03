@@ -478,16 +478,20 @@
     }
 
     tbody.innerHTML = filtered.map(c => {
+      const isLive = String(c.call_status || '').toUpperCase() === 'IN_PROGRESS';
       const durationMin = Math.floor((c.duration_seconds || 0) / 60);
       const durationSec = (c.duration_seconds || 0) % 60;
-      const durationStr = `${durationMin}m ${durationSec < 10 ? '0' : ''}${durationSec}s`;
+      const durationStr = isLive ? 'Live In-Call' : `${durationMin}m ${durationSec < 10 ? '0' : ''}${durationSec}s`;
 
       const isInbound = (c.trigger_type || '').toLowerCase().includes('inbound');
       const sent = (c.call_sentiment || '').toUpperCase();
 
       let badgeClass = 'badge-sentiment-neutral';
       let badgeLabel = c.call_sentiment || 'Completed';
-      if (sent.includes('INTEREST') || sent.includes('POSITIVE')) {
+      if (isLive) {
+        badgeClass = 'badge-sentiment-interested';
+        badgeLabel = '🟢 Live In-Call';
+      } else if (sent.includes('INTEREST') || sent.includes('POSITIVE')) {
         badgeClass = 'badge-sentiment-interested';
         badgeLabel = '🟢 Interested';
       } else if (sent.includes('TRANSFER')) {
@@ -496,7 +500,7 @@
       }
 
       return `
-        <tr>
+        <tr style="${isLive ? 'background:#f0fdf4;' : ''}">
           <td>
             <div style="font-weight:700;color:#0f172a;">${new Date(c.created_at).toLocaleDateString()}</div>
             <div style="font-size:11px;color:#64748b;">${new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
@@ -515,16 +519,18 @@
               ${isInbound ? '⬇️ Inbound Line' : '⬆️ Outbound AI'}
             </span>
           </td>
-          <td style="font-weight:700;color:#0f172a;">${durationStr}</td>
+          <td style="font-weight:700;color:${isLive ? '#15803d' : '#0f172a'};">${durationStr}</td>
           <td>
             <span class="${badgeClass}">${badgeLabel}</span>
           </td>
           <td class="audio-player-wrap">
             ${c.recording_url ? `
-              <audio controls preload="none" src="${escapeHtml(c.recording_url)}"></audio>
+              <audio controls preload="none" src="${escapeHtml(c.recording_url)}" style="width:190px;height:32px;"></audio>
+            ` : (isLive ? `
+              <span style="font-size:11px;color:#15803d;font-weight:700;">📡 Live Call Connected</span>
             ` : `
               <span style="font-size:11px;color:#94a3b8;font-style:italic;">Processing Audio...</span>
-            `}
+            `)}
           </td>
           <td style="text-align:right;">
             <button type="button" class="btn btn-secondary btn-sm" onclick="openTranscriptModal(${c.id})">
@@ -596,44 +602,68 @@
     if (!call) return;
 
     document.getElementById('transcript-modal-title').textContent = `Call Dialogue: ${call.driver_name || 'Carrier'} (${call.driver_phone})`;
-    document.getElementById('transcript-modal-subtitle').textContent = `${new Date(call.created_at).toLocaleString()} · Duration: ${call.duration_seconds || 60}s`;
+    document.getElementById('transcript-modal-subtitle').textContent = `${new Date(call.created_at).toLocaleString()} · Duration: ${call.duration_seconds || 0}s`;
     document.getElementById('transcript-modal-status').textContent = `Sentiment: ${call.call_sentiment || 'COMPLETED'}`;
 
     const body = document.getElementById('transcript-modal-body');
+
+    let audioPlayerHtml = '';
+    if (call.recording_url) {
+      audioPlayerHtml = `
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:14px;">
+          <div style="font-weight:700;font-size:12.5px;color:#166534;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <span>🎧</span> Listen to Call Audio Recording:
+          </div>
+          <audio controls autoplay style="width:100%;height:36px;" src="${escapeHtml(call.recording_url)}"></audio>
+        </div>
+      `;
+    }
+
+    let summaryHtml = '';
+    if (call.summary) {
+      summaryHtml = `
+        <div style="background:#f8fafc;padding:12px 16px;border-radius:10px;margin-bottom:14px;border:1px solid #e2e8f0;font-size:12px;">
+          <strong style="color:#0f172a;display:block;margin-bottom:4px;">Executive AI Summary:</strong>
+          <p style="margin:0;color:#475569;line-height:1.5;">${escapeHtml(call.summary)}</p>
+        </div>
+      `;
+    }
+
+    let dialogueHtml = '';
+    if (call.transcript) {
+      const lines = call.transcript.split(/\n+/).filter(Boolean);
+      dialogueHtml = lines.map(line => {
+        const isAi = /^(ai|assistant|sarah|alex|jordan)/i.test(line);
+        const cleanLine = line.replace(/^(ai|assistant|sarah|alex|jordan|user|customer|driver):\s*/i, '');
+        if (isAi) {
+          return `
+            <div style="padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;align-self:flex-start;max-width:85%;color:#1e3a8a;">
+              <strong>🤖 AI Assistant:</strong><br />
+              "${escapeHtml(cleanLine)}"
+            </div>
+          `;
+        } else {
+          return `
+            <div style="padding:10px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px;align-self:flex-end;max-width:85%;color:#0f172a;">
+              <strong>👤 ${escapeHtml(call.driver_name || 'Driver / Voicemail')}:</strong><br />
+              "${escapeHtml(cleanLine)}"
+            </div>
+          `;
+        }
+      }).join('');
+    } else {
+      dialogueHtml = `
+        <div style="padding:24px;text-align:center;color:#64748b;font-size:13px;">
+          Audio/Transcript sync ho raha hai... Kuch second baad Refresh karein.
+        </div>
+      `;
+    }
+
     body.innerHTML = `
-      <div style="background:#f8fafc;padding:12px 16px;border-radius:10px;margin-bottom:14px;border:1px solid #e2e8f0;font-size:12px;">
-        <strong style="color:#0f172a;display:block;margin-bottom:4px;">Executive AI Summary:</strong>
-        <p style="margin:0;color:#475569;line-height:1.5;">
-          Carrier verified operating in primary lanes. Expressed interest in ${call.trigger_type.includes('LOADSNEXUS') ? 'LoadsNexus $19/mo load board' : 'Shipping Wish dedicated truck dispatch'}.
-          Automated SMS follow-up triggered with onboarding link.
-        </p>
-      </div>
-
+      ${audioPlayerHtml}
+      ${summaryHtml}
       <div style="display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.5;">
-        <div style="padding:10px 14px;background:#eff6ff;border-radius:12px;align-self:flex-start;max-width:85%;color:#1e3a8a;">
-          <strong>🤖 AI Dispatcher:</strong><br />
-          "Hello, this is Shipping Wish operations desk calling from +1 (609) 469-6004. Am I speaking with the fleet manager for ${escapeHtml(call.carrier_name || 'your company')}?"
-        </div>
-
-        <div style="padding:10px 14px;background:#f1f5f9;border-radius:12px;align-self:flex-end;max-width:85%;color:#0f172a;">
-          <strong>👤 ${escapeHtml(call.driver_name || 'Driver')}:</strong><br />
-          "Yes, this is him. What loads do you have available today?"
-        </div>
-
-        <div style="padding:10px 14px;background:#eff6ff;border-radius:12px;align-self:flex-start;max-width:85%;color:#1e3a8a;">
-          <strong>🤖 AI Dispatcher:</strong><br />
-          "We have high-paying spot loads averaging $3.15 to $4.20 a mile out of Midwest, Texas, and Southeast corridors. We charge zero percentage from your checks — just a flat $149/week, and your first 7 days are completely free to test. Would you like me to send you the direct dispatch details?"
-        </div>
-
-        <div style="padding:10px 14px;background:#f1f5f9;border-radius:12px;align-self:flex-end;max-width:85%;color:#0f172a;">
-          <strong>👤 ${escapeHtml(call.driver_name || 'Driver')}:</strong><br />
-          "Sure, text me the link on this number."
-        </div>
-
-        <div style="padding:10px 14px;background:#eff6ff;border-radius:12px;align-self:flex-start;max-width:85%;color:#1e3a8a;">
-          <strong>🤖 AI Dispatcher:</strong><br />
-          "Done! I just texted your link. If you ever need to speak with our live dispatch team, you can also press 1 or call our toll-free line at +1 (800) 580-3101. Have a safe drive!"
-        </div>
+        ${dialogueHtml}
       </div>
     `;
 
