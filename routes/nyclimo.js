@@ -632,6 +632,111 @@ router.get('/erp/stats', requireAuth, requireRole('dispatcher', 'admin'), async 
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Search FMCSA passenger / limousine / charter carriers in NY, NJ, CT, etc.
+router.get('/erp/passenger-carriers', requireAuth, requireRole('dispatcher', 'admin'), async (req, res) => {
+  const state = String(req.query.state || 'NY').toUpperCase().slice(0, 2);
+  const limit = Math.min(50, Math.max(5, parseInt(req.query.limit, 10) || 20));
+  const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
+
+  try {
+    const where = [
+      "status_code = 'A'",
+      'email_address IS NOT NULL',
+      `phy_state = '${state}'`,
+      "(crgo_passengers = 'X' OR classdef like '%PASSENGER%' OR classdef like '%AUTHORIZED FOR HIRE%')"
+    ].join(' AND ');
+
+    const url = new URL('https://data.transportation.gov/resource/az4n-8mr2.json');
+    url.searchParams.set('$select', 'dot_number,legal_name,dba_name,company_officer_1,email_address,phone,phy_city,phy_state,power_units');
+    url.searchParams.set('$where', where);
+    url.searchParams.set('$order', 'dot_number DESC');
+    url.searchParams.set('$limit', String(limit));
+    url.searchParams.set('$offset', String(offset));
+
+    const headers = { Accept: 'application/json' };
+    if (process.env.SOCRATA_APP_TOKEN) headers['X-App-Token'] = process.env.SOCRATA_APP_TOKEN;
+
+    const resp = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+    if (!resp.ok) throw new Error(`FMCSA Census error: ${resp.status}`);
+    const carriers = await resp.json();
+
+    res.json({ ok: true, state, carriers: Array.isArray(carriers) ? carriers : [] });
+  } catch (err) {
+    console.warn('[FMCSA PASSENGER SEARCH ERROR]:', err.message);
+    res.status(500).json({ error: 'Could not search FMCSA passenger carriers: ' + err.message });
+  }
+});
+
+// Invite a carrier/chauffeur via Email or SMS
+router.post('/erp/invite-carrier', requireAuth, requireRole('dispatcher', 'admin'), async (req, res) => {
+  const b = req.body || {};
+  const email = String(b.email || '').trim().toLowerCase();
+  const phone = String(b.phone || '').trim();
+  const companyName = String(b.companyName || b.legalName || 'Executive Chauffeur Partner').trim();
+  const method = String(b.method || 'email').toLowerCase();
+
+  const results = {};
+
+  if (method === 'email' || method === 'both') {
+    if (email && /^\S+@\S+\.\S+$/.test(email)) {
+      try {
+        const { sendEmail } = require('../utils/mailer');
+        results.email = await sendEmail({
+          to: email,
+          from: getLimoSender(),
+          replyTo: getLimoReplyTo(),
+          subject: `Exclusive Partner Invitation: Expand Your Fleet With NYC Limo Wish`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0d0d0d;color:#ffffff;border-radius:12px;padding:32px;border:1px solid rgba(216,159,37,0.3);">
+              <div style="text-align:center;margin-bottom:24px;">
+                <h1 style="color:#d89f25;letter-spacing:0.05em;margin:0;font-size:1.6rem;">NYC LIMO WISH</h1>
+                <p style="color:#94a3b8;font-size:0.85rem;margin-top:4px;">Executive Chauffeur &amp; Fleet Partner Network</p>
+              </div>
+              <p style="font-size:1rem;color:#e2e8f0;">Dear Operations Desk at <strong>${companyName}</strong>,</p>
+              <p style="font-size:0.95rem;color:#cbd5e1;line-height:1.6;">
+                NYC Limo Wish is currently expanding its preferred executive fleet network across the New York, New Jersey, and Connecticut tristate region. We are dispatching high-yield corporate airport transfers (JFK, LGA, EWR, TEB) and private chauffeur charters.
+              </p>
+              <div style="background:#181818;border-left:3px solid #d89f25;padding:16px 20px;border-radius:6px;margin:20px 0;">
+                <h4 style="margin:0 0 8px;color:#d89f25;font-size:0.92rem;">Partner Benefits:</h4>
+                <ul style="margin:0;padding-left:18px;color:#94a3b8;font-size:0.85rem;line-height:1.6;">
+                  <li>Guaranteed prompt weekly direct deposit payouts.</li>
+                  <li>Direct dispatch offers to your LimoAnywhere, GNet, or driver mobile app.</li>
+                  <li>High-ticket corporate clients and pre-scheduled airport transfers.</li>
+                  <li>Keep your vehicles rolling during off-peak and deadhead hours.</li>
+                </ul>
+              </div>
+              <div style="text-align:center;margin:28px 0;">
+                <a href="${APP_URL}/partner" style="background:#d89f25;color:#000000;font-weight:bold;text-decoration:none;padding:14px 28px;border-radius:8px;display:inline-block;font-size:0.95rem;letter-spacing:0.04em;">
+                  REGISTER YOUR FLEET NOW →
+                </a>
+              </div>
+              <p style="font-size:0.82rem;color:#64748b;text-align:center;">
+                NYC Limo Wish · Shipping Wish LLC · (917) 737-0021 · info@nyclimowish.com
+              </p>
+            </div>
+          `
+        });
+      } catch (e) { results.emailError = e.message; }
+    } else {
+      results.emailError = 'Invalid email address';
+    }
+  }
+
+  if (method === 'sms' || method === 'both') {
+    if (phone) {
+      try {
+        const { sendTwilioSms } = require('./voip');
+        const smsText = `NYC Limo Wish: Expanding corporate airport & chauffeur transfers in NYC/NJ. Partner your fleet with us for high-yield bookings: ${APP_URL}/partner Reply STOP to opt out.`;
+        results.sms = await sendTwilioSms(phone, smsText);
+      } catch (e) { results.smsError = e.message; }
+    } else {
+      results.smsError = 'Invalid phone number';
+    }
+  }
+
+  res.json({ ok: true, results });
+});
+
 router.get('/driver/trips', requireAuth, requireRole('driver', 'admin'), async (req, res) => {
   try {
     const { rows } = await pool.query(

@@ -425,6 +425,9 @@ app.use((req, res, next) => {
     if (cleanP === '/driver' || cleanP === '/driver/' || cleanP === '/driver/index.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'driver', 'index.html'));
     }
+    if (cleanP === '/partner' || cleanP === '/partner.html' || cleanP === '/become-a-chauffeur') {
+      return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'partner.html'));
+    }
     if (cleanP === '/passenger' || cleanP === '/passenger/' || cleanP === '/passenger/index.html') {
       return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'passenger', 'index.html'));
     }

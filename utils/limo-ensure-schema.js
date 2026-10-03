@@ -189,17 +189,37 @@ UPDATE limo_commission_ledger SET operator_payout_status = 'paid', operator_payo
 UPDATE limo_commission_ledger SET referral_payout_status = 'earned' WHERE referral_base_id IS NOT NULL AND referral_payout_status = 'not_applicable' AND status <> 'void';
 CREATE INDEX IF NOT EXISTS idx_limo_partner_offers_queue ON limo_partner_offers(partner_base_id, status, expires_at);
 CREATE INDEX IF NOT EXISTS idx_limo_partner_bases_eligibility ON limo_partner_bases(approval_status, availability_status);
+CREATE TABLE IF NOT EXISTS limo_partner_applications (
+  id SERIAL PRIMARY KEY,
+  applicant_type VARCHAR(50) DEFAULT 'chauffeur',
+  full_name VARCHAR(150),
+  company_name VARCHAR(150),
+  phone VARCHAR(50),
+  email VARCHAR(255),
+  vehicle_type VARCHAR(100),
+  vehicle_name VARCHAR(100),
+  vehicle_year VARCHAR(20),
+  vehicle_color VARCHAR(50),
+  dispatch_software TEXT,
+  airports TEXT,
+  license_number VARCHAR(100),
+  notes TEXT,
+  status VARCHAR(50) DEFAULT 'pending_review',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 `;
 
 const DEFAULT_VEHICLES = [
-  ['business_sedan', 'Business Sedan', 'Cadillac XTS, Lyriq or similar', 3, 3, 85, 3.20, 75, 1.0, 95, 'best_value', 1],
-  ['premium_sedan', 'Premium Sedan', 'Mercedes S-Class, BMW 7 Series', 3, 3, 120, 4.50, 110, 1.2, 120, 'top_rated', 2],
-  ['elitex_suv', 'EliteX SUV', 'Cadillac Escalade ESV or similar', 6, 6, 110, 3.80, 95, 1.1, 110, null, 3],
-  ['luxury_suv', 'Luxury SUV', 'Chevrolet Suburban or similar', 6, 6, 105, 3.60, 90, 1.0, 105, 'popular', 4],
-  ['business_sprinter', 'Business Sprinter', 'Mercedes Sprinter Executive', 14, 14, 180, 5.50, 150, 1.3, 180, null, 5],
-  ['stretch_limo', 'Stretch Limousine', 'Lincoln MKT Stretch or similar', 10, 8, 200, 6.00, 175, 1.4, 200, null, 6],
-  ['standard_van', 'Standard Van', 'Ford Transit or similar', 12, 12, 150, 4.80, 130, 1.15, 150, null, 7],
-  ['party_bus', 'Party Bus 20P', 'Luxury party bus with lighting', 20, 20, 350, 8.00, 300, 1.6, 350, null, 8]
+  ['business_sedan', 'Business Sedan', 'Cadillac CT6, Lyriq or similar', 3, 3, 65.00, 2.80, 69.33, 1.0, 75.00, 'best_value', 1],
+  ['elitex_suv', 'EliteX SUV', 'Cadillac XT6, Lincoln Aviator or similar', 4, 4, 75.00, 3.10, 74.67, 1.0, 85.00, 'popular', 2],
+  ['luxury_suv', 'Luxury SUV', 'Chevrolet Suburban or similar', 6, 6, 85.00, 3.40, 83.20, 1.0, 95.00, 'best_value', 3],
+  ['premium_suv', 'Premium SUV', 'Cadillac Escalade ESV, Lincoln Navigator or similar', 6, 6, 95.00, 3.80, 106.67, 1.0, 110.00, 'top_rated', 4],
+  ['premium_sedan', 'Premium Sedan', 'Mercedes S-Class, BMW 7 Series', 3, 3, 100.00, 4.00, 117.33, 1.0, 115.00, 'top_rated', 5],
+  ['business_sprinter', 'Standard Sprinter', 'Mercedes Sprinter with Standard Seating', 14, 14, 135.00, 4.60, 138.67, 1.0, 150.00, 'popular', 6],
+  ['stretch_limo', 'Limo 9P', 'Lincoln MKT Stretch or similar', 9, 3, 150.00, 5.20, 160.00, 1.0, 175.00, null, 7],
+  ['standard_van', 'Standard Van', 'Ford Transit or similar', 12, 12, 120.00, 4.20, 120.00, 1.0, 140.00, null, 8],
+  ['party_bus', 'Party Bus 20P', 'Luxury party bus with perimeter seating', 20, 20, 260.00, 6.50, 250.00, 1.0, 300.00, null, 9]
 ];
 
 async function ensureSchema() {
@@ -214,7 +234,19 @@ async function ensureSchema() {
     try {
       await pool.query(
         `INSERT INTO limo_vehicles (id, name, models, passengers, luggage, base_fare, per_mile, hourly_rate, multiplier, min_fare, badge, sort_order)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT (id) DO NOTHING`, v
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         ON CONFLICT (id) DO UPDATE SET
+           name = EXCLUDED.name,
+           models = EXCLUDED.models,
+           passengers = EXCLUDED.passengers,
+           luggage = EXCLUDED.luggage,
+           base_fare = EXCLUDED.base_fare,
+           per_mile = EXCLUDED.per_mile,
+           hourly_rate = EXCLUDED.hourly_rate,
+           multiplier = EXCLUDED.multiplier,
+           min_fare = EXCLUDED.min_fare,
+           badge = EXCLUDED.badge,
+           sort_order = EXCLUDED.sort_order`, v
       );
     } catch (err) { console.warn('[VEHICLES]', err.message); }
   }

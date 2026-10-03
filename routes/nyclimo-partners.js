@@ -589,5 +589,149 @@ router.patch('/erp/commissions/:id/payout', ...adminGate, async (req, res) => {
   }
 });
 
+// ---------- PUBLIC DRIVER & AFFILIATE ONBOARDING APPLICATION ----------
+router.post('/partner/apply', async (req, res) => {
+  const b = req.body || {};
+  const applicantType = String(b.applicantType || 'chauffeur').toLowerCase() === 'affiliate' ? 'affiliate' : 'chauffeur';
+  const fullName = String(b.fullName || b.name || '').trim().slice(0, 150);
+  const companyName = String(b.companyName || '').trim().slice(0, 150);
+  const phone = String(b.phone || b.contactNumber || '').trim().slice(0, 50);
+  const email = String(b.email || '').trim().toLowerCase().slice(0, 254);
+  const vehicleType = String(b.vehicleType || '').trim().slice(0, 100);
+  const vehicleName = String(b.vehicleName || b.vehicleModel || '').trim().slice(0, 100);
+  const vehicleYear = String(b.vehicleYear || b.modelYear || '').trim().slice(0, 20);
+  const vehicleColor = String(b.vehicleColor || '').trim().slice(0, 50);
+  const dispatchSoftware = Array.isArray(b.dispatchSoftware)
+    ? b.dispatchSoftware.join(', ')
+    : String(b.dispatchSoftware || '').trim();
+  const airports = String(b.airports || 'JFK, LGA, EWR').trim().slice(0, 300);
+  const licenseNumber = String(b.licenseNumber || b.tlcLicense || b.commercialLicense || '').trim().slice(0, 100);
+  const notes = String(b.notes || b.comments || '').trim().slice(0, 1000);
+
+  if (!fullName || !phone || !/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(400).json({ error: 'Full name, valid phone number, and email address are required.' });
+  }
+
+  try {
+    await ensureSchema();
+    const { rows } = await pool.query(
+      `INSERT INTO limo_partner_applications (
+         applicant_type, full_name, company_name, phone, email,
+         vehicle_type, vehicle_name, vehicle_year, vehicle_color,
+         dispatch_software, airports, license_number, notes, status
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending_review')
+       RETURNING id, applicant_type, full_name, company_name, phone, email, vehicle_type, vehicle_name, status, created_at`,
+      [applicantType, fullName, companyName, phone, email,
+       vehicleType, vehicleName, vehicleYear, vehicleColor,
+       dispatchSoftware, airports, licenseNumber, notes]
+    );
+
+    const app = rows[0];
+
+    // Notify operations email
+    const opsEmail = process.env.OPS_EMAIL || 'shippingwishllc@gmail.com';
+    const { sendEmail } = require('../utils/mailer');
+    sendEmail({
+      to: opsEmail,
+      from: getLimoSender(),
+      replyTo: email,
+      subject: `New Chauffeur Partner Application — ${fullName} (${vehicleType || vehicleName || 'Fleet Partner'})`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;">
+          <h2 style="color:#0f172a;margin-top:0;">New Partner / Chauffeur Application</h2>
+          <p style="color:#64748b;font-size:0.9rem;">An applicant has registered via the NYC Limo Wish Chauffeur Onboarding Portal.</p>
+          <hr style="border:0;border-top:1px solid #eee;margin:16px 0;" />
+          <table style="width:100%;font-size:0.9rem;color:#1e293b;border-collapse:collapse;">
+            <tr><td style="padding:6px 0;font-weight:bold;width:160px;">Applicant Type:</td><td>${app.applicant_type.toUpperCase()}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">Full Name:</td><td>${fullName}</td></tr>
+            ${companyName ? `<tr><td style="padding:6px 0;font-weight:bold;">Company:</td><td>${companyName}</td></tr>` : ''}
+            <tr><td style="padding:6px 0;font-weight:bold;">Phone:</td><td><a href="tel:${phone}">${phone}</a></td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">Email:</td><td><a href="mailto:${email}">${email}</a></td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">Vehicle:</td><td>${vehicleYear} ${vehicleName} (${vehicleType}) - ${vehicleColor}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">TLC / License #:</td><td>${licenseNumber || 'Not specified'}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">Dispatch Networks:</td><td>${dispatchSoftware || 'Independent'}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">Airports Served:</td><td>${airports}</td></tr>
+            ${notes ? `<tr><td style="padding:6px 0;font-weight:bold;">Comments:</td><td>${notes}</td></tr>` : ''}
+          </table>
+          <div style="margin-top:24px;text-align:center;">
+            <a href="${APP_URL}/erp" style="background:#d89f25;color:#000;padding:10px 22px;border-radius:8px;font-weight:bold;text-decoration:none;display:inline-block;">Open Dispatch ERP to Review</a>
+          </div>
+        </div>
+      `
+    }).catch((err) => console.warn('[PARTNER APPLICATION NOTIFY ERROR]:', err.message));
+
+    // Welcome email to the driver
+    sendEmail({
+      to: email,
+      from: getLimoSender(),
+      replyTo: getLimoReplyTo(),
+      subject: `Welcome to NYC Limo Wish Partner Network — Application Received`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0d0d0d;color:#ffffff;border-radius:12px;padding:32px;border:1px solid rgba(216,159,37,0.3);">
+          <div style="text-align:center;margin-bottom:24px;">
+            <h1 style="color:#d89f25;letter-spacing:0.05em;margin:0;font-size:1.6rem;">NYC LIMO WISH</h1>
+            <p style="color:#94a3b8;font-size:0.85rem;margin-top:4px;">Executive Chauffeur &amp; Fleet Partner Network</p>
+          </div>
+          <p style="font-size:1rem;line-height:1.6;color:#e2e8f0;">Dear ${fullName},</p>
+          <p style="font-size:0.95rem;line-height:1.6;color:#cbd5e1;">Thank you for applying to partner with NYC Limo Wish. Your application for <strong>${vehicleType || 'Executive Fleet'} (${vehicleName || 'Vehicle'})</strong> has been received by our operations dispatch team.</p>
+          <div style="background:#181818;border-left:3px solid #d89f25;padding:16px 20px;border-radius:6px;margin:20px 0;">
+            <h4 style="margin:0 0 8px;color:#d89f25;font-size:0.9rem;">What Happens Next:</h4>
+            <ol style="margin:0;padding-left:18px;color:#94a3b8;font-size:0.85rem;line-height:1.6;">
+              <li>Our dispatch onboarding team verifies your commercial/TLC credentials and vehicle details.</li>
+              <li>You will receive your Driver PWA login and partner portal access details.</li>
+              <li>You start receiving high-paying corporate airport transfers (JFK, LGA, EWR) and executive point-to-point trips with prompt guaranteed payouts.</li>
+            </ol>
+          </div>
+          <p style="font-size:0.85rem;color:#94a3b8;line-height:1.5;">If you have any questions or would like to expedite your verification, contact our partner desk at <a href="mailto:info@nyclimowish.com" style="color:#d89f25;">info@nyclimowish.com</a> or call <a href="tel:+19177370021" style="color:#d89f25;">(917) 737-0021</a>.</p>
+          <div style="margin-top:30px;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;text-align:center;font-size:0.75rem;color:#64748b;">
+            NYC Limo Wish · Shipping Wish LLC · 24/7 Chauffeur Dispatch
+          </div>
+        </div>
+      `
+    }).catch((err) => console.warn('[PARTNER WELCOME EMAIL ERROR]:', err.message));
+
+    res.status(201).json({
+      ok: true,
+      message: 'Application received successfully. Our team will review and contact you shortly.',
+      application: app
+    });
+  } catch (err) {
+    console.error('[PARTNER APPLICATION ERROR]:', err.message);
+    res.status(500).json({ error: 'Could not submit partner application.' });
+  }
+});
+
+// Admin endpoint to view applications
+router.get('/erp/partner-applications', ...adminGate, async (req, res) => {
+  try {
+    await ensureSchema();
+    const { rows } = await pool.query(
+      `SELECT * FROM limo_partner_applications ORDER BY created_at DESC LIMIT 200`
+    );
+    res.json({ ok: true, applications: rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load partner applications.' });
+  }
+});
+
+// Admin endpoint to update application status
+router.patch('/erp/partner-applications/:id', ...adminGate, async (req, res) => {
+  const status = String(req.body?.status || '').trim();
+  if (!['approved', 'rejected', 'pending_review'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+  try {
+    await ensureSchema();
+    const { rows } = await pool.query(
+      `UPDATE limo_partner_applications SET status = $1, updated_at = now() WHERE id = $2 RETURNING *`,
+      [status, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Application not found' });
+    res.json({ ok: true, application: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not update application.' });
+  }
+});
+
 module.exports = router;
 module.exports.dispatchBooking = dispatchBooking;

@@ -246,5 +246,138 @@ ${['pending_operator','offering'].includes(b.status) ? '          <button class=
     return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
   }
 
+    init();
+  }
+
+  async function loadPartnerApplications() {
+    const tbody = document.getElementById('partner-apps-tbody');
+    if (!tbody) return;
+    try {
+      const data = await api('/erp/partner-applications');
+      if (!data?.applications?.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:16px;">No partner applications submitted yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.applications.map((a) => `
+        <tr style="border-bottom:1px solid #eee;">
+          <td>${new Date(a.created_at).toLocaleDateString()}</td>
+          <td><span style="font-weight:700;text-transform:uppercase;font-size:0.75rem;padding:3px 8px;border-radius:4px;background:#e2e8f0;">${esc(a.applicant_type)}</span></td>
+          <td><strong>${esc(a.full_name)}</strong>${a.company_name ? `<br><small style="color:#64748b;">${esc(a.company_name)}</small>` : ''}</td>
+          <td><a href="tel:${esc(a.phone)}">${esc(a.phone)}</a><br><a href="mailto:${esc(a.email)}" style="font-size:0.78rem;">${esc(a.email)}</a></td>
+          <td>${esc(a.vehicle_year || '')} ${esc(a.vehicle_name || '')}<br><small style="color:#64748b;">${esc(a.vehicle_type || '')} · ${esc(a.vehicle_color || '')}</small></td>
+          <td>${esc(a.license_number || '—')}</td>
+          <td><small style="color:#64748b;">${esc(a.dispatch_software || 'Independent')}</small></td>
+          <td><span style="padding:3px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;${a.status === 'approved' ? 'background:#dcfce7;color:#166534;' : a.status === 'rejected' ? 'background:#fee2e2;color:#991b1b;' : 'background:#fef3c7;color:#92400e;'}">${esc(a.status)}</span></td>
+          <td>
+            ${a.status === 'pending_review' ? `
+              <div style="display:flex;gap:4px;">
+                <button class="limo-btn limo-btn-gold" style="padding:4px 8px;font-size:0.75rem;" data-app-action="approved" data-app-id="${a.id}">Approve</button>
+                <button class="limo-btn limo-btn-outline" style="padding:4px 8px;font-size:0.75rem;" data-app-action="rejected" data-app-id="${a.id}">Reject</button>
+              </div>
+            ` : '—'}
+          </td>
+        </tr>
+      `).join('');
+
+      tbody.querySelectorAll('button[data-app-action]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-app-id');
+          const status = btn.getAttribute('data-app-action');
+          btn.disabled = true;
+          try {
+            await api('/erp/partner-applications/' + id, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status })
+            });
+            loadPartnerApplications();
+          } catch (e) {
+            alert(e.message);
+            btn.disabled = false;
+          }
+        });
+      });
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#ef4444;padding:16px;">Failed to load applications: ' + esc(err.message) + '</td></tr>';
+    }
+  }
+
+  document.getElementById('btn-refresh-apps')?.addEventListener('click', loadPartnerApplications);
+
+  document.getElementById('btn-search-carriers')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-search-carriers');
+    const state = document.getElementById('outreach-state')?.value || 'NY';
+    const tbody = document.getElementById('carriers-tbody');
+    if (!tbody) return;
+    btn.disabled = true;
+    btn.textContent = 'Searching FMCSA...';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:16px;">Searching passenger carriers in ' + state + '…</td></tr>';
+
+    try {
+      const data = await api('/erp/passenger-carriers?state=' + state + '&limit=30');
+      if (!data?.carriers?.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:16px;">No passenger carriers found for ' + state + '.</td></tr>';
+        btn.disabled = false;
+        btn.textContent = '🔍 Search Passenger Carriers';
+        return;
+      }
+      tbody.innerHTML = data.carriers.map((c) => `
+        <tr style="border-bottom:1px solid #eee;">
+          <td><strong>${esc(c.dot_number)}</strong></td>
+          <td><strong>${esc(c.legal_name)}</strong>${c.dba_name ? `<br><small style="color:#64748b;">DBA: ${esc(c.dba_name)}</small>` : ''}</td>
+          <td>${esc(c.company_officer_1 || '—')}</td>
+          <td>${esc(c.phy_city || '')}, ${esc(c.phy_state || '')}</td>
+          <td>${esc(c.power_units || '—')}</td>
+          <td><a href="tel:${esc(c.phone)}">${esc(c.phone || '—')}</a></td>
+          <td><a href="mailto:${esc(c.email_address)}" style="font-size:0.8rem;">${esc(c.email_address || '—')}</a></td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              ${c.email_address ? `<button class="limo-btn limo-btn-gold" style="padding:4px 8px;font-size:0.75rem;" data-invite="email" data-email="${esc(c.email_address)}" data-company="${esc(c.legal_name)}" data-phone="${esc(c.phone || '')}">✉️ Email Invite</button>` : ''}
+              ${c.phone ? `<button class="limo-btn limo-btn-dark" style="padding:4px 8px;font-size:0.75rem;" data-invite="sms" data-email="${esc(c.email_address || '')}" data-company="${esc(c.legal_name)}" data-phone="${esc(c.phone)}">💬 SMS Invite</button>` : ''}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      tbody.querySelectorAll('button[data-invite]').forEach((invBtn) => {
+        invBtn.addEventListener('click', async () => {
+          const method = invBtn.getAttribute('data-invite');
+          const email = invBtn.getAttribute('data-email');
+          const phone = invBtn.getAttribute('data-phone');
+          const companyName = invBtn.getAttribute('data-company');
+          invBtn.disabled = true;
+          invBtn.textContent = 'Sending...';
+
+          try {
+            const res = await api('/erp/invite-carrier', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, phone, companyName, method })
+            });
+            invBtn.textContent = method === 'email' ? 'Invited ✓' : 'Sent SMS ✓';
+            invBtn.style.background = '#22c55e';
+            invBtn.style.color = '#fff';
+          } catch (e) {
+            alert('Failed to send invitation: ' + e.message);
+            invBtn.disabled = false;
+            invBtn.textContent = method === 'email' ? '✉️ Email Invite' : '💬 SMS Invite';
+          }
+        });
+      });
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#ef4444;padding:16px;">Error searching carriers: ' + esc(err.message) + '</td></tr>';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 Search Passenger Carriers';
+    }
+  });
+
+  // Call loadPartnerApplications during init
+  const origInit = init;
+  init = async function() {
+    await origInit();
+    loadPartnerApplications();
+  };
+
   init();
 })();

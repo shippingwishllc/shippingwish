@@ -26,20 +26,25 @@
       badge: { text: 'Best Value', icon: '🏷️', cls: 'badge-value' },
       models: 'Cadillac CT6, Lyriq or similar'
     },
-    premium_sedan: {
-      image: '/nyclimowish/images/fleet/premium-sedan.jpg',
-      badge: { text: 'Top Rated', icon: '🛡️', cls: 'badge-rated' },
-      models: 'Mercedes S Class and BMW 7 Series'
-    },
     elitex_suv: {
       image: '/nyclimowish/images/fleet/elitex-suv.jpg',
       badge: { text: 'Popular', icon: '🔥', cls: 'badge-popular' },
-      models: 'Cadillac Escalade ESV, Lincoln Navigator or similar'
+      models: 'Cadillac XT6, Lincoln Aviator or similar'
     },
     luxury_suv: {
       image: '/nyclimowish/images/fleet/luxury-suv.jpg',
       badge: { text: 'Best Value', icon: '🏷️', cls: 'badge-value' },
       models: 'Chevrolet Suburban or similar'
+    },
+    premium_suv: {
+      image: '/nyclimowish/images/fleet/elitex-suv.jpg',
+      badge: { text: 'Top Rated', icon: '🛡️', cls: 'badge-rated' },
+      models: 'Cadillac Escalade ESV, Lincoln Navigator or similar'
+    },
+    premium_sedan: {
+      image: '/nyclimowish/images/fleet/premium-sedan.jpg',
+      badge: { text: 'Top Rated', icon: '🛡️', cls: 'badge-rated' },
+      models: 'Mercedes S Class and BMW 7 Series'
     },
     standard_van: {
       image: '/nyclimowish/images/fleet/standard-van.jpg',
@@ -54,7 +59,7 @@
     stretch_limo: {
       image: '/nyclimowish/images/fleet/stretch-limo.jpg',
       badge: null,
-      models: 'Lincoln MKT / Chrysler'
+      models: 'Lincoln MKT Stretch or similar'
     },
     party_bus: {
       image: '/nyclimowish/images/fleet/party-bus.jpg',

@@ -138,6 +138,16 @@
       "destination": "/nyclimowish/driver/index.html"
     },
     {
+      "source": "/partner",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/partner.html"
+    },
+    {
+      "source": "/become-a-chauffeur",
+      "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
+      "destination": "/nyclimowish/partner.html"
+    },
+    {
       "source": "/driver/(.*)",
       "has": [{"type": "host", "value": "(?:www\\.)?nyclimowish\\.com"}],
       "destination": "/nyclimowish/driver/$1"

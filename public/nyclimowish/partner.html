@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <!-- Google Tag Manager -->
@@ -15,33 +15,736 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-ZGYN8GXWLQ');
   </script>
 
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NYC Limo Wish Partner Portal</title>
-<link rel="icon" href="/nyclimowish/favicon.ico" sizes="32x32">
-<link rel="icon" href="/nyclimowish/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/nyclimowish/apple-touch-icon.png">
-<style>
-:root{font-family:Arial,sans-serif;color:#15202b;background:#f4f6f8}body{margin:0}header{background:#081226;color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}main{max-width:1000px;margin:32px auto;padding:0 18px}.panel{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:18px 0}.muted{color:#64748b}.card{border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin:12px 0}.row{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}.actions{display:flex;gap:8px;margin-top:12px}button{border:0;border-radius:7px;padding:10px 14px;font-weight:700;cursor:pointer;background:#10213d;color:#fff}button.secondary{background:#e8edf4;color:#10213d}button:disabled{opacity:.55;cursor:wait}.notice{padding:12px;background:#fef3c7;border-radius:8px;color:#78350f}#error{color:#b91c1c}input[type=checkbox]{width:18px;height:18px;vertical-align:middle}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partner With NYC Limo Wish | Become a Chauffeur &amp; Fleet Affiliate</title>
+  <meta name="description" content="Join NYC Limo Wish as a chauffeur or affiliate fleet company. Receive high-paying corporate airport transfers (JFK, LGA, EWR) and executive trips with guaranteed prompt payouts.">
+  <link rel="icon" href="/nyclimowish/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/nyclimowish/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/nyclimowish/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/limo.css">
+  <style>
+    .partner-hero {
+      background: linear-gradient(180deg, #000000 0%, #111111 100%);
+      padding: 120px 20px 60px;
+      text-align: center;
+      position: relative;
+    }
+    .partner-hero h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+    .partner-hero p.sub {
+      font-size: 1.15rem;
+      color: var(--limo-gold);
+      font-family: var(--font-serif);
+      font-style: italic;
+      max-width: 680px;
+      margin: 0 auto 36px;
+    }
+    .partner-features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: left;
+    }
+    .partner-feat-card {
+      background: #181818;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 24px 20px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .partner-feat-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(216,159,37,0.35);
+    }
+    .partner-feat-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(216,159,37,0.12);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--limo-gold);
+      font-size: 1.3rem;
+      margin-bottom: 16px;
+    }
+    .partner-feat-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .partner-feat-card p {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .partner-cta-bar {
+      background: #151515;
+      border: 1px solid rgba(216,159,37,0.25);
+      border-radius: 14px;
+      max-width: 1200px;
+      margin: 40px auto 0;
+      padding: 22px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      text-align: left;
+    }
+    .partner-cta-bar h4 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0 0 4px;
+    }
+    .partner-cta-bar p {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin: 0;
+    }
+    .partner-req-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .partner-req-card {
+      background: #181818;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 30px;
+      text-align: left;
+    }
+    .partner-req-card h3 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .partner-req-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .partner-req-card li {
+      padding: 8px 0 8px 24px;
+      position: relative;
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+    .partner-req-card li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--limo-gold);
+      font-weight: 800;
+    }
+    .fleet-showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      max-width: 1200px;
+      margin: 30px auto 0;
+    }
+    .fleet-showcase-item {
+      background: #181818;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .fleet-showcase-item img {
+      width: 100%;
+      height: 110px;
+      object-fit: contain;
+      background: #ffffff;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      padding: 6px;
+    }
+    .fleet-showcase-item h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .fleet-showcase-item p {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin: 0;
+    }
+    .onboarding-form-wrap {
+      max-width: 680px;
+      margin: 40px auto 0;
+      background: #202020;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      padding: 32px 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      text-align: left;
+    }
+    .onboarding-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      background: #161616;
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 24px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .onboarding-tab {
+      padding: 11px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .onboarding-tab.active {
+      background: var(--limo-gold);
+      color: #000000;
+      font-weight: 800;
+    }
+    .app-input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .app-field {
+      margin-bottom: 16px;
+    }
+    .app-field label {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+    .app-input {
+      width: 100%;
+      background: #2d2d2d;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #ffffff;
+      font-size: 0.92rem;
+      font-family: var(--font-sans);
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .app-input:focus {
+      outline: none;
+      border-color: var(--limo-gold);
+      box-shadow: 0 0 0 2px rgba(216,159,37,0.2);
+    }
+    .software-checkboxes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .software-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      cursor: pointer;
+    }
+    .software-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--limo-gold);
+    }
+    .steps-process-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      max-width: 1200px;
+      margin: 36px auto 0;
+      text-align: center;
+    }
+    .step-proc-card {
+      background: #181818;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 24px 18px;
+    }
+    .step-proc-num {
+      width: 40px;
+      height: 40px;
+      background: var(--limo-gold);
+      color: #000;
+      font-weight: 800;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+      font-size: 1.1rem;
+    }
+    .step-proc-card h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+    .step-proc-card p {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin: 0;
+      line-height: 1.45;
+    }
+    @media (max-width: 900px) {
+      .partner-features-grid, .partner-req-grid, .fleet-showcase-grid, .steps-process-grid {
+        grid-template-columns: 1fr;
+      }
+      .partner-cta-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .app-input-row, .software-checkboxes {
+        grid-template-columns: 1fr;
+      }
+      .onboarding-form-wrap {
+        padding: 24px 18px;
+      }
+    }
+  </style>
 </head>
-<body>
+<body class="limo">
   <!-- Google Tag Manager (noscript) -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KCZSXZ6K"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
 
-<header><strong>NYC Limo Wish · Partner Portal</strong><button id="logout" class="secondary">Sign out</button></header>
-<main>
-<section class="panel"><h1>Operator dashboard</h1><p id="welcome" class="muted">Loading your secure partner account…</p><p id="error"></p>
-<label><input id="available" type="checkbox"> Available for new ride offers</label>
-<p id="availability-note" class="muted">Availability is used only for new offers. Keep your TLC base and insurance details current with NYC Limo Wish.</p>
+<nav class="limo-nav">
+  <div class="limo-nav-inner">
+    <a href="/" class="limo-logo">NYC <span>LIMO</span> WISH<span class="limo-logo-dot"></span></a>
+    <div class="limo-nav-links">
+      <div class="limo-nav-drop" id="services-drop">
+        <button type="button" class="limo-nav-drop-btn" id="services-drop-btn" aria-expanded="false" aria-haspopup="true">
+          Services <span class="limo-nav-caret">▾</span>
+        </button>
+        <div class="limo-mega" id="services-mega" hidden>
+          <div class="limo-mega-panel">
+            <div class="limo-mega-col">
+              <p class="limo-mega-label">Personal Travel</p>
+              <div class="limo-mega-grid">
+                <a href="/services/airport-transfer" class="limo-mega-link"><span class="limo-mega-icon">✈</span>Airport Transfer</a>
+                <a href="/services/hourly-hire" class="limo-mega-link"><span class="limo-mega-icon">⏱</span>Hourly Hire</a>
+                <a href="/services/chauffeur-service" class="limo-mega-link"><span class="limo-mega-icon">◆</span>Chauffeur Service</a>
+                <a href="/services/special-events" class="limo-mega-link"><span class="limo-mega-icon">✦</span>Special Events</a>
+                <a href="/services/city-to-city" class="limo-mega-link"><span class="limo-mega-icon">↔</span>City to City</a>
+                <a href="/services/point-to-point" class="limo-mega-link"><span class="limo-mega-icon">●</span>Point to Point</a>
+              </div>
+            </div>
+            <div class="limo-mega-col">
+              <p class="limo-mega-label">Business Solutions</p>
+              <div class="limo-mega-grid limo-mega-grid--2">
+                <a href="/services/corporate-travel" class="limo-mega-link"><span class="limo-mega-icon">◈</span>Corporate Travel</a>
+                <a href="/services/corporate-events" class="limo-mega-link"><span class="limo-mega-icon">◈</span>Corporate Events</a>
+                <a href="/partner" class="limo-mega-link"><span class="limo-mega-icon">◈</span>Partner Program</a>
+              </div>
+            </div>
+            <div class="limo-mega-side">
+              <p class="limo-mega-label">Quick Book</p>
+              <a href="/airports/jfk" class="limo-mega-side-link">JFK Airport</a>
+              <a href="/airports/laguardia" class="limo-mega-side-link">LaGuardia</a>
+              <a href="/airports/newark" class="limo-mega-side-link">Newark (EWR)</a>
+              <a href="/services/hourly-hire" class="limo-mega-side-link">Hourly Hire</a>
+              <div class="limo-mega-quote-box">
+                <p class="limo-mega-quote">Where Every Mile Feels Like First Class</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <a href="/#fleet">Fleet</a>
+      <a href="/#cities">Cities</a>
+      <a href="/#corporate">Corporate</a>
+      <a href="/contact">Contact</a>
+    </div>
+    <div class="limo-nav-contact">
+      <a href="tel:+19177370021" class="limo-nav-phone">📞 (917) 737-0021</a>
+      <a href="/login" class="limo-btn limo-btn-gold limo-nav-login">Login / Register</a>
+    </div>
+    <button class="limo-mobile-toggle" id="mobile-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
+  </div>
+</nav>
+
+<div class="limo-mobile-overlay" id="mobile-overlay" hidden></div>
+<aside class="limo-mobile-drawer" id="mobile-drawer" aria-hidden="true">
+  <div class="limo-mobile-drawer-head">
+    <span class="limo-logo">NYC <span>LIMO</span> WISH</span>
+    <button type="button" id="mobile-close" aria-label="Close menu">✕</button>
+  </div>
+  <nav class="limo-mobile-drawer-nav">
+    <a href="/services/airport-transfer">Airport Transfer</a>
+    <a href="/services/hourly-hire">Hourly Hire</a>
+    <a href="/services/chauffeur-service">Chauffeur Service</a>
+    <a href="/#fleet">Fleet</a>
+    <a href="/#corporate">Corporate</a>
+    <a href="/partner">Become a Chauffeur</a>
+    <a href="/contact">Contact</a>
+    <a href="/book">Book Now</a>
+    <a href="/login">Login / Register</a>
+    <a href="tel:+19177370021" class="limo-mobile-phone">📞 (917) 737-0021</a>
+  </nav>
+</aside>
+
+<section class="partner-hero">
+  <div class="limo-wrap">
+    <h1>Why Partner with NYC Limo Wish?</h1>
+    <p class="sub">Where Every Mile Feels Like First Class</p>
+    
+    <div class="partner-features-grid">
+      <div class="partner-feat-card">
+        <div class="partner-feat-icon">🚀</div>
+        <h3>Robust Business Expansion</h3>
+        <p>Ready to roll with the big leagues? Partner with us and enjoy direct access to an executive corporate client base and frequent VIP travelers.</p>
+      </div>
+      <div class="partner-feat-card">
+        <div class="partner-feat-icon">💎</div>
+        <h3>Reliable Financial Model</h3>
+        <p>Our payment system is completely transparent. No unexpected deductions. You drive, we pay promptly and reliably every week.</p>
+      </div>
+      <div class="partner-feat-card">
+        <div class="partner-feat-icon">⏱️</div>
+        <h3>Flexible Scheduling</h3>
+        <p>Get complete control of your chauffeuring calendar with corporate airport transfers, hourly charters, or point-to-point service models.</p>
+      </div>
+      <div class="partner-feat-card">
+        <div class="partner-feat-icon">🎧</div>
+        <h3>Dedicated 24/7 Support</h3>
+        <p>Share your concerns with our partner-dedicated dispatchers. Our easy-to-use dispatch system is made to assist you swiftly and actively.</p>
+      </div>
+    </div>
+
+    <div class="partner-cta-bar">
+      <div>
+        <h4>Join our Tristate &amp; Nationwide Chauffeur Network</h4>
+        <p>Turn idle vehicle hours into steady, high-margin revenue with New York's executive limousine brand.</p>
+      </div>
+      <a href="#apply-section" class="limo-btn limo-btn-gold" style="white-space:nowrap;padding:12px 24px;">JOIN NOW ↓</a>
+    </div>
+  </div>
 </section>
-<section class="panel"><h2>New offers</h2><div id="offers"><p class="muted">Loading offers…</p></div></section>
-<section class="panel"><h2>Accepted and paid rides</h2><div id="bookings"><p class="muted">Loading assigned rides…</p></div></section>
-</main>
-<script src="/js/limo-partner.js"></script>
-</body></html>
+
+<section class="limo-section" style="background:#0a0a0a;">
+  <div class="limo-wrap" style="text-align:center;">
+    <h2 class="limo-section-title">Partner Requirements</h2>
+    <p class="limo-section-sub">We maintain the highest standards of safety, discretion, and luxury for our clientele.</p>
+
+    <div class="partner-req-grid">
+      <div class="partner-req-card">
+        <h3><span>👤</span> For Chauffeurs:</h3>
+        <ul>
+          <li>Valid Driver’s License along with active commercial auto insurance.</li>
+          <li>Commercial Driving License / TLC License (required for NYC metropolitan area).</li>
+          <li>Clean, late-model luxury vehicle (e.g., Business Sedan, Luxury SUV, Premium SUV) in pristine condition — 100% smoke-free.</li>
+          <li>Clean driving record and commitment to punctual, professional executive service.</li>
+        </ul>
+      </div>
+      <div class="partner-req-card">
+        <h3><span>🏢</span> For Affiliate Fleet Companies:</h3>
+        <ul>
+          <li>Valid corporate company registration &amp; TLC / USDOT / MC Operating Authority.</li>
+          <li>Fleet roster with full vehicle specifications (Make, Model, Year, Color, Capacity).</li>
+          <li>Commercial liability insurance certificate ($1.5M+ combined single limit coverage).</li>
+          <li>Professional background-checked chauffeurs compliant with local regulations.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="fleet-showcase-grid">
+      <div class="fleet-showcase-item">
+        <img src="/nyclimowish/images/fleet/business-sedan.jpg" alt="Business Sedan" loading="lazy">
+        <h4>Business Sedans</h4>
+        <p>Cadillac CT6, Lyriq, Lincoln Continental, Lexus ES</p>
+      </div>
+      <div class="fleet-showcase-item">
+        <img src="/nyclimowish/images/fleet/premium-sedan.jpg" alt="Premium Sedan" loading="lazy">
+        <h4>Premium Sedans</h4>
+        <p>Mercedes S-Class, BMW 7-Series, Audi A8</p>
+      </div>
+      <div class="fleet-showcase-item">
+        <img src="/nyclimowish/images/fleet/luxury-suv.jpg" alt="Luxury SUV" loading="lazy">
+        <h4>Luxury SUVs</h4>
+        <p>Chevrolet Suburban, GMC Yukon Denali</p>
+      </div>
+      <div class="fleet-showcase-item">
+        <img src="/nyclimowish/images/fleet/elitex-suv.jpg" alt="Premium SUV" loading="lazy">
+        <h4>Premium SUVs</h4>
+        <p>Cadillac Escalade ESV, Lincoln Navigator</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="limo-section" id="apply-section" style="background:#141414;">
+  <div class="limo-wrap" style="text-align:center;">
+    <h2 class="limo-section-title">How to Apply?</h2>
+    <p class="limo-section-sub">Our team will review your application and contact you for verification. Once approved, you'll gain access to our driver dispatch portal and start receiving trip requests immediately.</p>
+
+    <div class="onboarding-form-wrap">
+      <div class="onboarding-tabs">
+        <button type="button" class="onboarding-tab active" id="tab-driver" onclick="switchFormTab('driver')">Driver / Chauffeur</button>
+        <button type="button" class="onboarding-tab" id="tab-affiliate" onclick="switchFormTab('affiliate')">Affiliate Company</button>
+      </div>
+
+      <h3 style="font-size:1.25rem;font-weight:800;color:#ffffff;margin-bottom:4px;" id="form-heading">Driver Onboarding Form</h3>
+      <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:24px;">Please fill in the following details for our dispatch team to review.</p>
+
+      <form id="partner-apply-form">
+        <input type="hidden" name="applicantType" id="applicantType" value="chauffeur">
+        
+        <div class="app-field" id="company-name-row" style="display:none;">
+          <label>Company Legal Name *</label>
+          <input class="app-input" type="text" name="companyName" id="companyName" placeholder="e.g. Royal Executive Transportation LLC">
+        </div>
+
+        <div class="app-input-row">
+          <div class="app-field">
+            <label>Full Name *</label>
+            <input class="app-input" type="text" name="fullName" id="fullName" placeholder="Your full name" required>
+          </div>
+          <div class="app-field">
+            <label>Contact Phone *</label>
+            <input class="app-input" type="tel" name="phone" id="phone" placeholder="(917) 000-0000" required>
+          </div>
+        </div>
+
+        <div class="app-field">
+          <label>Email Address *</label>
+          <input class="app-input" type="email" name="email" id="email" placeholder="name@example.com" required>
+        </div>
+
+        <div class="app-input-row">
+          <div class="app-field">
+            <label>Vehicle Type *</label>
+            <select class="app-input" name="vehicleType" id="vehicleType" required>
+              <option value="">Select Vehicle Type</option>
+              <option value="Business Sedan">Business Sedan (Cadillac CT6 / Lincoln)</option>
+              <option value="Premium Sedan">Premium Sedan (Mercedes S-Class / BMW 7)</option>
+              <option value="EliteX SUV">EliteX SUV (Cadillac XT6 / Lincoln Aviator)</option>
+              <option value="Luxury SUV">Luxury SUV (Chevrolet Suburban / Yukon)</option>
+              <option value="Premium SUV">Premium SUV (Cadillac Escalade ESV / Navigator)</option>
+              <option value="Standard Sprinter">Standard Sprinter (14 Pax)</option>
+              <option value="Stretch Limousine">Stretch Limousine (9-10 Pax)</option>
+              <option value="Multiple Vehicles">Multiple Fleet Vehicles (Affiliate)</option>
+            </select>
+          </div>
+          <div class="app-field">
+            <label>Vehicle Make &amp; Model *</label>
+            <input class="app-input" type="text" name="vehicleName" id="vehicleName" placeholder="e.g. 2024 Cadillac Escalade ESV" required>
+          </div>
+        </div>
+
+        <div class="app-input-row">
+          <div class="app-field">
+            <label>Vehicle Color *</label>
+            <input class="app-input" type="text" name="vehicleColor" id="vehicleColor" placeholder="e.g. Black" required>
+          </div>
+          <div class="app-field">
+            <label>Model Year *</label>
+            <select class="app-input" name="vehicleYear" id="vehicleYear" required>
+              <option value="">Select Year</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+              <option value="2022">2022</option>
+              <option value="2021">2021</option>
+              <option value="2020">2020</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="app-field">
+          <label>Are you available on:</label>
+          <div class="software-checkboxes">
+            <label class="software-label"><input type="checkbox" name="dispatchSoftware" value="LimoAnywhere"> LimoAnywhere</label>
+            <label class="software-label"><input type="checkbox" name="dispatchSoftware" value="GNet"> GNet Network</label>
+            <label class="software-label"><input type="checkbox" name="dispatchSoftware" value="TLC/Independent"> NYC TLC / Independent Base</label>
+            <label class="software-label"><input type="checkbox" name="dispatchSoftware" value="Other"> Other Dispatch System</label>
+          </div>
+        </div>
+
+        <div class="app-input-row">
+          <div class="app-field">
+            <label>Serving Airports *</label>
+            <input class="app-input" type="text" name="airports" id="airports" value="JFK, LGA, EWR, TEB" placeholder="JFK, LGA, EWR..." required>
+          </div>
+          <div class="app-field">
+            <label>TLC / License / USDOT #</label>
+            <input class="app-input" type="text" name="licenseNumber" id="licenseNumber" placeholder="e.g. TLC #5492190 or Driver CDL">
+          </div>
+        </div>
+
+        <div class="app-field">
+          <label>Comments / Additional Details</label>
+          <textarea class="app-input" name="notes" id="notes" rows="3" placeholder="Tell us about your chauffeuring experience, fleet size, or coverage area..."></textarea>
+        </div>
+
+        <div id="form-msg" style="display:none;margin-bottom:16px;padding:12px;border-radius:8px;font-size:0.88rem;"></div>
+
+        <button type="submit" class="limo-btn limo-btn-gold limo-btn-block" id="submit-app-btn" style="padding:15px;font-weight:800;letter-spacing:0.06em;">
+          SUBMIT APPLICATION
+        </button>
+      </form>
+    </div>
+
+    <div class="steps-process-grid">
+      <div class="step-proc-card">
+        <div class="step-proc-num">1</div>
+        <h4>Submit Application</h4>
+        <p>Send your driver or affiliate fleet details through our simple onboarding form.</p>
+      </div>
+      <div class="step-proc-card">
+        <div class="step-proc-num">2</div>
+        <h4>Verification</h4>
+        <p>Our dispatch team verifies your TLC/commercial license and insurance documentation.</p>
+      </div>
+      <div class="step-proc-card">
+        <div class="step-proc-num">3</div>
+        <h4>Portal Access</h4>
+        <p>Once verified, you receive your Driver PWA and dispatch portal access login.</p>
+      </div>
+      <div class="step-proc-card">
+        <div class="step-proc-num">4</div>
+        <h4>Start Receiving Trips</h4>
+        <p>Accept high-paying corporate transfers, airport runs, and charters right on your phone.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="limo-footer">
+  <div class="limo-footer-grid">
+    <div>
+      <div class="limo-logo" style="margin-bottom:16px;">NYC <span>LIMO</span> WISH</div>
+      <p style="color:var(--limo-gray);font-size:0.85rem;line-height:1.6;">Premium executive chauffeur and luxury limousine service across New York, New Jersey, and Connecticut.</p>
+      <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="/track">Track Booking</a> · <a href="/login">Login</a> · <a href="/partner">Become a Chauffeur</a>
+      </div>
+    </div>
+    <div>
+      <h4>Major Airports</h4>
+      <ul>
+        <li><a href="/airports/jfk">JFK Airport</a></li>
+        <li><a href="/airports/laguardia">LaGuardia Airport</a></li>
+        <li><a href="/airports/newark">Newark Liberty (EWR)</a></li>
+        <li><a href="/airports/teterboro">Teterboro Airport (TEB)</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Services</h4>
+      <ul>
+        <li><a href="/services/airport-transfer">Airport Transfer</a></li>
+        <li><a href="/services/hourly-hire">Hourly Hire</a></li>
+        <li><a href="/services/chauffeur-service">Chauffeur Service</a></li>
+        <li><a href="/services/special-events">Special Events</a></li>
+        <li><a href="/services/city-to-city">City to City</a></li>
+        <li><a href="/services/point-to-point">Point to Point</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Contact Details</h4>
+      <ul>
+        <li><a href="/contact">Contact Us</a></li>
+        <li><a href="mailto:info@nyclimowish.com">info@nyclimowish.com</a></li>
+        <li><a href="tel:+19177370021">(917) 737-0021</a></li>
+      </ul>
+      <a href="/book" class="limo-btn limo-btn-gold" style="margin-top:16px;padding:10px 20px;font-size:0.75rem;">Book Now</a>
+    </div>
+  </div>
+  <div class="limo-footer-bottom">
+    <span>© 2026 NYC Limo Wish · Shipping Wish LLC. All rights reserved.</span>
+    <span><a href="/terms">Standard Policy &amp; Disclaimer</a> · <a href="/terms">Driver &amp; Affiliate Liability Policy</a> · <a href="/privacy-policy">Privacy</a> · <a href="/cancellation">Cancellation</a></span>
+  </div>
+</footer>
+
+<script>
+  function switchFormTab(type) {
+    const isAffiliate = type === 'affiliate';
+    document.getElementById('applicantType').value = isAffiliate ? 'affiliate' : 'chauffeur';
+    document.getElementById('tab-driver').classList.toggle('active', !isAffiliate);
+    document.getElementById('tab-affiliate').classList.toggle('active', isAffiliate);
+    document.getElementById('company-name-row').style.display = isAffiliate ? 'block' : 'none';
+    document.getElementById('form-heading').textContent = isAffiliate ? 'Affiliate Company Onboarding Form' : 'Driver Onboarding Form';
+  }
+
+  document.getElementById('partner-apply-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-app-btn');
+    const msg = document.getElementById('form-msg');
+    btn.disabled = true;
+    btn.textContent = 'SUBMITTING APPLICATION...';
+    msg.style.display = 'none';
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Collect checkboxes
+    const software = [];
+    document.querySelectorAll('input[name="dispatchSoftware"]:checked').forEach(cb => software.push(cb.value));
+    data.dispatchSoftware = software;
+
+    try {
+      const res = await fetch('/api/nyclimo/partner/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Could not submit application');
+
+      msg.style.display = 'block';
+      msg.style.background = 'rgba(34, 197, 94, 0.15)';
+      msg.style.border = '1px solid #22c55e';
+      msg.style.color = '#86efac';
+      msg.innerHTML = '<strong>Success!</strong> Your partner application has been received. Our dispatch onboarding desk will review your details and contact you shortly.';
+      e.target.reset();
+      btn.textContent = 'APPLICATION SUBMITTED ✓';
+    } catch (err) {
+      msg.style.display = 'block';
+      msg.style.background = 'rgba(239, 68, 68, 0.15)';
+      msg.style.border = '1px solid #ef4444';
+      msg.style.color = '#fca5a5';
+      msg.textContent = err.message || 'Submission error. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'SUBMIT APPLICATION';
+    }
+  });
+</script>
+<script src="/js/limo-nav.js"></script>
+</body>
+</html>
