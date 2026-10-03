@@ -601,11 +601,63 @@ Speak naturally, keep sentences short and conversational.`;
 }
 
 /**
+ * 5. Afternoon In-Transit Check-Call Sweep
+ * Automatically reminds drivers rolling on active loads to provide their mile marker and ETA.
+ * Runs in early afternoon (1:00 PM - 3:30 PM driver local time) if no check-call in last 8 hours.
+ */
+async function runInTransitCheckCallSweeps() {
+  await ensureDriverAssistantSchema();
+  const { rows } = await pool.query(`
+    SELECT l.*,
+           d.name AS driver_name, d.phone AS driver_phone,
+           c.name AS carrier_name, c.company_name, c.phone AS carrier_phone,
+           c.state AS carrier_state
+    FROM loads l
+    LEFT JOIN drivers d ON d.id = l.driver_id
+    LEFT JOIN users c ON c.id = l.carrier_id
+    WHERE l.status = 'in_transit'
+      AND (d.phone IS NOT NULL OR c.phone IS NOT NULL)
+  `).catch(() => ({ rows: [] }));
+
+  for (const load of rows) {
+    const phone = load.driver_phone || load.carrier_phone;
+    if (!phone) continue;
+
+    const { timezone } = resolveTimezone(phone, load.carrier_state || load.delivery_state || 'TX');
+    const now = new Date();
+    const hour = parseInt(now.toLocaleTimeString('en-US', { timeZone: timezone, hour12: false, hour: 'numeric' }), 10);
+
+    // Early afternoon window: 1:00 PM - 3:30 PM recipient local time
+    if (hour < 13 || hour > 15) continue;
+
+    // Do not repeat if a check-call was sent in the last 8 hours
+    if (await wasRecentlySent(phone, 'checkcall_ping', 8)) continue;
+
+    const msg = `🚚 *In-Transit Check-Call | Load #${load.load_number}*
+
+Heading to ${load.delivery_location}.
+Please reply with your current *mile marker / city* and estimated *ETA*.
+Dispatch: (917) 737-0021`;
+
+    await sendAssistantMessage({
+      phone,
+      body: msg,
+      eventType: 'checkcall_ping',
+      driverId: load.driver_id,
+      carrierId: load.carrier_id,
+      loadId: load.id,
+      metadata: { load_number: load.load_number }
+    });
+  }
+}
+
+/**
  * Cron tick handler (called from server.js every minute)
  */
 async function tick() {
   try {
     await runMorningDriverCheckins();
+    await runInTransitCheckCallSweeps();
   } catch (err) {
     console.warn('[Driver Assistant] Tick error:', err.message);
   }
@@ -614,6 +666,7 @@ async function tick() {
 module.exports = {
   ensureDriverAssistantSchema,
   runMorningDriverCheckins,
+  runInTransitCheckCallSweeps,
   onLoadBooked,
   onLoadInTransit,
   onLoadDelivered,
