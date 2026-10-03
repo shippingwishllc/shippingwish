@@ -18,7 +18,7 @@ const {
   buildOperatorAcceptedHtml, buildRideStatusUpdateHtml
 } = require('../utils/limo-email-templates');
 
-const APP_URL = (process.env.APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
+const APP_URL = (process.env.NYCLIMO_APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
 
 function signLimoToken(user) {
   return jwt.sign({ id: user.id, name: user.name, email: user.email, role: user.role, partner_base_id: user.partner_base_id || null, is_limo_user: true }, JWT_SECRET, { expiresIn: '7d' });

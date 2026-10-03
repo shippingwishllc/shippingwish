@@ -1308,9 +1308,9 @@ html.limo-preloading-step2 #step-2 {
   transform: translateY(-2px);
 }
 .limo-vehicle-card.selected {
-  border-color: #c9a227;
-  background: #fffdf5;
-  box-shadow: 0 10px 32px rgba(201,162,39,0.2);
+  border: 2px solid #c9a227;
+  background: #ffffff !important;
+  box-shadow: 0 10px 32px rgba(201,162,39,0.18);
 }
 
 /* Radio button top right */
@@ -1863,10 +1863,16 @@ body.limo-menu-open { overflow: hidden; }
     grid-template-columns: 1fr !important;
     padding: 18px 16px !important;
     gap: 14px !important;
+    background: #ffffff !important;
+  }
+  .limo-vehicle-card.selected {
+    background: #ffffff !important;
+    border-color: #c9a227 !important;
   }
   .limo-vehicle-photo-wrap {
     width: 100% !important;
     height: 140px !important;
+    background: #ffffff !important;
   }
   .limo-vehicle-price {
     text-align: left !important;

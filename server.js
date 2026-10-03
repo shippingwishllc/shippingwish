@@ -346,6 +346,15 @@ app.use((req, res, next) => {
     return res.sendFile(path.join(__dirname, 'public', 'settings.html'));
   }
 
+  // Global /track route: redirect to NYC Limo Wish domain if accessed on shippingwish or loadsnexus
+  if (p === '/track' || p === '/track.html') {
+    if (!host.includes('nyclimo')) {
+      const q = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+      return res.redirect(301, 'https://www.nyclimowish.com/track' + q);
+    }
+    return res.sendFile(path.join(__dirname, 'public', 'nyclimowish', 'track.html'));
+  }
+
   // 1. LoadsNexus Domain (loadsnexus.com)
   if (host.includes('loadsnexus') || p.startsWith('/loadsnexus')) {
     const cleanP = p.replace(/^\/loadsnexus/, '') || '/';

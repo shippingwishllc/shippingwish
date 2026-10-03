@@ -47,9 +47,13 @@ function getLimoSender() {
     if (custom.includes('@')) {
       return `NYC Limo Wish <${custom.trim()}>`;
     }
+function getLimoSender() {
+  const custom = (process.env.NYCLIMO_FROM_EMAIL || process.env.NYCLIMO_SENDER || '').replace(/^["']|["']$/g, '').trim();
+  if (custom) {
+    if (!custom.includes('<')) return `NYC Limo Wish <${custom}>`;
     return custom;
   }
-  return 'NYC Limo Wish <operations@shippingwish.com>';
+  return 'NYC Limo Wish <operations@nyclimowish.com>';
 }
 
 function getLimoReplyTo() {
@@ -58,7 +62,7 @@ function getLimoReplyTo() {
     const m = custom.match(/<([^>]+)>/);
     return m ? m[1].trim() : custom;
   }
-  return 'operations@shippingwish.com';
+  return 'operations@nyclimowish.com';
 }
 
 function buildRideRequestReceivedHtml(booking, vehicle = {}, appUrl = 'https://www.nyclimowish.com') {
@@ -75,7 +79,7 @@ function buildRideRequestReceivedHtml(booking, vehicle = {}, appUrl = 'https://w
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ride Request Received — ${escapeHtml(booking.booking_number)}</title>
+  <title>Reservation Confirmed — ${escapeHtml(booking.booking_number)}</title>
   <style>
     body { margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
     table { border-collapse: collapse; }
@@ -103,18 +107,18 @@ function buildRideRequestReceivedHtml(booking, vehicle = {}, appUrl = 'https://w
           <tr>
             <td style="padding:0 0 16px;">
               <span style="display:inline-block;background-color:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:12px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;padding:6px 14px;border-radius:20px;">
-                ✨ Ride Request Received
+                ✨ Luxury Reservation Scheduled
               </span>
             </td>
           </tr>
           <tr>
             <td style="font-size:22px;font-weight:800;color:#0f172a;line-height:1.3;padding-bottom:10px;">
-              We have received your reservation request, ${escapeHtml(passengerName)}!
+              Thank you for choosing NYC Limo Wish, ${escapeHtml(passengerName)}!
             </td>
           </tr>
           <tr>
             <td style="font-size:14px;color:#475569;line-height:1.6;padding-bottom:20px;">
-              Your luxury ride request has been routed to our licensed dispatch network. We will notify you via email and SMS the moment a certified professional chauffeur accepts your itinerary.
+              Your luxury reservation has been received and scheduled with NYC Limo Wish Executive Chauffeur Services. Our dedicated dispatch team is assigning your designated luxury vehicle and professional chauffeur for your upcoming itinerary.
             </td>
           </tr>
         </table>
@@ -261,9 +265,9 @@ function buildRideRequestReceivedHtml(booking, vehicle = {}, appUrl = 'https://w
             <td style="padding:16px 20px;">
               <div style="font-size:12px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">What Happens Next?</div>
               <div style="font-size:13px;color:#475569;line-height:1.5;">
-                <strong>1. Driver Match:</strong> An authorized executive driver is currently reviewing your schedule.<br>
-                <strong>2. Seamless Payment:</strong> Once matched, you will receive a secure checkout notification.<br>
-                <strong>3. Real-Time Tracking:</strong> You can view live driver assignment anytime via your tracking link.
+                <strong>1. Chauffeur Preparation:</strong> Your dedicated NYC Limo Wish executive chauffeur is reviewing your itinerary and preparing your vehicle.<br>
+                <strong>2. Seamless Payment:</strong> You will receive a secure checkout notification to finalize your booking.<br>
+                <strong>3. Real-Time Tracking:</strong> You can view live vehicle dispatch and chauffeur arrival anytime via your tracking link.
               </div>
             </td>
           </tr>
@@ -275,8 +279,8 @@ function buildRideRequestReceivedHtml(booking, vehicle = {}, appUrl = 'https://w
     <tr>
       <td style="background-color:#0a0a0a;padding:26px 28px;text-align:center;color:#94a3b8;font-size:12px;line-height:1.6;">
         <div style="font-weight:700;color:#ffffff;font-size:13px;margin-bottom:4px;">NYC Limo Wish — 24/7 VIP Concierge Support</div>
-        <div>Toll-Free: <a href="tel:+18883469886" style="color:#c9a227;text-decoration:none;">(888) 346-9886</a> &nbsp;|&nbsp; Direct: <a href="tel:+19177370021" style="color:#c9a227;text-decoration:none;">+1 (917) 737-0021</a></div>
-        <div>Email: <a href="mailto:operations@shippingwish.com" style="color:#c9a227;text-decoration:none;">operations@shippingwish.com</a></div>
+        <div>Direct VIP Line: <a href="tel:+19177370021" style="color:#c9a227;text-decoration:none;">+1 (917) 737-0021</a></div>
+        <div>Email: <a href="mailto:operations@nyclimowish.com" style="color:#c9a227;text-decoration:none;">operations@nyclimowish.com</a></div>
         <div style="margin-top:14px;color:#64748b;font-size:11px;">
           NYC Limo Wish is a premium luxury transportation service by Shipping Wish LLC.<br>
           19266 Coastal Hwy, Rehoboth Beach, DE 19971, USA.
@@ -351,7 +355,7 @@ function buildRideConfirmedHtml(booking, vehicle = {}, appUrl = 'https://www.nyc
     <tr>
       <td style="background-color:#0a0a0a;padding:24px 28px;text-align:center;color:#94a3b8;font-size:12px;line-height:1.6;">
         <div style="font-weight:700;color:#ffffff;font-size:13px;margin-bottom:4px;">NYC Limo Wish — VIP Executive Services</div>
-        <div>24/7 Support: <a href="tel:+18883469886" style="color:#c9a227;text-decoration:none;">(888) 346-9886</a> | <a href="mailto:operations@shippingwish.com" style="color:#c9a227;text-decoration:none;">operations@shippingwish.com</a></div>
+        <div>24/7 VIP Line: <a href="tel:+19177370021" style="color:#c9a227;text-decoration:none;">+1 (917) 737-0021</a> | <a href="mailto:operations@nyclimowish.com" style="color:#c9a227;text-decoration:none;">operations@nyclimowish.com</a></div>
       </td>
     </tr>
   </table>
@@ -387,13 +391,13 @@ function buildOperatorAcceptedHtml(booking, appUrl = 'https://www.nyclimowish.co
     <tr>
       <td style="padding:28px;">
         <div style="display:inline-block;background-color:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:12px;font-weight:800;padding:6px 14px;border-radius:20px;margin-bottom:16px;">
-          ✓ Licensed Operator Accepted Your Trip
+          ✓ Chauffeur Assigned &amp; Itinerary Ready
         </div>
         <div style="font-size:22px;font-weight:800;color:#0f172a;line-height:1.3;margin-bottom:10px;">
           Great news, ${escapeHtml(passengerName)}!
         </div>
         <div style="font-size:14px;color:#475569;line-height:1.6;margin-bottom:24px;">
-          A certified TLC-licensed partner operator has accepted your ride schedule. Please finalize your payment to lock in your chauffeur.
+          Your dedicated NYC Limo Wish executive chauffeur is assigned and ready for your ride. Please finalize your payment to guarantee your reservation.
         </div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:24px;">
           <tr>
@@ -419,7 +423,7 @@ function buildOperatorAcceptedHtml(booking, appUrl = 'https://www.nyclimowish.co
     <tr>
       <td style="background-color:#0a0a0a;padding:24px 28px;text-align:center;color:#94a3b8;font-size:12px;line-height:1.6;">
         <div style="font-weight:700;color:#ffffff;font-size:13px;margin-bottom:4px;">NYC Limo Wish — VIP Executive Services</div>
-        <div>24/7 Support: <a href="tel:+18883469886" style="color:#c9a227;text-decoration:none;">(888) 346-9886</a> | <a href="mailto:operations@shippingwish.com" style="color:#c9a227;text-decoration:none;">operations@shippingwish.com</a></div>
+        <div>24/7 VIP Line: <a href="tel:+19177370021" style="color:#c9a227;text-decoration:none;">+1 (917) 737-0021</a> | <a href="mailto:operations@nyclimowish.com" style="color:#c9a227;text-decoration:none;">operations@nyclimowish.com</a></div>
       </td>
     </tr>
   </table>
@@ -489,7 +493,7 @@ function buildRideStatusUpdateHtml(booking, status, appUrl = 'https://www.nyclim
     <tr>
       <td style="background-color:#0a0a0a;padding:24px 28px;text-align:center;color:#94a3b8;font-size:12px;line-height:1.6;">
         <div style="font-weight:700;color:#ffffff;font-size:13px;margin-bottom:4px;">NYC Limo Wish — VIP Executive Services</div>
-        <div>24/7 Support: <a href="tel:+18883469886" style="color:#c9a227;text-decoration:none;">(888) 346-9886</a> | <a href="mailto:operations@shippingwish.com" style="color:#c9a227;text-decoration:none;">operations@shippingwish.com</a></div>
+        <div>24/7 VIP Line: <a href="tel:+19177370021" style="color:#c9a227;text-decoration:none;">+1 (917) 737-0021</a> | <a href="mailto:operations@nyclimowish.com" style="color:#c9a227;text-decoration:none;">operations@nyclimowish.com</a></div>
       </td>
     </tr>
   </table>

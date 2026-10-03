@@ -8,7 +8,7 @@ const {
   getLimoSender, getLimoReplyTo, buildOperatorAcceptedHtml, buildRideStatusUpdateHtml
 } = require('../utils/limo-email-templates');
 
-const APP_URL = (process.env.APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
+const APP_URL = (process.env.NYCLIMO_APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
 
 const router = express.Router();
 async function dispatchBooking(bookingId, actorId = null) {
