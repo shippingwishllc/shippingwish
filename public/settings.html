@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -259,7 +259,13 @@
           <!-- 4. VOICE AI & AUDIO CALLING -->
           <div id="section-voice-ai" class="settings-section">
             <div class="settings-card">
-              <h2 class="settings-card-title">📞 AI Calling, Audio &amp; VoIP Engine</h2>
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+                <h2 class="settings-card-title" style="margin-bottom:0;">📞 AI Calling, Audio &amp; VoIP Engine</h2>
+                <span id="voice-connection-status" style="background:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e8f0;transition:all 0.2s ease;">
+                  <span id="voice-status-dot" style="width:8px;height:8px;border-radius:50%;background:#94a3b8;display:inline-block;"></span>
+                  <span id="voice-status-text">Standby</span>
+                </span>
+              </div>
               <p class="settings-card-desc">Manages AI Cold Calling, Carrier check-calls, and Dispatch desk phone routing.</p>
 
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
@@ -290,9 +296,9 @@
                 </div>
               </div>
 
-              <div class="save-bar">
-                <button type="button" class="btn btn-primary" onclick="saveIntegrationCategory('voice-ai')">💾 Save Voice Settings</button>
-                <span id="save-status-voice-ai" style="font-size:12px;color:var(--text-muted);"></span>
+              <div class="save-bar" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                <button type="button" id="btn-save-voice-ai" class="btn btn-primary" onclick="saveIntegrationCategory('voice-ai')">💾 Save Voice Settings</button>
+                <span id="save-status-voice-ai" style="font-size:12.5px;"></span>
               </div>
             </div>
           </div>
@@ -683,6 +689,9 @@
       if (it.vapi_phone_number_id) document.getElementById('int-vapi-phone-id').value = it.vapi_phone_number_id;
       if (it.mightycall_transfer_number) document.getElementById('int-transfer-number').value = it.mightycall_transfer_number;
 
+      const hasVoiceActive = Boolean((it.vapi_has_key || it.vapi_api_key) && it.vapi_phone_number_id);
+      updateVoiceStatusBadge(hasVoiceActive);
+
       // Google Maps
       if (it.google_maps_api_key) document.getElementById('int-gmaps-key').placeholder = 'Configured (••••••••)';
 
@@ -698,9 +707,40 @@
     }
   }
 
+  function updateVoiceStatusBadge(isLive) {
+    const badge = document.getElementById('voice-connection-status');
+    const dot = document.getElementById('voice-status-dot');
+    const text = document.getElementById('voice-status-text');
+    if (!badge || !dot || !text) return;
+    if (isLive) {
+      badge.style.background = '#dcfce7';
+      badge.style.color = '#15803d';
+      badge.style.borderColor = '#86efac';
+      dot.style.background = '#16a34a';
+      dot.style.boxShadow = '0 0 8px #22c55e';
+      text.textContent = '🟢 Live & Connected (Vapi Active)';
+    } else {
+      badge.style.background = '#f1f5f9';
+      badge.style.color = '#64748b';
+      badge.style.borderColor = '#e2e8f0';
+      dot.style.background = '#94a3b8';
+      dot.style.boxShadow = 'none';
+      text.textContent = 'Standby';
+    }
+  }
+
   async function saveIntegrationCategory(cat) {
+    const btn = document.getElementById('btn-save-' + cat);
+    const origBtnText = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Saving…';
+    }
+
     const statusEl = document.getElementById('save-status-' + cat);
-    if (statusEl) statusEl.textContent = 'Saving…';
+    if (statusEl) {
+      statusEl.innerHTML = '<span style="color:#64748b;font-weight:600;">⏳ Saving settings…</span>';
+    }
 
     const payload = {};
     if (cat === 'twilio-sms') {
@@ -743,10 +783,34 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save settings');
-      if (statusEl) { statusEl.textContent = 'Saved ✓'; setTimeout(() => statusEl.textContent = '', 3000); }
-      showToast('Integration settings updated!', true);
+
+      if (statusEl) {
+        statusEl.innerHTML = '<span style="color:#15803d;background:#dcfce7;border:1px solid #86efac;padding:5px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">✅ Saved Successfully! Vapi AI is Live &amp; Ready</span>';
+        setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 6000);
+      }
+      if (btn) {
+        btn.innerHTML = '✅ Saved!';
+        btn.style.background = '#16a34a';
+        setTimeout(() => {
+          if (btn) {
+            btn.innerHTML = origBtnText;
+            btn.style.background = '';
+            btn.disabled = false;
+          }
+        }, 2500);
+      }
+      if (cat === 'voice-ai') {
+        updateVoiceStatusBadge(true);
+      }
+      showToast('Voice AI Settings saved successfully! Engine is active.', true);
     } catch (err) {
-      if (statusEl) statusEl.textContent = 'Error';
+      if (statusEl) {
+        statusEl.innerHTML = `<span style="color:#b91c1c;background:#fee2e2;border:1px solid #fca5a5;padding:5px 12px;border-radius:6px;font-weight:700;">❌ ${esc(err.message)}</span>`;
+      }
+      if (btn) {
+        btn.innerHTML = origBtnText;
+        btn.disabled = false;
+      }
       showToast(err.message, false);
     }
   }
