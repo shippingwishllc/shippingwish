@@ -7,7 +7,7 @@
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="stylesheet" href="/css/design-system.css?v=36">
+  <link rel="stylesheet" href="/css/design-system.css?v=37">
   <style>
     :root {
       --inbox-page-items: 7;
@@ -58,24 +58,25 @@
       background: #ffffff;
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
       display:flex; flex-direction:column; overflow:hidden; padding:16px;
+      box-sizing:border-box; width:100%; max-width:100%;
     }
     .msg-panel-empty {
       margin:auto; text-align:center; color:#64748b; padding:24px; font-size:14px;
     }
-    .msg-panel-header { flex-shrink:0; margin-bottom:10px; }
+    .msg-panel-header { flex-shrink:0; margin-bottom:10px; width:100%; }
     .msg-scroll-area {
       flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;
-      padding-right:4px;
+      padding-right:4px; width:100%; box-sizing:border-box;
     }
-    .contact-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px 14px; margin:0 0 12px; padding:12px; border-radius:10px; background: #f8fafc; font-size:12px; }
+    .contact-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px 14px; margin:0 0 12px; padding:12px; border-radius:10px; background: #f8fafc; font-size:12px; box-sizing:border-box; width:100%; }
     .contact-grid strong { display:block; font-size:10px; text-transform:uppercase; letter-spacing:0.04em; color: #64748b; margin-bottom:2px; }
-    .msg-body { white-space:pre-wrap; font-size:14px; line-height:1.65; margin:0; color:#0f172a; }
-    .attach-list { display:flex; flex-direction:column; gap:8px; margin:0 0 12px; padding:10px; border-radius:10px; background:#fffbeb; border:1px solid #fde68a; }
+    .msg-body { white-space:pre-wrap; font-size:14px; line-height:1.65; margin:0; color:#0f172a; word-break:break-word; overflow-wrap:anywhere; }
+    .attach-list { display:flex; flex-direction:column; gap:8px; margin:0 0 12px; padding:10px; border-radius:10px; background:#fffbeb; border:1px solid #fde68a; box-sizing:border-box; width:100%; }
     .attach-item { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:13px; color:#0f172a; }
-    .reply-box { flex-shrink:0; margin-top:10px; padding-top:12px; border-top:1.5px solid var(--border-default, #e2e8f0); }
-    .reply-box textarea { width:100%; min-height:88px; max-height:120px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#0f172a; padding:10px 12px; font-family:inherit; font-size:14px; resize:vertical; box-sizing:border-box; }
+    .reply-box { flex-shrink:0; margin-top:10px; padding-top:12px; border-top:1.5px solid var(--border-default, #e2e8f0); width:100%; box-sizing:border-box; }
+    .reply-box textarea { width:100%; min-height:88px; max-height:140px; border-radius:10px; border:1.5px solid #cbd5e1; background:#ffffff; color:#0f172a; padding:10px 12px; font-family:inherit; font-size:14px; resize:vertical; box-sizing:border-box; word-break:break-word; }
     .reply-box textarea:focus { outline:none; border-color:#2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
-    .reply-from-note { font-size:11.5px; color:#64748b; margin:0 0 8px; }
+    .reply-from-note { font-size:11.5px; color:#64748b; margin:0 0 8px; word-break:break-word; }
     .inbox-kpi-row { display:flex; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
     .inbox-kpi-card { background:#ffffff; border:1px solid var(--border-default, #e2e8f0); border-radius:12px; padding:12px 20px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 3px rgba(15,23,42,0.04); min-width:180px; }
     .inbox-kpi-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
@@ -83,9 +84,110 @@
     .inbox-kpi-icon.total { background:rgba(37,99,235,0.1); color:#2563eb; }
     .inbox-kpi-val { font-size:24px; font-weight:800; color:#0f172a; line-height:1.1; }
     .inbox-kpi-label { font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em; margin-top:2px; }
+
+    /* Gmail-style Conversation Threading */
+    .thread-card {
+      border: 1px solid var(--border-default, #e2e8f0);
+      border-radius: 12px;
+      background: #ffffff;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+    }
+    .thread-card.active-target {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 1.5px rgba(245, 158, 11, 0.35);
+    }
+    .thread-card-header {
+      padding: 10px 14px;
+      background: #f8fafc;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+      transition: background 0.15s;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .thread-card-header:hover {
+      background: #f1f5f9;
+    }
+    .thread-card.expanded .thread-card-header {
+      border-bottom: 1px solid var(--border-default, #e2e8f0);
+      background: #ffffff;
+    }
+    .thread-card-body {
+      display: none;
+      padding: 16px 18px;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    .thread-card.expanded .thread-card-body {
+      display: block;
+    }
+    .thread-snippet {
+      font-size: 12px;
+      color: #64748b;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 320px;
+    }
+    .thread-chevron {
+      font-size: 11px;
+      color: #94a3b8;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-quote-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-quote-toggle:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .mobile-back-btn {
+      display: none;
+    }
+
     @media (max-width: 900px) {
-      .inbox-list-card, .msg-panel { height:auto; min-height:auto; max-height:none; }
-      #inbox-list { height:auto; min-height:auto; max-height:none; overflow:visible; }
+      .inbox-layout { grid-template-columns: 1fr; gap: 12px; width:100%; }
+      .inbox-list-col { width:100%; }
+      .inbox-list-card, .msg-panel {
+        height: auto; min-height: auto; max-height: none;
+        padding: 10px 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+      }
+      #inbox-list { height: auto; min-height: auto; max-height: none; overflow: visible; width: 100%; }
+      .mobile-back-btn { display: inline-flex !important; }
+      .thread-card-header { padding: 9px 10px !important; }
+      .thread-card-body { padding: 12px 8px !important; }
+      .contact-grid { padding: 8px 10px !important; gap: 6px 10px !important; font-size: 11.5px !important; }
+      .thread-snippet { max-width: 140px; }
+      .reply-box { padding: 10px 2px !important; }
+      .reply-box textarea { font-size: 13.5px !important; }
     }
     .inbox-page-content {
       padding-top: var(--space-6);
@@ -478,6 +580,40 @@
   }
 
   let currentOpenedMessage = null;
+  let currentThread = [];
+
+  function splitQuotedHistory(rawText) {
+    if (!rawText) return { main: '', quoted: '' };
+    const text = String(rawText).trim();
+
+    const patterns = [
+      /-{3,}\s*(?:Original Message|Forwarded Message|Message d'origine)\s*-{3,}/i,
+      /_{5,}/,
+      /\nOn\s+[A-Za-z]+,?\s+[A-Za-z0-9,:\s]+\s+wrote:\s*\n/i,
+      /\nOn\s+.+?at\s+.+?,?\s+<.+?>\s+wrote:\s*\n/i,
+      /\nFrom:\s+.+?\n(?:Sent|Date):\s+/i
+    ];
+
+    let cutIdx = -1;
+    for (const pat of patterns) {
+      const m = text.match(pat);
+      if (m && m.index !== undefined) {
+        if (cutIdx === -1 || m.index < cutIdx) {
+          cutIdx = m.index;
+        }
+      }
+    }
+
+    if (cutIdx !== -1 && cutIdx > 0) {
+      const main = text.slice(0, cutIdx).trim();
+      const quoted = text.slice(cutIdx).trim();
+      if (main.length > 0) {
+        return { main, quoted };
+      }
+    }
+
+    return { main: text, quoted: '' };
+  }
 
   async function openMessage(id) {
     selectedId = id;
@@ -486,16 +622,24 @@
     if (btn) btn.classList.add('active');
 
     const panel = document.getElementById('msg-panel');
-    panel.innerHTML = '<p class="text-muted" style="margin:0;">Loading message…</p>';
+    panel.innerHTML = '<p class="text-muted" style="margin:0;padding:24px;text-align:center;">Loading conversation thread…</p>';
+
+    // Smooth scroll on mobile to message panel
+    if (window.innerWidth <= 900) {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
     const res = await fetch('/api/email/inbox/' + id, { credentials: 'include' });
     const data = await res.json();
     if (!res.ok || !data.message) {
-      panel.innerHTML = '<p style="color:#b91c1c;margin:0;">' + escapeHtml(data.error || 'Could not open message') + '</p>';
+      panel.innerHTML = '<p style="color:#b91c1c;margin:0;padding:16px;">' + escapeHtml(data.error || 'Could not open message') + '</p>';
       return;
     }
     const m = data.message;
     currentOpenedMessage = m;
+
+    const thread = (Array.isArray(data.thread) && data.thread.length) ? data.thread : [m];
+    currentThread = thread;
 
     // Mark read when opened
     if (!m.is_read) {
@@ -503,107 +647,184 @@
         const cached = messagesCache.find(x => x.id === id);
         if (cached) cached.is_read = true;
         const unreadEl = document.getElementById('kpi-unread');
-        const n = Math.max(0, parseInt(unreadEl.textContent, 10) - 1);
-        unreadEl.textContent = String(n);
+        if (unreadEl) {
+          const n = Math.max(0, parseInt(unreadEl.textContent, 10) - 1);
+          unreadEl.textContent = String(n);
+        }
       });
     }
 
-    const bodyText = (m.body_text || '').trim();
-    const hasHtml = Boolean((m.body_html || '').trim());
-    const mailto = m.from_email ? `mailto:${encodeURIComponent(m.from_email)}?subject=${encodeURIComponent('Re: ' + (m.subject || ''))}` : '#';
-    const matchedLead = m.lead_id
-      ? `<a href="/crm-sales?lead=${m.lead_id}">Lead #${m.lead_id} — open in Sales CRM</a>`
-      : 'Not in CRM yet';
+    renderThreadConversation(id);
+  }
 
-    const attachments = Array.isArray(m.attachments) ? m.attachments : [];
-    const replyFrom = m.to_email || 'operations@shippingwish.com';
-    const attachHtml = attachments.length ? `
-      <div class="attach-list">
-        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:4px;">Attachments (${attachments.length})</div>
-        ${attachments.map(a => `
-          <div class="attach-item">
-            <span>📎 ${escapeHtml(a.filename || 'file')}${a.size ? ` <span style="color:var(--text-muted);">(${Math.round(a.size / 1024)} KB)</span>` : ''}</span>
-            <a class="btn btn-secondary btn-sm" href="/api/email/inbox/${m.id}/attachments/${encodeURIComponent(a.id)}/download" download>Download</a>
+  function renderThreadConversation(activeId) {
+    const panel = document.getElementById('msg-panel');
+    if (!panel || !currentThread || !currentThread.length) return;
+
+    const primaryMsg = currentOpenedMessage || currentThread[currentThread.length - 1];
+    const peerName = primaryMsg.company_name || primaryMsg.owner_name || primaryMsg.peer_name || 'Carrier';
+    const peerEmail = primaryMsg.peer_email || primaryMsg.from_email || primaryMsg.to_email || '';
+    const replyFrom = primaryMsg.to_email || 'operations@shippingwish.com';
+    const mailto = peerEmail ? `mailto:${encodeURIComponent(peerEmail)}?subject=${encodeURIComponent('Re: ' + (primaryMsg.subject || ''))}` : '#';
+    const matchedLead = primaryMsg.lead_id
+      ? `<a href="/crm-sales?lead=${primaryMsg.lead_id}" style="color:#2563eb;font-weight:700;text-decoration:none;">Lead #${primaryMsg.lead_id} — Open in Sales CRM ↗</a>`
+      : '<span style="color:#64748b;">Not in CRM yet</span>';
+
+    const cardsHtml = currentThread.map((item, idx) => {
+      const isLatest = (idx === currentThread.length - 1);
+      const isTarget = (item.id === activeId);
+      const isExpanded = isLatest || isTarget;
+      const isOutbound = item.direction === 'outbound';
+      const dirIcon = isOutbound ? '↗' : '📥';
+      const dirBadge = isOutbound
+        ? '<span class="badge badge-paid" style="font-size:10px;padding:2px 7px;">↗ Outbound</span>'
+        : '<span class="badge badge-booked" style="font-size:10px;padding:2px 7px;">📥 Inbound Reply</span>';
+      const senderTitle = isOutbound ? 'Shipping Wish Operations' : (item.from_name || item.peer_name || item.from_email || 'Carrier');
+      const dt = item.created_at ? new Date(item.created_at).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      const attachments = Array.isArray(item.attachments) ? item.attachments : [];
+      const attachCountHtml = attachments.length ? `<span style="font-size:11px;color:#64748b;font-weight:600;">📎 ${attachments.length}</span>` : '';
+
+      const attachListHtml = attachments.length ? `
+        <div class="attach-list">
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:4px;">Attachments (${attachments.length})</div>
+          ${attachments.map(a => `
+            <div class="attach-item">
+              <span>📎 ${escapeHtml(a.filename || 'file')}${a.size ? ` <span style="color:var(--text-muted);">(${Math.round(a.size / 1024)} KB)</span>` : ''}</span>
+              <a class="btn btn-secondary btn-sm" href="/api/email/inbox/${item.id}/attachments/${encodeURIComponent(a.id)}/download" download>Download</a>
+            </div>
+          `).join('')}
+        </div>` : '';
+
+      const bodyText = (item.body_text || '').trim();
+      const hasHtml = Boolean((item.body_html || '').trim());
+      const parsedText = splitQuotedHistory(bodyText);
+
+      return `
+        <div class="thread-card ${isExpanded ? 'expanded' : 'collapsed'} ${isTarget ? 'active-target' : ''}" id="thread-card-${item.id}">
+          <div class="thread-card-header" onclick="toggleThreadCard(${item.id})">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+              <div style="font-size:16px;">${dirIcon}</div>
+              <div style="min-width:0;flex:1;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <strong style="font-size:13px;color:#0f172a;">${escapeHtml(senderTitle)}</strong>
+                  ${dirBadge}
+                  ${attachCountHtml}
+                </div>
+                <div class="thread-snippet" style="font-size:11.5px;color:#64748b;margin-top:2px;">
+                  ${escapeHtml(previewText(item))}
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              <span style="font-size:11px;color:#64748b;">${escapeHtml(dt)}</span>
+              <span class="thread-chevron" id="chevron-${item.id}">${isExpanded ? '▲' : '▼'}</span>
+            </div>
           </div>
-        `).join('')}
-      </div>` : '';
 
-    const isOutbound = m.direction === 'outbound';
-    const dirBadge = isOutbound
-      ? '<span class="badge badge-paid" style="font-size:11px;padding:3px 8px;">↗ Outbound Email Sent</span>'
-      : '<span class="badge badge-booked" style="font-size:11px;padding:3px 8px;">📥 Inbound Reply Received</span>';
+          <div class="thread-card-body" id="thread-card-body-${item.id}">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b;">
+              <div>
+                <div><strong>From:</strong> <span style="color:#0f172a;">${escapeHtml(item.from_email || 'operations@shippingwish.com')}</span></div>
+                <div><strong>To:</strong> <span style="color:#0f172a;">${escapeHtml(item.to_email || peerEmail || '—')}</span></div>
+              </div>
+              ${hasHtml && bodyText ? `
+                <div style="display:flex;gap:6px;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-fmt-html-${item.id}" style="font-size:11px;padding:2px 8px;background:#0f172a;color:#fff;" onclick="toggleEmailFormat(${item.id}, 'html')">Formatted</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-fmt-text-${item.id}" style="font-size:11px;padding:2px 8px;" onclick="toggleEmailFormat(${item.id}, 'text')">Plain text</button>
+                </div>` : ''}
+            </div>
+
+            ${attachListHtml}
+
+            <div id="email-content-box-${item.id}">
+              ${hasHtml ? `
+                <iframe id="email-frame-${item.id}" style="width:100%;border:none;min-height:200px;background:#ffffff;display:block;" srcdoc="${escapeHtml(sanitizeIframeHtml(item.body_html))}" onload="autoResizeIframe(this)"></iframe>
+              ` : (bodyText ? `
+                <div style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.65;color:#0f172a;word-break:break-word;overflow-wrap:anywhere;">${escapeHtml(parsedText.main || bodyText)}</div>
+                ${parsedText.quoted ? `
+                  <div class="quoted-wrapper" style="margin-top:12px;padding-top:10px;border-top:1px dashed #cbd5e1;">
+                    <button type="button" class="btn-quote-toggle" onclick="toggleQuotedContent(${item.id})">
+                      <span style="font-weight:900;letter-spacing:1px;">···</span> <span id="lbl-quote-${item.id}">Show quoted text</span>
+                    </button>
+                    <div id="content-quote-${item.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8fafc;border-left:3px solid #cbd5e1;border-radius:4px;font-size:12px;color:#64748b;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">${escapeHtml(parsedText.quoted)}</div>
+                  </div>
+                ` : ''}
+              ` : `
+                <p style="color:#64748b;font-style:italic;margin:0;">(Empty message body)</p>
+              `)}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
 
     panel.innerHTML = `
       <div class="msg-panel-header">
+        <button type="button" class="btn btn-secondary btn-sm mobile-back-btn" onclick="backToInboxList()" style="margin-bottom:10px;align-items:center;gap:6px;font-weight:700;">
+          <span style="font-size:14px;">←</span> Back to Email List
+        </button>
+
         <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;">
-          <div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-              ${dirBadge}
-              <span style="font-size:11px;color:var(--text-muted);">${new Date(m.created_at).toLocaleString()}</span>
+          <div style="min-width:0;flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+              <span class="badge badge-booked" style="font-size:11px;padding:3px 8px;">📬 Thread (${currentThread.length} ${currentThread.length === 1 ? 'msg' : 'msgs'})</span>
+              <span style="font-size:11px;color:var(--text-muted);">${new Date(primaryMsg.created_at).toLocaleString()}</span>
             </div>
-            <h2 style="margin:0;font-size:17px;font-weight:800;color:var(--text-primary);">${escapeHtml(m.subject || '(no subject)')}</h2>
+            <h2 style="margin:0;font-size:17px;font-weight:800;color:var(--text-primary);word-break:break-word;overflow-wrap:anywhere;">${escapeHtml(primaryMsg.subject || '(no subject)')}</h2>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <a class="btn btn-secondary btn-sm" href="${mailto}">Open in mail app</a>
-            ${IS_ADMIN && m.direction !== 'draft' && m.direction !== 'outbound' ? `<button type="button" class="btn btn-light btn-sm" onclick="spamEmail(${m.id}, ${currentFolder === 'spam' ? 'false' : 'true'})">${currentFolder === 'spam' ? 'Not spam' : 'Spam'}</button>` : ''}
-            ${IS_ADMIN && m.direction !== 'draft' && m.direction !== 'outbound' && currentFolder !== 'trash' ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="trashEmail(${m.id})">Move to trash</button>` : ''}
-            ${m.direction === 'draft' ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="deleteDraft(${m.id})">Delete draft</button>` : ''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            ${currentThread.length > 1 ? `<button type="button" class="btn btn-secondary btn-sm" id="btn-thread-expand-all" onclick="toggleAllThreadCards()" style="font-size:11.5px;font-weight:700;">Expand All</button>` : ''}
+            <a class="btn btn-secondary btn-sm" href="${mailto}">Open mail app</a>
+            ${IS_ADMIN && primaryMsg.direction !== 'draft' && primaryMsg.direction !== 'outbound' ? `<button type="button" class="btn btn-light btn-sm" onclick="spamEmail(${primaryMsg.id}, ${currentFolder === 'spam' ? 'false' : 'true'})">${currentFolder === 'spam' ? 'Not spam' : 'Spam'}</button>` : ''}
+            ${IS_ADMIN && primaryMsg.direction !== 'draft' && primaryMsg.direction !== 'outbound' && currentFolder !== 'trash' ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="trashEmail(${primaryMsg.id})">Move to trash</button>` : ''}
+            ${primaryMsg.direction === 'draft' ? `<button type="button" class="btn btn-light btn-sm" style="color:#b91c1c;" onclick="deleteDraft(${primaryMsg.id})">Delete draft</button>` : ''}
           </div>
         </div>
       </div>
 
       <div class="msg-scroll-area">
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;font-size:12px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;font-size:12px;box-sizing:border-box;">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">
             <div>
-              <strong style="color:#64748b;text-transform:uppercase;font-size:10px;letter-spacing:0.04em;">Carrier / Recipient</strong>
-              <div style="font-size:15px;font-weight:800;color:#d97706;margin-top:2px;">
-                ${escapeHtml(m.company_name || m.owner_name || m.peer_name || 'Carrier')} ${m.mc_number ? `<span style="font-size:12px;color:#64748b;">(${escapeHtml(m.mc_number)})</span>` : ''}
+              <strong style="color:#64748b;text-transform:uppercase;font-size:10px;letter-spacing:0.04em;">Carrier / Contact</strong>
+              <div style="font-size:15px;font-weight:800;color:#d97706;margin-top:2px;word-break:break-word;overflow-wrap:anywhere;">
+                ${escapeHtml(peerName)} ${primaryMsg.mc_number ? `<span style="font-size:12px;color:#64748b;">(${escapeHtml(primaryMsg.mc_number)})</span>` : ''}
               </div>
             </div>
             <div>
               ${matchedLead}
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:8px;color:#64748b;">
-            <div><strong style="color:#475569;">From:</strong> <span style="color:#0f172a;font-weight:600;">${escapeHtml(m.from_email || 'operations@shippingwish.com')}</span></div>
-            <div><strong style="color:#475569;">To:</strong> <span style="color:#0f172a;font-weight:600;">${escapeHtml(m.peer_email || m.to_email || '—')}</span></div>
-            <div><strong style="color:#475569;">Phone:</strong> ${m.phone ? `<a href="tel:${escapeHtml(m.phone)}" style="color:#2563eb;font-weight:600;">${escapeHtml(m.phone)}</a>` : '—'}</div>
-            <div><strong style="color:#475569;">Sales Rep:</strong> <span style="color:#0f172a;font-weight:600;">${escapeHtml(m.sales_rep_name || 'Unassigned')}</span></div>
+          <div class="contact-grid" style="margin:0;padding:8px 0;background:transparent;">
+            <div><strong style="color:#475569;">Email:</strong> <span style="color:#0f172a;font-weight:600;word-break:break-all;">${escapeHtml(peerEmail || '—')}</span></div>
+            <div><strong style="color:#475569;">Mailbox:</strong> <span style="color:#0f172a;font-weight:600;word-break:break-all;">${escapeHtml(replyFrom)}</span></div>
+            <div><strong style="color:#475569;">Phone:</strong> ${primaryMsg.phone ? `<a href="tel:${escapeHtml(primaryMsg.phone)}" style="color:#2563eb;font-weight:600;">${escapeHtml(primaryMsg.phone)}</a>` : '—'}</div>
+            <div><strong style="color:#475569;">Sales Rep:</strong> <span style="color:#0f172a;font-weight:600;">${escapeHtml(primaryMsg.sales_rep_name || 'Unassigned')}</span></div>
           </div>
         </div>
 
-        ${attachHtml}
-
-        <div style="background:#ffffff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,0.04);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f1f5f9;">
-            <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#64748b;">Email Message Body</span>
-            ${hasHtml && bodyText ? `
-              <div style="display:flex;gap:6px;">
-                <button type="button" class="btn btn-secondary btn-sm" id="btn-fmt-html-${m.id}" style="font-size:11px;padding:2px 8px;background:#0f172a;color:#fff;" onclick="toggleEmailFormat(${m.id}, 'html')">Formatted</button>
-                <button type="button" class="btn btn-secondary btn-sm" id="btn-fmt-text-${m.id}" style="font-size:11px;padding:2px 8px;" onclick="toggleEmailFormat(${m.id}, 'text')">Plain text</button>
-              </div>` : ''}
-          </div>
-          <div id="email-content-box-${m.id}">
-            ${hasHtml ? `
-              <iframe id="email-frame-${m.id}" style="width:100%;border:none;min-height:220px;background:#ffffff;display:block;" srcdoc="${escapeHtml(sanitizeIframeHtml(m.body_html))}" onload="autoResizeIframe(this)"></iframe>
-            ` : (bodyText ? `
-              <div style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.65;color:#0f172a;word-break:break-word;">${escapeHtml(bodyText)}</div>
-            ` : `
-              <p style="color:#64748b;font-style:italic;margin:0;">(Empty message body)</p>
-            `)}
-          </div>
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;margin:0 0 8px;">
+          💬 Conversation Thread (${currentThread.length} ${currentThread.length === 1 ? 'Message' : 'Messages'})
         </div>
+
+        <div class="thread-messages-list">
+          ${cardsHtml}
+        </div>
+
+        ${primaryMsg.direction !== 'draft' ? `
+          <div class="reply-box" style="margin-top:16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;box-sizing:border-box;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+              <h3 style="margin:0;font-size:14px;font-weight:700;color:#0f172a;">💬 Reply to this thread</h3>
+              <span class="reply-from-note" style="font-size:11.5px;color:#64748b;margin:0;">Reply from <strong style="color:#0f172a;">${escapeHtml(replyFrom)}</strong> to <strong style="color:#0f172a;">${escapeHtml(peerEmail)}</strong></span>
+            </div>
+            <textarea id="reply-text-${primaryMsg.id}" placeholder="Type your reply to carrier…" style="width:100%;min-height:88px;border:1.5px solid #cbd5e1;border-radius:10px;padding:12px;font-family:inherit;font-size:14px;box-sizing:border-box;color:#0f172a;background:#ffffff;"></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px;">
+              <div style="font-size:11.5px;color:#64748b;">Carrier will receive this reply directly in their inbox.</div>
+              <button type="button" class="btn btn-primary btn-sm" style="font-weight:700;padding:6px 16px;" onclick="sendReply(${primaryMsg.id})">🚀 Send Reply</button>
+            </div>
+          </div>
+        ` : ''}
       </div>
-
-      ${m.direction === 'inbound' || !m.direction ? `<div class="reply-box">
-        <h3 style="margin:0 0 6px;font-size:14px;font-weight:700;color:#0f172a;">Reply from portal</h3>
-        <p class="reply-from-note" style="font-size:11.5px;color:#64748b;margin:0 0 8px;">Reply will send from <strong style="color:#0f172a;">${escapeHtml(replyFrom)}</strong> to <strong style="color:#0f172a;">${escapeHtml(m.peer_email || m.from_email || '')}</strong> (same thread).</p>
-        <textarea id="reply-text-${m.id}" placeholder="Type your reply to carrier…" style="width:100%;min-height:84px;border:1.5px solid #cbd5e1;border-radius:10px;padding:12px;font-family:inherit;font-size:14px;box-sizing:border-box;color:#0f172a;background:#ffffff;"></textarea>
-        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-          <button type="button" class="btn btn-primary btn-sm" onclick="sendReply(${m.id})">Send reply</button>
-        </div>
-      </div>` : ''}
     `;
   }
 
@@ -652,6 +873,7 @@
         alert(data.message || 'Reply sent');
       }
       if (ta) ta.value = '';
+      await openMessage(id);
     } catch (e) {
       if (window.swAlert) await window.swAlert({ title: 'Network Error', message: 'Could not reach server to send reply.', icon: 'error' });
     }
@@ -755,22 +977,91 @@
   function sanitizeIframeHtml(html) {
     if (!html) return '';
     const clean = String(html).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-    const baseStyle = `<style>
-      html, body {
-        background-color: #ffffff !important;
-        color: #0f172a !important;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-        font-size: 14px !important;
-        line-height: 1.6 !important;
-        margin: 0 !important;
-        padding: 8px 12px !important;
-        word-break: break-word !important;
-      }
-      a { color: #2563eb !important; text-decoration: underline; }
-      img { max-width: 100% !important; height: auto !important; }
-      table { max-width: 100% !important; }
-      blockquote { border-left: 3px solid #cbd5e1 !important; margin: 8px 0 !important; padding-left: 12px !important; color: #475569 !important; }
-    </style>`;
+    const baseStyle = `
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <style>
+        *, *::before, *::after {
+          box-sizing: border-box !important;
+          max-width: 100% !important;
+        }
+        html, body {
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+          font-size: 13.5px !important;
+          line-height: 1.6 !important;
+          margin: 0 !important;
+          padding: 8px !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+          word-break: break-word !important;
+          overflow-wrap: anywhere !important;
+        }
+        a { color: #2563eb !important; text-decoration: underline; word-break: break-all !important; }
+        img { max-width: 100% !important; height: auto !important; }
+        table {
+          width: 100% !important;
+          max-width: 100% !important;
+          border-collapse: collapse !important;
+        }
+        td, th {
+          word-break: break-word !important;
+          overflow-wrap: anywhere !important;
+          max-width: 100% !important;
+          white-space: normal !important;
+          padding: 4px 6px !important;
+        }
+        div, p, span, h1, h2, h3, h4, h5, h6, ul, ol, li {
+          word-break: break-word !important;
+          overflow-wrap: anywhere !important;
+          max-width: 100% !important;
+        }
+        pre, code {
+          white-space: pre-wrap !important;
+          word-break: break-all !important;
+          overflow-wrap: anywhere !important;
+        }
+        [style*="width"] {
+          max-width: 100% !important;
+        }
+        [style*="min-width"] {
+          min-width: 0 !important;
+        }
+        blockquote {
+          border-left: 3px solid #cbd5e1 !important;
+          margin: 8px 0 !important;
+          padding-left: 10px !important;
+          color: #64748b !important;
+        }
+      </style>
+      <script>
+        window.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('blockquote, .gmail_quote, .gmail_extra, [id^="divRplyFwdMsg"]').forEach(function(el) {
+            if (el.dataset.folded) return;
+            el.dataset.folded = 'true';
+            el.style.display = 'none';
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.innerHTML = '<span style="letter-spacing:1px;font-weight:900;">···</span> Show quoted text';
+            btn.style.cssText = 'display:inline-block;margin:8px 0;padding:3px 9px;font-size:11.5px;font-weight:700;color:#64748b;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-family:inherit;';
+            btn.onclick = function() {
+              if (el.style.display === 'none') {
+                el.style.display = 'block';
+                btn.innerHTML = '▴ Hide quoted text';
+              } else {
+                el.style.display = 'none';
+                btn.innerHTML = '<span style="letter-spacing:1px;font-weight:900;">···</span> Show quoted text';
+              }
+              if (window.parent && window.parent.autoResizeIframe) {
+                var frames = window.parent.document.querySelectorAll('iframe');
+                frames.forEach(function(f) { window.parent.autoResizeIframe(f); });
+              }
+            };
+            el.parentNode.insertBefore(btn, el);
+          });
+        });
+      <\/script>`;
     return baseStyle + clean;
   }
 
@@ -779,33 +1070,105 @@
       if (!iframe) return;
       const doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
       if (doc && doc.body) {
-        const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 200);
+        const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 180);
         iframe.style.height = (height + 24) + 'px';
       }
     } catch (e) {
-      iframe.style.height = '420px';
+      iframe.style.height = '350px';
     }
   }
 
-  function toggleEmailFormat(id, mode) {
-    const box = document.getElementById('email-content-box-' + id);
-    const btnHtml = document.getElementById('btn-fmt-html-' + id);
-    const btnText = document.getElementById('btn-fmt-text-' + id);
-    if (!box || !currentOpenedMessage || currentOpenedMessage.id !== id) return;
+  function toggleEmailFormat(msgId, mode) {
+    const m = (currentThread || []).find(x => x.id === msgId);
+    const box = document.getElementById('email-content-box-' + msgId);
+    const btnHtml = document.getElementById('btn-fmt-html-' + msgId);
+    const btnText = document.getElementById('btn-fmt-text-' + msgId);
+    if (!box || !m) return;
 
     if (mode === 'html') {
       if (btnHtml) { btnHtml.style.background = '#0f172a'; btnHtml.style.color = '#fff'; }
       if (btnText) { btnText.style.background = ''; btnText.style.color = ''; }
       box.innerHTML = `
-        <iframe id="email-frame-${id}" style="width:100%;border:none;min-height:220px;background:#ffffff;display:block;" srcdoc="${escapeHtml(sanitizeIframeHtml(currentOpenedMessage.body_html))}" onload="autoResizeIframe(this)"></iframe>
+        <iframe id="email-frame-${msgId}" style="width:100%;border:none;min-height:200px;background:#ffffff;display:block;" srcdoc="${escapeHtml(sanitizeIframeHtml(m.body_html))}" onload="autoResizeIframe(this)"></iframe>
       `;
     } else {
       if (btnText) { btnText.style.background = '#0f172a'; btnText.style.color = '#fff'; }
       if (btnHtml) { btnHtml.style.background = ''; btnHtml.style.color = ''; }
-      const txt = (currentOpenedMessage.body_text || '').trim();
+      const txt = (m.body_text || '').trim();
+      const parsed = splitQuotedHistory(txt);
       box.innerHTML = `
-        <div style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.65;color:#0f172a;word-break:break-word;">${escapeHtml(txt || '(No plain text available)')}</div>
+        <div style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.65;color:#0f172a;word-break:break-word;overflow-wrap:anywhere;">${escapeHtml(parsed.main || txt || '(No plain text available)')}</div>
+        ${parsed.quoted ? `
+          <div class="quoted-wrapper" style="margin-top:12px;padding-top:10px;border-top:1px dashed #cbd5e1;">
+            <button type="button" class="btn-quote-toggle" onclick="toggleQuotedContent(${m.id})">
+              <span style="font-weight:900;letter-spacing:1px;">···</span> <span id="lbl-quote-${m.id}">Show quoted text</span>
+            </button>
+            <div id="content-quote-${m.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8fafc;border-left:3px solid #cbd5e1;border-radius:4px;font-size:12px;color:#64748b;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">${escapeHtml(parsed.quoted)}</div>
+          </div>
+        ` : ''}
       `;
+    }
+  }
+
+  function toggleThreadCard(msgId) {
+    const card = document.getElementById('thread-card-' + msgId);
+    const chev = document.getElementById('chevron-' + msgId);
+    if (!card) return;
+    const isExp = card.classList.contains('expanded');
+    if (isExp) {
+      card.classList.remove('expanded');
+      card.classList.add('collapsed');
+      if (chev) chev.textContent = '▼';
+    } else {
+      card.classList.remove('collapsed');
+      card.classList.add('expanded');
+      if (chev) chev.textContent = '▲';
+      const frame = card.querySelector('iframe');
+      if (frame) autoResizeIframe(frame);
+    }
+  }
+
+  function toggleAllThreadCards() {
+    const cards = document.querySelectorAll('.thread-card');
+    const btn = document.getElementById('btn-thread-expand-all');
+    const anyCollapsed = Array.from(cards).some(c => c.classList.contains('collapsed'));
+    cards.forEach(c => {
+      const id = c.id.replace('thread-card-', '');
+      const chev = document.getElementById('chevron-' + id);
+      if (anyCollapsed) {
+        c.classList.remove('collapsed');
+        c.classList.add('expanded');
+        if (chev) chev.textContent = '▲';
+        const frame = c.querySelector('iframe');
+        if (frame) autoResizeIframe(frame);
+      } else {
+        c.classList.remove('expanded');
+        c.classList.add('collapsed');
+        if (chev) chev.textContent = '▼';
+      }
+    });
+    if (btn) {
+      btn.textContent = anyCollapsed ? 'Collapse All' : 'Expand All';
+    }
+  }
+
+  function toggleQuotedContent(id) {
+    const el = document.getElementById('content-quote-' + id);
+    const lbl = document.getElementById('lbl-quote-' + id);
+    if (!el) return;
+    if (el.style.display === 'none' || !el.style.display) {
+      el.style.display = 'block';
+      if (lbl) lbl.textContent = 'Hide quoted text';
+    } else {
+      el.style.display = 'none';
+      if (lbl) lbl.textContent = 'Show quoted text';
+    }
+  }
+
+  function backToInboxList() {
+    const el = document.querySelector('.inbox-list-col');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
 
@@ -917,6 +1280,10 @@
   window.autoResizeIframe = autoResizeIframe;
   window.toggleEmailFormat = toggleEmailFormat;
   window.sanitizeIframeHtml = sanitizeIframeHtml;
+  window.toggleThreadCard = toggleThreadCard;
+  window.toggleAllThreadCards = toggleAllThreadCards;
+  window.toggleQuotedContent = toggleQuotedContent;
+  window.backToInboxList = backToInboxList;
 
   async function init() {
     await checkAuth();
@@ -937,6 +1304,6 @@
 })();
 </script>
 
-<script src="/js/app-shell.js?v=36"></script>
+<script src="/js/app-shell.js?v=37"></script>
 </body>
 </html>

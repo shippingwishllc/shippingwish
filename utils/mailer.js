@@ -145,14 +145,15 @@ async function sendBrandedEmail({
   }
 
   const fromEmail = (String(from).match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i) || [null])[0];
+  const bodyTextToLog = text || (html ? html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '');
   try {
     await pool.query(
-      `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key, from_email)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [leadId || null, to, subject, emailType || templateKey || 'outreach', status, providerId, sentBy || null, templateKey || emailType || null, fromEmail]
+      `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key, from_email, body_text)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [leadId || null, to, subject, emailType || templateKey || 'outreach', status, providerId, sentBy || null, templateKey || emailType || null, fromEmail, bodyTextToLog]
     );
   } catch (err) {
-    // template_key column may not exist yet — fall back
+    // template_key/body_text column may not exist yet — fall back
     try {
       await pool.query(
         `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by)

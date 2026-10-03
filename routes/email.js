@@ -85,6 +85,7 @@ async function ensureInboundColumns() {
   await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'`).catch(() => {});
   await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS is_spam BOOLEAN DEFAULT FALSE`).catch(() => {});
   await pool.query(`ALTER TABLE email_logs ADD COLUMN IF NOT EXISTS from_email TEXT`).catch(() => {});
+  await pool.query(`ALTER TABLE email_logs ADD COLUMN IF NOT EXISTS body_text TEXT`).catch(() => {});
   await pool.query(`
     CREATE TABLE IF NOT EXISTS email_drafts (
       id SERIAL PRIMARY KEY,
@@ -579,6 +580,77 @@ router.delete('/drafts/:id', requireAuth, staffEmailOnly, async (req, res) => {
   }
 });
 
+async function fetchEmailThread(peerEmail, leadId) {
+  const cleanEmail = normalizeEmail(peerEmail);
+  const cleanLeadId = leadId ? parseInt(leadId, 10) : null;
+  if (!cleanEmail && !cleanLeadId) return [];
+
+  let thread = [];
+  try {
+    const inboundRes = await pool.query(
+      `SELECT i.id, i.lead_id, i.from_email, i.to_email, i.from_name,
+              COALESCE(l.company_name, l.owner_name, i.from_name, i.from_email) AS peer_name,
+              i.subject, i.body_text, i.body_html, i.is_read, i.attachments, i.resend_email_id,
+              i.created_at, 'inbound' AS direction
+       FROM email_inbound i
+       LEFT JOIN crm_leads l ON l.id = i.lead_id
+       WHERE i.deleted_at IS NULL
+         AND (
+           ($1::text <> '' AND lower(i.from_email) = lower($1::text))
+           OR ($2::int IS NOT NULL AND i.lead_id = $2::int)
+         )
+       ORDER BY i.created_at ASC`,
+      [cleanEmail || '', cleanLeadId]
+    );
+
+    const outboundRes = await pool.query(
+      `SELECT (e.id + 10000000) AS id, e.lead_id,
+              COALESCE(NULLIF(e.from_email, ''), 'operations@shippingwish.com') AS from_email,
+              e.recipient_email AS to_email,
+              'Shipping Wish Operations' AS from_name,
+              COALESCE(l.company_name, l.owner_name, e.recipient_email) AS peer_name,
+              e.subject,
+              COALESCE(e.body_text, CONCAT('Outbound Email sent to ', e.recipient_email)) AS body_text,
+              NULL AS body_html,
+              TRUE AS is_read, '[]'::jsonb AS attachments, e.resend_id AS resend_email_id,
+              e.sent_at AS created_at, 'outbound' AS direction
+       FROM email_logs e
+       LEFT JOIN crm_leads l ON l.id = e.lead_id
+       WHERE (
+           ($1::text <> '' AND lower(e.recipient_email) = lower($1::text))
+           OR ($2::int IS NOT NULL AND e.lead_id = $2::int)
+         )
+       ORDER BY e.sent_at ASC`,
+      [cleanEmail || '', cleanLeadId]
+    );
+
+    const parseAttachments = (att) => {
+      if (!att) return [];
+      if (Array.isArray(att)) return att;
+      if (typeof att === 'string') {
+        try { return JSON.parse(att); } catch (_) { return []; }
+      }
+      return [];
+    };
+
+    const inbounds = (inboundRes.rows || []).map((m) => ({
+      ...m,
+      attachments: parseAttachments(m.attachments)
+    }));
+
+    const outbounds = (outboundRes.rows || []).map((m) => ({
+      ...m,
+      attachments: []
+    }));
+
+    thread = [...inbounds, ...outbounds];
+    thread.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  } catch (err) {
+    console.warn('fetchEmailThread error:', err.message);
+  }
+  return thread;
+}
+
 router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
   try {
     const numericId = parseInt(req.params.id, 10);
@@ -588,20 +660,23 @@ router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
       const draft = await pool.query('SELECT * FROM email_drafts WHERE id = $1', [draftId]);
       if (!draft.rows.length) return res.status(404).json({ error: 'Draft not found' });
       const row = draft.rows[0];
+      const draftMsg = {
+        id: numericId,
+        direction: 'draft',
+        from_email: row.from_email,
+        to_email: row.to_email,
+        peer_email: row.to_email,
+        subject: row.subject || '(draft)',
+        body_text: row.body_text || '',
+        body_html: '',
+        created_at: row.updated_at,
+        is_read: true,
+        attachments: []
+      };
+      const thread = await fetchEmailThread(row.to_email, null);
       return res.json({
-        message: {
-          id: numericId,
-          direction: 'draft',
-          from_email: row.from_email,
-          to_email: row.to_email,
-          peer_email: row.to_email,
-          subject: row.subject || '(draft)',
-          body_text: row.body_text || '',
-          body_html: '',
-          created_at: row.updated_at,
-          is_read: true,
-          attachments: []
-        }
+        message: draftMsg,
+        thread: thread.length ? [...thread, draftMsg] : [draftMsg]
       });
     }
 
@@ -611,31 +686,34 @@ router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
       const lr = await pool.query(`SELECT * FROM crm_leads WHERE id = $1`, [realLeadId]);
       if (!lr.rows.length) return res.status(404).json({ error: 'Lead not found' });
       const l = lr.rows[0];
+      const leadMsg = {
+        id: numericId,
+        direction: 'outbound',
+        lead_id: l.id,
+        from_email: 'operations@shippingwish.com',
+        to_email: l.email,
+        subject: `↗ Outbound Outreach: ${l.company_name || 'Carrier'}`,
+        body_text: `Outbound Outreach Email sent to ${l.email}.\nEquipment: ${l.equipment_type || 'Dry Van'}\nStatus: ${l.status}`,
+        body_html: `<div style="padding:18px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">
+          <h4 style="margin:0 0 10px;color:#f59e0b;font-size:16px;">↗ Outbound Email Sent to ${escapeHtml(l.email)}</h4>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Company:</strong> ${escapeHtml(l.company_name)} (${escapeHtml(l.mc_number || 'N/A')})</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Recipient Email:</strong> ${escapeHtml(l.email)}</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Equipment:</strong> ${escapeHtml(l.equipment_type || '53ft Dry Van')}</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Status:</strong> <span class="badge badge-paid">${escapeHtml(l.status)}</span></p>
+          <p style="margin:8px 0 0;font-size:11px;color:#94a3b8;">Sent via Shipping Wish AI Outreach Engine</p>
+        </div>`,
+        created_at: l.created_at,
+        is_read: true,
+        company_name: l.company_name,
+        owner_name: l.owner_name,
+        phone: l.phone,
+        mc_number: l.mc_number,
+        attachments: []
+      };
+      const thread = await fetchEmailThread(l.email, l.id);
       return res.json({
-        message: {
-          id: numericId,
-          direction: 'outbound',
-          lead_id: l.id,
-          from_email: 'operations@shippingwish.com',
-          to_email: l.email,
-          subject: `↗ Outbound Outreach: ${l.company_name || 'Carrier'}`,
-          body_text: `Outbound Outreach Email sent to ${l.email}.\nEquipment: ${l.equipment_type || 'Dry Van'}\nStatus: ${l.status}`,
-          body_html: `<div style="padding:18px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">
-            <h4 style="margin:0 0 10px;color:#f59e0b;font-size:16px;">↗ Outbound Email Sent to ${escapeHtml(l.email)}</h4>
-            <p style="margin:0 0 6px;font-size:13px;"><strong>Company:</strong> ${escapeHtml(l.company_name)} (${escapeHtml(l.mc_number || 'N/A')})</p>
-            <p style="margin:0 0 6px;font-size:13px;"><strong>Recipient Email:</strong> ${escapeHtml(l.email)}</p>
-            <p style="margin:0 0 6px;font-size:13px;"><strong>Equipment:</strong> ${escapeHtml(l.equipment_type || '53ft Dry Van')}</p>
-            <p style="margin:0 0 6px;font-size:13px;"><strong>Status:</strong> <span class="badge badge-paid">${escapeHtml(l.status)}</span></p>
-            <p style="margin:8px 0 0;font-size:11px;color:#94a3b8;">Sent via Shipping Wish AI Outreach Engine</p>
-          </div>`,
-          created_at: l.created_at,
-          is_read: true,
-          company_name: l.company_name,
-          owner_name: l.owner_name,
-          phone: l.phone,
-          mc_number: l.mc_number,
-          attachments: []
-        }
+        message: leadMsg,
+        thread: thread.length ? thread : [leadMsg]
       });
     }
 
@@ -651,31 +729,35 @@ router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
       );
       if (!result.rows.length) return res.status(404).json({ error: 'Outbound email log not found' });
       const e = result.rows[0];
+      const logMsg = {
+        id: numericId,
+        direction: 'outbound',
+        lead_id: e.lead_id,
+        from_email: e.from_email || 'operations@shippingwish.com',
+        to_email: e.recipient_email,
+        subject: e.subject,
+        body_text: e.body_text || `Outbound Email (${e.email_type || 'campaign'}) sent to ${e.recipient_email}.\nStatus: ${e.status || 'sent'}`,
+        body_html: `<div style="padding:18px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">
+          <h4 style="margin:0 0 10px;color:#f59e0b;font-size:16px;">↗ Outbound Email Sent to ${escapeHtml(e.recipient_email)}</h4>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Recipient:</strong> ${escapeHtml(e.recipient_email)}</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Subject:</strong> ${escapeHtml(e.subject)}</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Campaign Type:</strong> ${escapeHtml(e.email_type || 'campaign')}</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Status:</strong> <span class="badge badge-paid">${escapeHtml(e.status || 'sent')}</span></p>
+          ${e.body_text ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(245,158,11,0.2);white-space:pre-wrap;font-size:13px;color:#334155;">${escapeHtml(e.body_text)}</div>` : ''}
+          <p style="margin:8px 0 0;font-size:11px;color:#94a3b8;">Sent via Shipping Wish Resend Email Engine</p>
+        </div>`,
+        created_at: e.sent_at,
+        is_read: true,
+        company_name: e.company_name,
+        owner_name: e.owner_name,
+        phone: e.phone,
+        mc_number: e.mc_number,
+        attachments: []
+      };
+      const thread = await fetchEmailThread(e.recipient_email, e.lead_id);
       return res.json({
-        message: {
-          id: numericId,
-          direction: 'outbound',
-          lead_id: e.lead_id,
-          from_email: 'operations@shippingwish.com',
-          to_email: e.recipient_email,
-          subject: e.subject,
-          body_text: `Outbound Email (${e.email_type || 'campaign'}) sent to ${e.recipient_email}.\nStatus: ${e.status || 'sent'}`,
-          body_html: `<div style="padding:18px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">
-            <h4 style="margin:0 0 10px;color:#f59e0b;font-size:16px;">↗ Outbound Email Sent to ${escapeHtml(e.recipient_email)}</h4>
-            <p style="margin:0 0 6px;font-size:13px;"><strong>Recipient:</strong> ${escapeHtml(e.recipient_email)}</p>
-            <p style="margin:0 0 6px;font-size:13px;"><strong>Subject:</strong> ${escapeHtml(e.subject)}</p>
-            <p style="margin:0 0 6px;font-size:13px;"><strong>Campaign Type:</strong> ${escapeHtml(e.email_type || 'campaign')}</p>
-            <p style="margin:0 0 6px;font-size:13px;"><strong>Status:</strong> <span class="badge badge-paid">${escapeHtml(e.status || 'sent')}</span></p>
-            <p style="margin:8px 0 0;font-size:11px;color:#94a3b8;">Sent via Shipping Wish Resend Email Engine</p>
-          </div>`,
-          created_at: e.sent_at,
-          is_read: true,
-          company_name: e.company_name,
-          owner_name: e.owner_name,
-          phone: e.phone,
-          mc_number: e.mc_number,
-          attachments: []
-        }
+        message: logMsg,
+        thread: thread.length ? thread : [logMsg]
       });
     }
 
@@ -714,7 +796,12 @@ router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
 
     msg.attachments = await loadAttachmentsForMessage(msg);
 
-    res.json({ message: msg });
+    const thread = await fetchEmailThread(msg.from_email, msg.lead_id);
+    const enrichedThread = thread.length
+      ? thread.map(t => (t.id === msg.id && t.direction === 'inbound') ? msg : t)
+      : [msg];
+
+    res.json({ message: msg, thread: enrichedThread });
   } catch (err) {
     console.error('Inbox message fetch error:', err);
     res.status(500).json({ error: 'Could not load message' });
@@ -848,9 +935,9 @@ router.post('/inbox/:id/reply', requireAuth, staffEmailOnly, async (req, res) =>
     const providerId = (sent.data && sent.data.id) || null;
     try {
       await pool.query(
-        `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key, from_email)
-         VALUES ($1, $2, $3, 'inbox_reply', 'sent', $4, $5, 'inbox_reply', $6)`,
-        [msg.lead_id || null, recipient, subject, providerId, req.user.id, replyMailbox]
+        `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key, from_email, body_text)
+         VALUES ($1, $2, $3, 'inbox_reply', 'sent', $4, $5, 'inbox_reply', $6, $7)`,
+        [msg.lead_id || null, recipient, subject, providerId, req.user.id, replyMailbox, message]
       );
     } catch (_) { /* optional log */ }
 
