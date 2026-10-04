@@ -189,16 +189,23 @@
     </label>
   </div>
 
-  <button type="button" id="btn-grab-load" class="btn-main">
-    <span>🎯 Grab Active Load from DAT</span>
+  <button type="button" id="btn-bulk-sync" class="btn-main" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-bottom: 8px;">
+    <span>⚡ 1-Click Sync ALL Loads to LoadsNexus</span>
   </button>
 
-  <div id="status-box" class="status-msg">Click above or highlight load on DAT One</div>
+  <button type="button" id="btn-grab-load" class="btn-main" style="background: #1e293b; border: 1px solid #334155; margin-bottom: 12px; font-size: 11px; padding: 8px;">
+    <span>🎯 Grab Single Load Detail</span>
+  </button>
+
+  <div id="status-box" class="status-msg">Click above or search on DAT One</div>
 
   <!-- Parsed Result Card -->
   <div id="card-container" style="display:none;"></div>
 
-  <a href="#" id="link-web-hub" class="link-portal">↗ Open Full Web Dispatch Desk (/ai-dispatch)</a>
+  <div style="display:flex; justify-content:space-between; gap:6px; margin-top:8px;">
+    <a href="#" id="link-web-hub" class="link-portal" style="flex:1;">↗ AI Dispatch Desk</a>
+    <a href="#" id="link-loadsnexus" class="link-portal" style="flex:1; color:#38bdf8;">🌐 LoadsNexus Board</a>
+  </div>
 
   <script src="popup.js"></script>
 </body>

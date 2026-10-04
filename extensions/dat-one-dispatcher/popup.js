@@ -30,6 +30,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.tabs.create({ url: `${currentApi}/ai-dispatch` });
   });
 
+  const linkLoadsNexus = document.getElementById('link-loadsnexus');
+  if (linkLoadsNexus) {
+    linkLoadsNexus.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const currentApi = serverSelect.value;
+      chrome.tabs.create({ url: `${currentApi}/load-board` });
+    });
+  }
+
+  const btnBulkSync = document.getElementById('btn-bulk-sync');
+  if (btnBulkSync) {
+    btnBulkSync.addEventListener('click', async () => {
+      statusBox.textContent = 'Syncing all visible loads to LoadsNexus...';
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) throw new Error('No active browser tab found.');
+
+        chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_BULK_SYNC' }, (response) => {
+          if (chrome.runtime.lastError) {
+            statusBox.textContent = 'Please switch to your active DAT One tab first.';
+          } else {
+            statusBox.textContent = '✓ Sync triggered! Check LoadsNexus.';
+          }
+        });
+      } catch (err) {
+        statusBox.textContent = `Error: ${err.message}`;
+      }
+    });
+  }
+
   let currentParsedLoad = null;
   let currentCarriers = [];
 

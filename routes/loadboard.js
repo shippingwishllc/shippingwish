@@ -2647,6 +2647,7 @@ router.post('/ai-carrier-copilot', optionalAuth, async (req, res) => {
   }
 });
 
+router.broadcastLoadboardEvent = broadcastLoadboardEvent;
 module.exports = router;
 
 

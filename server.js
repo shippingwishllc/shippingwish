@@ -860,6 +860,7 @@ if (require.main === module) {
             dispatchDesk.syncDueSources().catch((err) => console.warn('[LOADBOARD] sync:', err.message));
             dispatchDesk.sendDueMorningTexts().catch((err) => console.warn('[AI-DISPATCH] morning:', err.message));
             dispatchDesk.sendDueEmptySoonOffers().catch((err) => console.warn('[AI-DISPATCH] empty-soon:', err.message));
+            dispatchDesk.autoCoverStaleDatLoads().catch((err) => console.warn('[LOADBOARD] auto-cover:', err.message));
             require('./utils/driver-assistant').tick().catch((err) => console.warn('[DRIVER-ASSISTANT] tick:', err.message));
             require('./utils/outreach-engine').tick().catch((err) => console.warn('[OUTREACH] tick:', err.message));
           }, 60000);

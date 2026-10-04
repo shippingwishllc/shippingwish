@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('../db');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requireRole, optionalAuth } = require('../middleware/auth');
 const { sendTwilioSms } = require('./voip');
 const { logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
 const { assertPublicHttps, ensureBoardSchema, syncSource, syncDueSources } = require('../utils/loadboard-sync');
@@ -477,6 +477,202 @@ router.post('/parse-dat-loads', ...staff, async (req, res) => {
   } catch (err) {
     console.error('[DAT Parse] Error:', err);
     res.status(500).json({ error: 'Could not parse DAT load text: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/dispatch/sync-dat-bulk (and /api/dispatch-desk/sync-dat-bulk)
+ * Autonomous Bulk Ingestion & Live Sync from DAT One / Extension
+ */
+router.post('/sync-dat-bulk', optionalAuth, async (req, res) => {
+  try {
+    await ensureBoardSchema();
+    let loadsToProcess = [];
+
+    if (Array.isArray(req.body.loads) && req.body.loads.length > 0) {
+      loadsToProcess = req.body.loads;
+    } else if (req.body.rawText || req.body.text) {
+      loadsToProcess = parseDatInput(String(req.body.rawText || req.body.text || ''));
+    }
+
+    if (!loadsToProcess.length) {
+      return res.status(400).json({ error: 'No loads found to sync. Provide an array of loads or raw text.' });
+    }
+
+    // Fetch active carriers & trucks for automated fleet matching
+    let carriers = [];
+    try {
+      const carriersRes = await pool.query('SELECT * FROM ai_dispatch_carriers WHERE paused = false ORDER BY id DESC');
+      carriers = carriersRes.rows;
+    } catch {}
+
+    let trucks = [];
+    try {
+      const trucksRes = await pool.query(
+        `SELECT t.*, d.name as driver_name, d.phone as driver_phone
+         FROM trucks t
+         LEFT JOIN drivers d ON d.assigned_truck_id = t.id
+         ORDER BY t.truck_number ASC`
+      );
+      trucks = trucksRes.rows;
+    } catch {}
+
+    const insertedLoads = [];
+    let skippedCount = 0;
+    const matchedOffers = [];
+
+    for (const load of loadsToProcess) {
+      const origin = String(load.origin || load.pickup_location || '').trim();
+      const dest = String(load.destination || load.delivery_location || '').trim();
+      const rate = parseFloat(load.rate) || 0;
+      const miles = parseInt(load.loaded_miles || load.miles, 10) || 0;
+      const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : (parseFloat(load.rpm) || 0);
+      const broker = String(load.broker_name || 'DAT Verified Broker').trim();
+      const email = load.broker_email || null;
+      const phone = load.broker_phone || null;
+      const dho = parseInt(load.dho, 10) || 0;
+      const weight = parseInt(load.weight, 10) || 5000;
+      const equipment = load.equipment_type || '26ft Box Truck';
+      const notes = load.notes || null;
+      const pickupDate = load.pickup_date || new Date().toISOString().slice(0, 10);
+
+      if (!origin || !dest) {
+        skippedCount++;
+        continue;
+      }
+
+      // Check deduplication (look for identical origin, destination, rate, and broker within the last 48 hours)
+      const existing = await pool.query(
+        `SELECT id, load_number FROM loads 
+         WHERE pickup_location = $1 AND delivery_location = $2 AND rate = $3 
+           AND (broker_name = $4 OR broker_contact LIKE $5)
+           AND created_at > NOW() - INTERVAL '48 hours'
+         LIMIT 1`,
+        [origin, dest, rate, broker, email ? `%${email}%` : '%']
+      );
+
+      let loadRow = null;
+      if (existing.rows.length > 0) {
+        skippedCount++;
+        loadRow = existing.rows[0];
+      } else {
+        const loadNum = load.load_id || `DAT-${Math.floor(100000 + Math.random() * 900000)}`;
+        const ins = await pool.query(
+          `INSERT INTO loads (
+            load_number, broker_name, broker_contact, pickup_location, pickup_state,
+            delivery_location, delivery_state, pickup_date, pickup_time, delivery_time,
+            equipment_type, weight, miles, rate, rpm, status, source_type, notes
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'new','dat_sync',$16)
+          RETURNING *`,
+          [
+            loadNum,
+            broker,
+            [email, phone].filter(Boolean).join(' | ') || null,
+            origin,
+            load.origin_state || null,
+            dest,
+            load.destination_state || null,
+            pickupDate,
+            load.pickup_time || 'Ready Today',
+            load.delivery_time || 'Next Day',
+            equipment,
+            weight,
+            miles,
+            rate,
+            rpm,
+            notes
+          ]
+        );
+        loadRow = ins.rows[0];
+        insertedLoads.push(loadRow);
+      }
+
+      // Fleet Matching
+      if (carriers.length > 0 && loadRow) {
+        let bestCarrier = null;
+        for (const c of carriers) {
+          if (c.equipment) {
+            const eq = c.equipment.toLowerCase();
+            const loadEq = equipment.toLowerCase();
+            if (loadEq.includes(eq) || eq.includes(loadEq) || (eq.includes('box') && loadEq.includes('box'))) {
+              bestCarrier = c;
+              break;
+            }
+          } else {
+            bestCarrier = c;
+            break;
+          }
+        }
+        if (!bestCarrier) bestCarrier = carriers[0];
+
+        const defaultTruck = trucks.find(t => t.truck_number === bestCarrier.truck_number) || trucks[0];
+        const truckNum = defaultTruck?.truck_number || bestCarrier.truck_number || '101';
+        const formattedSms = formatDriverSms(load, truckNum);
+
+        matchedOffers.push({
+          load_id: loadRow.id,
+          load_number: loadRow.load_number,
+          origin,
+          destination: dest,
+          rate,
+          rpm,
+          carrier_id: bestCarrier.id,
+          carrier_name: bestCarrier.company_name || bestCarrier.contact_name,
+          driver_phone: bestCarrier.phone,
+          truck_number: truckNum,
+          formatted_sms: formattedSms
+        });
+      }
+    }
+
+    // Broadcast newly inserted loads to LoadsNexus real-time board
+    try {
+      const loadboardRouter = require('./loadboard');
+      if (typeof loadboardRouter.broadcastLoadboardEvent === 'function') {
+        for (const l of insertedLoads) {
+          loadboardRouter.broadcastLoadboardEvent('load_posted', l);
+        }
+      }
+    } catch (e) {
+      console.warn('[DAT Bulk Sync] Real-time broadcast warning:', e.message);
+    }
+
+    // Auto-cover & deduct stale DAT loads that are no longer active on the exchange
+    let coveredStaleCount = 0;
+    try {
+      const loadboardRouter = require('./loadboard');
+      const staleRes = await pool.query(
+        `UPDATE loads 
+         SET status = 'covered', updated_at = NOW() 
+         WHERE source_type = 'dat_sync' 
+           AND status = 'new' 
+           AND updated_at < NOW() - INTERVAL '15 minutes'
+         RETURNING id, load_number`
+      );
+      coveredStaleCount = staleRes.rows.length;
+      if (coveredStaleCount > 0 && typeof loadboardRouter.broadcastLoadboardEvent === 'function') {
+        staleRes.rows.forEach(r => {
+          loadboardRouter.broadcastLoadboardEvent('load_covered', { id: r.load_number || r.id, status: 'covered', covered_at: Date.now() });
+        });
+      }
+    } catch (e) {
+      console.warn('[DAT Bulk Sync] Stale cover check warning:', e.message);
+    }
+
+    res.json({
+      ok: true,
+      total_received: loadsToProcess.length,
+      inserted_count: insertedLoads.length,
+      skipped_duplicate_count: skippedCount,
+      covered_stale_count: coveredStaleCount,
+      matched_count: matchedOffers.length,
+      inserted_loads: insertedLoads,
+      matched_offers: matchedOffers,
+      message: `Successfully processed ${loadsToProcess.length} loads (${insertedLoads.length} new published to LoadsNexus, ${coveredStaleCount} covered/deducted, ${matchedOffers.length} matched to fleet).`
+    });
+  } catch (err) {
+    console.error('[DAT Bulk Sync] Error:', err);
+    res.status(500).json({ error: 'Could not sync bulk DAT loads: ' + err.message });
   }
 });
 
@@ -1052,7 +1248,30 @@ router.post('/generate-tracking', ...staff, async (req, res) => {
   }
 });
 
+async function autoCoverStaleDatLoads() {
+  try {
+    const loadboardRouter = require('./loadboard');
+    const { rows } = await pool.query(
+      `UPDATE loads 
+       SET status = 'covered', updated_at = NOW() 
+       WHERE source_type = 'dat_sync' 
+         AND status = 'new' 
+         AND updated_at < NOW() - INTERVAL '15 minutes'
+       RETURNING id, load_number`
+    );
+    if (rows.length > 0 && typeof loadboardRouter.broadcastLoadboardEvent === 'function') {
+      rows.forEach(r => {
+        loadboardRouter.broadcastLoadboardEvent('load_covered', { id: r.load_number || r.id, status: 'covered', covered_at: Date.now() });
+      });
+      console.log(`[LOADBOARD] Auto-covered and deducted ${rows.length} stale DAT loads from live exchange.`);
+    }
+  } catch (err) {
+    console.warn('[LOADBOARD] Auto-cover stale loads error:', err.message);
+  }
+}
+
 module.exports = router;
 module.exports.syncDueSources = syncDueSources;
 module.exports.sendDueMorningTexts = sendDueMorningTexts;
 module.exports.sendDueEmptySoonOffers = () => brain.sendDueEmptySoonOffers();
+module.exports.autoCoverStaleDatLoads = autoCoverStaleDatLoads;
