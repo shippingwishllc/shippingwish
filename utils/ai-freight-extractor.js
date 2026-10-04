@@ -237,7 +237,7 @@ async function saveLoadsToDatabase(loadsArray) {
 
   const saved = [];
   for (const l of loadsArray) {
-    const loadNumber = 'SW-AI-' + Math.floor(100000 + Math.random() * 900000);
+    const loadNumber = 'DAT-INGEST-' + Math.floor(100000 + Math.random() * 900000);
     const rpmNum = parseFloat(l.rpm || (l.rate / (l.miles || 1))).toFixed(2);
 
     try {

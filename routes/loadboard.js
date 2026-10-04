@@ -467,7 +467,9 @@ router.get('/search', optionalAuth, async (req, res) => {
     // Build parameterized dynamic SQL query for loads
     const sqlConditions = [
       `status NOT IN ('cancelled', 'expired')`,
-      `(status != 'covered' OR updated_at > NOW() - interval '30 seconds')`
+      `(status != 'covered' OR updated_at > NOW() - interval '30 seconds')`,
+      `load_number NOT LIKE 'SW-AI-%'`,
+      `COALESCE(broker_name, '') NOT ILIKE '%LoadNexus Direct%'`
     ];
     const sqlParams = [];
 
@@ -2644,6 +2646,27 @@ router.post('/ai-carrier-copilot', optionalAuth, async (req, res) => {
   } catch (err) {
     console.error('AI Carrier Copilot error:', err);
     res.status(500).json({ error: 'Could not generate negotiation analysis.' });
+  }
+});
+
+// ALL /api/loadboard/clean-fake-loads — Purge all SW-AI and fake Direct Broker loads
+router.all('/clean-fake-loads', optionalAuth, async (req, res) => {
+  try {
+    const deleted = await pool.query(`
+      DELETE FROM loads 
+      WHERE load_number LIKE 'SW-AI-%' 
+         OR broker_name ILIKE '%LoadNexus Direct%'
+         OR broker_contact ILIKE '%LoadNexus Direct%'
+      RETURNING id, load_number
+    `);
+    res.json({
+      ok: true,
+      deleted_count: deleted.rowCount,
+      deleted: deleted.rows,
+      message: `Successfully purged ${deleted.rowCount} fake SW-AI loads from database.`
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

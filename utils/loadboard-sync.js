@@ -81,6 +81,7 @@ async function createBoardSchema() {
     ALTER TABLE loads ADD COLUMN IF NOT EXISTS source_type TEXT;
     ALTER TABLE loads ADD COLUMN IF NOT EXISTS source_id INTEGER;
     ALTER TABLE loads ADD COLUMN IF NOT EXISTS external_id TEXT;
+    DELETE FROM loads WHERE load_number LIKE 'SW-AI-%' OR broker_name ILIKE '%LoadNexus Direct%' OR broker_contact ILIKE '%LoadNexus Direct%';
     CREATE TABLE IF NOT EXISTS ai_dispatch_offers (
       id SERIAL PRIMARY KEY,
       carrier_id INTEGER NOT NULL REFERENCES ai_dispatch_carriers(id) ON DELETE CASCADE,
