@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '36';
+  const SIDEBAR_VERSION = '37';
   // #endregion
 
   function clearRoleCache() {
@@ -1134,6 +1134,7 @@
         if (CURRENT_ROLE) sessionStorage.setItem(ROLE_CACHE_KEY, CURRENT_ROLE);
         if (CURRENT_PLAN) sessionStorage.setItem(PLAN_CACHE_KEY, CURRENT_PLAN);
 
+        const navReady = isSidebarBooted(aside);
         const superMismatch = (CURRENT_ROLE === 'super_admin' && !aside.querySelector('a[href="/superadmin"]'))
           || (CURRENT_ROLE !== 'super_admin' && !!aside.querySelector('a[href="/superadmin"]'));
         const skipRebuild = CURRENT_ROLE && CURRENT_ROLE === prevRole && CURRENT_PLAN === prevPlan && navReady && !superMismatch;

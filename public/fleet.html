@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7,8 +7,27 @@
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="stylesheet" href="/css/design-system.css?v=36">
+  <link rel="stylesheet" href="/css/design-system.css?v=37">
   <style>
+    .desk-tab-content {
+      min-height: 420px;
+    }
+    .stat-kpi-card {
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+      user-select: none;
+    }
+    .stat-kpi-card:hover {
+      border-color: var(--color-amber-400);
+      transform: translateY(-1px);
+    }
+    .stat-kpi-card.is-active-tab {
+      border-color: var(--color-amber-500) !important;
+      box-shadow: 0 0 0 1.5px var(--color-amber-500), 0 4px 12px rgba(245, 158, 11, 0.12) !important;
+      background: #ffffff;
+    }
+    .tab-pill-group .btn {
+      transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+    }
     .fleet-action-btns {
       display: flex;
       align-items: center;
@@ -86,7 +105,7 @@
 
       <!-- KPI STAT CARDS -->
       <div class="stat-card-grid" style="margin-bottom:var(--space-6);">
-        <div class="stat-kpi-card" style="cursor:pointer;" onclick="switchFleetTab('carriers')">
+        <div class="stat-kpi-card is-active-tab" id="kpi-card-carriers" style="cursor:pointer;" onclick="switchFleetTab('carriers')">
           <div class="stat-kpi-top">
             <span class="stat-kpi-title">Carrier Companies</span>
             <div class="stat-kpi-icon">🏢</div>
@@ -95,7 +114,7 @@
           <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Active carrier clients &amp; fleets</div>
         </div>
 
-        <div class="stat-kpi-card" style="cursor:pointer;" onclick="switchFleetTab('drivers')">
+        <div class="stat-kpi-card" id="kpi-card-drivers" style="cursor:pointer;" onclick="switchFleetTab('drivers')">
           <div class="stat-kpi-top">
             <span class="stat-kpi-title">Active Drivers</span>
             <div class="stat-kpi-icon">👤</div>
@@ -104,7 +123,7 @@
           <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Registered CDL drivers</div>
         </div>
 
-        <div class="stat-kpi-card" style="cursor:pointer;" onclick="switchFleetTab('trucks')">
+        <div class="stat-kpi-card" id="kpi-card-trucks" style="cursor:pointer;" onclick="switchFleetTab('trucks')">
           <div class="stat-kpi-top">
             <span class="stat-kpi-title">Power Units (Trucks)</span>
             <div class="stat-kpi-icon">🚛</div>
@@ -113,7 +132,7 @@
           <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Active semi-truck power units</div>
         </div>
 
-        <div class="stat-kpi-card" style="cursor:pointer;" onclick="switchFleetTab('trailers')">
+        <div class="stat-kpi-card" id="kpi-card-trailers" style="cursor:pointer;" onclick="switchFleetTab('trailers')">
           <div class="stat-kpi-top">
             <span class="stat-kpi-title">Trailers Roster</span>
             <div class="stat-kpi-icon">📦</div>
@@ -695,8 +714,13 @@
     ['carriers', 'drivers', 'trucks', 'trailers'].forEach(t => {
       const btn = document.getElementById(`tab-btn-${t}`);
       const tab = document.getElementById(`fleet-tab-${t}`);
+      const card = document.getElementById(`kpi-card-${t}`);
       if (btn) btn.className = (t === tabName) ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
       if (tab) tab.style.display = (t === tabName) ? 'block' : 'none';
+      if (card) {
+        if (t === tabName) card.classList.add('is-active-tab');
+        else card.classList.remove('is-active-tab');
+      }
     });
   }
   window.switchFleetTab = switchFleetTab;
@@ -1382,6 +1406,6 @@
   }
 </script>
 
-<script src="/js/app-shell.js?v=36"></script>
+<script src="/js/app-shell.js?v=37"></script>
 </body>
 </html>

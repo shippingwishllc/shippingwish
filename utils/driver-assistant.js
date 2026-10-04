@@ -653,6 +653,10 @@ Speak concisely in 1 to 2 sentences. If they hit voicemail, leave a brief notice
 
     // Immediately log into ai_dispatch_calls table so it appears in history
     if (data.id) {
+      try {
+        const { ensureAiCallingSchema } = require('../routes/ai-calling');
+        if (typeof ensureAiCallingSchema === 'function') await ensureAiCallingSchema();
+      } catch (_) {}
       await pool.query(`
         INSERT INTO ai_dispatch_calls (
           call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, audio_hash
@@ -665,7 +669,7 @@ Speak concisely in 1 to 2 sentences. If they hit voicemail, leave a brief notice
         'Fleet Carrier',
         `DRIVER_ASSISTANT_${String(scenario || 'checkin').toUpperCase()}`,
         `vapi-${data.id}`
-      ]).catch(() => {});
+      ]).catch((e) => console.warn('[Driver Assistant] Could not log initiated call:', e.message));
     }
 
     return { ok: true, callId: data.id, provider: 'vapi', assistant: assistantName, phone: targetPhone };
@@ -815,6 +819,10 @@ async function getVapiCallStatus(callId) {
   const sentiment = data.analysis?.structuredData?.sentiment || (data.endedReason ? String(data.endedReason).replace(/-/g, ' ').toUpperCase() : 'CALM');
 
   if (data.id) {
+    try {
+      const { ensureAiCallingSchema } = require('../routes/ai-calling');
+      if (typeof ensureAiCallingSchema === 'function') await ensureAiCallingSchema();
+    } catch (_) {}
     await pool.query(`
       INSERT INTO ai_dispatch_calls (
         call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, duration_seconds, recording_url, transcript, summary, call_sentiment, audio_hash
@@ -840,7 +848,7 @@ async function getVapiCallStatus(callId) {
       summary,
       sentiment,
       `vapi-${data.id}`
-    ]).catch(() => {});
+    ]).catch((e) => console.warn('[Driver Assistant] Could not update call status in db:', e.message));
   }
 
   return {

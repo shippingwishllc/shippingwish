@@ -40,7 +40,7 @@
   if (!aside) return;
   try {
     aside.classList.remove('is-open');
-    var BOOT_VER = '36';
+    var BOOT_VER = '37';
     if (sessionStorage.getItem('sw_sidebar_ver') !== BOOT_VER) return;
     var role = sessionStorage.getItem('sw_portal_role');
     var html = sessionStorage.getItem('sw_sidebar_html');

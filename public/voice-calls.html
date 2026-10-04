@@ -341,18 +341,25 @@
   </div>
 </div>
 
-<script src="/js/app-shell.js?v=36"></script>
+<script src="/js/app-shell.js?v=37"></script>
 <script>
 (function () {
   let allCalls = [];
   let activeFilter = 'all';
 
   async function loadCallsHistory() {
+    const tbody = document.getElementById('calls-tbody');
     try {
+      if (tbody && (!allCalls || allCalls.length === 0)) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#64748b;">Syncing and loading AI voice calls...</td></tr>`;
+      }
       const res = await fetch('/api/ai-calling/history', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch call history');
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `Server error (${res.status})`);
+      }
       const data = await res.json();
-      allCalls = data.calls || [];
+      allCalls = Array.isArray(data.calls) ? data.calls : [];
 
       // Update KPIs
       document.getElementById('kpi-total-calls').textContent = allCalls.length;
@@ -380,49 +387,17 @@
       renderCallsTable();
     } catch (err) {
       console.warn('Call history fetch error:', err);
-      // Fallback sample data if database is fresh
-      allCalls = [
-        {
-          id: 101,
-          call_sid: 'vapi-call-101',
-          driver_name: 'Robert Vance',
-          carrier_name: 'Vance Trucking LLC',
-          driver_phone: '+1 (214) 555-0144',
-          trigger_type: 'AI_OUTBOUND_SHIPPINGWISH',
-          call_status: 'COMPLETED',
-          duration_seconds: 165,
-          call_sentiment: 'POSITIVE / INTERESTED',
-          recording_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=sample-call.mp3',
-          created_at: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          id: 102,
-          call_sid: 'vapi-call-102',
-          driver_name: 'Samir Khan',
-          carrier_name: 'Midwest Express Carriers',
-          driver_phone: '+1 (312) 555-0188',
-          trigger_type: 'AI_INBOUND_DISPATCH',
-          call_status: 'COMPLETED',
-          duration_seconds: 240,
-          call_sentiment: 'TRANSFERRED_TO_MIGHTYCALL',
-          recording_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=sample-call.mp3',
-          created_at: new Date(Date.now() - 7200000).toISOString()
-        },
-        {
-          id: 103,
-          call_sid: 'vapi-call-103',
-          driver_name: 'David Miller',
-          carrier_name: 'Lone Star Logistics',
-          driver_phone: '+1 (713) 555-0122',
-          trigger_type: 'AI_OUTBOUND_LOADSNEXUS_CARRIER',
-          call_status: 'COMPLETED',
-          duration_seconds: 90,
-          call_sentiment: 'INTERESTED_19_PASS',
-          recording_url: '',
-          created_at: new Date(Date.now() - 14400000).toISOString()
-        }
-      ];
-      renderCallsTable();
+      if (tbody && allCalls.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align:center;padding:36px 20px;color:#dc2626;">
+              <div style="font-weight:700;font-size:14px;margin-bottom:6px;">⚠️ Call Records Load Failed</div>
+              <div style="font-size:12px;color:#64748b;margin-bottom:12px;">${escapeHtml(err.message)}</div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="loadCallsHistory()">🔄 Retry</button>
+            </td>
+          </tr>
+        `;
+      }
     }
   }
 
@@ -473,7 +448,19 @@
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#64748b;">No call records match the current filter.</td></tr>`;
+      if (allCalls.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align:center;padding:40px 20px;color:#64748b;">
+              <div style="font-size:24px;margin-bottom:8px;">📞</div>
+              <div style="font-weight:700;font-size:14px;color:#1e293b;margin-bottom:4px;">No AI voice calls recorded yet</div>
+              <div style="font-size:12px;color:#64748b;margin-bottom:14px;">Make a test call with the button above or from Settings &gt; AI Calling Engine.</div>
+              <button type="button" class="btn btn-primary btn-sm" onclick="openTriggerCallModal()">+ Call Lead with AI</button>
+            </td>
+          </tr>`;
+      } else {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#64748b;">No call records match the current filter.</td></tr>`;
+      }
       return;
     }
 

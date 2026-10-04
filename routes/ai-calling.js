@@ -295,12 +295,16 @@ async function ensureAiCallingSchema() {
         summary TEXT,
         call_sentiment VARCHAR(50) DEFAULT 'CALM',
         audio_hash VARCHAR(100) DEFAULT '',
-        created_at TIMESTAMP DEFAULT now(),
-        updated_at TIMESTAMP DEFAULT now()
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
       );
       ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS transcript TEXT;
       ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS summary TEXT;
+      ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS duration_seconds INT DEFAULT 0;
+      ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS call_sentiment VARCHAR(50) DEFAULT 'CALM';
       ALTER TABLE ai_dispatch_calls ALTER COLUMN recording_url TYPE TEXT;
+      ALTER TABLE ai_dispatch_calls ALTER COLUMN audio_hash DROP NOT NULL;
+      ALTER TABLE ai_dispatch_calls ALTER COLUMN audio_hash SET DEFAULT '';
     `);
     schemaReady = true;
   } catch (e) {
@@ -322,7 +326,7 @@ async function syncVapiCallsToDb() {
   if (!vapiApiKey) return;
 
   try {
-    const res = await fetch('https://api.vapi.ai/call?limit=25', {
+    const res = await fetch('https://api.vapi.ai/call?limit=50', {
       headers: { Authorization: `Bearer ${vapiApiKey}` }
     });
     const calls = await res.json().catch(() => []);
@@ -337,15 +341,20 @@ async function syncVapiCallsToDb() {
       }
       const transcript = c.transcript || (Array.isArray(c.messages) ? c.messages.map(m => `${m.role === 'assistant' ? '🤖 AI' : '👤 ' + (m.role || 'User')}: ${m.message}`).join('\n\n') : '');
       const summary = c.summary || c.analysis?.summary || '';
-      const phone = c.customer?.number || '+19177370021';
+      const phone = c.customer?.number || c.destination?.number || c.phoneNumber?.number || '+16094696004';
       const name = c.customer?.name || (c.assistant?.name ? `Lead (${c.assistant.name})` : 'Driver / Carrier');
       const sentiment = c.analysis?.structuredData?.sentiment || (c.endedReason ? String(c.endedReason).replace(/-/g, ' ').toUpperCase() : 'CALM');
       const status = c.status === 'ended' ? 'COMPLETED' : (c.status === 'in-progress' ? 'IN_PROGRESS' : 'QUEUED');
 
+      const rawCreatedAt = c.createdAt || c.startedAt;
+      const callCreatedAt = (rawCreatedAt && !isNaN(new Date(rawCreatedAt).getTime()))
+        ? new Date(rawCreatedAt)
+        : new Date();
+
       await pool.query(`
         INSERT INTO ai_dispatch_calls (
           call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, duration_seconds, recording_url, transcript, summary, call_sentiment, audio_hash, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, COALESCE($13, now()))
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         ON CONFLICT (call_sid) DO UPDATE SET
           call_status = EXCLUDED.call_status,
           duration_seconds = CASE WHEN EXCLUDED.duration_seconds > 0 THEN EXCLUDED.duration_seconds ELSE ai_dispatch_calls.duration_seconds END,
@@ -367,8 +376,10 @@ async function syncVapiCallsToDb() {
         summary,
         sentiment,
         `vapi-${c.id}`,
-        c.createdAt || c.startedAt || null
-      ]).catch(() => {});
+        callCreatedAt
+      ]).catch((e) => {
+        console.warn('[AI Calling] Failed to save synced call ' + c.id + ':', e.message);
+      });
     }
   } catch (err) {
     console.warn('[AI Calling] Vapi history sync note:', err.message);
@@ -455,7 +466,11 @@ router.get('/history', requireAuth, async (req, res) => {
   try {
     await ensureAiCallingSchema();
     // Two-way sync: automatically fetch recent calls from Vapi API into DB
-    await syncVapiCallsToDb();
+    try {
+      await syncVapiCallsToDb();
+    } catch (syncErr) {
+      console.warn('[AI Calling] Vapi sync error during GET /history:', syncErr.message);
+    }
 
     const result = await pool.query(`
       SELECT id, call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, duration_seconds, recording_url, transcript, summary, call_sentiment, created_at
@@ -464,8 +479,11 @@ router.get('/history', requireAuth, async (req, res) => {
     `);
     res.json({ ok: true, calls: result.rows });
   } catch (err) {
+    console.error('[AI Calling] Failed to fetch voice history:', err);
     res.status(500).json({ error: 'Could not fetch voice history: ' + err.message });
   }
 });
 
 module.exports = router;
+module.exports.ensureAiCallingSchema = ensureAiCallingSchema;
+module.exports.syncVapiCallsToDb = syncVapiCallsToDb;
