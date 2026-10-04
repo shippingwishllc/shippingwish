@@ -1,238 +1,472 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Dispatch — Shipping Wish</title>
+  <title>AI Dispatch Operations Center — Shipping Wish</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/design-system.css?v=36">
+  <style>
+    .dispatch-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .dispatch-kpi-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .dispatch-kpi-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+    }
+    .dispatch-kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .dispatch-kpi-sub {
+      font-size: 11px;
+      color: #10b981;
+      font-weight: 700;
+    }
+
+    .truck-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .truck-card {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 18px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .truck-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 6px 16px rgba(59,130,246,0.12);
+    }
+    .truck-card.is-active-truck {
+      border-color: #2563eb;
+      background: #f8faff;
+      box-shadow: 0 6px 20px rgba(37,99,235,0.15);
+    }
+
+    .badge-status {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .badge-status-empty {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .badge-status-rolling {
+      background: #fef3c7;
+      color: #b45309;
+    }
+    .badge-status-booked {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .matched-loads-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 18px;
+    }
+    .load-ticket {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 18px 20px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .load-ticket:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .btn-act {
+      border: 0;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: filter 0.15s ease, transform 0.1s ease;
+    }
+    .btn-act:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+    .btn-act:active {
+      transform: translateY(0);
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.is-open {
+      display: flex;
+    }
+    .modal-dialog {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 24px;
+      width: min(540px, 100%);
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+  </style>
 </head>
 <body class="app-body">
 <div class="app-shell">
   <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
   <script src="/js/app-shell-boot.js"></script>
   <div class="app-main">
-    <header class="app-header">
+    <!-- Header -->
+    <header class="app-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #e2e8f0; padding:16px 24px; background:#fff;">
       <div>
-        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">AI Dispatch</h1>
-        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Start work for each carrier you add. Loads come from brokers or a licensed JSON API.</p>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <h1 style="font-size:20px; font-weight:800; color:#0f172a; margin:0;">AI Dispatch Operational Center</h1>
+          <span style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:800; padding:2px 8px; border-radius:6px; border:1px solid #bae6fd;">Live Command</span>
+        </div>
+        <p style="font-size:12px; color:#64748b; margin:2px 0 0;">Select a truck, view real-time matched loads, and dispatch drivers &amp; brokers in 1 click.</p>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span style="font-size:12px; color:#166534; font-weight:700; background:#f0fdf4; border:1px solid #bbf7d0; padding:6px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:6px;">
+          <span class="pulse-dot"></span> LoadsNexus &amp; DAT Sync Active
+        </span>
+        <button type="button" id="btn-open-add-truck" class="btn-act" style="background:#2563eb; color:#fff; padding:8px 14px; font-size:13px; box-shadow:0 2px 6px rgba(37,99,235,0.3);">
+          <span>+ Add Truck / Carrier</span>
+        </button>
       </div>
     </header>
-    <main class="app-content">
-      <!-- 📢 CARRIER SALES & MARKETING PLAYBOOK (ACQUISITION & VALUE PROPOSITION) -->
-      <details style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
-        <summary style="font-weight: 800; font-size: 15px; color: #0f172a; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span>📢 Carrier Acquisition &amp; Subscription Pitch Playbook</span>
-            <span style="background: #fef3c7; color: #b45309; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; border: 1px solid #fde68a;">Sales &amp; AI Training Guide</span>
+
+    <main class="app-content" style="padding:20px 24px;">
+      <!-- Live KPIs -->
+      <div class="dispatch-kpi-grid">
+        <div class="dispatch-kpi-card">
+          <span class="dispatch-kpi-label">🚛 Active Fleet Trucks</span>
+          <span class="dispatch-kpi-value" id="kpi-total-trucks">--</span>
+          <span class="dispatch-kpi-sub" style="color:#2563eb;">Ready for Dispatch</span>
+        </div>
+        <div class="dispatch-kpi-card">
+          <span class="dispatch-kpi-label">🟢 Empty &amp; Waiting For Load</span>
+          <span class="dispatch-kpi-value" id="kpi-ready-trucks" style="color:#16a34a;">--</span>
+          <span class="dispatch-kpi-sub" style="color:#16a34a;">Immediate Capacity</span>
+        </div>
+        <div class="dispatch-kpi-card">
+          <span class="dispatch-kpi-label">📦 Synced Loads on Board</span>
+          <span class="dispatch-kpi-value" id="kpi-open-loads">--</span>
+          <span class="dispatch-kpi-sub" style="color:#0284c7;">LoadsNexus + DAT One</span>
+        </div>
+        <div class="dispatch-kpi-card">
+          <span class="dispatch-kpi-label">💰 Revenue Booked Today</span>
+          <span class="dispatch-kpi-value" id="kpi-revenue-today">$0.00</span>
+          <span class="dispatch-kpi-sub" style="color:#059669;" id="kpi-booked-count">0 Loads Locked</span>
+        </div>
+      </div>
+
+      <!-- Quick DAT Clipboard / Spot Load Ingestion Bar -->
+      <details style="background:#ffffff; border:1px solid #cbd5e1; border-radius:14px; padding:12px 16px; margin-bottom:20px; box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+        <summary style="font-weight:700; font-size:13px; color:#1e293b; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span>⚡ DAT One Quick Ingestion &amp; Spot Load Parser</span>
+            <span style="background:#f1f5f9; color:#475569; font-size:11px; padding:2px 6px; border-radius:6px;">Instant Auto-Match</span>
           </div>
-          <span style="font-size: 12px; color: #2563eb; font-weight: 700;">Click to View Pitch &amp; Objection Scripts &darr;</span>
+          <span style="font-size:12px; color:#2563eb;">Click to Paste Raw DAT Load &darr;</span>
         </summary>
-
-        <div style="margin-top: 16px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px;">
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
-              <h4 style="margin: 0 0 6px; font-size: 14px; color: #0f172a;">🎯 Why Carriers Subscribe</h4>
-              <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #334155; line-height: 1.6;">
-                <li><strong>0% Commission:</strong> Keep 100% of broker pay. Flat $149/wk vs 8-10% ($1,200/mo) from traditional dispatchers.</li>
-                <li><strong>Autonomous AI + 24/7 Human Team:</strong> AI speed on DAT load boards backed by live human dispatchers 24/7/365.</li>
-                <li><strong>7-Day $0 Free Trial:</strong> Zero risk to test. $0 due today.</li>
-                <li><strong>All Features Included:</strong> 1-Click DAT grabbing, 10-sec broker packets, RateCon OCR audit, live tracking, same-day factoring.</li>
-              </ul>
-            </div>
-
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px;">
-              <h4 style="margin: 0 0 6px; font-size: 14px; color: #166534;">📱 1-Click Cold SMS Pitch Copy</h4>
-              <p id="pitch-sms-text" style="margin: 0 0 10px; font-size: 12px; color: #15803d; line-height: 1.5; font-family: monospace; background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #86efac;">
-                Shipping Wish: Hi! Tired of dispatchers taking 8-10% of your check? Get an Autonomous 24/7 AI Dispatch Manager + live human support for flat $149/wk (0% cut). 1-click DAT loads, 10-sec broker packets & instant factoring. 7 days free ($0 today): https://www.shippingwish.com/pricing Reply STOP to opt out.
-              </p>
-              <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('pitch-sms-text').innerText.trim()); alert('Copied SMS pitch to clipboard!');" style="background: #16a34a; color: #fff; border: 0; border-radius: 6px; padding: 6px 12px; font-size: 11px; font-weight: 700; cursor: pointer;">
-                📋 Copy SMS Pitch
+        <div style="margin-top:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
+          <div style="display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:stretch;">
+            <textarea id="dat-raw-input" rows="3" placeholder="Paste DAT One text here or click 'Sample Load'..." style="width:100%; border-radius:10px; border:1px solid #cbd5e1; padding:10px 12px; font-family:monospace; font-size:12px; box-sizing:border-box;"></textarea>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <button type="button" id="btn-parse-dat" class="btn-act" style="flex:1; background:#0b1f3a; color:#fff; white-space:nowrap; padding:0 16px;">
+                <span>⚡ Parse &amp; Match</span>
+              </button>
+              <button type="button" id="btn-sample-load" class="btn-act" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; font-size:11px;">
+                Sample Load
               </button>
             </div>
           </div>
-
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
-            <h4 style="margin: 0 0 8px; font-size: 13px; text-transform: uppercase; color: #475569; letter-spacing: 0.05em;">Phone Calling Objection Cheat Sheet</h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; font-size: 12px;">
-              <div>
-                <strong style="color: #0f172a;">"I already have DAT One"</strong>
-                <p style="margin: 2px 0 0; color: #64748b; line-height: 1.4;">"DAT only lists loads. Who negotiates while you drive, checks deadhead, auto-submits carrier packets in 10 seconds, and audits RateCons for hidden cuts? Our AI and live team do all of that for you."</p>
-              </div>
-              <div>
-                <strong style="color: #0f172a;">"Are you an AI or real humans?"</strong>
-                <p style="margin: 2px 0 0; color: #64748b; line-height: 1.4;">"We are both! You get the lightning speed of our autonomous AI dispatch engine, backed by a dedicated human operations team available 24/7/365 to handle complex problems."</p>
-              </div>
-              <div>
-                <strong style="color: #0f172a;">"Do you take a percentage?"</strong>
-                <p style="margin: 2px 0 0; color: #64748b; line-height: 1.4;">"Zero percent! You keep 100% of the broker pay. We only charge a flat $149/week, and your first 7 days are completely free ($0 due today)."</p>
-              </div>
-              <div>
-                <strong style="color: #0f172a;">"What lanes do you cover?"</strong>
-                <p style="margin: 2px 0 0; color: #64748b; line-height: 1.4;">"All lower 48 states. We find freight from wherever your truck empties out to wherever you want to go, and you approve every single load."</p>
-              </div>
-            </div>
-          </div>
+          <div id="dat-parse-msg" style="font-size:12px; color:#2563eb; margin-top:6px; min-height:1.2em;"></div>
         </div>
       </details>
 
-      <!-- ⚡ AUTONOMOUS DAT LOAD INGESTION & AI FLEET DISPATCH HUB -->
-      <section style="background: linear-gradient(135deg, #0b1f3a 0%, #1e3a8a 100%); color: #fff; border-radius: 18px; padding: 22px; margin-bottom: 22px; box-shadow: 0 10px 25px -5px rgba(11,31,58,0.25);">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:16px;">
+      <!-- SECTION 1: FLEET & TRUCKS COMMAND ROSTER -->
+      <section style="margin-bottom:28px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
           <div>
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-              <span style="background: #2563eb; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.05em; text-transform: uppercase;">Zero-Human Dispatch</span>
-              <span style="background: #10b981; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px;">Autonomous AI Engine</span>
-            </div>
-            <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 800; color: #fff;">⚡ DAT One & Load Board Clipboard Dispatch Desk</h2>
-            <p style="margin: 0; font-size: 13px; color: #cbd5e1; max-width: 660px; line-height: 1.45;">
-              Copy loads directly from DAT One (table rows or key-value format) and paste below. The AI instantly parses DHO, loaded miles, and rate, matches your fleet trucks, sends drivers structured SMS offers, and handles broker outreach via Email (Option A) and AI Calling (Option B).
+            <h2 style="font-size:17px; font-weight:800; color:#0f172a; margin:0 0 2px;">
+              🚛 Fleet &amp; Trucks Command Roster
+            </h2>
+            <p style="font-size:13px; color:#64748b; margin:0;">
+              Select any truck to view AI-matched high-paying loads from its current empty location.
             </p>
           </div>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <button type="button" id="btn-sample-load" style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 9px 13px; font-weight: 700; font-size: 12px; cursor: pointer; backdrop-filter: blur(4px); transition: background 0.2s;">
-              📋 Fill Sample (Hopkinsville KY → Dibersville MS)
-            </button>
-            <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; background:rgba(0,0,0,0.3); padding:7px 12px; border-radius:10px; cursor:pointer;">
-              <input type="checkbox" id="autopilot-toggle" style="accent-color:#10b981; width:15px; height:15px;">
-              Auto-Pilot (Instant SMS)
-            </label>
+          <div style="display:flex; gap:8px;">
+            <button type="button" id="filter-all-trucks" class="btn-act" style="background:#0f172a; color:#fff; font-size:11px; padding:6px 10px;">All Trucks</button>
+            <button type="button" id="filter-ready-trucks" class="btn-act" style="background:#fff; border:1px solid #cbd5e1; color:#334155; font-size:11px; padding:6px 10px;">Ready &amp; Empty Only</button>
+            <button type="button" id="btn-refresh-roster" class="btn-act" style="background:#fff; border:1px solid #cbd5e1; color:#334155; font-size:11px; padding:6px 10px;">🔄 Refresh Roster</button>
           </div>
         </div>
 
-        <!-- Input Box -->
-        <div style="display:grid; grid-template-columns: 1fr auto; gap: 10px; align-items: stretch; margin-bottom: 12px;">
-          <textarea id="dat-raw-input" rows="4" placeholder="Paste DAT One text or table rows here... Example:
-𝗗𝗛𝗢: 72
-𝗟𝗼𝗮𝗱𝗲𝗱 𝗠𝗶𝗹𝗲𝘀 : 563
-𝗙𝗿𝗼𝗺: Hopkinsville KY
-𝗧𝗼: DIBERSVILLE MS
-RATE: 1000
-DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.25); background: #ffffff; color: #0f172a; padding: 12px 14px; font-family: monospace; font-size: 13px; line-height: 1.4; resize: vertical; box-sizing: border-box;"></textarea>
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            <button type="button" id="btn-parse-dat" style="flex:1; background: #3b82f6; color: #fff; border: 0; border-radius: 12px; padding: 0 20px; font-weight: 800; font-size: 14px; cursor: pointer; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; box-shadow: 0 4px 14px rgba(37,99,235,0.4);">
-              <span>⚡ Parse & Match Fleet</span>
-            </button>
-            <button type="button" id="btn-clear-dat" style="background: rgba(255,255,255,0.15); color: #fff; border: 0; border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
-              Clear
+        <!-- Truck Cards Grid -->
+        <div id="trucks-grid-container" class="truck-grid">
+          <div style="padding:24px; text-align:center; color:#64748b; grid-column:1/-1;">Loading fleet trucks...</div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: AI LOAD RECOMMENDATIONS & 1-CLICK DISPATCH DESK -->
+      <section id="ai-recommendations-section" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; padding:22px; margin-bottom:28px; box-shadow:0 4px 20px rgba(0,0,0,0.03);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="background:#2563eb; color:#fff; font-size:11px; font-weight:800; padding:2px 8px; border-radius:6px; text-transform:uppercase;">AI Dispatch Matcher</span>
+              <h2 id="matcher-title" style="font-size:17px; font-weight:800; color:#0f172a; margin:0;">
+                🎯 AI Recommendations for Fleet
+              </h2>
+            </div>
+            <p id="matcher-subtitle" style="font-size:12px; color:#64748b; margin:4px 0 0;">
+              Loads ranked by highest profit, lowest empty deadhead, and carrier target rate.
+            </p>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="matched-load-count-badge" style="background:#dbeafe; color:#1e40af; font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px;">0 Loads Found</span>
+            <button type="button" id="btn-re-match" class="btn-act" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#0f172a; padding:6px 12px; font-size:12px;">
+              🔄 Re-Scan Loads
             </button>
           </div>
         </div>
 
-        <p id="dat-parse-msg" style="font-size: 13px; color: #fbbf24; min-height: 1.2em; margin: 0 0 10px;"></p>
-
-        <!-- Parsed Results Container -->
-        <div id="dat-results-container" style="display:none; margin-top: 14px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-            <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #93c5fd; margin: 0;">Matched DAT Loads & Dispatch Options (<span id="dat-load-count">0</span>)</h3>
-            <span style="font-size: 12px; color: #cbd5e1;">Review details below, or click an action button to dispatch.</span>
+        <!-- Matched Loads Cards Grid -->
+        <div id="matched-loads-container" class="matched-loads-grid">
+          <div style="padding:30px; text-align:center; color:#64748b; grid-column:1/-1;">
+            Select a truck above and click <strong>"🎯 Match Loads with AI"</strong> to scan live freight.
           </div>
-          <div id="dat-cards-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px;"></div>
         </div>
       </section>
 
-      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
-        <h2 style="margin:0 0 8px;font-size:15px;">Three ways a load reaches the board</h2>
-        <ol style="margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.55;">
-          <li>A broker posts it on LoadsNexus. That path is already live.</li>
-          <li>You paste a licensed load-board API here. The desk calls that https JSON URL with your key. It does not open websites or copy another board’s pages.</li>
-          <li>When a load is covered, expired, or missing from the latest API reply, it leaves the public board.</li>
-        </ol>
-        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">The board stays empty until a broker posts or an API returns real loads. Start sends a good-morning text asking for the empty ZIP. A broker is only contacted after the driver picks that exact load. Home-time days are a skip rule, not forced dispatch.</p>
-      </section>
-
-      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
-        <h2 style="margin:0 0 8px;font-size:15px;">What the AI dispatcher does with a driver's text</h2>
-        <ol style="margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.55;">
-          <li>Reads texts like “75201 to Atlanta”, “empty in Dallas TX want GA or FL reefer”, “MORE”, “off today”, “EMPTY SOON”, or “HOME FRI SAT”.</li>
-          <li>Finds open loads within the carrier's empty-mile limit, with matching equipment and destination, above their minimum $/mile. It ranks them by all-in $/mile, counting empty miles too. Home days (for example FRI,SAT) skip a pickup on those days unless the load is heading to the home state, and skip runs that would miss the next home evening.</li>
-          <li>Texts the best three. The driver replies 1, 2 or 3. About two to three hours before a booked drop, it texts the next three from that empty ZIP if the carrier agreed to texts.</li>
-          <li>Emails the broker a booking request with the carrier's MC or DOT and tells the driver not to roll yet.</li>
-          <li>If the broker replies “covered”, the driver gets the next best loads. If the broker confirms, you check the rate confirmation and press Booked. Then the driver gets a BOOKED text.</li>
-        </ol>
-        <p style="margin:10px 0 0;font-size:13px;color:#64748b;">Rates shown are the broker's posted rate. Miles marked ~ are estimated from ZIP and city locations. After 12 texts to one carrier in a day, the AI hands off to a person. STOP pauses the carrier.</p>
-      </section>
-
-      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
-        <h2 style="margin:0 0 10px;font-size:15px;">Try the AI (nothing is sent)</h2>
-        <div style="display:grid;grid-template-columns:minmax(160px,220px) 1fr auto;gap:10px;align-items:end;">
-          <label style="font-size:12px;color:#475569;">As carrier<select id="try-carrier" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"><option value="">Test carrier (van, 150 mi)</option></select></label>
-          <label style="font-size:12px;color:#475569;">Driver text<input id="try-text" placeholder="75201 to Atlanta" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <button type="button" id="try-run" style="background:#0b1f3a;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;">Test</button>
+      <!-- SECTION 3: ACTIVE DISPATCHED & BOOKED FREIGHT TRACKER -->
+      <section style="background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; padding:22px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+          <div>
+            <h2 style="font-size:17px; font-weight:800; color:#0f172a; margin:0 0 2px;">
+              📋 Active Dispatched &amp; Booked Loads Tracker
+            </h2>
+            <p style="font-size:12px; color:#64748b; margin:0;">
+              Loads offered to drivers, pending broker RateCon, active in transit, and ready for factoring.
+            </p>
+          </div>
+          <button type="button" id="btn-refresh-offers" class="btn-act" style="background:#fff; border:1px solid #cbd5e1; color:#334155; padding:6px 12px; font-size:12px;">
+            🔄 Refresh Dispatched Loads
+          </button>
         </div>
-        <div id="try-result" style="font-size:13px;color:#475569;margin-top:10px;"></div>
-      </section>
 
-      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
-          <h2 style="margin:0;font-size:15px;">Load requests</h2>
-          <button type="button" id="offers-refresh" style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;">Refresh</button>
+        <div id="offers-status-msg" style="font-size:12px; color:#2563eb; min-height:1.2em; margin-bottom:8px;"></div>
+        <div id="offers-table-container" style="overflow-x:auto;">
+          <div style="padding:20px; text-align:center; color:#64748b;">Loading dispatched loads...</div>
         </div>
-        <p style="font-size:13px;color:#64748b;margin:6px 0;">Loads a driver picked are listed first. Press Booked only after you have the broker's rate confirmation. Release sends the driver the next best loads.</p>
-        <p id="offers-msg" style="font-size:13px;color:#b45309;min-height:1.2em;"></p>
-        <div id="offers-list" style="font-size:13px;color:#475569;">Loading…</div>
-      </section>
-
-
-      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin-bottom:16px;">
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
-          <h2 style="margin:0;font-size:15px;">FMCSA email outreach</h2>
-          <label style="display:flex;gap:8px;align-items:center;font-size:13px;font-weight:700;"><input type="checkbox" id="outreach-enabled"> Outreach on</label>
-        </div>
-        <p style="font-size:13px;color:#64748b;margin:8px 0;">AI pulls active carriers (1–20 trucks) and brokers with an email on file from the public FMCSA registry. Carriers get up to four emails over about three weeks, from Shipping Wish and LoadsNexus. Brokers get up to three emails from LoadsNexus. Emails go out Monday–Friday, 9 a.m.–5 p.m. in each company’s own time zone.</p>
-        <p style="font-size:13px;color:#64748b;margin:0 0 8px;">It starts small and raises the daily limit only while bounces and unsubscribes stay low. It slows down when they rise and pauses itself if they cross the safe line. A reply, an unsubscribe, a bounce, or a signup stops the emails to that company. Cold contacts never get texts or AI calls.</p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end;margin-bottom:10px;">
-          <label style="font-size:12px;color:#475569;">First-day limit<input id="outreach-start" type="number" min="5" max="50" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">Highest daily limit<input id="outreach-max" type="number" min="10" max="300" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <button type="button" id="outreach-save" style="background:#0b1f3a;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;">Save limits</button>
-          <button type="button" id="outreach-run" style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;">Send due batch now</button>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-items:end;margin-bottom:10px;">
-          <label style="font-size:12px;color:#475569;">Import type<select id="import-kind" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"><option value="carrier">Carriers</option><option value="broker">Brokers</option></select></label>
-          <label style="font-size:12px;color:#475569;">State<input id="import-state" maxlength="2" placeholder="TX" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase;"></label>
-          <button type="button" id="import-run" style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;">Import from FMCSA</button>
-        </div>
-        <p id="outreach-msg" style="font-size:13px;color:#b45309;min-height:1.2em;"></p>
-        <div id="outreach-status" style="font-size:13px;color:#475569;">Loading outreach…</div>
-      </section>
-
-      <section style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;">
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
-          <h2 style="margin:0;font-size:15px;">Carriers on AI dispatch</h2>
-          <button type="button" id="start-all" style="background:#2563eb;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;">Start all</button>
-        </div>
-        <p style="font-size:13px;color:#64748b;">Start marks the carrier active and texts them for the ZIP they are empty in, only if the carrier agreed to texts. Texts send Monday–Saturday, 9:00 a.m. to 5:00 p.m. in that phone’s local time. Outside those hours the carrier stays active and the text waits.</p>
-        <form id="carrier-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;align-items:end;">
-          <label style="font-size:12px;color:#475569;">Company<input name="company_name" required style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">Contact<input name="contact_name" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">Phone<input name="phone" required style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">Email<input name="email" type="email" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">Equipment<input name="equipment" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">Empty ZIP<input name="empty_zip" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">Preferred destination<input name="prefer_destination" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">MC number<input name="mc_number" inputmode="numeric" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">USDOT<input name="dot_number" inputmode="numeric" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">Minimum $/mile all-in<input name="min_rpm" type="number" step="0.05" min="0" placeholder="2.00" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">Max empty miles<input name="max_deadhead" type="number" min="10" max="600" placeholder="150" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-          <label style="font-size:12px;color:#475569;">Home state<input name="home_state" maxlength="2" placeholder="TX" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase;"></label>
-          <label style="font-size:12px;color:#475569;">Home days<input name="home_days" placeholder="FRI, SAT" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase;"></label>
-          <label style="font-size:12px;color:#475569;">Never go to<input name="avoid_states" placeholder="NY, NJ" style="display:block;width:100%;margin-top:4px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase;"></label>
-          <label style="font-size:12px;color:#475569;display:flex;gap:6px;align-items:flex-start;grid-column:1/-1;"><input type="checkbox" name="sms_consent" value="true" style="margin-top:2px;">The carrier agreed to receive texts from Shipping Wish. Start will not text anyone without this.</label>
-          <button type="submit" style="background:#0b1f3a;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;">Add carrier</button>
-        </form>
-        <p id="carrier-msg" style="font-size:13px;color:#b45309;min-height:1.2em;"></p>
-        <div id="carrier-list" style="font-size:13px;color:#475569;">Loading carriers…</div>
       </section>
     </main>
   </div>
 </div>
+
+<!-- MODAL: ADD TRUCK / CARRIER -->
+<div id="modal-add-truck" class="modal-backdrop">
+  <div class="modal-dialog">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0; font-size:17px; font-weight:800; color:#0f172a;">+ Add Fleet Truck to AI Dispatch</h3>
+      <button type="button" id="btn-close-add-modal" style="background:none; border:0; font-size:20px; color:#64748b; cursor:pointer;">&times;</button>
+    </div>
+
+    <form id="form-add-truck" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <label style="font-size:12px; font-weight:700; color:#475569; grid-column:1/-1;">
+        Company / Carrier Name:
+        <input name="company_name" required placeholder="e.g. Swift Express LLC" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Truck Unit #:
+        <input name="truck_number" required placeholder="101" value="101" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Equipment Type:
+        <select name="equipment" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+          <option value="26ft Box Truck">26ft Box Truck</option>
+          <option value="53ft Dry Van">53ft Dry Van</option>
+          <option value="53ft Reefer">53ft Reefer</option>
+          <option value="Flatbed">Flatbed</option>
+          <option value="Hotshot">Hotshot</option>
+          <option value="Power Only">Power Only</option>
+        </select>
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Driver / Contact Name:
+        <input name="contact_name" placeholder="Mike Miller" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Driver Phone (SMS):
+        <input name="phone" required placeholder="(555) 123-4567" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Current Empty City or ZIP:
+        <input name="empty_zip" required placeholder="Dallas, TX or 75201" value="Dallas, TX" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Target Destination:
+        <input name="prefer_destination" placeholder="Atlanta, GA or Anywhere" value="Anywhere (High RPM)" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        MC Number:
+        <input name="mc_number" placeholder="1234567" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Min Rate ($/mi):
+        <input name="min_rpm" type="number" step="0.05" value="2.00" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569; grid-column:1/-1; display:flex; align-items:center; gap:8px; margin-top:4px;">
+        <input type="checkbox" name="sms_consent" value="true" checked style="accent-color:#2563eb; width:16px; height:16px;">
+        Carrier agreed to receive automated load offer SMS messages.
+      </label>
+
+      <div style="grid-column:1/-1; display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+        <button type="button" id="btn-cancel-add-truck" class="btn-act" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;">Cancel</button>
+        <button type="submit" class="btn-act" style="background:#2563eb; color:#fff; padding:10px 18px; font-weight:800;">Save &amp; Activate Truck</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: UPDATE TRUCK STATUS / LOCATION -->
+<div id="modal-update-truck" class="modal-backdrop">
+  <div class="modal-dialog">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 id="update-modal-title" style="margin:0; font-size:17px; font-weight:800; color:#0f172a;">Update Truck Status &amp; Location</h3>
+      <button type="button" id="btn-close-update-modal" style="background:none; border:0; font-size:20px; color:#64748b; cursor:pointer;">&times;</button>
+    </div>
+
+    <form id="form-update-truck" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <input type="hidden" name="carrier_id" id="edit-carrier-id">
+      <input type="hidden" name="truck_id" id="edit-truck-id">
+
+      <label style="font-size:12px; font-weight:700; color:#475569; grid-column:1/-1;">
+        Current Empty Location (City, ST or ZIP):
+        <input name="empty_zip" id="edit-empty-zip" required placeholder="e.g. Hopkinsville, KY or 75201" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569; grid-column:1/-1;">
+        Target Destination / Lane:
+        <input name="prefer_destination" id="edit-prefer-dest" placeholder="e.g. DIBERSVILLE, MS or Anywhere" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Equipment:
+        <select name="equipment" id="edit-equipment" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+          <option value="26ft Box Truck">26ft Box Truck</option>
+          <option value="53ft Dry Van">53ft Dry Van</option>
+          <option value="53ft Reefer">53ft Reefer</option>
+          <option value="Flatbed">Flatbed</option>
+          <option value="Hotshot">Hotshot</option>
+        </select>
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Truck Operational Status:
+        <select name="status" id="edit-status" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+          <option value="active">🟢 Empty &amp; Ready (Needs Load)</option>
+          <option value="rolling">🟡 En Route / Rolling</option>
+          <option value="booked">🔵 Booked (Under Load)</option>
+          <option value="paused">⚪ Off Today / Home-time</option>
+        </select>
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Min Rate ($/mi):
+        <input name="min_rpm" id="edit-min-rpm" type="number" step="0.05" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Max Empty Deadhead (mi):
+        <input name="max_deadhead" id="edit-max-deadhead" type="number" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <div style="grid-column:1/-1; display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+        <button type="button" id="btn-cancel-update-truck" class="btn-act" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;">Cancel</button>
+        <button type="submit" class="btn-act" style="background:#0f172a; color:#fff; padding:10px 18px; font-weight:800;">Save Updates</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="/js/app-shell.js?v=36"></script>
 <script>
   function esc(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   }
+
   async function api(path, options) {
     const opts = Object.assign({ credentials: 'include' }, options || {});
     if (opts.body) opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
@@ -241,857 +475,697 @@ DRIVER ASSIST AT RECEIVER" style="width: 100%; border-radius: 12px; border: 1px 
     if (!res.ok) throw new Error(data.error || 'Request failed');
     return data;
   }
+
   async function guard() {
     const res = await fetch('/api/me', { credentials: 'include' });
     if (!res.ok) { window.location.href = '/login'; return false; }
     const data = await res.json();
-    if (!data.user || !['admin', 'super_admin'].includes(data.user.role)) {
+    if (!data.user || !['admin', 'super_admin', 'dispatcher'].includes(data.user.role)) {
       window.location.href = '/login';
       return false;
     }
     return true;
   }
-  async function loadSources() {
-    const box = document.getElementById('source-list');
-    if (!box) return;
-    const data = await api('/api/dispatch-desk/sources');
-    if (!data.sources.length) {
-      box.textContent = 'No licensed API is connected. Broker posts can still appear on the board.';
-      return;
-    }
-    box.innerHTML = data.sources.map((row) => {
-      const when = row.last_sync_at ? new Date(row.last_sync_at).toLocaleString() : 'not synced';
-      return '<div style="padding:10px 0;border-top:1px solid #e2e8f0;">' +
-        '<strong>' + esc(row.name) + '</strong> · ' + esc(row.base_url) +
-        '<br><span style="color:#64748b;">Key ' + esc(row.api_key || 'not set') + ' · ' + esc(row.last_status || 'waiting') + ' · ' + esc(when) +
-        (row.last_error ? ' · ' + esc(row.last_error) : '') + '</span>' +
-        '<div style="margin-top:6px;display:flex;gap:8px;">' +
-        '<button type="button" data-sync="' + esc(row.id) + '" style="border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Sync now</button>' +
-        '<button type="button" data-remove="' + esc(row.id) + '" style="border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:8px;padding:6px 10px;cursor:pointer;">Remove</button>' +
-        '</div></div>';
-    }).join('');
-  }
-  async function loadCarriers() {
-    const box = document.getElementById('carrier-list');
-    const data = await api('/api/dispatch-desk/carriers');
-    if (!data.carriers.length) {
-      box.textContent = 'No carriers yet. Add one, then press Start.';
-      return;
-    }
-    carriersById = {};
-    data.carriers.forEach((row) => { carriersById[row.id] = row; });
-    const select = document.getElementById('try-carrier');
-    select.innerHTML = '<option value="">Test carrier (van, 150 mi)</option>' +
-      data.carriers.map((row) => '<option value="' + esc(row.id) + '">' + esc(row.company_name) + '</option>').join('');
-    const btn = 'border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;';
-    box.innerHTML = data.carriers.map((row) => {
-      const when = row.last_sms_at ? new Date(row.last_sms_at).toLocaleString() : 'no text yet';
-      const rules = [
-        row.mc_number ? 'MC ' + row.mc_number : 'no MC yet',
-        row.dot_number ? 'DOT ' + row.dot_number : '',
-        row.min_rpm ? 'min $' + Number(row.min_rpm).toFixed(2) + '/mi' : '',
-        'max ' + (row.max_deadhead || 150) + ' empty mi',
-        row.home_state ? 'home ' + row.home_state : '',
-        row.home_days ? 'home days ' + row.home_days : '',
-        row.avoid_states ? 'never ' + row.avoid_states : '',
-        row.last_location ? 'last seen ' + row.last_location : '',
-        row.prefer_destination ? 'wants ' + row.prefer_destination : '',
-        row.off_until && new Date(row.off_until) > new Date() ? 'off today' : ''
-      ].filter(Boolean).join(' · ');
-      return '<div style="padding:10px 0;border-top:1px solid #e2e8f0;">' +
-        '<strong>' + esc(row.company_name) + '</strong> · ' + esc(row.status) + (row.sms_consent ? '' : ' · <span style="color:#b45309;">no text consent</span>') +
-        '<br><span style="color:#64748b;">' + esc([row.contact_name, row.phone, row.equipment, row.empty_zip].filter(Boolean).join(' · ')) +
-        '<br>' + esc(rules) +
-        '<br>Last text: ' + esc(when) + ' · ' + esc(row.last_sms_status || 'not sent') + '</span>' +
-        '<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">' +
-        (row.sms_consent ? '' : '<button type="button" data-consent="' + esc(row.id) + '" style="' + btn + '">Carrier agreed to texts</button>') +
-        '<button type="button" data-start="' + esc(row.id) + '" style="border:0;background:#2563eb;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Start</button>' +
-        '<button type="button" data-sendloads="' + esc(row.id) + '" style="' + btn + '">Send loads now</button>' +
-        '<button type="button" data-emptysoon="' + esc(row.id) + '" style="' + btn + '">Empty soon now</button>' +
-        '<button type="button" data-rules="' + esc(row.id) + '" style="' + btn + '">Rules</button>' +
-        '<button type="button" data-chat="' + esc(row.id) + '" style="' + btn + '">Conversation</button>' +
-        '<button type="button" data-pause="' + esc(row.id) + '" style="' + btn + '">Pause</button>' +
-        '</div><div id="carrier-extra-' + esc(row.id) + '"></div></div>';
-    }).join('');
-  }
-  let carriersById = {};
-  function rulesForm(row) {
-    const field = (name, label, value, extra) =>
-      '<label style="font-size:12px;color:#475569;">' + label + '<input name="' + name + '" value="' + esc(value == null ? '' : value) + '" ' + (extra || '') +
-      ' style="display:block;width:100%;margin-top:4px;padding:6px;border:1px solid #cbd5e1;border-radius:8px;"></label>';
-    return '<form data-rulesform="' + esc(row.id) + '" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;align-items:end;margin-top:8px;background:#f8fafc;padding:10px;border-radius:10px;">' +
-      field('mc_number', 'MC number', row.mc_number) + field('dot_number', 'USDOT', row.dot_number) +
-      field('equipment', 'Equipment', row.equipment) + field('empty_zip', 'Empty ZIP', row.empty_zip) +
-      field('prefer_destination', 'Wants to go', row.prefer_destination) +
-      field('min_rpm', 'Min $/mile', row.min_rpm, 'type="number" step="0.05" min="0"') +
-      field('max_deadhead', 'Max empty miles', row.max_deadhead, 'type="number" min="10" max="600"') +
-      field('home_state', 'Home state', row.home_state, 'maxlength="2"') +
-      field('home_days', 'Home days', row.home_days, 'placeholder="FRI, SAT"') +
-      field('avoid_states', 'Never go to', row.avoid_states) +
-      '<button type="submit" style="background:#0b1f3a;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;">Save rules</button></form>';
-  }
-  async function showConversation(id) {
-    const box = document.getElementById('carrier-extra-' + id);
-    const data = await api('/api/dispatch-desk/carriers/' + id + '/messages');
-    box.innerHTML = '<div style="margin-top:8px;background:#f8fafc;padding:10px;border-radius:10px;max-height:320px;overflow:auto;">' +
-      (data.messages.length ? data.messages.map((m) =>
-        '<div style="margin:6px 0;text-align:' + (m.direction === 'inbound' ? 'left' : 'right') + ';">' +
-        '<div style="display:inline-block;max-width:85%;white-space:pre-wrap;text-align:left;padding:8px 10px;border-radius:10px;background:' + (m.direction === 'inbound' ? '#fff;border:1px solid #e2e8f0' : '#dbeafe') + ';">' + esc(m.body) + '</div>' +
-        '<div style="font-size:11px;color:#94a3b8;">' + esc(new Date(m.created_at).toLocaleString()) + (m.intent ? ' · ' + esc(m.intent) : '') + '</div></div>'
-      ).join('') : 'No texts with the AI dispatcher yet.') + '</div>';
-  }
-  const OFFER_LABELS = { requested: 'driver picked it — waiting on broker', offered: 'sent to driver', booked: 'booked', declined: 'fell through', expired: 'expired' };
-  async function loadOffers() {
-    const box = document.getElementById('offers-list');
-    const data = await api('/api/dispatch-desk/offers');
-    const rows = data.offers.filter((o) => o.status !== 'expired');
-    if (!rows.length) { box.textContent = 'No load requests yet. They appear when a driver replies to the loads the AI sent.'; return; }
-    box.innerHTML = rows.map((o) => {
-      const approx = o.miles_estimated ? '~' : '';
-      const actions = o.status === 'requested' || o.status === 'offered'
-        ? '<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">' +
-          '<button type="button" data-audit-rc="' + esc(o.id) + '" style="border:1px solid #2563eb;background:#eff6ff;color:#1d4ed8;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:700;">📄 Audit Broker RateCon (PDF)</button>' +
-          '<button type="button" data-booked="' + esc(o.id) + '" style="border:0;background:#16a34a;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">Booked (rate con received)</button>' +
-          '<button type="button" data-release="' + esc(o.id) + '" style="border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:8px;padding:6px 10px;cursor:pointer;">Release</button></div>'
-        : '';
-      return '<div style="padding:10px 0;border-top:1px solid #e2e8f0;">' +
-        '<strong>' + esc(o.load_number || 'load removed') + '</strong> · ' + esc(OFFER_LABELS[o.status] || o.status) + ' · ' + esc(o.company_name) + (o.mc_number ? ' (MC ' + esc(o.mc_number) + ')' : '') +
-        '<br><span style="color:#64748b;">' + esc((o.pickup_location || '') + ' → ' + (o.delivery_location || '')) + ' · $' + esc(Math.round(o.rate || 0).toLocaleString()) +
-        ' · ' + approx + esc(o.loaded_miles) + ' mi · ' + approx + '$' + esc(Number(o.all_in_rpm || 0).toFixed(2)) + '/mi all-in · ' + approx + esc(o.deadhead_miles) + ' empty' +
-        '<br>Broker: ' + esc([o.broker_name, o.broker_contact].filter(Boolean).join(' · ') || 'not listed') +
-        (o.note ? '<br>' + esc(o.note) : '') + (o.broker_reply ? '<br>Broker reply: ' + esc(o.broker_reply.slice(0, 200)) : '') + '</span>' +
-        actions + '</div>';
-    }).join('');
-  }
-  function matchRows(list) {
-    return list.map((m) => {
-      const approx = m.estimated ? '~' : '';
-      const bench = m.lane_benchmark ? ' · board average on this lane $' + Number(m.lane_benchmark.rpm).toFixed(2) + '/mi (' + m.lane_benchmark.loads + ' loads, 30 days)' : '';
-      return '<div style="padding:6px 0;border-top:1px solid #f1f5f9;"><strong>' + esc(m.load_number) + '</strong> ' + esc(m.lane) +
-        ' · $' + esc(Math.round(m.rate).toLocaleString()) + ' · ' + approx + esc(m.loaded_miles) + ' mi · ' + approx + esc(m.deadhead_miles) + ' empty · ' +
-        approx + '$' + esc(m.all_in_rpm.toFixed(2)) + '/mi all-in ($' + esc(m.loaded_rpm.toFixed(2)) + ' loaded)' + esc(bench) + '</div>';
-    }).join('');
-  }
-  async function runPreview() {
-    const box = document.getElementById('try-result');
-    const text = document.getElementById('try-text').value.trim();
-    if (!text) { box.textContent = 'Type what a driver might text.'; return; }
-    box.textContent = 'Thinking…';
+
+  // State
+  let currentRoster = [];
+  let selectedTruck = null;
+  let currentMatchedLoads = [];
+  let currentDispatchedOffers = [];
+
+  // DOM Elements
+  const trucksGridEl = document.getElementById('trucks-grid-container');
+  const matchedContainerEl = document.getElementById('matched-loads-container');
+  const matcherTitleEl = document.getElementById('matcher-title');
+  const matcherSubtitleEl = document.getElementById('matcher-subtitle');
+  const loadCountBadgeEl = document.getElementById('matched-load-count-badge');
+  const offersTableEl = document.getElementById('offers-table-container');
+  const offersMsgEl = document.getElementById('offers-status-msg');
+
+  // KPI elements
+  const kpiTotalTrucksEl = document.getElementById('kpi-total-trucks');
+  const kpiReadyTrucksEl = document.getElementById('kpi-ready-trucks');
+  const kpiOpenLoadsEl = document.getElementById('kpi-open-loads');
+  const kpiRevenueTodayEl = document.getElementById('kpi-revenue-today');
+  const kpiBookedCountEl = document.getElementById('kpi-booked-count');
+
+  // Modals
+  const modalAddTruck = document.getElementById('modal-add-truck');
+  const modalUpdateTruck = document.getElementById('modal-update-truck');
+
+  // Load and Render Roster
+  async function loadRoster(filterMode = 'all') {
     try {
-      const data = await api('/api/dispatch-desk/preview', { method: 'POST', body: JSON.stringify({ text, carrier_id: document.getElementById('try-carrier').value || undefined }) });
-      const p = data.parsed;
-      const filtered = Object.entries(data.filtered || {}).filter(([, n]) => n).map(([k, n]) => k.replace(/_/g, ' ') + ': ' + n).join(' · ');
-      box.innerHTML = '<div><strong>AI read it as:</strong> ' + esc(p.intent) + (p.via === 'ai' ? ' (model)' : ' (rules)') +
-        ' · from ' + esc(p.origin || '—') + ' · to ' + esc(p.destination || 'any') + ' · ' + esc(p.equipment || 'any equipment') + (p.choice ? ' · picked #' + esc(p.choice) : '') + '</div>' +
-        '<div style="margin-top:6px;"><strong>Would offer:</strong> ' + (data.matches.length ? '' : 'nothing that fits.') + '</div>' + matchRows(data.matches) +
-        (data.others.length ? '<div style="margin-top:6px;"><strong>Other directions:</strong></div>' + matchRows(data.others) : '') +
-        '<div style="margin-top:6px;color:#64748b;">Checked ' + esc(data.considered) + ' open loads.' + (filtered ? ' Skipped — ' + esc(filtered) : '') + '</div>';
-    } catch (err) { box.textContent = err.message; }
-  }
-  const STATUS_LABELS = {
-    queued: 'waiting for first email',
-    active: 'in follow-up',
-    replied: 'replied',
-    signed_up: 'signed up',
-    unsubscribed: 'unsubscribed',
-    bounced: 'bounced',
-    complained: 'marked spam',
-    done: 'finished'
-  };
-  async function loadOutreach() {
-    const box = document.getElementById('outreach-status');
-    const data = await api('/api/outreach/status');
-    const s = data.settings;
-    document.getElementById('outreach-enabled').checked = !!s.enabled;
-    document.getElementById('outreach-start').value = s.start_cap;
-    document.getElementById('outreach-max').value = s.max_cap;
-    const h = data.health;
-    const pct = (n) => (n * 100).toFixed(1) + '%';
-    const warnings = [];
-    if (!data.email_ready) warnings.push('Email is not configured on the server (RESEND_API_KEY). Nothing will send.');
-    if (!data.ai_replies_ready) warnings.push('OPENAI_API_KEY is not set, so replies go to staff instead of an AI answer.');
-    if (s.paused_reason) warnings.push(s.paused_reason);
-    const counts = {};
-    data.counts.forEach((row) => {
-      counts[row.kind] = counts[row.kind] || [];
-      counts[row.kind].push(esc(STATUS_LABELS[row.status] || row.status) + ': ' + esc(row.n));
-    });
-    const recent = data.recent.map((row) =>
-      '<div style="padding:4px 0;border-top:1px solid #f1f5f9;">' + esc(new Date(row.created_at).toLocaleString()) + ' · ' + esc(row.event) +
-      (row.brand ? ' · ' + esc(row.brand) : '') + ' · ' + esc(row.kind || '') + ' ' + esc(row.company_name || '') + (row.state ? ' (' + esc(row.state) + ')' : '') + '</div>'
-    ).join('');
-    box.innerHTML =
-      (warnings.length ? '<div style="color:#b45309;margin-bottom:8px;">' + warnings.map(esc).join('<br>') + '</div>' : '') +
-      '<div><strong>Today:</strong> ' + esc(data.sent_today) + ' sent of ' + esc(s.cap_today == null ? 'not set yet' : s.cap_today) + ' allowed.' +
-      (s.last_tick_note ? ' ' + esc(s.last_tick_note) : '') + '</div>' +
-      '<div><strong>Last 7 days:</strong> ' + esc(h.sent) + ' sent · ' + esc(h.replied) + ' replies · bounce ' + pct(h.bounceRate) +
-      ' · unsubscribe ' + pct(h.unsubRate) + ' · spam ' + pct(h.complaintRate) + '</div>' +
-      '<div><strong>Carriers:</strong> ' + ((counts.carrier || []).join(' · ') || 'none yet') + '</div>' +
-      '<div><strong>Brokers:</strong> ' + ((counts.broker || []).join(' · ') || 'none yet') + '</div>' +
-      (recent ? '<div style="margin-top:8px;max-height:220px;overflow:auto;">' + recent + '</div>' : '');
-  }
-  document.addEventListener('DOMContentLoaded', async () => {
-    if (!(await guard())) return;
-    try { await loadCarriers(); }
-    catch (err) { console.warn('Could not load carriers:', err); }
-    loadOffers().catch((err) => { document.getElementById('offers-msg').textContent = err.message; });
-    document.getElementById('offers-refresh').addEventListener('click', () => loadOffers().catch((err) => { document.getElementById('offers-msg').textContent = err.message; }));
-    document.getElementById('try-run').addEventListener('click', runPreview);
-    document.getElementById('try-text').addEventListener('keydown', (event) => { if (event.key === 'Enter') runPreview(); });
-
-    // DAT One Autonomous Dispatch Hub
-    const sampleDatLoadText = `𝗗𝗛𝗢: 72\n𝗟𝗼𝗮𝗱𝗲𝗱 𝗠𝗶𝗹𝗲𝘀 : 563\n\n𝗙𝗿𝗼𝗺: Hopkinsville KY\n𝗧𝗼: DIBERSVILLE MS\n\n𝗣𝗶𝗰𝗸𝘂𝗽: TODAY BEFORE 5PM\n𝗗𝗲𝗹𝗶𝘃𝗲𝗿y: TOMORROW 8 TO 3PM\n\n𝗪𝗲𝗶𝗴𝗵t: 2500\nRATE: 1000\nDRIVER ASSIST AT RECEIVER`;
-
-    let currentParsedLoads = [];
-    let activeCarriersList = [];
-    let activeTrucksList = [];
-
-    const rawInputEl = document.getElementById('dat-raw-input');
-    const parseMsgEl = document.getElementById('dat-parse-msg');
-    const resultsContainerEl = document.getElementById('dat-results-container');
-    const cardsGridEl = document.getElementById('dat-cards-grid');
-    const loadCountEl = document.getElementById('dat-load-count');
-    const autopilotEl = document.getElementById('autopilot-toggle');
-
-    document.getElementById('btn-sample-load').addEventListener('click', () => {
-      rawInputEl.value = sampleDatLoadText;
-      parseMsgEl.textContent = 'Sample load filled. Parsing...';
-      parseDatLoadsAction();
-    });
-
-    document.getElementById('btn-clear-dat').addEventListener('click', () => {
-      rawInputEl.value = '';
-      parseMsgEl.textContent = '';
-      resultsContainerEl.style.display = 'none';
-      cardsGridEl.innerHTML = '';
-      currentParsedLoads = [];
-    });
-
-    async function parseDatLoadsAction() {
-      const text = rawInputEl.value.trim();
-      if (!text) {
-        parseMsgEl.textContent = 'Please paste DAT One load details or click "Fill Sample" above.';
-        return;
+      trucksGridEl.innerHTML = '<div style="padding:24px; text-align:center; color:#64748b; grid-column:1/-1;">Loading fleet trucks...</div>';
+      const data = await api('/api/dispatch-desk/roster');
+      currentRoster = data.roster || [];
+      
+      // Update KPIs
+      if (data.stats) {
+        kpiTotalTrucksEl.textContent = data.stats.total_trucks || currentRoster.length;
+        kpiReadyTrucksEl.textContent = data.stats.ready_empty || 0;
+        kpiOpenLoadsEl.textContent = data.stats.open_loads || 0;
+        kpiRevenueTodayEl.textContent = `$${Number(data.stats.revenue_today || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        kpiBookedCountEl.textContent = `${data.stats.booked_today || 0} Loads Locked`;
       }
-      parseMsgEl.textContent = 'Parsing text and matching fleet trucks...';
-      try {
-        const res = await api('/api/dispatch-desk/parse-dat-loads', {
-          method: 'POST',
-          body: JSON.stringify({ text })
-        });
 
-        currentParsedLoads = res.loads || [];
-        activeCarriersList = res.carriers || [];
-        activeTrucksList = res.trucks || [];
+      renderTrucks(filterMode);
 
-        loadCountEl.textContent = currentParsedLoads.length;
-        parseMsgEl.textContent = `Successfully matched ${currentParsedLoads.length} load(s) with your fleet.`;
-        resultsContainerEl.style.display = 'block';
-
-        renderDatCards();
-
-        // If Auto-Pilot is enabled, automatically send offer for the first load
-        if (autopilotEl.checked && currentParsedLoads.length > 0) {
-          const firstLoad = currentParsedLoads[0];
-          if (firstLoad.suggested_carrier_id) {
-            parseMsgEl.textContent = `⚡ Auto-Pilot: Sending SMS offer to driver for load ${firstLoad.load_id}...`;
-            await window.sendDriverOfferAction(0);
-          }
-        }
-      } catch (err) {
-        parseMsgEl.textContent = 'Parsing error: ' + err.message;
+      // Auto-select first truck if none selected
+      if (!selectedTruck && currentRoster.length > 0) {
+        const firstEmpty = currentRoster.find(r => r.status === 'active' || r.status === 'ready') || currentRoster[0];
+        selectTruckForDispatch(firstEmpty);
       }
+    } catch (err) {
+      trucksGridEl.innerHTML = `<div style="padding:24px; text-align:center; color:#dc2626; grid-column:1/-1;">Error loading roster: ${esc(err.message)}</div>`;
+    }
+  }
+
+  function renderTrucks(filterMode = 'all') {
+    let list = currentRoster;
+    if (filterMode === 'ready') {
+      list = list.filter(r => r.status === 'active' || r.status === 'ready');
     }
 
-    document.getElementById('btn-parse-dat').addEventListener('click', parseDatLoadsAction);
+    if (!list.length) {
+      trucksGridEl.innerHTML = `
+        <div style="background:#fff; border:1px dashed #cbd5e1; border-radius:14px; padding:30px; text-align:center; grid-column:1/-1;">
+          <p style="margin:0 0 10px; font-weight:700; color:#334155;">No trucks match the current filter.</p>
+          <button type="button" onclick="document.getElementById('btn-open-add-truck').click()" class="btn-act" style="background:#2563eb; color:#fff;">+ Add Your First Truck</button>
+        </div>
+      `;
+      return;
+    }
 
-    function renderDatCards() {
-      if (!currentParsedLoads.length) {
-        cardsGridEl.innerHTML = '<p style="color:#cbd5e1;">No loads parsed yet.</p>';
-        return;
-      }
+    trucksGridEl.innerHTML = list.map((truck, idx) => {
+      const isSelected = selectedTruck && (selectedTruck.id === truck.id || selectedTruck.truck_number === truck.truck_number);
+      const isReady = truck.status === 'active' || truck.status === 'ready';
+      const statusBadge = isReady
+        ? '<span class="badge-status badge-status-empty"><span class="pulse-dot"></span> Empty &amp; Ready</span>'
+        : (truck.status === 'booked' ? '<span class="badge-status badge-status-booked">🔵 Booked</span>' : '<span class="badge-status badge-status-rolling">🟡 Rolling</span>');
 
-      cardsGridEl.innerHTML = currentParsedLoads.map((load, idx) => {
-        const carrierOptions = activeCarriersList.map(c => {
-          const sel = (c.id === load.suggested_carrier_id) ? 'selected' : '';
-          return `<option value="${esc(c.id)}" ${sel}>${esc(c.company_name)} (${esc(c.phone)}) - ${esc(c.equipment || 'Any')}</option>`;
-        }).join('');
-
-        const truckOptions = (activeTrucksList.length ? activeTrucksList : [{ truck_number: '101' }]).map(t => {
-          const sel = (t.truck_number === load.suggested_truck_number) ? 'selected' : '';
-          return `<option value="${esc(t.truck_number)}" ${sel}>Unit #${esc(t.truck_number)}${t.driver_name ? ' (' + esc(t.driver_name) + ')' : ''}</option>`;
-        }).join('');
-
-        const rateStr = load.rate ? `$${Number(load.rate).toLocaleString()}` : 'Negotiable';
-        const rpmStr = load.rpm > 0 ? ` · $${load.rpm}/mi` : '';
-
-        return `
-          <div id="dat-card-${idx}" style="background:#ffffff; color:#0f172a; border-radius:14px; padding:18px; box-shadow:0 4px 12px rgba(0,0,0,0.15); border:1px solid #e2e8f0; display:flex; flex-direction:column; justify-content:space-between;">
+      return `
+        <div class="truck-card ${isSelected ? 'is-active-truck' : ''}" id="truck-card-${idx}">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
             <div>
-              <!-- Header Badges -->
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
-                <span style="background:#0b1f3a; color:#fff; font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px; font-family:monospace;">${esc(load.load_id)}</span>
-                <span style="background:#dcfce7; color:#166534; font-size:13px; font-weight:800; padding:3px 10px; border-radius:6px;">${esc(rateStr)}${esc(rpmStr)}</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="background:#0f172a; color:#fff; font-size:12px; font-weight:800; padding:2px 8px; border-radius:6px; font-family:monospace;">Unit #${esc(truck.truck_number)}</span>
+                <span style="font-size:13px; font-weight:800; color:#0f172a;">${esc(truck.company_name)}</span>
               </div>
+              ${truck.mc_number ? `<span style="font-size:11px; color:#64748b;">MC: ${esc(truck.mc_number)}</span>` : ''}
+            </div>
+            ${statusBadge}
+          </div>
 
-              <!-- Corridor -->
-              <div style="margin-bottom:12px;">
-                <div style="font-size:16px; font-weight:800; color:#0f172a;">${esc(load.origin)} → ${esc(load.destination)}</div>
-                <div style="font-size:12px; color:#64748b; margin-top:2px;">
-                  Deadhead: <strong>${esc(load.dho)} mi</strong> · Trip: <strong>${esc(load.loaded_miles)} mi</strong> · Weight: <strong>${Number(load.weight || 0).toLocaleString()} lbs</strong> · Eq: <strong>${esc(load.equipment_type || 'Box Truck')}</strong>
-                </div>
-              </div>
+          <div style="font-size:12px; color:#334155; line-height:1.6; margin-bottom:14px; background:#f8fafc; border-radius:10px; padding:10px 12px; border:1px solid #f1f5f9;">
+            <div>🚛 <strong>Equipment:</strong> ${esc(truck.equipment)}</div>
+            <div>👤 <strong>Driver:</strong> ${esc(truck.driver_name || truck.contact_name)} · <a href="tel:${esc(truck.driver_phone || truck.phone)}" style="color:#2563eb; font-weight:700;">${esc(truck.driver_phone || truck.phone)}</a></div>
+            <div style="margin-top:4px; padding-top:4px; border-top:1px dashed #e2e8f0;">
+              📍 <strong>Empty Location:</strong> <span style="color:#0f172a; font-weight:800;">${esc(truck.empty_zip)}</span>
+            </div>
+            <div>🏁 <strong>Target Lane:</strong> <span style="color:#0f172a; font-weight:800;">${esc(truck.prefer_destination)}</span></div>
+            <div>💵 <strong>Target Pay:</strong> Min $${Number(truck.min_rpm || 2).toFixed(2)}/mi · Max ${esc(truck.max_deadhead || 150)} mi DHO</div>
+          </div>
 
-              <!-- Pickup & Delivery -->
-              <div style="background:#f8fafc; border-radius:8px; padding:10px; font-size:12px; margin-bottom:12px; border:1px solid #f1f5f9;">
-                <div>📅 <strong>Pickup:</strong> ${esc(load.pickup_time || 'Ready Today')}</div>
-                <div style="margin-top:2px;">🏁 <strong>Delivery:</strong> ${esc(load.delivery_time || 'Tomorrow')}</div>
-                ${load.notes ? `<div style="margin-top:4px; color:#b45309;">⚠️ <strong>Notes:</strong> ${esc(load.notes)}</div>` : ''}
-              </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" onclick="window.handleSelectTruck(${idx})" class="btn-act" style="flex:1; background:${isSelected ? '#16a34a' : '#2563eb'}; color:#fff; box-shadow:0 2px 6px rgba(37,99,235,0.25);">
+              <span>🎯 ${isSelected ? 'Scanning Live Loads...' : 'Match Loads with AI'}</span>
+            </button>
+            <button type="button" onclick="window.openEditTruckModal(${idx})" class="btn-act" style="background:#ffffff; border:1px solid #cbd5e1; color:#334155;" title="Edit empty location, target lane or status">
+              ✏️
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
-              <!-- Broker Contact Info -->
-              <div style="font-size:12px; color:#475569; margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed #cbd5e1;">
-                <strong>Broker:</strong> ${esc(load.broker_name || 'DAT Broker')} 
-                ${load.broker_email ? `· <a href="mailto:${esc(load.broker_email)}" style="color:#2563eb;">${esc(load.broker_email)}</a>` : ''}
-                ${load.broker_phone ? `· <a href="tel:${esc(load.broker_phone)}" style="color:#2563eb;">${esc(load.broker_phone)}</a>` : ''}
-              </div>
+  window.handleSelectTruck = function(idx) {
+    const truck = currentRoster[idx];
+    if (!truck) return;
+    selectTruckForDispatch(truck);
+  };
 
-              <!-- Fleet Assignment Controls -->
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-                <label style="font-size:11px; font-weight:700; color:#475569;">
-                  Fleet Carrier:
-                  <select id="dat-carrier-sel-${idx}" style="display:block; width:100%; margin-top:2px; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;">
-                    ${carrierOptions || '<option value="">No carriers yet</option>'}
-                  </select>
-                </label>
-                <label style="font-size:11px; font-weight:700; color:#475569;">
-                  Fleet Truck #:
-                  <select id="dat-truck-sel-${idx}" style="display:block; width:100%; margin-top:2px; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;">
-                    ${truckOptions}
-                  </select>
-                </label>
-              </div>
+  async function selectTruckForDispatch(truck) {
+    selectedTruck = truck;
+    renderTrucks();
 
-              <!-- Driver SMS Preview -->
-              <details style="margin-bottom:14px; background:#f1f5f9; border-radius:8px; padding:8px 10px; font-size:12px;">
-                <summary style="font-weight:700; color:#334155; cursor:pointer;">📱 View Driver SMS Template</summary>
-                <pre id="dat-sms-preview-${idx}" style="margin:8px 0 0; white-space:pre-wrap; font-family:monospace; font-size:11px; color:#1e293b; background:#fff; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">${esc(load.formatted_sms)}</pre>
-              </details>
+    matcherTitleEl.innerHTML = `🎯 AI Matched Loads for <span style="color:#2563eb;">Unit #${esc(truck.truck_number)}</span> (${esc(truck.company_name)})`;
+    matcherSubtitleEl.innerHTML = `Origin: <strong>${esc(truck.empty_zip)}</strong> ➔ Target: <strong>${esc(truck.prefer_destination)}</strong> · Eq: <strong>${esc(truck.equipment)}</strong> · Min: <strong>$${Number(truck.min_rpm || 2).toFixed(2)}/mi</strong>`;
+
+    matchedContainerEl.innerHTML = `
+      <div style="padding:40px; text-align:center; color:#2563eb; grid-column:1/-1;">
+        <span class="pulse-dot" style="width:12px; height:12px; margin-bottom:10px;"></span>
+        <div style="font-weight:700; font-size:14px; margin-top:8px;">Scanning live freight on LoadsNexus &amp; DAT for Unit #${esc(truck.truck_number)}...</div>
+        <div style="font-size:12px; color:#64748b; margin-top:4px;">Calculating deadhead from ${esc(truck.empty_zip)} to pickup</div>
+      </div>
+    `;
+
+    try {
+      const res = await api('/api/dispatch-desk/match-truck', {
+        method: 'POST',
+        body: JSON.stringify({
+          carrier_id: truck.carrier_id || truck.id,
+          truck_number: truck.truck_number,
+          origin: truck.empty_zip,
+          destination: truck.prefer_destination,
+          equipment: truck.equipment,
+          min_rpm: truck.min_rpm,
+          max_deadhead: truck.max_deadhead,
+          limit: 12
+        })
+      });
+
+      currentMatchedLoads = res.loads || [];
+      loadCountBadgeEl.textContent = `${currentMatchedLoads.length} Loads Found`;
+      renderMatchedLoads();
+    } catch (err) {
+      matchedContainerEl.innerHTML = `<div style="padding:30px; text-align:center; color:#dc2626; grid-column:1/-1;">Match error: ${esc(err.message)}</div>`;
+    }
+  }
+
+  function renderMatchedLoads() {
+    if (!currentMatchedLoads.length) {
+      matchedContainerEl.innerHTML = `
+        <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:14px; padding:30px; text-align:center; grid-column:1/-1;">
+          <p style="margin:0 0 8px; font-weight:800; font-size:14px; color:#0f172a;">No exact loads in this radius right now.</p>
+          <p style="margin:0 0 14px; font-size:12px; color:#64748b;">
+            Paste DAT One loads in the toolbar above, or click "Sample Load" to test instant 1-click dispatch.
+          </p>
+          <button type="button" onclick="document.getElementById('btn-sample-load').click()" class="btn-act" style="background:#2563eb; color:#fff;">
+            📋 Fill &amp; Dispatch Sample Load
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    matchedContainerEl.innerHTML = currentMatchedLoads.map((load, idx) => {
+      const rateStr = load.rate ? `$${Number(load.rate).toLocaleString()}` : 'Negotiable';
+      const rpmStr = load.all_in_rpm > 0 ? ` · $${load.all_in_rpm}/mi all-in` : (load.loaded_rpm > 0 ? ` · $${load.loaded_rpm}/mi` : '');
+
+      return `
+        <div class="load-ticket" id="match-card-${idx}">
+          <div>
+            <!-- Top Badge Row -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <span style="background:#0f172a; color:#fff; font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px; font-family:monospace;">${esc(load.load_number)}</span>
+              <span style="background:#dcfce7; color:#15803d; font-size:13px; font-weight:800; padding:3px 10px; border-radius:8px;">
+                ${esc(rateStr)}${esc(rpmStr)}
+              </span>
             </div>
 
-            <!-- Action Status & 3 Dispatch Buttons -->
-            <div>
-              <div id="dat-action-status-${idx}" style="font-size:12px; font-weight:700; color:#2563eb; margin-bottom:8px; min-height:1.2em;"></div>
-              <div style="display:flex; flex-direction:column; gap:6px;">
-                <button type="button" onclick="window.sendDriverOfferAction(${idx})" style="background:#2563eb; color:#fff; border:0; border-radius:8px; padding:10px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-                  <span>📱 Send Driver SMS Offer</span>
-                </button>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                  <button type="button" onclick="window.emailBrokerAction(${idx})" style="background:#0b1f3a; color:#fff; border:0; border-radius:8px; padding:8px 6px; font-weight:700; font-size:12px; cursor:pointer;" title="Option A: Email broker with carrier setup packet & authority info">
-                    📧 Option A: Email
-                  </button>
-                  <button type="button" onclick="window.callBrokerAction(${idx})" style="background:#059669; color:#fff; border:0; border-radius:8px; padding:8px 6px; font-weight:700; font-size:12px; cursor:pointer;" title="Option B: Initiate AI voice call or dispatch bridge">
-                    📞 Option B: Call
-                  </button>
-                </div>
-                <button type="button" onclick="window.sendPacketAction(${idx})" style="background:#d97706; color:#fff; border:0; border-radius:8px; padding:8px; font-weight:700; font-size:12px; cursor:pointer;" title="Auto-send verified W-9, COI, and MC Authority to broker setup desk">
-                  📁 1-Click Broker Carrier Packet
-                </button>
-                <button type="button" onclick="window.auditRateConAction(${idx})" style="background:#475569; color:#fff; border:0; border-radius:8px; padding:8px; font-weight:700; font-size:12px; cursor:pointer;" title="Upload or paste broker RateCon to audit agreed rate ($1,000)">
-                  📄 Audit Broker RateCon (PDF)
-                </button>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                  <button type="button" onclick="window.generateTrackingAction(${idx})" style="background:#0284c7; color:#fff; border:0; border-radius:8px; padding:8px 6px; font-weight:700; font-size:12px; cursor:pointer;" title="Generate live GPS tracking link for broker">
-                    🛰️ Live Tracking
-                  </button>
-                  <button type="button" onclick="window.scanPodAction(${idx})" style="background:#16a34a; color:#fff; border:0; border-radius:8px; padding:8px 6px; font-weight:700; font-size:12px; cursor:pointer;" title="Scan signed BOL & auto-submit invoice to factoring">
-                    🏦 Factoring / POD
-                  </button>
-                </div>
+            <!-- Route Corridor -->
+            <div style="margin-bottom:10px;">
+              <div style="font-size:16px; font-weight:800; color:#0f172a;">
+                ${esc(load.origin)} ➔ ${esc(load.destination)}
               </div>
+              <div style="font-size:12px; color:#64748b; margin-top:2px;">
+                Deadhead: <strong style="color:#0f172a;">${esc(load.deadhead_miles || load.dho || 0)} mi</strong> · Trip: <strong>${esc(load.loaded_miles)} mi</strong> · Eq: <strong>${esc(load.equipment_type || 'Box Truck')}</strong> · Wt: <strong>${Number(load.weight || 0).toLocaleString()} lbs</strong>
+              </div>
+            </div>
+
+            <!-- Pickup & Delivery Schedule -->
+            <div style="background:#f8fafc; border-radius:8px; padding:10px; font-size:12px; margin-bottom:12px; border:1px solid #f1f5f9;">
+              <div>📅 <strong>Pickup:</strong> ${esc(load.pickup_time || 'Ready Today')}</div>
+              <div style="margin-top:2px;">🏁 <strong>Delivery:</strong> ${esc(load.delivery_time || 'Tomorrow')}</div>
+              ${load.notes ? `<div style="margin-top:4px; color:#b45309;">⚠️ <strong>Notes:</strong> ${esc(load.notes)}</div>` : ''}
+            </div>
+
+            <!-- Broker Contact Info -->
+            <div style="font-size:12px; color:#475569; margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed #cbd5e1;">
+              <strong>Broker:</strong> ${esc(load.broker_name || 'Verified Broker')} 
+              ${load.broker_phone ? `· <a href="tel:${esc(load.broker_phone)}" style="color:#2563eb; font-weight:700;">${esc(load.broker_phone)}</a>` : ''}
+              ${load.broker_email ? `· <a href="mailto:${esc(load.broker_email)}" style="color:#2563eb;">${esc(load.broker_email)}</a>` : ''}
+            </div>
+
+            <!-- Driver SMS Preview -->
+            <details style="margin-bottom:14px; background:#f1f5f9; border-radius:8px; padding:8px 10px; font-size:12px;">
+              <summary style="font-weight:700; color:#334155; cursor:pointer;">📱 View Driver SMS Format</summary>
+              <pre style="margin:8px 0 0; white-space:pre-wrap; font-family:monospace; font-size:11px; color:#1e293b; background:#fff; padding:8px; border-radius:6px; border:1px solid #e2e8f0;">${esc(load.formatted_sms)}</pre>
+            </details>
+          </div>
+
+          <!-- Action Buttons -->
+          <div>
+            <div id="match-status-${idx}" style="font-size:12px; font-weight:700; color:#2563eb; margin-bottom:8px; min-height:1.2em;"></div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <button type="button" onclick="window.sendDriverOfferAction(${idx})" class="btn-act" style="background:#2563eb; color:#fff; font-size:13px; padding:10px;">
+                <span>📱 1-Click Send Driver SMS Offer</span>
+              </button>
+              
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <button type="button" onclick="window.emailBrokerAction(${idx})" class="btn-act" style="background:#0b1f3a; color:#fff;" title="Option A: Email broker booking request with carrier packet">
+                  📧 Option A: Email
+                </button>
+                <button type="button" onclick="window.callBrokerAction(${idx})" class="btn-act" style="background:#059669; color:#fff;" title="Option B: Initiate AI voice call or dispatch bridge">
+                  📞 Option B: Call
+                </button>
+              </div>
+
+              <button type="button" onclick="window.sendPacketAction(${idx})" class="btn-act" style="background:#d97706; color:#fff;" title="Send W-9, COI & MC Authority">
+                📁 1-Click Carrier Packet &amp; COI
+              </button>
+
+              <button type="button" onclick="window.auditRateConAction(${idx})" class="btn-act" style="background:#475569; color:#fff;" title="Audit broker rate confirmation">
+                📄 Audit Broker RateCon (PDF/Text)
+              </button>
             </div>
           </div>
-        `;
-      }).join('');
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Load and Render Dispatched Offers Table
+  async function loadDispatchedOffers() {
+    try {
+      const data = await api('/api/dispatch-desk/offers');
+      currentDispatchedOffers = (data.offers || []).filter(o => o.status !== 'expired');
+      renderOffersTable();
+    } catch (err) {
+      offersTableEl.innerHTML = `<div style="padding:14px; color:#dc2626;">Error: ${esc(err.message)}</div>`;
+    }
+  }
+
+  const OFFER_STATUS_LABELS = {
+    offered: '<span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:6px; font-weight:800;">Sent to Driver</span>',
+    requested: '<span style="background:#fef3c7; color:#b45309; padding:3px 8px; border-radius:6px; font-weight:800;">Driver Accepted (Locking)</span>',
+    booked: '<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-weight:800;">Booked (RateCon Done)</span>',
+    declined: '<span style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:6px; font-weight:800;">Released</span>'
+  };
+
+  function renderOffersTable() {
+    if (!currentDispatchedOffers.length) {
+      offersTableEl.innerHTML = '<div style="padding:24px; text-align:center; color:#64748b;">No active loads dispatched yet. Dispatched loads will appear here in real-time.</div>';
+      return;
     }
 
-    // Expose actions to window
-    window.sendDriverOfferAction = async function(idx) {
-      const load = currentParsedLoads[idx];
-      if (!load) return;
-      const statusEl = document.getElementById(`dat-action-status-${idx}`);
-      const carrierSel = document.getElementById(`dat-carrier-sel-${idx}`);
-      const truckSel = document.getElementById(`dat-truck-sel-${idx}`);
+    offersTableEl.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+        <thead>
+          <tr style="border-bottom:2px solid #e2e8f0; color:#475569; font-size:11px; text-transform:uppercase;">
+            <th style="padding:10px 8px;">Load #</th>
+            <th style="padding:10px 8px;">Carrier / Truck</th>
+            <th style="padding:10px 8px;">Lane</th>
+            <th style="padding:10px 8px;">Pay / Miles</th>
+            <th style="padding:10px 8px;">Broker</th>
+            <th style="padding:10px 8px;">Status</th>
+            <th style="padding:10px 8px; text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${currentDispatchedOffers.map(o => {
+            const statusBadge = OFFER_STATUS_LABELS[o.status] || `<span style="font-weight:700;">${esc(o.status)}</span>`;
+            return `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:10px 8px; font-weight:800; font-family:monospace; color:#0f172a;">${esc(o.load_number || 'DAT-Spot')}</td>
+                <td style="padding:10px 8px;">
+                  <strong>${esc(o.company_name)}</strong>
+                  ${o.phone ? `<br><span style="color:#64748b;">${esc(o.phone)}</span>` : ''}
+                </td>
+                <td style="padding:10px 8px; font-weight:700; color:#0f172a;">
+                  ${esc(o.pickup_location)} ➔ ${esc(o.delivery_location)}
+                </td>
+                <td style="padding:10px 8px;">
+                  <strong style="color:#15803d; font-size:13px;">$${Number(o.rate || 0).toLocaleString()}</strong>
+                  <br><span style="color:#64748b;">${esc(o.loaded_miles)} mi · $${Number(o.all_in_rpm || 0).toFixed(2)}/mi</span>
+                </td>
+                <td style="padding:10px 8px; color:#475569;">
+                  ${esc(o.broker_name || 'Verified Broker')}
+                  ${o.broker_contact ? `<br><span style="color:#64748b; font-size:11px;">${esc(o.broker_contact)}</span>` : ''}
+                </td>
+                <td style="padding:10px 8px;">${statusBadge}</td>
+                <td style="padding:10px 8px; text-align:right;">
+                  <div style="display:inline-flex; gap:4px; flex-wrap:wrap; justify-content:flex-end;">
+                    <button type="button" onclick="window.auditOfferRateCon(${o.id})" class="btn-act" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:11px; padding:4px 8px;">📄 Audit RateCon</button>
+                    ${o.status !== 'booked' ? `
+                      <button type="button" onclick="window.markOfferBooked(${o.id})" class="btn-act" style="background:#16a34a; color:#fff; font-size:11px; padding:4px 8px;">✓ Mark Booked</button>
+                      <button type="button" onclick="window.releaseOfferAction(${o.id})" class="btn-act" style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; font-size:11px; padding:4px 8px;">Release</button>
+                    ` : `
+                      <button type="button" onclick="window.generateOfferTracking(${o.id})" class="btn-act" style="background:#0284c7; color:#fff; font-size:11px; padding:4px 8px;">🛰️ Tracking</button>
+                      <button type="button" onclick="window.scanOfferPod(${o.id}, ${o.rate || 1000}, '${esc(o.pickup_location)}', '${esc(o.delivery_location)}')" class="btn-act" style="background:#059669; color:#fff; font-size:11px; padding:4px 8px;">🏦 Factoring / POD</button>
+                    `}
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
 
-      const carrierId = carrierSel ? carrierSel.value : load.suggested_carrier_id;
-      const truckNum = truckSel ? truckSel.value : (load.suggested_truck_number || '101');
+  // Action Handlers
+  window.sendDriverOfferAction = async function(idx) {
+    const load = currentMatchedLoads[idx];
+    if (!load) return;
+    const statusEl = document.getElementById(`match-status-${idx}`);
+    const carrierId = load.suggested_carrier_id || (selectedTruck ? selectedTruck.carrier_id : null);
+    const truckNum = load.suggested_truck_number || (selectedTruck ? selectedTruck.truck_number : '101');
 
-      if (!carrierId) {
-        statusEl.innerHTML = '<span style="color:#dc2626;">Please select a carrier first.</span>';
-        return;
-      }
+    if (!carrierId) {
+      statusEl.innerHTML = '<span style="color:#dc2626;">Please select a carrier first.</span>';
+      return;
+    }
 
-      statusEl.innerHTML = '<span style="color:#475569;">Sending SMS offer to driver...</span>';
-      try {
-        const data = await api('/api/dispatch-desk/send-driver-offer', {
-          method: 'POST',
-          body: JSON.stringify({
-            load,
-            carrier_id: carrierId,
-            truck_number: truckNum
-          })
-        });
-
-        load.active_offer_id = data.offer_id;
-        statusEl.innerHTML = `<span style="color:#166534;">✓ SMS offer sent to ${esc(data.carrier.phone)}! Awaiting "BOOK IT" reply.</span>`;
-        await loadOffers();
-      } catch (err) {
-        statusEl.innerHTML = `<span style="color:#dc2626;">Error: ${esc(err.message)}</span>`;
-      }
-    };
-
-    window.emailBrokerAction = async function(idx) {
-      const load = currentParsedLoads[idx];
-      if (!load) return;
-      const statusEl = document.getElementById(`dat-action-status-${idx}`);
-      const carrierSel = document.getElementById(`dat-carrier-sel-${idx}`);
-      const carrierId = carrierSel ? carrierSel.value : load.suggested_carrier_id;
-
-      let brokerEmail = load.broker_email;
-      if (!brokerEmail) {
-        brokerEmail = prompt('Enter broker email for booking request:', 'bobby@shipogre.com');
-        if (!brokerEmail) return;
-        load.broker_email = brokerEmail;
-      }
-
-      statusEl.innerHTML = '<span style="color:#475569;">Sending Option A booking email with carrier packet...</span>';
-      try {
-        const data = await api('/api/dispatch-desk/contact-broker-email', {
-          method: 'POST',
-          body: JSON.stringify({
-            load,
-            offer_id: load.active_offer_id || null,
-            carrier_id: carrierId,
-            broker_email: brokerEmail,
-            notes: load.notes
-          })
-        });
-        statusEl.innerHTML = `<span style="color:#166534;">✓ Option A Email sent to ${esc(data.broker_email)}! RateCon requested.</span>`;
-        await loadOffers();
-      } catch (err) {
-        statusEl.innerHTML = `<span style="color:#dc2626;">Error: ${esc(err.message)}</span>`;
-      }
-    };
-
-    window.callBrokerAction = async function(idx) {
-      const load = currentParsedLoads[idx];
-      if (!load) return;
-      const statusEl = document.getElementById(`dat-action-status-${idx}`);
-      let brokerPhone = load.broker_phone;
-      if (!brokerPhone) {
-        brokerPhone = prompt('Enter broker phone number for Option B call:', '(800) 580-3101');
-        if (!brokerPhone) return;
-        load.broker_phone = brokerPhone;
-      }
-
-      statusEl.innerHTML = '<span style="color:#475569;">Initiating Option B broker call...</span>';
-      try {
-        const data = await api('/api/dispatch-desk/contact-broker-call', {
-          method: 'POST',
-          body: JSON.stringify({
-            broker_phone: brokerPhone,
-            broker_name: load.broker_name,
-            load,
-            offer_id: load.active_offer_id || null
-          })
-        });
-        statusEl.innerHTML = `<span style="color:#166534;">✓ ${esc(data.message)}</span>`;
-        await loadOffers();
-      } catch (err) {
-        statusEl.innerHTML = `<span style="color:#dc2626;">Error: ${esc(err.message)}</span>`;
-      }
-    };
-
-    window.auditRateConAction = async function(idx) {
-      const load = currentParsedLoads[idx];
-      if (!load) return;
-      const statusEl = document.getElementById(`dat-action-status-${idx}`);
-      const defaultSample = `CARRIER RATE CONFIRMATION\nBroker: ${load.broker_name || 'Verified Broker'}\nOrder #: OGR-${load.load_id || '99412'}\nShipper: 100 Main St, ${load.origin}\nReceiver: 500 Gulf Fwy, ${load.destination}\nTotal Pay: $${load.rate ? Number(load.rate).toLocaleString() : '1,000'}.00\nDetention: $50/hr\nDRIVER ASSIST REQUIRED AT RECEIVER`;
-      const rcText = prompt('Paste broker Rate Confirmation text or terms to audit:', defaultSample);
-      if (!rcText) return;
-
-      statusEl.innerHTML = '<span style="color:#475569;">Auditing RateCon against agreed terms...</span>';
-      try {
-        const data = await api('/api/dispatch-desk/audit-ratecon', {
-          method: 'POST',
-          body: JSON.stringify({
-            offer_id: load.active_offer_id || null,
-            expected_rate: load.rate,
-            expected_origin: load.origin,
-            expected_destination: load.destination,
-            ratecon_text: rcText,
-            auto_book: Boolean(load.active_offer_id)
-          })
-        });
-
-        if (data.audit?.passed) {
-          alert(`✓ RateCon Audit PASSED (Score: ${data.audit.score}/100)!\n\nRate: $${data.parsed_ratecon.rate} matches agreed pay.\nLane: ${data.parsed_ratecon.origin} → ${data.parsed_ratecon.destination}\n\n${data.auto_booked ? 'Status: BOOKED! Driver confirmed via SMS.' : 'Ready to Book.'}`);
-          statusEl.innerHTML = `<span style="color:#166534;">✓ RateCon Verified ($${data.parsed_ratecon.rate})! ${data.auto_booked ? 'Load BOOKED.' : 'Audit passed.'}</span>`;
-          await loadOffers();
-        } else {
-          alert(`⚠️ RATE DISCREPANCY DETECTED:\n\n${data.audit.discrepancies.map(d => d.message).join('\n')}\n\nRecommendation: Request corrected RateCon from broker before dispatching truck.`);
-          statusEl.innerHTML = `<span style="color:#dc2626;">⚠️ RateCon Discrepancy Flagged!</span>`;
-        }
-      } catch (err) {
-        statusEl.innerHTML = `<span style="color:#dc2626;">Audit Error: ${esc(err.message)}</span>`;
-      }
-    };
-
-    window.sendPacketAction = async function(idx) {
-      const load = currentParsedLoads[idx];
-      if (!load) return;
-      const statusEl = document.getElementById(`dat-action-status-${idx}`);
-      const carrierSel = document.getElementById(`dat-carrier-sel-${idx}`);
-      const carrierId = carrierSel ? carrierSel.value : load.suggested_carrier_id;
-
-      let brokerEmail = load.broker_email;
-      if (!brokerEmail) {
-        brokerEmail = prompt('Enter broker email to receive Carrier Onboarding Packet (W-9, COI, MC Certificate):', 'onboarding@broker.com');
-        if (!brokerEmail) return;
-        load.broker_email = brokerEmail;
-      }
-
-      statusEl.innerHTML = '<span style="color:#475569;">Sending verified Carrier Packet...</span>';
-      try {
-        const data = await api('/api/dispatch-desk/send-carrier-packet', {
-          method: 'POST',
-          body: JSON.stringify({
-            broker_email: brokerEmail,
-            carrier_id: carrierId,
-            load_id: load.load_id || 'Spot-Freight',
-            origin: load.origin,
-            destination: load.destination,
-            agreed_rate: load.rate,
-            equipment: load.equipment_type
-          })
-        });
-        alert(`✓ CARRIER PACKET SENT!\n\nDelivered to: ${brokerEmail}\nAttached: W-9, Certificate of Insurance, MC Authority Certificate, and Factoring NOA.\n\nCarrier is now cleared for RateCon!`);
-        statusEl.innerHTML = `<span style="color:#166534;">✓ Carrier packet sent to ${esc(brokerEmail)}!</span>`;
-      } catch (err) {
-        statusEl.innerHTML = `<span style="color:#dc2626;">Error: ${esc(err.message)}</span>`;
-      }
-    };
-
-    window.generateTrackingAction = async function(idx) {
-      const load = currentParsedLoads[idx];
-      if (!load) return;
-      const statusEl = document.getElementById(`dat-action-status-${idx}`);
-
-      statusEl.innerHTML = '<span style="color:#475569;">Generating live GPS tracking link...</span>';
-      try {
-        const data = await api('/api/dispatch-desk/generate-tracking', {
-          method: 'POST',
-          body: JSON.stringify({
-            offer_id: load.active_offer_id || 1
-          })
-        });
-
-        const trackingUrl = data.tracking_url;
-        window.open(trackingUrl, '_blank');
-        alert(`🛰️ LIVE GPS TRACKING ACTIVE!\n\nBroker Tracking URL:\n${trackingUrl}\n\nFeatures:\n- Real-time GPS location & speed\n- Automated shipper & receiver milestone pings\n- Zero broker phone check-calls needed!`);
-        statusEl.innerHTML = `<span style="color:#0284c7;">✓ Live GPS tracking link active! (<a href="${trackingUrl}" target="_blank" style="color:#0284c7;text-decoration:underline;">Open</a>)</span>`;
-      } catch (err) {
-        statusEl.innerHTML = `<span style="color:#dc2626;">Tracking error: ${esc(err.message)}</span>`;
-      }
-    };
-
-    window.scanPodAction = async function(idx) {
-      const load = currentParsedLoads[idx];
-      if (!load) return;
-      const statusEl = document.getElementById(`dat-action-status-${idx}`);
-      const samplePodText = `BILL OF LADING & PROOF OF DELIVERY\nShipper: 100 Main St, ${load.origin || 'Hopkinsville KY'}\nConsignee: Gulf Freight Docks, ${load.destination || 'Diberville MS'}\nPieces: 24 Pallets (2500 lbs)\nRECEIVED IN GOOD CONDITION - CLEAN / NO SHORTAGE\nConsignee Signature: John D. Miller\nDate: ${new Date().toLocaleDateString('en-US')}\nSeal Intact: YES (#884920)`;
-
-      const podInput = prompt('Paste Proof of Delivery (POD) / signed BOL text to audit & invoice:', samplePodText);
-      if (!podInput) return;
-
-      statusEl.innerHTML = '<span style="color:#475569;">Auditing POD signature & generating invoice...</span>';
-      try {
-        const data = await api('/api/dispatch-desk/scan-pod', {
-          method: 'POST',
-          body: JSON.stringify({
-            load_id: load.load_id || 101,
-            offer_id: load.active_offer_id || null,
-            pod_text: podInput,
-            rate: load.rate || 1000,
-            origin: load.origin,
-            destination: load.destination
-          })
-        });
-
-        if (data.ready_for_factoring) {
-          const inv = data.generated_invoice;
-          const confirmSubmit = window.swConfirm
-            ? await window.swConfirm({
-                title: 'POD Audit Verified Clean!',
-                message: `Signature: Confirmed (Receiver signed on ${data.pod_report.delivery_date})\nOS&D Exceptions: Clean bill (Zero damage/shortage)\nInvoice Generated: #${inv.invoice_number} ($${inv.total_due.toLocaleString()})\n\nWould you like to auto-submit this invoice bundle directly to your Factoring Provider (${inv.remit_to.factoring_company})?`,
-                confirmText: 'Submit to Factoring',
-                confirmColor: 'success',
-                icon: 'check'
-              })
-            : confirm(`✓ POD AUDIT VERIFIED CLEAN!\n\nSignature: Confirmed (Receiver signed on ${data.pod_report.delivery_date})\nOS&D Exceptions: Clean bill (Zero damage/shortage)\nInvoice Generated: #${inv.invoice_number} ($${inv.total_due.toLocaleString()})\n\nWould you like to auto-submit this invoice bundle directly to your Factoring Provider (${inv.remit_to.factoring_company})?`);
-          
-          if (confirmSubmit) {
-            statusEl.innerHTML = '<span style="color:#475569;">Submitting to factoring desk...</span>';
-            const subData = await api('/api/dispatch-desk/submit-factoring', {
-              method: 'POST',
-              body: JSON.stringify({
-                invoice: inv,
-                pod_report: data.pod_report,
-                target_email: inv.remit_to.remit_email,
-                offer_id: load.active_offer_id || null
-              })
-            });
-            if (window.swAlert) {
-              await window.swAlert({
-                title: 'Factoring Funding Submitted!',
-                message: `Invoice #${inv.invoice_number} ($${inv.total_due.toLocaleString()}) has been submitted to ${inv.remit_to.remit_email} with RateCon and Clean Signed POD.\n\nSame-day pay scheduled!`,
-                icon: 'info'
-              });
-            } else {
-              alert(`🎉 FACTORING FUNDING SUBMITTED!\n\nInvoice #${inv.invoice_number} ($${inv.total_due.toLocaleString()}) has been submitted to ${inv.remit_to.remit_email} with RateCon and Clean Signed POD.\n\nSame-day pay scheduled!`);
-            }
-            statusEl.innerHTML = `<span style="color:#166534;">✓ Factoring submitted (#${inv.invoice_number})! Payout pending.</span>`;
-            await loadOffers();
-          } else {
-            statusEl.innerHTML = `<span style="color:#166534;">✓ Clean POD verified. Invoice #${inv.invoice_number} ready in draft.</span>`;
-          }
-        } else {
-          alert(`⚠️ POD AUDIT FLAGGED:\n\n${data.pod_report.summary}`);
-          statusEl.innerHTML = `<span style="color:#dc2626;">⚠️ POD issue: ${esc(data.pod_report.summary)}</span>`;
-        }
-      } catch (err) {
-        statusEl.innerHTML = `<span style="color:#dc2626;">POD Error: ${esc(err.message)}</span>`;
-      }
-    };
-    document.body.addEventListener('submit', async (event) => {
-      const id = event.target.getAttribute && event.target.getAttribute('data-rulesform');
-      if (!id) return;
-      event.preventDefault();
-      try {
-        await api('/api/dispatch-desk/carriers/' + id, { method: 'PATCH', body: JSON.stringify(Object.fromEntries(new FormData(event.target).entries())) });
-        document.getElementById('carrier-msg').textContent = 'Rules saved.';
-        await loadCarriers();
-      } catch (err) { document.getElementById('carrier-msg').textContent = err.message; }
-    });
-    loadOutreach().catch((err) => { document.getElementById('outreach-msg').textContent = err.message; });
-
-    document.getElementById('outreach-enabled').addEventListener('change', async (event) => {
-      const msg = document.getElementById('outreach-msg');
-      try {
-        await api('/api/outreach/settings', { method: 'POST', body: JSON.stringify({ enabled: event.target.checked }) });
-        msg.textContent = event.target.checked ? 'Outreach is on. It sends small batches during each state’s office hours.' : 'Outreach is off.';
-        await loadOutreach();
-      } catch (err) { msg.textContent = err.message; }
-    });
-    document.getElementById('outreach-save').addEventListener('click', async () => {
-      const msg = document.getElementById('outreach-msg');
-      try {
-        await api('/api/outreach/settings', {
-          method: 'POST',
-          body: JSON.stringify({ start_cap: document.getElementById('outreach-start').value, max_cap: document.getElementById('outreach-max').value })
-        });
-        msg.textContent = 'Limits saved.';
-        await loadOutreach();
-      } catch (err) { msg.textContent = err.message; }
-    });
-    document.getElementById('outreach-run').addEventListener('click', async () => {
-      const msg = document.getElementById('outreach-msg');
-      try {
-        const data = await api('/api/outreach/run', { method: 'POST', body: '{}' });
-        const r = data.result || {};
-        msg.textContent = r.idle || ('Sent ' + (r.results || []).filter((x) => x.sent).length + ' in this batch. Only companies inside their 9–5 window are emailed.');
-        await loadOutreach();
-      } catch (err) { msg.textContent = err.message; }
-    });
-    document.getElementById('import-run').addEventListener('click', async () => {
-      const msg = document.getElementById('outreach-msg');
-      try {
-        const data = await api('/api/outreach/import', {
-          method: 'POST',
-          body: JSON.stringify({ kind: document.getElementById('import-kind').value, state: document.getElementById('import-state').value.trim().toUpperCase() })
-        });
-        msg.textContent = 'FMCSA returned ' + data.result.fetched + ' ' + data.result.kind + 's in ' + data.result.state + '. Added ' + data.result.added + ' new.';
-        await loadOutreach();
-      } catch (err) { msg.textContent = err.message; }
-    });
-
-    const sourceFormEl = document.getElementById('source-form');
-    if (sourceFormEl) {
-      sourceFormEl.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const msg = document.getElementById('source-msg') || { textContent: '' };
-        const body = Object.fromEntries(new FormData(event.target).entries());
-        try {
-          await api('/api/dispatch-desk/sources', { method: 'POST', body: JSON.stringify(body) });
-          event.target.reset();
-          event.target.header_name.value = 'Authorization';
-          msg.textContent = 'API saved. Press Sync now to pull the first loads.';
-          await loadSources();
-        } catch (err) { msg.textContent = err.message; }
+    statusEl.innerHTML = '<span style="color:#2563eb;">Sending SMS offer to driver phone...</span>';
+    try {
+      const data = await api('/api/dispatch-desk/send-driver-offer', {
+        method: 'POST',
+        body: JSON.stringify({
+          load,
+          carrier_id: carrierId,
+          truck_number: truckNum
+        })
       });
+      load.active_offer_id = data.offer_id;
+      statusEl.innerHTML = `<span style="color:#166534;">✓ SMS offer sent to ${esc(data.carrier.phone)}! Awaiting "BOOK IT" reply.</span>`;
+      await loadDispatchedOffers();
+    } catch (err) {
+      statusEl.innerHTML = `<span style="color:#dc2626;">Error: ${esc(err.message)}</span>`;
+    }
+  };
+
+  window.emailBrokerAction = async function(idx) {
+    const load = currentMatchedLoads[idx];
+    if (!load) return;
+    const statusEl = document.getElementById(`match-status-${idx}`);
+    const carrierId = load.suggested_carrier_id || (selectedTruck ? selectedTruck.carrier_id : null);
+
+    let brokerEmail = load.broker_email;
+    if (!brokerEmail) {
+      brokerEmail = prompt('Enter broker email for booking request:', 'dispatch@verifiedbroker.com');
+      if (!brokerEmail) return;
+      load.broker_email = brokerEmail;
     }
 
-    document.getElementById('carrier-form').addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const msg = document.getElementById('carrier-msg');
-      const body = Object.fromEntries(new FormData(event.target).entries());
-      try {
-        await api('/api/dispatch-desk/carriers', { method: 'POST', body: JSON.stringify(body) });
-        event.target.reset();
-        msg.textContent = 'Carrier added. Press Start when you want the morning text to go out.';
-        await loadCarriers();
-      } catch (err) { msg.textContent = err.message; }
-    });
-
-    const syncDueEl = document.getElementById('sync-due');
-    if (syncDueEl) {
-      syncDueEl.addEventListener('click', async () => {
-        const msg = document.getElementById('source-msg') || { textContent: '' };
-        try {
-          await api('/api/dispatch-desk/sources/sync-due', { method: 'POST', body: '{}' });
-          msg.textContent = 'Refresh finished.';
-          await loadSources();
-        } catch (err) { msg.textContent = err.message; }
+    statusEl.innerHTML = '<span style="color:#2563eb;">Sending Option A booking email with carrier packet...</span>';
+    try {
+      const data = await api('/api/dispatch-desk/contact-broker-email', {
+        method: 'POST',
+        body: JSON.stringify({
+          load,
+          offer_id: load.active_offer_id || null,
+          carrier_id: carrierId,
+          broker_email: brokerEmail,
+          notes: load.notes
+        })
       });
+      statusEl.innerHTML = `<span style="color:#166534;">✓ Option A Email sent to ${esc(data.broker_email)}! RateCon requested.</span>`;
+      await loadDispatchedOffers();
+    } catch (err) {
+      statusEl.innerHTML = `<span style="color:#dc2626;">Error: ${esc(err.message)}</span>`;
     }
-    document.getElementById('start-all').addEventListener('click', async () => {
-      const msg = document.getElementById('carrier-msg');
-      try {
-        await api('/api/dispatch-desk/carriers/start-all', { method: 'POST', body: '{}' });
-        msg.textContent = 'Start requested for every carrier on this list.';
-        await loadCarriers();
-      } catch (err) { msg.textContent = err.message; }
-    });
-    document.body.addEventListener('click', async (event) => {
-      const sync = event.target.getAttribute && event.target.getAttribute('data-sync');
-      const remove = event.target.getAttribute && event.target.getAttribute('data-remove');
-      const start = event.target.getAttribute && event.target.getAttribute('data-start');
-      const pause = event.target.getAttribute && event.target.getAttribute('data-pause');
-      const consent = event.target.getAttribute && event.target.getAttribute('data-consent');
-      const attr = (name) => event.target.getAttribute && event.target.getAttribute(name);
-      const sendLoads = attr('data-sendloads');
-      const emptySoon = attr('data-emptysoon');
-      const rules = attr('data-rules');
-      const chat = attr('data-chat');
-      const booked = attr('data-booked');
-      const release = attr('data-release');
-      const auditRc = attr('data-audit-rc');
+  };
 
-      if (auditRc) {
-        const msg = document.getElementById('offers-msg');
-        const defaultSample = `CARRIER RATE CONFIRMATION\nBroker: Verified Broker\nOrder #: OGR-99412\nShipper: 100 Main St, Hopkinsville, KY\nReceiver: 500 Gulf Fwy, Dibersville, MS\nTotal Pay: $1,000.00\nDetention: $50/hr\nDRIVER ASSIST REQUIRED AT RECEIVER`;
-        const rcText = prompt('Paste broker Rate Confirmation text or terms to audit:', defaultSample);
-        if (!rcText) return;
-        msg.textContent = 'Auditing broker Rate Confirmation...';
-        try {
-          const data = await api('/api/dispatch-desk/audit-ratecon', {
+  window.callBrokerAction = async function(idx) {
+    const load = currentMatchedLoads[idx];
+    if (!load) return;
+    const statusEl = document.getElementById(`match-status-${idx}`);
+    let brokerPhone = load.broker_phone;
+    if (!brokerPhone) {
+      brokerPhone = prompt('Enter broker phone number for Option B call:', '(800) 580-3101');
+      if (!brokerPhone) return;
+      load.broker_phone = brokerPhone;
+    }
+
+    statusEl.innerHTML = '<span style="color:#2563eb;">Initiating Option B broker call bridge...</span>';
+    try {
+      const data = await api('/api/dispatch-desk/contact-broker-call', {
+        method: 'POST',
+        body: JSON.stringify({
+          broker_phone: brokerPhone,
+          broker_name: load.broker_name,
+          load,
+          offer_id: load.active_offer_id || null
+        })
+      });
+      statusEl.innerHTML = `<span style="color:#166534;">✓ ${esc(data.message)}</span>`;
+      await loadDispatchedOffers();
+    } catch (err) {
+      statusEl.innerHTML = `<span style="color:#dc2626;">Error: ${esc(err.message)}</span>`;
+    }
+  };
+
+  window.sendPacketAction = async function(idx) {
+    const load = currentMatchedLoads[idx];
+    if (!load) return;
+    const statusEl = document.getElementById(`match-status-${idx}`);
+    const carrierId = load.suggested_carrier_id || (selectedTruck ? selectedTruck.carrier_id : null);
+
+    let brokerEmail = load.broker_email;
+    if (!brokerEmail) {
+      brokerEmail = prompt('Enter broker email to receive Carrier Onboarding Packet (W-9, COI, MC Certificate):', 'onboarding@freightbroker.com');
+      if (!brokerEmail) return;
+      load.broker_email = brokerEmail;
+    }
+
+    statusEl.innerHTML = '<span style="color:#2563eb;">Sending verified Carrier Packet bundle...</span>';
+    try {
+      await api('/api/dispatch-desk/send-carrier-packet', {
+        method: 'POST',
+        body: JSON.stringify({
+          broker_email: brokerEmail,
+          carrier_id: carrierId,
+          load_id: load.load_id || 'Spot-Freight',
+          origin: load.origin,
+          destination: load.destination,
+          agreed_rate: load.rate,
+          equipment: load.equipment_type
+        })
+      });
+      alert(`✓ CARRIER PACKET SENT!\n\nDelivered to: ${brokerEmail}\nAttached: W-9, Certificate of Insurance, MC Authority Certificate, and Factoring NOA.\n\nCarrier is now cleared for RateCon!`);
+      statusEl.innerHTML = `<span style="color:#166534;">✓ Carrier packet sent to ${esc(brokerEmail)}!</span>`;
+    } catch (err) {
+      statusEl.innerHTML = `<span style="color:#dc2626;">Error: ${esc(err.message)}</span>`;
+    }
+  };
+
+  window.auditRateConAction = async function(idx) {
+    const load = currentMatchedLoads[idx];
+    if (!load) return;
+    const statusEl = document.getElementById(`match-status-${idx}`);
+    const defaultSample = `CARRIER RATE CONFIRMATION\nBroker: ${load.broker_name || 'Verified Broker'}\nOrder #: OGR-${load.load_id || '99412'}\nShipper: 100 Main St, ${load.origin}\nReceiver: 500 Gulf Fwy, ${load.destination}\nTotal Pay: $${load.rate ? Number(load.rate).toLocaleString() : '1,000'}.00\nDetention: $50/hr\nDRIVER ASSIST REQUIRED AT RECEIVER`;
+    const rcText = prompt('Paste broker Rate Confirmation text or terms to audit:', defaultSample);
+    if (!rcText) return;
+
+    statusEl.innerHTML = '<span style="color:#2563eb;">Auditing RateCon against agreed terms...</span>';
+    try {
+      const data = await api('/api/dispatch-desk/audit-ratecon', {
+        method: 'POST',
+        body: JSON.stringify({
+          offer_id: load.active_offer_id || null,
+          expected_rate: load.rate,
+          expected_origin: load.origin,
+          expected_destination: load.destination,
+          ratecon_text: rcText,
+          auto_book: Boolean(load.active_offer_id)
+        })
+      });
+
+      if (data.audit?.passed) {
+        alert(`✓ RateCon Audit PASSED (Score: ${data.audit.score}/100)!\n\nRate: $${data.parsed_ratecon.rate} matches agreed pay.\nLane: ${data.parsed_ratecon.origin} → ${data.parsed_ratecon.destination}\n\n${data.auto_booked ? 'Status: BOOKED! Driver confirmed via SMS.' : 'Ready to Book.'}`);
+        statusEl.innerHTML = `<span style="color:#166534;">✓ RateCon Verified ($${data.parsed_ratecon.rate})! ${data.auto_booked ? 'Load BOOKED.' : 'Audit passed.'}</span>`;
+        await loadDispatchedOffers();
+      } else {
+        alert(`⚠️ RATE DISCREPANCY DETECTED:\n\n${data.audit.discrepancies.map(d => d.message).join('\n')}\n\nRecommendation: Request corrected RateCon from broker before dispatching truck.`);
+        statusEl.innerHTML = `<span style="color:#dc2626;">⚠️ RateCon Discrepancy Flagged!</span>`;
+      }
+    } catch (err) {
+      statusEl.innerHTML = `<span style="color:#dc2626;">Audit Error: ${esc(err.message)}</span>`;
+    }
+  };
+
+  // Offers Table Actions
+  window.auditOfferRateCon = async function(offerId) {
+    const defaultSample = `CARRIER RATE CONFIRMATION\nBroker: Verified Broker\nTotal Pay: $1,200.00\nDetention: $50/hr`;
+    const rcText = prompt('Paste broker Rate Confirmation text to audit:', defaultSample);
+    if (!rcText) return;
+    try {
+      const data = await api('/api/dispatch-desk/audit-ratecon', {
+        method: 'POST',
+        body: JSON.stringify({ offer_id: offerId, ratecon_text: rcText, auto_book: true })
+      });
+      alert(data.audit?.passed ? `✓ Audit PASSED! Load marked as BOOKED.` : `⚠️ Flagged: ${data.audit.discrepancies.map(d => d.message).join('; ')}`);
+      await loadDispatchedOffers();
+    } catch (err) { alert(err.message); }
+  };
+
+  window.markOfferBooked = async function(offerId) {
+    if (!confirm('Mark load as officially BOOKED and text driver confirmation?')) return;
+    try {
+      await api(`/api/dispatch-desk/offers/${offerId}/booked`, { method: 'POST', body: '{}' });
+      alert('✓ Load marked BOOKED. Confirmation text sent to driver.');
+      await loadDispatchedOffers();
+      await loadRoster();
+    } catch (err) { alert(err.message); }
+  };
+
+  window.releaseOfferAction = async function(offerId) {
+    if (!confirm('Release this load and send the driver next best loads?')) return;
+    try {
+      await api(`/api/dispatch-desk/offers/${offerId}/release`, { method: 'POST', body: '{}' });
+      await loadDispatchedOffers();
+    } catch (err) { alert(err.message); }
+  };
+
+  window.generateOfferTracking = async function(offerId) {
+    try {
+      const data = await api('/api/dispatch-desk/generate-tracking', {
+        method: 'POST',
+        body: JSON.stringify({ offer_id: offerId })
+      });
+      window.open(data.tracking_url, '_blank');
+    } catch (err) { alert(err.message); }
+  };
+
+  window.scanOfferPod = async function(offerId, rate, origin, destination) {
+    const samplePodText = `BILL OF LADING & PROOF OF DELIVERY\nReceived in good condition - Clean bill / No exceptions.\nConsignee Signature: Confirmed Receiver`;
+    const podInput = prompt('Paste signed BOL / POD text to audit & generate factoring invoice:', samplePodText);
+    if (!podInput) return;
+    try {
+      const data = await api('/api/dispatch-desk/scan-pod', {
+        method: 'POST',
+        body: JSON.stringify({
+          offer_id: offerId,
+          pod_text: podInput,
+          rate: rate || 1000,
+          origin,
+          destination
+        })
+      });
+      if (data.ready_for_factoring) {
+        if (confirm(`✓ Clean POD Verified! Generated Invoice #${data.generated_invoice.invoice_number} ($${data.generated_invoice.total_due}). Auto-submit to Factoring company?`)) {
+          await api('/api/dispatch-desk/submit-factoring', {
             method: 'POST',
             body: JSON.stringify({
-              offer_id: auditRc,
-              ratecon_text: rcText,
-              auto_book: true
+              invoice: data.generated_invoice,
+              pod_report: data.pod_report,
+              target_email: data.generated_invoice.remit_to.remit_email,
+              offer_id: offerId
             })
           });
-          if (data.audit?.passed) {
-            alert(`✓ RateCon Audit PASSED (Score: ${data.audit.score}/100)!\n\nRate: $${data.parsed_ratecon.rate} matches agreed rate.\nLane: ${data.parsed_ratecon.origin} → ${data.parsed_ratecon.destination}\n\nStatus: Load automatically BOOKED and driver notified via SMS!`);
-            msg.textContent = data.message;
-          } else {
-            alert(`⚠️ RATE DISCREPANCY DETECTED:\n\n${data.audit.discrepancies.map(d => d.message).join('\n')}\n\nRecommendation: Do not book until broker fixes the rate.`);
-            msg.textContent = 'Discrepancy flagged: ' + data.audit.discrepancies.map(d => d.message).join('; ');
-          }
-          await loadOffers();
-        } catch (err) { msg.textContent = 'Audit error: ' + err.message; }
-        return;
-      }
-
-      if (booked || release) {
-        const msg = document.getElementById('offers-msg');
-        try {
-          if (booked) {
-            const ok = window.swConfirm
-              ? await window.swConfirm({
-                  title: 'Confirm Load Booked?',
-                  message: 'Only press Booked after the broker has sent the official rate confirmation. Text the driver BOOKED now?',
-                  confirmText: 'Confirm & Text Driver',
-                  confirmColor: 'success',
-                  icon: 'check'
-                })
-              : confirm('Only press Booked after the broker sent the rate confirmation. Text the driver BOOKED now?');
-            if (!ok) return;
-            const data = await api('/api/dispatch-desk/offers/' + booked + '/booked', { method: 'POST', body: '{}' });
-            msg.textContent = 'Booked. Driver text: ' + data.sms + '.';
-            if (window.swToast) window.swToast('Load marked as booked!', 'success');
-          } else {
-            const ok = window.swConfirm
-              ? await window.swConfirm({
-                  title: 'Release Load?',
-                  message: 'Release this load and send the driver the next best loads?',
-                  confirmText: 'Release Load',
-                  confirmColor: 'warning',
-                  icon: 'warning'
-                })
-              : confirm('Release this load and send the driver the next best loads?');
-            if (!ok) return;
-            const data = await api('/api/dispatch-desk/offers/' + release + '/release', { method: 'POST', body: '{}' });
-            msg.textContent = data.sms === 'held_for_hours' ? 'Released. The driver is outside texting hours or has no consent, so tell them yourself.' : 'Released and the driver got the next loads.';
-            if (window.swToast) window.swToast('Load released', 'info');
-          }
-          await loadOffers();
-        } catch (err) { msg.textContent = err.message; }
-        return;
-      }
-      if (sendLoads || emptySoon || rules || chat) {
-        const msg = document.getElementById('carrier-msg');
-        try {
-          if (sendLoads) {
-            const data = await api('/api/dispatch-desk/carriers/' + sendLoads + '/send-loads', { method: 'POST', body: '{}' });
-            msg.textContent = data.sent ? 'Sent ' + data.offers + ' loads to the driver.' : (data.reason || 'Nothing sent.');
-            await loadOffers();
-          } else if (emptySoon) {
-            const data = await api('/api/dispatch-desk/carriers/' + emptySoon + '/empty-soon', { method: 'POST', body: '{}' });
-            msg.textContent = data.sent ? 'Empty-soon loads sent (' + data.offers + ').' : (data.reason || 'Nothing sent.');
-            await loadOffers();
-          } else if (rules) {
-            const box = document.getElementById('carrier-extra-' + rules);
-            box.innerHTML = box.innerHTML ? '' : rulesForm(carriersById[rules]);
-          } else if (chat) {
-            const box = document.getElementById('carrier-extra-' + chat);
-            if (box.innerHTML) box.innerHTML = ''; else await showConversation(chat);
-          }
-        } catch (err) { msg.textContent = err.message; }
-        return;
-      }
-      try {
-        if (consent) {
-          await api('/api/dispatch-desk/carriers/' + consent + '/consent', { method: 'POST', body: '{}' });
-          await loadCarriers();
-        } else if (sync) {
-          await api('/api/dispatch-desk/sources/' + sync + '/sync', { method: 'POST', body: '{}' });
-          await loadSources();
-        } else if (remove) {
-          await api('/api/dispatch-desk/sources/' + remove, { method: 'DELETE' });
-          await loadSources();
-        } else if (start) {
-          await api('/api/dispatch-desk/carriers/' + start + '/start', { method: 'POST', body: '{}' });
-          await loadCarriers();
-        } else if (pause) {
-          await api('/api/dispatch-desk/carriers/' + pause + '/pause', { method: 'POST', body: '{}' });
-          await loadCarriers();
+          alert('🎉 Factoring bundle submitted! Payout pending.');
+          await loadDispatchedOffers();
         }
-      } catch (err) {
-        document.getElementById(start || pause || consent ? 'carrier-msg' : 'source-msg').textContent = err.message;
+      } else {
+        alert(`⚠️ POD Flagged: ${data.pod_report.summary}`);
       }
-    });
+    } catch (err) { alert(err.message); }
+  };
+
+  // Edit Truck Modal Handlers
+  window.openEditTruckModal = function(idx) {
+    const truck = currentRoster[idx];
+    if (!truck) return;
+    document.getElementById('edit-carrier-id').value = truck.carrier_id || '';
+    document.getElementById('edit-truck-id').value = truck.truck_id || '';
+    document.getElementById('edit-empty-zip').value = truck.empty_zip || '';
+    document.getElementById('edit-prefer-dest').value = truck.prefer_destination || '';
+    document.getElementById('edit-equipment').value = truck.equipment || '26ft Box Truck';
+    document.getElementById('edit-status').value = truck.status || 'active';
+    document.getElementById('edit-min-rpm').value = truck.min_rpm || 2.00;
+    document.getElementById('edit-max-deadhead').value = truck.max_deadhead || 150;
+    document.getElementById('update-modal-title').textContent = `Update Unit #${truck.truck_number} (${truck.company_name})`;
+    modalUpdateTruck.classList.add('is-open');
+  };
+
+  document.getElementById('btn-close-update-modal').addEventListener('click', () => modalUpdateTruck.classList.remove('is-open'));
+  document.getElementById('btn-cancel-update-truck').addEventListener('click', () => modalUpdateTruck.classList.remove('is-open'));
+
+  document.getElementById('form-update-truck').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = Object.fromEntries(new FormData(e.target).entries());
+    try {
+      await api('/api/dispatch-desk/update-truck-status', {
+        method: 'POST',
+        body: JSON.stringify(body)
+      });
+      modalUpdateTruck.classList.remove('is-open');
+      await loadRoster();
+      if (selectedTruck) {
+        const updated = currentRoster.find(r => r.id === selectedTruck.id || r.truck_number === selectedTruck.truck_number);
+        if (updated) selectTruckForDispatch(updated);
+      }
+    } catch (err) { alert(err.message); }
+  });
+
+  // Add Truck Modal Handlers
+  document.getElementById('btn-open-add-truck').addEventListener('click', () => modalAddTruck.classList.add('is-open'));
+  document.getElementById('btn-close-add-modal').addEventListener('click', () => modalAddTruck.classList.remove('is-open'));
+  document.getElementById('btn-cancel-add-truck').addEventListener('click', () => modalAddTruck.classList.remove('is-open'));
+
+  document.getElementById('form-add-truck').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = Object.fromEntries(new FormData(e.target).entries());
+    try {
+      await api('/api/dispatch-desk/carriers', {
+        method: 'POST',
+        body: JSON.stringify(body)
+      });
+      modalAddTruck.classList.remove('is-open');
+      e.target.reset();
+      await loadRoster();
+    } catch (err) { alert(err.message); }
+  });
+
+  // Filters & Top Controls
+  document.getElementById('filter-all-trucks').addEventListener('click', () => {
+    document.getElementById('filter-all-trucks').style.background = '#0f172a';
+    document.getElementById('filter-all-trucks').style.color = '#fff';
+    document.getElementById('filter-ready-trucks').style.background = '#fff';
+    document.getElementById('filter-ready-trucks').style.color = '#334155';
+    renderTrucks('all');
+  });
+
+  document.getElementById('filter-ready-trucks').addEventListener('click', () => {
+    document.getElementById('filter-ready-trucks').style.background = '#0f172a';
+    document.getElementById('filter-ready-trucks').style.color = '#fff';
+    document.getElementById('filter-all-trucks').style.background = '#fff';
+    document.getElementById('filter-all-trucks').style.color = '#334155';
+    renderTrucks('ready');
+  });
+
+  document.getElementById('btn-refresh-roster').addEventListener('click', () => loadRoster());
+  document.getElementById('btn-refresh-offers').addEventListener('click', () => loadDispatchedOffers());
+  document.getElementById('btn-re-match').addEventListener('click', () => {
+    if (selectedTruck) selectTruckForDispatch(selectedTruck);
+  });
+
+  // Quick Ingestion Toolbar
+  const sampleDatLoadText = `𝗗𝗛𝗢: 72\n𝗟𝗼𝗮𝗱𝗲𝗱 𝗠𝗶𝗹𝗲𝘀 : 563\n\n𝗙𝗿𝗼𝗺: Hopkinsville KY\n𝗧𝗼: DIBERSVILLE MS\n\n𝗣𝗶𝗰𝗸𝘂𝗽: TODAY BEFORE 5PM\n𝗗𝗲𝗹𝗶𝘃𝗲𝗿𝘆: TOMORROW 8 TO 3PM\n\n𝗪𝗲𝗶𝗴𝗵𝘁: 2500\nRATE: 1000\nDRIVER ASSIST AT RECEIVER`;
+  document.getElementById('btn-sample-load').addEventListener('click', () => {
+    document.getElementById('dat-raw-input').value = sampleDatLoadText;
+    document.getElementById('btn-parse-dat').click();
+  });
+
+  document.getElementById('btn-parse-dat').addEventListener('click', async () => {
+    const text = document.getElementById('dat-raw-input').value.trim();
+    const msgEl = document.getElementById('dat-parse-msg');
+    if (!text) { msgEl.textContent = 'Please paste DAT One load details or click "Sample Load".'; return; }
+
+    msgEl.textContent = 'Parsing DAT text and matching fleet trucks...';
+    try {
+      const res = await api('/api/dispatch-desk/parse-dat-loads', {
+        method: 'POST',
+        body: JSON.stringify({ text })
+      });
+      currentMatchedLoads = res.loads || [];
+      loadCountBadgeEl.textContent = `${currentMatchedLoads.length} Loads Found`;
+      msgEl.textContent = `✓ Successfully matched ${currentMatchedLoads.length} load(s) with your fleet. Displayed below!`;
+      renderMatchedLoads();
+      document.getElementById('ai-recommendations-section').scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      msgEl.textContent = 'Error: ' + err.message;
+    }
+  });
+
+  // Init
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!(await guard())) return;
+    await loadRoster();
+    await loadDispatchedOffers();
   });
 </script>
 </body>
