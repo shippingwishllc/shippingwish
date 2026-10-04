@@ -120,28 +120,47 @@ router.post('/carriers', ...staff, async (req, res) => {
     await ensureBoardSchema();
     const company = String(req.body.company_name || '').trim();
     const phone = String(req.body.phone || '').trim();
+    const truckNumber = String(req.body.truck_number || '').trim() || '101';
+    const status = String(req.body.status || 'active').trim();
     if (!company || !phone) return res.status(400).json({ error: 'Company and phone are required.' });
     const consent = [true, 'true', 'on', '1', 'yes'].includes(req.body.sms_consent);
     const prefs = carrierPrefs(req.body);
     const { rows } = await pool.query(
-      `INSERT INTO ai_dispatch_carriers (company_name, contact_name, phone, email, equipment, empty_zip, prefer_destination, sms_consent, sms_consent_at,
+      `INSERT INTO ai_dispatch_carriers (company_name, truck_number, contact_name, phone, email, equipment, empty_zip, prefer_destination, status, sms_consent, sms_consent_at,
          mc_number, dot_number, min_rpm, max_deadhead, home_state, avoid_states, home_days)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8, CASE WHEN $8 THEN now() ELSE NULL END, $9,$10,$11, COALESCE($12, 150), $13,$14,$15) RETURNING *`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, CASE WHEN $10 THEN now() ELSE NULL END, $11,$12,$13, COALESCE($14, 150), $15,$16,$17) RETURNING *`,
       [
         company,
+        truckNumber,
         String(req.body.contact_name || '').trim() || null,
         phone,
         String(req.body.email || '').trim() || null,
         String(req.body.equipment || '').trim() || null,
         String(req.body.empty_zip || '').trim() || null,
         String(req.body.prefer_destination || '').trim() || null,
+        status,
         consent,
         prefs.mc_number, prefs.dot_number, prefs.min_rpm, prefs.max_deadhead, prefs.home_state, prefs.avoid_states, prefs.home_days
       ]
     );
+
+    // Also auto-sync to trucks table for Load Planning & Fleet ERP
+    try {
+      const existingUser = await pool.query('SELECT id FROM users WHERE company_name ILIKE $1 OR name ILIKE $1 LIMIT 1', [company]);
+      const carrierUserId = existingUser.rows[0] ? existingUser.rows[0].id : null;
+      if (carrierUserId) {
+        await pool.query(
+          `INSERT INTO trucks (carrier_id, truck_number, status)
+           VALUES ($1, $2, $3)
+           ON CONFLICT DO NOTHING`,
+          [carrierUserId, truckNumber, status]
+        ).catch(() => {});
+      }
+    } catch (_) {}
+
     res.json({ ok: true, carrier: rows[0] });
   } catch (err) {
-    res.status(500).json({ error: 'Could not add this carrier.' });
+    res.status(500).json({ error: 'Could not add this carrier: ' + err.message });
   }
 });
 
@@ -490,10 +509,26 @@ router.post('/match-truck', ...staff, async (req, res) => {
 router.post('/update-truck-status', ...staff, async (req, res) => {
   try {
     await ensureBoardSchema();
-    const { carrier_id, truck_id, empty_zip, prefer_destination, equipment, min_rpm, max_deadhead, status, driver_name, driver_phone } = req.body;
+    const {
+      carrier_id,
+      truck_id,
+      truck_number,
+      company_name,
+      empty_zip,
+      prefer_destination,
+      equipment,
+      min_rpm,
+      max_deadhead,
+      status,
+      driver_name,
+      driver_phone
+    } = req.body;
 
-    if (carrier_id && !String(carrier_id).startsWith('truck_')) {
-      await pool.query(`
+    let updatedCarrier = false;
+
+    // 1. Try to update existing ai_dispatch_carriers record
+    if (carrier_id && !String(carrier_id).startsWith('truck_') && !isNaN(Number(carrier_id))) {
+      const updateRes = await pool.query(`
         UPDATE ai_dispatch_carriers
         SET empty_zip = COALESCE($2, empty_zip),
             prefer_destination = COALESCE($3, prefer_destination),
@@ -501,17 +536,58 @@ router.post('/update-truck-status', ...staff, async (req, res) => {
             min_rpm = COALESCE($5, min_rpm),
             max_deadhead = COALESCE($6, max_deadhead),
             status = COALESCE($7, status),
-            last_location = COALESCE($2, last_location)
+            last_location = COALESCE($2, last_location),
+            truck_number = COALESCE($8, truck_number),
+            company_name = COALESCE($9, company_name),
+            contact_name = COALESCE($10, contact_name),
+            phone = COALESCE($11, phone)
         WHERE id = $1
-      `, [carrier_id, empty_zip || null, prefer_destination || null, equipment || null, min_rpm ? parseFloat(min_rpm) : null, max_deadhead ? parseInt(max_deadhead, 10) : null, status || null]);
+        RETURNING id
+      `, [
+        carrier_id,
+        empty_zip || null,
+        prefer_destination || null,
+        equipment || null,
+        min_rpm ? parseFloat(min_rpm) : null,
+        max_deadhead ? parseInt(max_deadhead, 10) : null,
+        status || null,
+        truck_number || null,
+        company_name || null,
+        driver_name || null,
+        driver_phone || null
+      ]);
+      if (updateRes.rows.length > 0) {
+        updatedCarrier = true;
+      }
     }
 
-    if (truck_id) {
+    // If carrier record wasn't updated (e.g. was fallback demo unit or standalone truck), insert real record
+    if (!updatedCarrier && (company_name || truck_number)) {
+      await pool.query(`
+        INSERT INTO ai_dispatch_carriers (company_name, truck_number, contact_name, phone, equipment, empty_zip, prefer_destination, status, min_rpm, max_deadhead, sms_consent)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)
+        RETURNING id
+      `, [
+        company_name || 'Shipping Wish Fleet Operations',
+        truck_number || '101',
+        driver_name || 'Driver',
+        driver_phone || '+1 (555) 019-2834',
+        equipment || '26ft Box Truck',
+        empty_zip || 'Hopkinsville, KY',
+        prefer_destination || 'Anywhere (High RPM)',
+        status || 'active',
+        min_rpm ? parseFloat(min_rpm) : 2.00,
+        max_deadhead ? parseInt(max_deadhead, 10) : 150
+      ]).catch(() => {});
+    }
+
+    // 2. Also update trucks table if truck_id exists, or if truck_number exists
+    if (truck_id && !String(truck_id).startsWith('101')) {
       await pool.query(`
         UPDATE trucks
         SET status = COALESCE($2, status)
         WHERE id = $1
-      `, [truck_id, status || null]);
+      `, [truck_id, status || null]).catch(() => {});
 
       if (driver_name || driver_phone) {
         await pool.query(`
@@ -519,11 +595,19 @@ router.post('/update-truck-status', ...staff, async (req, res) => {
           SET name = COALESCE($2, name),
               phone = COALESCE($3, phone)
           WHERE assigned_truck_id = $1
-        `, [truck_id, driver_name || null, driver_phone || null]);
+        `, [truck_id, driver_name || null, driver_phone || null]).catch(() => {});
       }
     }
 
-    res.json({ ok: true, message: 'Truck status and location updated.' });
+    if (truck_number) {
+      await pool.query(`
+        UPDATE trucks
+        SET status = COALESCE($2, status)
+        WHERE truck_number = $1
+      `, [truck_number, status || null]).catch(() => {});
+    }
+
+    res.json({ ok: true, message: 'Truck status and location updated successfully.' });
   } catch (err) {
     console.error('[Update Truck Status Error]', err);
     res.status(500).json({ error: 'Could not update truck status: ' + err.message });

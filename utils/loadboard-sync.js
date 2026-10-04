@@ -75,6 +75,7 @@ async function createBoardSchema() {
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS home_state TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS avoid_states TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS home_days TEXT;
+    ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS truck_number TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS last_location TEXT;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS off_until TIMESTAMPTZ;
     ALTER TABLE ai_dispatch_carriers ADD COLUMN IF NOT EXISTS last_inbound_at TIMESTAMPTZ;

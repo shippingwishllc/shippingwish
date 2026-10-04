@@ -147,18 +147,21 @@
     }
 
     .modal-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.65);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
+      display: none !important;
+      position: fixed !important;
+      inset: 0 !important;
+      background: rgba(15, 23, 42, 0.72) !important;
+      backdrop-filter: blur(6px) !important;
+      -webkit-backdrop-filter: blur(6px) !important;
+      z-index: 999999 !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 16px !important;
     }
+    .modal-backdrop.open,
+    .modal-backdrop.active,
     .modal-backdrop.is-open {
-      display: flex;
+      display: flex !important;
     }
     .modal-dialog {
       background: #ffffff;
@@ -248,20 +251,36 @@
 
       <!-- SECTION 1: FLEET & TRUCKS COMMAND ROSTER -->
       <section style="margin-bottom:28px;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
           <div>
-            <h2 style="font-size:17px; font-weight:800; color:#0f172a; margin:0 0 2px;">
-              🚛 Fleet &amp; Trucks Command Roster
-            </h2>
-            <p style="font-size:13px; color:#64748b; margin:0;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h2 style="font-size:17px; font-weight:800; color:#0f172a; margin:0;">
+                🚛 Fleet &amp; Trucks Command Roster
+              </h2>
+              <span id="roster-total-badge" style="background:#e2e8f0; color:#334155; font-size:11px; font-weight:800; padding:2px 8px; border-radius:6px;">0 Trucks</span>
+            </div>
+            <p style="font-size:13px; color:#64748b; margin:3px 0 0;">
               Select any truck to view AI-matched high-paying loads from its current empty location.
             </p>
           </div>
-          <div style="display:flex; gap:8px;">
-            <button type="button" id="filter-all-trucks" class="btn-act" style="background:#0f172a; color:#fff; font-size:11px; padding:6px 10px;">All Trucks</button>
-            <button type="button" id="filter-ready-trucks" class="btn-act" style="background:#fff; border:1px solid #cbd5e1; color:#334155; font-size:11px; padding:6px 10px;">Ready &amp; Empty Only</button>
-            <button type="button" id="btn-refresh-roster" class="btn-act" style="background:#fff; border:1px solid #cbd5e1; color:#334155; font-size:11px; padding:6px 10px;">🔄 Refresh Roster</button>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" id="tab-all-trucks" class="btn-act roster-tab" style="font-size:12px; padding:6px 12px; background:#0f172a; color:#fff; border-radius:8px;">All (<span id="count-tab-all">0</span>)</button>
+            <button type="button" id="tab-ready-trucks" class="btn-act roster-tab" style="font-size:12px; padding:6px 12px; background:#fff; border:1px solid #cbd5e1; color:#166534; font-weight:700; border-radius:8px;">🟢 Ready (<span id="count-tab-ready">0</span>)</button>
+            <button type="button" id="tab-rolling-trucks" class="btn-act roster-tab" style="font-size:12px; padding:6px 12px; background:#fff; border:1px solid #cbd5e1; color:#854d0e; font-weight:700; border-radius:8px;">🟡 Rolling (<span id="count-tab-rolling">0</span>)</button>
+            <button type="button" id="tab-booked-trucks" class="btn-act roster-tab" style="font-size:12px; padding:6px 12px; background:#fff; border:1px solid #cbd5e1; color:#1e40af; font-weight:700; border-radius:8px;">🔵 Booked (<span id="count-tab-booked">0</span>)</button>
+            <button type="button" id="btn-refresh-roster" class="btn-act" style="background:#fff; border:1px solid #cbd5e1; color:#334155; font-size:12px; padding:6px 10px; border-radius:8px;" title="Refresh Fleet Roster">🔄</button>
           </div>
+        </div>
+
+        <!-- Quick Search & Action Bar -->
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;">
+          <div style="position:relative; flex:1; min-width:260px;">
+            <input type="text" id="roster-search-input" placeholder="🔍 Quick search Unit #, Driver, Carrier, Equipment, or Empty City (e.g. 101, Dallas, Reefer)..." style="width:100%; padding:9px 12px 9px 34px; border:1px solid #cbd5e1; border-radius:10px; font-size:13px; background:#ffffff; box-sizing:border-box;">
+            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:13px; color:#94a3b8; pointer-events:none;">🔍</span>
+          </div>
+          <button type="button" id="btn-header-add-truck" class="btn-act" style="background:#2563eb; color:#fff; font-size:12px; padding:9px 14px; border-radius:10px; box-shadow:0 2px 6px rgba(37,99,235,0.25); white-space:nowrap;">
+            + Add Fleet Truck
+          </button>
         </div>
 
         <!-- Truck Cards Grid -->
@@ -331,7 +350,7 @@
   <div class="modal-dialog">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <h3 style="margin:0; font-size:17px; font-weight:800; color:#0f172a;">+ Add Fleet Truck to AI Dispatch</h3>
-      <button type="button" id="btn-close-add-modal" style="background:none; border:0; font-size:20px; color:#64748b; cursor:pointer;">&times;</button>
+      <button type="button" id="btn-close-add-modal" style="background:none; border:0; font-size:24px; line-height:1; color:#64748b; cursor:pointer;">&times;</button>
     </div>
 
     <form id="form-add-truck" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -405,12 +424,32 @@
   <div class="modal-dialog">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <h3 id="update-modal-title" style="margin:0; font-size:17px; font-weight:800; color:#0f172a;">Update Truck Status &amp; Location</h3>
-      <button type="button" id="btn-close-update-modal" style="background:none; border:0; font-size:20px; color:#64748b; cursor:pointer;">&times;</button>
+      <button type="button" id="btn-close-update-modal" style="background:none; border:0; font-size:24px; line-height:1; color:#64748b; cursor:pointer;">&times;</button>
     </div>
 
     <form id="form-update-truck" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
       <input type="hidden" name="carrier_id" id="edit-carrier-id">
       <input type="hidden" name="truck_id" id="edit-truck-id">
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Truck Unit #:
+        <input name="truck_number" id="edit-truck-number" required placeholder="101" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Carrier / Company Name:
+        <input name="company_name" id="edit-company-name" required placeholder="Swift Express LLC" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Driver / Contact Name:
+        <input name="driver_name" id="edit-driver-name" placeholder="Mike Miller" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Driver Phone (SMS):
+        <input name="driver_phone" id="edit-driver-phone" placeholder="(555) 123-4567" style="width:100%; margin-top:4px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
 
       <label style="font-size:12px; font-weight:700; color:#475569; grid-column:1/-1;">
         Current Empty Location (City, ST or ZIP):
@@ -430,6 +469,7 @@
           <option value="53ft Reefer">53ft Reefer</option>
           <option value="Flatbed">Flatbed</option>
           <option value="Hotshot">Hotshot</option>
+          <option value="Power Only">Power Only</option>
         </select>
       </label>
 
@@ -490,6 +530,8 @@
   // State
   let currentRoster = [];
   let selectedTruck = null;
+  let currentFilterMode = 'all';
+  let rosterSearchTerm = '';
   let currentMatchedLoads = [];
   let currentDispatchedOffers = [];
 
@@ -513,13 +555,47 @@
   const modalAddTruck = document.getElementById('modal-add-truck');
   const modalUpdateTruck = document.getElementById('modal-update-truck');
 
+  function openModal(el) {
+    if (!el) return;
+    el.classList.add('open', 'active', 'is-open');
+  }
+  function closeModal(el) {
+    if (!el) return;
+    el.classList.remove('open', 'active', 'is-open');
+  }
+
+  window.openAddTruckModal = function() {
+    openModal(modalAddTruck);
+  };
+
+  function updateRosterCounts() {
+    const total = currentRoster.length;
+    const ready = currentRoster.filter(r => r.status === 'active' || r.status === 'ready').length;
+    const rolling = currentRoster.filter(r => r.status === 'rolling').length;
+    const booked = currentRoster.filter(r => r.status === 'booked').length;
+
+    const countAllEl = document.getElementById('count-tab-all');
+    if (countAllEl) countAllEl.textContent = total;
+    const countReadyEl = document.getElementById('count-tab-ready');
+    if (countReadyEl) countReadyEl.textContent = ready;
+    const countRollingEl = document.getElementById('count-tab-rolling');
+    if (countRollingEl) countRollingEl.textContent = rolling;
+    const countBookedEl = document.getElementById('count-tab-booked');
+    if (countBookedEl) countBookedEl.textContent = booked;
+
+    const totalBadgeEl = document.getElementById('roster-total-badge');
+    if (totalBadgeEl) totalBadgeEl.textContent = `${total} Truck${total === 1 ? '' : 's'}`;
+  }
+
   // Load and Render Roster
-  async function loadRoster(filterMode = 'all') {
+  async function loadRoster() {
     try {
       trucksGridEl.innerHTML = '<div style="padding:24px; text-align:center; color:#64748b; grid-column:1/-1;">Loading fleet trucks...</div>';
       const data = await api('/api/dispatch-desk/roster');
       currentRoster = data.roster || [];
       
+      updateRosterCounts();
+
       // Update KPIs
       if (data.stats) {
         kpiTotalTrucksEl.textContent = data.stats.total_trucks || currentRoster.length;
@@ -529,43 +605,70 @@
         kpiBookedCountEl.textContent = `${data.stats.booked_today || 0} Loads Locked`;
       }
 
-      renderTrucks(filterMode);
+      renderTrucks();
 
-      // Auto-select first truck if none selected
-      if (!selectedTruck && currentRoster.length > 0) {
-        const firstEmpty = currentRoster.find(r => r.status === 'active' || r.status === 'ready') || currentRoster[0];
-        selectTruckForDispatch(firstEmpty);
+      // Auto-select truck
+      if (currentRoster.length > 0) {
+        if (selectedTruck) {
+          const still = currentRoster.find(r => String(r.id) === String(selectedTruck.id) || String(r.truck_number) === String(selectedTruck.truck_number));
+          if (still) {
+            selectTruckForDispatch(still, false);
+          } else {
+            selectTruckForDispatch(currentRoster[0], true);
+          }
+        } else {
+          const firstEmpty = currentRoster.find(r => r.status === 'active' || r.status === 'ready') || currentRoster[0];
+          selectTruckForDispatch(firstEmpty, true);
+        }
       }
     } catch (err) {
       trucksGridEl.innerHTML = `<div style="padding:24px; text-align:center; color:#dc2626; grid-column:1/-1;">Error loading roster: ${esc(err.message)}</div>`;
     }
   }
 
-  function renderTrucks(filterMode = 'all') {
+  function renderTrucks() {
     let list = currentRoster;
-    if (filterMode === 'ready') {
+
+    if (currentFilterMode === 'ready') {
       list = list.filter(r => r.status === 'active' || r.status === 'ready');
+    } else if (currentFilterMode === 'rolling') {
+      list = list.filter(r => r.status === 'rolling');
+    } else if (currentFilterMode === 'booked') {
+      list = list.filter(r => r.status === 'booked');
+    }
+
+    if (rosterSearchTerm) {
+      const q = rosterSearchTerm.toLowerCase();
+      list = list.filter(r =>
+        String(r.truck_number || '').toLowerCase().includes(q) ||
+        String(r.company_name || '').toLowerCase().includes(q) ||
+        String(r.driver_name || r.contact_name || '').toLowerCase().includes(q) ||
+        String(r.equipment || '').toLowerCase().includes(q) ||
+        String(r.empty_zip || '').toLowerCase().includes(q) ||
+        String(r.prefer_destination || '').toLowerCase().includes(q)
+      );
     }
 
     if (!list.length) {
       trucksGridEl.innerHTML = `
         <div style="background:#fff; border:1px dashed #cbd5e1; border-radius:14px; padding:30px; text-align:center; grid-column:1/-1;">
-          <p style="margin:0 0 10px; font-weight:700; color:#334155;">No trucks match the current filter.</p>
-          <button type="button" onclick="document.getElementById('btn-open-add-truck').click()" class="btn-act" style="background:#2563eb; color:#fff;">+ Add Your First Truck</button>
+          <p style="margin:0 0 10px; font-weight:700; color:#334155;">No trucks match the current filter or search criteria.</p>
+          <button type="button" onclick="window.openAddTruckModal()" class="btn-act" style="background:#2563eb; color:#fff;">+ Add New Truck</button>
         </div>
       `;
       return;
     }
 
-    trucksGridEl.innerHTML = list.map((truck, idx) => {
-      const isSelected = selectedTruck && (selectedTruck.id === truck.id || selectedTruck.truck_number === truck.truck_number);
+    trucksGridEl.innerHTML = list.map((truck) => {
+      const truckKey = String(truck.id || truck.truck_number);
+      const isSelected = selectedTruck && (String(selectedTruck.id) === String(truck.id) || String(selectedTruck.truck_number) === String(truck.truck_number));
       const isReady = truck.status === 'active' || truck.status === 'ready';
       const statusBadge = isReady
         ? '<span class="badge-status badge-status-empty"><span class="pulse-dot"></span> Empty &amp; Ready</span>'
         : (truck.status === 'booked' ? '<span class="badge-status badge-status-booked">🔵 Booked</span>' : '<span class="badge-status badge-status-rolling">🟡 Rolling</span>');
 
       return `
-        <div class="truck-card ${isSelected ? 'is-active-truck' : ''}" id="truck-card-${idx}">
+        <div class="truck-card ${isSelected ? 'is-active-truck' : ''}" onclick="window.selectTruckByKey('${esc(truckKey)}')" style="cursor:pointer; transition:all 0.15s ease;">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
             <div>
               <div style="display:flex; align-items:center; gap:8px;">
@@ -577,9 +680,9 @@
             ${statusBadge}
           </div>
 
-          <div style="font-size:12px; color:#334155; line-height:1.6; margin-bottom:14px; background:#f8fafc; border-radius:10px; padding:10px 12px; border:1px solid #f1f5f9;">
+          <div style="font-size:12px; color:#334155; line-height:1.6; margin-bottom:12px; background:#f8fafc; border-radius:10px; padding:10px 12px; border:1px solid #f1f5f9;">
             <div>🚛 <strong>Equipment:</strong> ${esc(truck.equipment)}</div>
-            <div>👤 <strong>Driver:</strong> ${esc(truck.driver_name || truck.contact_name)} · <a href="tel:${esc(truck.driver_phone || truck.phone)}" style="color:#2563eb; font-weight:700;">${esc(truck.driver_phone || truck.phone)}</a></div>
+            <div>👤 <strong>Driver:</strong> ${esc(truck.driver_name || truck.contact_name)} · <a href="tel:${esc(truck.driver_phone || truck.phone)}" onclick="event.stopPropagation()" style="color:#2563eb; font-weight:700;">${esc(truck.driver_phone || truck.phone)}</a></div>
             <div style="margin-top:4px; padding-top:4px; border-top:1px dashed #e2e8f0;">
               📍 <strong>Empty Location:</strong> <span style="color:#0f172a; font-weight:800;">${esc(truck.empty_zip)}</span>
             </div>
@@ -587,11 +690,11 @@
             <div>💵 <strong>Target Pay:</strong> Min $${Number(truck.min_rpm || 2).toFixed(2)}/mi · Max ${esc(truck.max_deadhead || 150)} mi DHO</div>
           </div>
 
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" onclick="window.handleSelectTruck(${idx})" class="btn-act" style="flex:1; background:${isSelected ? '#16a34a' : '#2563eb'}; color:#fff; box-shadow:0 2px 6px rgba(37,99,235,0.25);">
-              <span>🎯 ${isSelected ? 'Scanning Live Loads...' : 'Match Loads with AI'}</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button type="button" onclick="event.stopPropagation(); window.selectTruckByKey('${esc(truckKey)}', true);" class="btn-act" style="flex:1; background:${isSelected ? '#16a34a' : '#2563eb'}; color:#fff; box-shadow:0 2px 6px rgba(37,99,235,0.25);">
+              <span>🎯 ${isSelected ? '✓ Matched Loads Below' : 'Match Loads with AI'}</span>
             </button>
-            <button type="button" onclick="window.openEditTruckModal(${idx})" class="btn-act" style="background:#ffffff; border:1px solid #cbd5e1; color:#334155;" title="Edit empty location, target lane or status">
+            <button type="button" onclick="event.stopPropagation(); window.openEditTruckModal('${esc(truckKey)}');" class="btn-act" style="background:#ffffff; border:1px solid #cbd5e1; color:#334155; padding:8px 12px;" title="Edit Unit #${esc(truck.truck_number)}">
               ✏️
             </button>
           </div>
@@ -600,14 +703,18 @@
     }).join('');
   }
 
-  window.handleSelectTruck = function(idx) {
-    const truck = currentRoster[idx];
+  window.selectTruckByKey = function(truckKey, scrollDown = false) {
+    const truck = currentRoster.find(r => String(r.id) === String(truckKey) || String(r.truck_number) === String(truckKey));
     if (!truck) return;
-    selectTruckForDispatch(truck);
+    selectTruckForDispatch(truck, true);
+    if (scrollDown) {
+      document.getElementById('ai-recommendations-section').scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
-  async function selectTruckForDispatch(truck) {
+  async function selectTruckForDispatch(truck, triggerMatch = true) {
     selectedTruck = truck;
+    renderTrucks();
     renderTrucks();
 
     matcherTitleEl.innerHTML = `🎯 AI Matched Loads for <span style="color:#2563eb;">Unit #${esc(truck.truck_number)}</span> (${esc(truck.company_name)})`;
@@ -1056,11 +1163,18 @@
   };
 
   // Edit Truck Modal Handlers
-  window.openEditTruckModal = function(idx) {
-    const truck = currentRoster[idx];
-    if (!truck) return;
-    document.getElementById('edit-carrier-id').value = truck.carrier_id || '';
+  window.openEditTruckModal = function(truckKey) {
+    const truck = currentRoster.find(r => String(r.id) === String(truckKey) || String(r.truck_number) === String(truckKey));
+    if (!truck) {
+      alert('Truck details not found.');
+      return;
+    }
+    document.getElementById('edit-carrier-id').value = truck.carrier_id || truck.id || '';
     document.getElementById('edit-truck-id').value = truck.truck_id || '';
+    document.getElementById('edit-truck-number').value = truck.truck_number || '';
+    document.getElementById('edit-company-name').value = truck.company_name || '';
+    document.getElementById('edit-driver-name').value = truck.driver_name || truck.contact_name || '';
+    document.getElementById('edit-driver-phone').value = truck.driver_phone || truck.phone || '';
     document.getElementById('edit-empty-zip').value = truck.empty_zip || '';
     document.getElementById('edit-prefer-dest').value = truck.prefer_destination || '';
     document.getElementById('edit-equipment').value = truck.equipment || '26ft Box Truck';
@@ -1068,11 +1182,11 @@
     document.getElementById('edit-min-rpm').value = truck.min_rpm || 2.00;
     document.getElementById('edit-max-deadhead').value = truck.max_deadhead || 150;
     document.getElementById('update-modal-title').textContent = `Update Unit #${truck.truck_number} (${truck.company_name})`;
-    modalUpdateTruck.classList.add('is-open');
+    openModal(modalUpdateTruck);
   };
 
-  document.getElementById('btn-close-update-modal').addEventListener('click', () => modalUpdateTruck.classList.remove('is-open'));
-  document.getElementById('btn-cancel-update-truck').addEventListener('click', () => modalUpdateTruck.classList.remove('is-open'));
+  document.getElementById('btn-close-update-modal').addEventListener('click', () => closeModal(modalUpdateTruck));
+  document.getElementById('btn-cancel-update-truck').addEventListener('click', () => closeModal(modalUpdateTruck));
 
   document.getElementById('form-update-truck').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1082,19 +1196,21 @@
         method: 'POST',
         body: JSON.stringify(body)
       });
-      modalUpdateTruck.classList.remove('is-open');
+      closeModal(modalUpdateTruck);
       await loadRoster();
-      if (selectedTruck) {
-        const updated = currentRoster.find(r => r.id === selectedTruck.id || r.truck_number === selectedTruck.truck_number);
-        if (updated) selectTruckForDispatch(updated);
+      if (body.truck_number) {
+        window.selectTruckByKey(body.truck_number, true);
       }
     } catch (err) { alert(err.message); }
   });
 
   // Add Truck Modal Handlers
-  document.getElementById('btn-open-add-truck').addEventListener('click', () => modalAddTruck.classList.add('is-open'));
-  document.getElementById('btn-close-add-modal').addEventListener('click', () => modalAddTruck.classList.remove('is-open'));
-  document.getElementById('btn-cancel-add-truck').addEventListener('click', () => modalAddTruck.classList.remove('is-open'));
+  const btnOpenAddTruck = document.getElementById('btn-open-add-truck');
+  if (btnOpenAddTruck) {
+    btnOpenAddTruck.addEventListener('click', () => openModal(modalAddTruck));
+  }
+  document.getElementById('btn-close-add-modal').addEventListener('click', () => closeModal(modalAddTruck));
+  document.getElementById('btn-cancel-add-truck').addEventListener('click', () => closeModal(modalAddTruck));
 
   document.getElementById('form-add-truck').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1104,28 +1220,72 @@
         method: 'POST',
         body: JSON.stringify(body)
       });
-      modalAddTruck.classList.remove('is-open');
+      closeModal(modalAddTruck);
       e.target.reset();
       await loadRoster();
+      if (body.truck_number) {
+        window.selectTruckByKey(body.truck_number, true);
+      }
     } catch (err) { alert(err.message); }
   });
 
-  // Filters & Top Controls
-  document.getElementById('filter-all-trucks').addEventListener('click', () => {
-    document.getElementById('filter-all-trucks').style.background = '#0f172a';
-    document.getElementById('filter-all-trucks').style.color = '#fff';
-    document.getElementById('filter-ready-trucks').style.background = '#fff';
-    document.getElementById('filter-ready-trucks').style.color = '#334155';
-    renderTrucks('all');
+  // Close modals on backdrop click
+  if (modalAddTruck) {
+    modalAddTruck.addEventListener('click', (e) => {
+      if (e.target === modalAddTruck) closeModal(modalAddTruck);
+    });
+  }
+  if (modalUpdateTruck) {
+    modalUpdateTruck.addEventListener('click', (e) => {
+      if (e.target === modalUpdateTruck) closeModal(modalUpdateTruck);
+    });
+  }
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeModal(modalAddTruck);
+      closeModal(modalUpdateTruck);
+    }
   });
 
-  document.getElementById('filter-ready-trucks').addEventListener('click', () => {
-    document.getElementById('filter-ready-trucks').style.background = '#0f172a';
-    document.getElementById('filter-ready-trucks').style.color = '#fff';
-    document.getElementById('filter-all-trucks').style.background = '#fff';
-    document.getElementById('filter-all-trucks').style.color = '#334155';
-    renderTrucks('ready');
+  // Tab Filtering Listeners
+  const rosterTabs = [
+    { id: 'tab-all-trucks', mode: 'all' },
+    { id: 'tab-ready-trucks', mode: 'ready' },
+    { id: 'tab-rolling-trucks', mode: 'rolling' },
+    { id: 'tab-booked-trucks', mode: 'booked' }
+  ];
+
+  rosterTabs.forEach(t => {
+    const btn = document.getElementById(t.id);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      currentFilterMode = t.mode;
+      rosterTabs.forEach(item => {
+        const b = document.getElementById(item.id);
+        if (b) {
+          if (item.mode === currentFilterMode) {
+            b.style.background = '#0f172a';
+            b.style.color = '#fff';
+          } else {
+            b.style.background = '#fff';
+            b.style.color = item.mode === 'ready' ? '#166534' : (item.mode === 'rolling' ? '#854d0e' : (item.mode === 'booked' ? '#1e40af' : '#334155'));
+          }
+        }
+      });
+      renderTrucks();
+    });
   });
+
+  // Search input listener
+  const rosterSearchEl = document.getElementById('roster-search-input');
+  if (rosterSearchEl) {
+    rosterSearchEl.addEventListener('input', (e) => {
+      rosterSearchTerm = e.target.value.trim();
+      renderTrucks();
+    });
+  }
 
   document.getElementById('btn-refresh-roster').addEventListener('click', () => loadRoster());
   document.getElementById('btn-refresh-offers').addEventListener('click', () => loadDispatchedOffers());
