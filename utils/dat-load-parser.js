@@ -227,52 +227,235 @@ function parseDatTableRows(text) {
 }
 
 /**
+ * Parse DAT One Detail Card / Side Drawer (Multi-line copied view)
+ */
+function parseDatCard(text) {
+  const lines = String(text || '').split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return null;
+
+  const data = {};
+
+  // 1. Origin & Destination from City, ST patterns
+  const cityStateRegex = /^([A-Za-z\s.]+),\s*([A-Za-z]{2})(?:\s*\((\d+)\))?$/;
+  const cityStateMatches = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    const m = l.match(cityStateRegex);
+    if (m) {
+      cityStateMatches.push({ lineIdx: i, city: m[1].trim(), state: m[2].toUpperCase(), dho: m[3] ? parseInt(m[3], 10) : null });
+    }
+  }
+
+  if (cityStateMatches.length >= 2) {
+    data.origin = `${cityStateMatches[0].city}, ${cityStateMatches[0].state}`;
+    data.destination = `${cityStateMatches[1].city}, ${cityStateMatches[1].state}`;
+    if (cityStateMatches[0].dho) data.dho = cityStateMatches[0].dho;
+  }
+
+  // Check for lines with explicit DHO or (147)
+  const dhoInline = text.match(/\bDH-?O:?\s*(\d+)/i) || text.match(/,\s*[A-Z]{2}\s*\((\d+)\)/);
+  if (dhoInline && !data.dho) {
+    data.dho = parseInt(dhoInline[1], 10);
+  }
+
+  // 2. Trip Miles: e.g. "454 mi"
+  const tripMatch = text.match(/(\d{2,5})\s*(?:mi|miles)\b/i);
+  if (tripMatch) {
+    data.loaded_miles = parseInt(tripMatch[1], 10);
+  }
+
+  // 3. Weight: e.g. "42,827 lbs" or "Weight\n42,827 lbs"
+  const weightMatch = text.match(/(\d{1,3}(?:,\d{3})+|\d{4,6})\s*lbs/i);
+  if (weightMatch) {
+    data.weight = parseWeight(weightMatch[1]);
+  } else {
+    for (let i = 0; i < lines.length; i++) {
+      if (/^weight$/i.test(lines[i]) && lines[i + 1]) {
+        data.weight = parseWeight(lines[i + 1]);
+        break;
+      }
+    }
+  }
+
+  // 4. Equipment: Van, Reefer, Flatbed, 53 ft, Box Truck
+  let lengthStr = '';
+  let typeStr = '';
+  for (let i = 0; i < lines.length; i++) {
+    if (/^truck$/i.test(lines[i]) && lines[i + 1]) typeStr = lines[i + 1];
+    if (/^length$/i.test(lines[i]) && lines[i + 1]) lengthStr = lines[i + 1];
+    if (/^equipment$/i.test(lines[i]) && lines[i + 1]) typeStr = lines[i + 1];
+  }
+  if (typeStr || lengthStr) {
+    data.equipment = mapEquipment(`${lengthStr} ${typeStr}`);
+  } else {
+    const eqMatch = text.match(/\b(Van|Reefer|Flatbed|Box Truck|Hotshot|Step Deck|Power Only)\b/i);
+    if (eqMatch) data.equipment = mapEquipment(eqMatch[1]);
+  }
+
+  // 5. Company / Broker
+  for (let i = 0; i < lines.length; i++) {
+    if (/^company$/i.test(lines[i]) && lines[i + 1]) {
+      data.broker_name = lines[i + 1];
+      break;
+    }
+  }
+  if (!data.broker_name) {
+    const compMatch = text.match(/Company\s*[:\n]\s*([^\n\r]+)/i);
+    if (compMatch) data.broker_name = compMatch[1].trim();
+  }
+
+  // 6. Phone & Extension
+  const phoneMatch = text.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
+  if (phoneMatch) {
+    data.broker_phone = `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}`;
+  }
+  const extMatch = text.match(/(?:EXT|extension)\s*#?([0-9]{1,6})/i);
+  if (extMatch && data.broker_phone) {
+    data.broker_phone += ` ext ${extMatch[1]}`;
+  }
+
+  // 7. Email
+  const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+  if (emailMatch) {
+    data.broker_email = emailMatch[1].toLowerCase();
+  }
+
+  // 8. MC Number
+  const mcMatch = text.match(/MC\s*#?\s*(\d{5,8})/i);
+  if (mcMatch) {
+    data.mc_number = mcMatch[1];
+  }
+
+  // 9. Rate: look for posted rate or SPOT RATE benchmark
+  const spotRateMatch = text.match(/SPOT\s+RATE[\s\S]*?\$([0-9,]+)/i);
+  const explicitRateMatch = text.match(/(?:Rate|Pay|Total)\s*[:\n]\s*\$([0-9,]+)/i);
+  if (explicitRateMatch) {
+    data.rate = parseMoney(explicitRateMatch[1]);
+  } else if (spotRateMatch) {
+    data.rate = parseMoney(spotRateMatch[1]);
+    data.is_spot_benchmark = true;
+  }
+
+  // 10. Pickup / Delivery times
+  const dateMatch = text.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})/);
+  if (dateMatch) {
+    data.pickup_time = dateMatch[1];
+  }
+
+  // 11. Comments / Notes
+  for (let i = 0; i < lines.length; i++) {
+    if (/^comments$/i.test(lines[i]) && lines[i + 1]) {
+      data.notes = lines[i + 1];
+      break;
+    }
+  }
+
+  if (data.origin && data.destination) {
+    const orig = cleanLocation(data.origin);
+    const dest = cleanLocation(data.destination);
+    const miles = data.loaded_miles || 500;
+    const rate = data.rate || 0;
+    const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : 0;
+
+    return {
+      load_id: data.mc_number ? `DAT-MC${data.mc_number}` : `DAT-${Math.floor(100000 + Math.random() * 900000)}`,
+      dho: data.dho || 0,
+      loaded_miles: miles,
+      origin: orig.full || data.origin,
+      origin_city: orig.city,
+      origin_state: orig.state,
+      destination: dest.full || data.destination,
+      destination_city: dest.city,
+      destination_state: dest.state,
+      pickup_time: data.pickup_time || 'Ready Today',
+      delivery_time: data.delivery_time || 'Standard Delivery',
+      weight: data.weight || 40000,
+      equipment_type: data.equipment || '53ft Dry Van',
+      rate: rate,
+      rpm: rpm,
+      notes: data.notes || (data.is_spot_benchmark ? `DAT Spot benchmark rate ($${rate})` : ''),
+      broker_name: data.broker_name || 'Verified Freight Broker',
+      broker_email: data.broker_email || null,
+      broker_phone: data.broker_phone || null,
+      mc_number: data.mc_number || null,
+      raw_source: text.slice(0, 400)
+    };
+  }
+
+  return null;
+}
+
+/**
  * Universal Master Parse Function
- * Handles both key-value pasted text and tabular DAT data
+ * Handles DAT One detail cards, key-value pasted text, and tabular DAT data
  */
 function parseDatInput(text) {
   if (!text || typeof text !== 'string') return [];
   const trimmed = text.trim();
   if (!trimmed) return [];
 
-  // 1. Try Key-Value format first (like the user's DHO / Loaded Miles / From / To example)
+  // 1. Try DAT One multi-line card / detail view format first
+  const cardResult = parseDatCard(trimmed);
+  if (cardResult) {
+    return [cardResult];
+  }
+
+  // 2. Try Key-Value format (like DHO / Loaded Miles / From / To)
   const kvResults = parseKeyValueFormat(trimmed);
   if (kvResults.length > 0) {
     return kvResults;
   }
 
-  // 2. Try Tabular DAT table format
+  // 3. Try Tabular DAT table rows
   const tableResults = parseDatTableRows(trimmed);
   if (tableResults.length > 0) {
     return tableResults;
   }
 
-  // 3. Fallback: Check if there are any city/state pairs in the text
+  // 4. Fallback: Extract from any text containing city/state pairs
   const stateRegex = /\b([A-Za-z\s]+),\s*([A-Za-z]{2})\b/g;
   const pairs = Array.from(trimmed.matchAll(stateRegex));
   if (pairs.length >= 2) {
     const orig = cleanLocation(`${pairs[0][1].trim()}, ${pairs[0][2].trim()}`);
     const dest = cleanLocation(`${pairs[1][1].trim()}, ${pairs[1][2].trim()}`);
+    
+    const tripMatch = trimmed.match(/(\d{2,5})\s*(?:mi|miles)\b/i);
+    const miles = tripMatch ? parseInt(tripMatch[1], 10) : 500;
+
+    const weightMatch = trimmed.match(/(\d{1,3}(?:,\d{3})+|\d{4,6})\s*lbs/i);
+    const weight = weightMatch ? parseWeight(weightMatch[1]) : 40000;
+
+    const rateMatch = trimmed.match(/\$([0-9,]+(?:\.[0-9]{2})?)/);
+    const rate = rateMatch ? parseMoney(rateMatch[1]) : 0;
+    const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : 0;
+
+    const phoneMatch = trimmed.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
+    const phone = phoneMatch ? `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}` : null;
+
+    const emailMatch = trimmed.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+    const email = emailMatch ? emailMatch[1].toLowerCase() : null;
+
     return [{
       load_id: `DAT-${Math.floor(100000 + Math.random() * 900000)}`,
       dho: 50,
-      loaded_miles: 500,
+      loaded_miles: miles,
       origin: orig.full,
       origin_city: orig.city,
       origin_state: orig.state,
       destination: dest.full,
       destination_city: dest.city,
       destination_state: dest.state,
-      pickup_time: 'Immediate',
-      delivery_time: 'Standard',
-      weight: 5000,
-      equipment_type: '26ft Box Truck / Dry Van',
-      rate: 1000,
-      rpm: 2.00,
+      pickup_time: 'Ready Today',
+      delivery_time: 'Standard Delivery',
+      weight: weight,
+      equipment_type: '53ft Dry Van',
+      rate: rate,
+      rpm: rpm,
       notes: 'Pasted load board corridor',
       broker_name: 'Verified Freight Broker',
-      broker_email: null,
-      broker_phone: null,
+      broker_email: email,
+      broker_phone: phone,
       raw_source: trimmed.slice(0, 300)
     }];
   }
