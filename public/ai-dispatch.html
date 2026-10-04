@@ -224,6 +224,69 @@
         </div>
       </div>
 
+      <!-- 24/7 AUTONOMOUS CLOUD ENGINE CONTROL CONSOLE -->
+      <section style="background: linear-gradient(135deg, #0b1f3a 0%, #1e3a8a 100%); color:#fff; border-radius:18px; padding:20px 24px; margin-bottom:24px; box-shadow:0 8px 30px rgba(11,31,58,0.25); position:relative; overflow:hidden;">
+        <div style="position:absolute; right:-20px; top:-20px; font-size:120px; opacity:0.05; pointer-events:none; font-family:sans-serif; font-weight:900;">24/7</div>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:16px; position:relative; z-index:1;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <span id="dat-cloud-status-pill" style="background:#16a34a; color:#fff; font-size:11px; font-weight:800; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:6px; letter-spacing:0.5px;">
+                <span class="pulse-dot" style="background:#fff; width:8px; height:8px;"></span> 24/7 CLOUD ENGINE RUNNING
+              </span>
+              <span style="font-size:12px; color:#93c5fd; font-weight:600;">Server-Side Background Ingestion • No PC or App Required</span>
+            </div>
+            <h2 style="font-size:20px; font-weight:900; margin:8px 0 4px; letter-spacing:-0.3px;">
+              ⚡ DAT One Autonomous Cloud Engine
+            </h2>
+            <p style="font-size:13px; color:#cbd5e1; margin:0; max-width:680px; line-height:1.5;">
+              Shipping Wish Cloud Server 24/7 USA ke verified brokers se live loads pull karta hai aur covered loads ko LoadsNexus se real-time deduct karta hai.
+            </p>
+          </div>
+
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button type="button" id="btn-dat-cloud-sync-now" class="btn-act" style="background:#2563eb; color:#fff; font-size:12px; padding:9px 14px; border-radius:10px; font-weight:700; box-shadow:0 2px 8px rgba(37,99,235,0.4);">
+              🔄 Sync Now
+            </button>
+            <button type="button" id="btn-dat-cloud-toggle" class="btn-act" style="background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.3); font-size:12px; padding:9px 14px; border-radius:10px; font-weight:700;">
+              ⏸️ Pause Engine
+            </button>
+            <button type="button" id="btn-open-dat-config" class="btn-act" style="background:#fff; color:#0f172a; font-size:12px; padding:9px 14px; border-radius:10px; font-weight:800; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+              ⚙️ DAT Credentials &amp; Filters
+            </button>
+          </div>
+        </div>
+
+        <!-- Telemetry KPIs -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.15); position:relative; z-index:1;">
+          <div style="background:rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; border:1px solid rgba(255,255,255,0.1);">
+            <div style="font-size:11px; text-transform:uppercase; color:#93c5fd; font-weight:700; letter-spacing:0.5px;">📦 Loads Synced Today</div>
+            <div id="dat-cloud-kpi-synced" style="font-size:22px; font-weight:900; color:#fff; margin-top:2px;">-- Loads</div>
+            <div style="font-size:11px; color:#86efac; margin-top:2px;">✓ Auto-Pushed to LoadsNexus</div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; border:1px solid rgba(255,255,255,0.1);">
+            <div style="font-size:11px; text-transform:uppercase; color:#93c5fd; font-weight:700; letter-spacing:0.5px;">✂️ Auto-Covered &amp; Deducted</div>
+            <div id="dat-cloud-kpi-covered" style="font-size:22px; font-weight:900; color:#fca5a5; margin-top:2px;">-- Deducted</div>
+            <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Removed When Covered on DAT</div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; border:1px solid rgba(255,255,255,0.1);">
+            <div style="font-size:11px; text-transform:uppercase; color:#93c5fd; font-weight:700; letter-spacing:0.5px;">⏱️ Sync Frequency</div>
+            <div id="dat-cloud-kpi-interval" style="font-size:22px; font-weight:900; color:#fff; margin-top:2px;">Every 30s</div>
+            <div id="dat-cloud-kpi-last-sync" style="font-size:11px; color:#cbd5e1; margin-top:2px;">Last pulse: Just now</div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; border:1px solid rgba(255,255,255,0.1);">
+            <div style="font-size:11px; text-transform:uppercase; color:#93c5fd; font-weight:700; letter-spacing:0.5px;">🛡️ Engine Cloud State</div>
+            <div id="dat-cloud-kpi-account" style="font-size:15px; font-weight:800; color:#fef08a; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Connected (Cloud Relay)</div>
+            <div id="dat-cloud-kpi-filters" style="font-size:11px; color:#cbd5e1; margin-top:4px;">Van · Reefer · Flat · Box</div>
+          </div>
+        </div>
+
+        <div id="dat-cloud-pulse-msg" style="font-size:12px; color:#93c5fd; margin-top:10px; min-height:1.2em;"></div>
+      </section>
+
       <!-- Quick DAT Clipboard / Spot Load Ingestion Bar -->
       <details style="background:#ffffff; border:1px solid #cbd5e1; border-radius:14px; padding:12px 16px; margin-bottom:20px; box-shadow:0 1px 4px rgba(0,0,0,0.03);">
         <summary style="font-weight:700; font-size:13px; color:#1e293b; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
@@ -501,6 +564,80 @@
   </div>
 </div>
 
+<!-- MODAL: CONFIGURE 24/7 DAT ONE CLOUD ENGINE -->
+<div id="modal-dat-cloud-config" class="modal-backdrop">
+  <div class="modal-dialog" style="max-width:540px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:22px;">⚡</span>
+        <div>
+          <h3 style="margin:0; font-size:17px; font-weight:800; color:#0f172a;">24/7 DAT One Autonomous Cloud Engine</h3>
+          <p style="margin:2px 0 0; font-size:12px; color:#64748b;">Configure server-side background ingestion &amp; automated live sync.</p>
+        </div>
+      </div>
+      <button type="button" id="btn-close-dat-config" style="background:none; border:0; font-size:24px; line-height:1; color:#64748b; cursor:pointer;">&times;</button>
+    </div>
+
+    <form id="form-dat-cloud-config" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div style="grid-column:1/-1; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px 12px; font-size:12px; color:#166534; line-height:1.5;">
+        <strong>🛡️ 24/7 Server-Side Cloud Sync:</strong> Credentials yahan save hone ke baad, humara cloud worker continuous background mein live loads pull karega aur covered loads ko LoadsNexus se deduct karega. Aapka PC ya TAL One band bhi ho to bhi engine chalta rahega.
+      </div>
+
+      <label style="font-size:12px; font-weight:700; color:#475569; grid-column:1/-1;">
+        DAT One Username / Email:
+        <input name="dat_username" id="cfg-dat-username" placeholder="e.g. dispatch@shippingwish.com" style="width:100%; margin-top:4px; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569; grid-column:1/-1;">
+        DAT One Password:
+        <input type="password" name="dat_password" id="cfg-dat-password" placeholder="••••••••••••" style="width:100%; margin-top:4px; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+        <span style="font-size:11px; color:#64748b;">Leave blank to keep existing encrypted password on file.</span>
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Sync Frequency:
+        <select name="sync_interval_seconds" id="cfg-dat-interval" style="width:100%; margin-top:4px; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+          <option value="15">Every 15 Seconds (Ultra-Fast)</option>
+          <option value="30" selected>Every 30 Seconds (Recommended)</option>
+          <option value="60">Every 1 Minute</option>
+          <option value="300">Every 5 Minutes</option>
+        </select>
+      </label>
+
+      <label style="font-size:12px; font-weight:700; color:#475569;">
+        Minimum RPM Threshold:
+        <input name="min_rpm" id="cfg-dat-rpm" type="number" step="0.10" value="1.80" placeholder="1.80" style="width:100%; margin-top:4px; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
+      </label>
+
+      <div style="grid-column:1/-1;">
+        <span style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Target Equipment Types:</span>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; font-size:12px; color:#334155;">
+          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="cfg-eq-van" value="Dry Van" checked style="accent-color:#2563eb;"> 53ft Dry Van
+          </label>
+          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="cfg-eq-reefer" value="Reefer" checked style="accent-color:#2563eb;"> 53ft Reefer
+          </label>
+          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="cfg-eq-flatbed" value="Flatbed" checked style="accent-color:#2563eb;"> Flatbed
+          </label>
+          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="cfg-eq-box" value="Box Truck" checked style="accent-color:#2563eb;"> 26ft Box Truck
+          </label>
+          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="cfg-eq-power" value="Power Only" checked style="accent-color:#2563eb;"> Power Only
+          </label>
+        </div>
+      </div>
+
+      <div style="grid-column:1/-1; display:flex; justify-content:flex-end; gap:8px; margin-top:12px; border-top:1px solid #e2e8f0; padding-top:14px;">
+        <button type="button" id="btn-cancel-dat-config" class="btn-act" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;">Cancel</button>
+        <button type="submit" class="btn-act" style="background:#2563eb; color:#fff; padding:10px 20px; font-weight:800;">Save &amp; Connect 24/7 Engine</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="/js/app-shell.js?v=36"></script>
 <script>
   function esc(value) {
@@ -554,6 +691,7 @@
   // Modals
   const modalAddTruck = document.getElementById('modal-add-truck');
   const modalUpdateTruck = document.getElementById('modal-update-truck');
+  const modalDatConfig = document.getElementById('modal-dat-cloud-config');
 
   function openModal(el) {
     if (!el) return;
@@ -1240,14 +1378,204 @@
       if (e.target === modalUpdateTruck) closeModal(modalUpdateTruck);
     });
   }
+  if (modalDatConfig) {
+    modalDatConfig.addEventListener('click', (e) => {
+      if (e.target === modalDatConfig) closeModal(modalDatConfig);
+    });
+  }
 
   // Close on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeModal(modalAddTruck);
       closeModal(modalUpdateTruck);
+      closeModal(modalDatConfig);
     }
   });
+
+  // -------------------------------------------------------------
+  // ⚡ 24/7 DAT ONE AUTONOMOUS CLOUD ENGINE CONTROLLER
+  // -------------------------------------------------------------
+  let datCloudConfig = {};
+
+  async function loadDatCloudStatus() {
+    try {
+      const data = await api('/api/dispatch-desk/dat-cloud/status');
+      datCloudConfig = data.config || {};
+      renderDatCloudUI();
+    } catch (err) {
+      console.warn('DAT cloud status load error:', err.message);
+    }
+  }
+
+  function renderDatCloudUI() {
+    const pill = document.getElementById('dat-cloud-status-pill');
+    const btnToggle = document.getElementById('btn-dat-cloud-toggle');
+    const syncedEl = document.getElementById('dat-cloud-kpi-synced');
+    const coveredEl = document.getElementById('dat-cloud-kpi-covered');
+    const intervalEl = document.getElementById('dat-cloud-kpi-interval');
+    const lastSyncEl = document.getElementById('dat-cloud-kpi-last-sync');
+    const accountEl = document.getElementById('dat-cloud-kpi-account');
+    const filtersEl = document.getElementById('dat-cloud-kpi-filters');
+
+    if (datCloudConfig.enabled) {
+      if (pill) {
+        pill.style.background = '#16a34a';
+        pill.innerHTML = '<span class="pulse-dot" style="background:#fff; width:8px; height:8px;"></span> 24/7 CLOUD ENGINE RUNNING';
+      }
+      if (btnToggle) {
+        btnToggle.textContent = '⏸️ Pause Engine';
+        btnToggle.style.background = 'rgba(255,255,255,0.15)';
+      }
+    } else {
+      if (pill) {
+        pill.style.background = '#d97706';
+        pill.innerHTML = '⏸️ 24/7 CLOUD ENGINE PAUSED';
+      }
+      if (btnToggle) {
+        btnToggle.textContent = '▶️ Start 24/7 Engine';
+        btnToggle.style.background = '#16a34a';
+      }
+    }
+
+    if (syncedEl) syncedEl.textContent = `${datCloudConfig.loads_synced_today || 0} Loads`;
+    if (coveredEl) coveredEl.textContent = `${datCloudConfig.loads_covered_today || 0} Deducted`;
+    if (intervalEl) intervalEl.textContent = `Every ${datCloudConfig.sync_interval_seconds || 30}s`;
+
+    if (lastSyncEl) {
+      if (datCloudConfig.last_sync_at) {
+        const diffSec = Math.max(0, Math.floor((Date.now() - new Date(datCloudConfig.last_sync_at).getTime()) / 1000));
+        lastSyncEl.textContent = diffSec < 60 ? `Last pulse: ${diffSec}s ago` : `Last pulse: ${Math.floor(diffSec/60)}m ago`;
+      } else {
+        lastSyncEl.textContent = 'Last pulse: Initializing...';
+      }
+    }
+
+    if (accountEl) {
+      accountEl.textContent = datCloudConfig.dat_username ? `DAT: ${esc(datCloudConfig.dat_username)}` : 'Connected (Cloud Relay)';
+    }
+
+    if (filtersEl) {
+      const eqList = datCloudConfig.equipment_types || ['Van', 'Reefer', 'Flatbed', 'Box Truck'];
+      filtersEl.textContent = eqList.join(' · ');
+    }
+  }
+
+  // Toggle Engine (Start/Pause)
+  const btnDatCloudToggle = document.getElementById('btn-dat-cloud-toggle');
+  if (btnDatCloudToggle) {
+    btnDatCloudToggle.addEventListener('click', async () => {
+      const newTarget = !datCloudConfig.enabled;
+      const msgEl = document.getElementById('dat-cloud-pulse-msg');
+      if (msgEl) msgEl.textContent = newTarget ? 'Starting 24/7 Cloud Background Engine...' : 'Pausing 24/7 Cloud Engine...';
+      try {
+        const res = await api('/api/dispatch-desk/dat-cloud/toggle', {
+          method: 'POST',
+          body: JSON.stringify({ enabled: newTarget })
+        });
+        datCloudConfig = res.config || {};
+        renderDatCloudUI();
+        if (msgEl) msgEl.textContent = res.message;
+        setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 5000);
+      } catch (err) {
+        if (msgEl) msgEl.textContent = 'Error: ' + err.message;
+      }
+    });
+  }
+
+  // Sync Now (Instant Pulse)
+  const btnDatCloudSyncNow = document.getElementById('btn-dat-cloud-sync-now');
+  if (btnDatCloudSyncNow) {
+    btnDatCloudSyncNow.addEventListener('click', async () => {
+      const btn = btnDatCloudSyncNow;
+      const msgEl = document.getElementById('dat-cloud-pulse-msg');
+      btn.disabled = true;
+      btn.textContent = '🔄 Syncing...';
+      if (msgEl) msgEl.textContent = 'Pulling live DAT loads & deducting covered loads...';
+      try {
+        const res = await api('/api/dispatch-desk/dat-cloud/sync-now', { method: 'POST', body: '{}' });
+        datCloudConfig = res.config || {};
+        renderDatCloudUI();
+        if (msgEl) msgEl.textContent = res.message;
+        if (selectedTruck) selectTruckForDispatch(selectedTruck);
+        await loadRoster();
+        setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 6000);
+      } catch (err) {
+        if (msgEl) msgEl.textContent = 'Sync error: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔄 Sync Now';
+      }
+    });
+  }
+
+  // Open & Close DAT Config Modal
+  const btnOpenDatConfig = document.getElementById('btn-open-dat-config');
+  if (btnOpenDatConfig) {
+    btnOpenDatConfig.addEventListener('click', () => {
+      document.getElementById('cfg-dat-username').value = datCloudConfig.dat_username || '';
+      document.getElementById('cfg-dat-password').value = '';
+      document.getElementById('cfg-dat-interval').value = String(datCloudConfig.sync_interval_seconds || 30);
+      document.getElementById('cfg-dat-rpm').value = datCloudConfig.min_rpm || 1.80;
+
+      const eq = datCloudConfig.equipment_types || [];
+      const setEq = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = eq.includes(val) || eq.length === 0;
+      };
+      setEq('cfg-eq-van', 'Dry Van');
+      setEq('cfg-eq-reefer', 'Reefer');
+      setEq('cfg-eq-flatbed', 'Flatbed');
+      setEq('cfg-eq-box', 'Box Truck');
+      setEq('cfg-eq-power', 'Power Only');
+
+      openModal(modalDatConfig);
+    });
+  }
+
+  document.getElementById('btn-close-dat-config').addEventListener('click', () => closeModal(modalDatConfig));
+  document.getElementById('btn-cancel-dat-config').addEventListener('click', () => closeModal(modalDatConfig));
+
+  document.getElementById('form-dat-cloud-config').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('cfg-dat-username').value.trim();
+    const password = document.getElementById('cfg-dat-password').value;
+    const interval = parseInt(document.getElementById('cfg-dat-interval').value, 10);
+    const rpm = parseFloat(document.getElementById('cfg-dat-rpm').value);
+
+    const equipments = [];
+    if (document.getElementById('cfg-eq-van')?.checked) equipments.push('Dry Van');
+    if (document.getElementById('cfg-eq-reefer')?.checked) equipments.push('Reefer');
+    if (document.getElementById('cfg-eq-flatbed')?.checked) equipments.push('Flatbed');
+    if (document.getElementById('cfg-eq-box')?.checked) equipments.push('Box Truck');
+    if (document.getElementById('cfg-eq-power')?.checked) equipments.push('Power Only');
+
+    try {
+      const res = await api('/api/dispatch-desk/dat-cloud/config', {
+        method: 'POST',
+        body: JSON.stringify({
+          dat_username: username,
+          dat_password: password,
+          sync_interval_seconds: interval,
+          min_rpm: rpm,
+          equipment_types: equipments,
+          enabled: true
+        })
+      });
+      closeModal(modalDatConfig);
+      datCloudConfig = res.config || {};
+      renderDatCloudUI();
+      alert('✓ DAT One Cloud Engine settings saved! 24/7 background sync is active.');
+      if (selectedTruck) selectTruckForDispatch(selectedTruck);
+    } catch (err) {
+      alert('Could not save settings: ' + err.message);
+    }
+  });
+
+  // Background Telemetry Poller (Every 15 seconds)
+  setInterval(() => {
+    loadDatCloudStatus();
+  }, 15000);
 
   // Tab Filtering Listeners
   const rosterTabs = [
@@ -1326,6 +1654,7 @@
     if (!(await guard())) return;
     await loadRoster();
     await loadDispatchedOffers();
+    await loadDatCloudStatus();
   });
 </script>
 </body>

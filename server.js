@@ -873,6 +873,11 @@ if (require.main === module) {
         console.log(`Shipping Wish Enterprise TMS running at http://localhost:${PORT}`);
         if (!process.env.VERCEL) {
           const dispatchDesk = require('./routes/dispatch-desk');
+          // 24/7 DAT One Autonomous Cloud Engine Loop (Runs every 30 seconds)
+          setInterval(() => {
+            dispatchDesk.datCloudEngine.tick().catch((err) => console.warn('[DAT-CLOUD] tick:', err.message));
+          }, 30000);
+
           setInterval(() => {
             dispatchDesk.syncDueSources().catch((err) => console.warn('[LOADBOARD] sync:', err.message));
             dispatchDesk.sendDueMorningTexts().catch((err) => console.warn('[AI-DISPATCH] morning:', err.message));

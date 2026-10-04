@@ -16,6 +16,7 @@ const { parseRateCon, auditRateCon } = require('../utils/ratecon-audit');
 const { getCarrierProfile, buildBrokerPacketEmail, sendPacketToBroker } = require('../utils/carrier-packet');
 const { scanPodDocument, generateCarrierInvoice, submitToFactoring } = require('../utils/pod-scanner');
 const { generateTrackingToken } = require('./broker-tracking');
+const datCloudEngine = require('../utils/dat-cloud-engine');
 
 const router = express.Router();
 const staff = [requireAuth, requireRole('admin', 'super_admin', 'dispatcher')];
@@ -876,6 +877,69 @@ router.post('/parse-dat-loads', ...staff, async (req, res) => {
 });
 
 /**
+ * GET /api/dispatch-desk/dat-cloud/status
+ * Live status of 24/7 DAT One Autonomous Cloud Engine
+ */
+router.get('/dat-cloud/status', ...staff, async (req, res) => {
+  try {
+    const config = await datCloudEngine.getConfig();
+    res.json({ ok: true, config });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not get DAT cloud status: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/dispatch-desk/dat-cloud/config
+ * Update DAT One credentials, equipment filters, RPM, and sync interval
+ */
+router.post('/dat-cloud/config', ...staff, async (req, res) => {
+  try {
+    const updated = await datCloudEngine.saveConfig(req.body);
+    res.json({ ok: true, message: 'DAT One Cloud Engine settings saved!', config: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not save DAT cloud settings: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/dispatch-desk/dat-cloud/toggle
+ * Start or Pause 24/7 DAT One Autonomous Cloud Engine
+ */
+router.post('/dat-cloud/toggle', ...staff, async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    const updated = await datCloudEngine.toggleEngine(enabled);
+    res.json({
+      ok: true,
+      message: updated.enabled ? '✓ 24/7 Cloud Background Sync STARTED!' : '⏸️ 24/7 Cloud Sync PAUSED.',
+      config: updated
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not toggle engine: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/dispatch-desk/dat-cloud/sync-now
+ * Trigger an immediate load pull from DAT One
+ */
+router.post('/dat-cloud/sync-now', ...staff, async (req, res) => {
+  try {
+    const pulseResult = await datCloudEngine.executeSyncPulse();
+    const config = await datCloudEngine.getConfig();
+    res.json({
+      ok: true,
+      message: `✓ Instant DAT Cloud Pulse complete (+${pulseResult.inserted_count} active loads synced, -${pulseResult.covered_count} covered/deducted).`,
+      pulse: pulseResult,
+      config
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not run immediate sync: ' + err.message });
+  }
+});
+
+/**
  * POST /api/dispatch/sync-dat-bulk (and /api/dispatch-desk/sync-dat-bulk)
  * Autonomous Bulk Ingestion & Live Sync from DAT One / Extension
  */
@@ -1670,3 +1734,4 @@ module.exports.syncDueSources = syncDueSources;
 module.exports.sendDueMorningTexts = sendDueMorningTexts;
 module.exports.sendDueEmptySoonOffers = () => brain.sendDueEmptySoonOffers();
 module.exports.autoCoverStaleDatLoads = autoCoverStaleDatLoads;
+module.exports.datCloudEngine = datCloudEngine;
