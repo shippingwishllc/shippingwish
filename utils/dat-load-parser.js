@@ -470,7 +470,12 @@ function formatDriverSms(load, truckNumber = '101') {
   const dho = Math.round(parseFloat(load.dho ?? load.deadhead_miles ?? 0) || 0);
   const miles = Math.round(parseFloat(load.loaded_miles ?? load.miles ?? 0) || 0);
   const rpm = miles > 0 && load.rate > 0 ? (load.rate / miles).toFixed(2) : '0.00';
-  const notesLine = load.notes ? `\n𝗡𝗢𝗧𝗘𝗦: ${load.notes.toUpperCase()}` : '';
+  let cleanNotes = String(load.notes || '').trim();
+  // Filter out internal system & background engine sync tags so driver SMS is 100% clean
+  if (/24\/7 DAT|Cloud Sync|DAT Spot Match|Verified.*Freight|Eden Prairie|Direct from DAT/i.test(cleanNotes)) {
+    cleanNotes = '';
+  }
+  const notesLine = cleanNotes ? `\n𝗡𝗢𝗧𝗘𝗦: ${cleanNotes.toUpperCase()}` : '';
 
   return `🚛 LOAD OPTION FOR TRUCK #${truckNumber}
 

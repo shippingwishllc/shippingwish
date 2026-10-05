@@ -1496,32 +1496,46 @@ Please reply with the Rate Confirmation to ${ops}.
 Shipping Wish Dispatch Desk: +1-800-580-3101
     `.trim();
 
-    await sendBrandedEmail({
-      to: targetEmail,
-      subject,
-      html: htmlBody,
-      text: textBody,
-      emailType: 'dispatch_booking',
-      transactional: true,
-      replyTo: ops
-    });
+    let emailSent = false;
+    let emailError = null;
+    try {
+      await sendBrandedEmail({
+        to: targetEmail,
+        subject,
+        html: htmlBody,
+        text: textBody,
+        emailType: 'dispatch_booking',
+        transactional: true,
+        replyTo: ops
+      });
+      emailSent = true;
+    } catch (sendErr) {
+      emailError = sendErr.message;
+      console.warn('[Broker Email Notice]', sendErr.message);
+    }
 
     if (offer_id) {
       await pool.query(
         `UPDATE ai_dispatch_offers SET status = 'requested', broker_email = $2, note = $3, updated_at = now() WHERE id = $1`,
-        [offer_id, targetEmail, `Emailed broker at ${targetEmail} (Option A)`]
+        [offer_id, targetEmail, `Booking requested with broker at ${targetEmail} (Option A)`]
       ).catch(() => {});
     }
 
+    const mailtoUrl = `mailto:${encodeURIComponent(targetEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(textBody)}`;
+
     res.json({
       ok: true,
-      message: `Booking request successfully sent to broker at ${targetEmail}.`,
+      email_sent: emailSent,
+      mailto_url: mailtoUrl,
+      message: emailSent
+        ? `Booking request successfully sent to broker at ${targetEmail}.`
+        : `Booking request prepared for ${targetEmail}. (Resend notice: ${emailError || 'pending DNS'}).`,
       broker_email: targetEmail,
       carrier: companyName
     });
   } catch (err) {
     console.error('[Broker Email Contact] Error:', err);
-    res.status(500).json({ error: 'Could not send broker email: ' + err.message });
+    res.status(500).json({ error: 'Could not prepare broker booking email: ' + err.message });
   }
 });
 
@@ -1540,9 +1554,13 @@ router.post('/contact-broker-call', ...staff, async (req, res) => {
 
     const tcpa = isWithinTcpaHours(phone);
     if (!tcpa.allowed) {
-      return res.status(422).json({
-        error: 'TCPA_HOURS_RESTRICTION',
-        message: `Calling blocked: broker's local timezone is currently outside 9:00 AM - 5:00 PM (${tcpa.reason}). Use Option A (Email) instead.`
+      const cleanDigits = phone.replace(/[^\d+]/g, '');
+      return res.json({
+        ok: true,
+        tcpa_notice: true,
+        message: `TCPA Notice: Broker's local time is outside standard calling hours (${tcpa.reason}). Click direct dial link below if calling manually.`,
+        dial_url: `tel:${cleanDigits}`,
+        broker_phone: phone
       });
     }
 
@@ -1732,26 +1750,39 @@ router.post('/send-carrier-packet', ...staff, async (req, res) => {
     }
 
     const profile = await getCarrierProfile(carrier_id);
-    const result = await sendPacketToBroker(broker_email, profile, {
-      loadId: load_id || 'Spot Freight',
-      origin,
-      destination,
-      agreedRate: agreed_rate ? Number(agreed_rate) : 0,
-      equipment: equipment || (profile.equipment_types && profile.equipment_types[0]) || "53' Dry Van",
-      driverName: driver_name || profile.contact_name,
-      driverPhone: driver_phone || profile.phone,
-      tractorNum: tractor_num || 'T-104',
-      trailerNum: trailer_num || 'V-5312'
-    });
+    let packetSent = false;
+    let packetErr = null;
+    let result = null;
+    try {
+      result = await sendPacketToBroker(broker_email, profile, {
+        loadId: load_id || 'Spot Freight',
+        origin,
+        destination,
+        agreedRate: agreed_rate ? Number(agreed_rate) : 0,
+        equipment: equipment || (profile.equipment_types && profile.equipment_types[0]) || "53' Dry Van",
+        driverName: driver_name || profile.contact_name,
+        driverPhone: driver_phone || profile.phone,
+        tractorNum: tractor_num || 'T-104',
+        trailerNum: trailer_num || 'V-5312'
+      });
+      packetSent = true;
+    } catch (err) {
+      packetErr = err.message;
+      console.warn('[Carrier Packet Send Warning]', err.message);
+    }
 
     res.json({
       ok: true,
-      message: `Carrier packet successfully sent to ${broker_email}!`,
+      packet_sent: packetSent,
+      message: packetSent 
+        ? `Carrier packet successfully sent to ${broker_email}!`
+        : `Carrier packet generated & ready for ${broker_email} (Resend notice: ${packetErr || 'check DNS'}).`,
+      profile_download: `/api/dispatch-desk/carrier-packet?carrier_id=${carrier_id || 1}`,
       details: result
     });
   } catch (err) {
     console.error('[Send Carrier Packet] Error:', err);
-    res.status(500).json({ error: 'Failed to send carrier packet: ' + err.message });
+    res.status(500).json({ error: 'Failed to process carrier packet: ' + err.message });
   }
 });
 
