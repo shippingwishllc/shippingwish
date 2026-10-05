@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -27,7 +27,13 @@
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Manage assigned carriers, book loads, & monitor drivers</p>
       </div>
 
-      <div style="display:flex;align-items:center;gap:var(--space-3);">
+      <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+        <a href="/ai-dispatch" class="btn btn-secondary btn-sm" style="border-color:#3b82f6;color:#1d4ed8;font-weight:700;background:#eff6ff;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+          ⚡ Step 1: Find Loads (AI Match)
+        </a>
+        <a href="/dispatch-communications" class="btn btn-secondary btn-sm" style="border-color:#10b981;color:#047857;font-weight:700;background:#ecfdf5;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+          💬 Step 3: Comms Hub
+        </a>
         <button class="btn btn-secondary btn-sm" onclick="openRouteOptimizerModal()" id="btn-open-route-optimizer" style="border-color:var(--color-amber-500);color:var(--color-amber-600);font-weight:700;">
           🗺️ Route &amp; RPM Optimizer
         </button>

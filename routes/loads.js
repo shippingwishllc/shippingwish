@@ -191,9 +191,9 @@ router.get('/', requireAuth, async (req, res) => {
         OR (dr.email IS NOT NULL AND lower(dr.email) = lower($${n + 1}))
       )`;
     } else if (req.user.role === 'dispatcher') {
-      // STRICT ISOLATION: Each dispatcher ONLY sees loads booked by themselves
+      // Dispatchers see loads booked by themselves or unassigned company fleet / AI loads
       params.push(req.user.id);
-      query += ` AND l.dispatcher_id = $${params.length}`;
+      query += ` AND (l.dispatcher_id = $${params.length} OR l.dispatcher_id IS NULL)`;
     }
 
     if (carrierId && req.user.role !== 'carrier') {

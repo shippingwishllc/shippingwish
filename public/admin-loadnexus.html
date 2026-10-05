@@ -633,7 +633,16 @@
         </p>
       </div>
 
-      <div style="display:flex;align-items:center;gap:var(--space-3);">
+      <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+        <a href="/ai-dispatch" class="btn btn-secondary btn-sm" style="border-color:#3b82f6;color:#60a5fa;background:rgba(59,130,246,0.15);font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+          ⚡ Step 1: Find Loads
+        </a>
+        <a href="/dispatcher-dashboard" class="btn btn-secondary btn-sm" style="border-color:#10b981;color:#34d399;background:rgba(16,185,129,0.15);font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+          🎧 Step 2: Dispatch Desk
+        </a>
+        <a href="/dispatch-communications" class="btn btn-secondary btn-sm" style="border-color:#8b5cf6;color:#c084fc;background:rgba(139,92,246,0.15);font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+          💬 Step 3: Comms Hub
+        </a>
         <button class="btn btn-secondary btn-sm" onclick="loadAllTelemetryData()">🔄 Refresh Radar</button>
         <button class="btn btn-danger btn-sm" onclick="openEmergencyFreezeModal()">🚨 Emergency Fraud Freeze</button>
       </div>

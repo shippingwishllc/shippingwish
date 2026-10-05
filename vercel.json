@@ -8,6 +8,23 @@
       "includeFiles": "public/**"
     }
   },
+  "redirects": [
+    {
+      "source": "/load-booking",
+      "destination": "/ai-dispatch",
+      "permanent": true
+    },
+    {
+      "source": "/load-booking.html",
+      "destination": "/ai-dispatch",
+      "permanent": true
+    },
+    {
+      "source": "/dispatch-communications.html",
+      "destination": "/dispatch-communications",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/superadmin",
