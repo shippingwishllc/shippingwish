@@ -147,17 +147,28 @@ async function sendLeadSms(lead, user, opts = {}) {
   };
 }
 
+function formatE164(rawPhone) {
+  if (!rawPhone) return '';
+  const digits = String(rawPhone).replace(/[^0-9]/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  if (digits.length > 10) return `+${digits}`;
+  return digits ? `+1${digits}` : '';
+}
+
 async function sendLeadVapi(lead, user, opts = {}) {
-  const phone = lead.phone;
-  if (!usablePhone(phone)) return { ok: false, reason: 'No usable phone' };
-  if (opts.consentConfirmed !== true && !(await hasSmsConsent(phone, lead))) {
+  const rawPhone = lead.phone;
+  if (!usablePhone(rawPhone)) return { ok: false, reason: 'No usable phone' };
+  const phone = formatE164(rawPhone);
+  if (!phone || phone.length < 11) return { ok: false, reason: 'Invalid phone format for AI calling' };
+  if (opts.consentConfirmed !== true && !(await hasSmsConsent(rawPhone, lead))) {
     return {
       ok: false,
       reason: 'AI call needs prior consent. Check “they already agreed” on the selected row.'
     };
   }
   const state = String(lead.phy_state || lead.target_lanes || lead.state || 'US').slice(0, 2).toUpperCase();
-  const tcpa = isWithinTcpaHours(phone, state);
+  const tcpa = isWithinTcpaHours(rawPhone, state);
   if (!tcpa.allowed) {
     return { ok: false, reason: tcpa.reason || 'Outside 9am–5pm local hours' };
   }
@@ -180,12 +191,14 @@ async function sendLeadVapi(lead, user, opts = {}) {
   }
 
   const firstMessage = `Hi this is Alex with Shipping Wish Logistics operations. Am I speaking with the fleet owner or manager for ${company}?`;
-  const vapiPayload = {
-    name: `CRM AI Call to ${name}`,
+  const assistantName = 'Alex - Operations Manager'; // 25 chars (strictly <= 40 chars for Vapi validation)
+  
+  const buildPayload = (useVoice = true) => ({
+    name: `CRM Call to ${String(name || 'Lead').slice(0, 25)}`,
     phoneNumberId: vapiPhoneId || undefined,
-    customer: { number: phone, name },
+    customer: { number: phone, name: String(name || 'Partner').slice(0, 38) },
     assistant: {
-      name: 'Alex — Senior Dispatch Manager at Shipping Wish LLC',
+      name: assistantName,
       firstMessage,
       model: {
         provider: 'openai',
@@ -199,23 +212,38 @@ async function sendLeadVapi(lead, user, opts = {}) {
           destinations: [{ type: 'number', number: transfer, message: 'One moment while I transfer you to our operations desk.' }]
         }]
       },
-      voice: { provider: '11labs', voiceId: '21m00Tcm4TlvDq8ikWAM' },
+      ...(useVoice ? { voice: { provider: '11labs', voiceId: '21m00Tcm4TlvDq8ikWAM' } } : {}),
       endCallMessage: 'Thank you for your time. Have a safe drive!',
       recordingEnabled: true
     }
-  };
+  });
 
-  const vapiRes = await fetch('https://api.vapi.ai/call/phone', {
+  let vapiRes = await fetch('https://api.vapi.ai/call/phone', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${vapiApiKey}`
     },
-    body: JSON.stringify(vapiPayload)
+    body: JSON.stringify(buildPayload(true))
   });
-  const vapiData = await vapiRes.json().catch(() => ({}));
+  let vapiData = await vapiRes.json().catch(() => ({}));
+  const msgOf = (d) => Array.isArray(d.message) ? d.message.join('; ') : String(d.message || d.error || '');
+
+  // Fallback if ElevenLabs voice is not configured in Vapi workspace
+  if (!vapiRes.ok && /voice|elevenlabs|11labs/i.test(msgOf(vapiData))) {
+    vapiRes = await fetch('https://api.vapi.ai/call/phone', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${vapiApiKey}`
+      },
+      body: JSON.stringify(buildPayload(false))
+    });
+    vapiData = await vapiRes.json().catch(() => ({}));
+  }
+
   if (!vapiRes.ok) {
-    return { ok: false, reason: vapiData.message || `Vapi error ${vapiRes.status}` };
+    return { ok: false, reason: msgOf(vapiData) || `Vapi error ${vapiRes.status}` };
   }
 
   await pool.query(

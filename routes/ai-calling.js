@@ -158,11 +158,13 @@ router.post('/outbound', requireAuth, async (req, res) => {
   if (vapiApiKey) {
     try {
       const assistantName = (config.shortName || 'Alex - Dispatch').slice(0, 38);
+      const e164Digits = String(to_phone || '').replace(/[^0-9]/g, '');
+      const formattedToPhone = e164Digits.length === 10 ? `+1${e164Digits}` : (e164Digits.length === 11 && e164Digits.startsWith('1') ? `+${e164Digits}` : `+${e164Digits}`);
       const buildVapiPayload = (useVoice = true) => ({
         name: `SW Call to ${name}`.slice(0, 38),
         phoneNumberId: vapiPhoneId || undefined,
         customer: {
-          number: to_phone,
+          number: formattedToPhone,
           name: String(name || 'Partner').slice(0, 38)
         },
         assistant: {

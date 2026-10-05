@@ -1799,6 +1799,8 @@ router.post('/contact-broker-call', ...staff, async (req, res) => {
 
     if (vapiApiKey) {
       try {
+        const e164Phone = String(phone || '').replace(/[^0-9]/g, '');
+        const formattedPhone = e164Phone.length === 10 ? `+1${e164Phone}` : (e164Phone.length === 11 && e164Phone.startsWith('1') ? `+${e164Phone}` : `+${e164Phone}`);
         const vapiRes = await fetch('https://api.vapi.ai/call/phone', {
           method: 'POST',
           headers: {
@@ -1806,11 +1808,11 @@ router.post('/contact-broker-call', ...staff, async (req, res) => {
             Authorization: `Bearer ${vapiApiKey.trim()}`
           },
           body: JSON.stringify({
-            name: `Broker Load Booking Call - [${loadIdStr}] ${load?.origin} to ${load?.destination}`,
+            name: `Broker Call [${loadIdStr}]`.slice(0, 38),
             phoneNumberId: vapiPhoneId || undefined,
-            customer: { number: phone, name: broker_name || 'Freight Broker' },
+            customer: { number: formattedPhone, name: String(broker_name || 'Freight Broker').slice(0, 38) },
             assistant: {
-              name: 'Alex - Senior Dispatcher at Shipping Wish',
+              name: 'Alex - Senior Dispatcher',
               firstMessage: `Hi, this is Alex with Shipping Wish dispatch calling regarding your posted load #${loadIdStr} from ${load?.origin || 'the pickup'} to ${load?.destination || 'the delivery'}. Is this load still open?`,
               model: {
                 provider: 'openai',
