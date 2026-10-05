@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -962,11 +962,19 @@
       btn.disabled = false;
       btn.textContent = 'Run campaign';
 
-      const data = await res.json();
+      let data;
+      const textResponse = await res.text();
+      try {
+        data = JSON.parse(textResponse);
+      } catch (parseErr) {
+        header.textContent = '❌ Campaign Error';
+        summary.textContent = `Server returned non-JSON response (${res.status} ${res.statusText}): ${textResponse.slice(0, 180)}`;
+        return;
+      }
 
       if (!res.ok) {
         header.textContent = '❌ AI Campaign Failed';
-        summary.textContent = data.error || 'Server error running campaign';
+        summary.textContent = data.error || data.message || 'Server error running campaign';
         return;
       }
 
@@ -1003,7 +1011,7 @@
             <div style="display:flex;gap:6px;">
               ${l.email_sent ? '<span class="badge badge-paid">Email sent</span>' : ''}
               ${l.sms_sent ? '<span class="badge badge-booked">SMS sent</span>' : ''}
-              ${l.vapi_sent ? '<span class="badge badge-booked">Vapi started</span>' : ''}
+              ${l.vapi_sent ? '<span class="badge badge-booked">Vapi started</span>' : (l.vapi_standby ? '<span class="badge badge-pending" title="Vapi payload ready (standby)">Vapi standby</span>' : '')}
             </div>
           </div>
         `).join('');
