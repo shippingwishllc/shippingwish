@@ -289,45 +289,44 @@
     }
   </style>
 </head>
-<body>
-  <div class="app-layout">
-    <main class="app-main">
-      <div class="layout-container" style="padding-top:20px; padding-bottom:40px;">
-        
-        <!-- Breadcrumb & Page Header -->
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
-          <div>
-            <div style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">
-              Operations &bull; Communications Desk
-            </div>
-            <h1 style="margin:0; font-size:24px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-              💬 Dispatch Communications Hub
-            </h1>
-            <p style="margin:4px 0 0; font-size:13.5px; color:#64748b;">
-              Unified omnichannel desk for outbound/inbound broker booking emails, voice calls &amp; driver offers (SMS + WhatsApp).
-            </p>
-          </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <a href="/ai-dispatch" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:6px; border-color:#3b82f6; color:#1d4ed8; background:#eff6ff; font-weight:700; text-decoration:none;">
-              ⚡ Step 1: AI Match
-            </a>
-            <a href="/dispatcher-dashboard" class="btn btn-secondary" style="display:inline-flex; align-items:center; gap:6px; border-color:#10b981; color:#047857; background:#ecfdf5; font-weight:700; text-decoration:none;">
-              🎧 Step 2: Dispatch Desk
-            </a>
-            <button type="button" class="btn btn-secondary" onclick="openComposeEmailModal()" style="display:inline-flex; align-items:center; gap:6px;">
-              📧 Compose Broker Email
-            </button>
-            <button type="button" class="btn btn-secondary" onclick="openQuickDialModal()" style="display:inline-flex; align-items:center; gap:6px;">
-              📞 Quick Call Broker
-            </button>
-            <button type="button" class="btn btn-primary" onclick="openDriverOfferModal()" style="display:inline-flex; align-items:center; gap:6px;">
-              📱 Send Driver Offer
-            </button>
-            <button type="button" class="btn btn-secondary" onclick="refreshCurrentTab()" title="Refresh" style="padding:8px 12px;">
-              🔄
-            </button>
-          </div>
+<body class="app-body">
+  <div class="app-shell">
+    <!-- LEFT SIDEBAR -->
+    <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+    <script src="/js/app-shell-boot.js"></script>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="app-main">
+      <!-- TOP HEADER -->
+      <header class="app-header">
+        <div>
+          <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">
+            <span>💬</span> Dispatch Communications Hub
+          </h1>
+          <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">
+            Unified omnichannel desk for outbound/inbound broker booking emails, voice calls &amp; driver offers (SMS + WhatsApp)
+          </p>
         </div>
+
+        <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openComposeEmailModal()" style="display:inline-flex;align-items:center;gap:6px;">
+            📧 Compose Broker Email
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openQuickDialModal()" style="display:inline-flex;align-items:center;gap:6px;">
+            📞 Quick Call Broker
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="openDriverOfferModal()" style="display:inline-flex;align-items:center;gap:6px;">
+            📱 Send Driver Offer
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="refreshCurrentTab()" title="Refresh" style="padding:6px 10px;">
+            🔄
+          </button>
+          <div id="notif-container"></div>
+        </div>
+      </header>
+
+      <!-- CONTENT BODY -->
+      <main class="app-content">
 
         <!-- KPI Summary Cards -->
         <div class="kpi-grid-6">
@@ -477,9 +476,8 @@
             </table>
           </div>
         </div>
-
-      </div>
-    </main>
+      </main>
+    </div>
   </div>
 
   <!-- MODAL: VIEW FULL EMAIL -->

@@ -10,22 +10,16 @@
   },
   "redirects": [
     {
-      "source": "/load-booking",
-      "destination": "/ai-dispatch",
-      "permanent": true
-    },
-    {
-      "source": "/load-booking.html",
-      "destination": "/ai-dispatch",
-      "permanent": true
-    },
-    {
       "source": "/dispatch-communications.html",
       "destination": "/dispatch-communications",
       "permanent": true
     }
   ],
   "rewrites": [
+    {
+      "source": "/load-booking",
+      "destination": "/load-booking.html"
+    },
     {
       "source": "/superadmin",
       "destination": "/superadmin/index.html"

@@ -18,7 +18,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '37';
+  const SIDEBAR_VERSION = '38';
   // #endregion
 
   function clearRoleCache() {
@@ -221,11 +221,12 @@
   const STAFF_LINKS = [
     { section: 'Executive Command', superAdminOnly: true },
     { key: 'superadmin', href: '/superadmin', icon: IC.crown, label: 'Command Center (4-Brand)', superAdminOnly: true },
+    { key: 'loadnexus', href: '/admin-loadnexus', icon: IC.shield, label: '🛡️ LoadNexus Superadmin Command', superAdminOnly: true },
     { section: 'Operations Workflow' },
-    { key: 'ai-dispatch', href: '/ai-dispatch', icon: IC.target, label: '⚡ Load Board & AI Match' },
+    { key: 'loadboard', href: '/load-booking', icon: IC.target, label: '⚡ Load Board & AI Match' },
+    { key: 'ai-dispatch', href: '/ai-dispatch', icon: IC.robot, label: '🤖 AI Dispatch Operations' },
     { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: IC.headset, label: '🎧 Dispatch Control Desk' },
     { key: 'dispatch-comms', href: '/dispatch-communications', icon: IC.inbox, label: '💬 Dispatch Comms Hub' },
-    { key: 'loadnexus', href: '/admin-loadnexus', icon: IC.shield, label: '🛡️ LoadNexus Command (25 Desks)', adminOnly: true },
     { key: 'planning', href: '/load-planning', icon: IC.planning, label: 'Truck Load Planning' },
     { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' },
     { key: 'fleet', href: '/fleet', icon: IC.truck, label: 'Fleet & Drivers' },
@@ -265,7 +266,8 @@
 
   const DISPATCHER_LINKS = [
     { section: 'Operations Workflow' },
-    { key: 'ai-dispatch', href: '/ai-dispatch', icon: IC.target, label: '⚡ Load Board & AI Match' },
+    { key: 'loadboard', href: '/load-booking', icon: IC.target, label: '⚡ Load Board & AI Match' },
+    { key: 'ai-dispatch', href: '/ai-dispatch', icon: IC.robot, label: '🤖 AI Dispatch Operations' },
     { key: 'dispatch', navId: 'nav-tab-desk', href: '/dispatcher-dashboard', icon: IC.headset, label: '🎧 Dispatch Control Desk' },
     { key: 'dispatch-comms', href: '/dispatch-communications', icon: IC.inbox, label: '💬 Dispatch Comms Hub' },
     { key: 'fleets', navId: 'nav-tab-fleets', href: '/dispatcher-dashboard#fleets', icon: IC.truck, label: 'Assigned Fleets' },
@@ -324,12 +326,15 @@
 
   const PAGE_KEY = {
     'admin-loadnexus.html': 'loadnexus',
+    'admin-loadnexus': 'loadnexus',
     'admin-dashboard.html': 'overview',
     'dispatcher-dashboard.html': 'dispatch',
     'ai-dispatch.html': 'ai-dispatch',
+    'ai-dispatch': 'ai-dispatch',
     'dispatch-communications.html': 'dispatch-comms',
     'dispatch-communications': 'dispatch-comms',
-    'load-booking.html': 'ai-dispatch',
+    'load-booking.html': 'loadboard',
+    'load-booking': 'loadboard',
     'brokers.html': 'brokers',
     'fleet.html': 'fleet',
     'crm-sales.html': 'crm',

@@ -540,9 +540,9 @@ app.get(['/track/:token', '/tracking/:token'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tracking.html'));
 });
 
-// Consolidation: Redirect legacy /load-booking to unified /ai-dispatch
+// Load Board & AI Match
 app.get(['/load-booking', '/load-booking.html'], (req, res) => {
-  res.redirect(301, '/ai-dispatch');
+  res.sendFile(path.join(__dirname, 'public', 'load-booking.html'));
 });
 
 // Dedicated Staff Gateways

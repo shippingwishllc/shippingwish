@@ -522,16 +522,22 @@ router.post('/match-truck', ...staff, async (req, res) => {
         else if (isBox) baseRpm = 2.55;
 
         const candidateOrigins = [
-          { city: effectiveOrigin, dho: 0 },
-          { city: effectiveOrigin, dho: 14 },
-          { city: effectiveOrigin, dho: 28 }
+          { city: effectiveOrigin, dho: 0, dest: targetCity },
+          { city: effectiveOrigin, dho: 12, dest: targetCity },
+          { city: effectiveOrigin, dho: 28, dest: targetCity },
+          { city: effectiveOrigin, dho: 45, dest: targetCity },
+          { city: effectiveOrigin, dho: 18, dest: 'Atlanta, GA' },
+          { city: effectiveOrigin, dho: 35, dest: 'Chicago, IL' },
+          { city: effectiveOrigin, dho: 24, dest: 'Dallas, TX' },
+          { city: effectiveOrigin, dho: 50, dest: 'Columbus, OH' }
         ];
 
         for (let i = 0; i < candidateOrigins.length; i++) {
           const cand = candidateOrigins[i];
           const b = brokers[i % brokers.length];
-          const milesForCandidate = tripMiles + (i === 1 ? -15 : (i === 2 ? 20 : 0));
-          const rateRpm = parseFloat((baseRpm + (i * 0.08) - (Math.random() * 0.04)).toFixed(2));
+          const destForCand = cand.dest || targetCity;
+          const milesForCandidate = tripMiles + (i * 25) - 30;
+          const rateRpm = parseFloat((baseRpm + ((i % 4) * 0.12) - (Math.random() * 0.04)).toFixed(2));
           const totalRate = Math.round(milesForCandidate * rateRpm);
 
           // Realistic weight strictly matching equipment type
@@ -547,7 +553,7 @@ router.post('/match-truck', ...staff, async (req, res) => {
             id: 9100 + i,
             load_number: loadNum,
             pickup_location: cand.city,
-            delivery_location: targetCity,
+            delivery_location: destForCand,
             pickup_time: 'Ready Today Before 5PM',
             delivery_time: 'Next Day Before 3PM',
             equipment_type: effectiveEquip,
@@ -571,7 +577,7 @@ router.post('/match-truck', ...staff, async (req, res) => {
               ON CONFLICT (load_number) DO NOTHING`,
               [
                 loadNum, b.name, b.phone, b.mc,
-                cand.city, targetCity, synthLoad.pickup_time, synthLoad.delivery_time,
+                cand.city, destForCand, synthLoad.pickup_time, synthLoad.delivery_time,
                 effectiveEquip, loadWeight, milesForCandidate, totalRate, rateRpm, synthLoad.notes
               ]
             );

@@ -314,7 +314,7 @@ async function executeSyncPulse() {
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   const shuffled = [...PRIME_CORRIDORS].sort(() => 0.5 - Math.random());
-  const selectedCorridors = [...shuffled.slice(0, Math.floor(Math.random() * 4) + 3)];
+  const selectedCorridors = [...shuffled.slice(0, Math.floor(Math.random() * 6) + 12)];
 
   // Prioritize active fleet truck lanes (e.g. Hopkinsville, KY -> D'Iberville, MS)
   if (canQueryDb()) {

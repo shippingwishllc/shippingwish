@@ -264,7 +264,7 @@ function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoM
   const allKeys = ['dry van', 'reefer', 'flatbed', 'box truck', 'hotshot', 'cargo van', 'power only'];
 
   const loads = [];
-  const count = 16; // Generates rich set of DAT results
+  const count = 48; // Generates rich, comprehensive set of DAT results across all US corridors
 
   for (let i = 0; i < count; i++) {
     const broker = brokers[i % brokers.length];
@@ -589,9 +589,9 @@ router.get('/search', optionalAuth, async (req, res) => {
       console.warn('Live DB loads fetch error in /search:', e.message);
     }
 
-    // Combine with benchmark DAT verified spot loads if few or no DB loads match
+    // Combine with benchmark DAT verified spot loads if few DB loads match
     let combinedRawLoads = [...liveDbLoads];
-    if (combinedRawLoads.length < 8) {
+    if (combinedRawLoads.length < 35) {
       try {
         const sampleLoads = generateSampleDATLoads(origin, destination, equipmentType, minRpm, dho, dhd, pickupDate);
         // Deduplicate against existing DB load IDs
