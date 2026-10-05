@@ -388,6 +388,128 @@ function parseDatCard(text) {
 }
 
 /**
+ * Universal Multi-Row Table Parser (Supports TAL One / DAT One Virtual Tables & Multi-Line Rows)
+ */
+function parseUniversalDat(text) {
+  if (!text || typeof text !== 'string') return [];
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  
+  // Strategy A: Split by Age indicator at row start (e.g. 0m, 15m, 1m, 2h, 3d, <1m)
+  const ageRowRegex = /^(?:\[\s*\]\s*)?(\d+[mhsd]|<1m|\d+\s*mins?)\b/i;
+  const ageLineIndices = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (ageRowRegex.test(lines[i])) {
+      ageLineIndices.push(i);
+    }
+  }
+
+  const chunks = [];
+  if (ageLineIndices.length >= 2) {
+    for (let k = 0; k < ageLineIndices.length; k++) {
+      const start = ageLineIndices[k];
+      const end = (k + 1 < ageLineIndices.length) ? ageLineIndices[k + 1] : lines.length;
+      chunks.push(lines.slice(start, end).join('\n'));
+    }
+  }
+
+  // Strategy B: If no age indicators, check if each line has 2 cities
+  if (chunks.length === 0) {
+    for (const l of lines) {
+      const cities = Array.from(l.matchAll(/([A-Za-z\s.]+),\s*([A-Za-z]{2})/g));
+      if (cities.length >= 2) {
+        chunks.push(l);
+      }
+    }
+  }
+
+  // Strategy C: Split by sequential pairs of City, ST in full text
+  if (chunks.length === 0) {
+    const cityRegex = /\b([A-Za-z\s.]+),\s*([A-Za-z]{2})\b/g;
+    const allCities = Array.from(text.matchAll(cityRegex));
+    if (allCities.length >= 4) {
+      for (let i = 0; i < allCities.length; i += 2) {
+        if (i + 1 < allCities.length) {
+          const startIdx = Math.max(0, allCities[i].index - 60);
+          const nextStart = (i + 2 < allCities.length) ? allCities[i + 2].index : text.length;
+          chunks.push(text.slice(startIdx, nextStart));
+        }
+      }
+    }
+  }
+
+  const results = [];
+  for (const chunk of chunks) {
+    const cityMatches = Array.from(chunk.matchAll(/\b([A-Za-z\s.]+),\s*([A-Za-z]{2})\b/g));
+    if (cityMatches.length < 2) continue;
+
+    const orig = cleanLocation(`${cityMatches[0][1].trim()}, ${cityMatches[0][2].trim()}`);
+    const dest = cleanLocation(`${cityMatches[1][1].trim()}, ${cityMatches[1][2].trim()}`);
+
+    const rateMatch = chunk.match(/\$([0-9,]+(?:\.[0-9]{2})?)/);
+    const rate = rateMatch ? parseMoney(rateMatch[1]) : 0;
+
+    const milesMatch = chunk.match(/\b([0-9,]{2,5})\s*(?:mi|miles)\b/i) || chunk.match(/(?:^|\s|\t)([0-9]{2,4})(?:\s|\t|$)/);
+    const miles = milesMatch ? parseInt(milesMatch[1].replace(/,/g, ''), 10) : 500;
+
+    const dhoMatch = chunk.match(/\(([0-9]{1,3})\)/) || chunk.match(/DH-?O:?\s*([0-9]{1,3})/i);
+    const dho = dhoMatch ? parseInt(dhoMatch[1], 10) : 0;
+
+    const weightMatch = chunk.match(/([0-9,]+)\s*(?:lbs|lb)\b/i);
+    const weight = weightMatch ? parseInt(weightMatch[1].replace(/,/g, ''), 10) : 40000;
+
+    let eq = '53ft Dry Van';
+    if (/\b(VR|REEFER|R)\b/i.test(chunk)) eq = '53ft Reefer';
+    else if (/\b(F|FLATBED|FLAT)\b/i.test(chunk)) eq = 'Flatbed';
+    else if (/\b(SB|BOX|STRAIGHT)\b/i.test(chunk)) eq = '26ft Box Truck';
+    else if (/\b(SD|STEP)\b/i.test(chunk)) eq = 'Step Deck';
+    else if (/\b(V|VAN)\b/i.test(chunk)) eq = '53ft Dry Van';
+
+    const phoneMatch = chunk.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
+    const phone = phoneMatch ? `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}` : null;
+
+    const emailMatch = chunk.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+    const email = emailMatch ? emailMatch[1].toLowerCase() : null;
+
+    let broker = 'DAT Verified Broker';
+    const brokerMatch = chunk.match(/(?:Full|Partial|53 ft|26 ft)[\s\t]+([A-Za-z0-9\s.,&'-]+?)(?:[\s\t]+\([0-9]{3}\)|[\s\t]+[0-9]{2}\s+CS|[\s\t]+[a-zA-Z0-9._%+-]+@|$)/i);
+    if (brokerMatch && brokerMatch[1].trim().length > 3) {
+      broker = brokerMatch[1].replace(/^(?:-\s*)?(?:Full|Partial)\s*[\t\s]*/i, '').trim();
+    } else if (email) {
+      const domain = email.split('@')[1]?.replace(/\.[a-z]{2,}$/i, '');
+      if (domain) broker = domain.toUpperCase() + ' Logistics';
+    }
+
+    const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : 0;
+
+    results.push({
+      load_id: `DAT-${Math.floor(100000 + Math.random() * 900000)}`,
+      origin: orig.full,
+      origin_city: orig.city,
+      origin_state: orig.state,
+      destination: dest.full,
+      destination_city: dest.city,
+      destination_state: dest.state,
+      rate,
+      miles,
+      loaded_miles: miles,
+      dho,
+      weight,
+      equipment_type: eq,
+      broker_name: broker,
+      broker_phone: phone,
+      broker_email: email,
+      rpm,
+      pickup_time: 'Ready Today',
+      delivery_time: 'Standard Delivery',
+      notes: 'Live TAL One sync',
+      raw_source: chunk.slice(0, 300)
+    });
+  }
+
+  return results;
+}
+
+/**
  * Universal Master Parse Function
  * Handles DAT One detail cards, key-value pasted text, and tabular DAT data
  */
@@ -396,22 +518,28 @@ function parseDatInput(text) {
   const trimmed = text.trim();
   if (!trimmed) return [];
 
-  // 1. Try DAT One multi-line card / detail view format first
-  const cardResult = parseDatCard(trimmed);
-  if (cardResult) {
-    return [cardResult];
+  // 1. Prioritize Multi-Row Tables (handles TAL One virtualized tables & copied search results)
+  const universalLoads = parseUniversalDat(trimmed);
+  if (universalLoads.length > 0) {
+    return universalLoads;
   }
 
-  // 2. Try Key-Value format (like DHO / Loaded Miles / From / To)
+  // 2. Try Tabular DAT table rows
+  const tableResults = parseDatTableRows(trimmed);
+  if (tableResults.length > 0) {
+    return tableResults;
+  }
+
+  // 3. Try Key-Value format (like DHO / Loaded Miles / From / To)
   const kvResults = parseKeyValueFormat(trimmed);
   if (kvResults.length > 0) {
     return kvResults;
   }
 
-  // 3. Try Tabular DAT table rows
-  const tableResults = parseDatTableRows(trimmed);
-  if (tableResults.length > 0) {
-    return tableResults;
+  // 4. Try DAT One single detail card / side drawer format
+  const cardResult = parseDatCard(trimmed);
+  if (cardResult) {
+    return [cardResult];
   }
 
   // 4. Fallback: Extract from any text containing city/state pairs

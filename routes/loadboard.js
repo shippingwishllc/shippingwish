@@ -519,7 +519,6 @@ router.get('/search', optionalAuth, async (req, res) => {
     let liveDbLoads = [];
     setImmediate(() => {
       require('../utils/loadboard-sync').syncDueSources().catch(() => {});
-      require('../utils/dat-cloud-engine').executeSyncPulse().catch(() => {});
     });
 
     // Build parameterized dynamic SQL query for loads
@@ -663,22 +662,8 @@ router.get('/search', optionalAuth, async (req, res) => {
       console.warn('Live DB loads fetch error in /search:', e.message);
     }
 
-    // Combine with benchmark DAT verified spot loads if few DB loads match
+    // Only genuine live loads from database (e.g. synced from TAL One / verified carriers)
     let combinedRawLoads = [...liveDbLoads];
-    if (combinedRawLoads.length < 35) {
-      try {
-        const sampleLoads = generateSampleDATLoads(origin, destination, equipmentType, minRpm, dho, dhd, pickupDate);
-        // Deduplicate against existing DB load IDs
-        const existingIds = new Set(combinedRawLoads.map(l => l.id));
-        for (const s of sampleLoads) {
-          if (!existingIds.has(s.id)) {
-            combinedRawLoads.push(s);
-          }
-        }
-      } catch (errGen) {
-        console.warn('Fallback sample loads generation notice:', errGen.message);
-      }
-    }
 
     // Secondary client-level filtering for equipment and minRpm
     if (equipmentType && equipmentType !== 'all' && equipmentType !== 'any') {
@@ -898,21 +883,7 @@ router.post('/ai-match', optionalAuth, async (req, res) => {
       verified_broker: true,
       is_sample: false
     }));
-
-    if (matches.length < 10) {
-      const sampleLoads = generateSampleDATLoads(origin, destination, eq, minRpm, dho, dhd, pickupDate);
-      const existingIds = new Set(matches.map(m => m.id));
-      for (const s of sampleLoads) {
-        if (!existingIds.has(s.id)) {
-          matches.push({
-            ...s,
-            ai_score: s.ai_score || (98.0 - matches.length * 1.5).toFixed(1)
-          });
-          if (matches.length >= 15) break;
-        }
-      }
-    }
-
+    // Only genuine matching loads from database - no synthetic sample generation
     // Secondary client-level filtering
     if (eq && eq !== 'all' && eq !== 'any') {
       matches = matches.filter(m => equipmentMatches(eq, m.equipment_type));

@@ -303,184 +303,11 @@ async function toggleEngine(enableState) {
 }
 
 /**
- * Execute a single 24/7 Cloud Sync Pulse
+ * Execute a 24/7 Cloud Sync Pulse (Status Heartbeat only - loads originate strictly from live bridge)
  */
 async function executeSyncPulse() {
-  const cfg = await getConfig();
-  const loadboardRouter = require('../routes/loadboard');
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-  const shuffled = [...PRIME_CORRIDORS].sort(() => 0.5 - Math.random());
-  const selectedCorridors = [...shuffled.slice(0, Math.floor(Math.random() * 6) + 12)];
-
-  // Prioritize active fleet truck lanes (e.g. Hopkinsville, KY -> D'Iberville, MS)
-  if (canQueryDb()) {
-    try {
-      const activeCarriers = await pool.query(
-        `SELECT empty_zip, prefer_destination, equipment, min_rpm 
-         FROM ai_dispatch_carriers 
-         WHERE status IN ('active', 'ready') LIMIT 3`
-      );
-      for (const c of activeCarriers.rows) {
-        if (c.empty_zip && c.prefer_destination && !c.prefer_destination.toLowerCase().includes('anywhere')) {
-          const isBox = /box/i.test(c.equipment || '');
-          const origState = c.empty_zip.includes(',') ? c.empty_zip.split(',')[1].trim().slice(0, 2).toUpperCase() : 'KY';
-          const destState = c.prefer_destination.includes(',') ? c.prefer_destination.split(',')[1].trim().slice(0, 2).toUpperCase() : 'MS';
-          const weight = isBox ? Math.floor(5400 + Math.random() * 3200) : Math.floor(38000 + Math.random() * 4500);
-          selectedCorridors.unshift({
-            origin: c.empty_zip,
-            origState,
-            dest: c.prefer_destination,
-            destState,
-            miles: 563,
-            dho: 18,
-            baseRpm: Math.max(parseFloat(c.min_rpm) || 2.00, 2.45),
-            eq: c.equipment || '26ft Box Truck',
-            weight
-          });
-        }
-      }
-    } catch (_) {}
-  }
-
-  const insertedLoads = [];
-  let skippedCount = 0;
-  let coveredCount = 0;
-
-  for (const lane of selectedCorridors) {
-    const broker = AUTHENTIC_BROKERS[Math.floor(Math.random() * AUTHENTIC_BROKERS.length)];
-    const rateVariation = 0.96 + Math.random() * 0.08;
-    const rpm = parseFloat((lane.baseRpm * rateVariation).toFixed(2));
-    const totalRate = Math.round(lane.miles * rpm);
-
-    if (rpm < cfg.min_rpm) continue;
-
-    // Strict box truck weight guard: Box trucks cannot legally haul > 10,000 lbs
-    let loadWeight = lane.weight;
-    if (/box/i.test(lane.eq)) {
-      loadWeight = Math.min(loadWeight, 9500);
-      if (loadWeight > 9500 || loadWeight < 1500) {
-        loadWeight = Math.floor(4500 + Math.random() * 4500);
-      }
-    }
-
-    const loadNum = `DAT-${Math.floor(100000 + Math.random() * 900000)}`;
-    const loadObj = {
-      load_number: loadNum,
-      broker_name: broker.name,
-      broker_contact: broker.phone,
-      broker_mc: broker.mc,
-      pickup_location: lane.origin,
-      pickup_state: lane.origState,
-      delivery_location: lane.dest,
-      delivery_state: lane.destState,
-      pickup_date: todayStr,
-      pickup_time: `${todayStr} ${timeStr}`,
-      delivery_time: 'Next Day Before 3PM',
-      equipment_type: lane.eq,
-      weight: loadWeight,
-      miles: lane.miles,
-      rate: totalRate,
-      rpm: rpm,
-      status: 'new',
-      source_type: 'dat_sync',
-      notes: `24/7 DAT Cloud Sync • DHO ${lane.dho} mi • ${broker.city}`
-    };
-
-    if (canQueryDb()) {
-      try {
-        const existing = await pool.query(
-          `SELECT id FROM loads
-           WHERE pickup_location = $1 AND delivery_location = $2 AND rate = $3
-             AND source_type = 'dat_sync' AND status = 'new'
-             AND created_at > NOW() - INTERVAL '60 minutes'
-           LIMIT 1`,
-          [lane.origin, lane.dest, totalRate]
-        );
-
-        if (existing.rows.length > 0) {
-          skippedCount++;
-          continue;
-        }
-
-        const ins = await pool.query(
-          `INSERT INTO loads (
-            load_number, broker_name, broker_contact, broker_mc,
-            pickup_location, pickup_state, delivery_location, delivery_state,
-            pickup_date, pickup_time, delivery_time,
-            equipment_type, weight, miles, rate, rpm,
-            status, source_type, notes, created_at, updated_at
-          ) VALUES (
-            $1, $2, $3, $4,
-            $5, $6, $7, $8,
-            $9, $10, $11,
-            $12, $13, $14, $15, $16,
-            'new', 'dat_sync', $17, NOW(), NOW()
-          ) RETURNING *`,
-          [
-            loadNum, broker.name, broker.phone, broker.mc,
-            lane.origin, lane.origState, lane.dest, lane.destState,
-            todayStr, `${todayStr} ${timeStr}`, 'Next Day Before 3PM',
-            lane.eq, lane.weight, lane.miles, totalRate, rpm,
-            loadObj.notes
-          ]
-        );
-        insertedLoads.push(ins.rows[0]);
-      } catch (err) {
-        markDbError(err);
-        loadObj.id = Math.floor(10000 + Math.random() * 90000);
-        insertedLoads.push(loadObj);
-      }
-    } else {
-      loadObj.id = Math.floor(10000 + Math.random() * 90000);
-      insertedLoads.push(loadObj);
-    }
-
-    // Real-time broadcast to LoadsNexus
-    if (typeof loadboardRouter.broadcastLoadboardEvent === 'function') {
-      try {
-        loadboardRouter.broadcastLoadboardEvent('load_posted', loadObj);
-      } catch (_) {}
-    }
-  }
-
-  // Deduct & cover stale loads
-  if (canQueryDb()) {
-    try {
-      const staleRes = await pool.query(
-        `UPDATE loads 
-         SET status = 'covered', updated_at = NOW() 
-         WHERE source_type = 'dat_sync' 
-           AND status = 'new' 
-           AND created_at < NOW() - INTERVAL '6 hours'
-         RETURNING id, load_number`
-      );
-      coveredCount = staleRes.rows.length;
-      if (coveredCount > 0 && typeof loadboardRouter.broadcastLoadboardEvent === 'function') {
-        staleRes.rows.forEach(r => {
-          try {
-            loadboardRouter.broadcastLoadboardEvent('load_covered', {
-              id: r.load_number || r.id,
-              status: 'covered',
-              covered_at: Date.now()
-            });
-          } catch (_) {}
-        });
-      }
-    } catch (err) {
-      markDbError(err);
-      coveredCount = Math.floor(Math.random() * 3) + 1;
-    }
-  } else {
-    coveredCount = Math.floor(Math.random() * 3) + 1;
-  }
-
   memConfig.last_sync_at = new Date();
-  memConfig.loads_synced_today += insertedLoads.length;
-  memConfig.loads_covered_today += coveredCount;
-  memConfig.last_status_message = `Pulse complete: +${insertedLoads.length} active loads synced, -${coveredCount} covered/deducted in real-time.`;
+  memConfig.last_status_message = '24/7 Autonomous Cloud Engine Active • Ingesting live loads via TAL One Sync Bridge';
 
   if (canQueryDb()) {
     try {
@@ -488,13 +315,11 @@ async function executeSyncPulse() {
         `UPDATE dat_cloud_engine_config
          SET last_sync_at = NOW(),
              status = 'active',
-             loads_synced_today = loads_synced_today + $1,
-             loads_covered_today = loads_covered_today + $2,
-             last_status_message = $3,
+             last_status_message = $1,
              last_error = NULL,
              updated_at = NOW()
          WHERE id = 1`,
-        [insertedLoads.length, coveredCount, memConfig.last_status_message]
+        [memConfig.last_status_message]
       );
     } catch (err) {
       markDbError(err);
@@ -503,10 +328,10 @@ async function executeSyncPulse() {
 
   return {
     ok: true,
-    inserted_count: insertedLoads.length,
-    covered_count: coveredCount,
-    skipped_count: skippedCount,
-    inserted_loads: insertedLoads
+    inserted_count: 0,
+    covered_count: 0,
+    active_corridors: 0,
+    message: 'Engine active. Live loads are ingested directly via TAL One bridge.'
   };
 }
 
