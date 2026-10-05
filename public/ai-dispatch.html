@@ -172,6 +172,309 @@
       max-height: 90vh;
       overflow-y: auto;
     }
+
+    /* DAT One Manual Search Toolbar Styling */
+    .schedule-toolbar {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .schedule-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .schedule-label {
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .schedule-presets {
+      display: inline-flex;
+      background: #ffffff;
+      padding: 3px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      gap: 4px;
+    }
+    .sched-pill {
+      border: none;
+      background: transparent;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .sched-pill:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .sched-pill.active {
+      background: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+    }
+    .sched-pill .sched-sub {
+      font-size: 10.5px;
+      font-weight: 600;
+      opacity: 0.75;
+    }
+    .sched-pill.active .sched-sub {
+      opacity: 0.95;
+      color: #fbbf24;
+    }
+    .schedule-date-input-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .schedule-date-input {
+      height: 36px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+    }
+    .schedule-date-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .date-status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .status-today {
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+    }
+    .status-tomorrow {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+    }
+    .status-advance {
+      background: #faf5ff;
+      color: #7c3aed;
+      border: 1px solid #e9d5ff;
+    }
+    .routing-fields-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.4fr) minmax(220px, 1.4fr) minmax(160px, 1.1fr) minmax(180px, 1.1fr) minmax(110px, 0.7fr) auto;
+      gap: 14px;
+      align-items: flex-end;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 1380px) {
+      .routing-fields-grid {
+        grid-template-columns: 1.4fr 1.4fr 1.1fr 1fr;
+      }
+      .routing-actions-col {
+        grid-column: span 2;
+      }
+    }
+    @media (max-width: 880px) {
+      .routing-fields-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .routing-actions-col {
+        grid-column: span 2;
+      }
+    }
+    @media (max-width: 580px) {
+      .routing-fields-grid {
+        grid-template-columns: 1fr;
+      }
+      .routing-actions-col {
+        grid-column: span 1;
+      }
+    }
+    .routing-field-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .field-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #475569;
+      margin: 0;
+    }
+    .radius-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #2563eb;
+      background: #eff6ff;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #dbeafe;
+    }
+    .field-input-combo {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .combo-text {
+      flex: 1;
+      min-width: 0;
+      font-weight: 600;
+      font-size: 13px;
+      height: 38px;
+      padding: 6px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      box-sizing: border-box;
+    }
+    .combo-radius {
+      width: 90px;
+      flex-shrink: 0;
+      font-weight: 700;
+      font-size: 12.5px;
+      background-color: #f8fafc;
+      height: 38px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 0 8px;
+      box-sizing: border-box;
+    }
+    .routing-actions-col {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn-search-primary {
+      height: 38px;
+      padding: 0 18px;
+      font-size: 13px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #ffffff;
+      border: 1px solid #b45309;
+      box-shadow: 0 2px 5px rgba(217, 119, 6, 0.25);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-search-primary:hover {
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(217, 119, 6, 0.35);
+    }
+    .btn-ai-match {
+      height: 38px;
+      padding: 0 15px;
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-ai-match:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
+      transform: translateY(-1px);
+    }
+    .quick-lanes-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-top: 14px;
+      border-top: 1px solid #f1f5f9;
+    }
+    .quick-lanes-label {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #64748b;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .quick-lanes-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .quick-lane-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .quick-lane-pill:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+      color: #0f172a;
+      transform: translateY(-1px);
+    }
+    .mode-tab.active {
+      background: #0f172a !important;
+      color: #fff !important;
+      border-color: #0f172a !important;
+      box-shadow: 0 2px 6px rgba(15,23,42,0.2) !important;
+    }
+    .mode-tab:not(.active) {
+      background: #fff !important;
+      color: #475569 !important;
+      border: 1px solid #cbd5e1 !important;
+    }
   </style>
 </head>
 <body class="app-body">
@@ -312,8 +615,25 @@
         </div>
       </details>
 
-      <!-- SECTION 1: FLEET & TRUCKS COMMAND ROSTER -->
-      <section style="margin-bottom:28px;">
+      <!-- DISPATCH OPERATIONS MODE SELECTOR -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; border-bottom:2px solid #e2e8f0; padding-bottom:14px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button type="button" id="mode-tab-fleet" class="mode-tab active" onclick="switchDispatchMode('fleet')" style="padding:10px 18px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+            <span>🚛 Fleet AI Capacity Match</span>
+            <span style="background:#2563eb; color:#fff; font-size:11px; padding:2px 8px; border-radius:12px; font-weight:800;">Units #101-#104</span>
+          </button>
+          <button type="button" id="mode-tab-dat" class="mode-tab" onclick="switchDispatchMode('dat')" style="padding:10px 18px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+            <span>🔍 DAT One Live Search Toolbar</span>
+            <span style="background:#fef3c7; color:#92400e; font-size:11px; padding:2px 8px; border-radius:12px; font-weight:800;">Point A-B &amp; Radius</span>
+          </button>
+        </div>
+        <div style="font-size:12px; color:#64748b; font-weight:600;">
+          💡 Single unified hub for fleet auto-matching &amp; DAT One manual lane searches.
+        </div>
+      </div>
+
+      <!-- SECTION 1A: FLEET & TRUCKS COMMAND ROSTER -->
+      <section id="section-fleet-roster" style="margin-bottom:28px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -349,6 +669,173 @@
         <!-- Truck Cards Grid -->
         <div id="trucks-grid-container" class="truck-grid">
           <div style="padding:24px; text-align:center; color:#64748b; grid-column:1/-1;">Loading fleet trucks...</div>
+        </div>
+      </section>
+
+      <!-- SECTION 1B: DAT ONE MANUAL SEARCH TOOLBAR -->
+      <section id="section-dat-search-toolbar" style="display:none; background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; padding:22px; margin-bottom:28px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:36px; height:36px; border-radius:10px; background:#f59e0b; color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:900;">
+              🔍
+            </div>
+            <div>
+              <h2 style="font-size:17px; font-weight:800; color:#0f172a; margin:0;">
+                DAT One Point A-B Search &amp; Lane Filter
+              </h2>
+              <p style="font-size:12px; color:#64748b; margin:2px 0 0;">
+                Specify origin, destination, deadhead radius, and equipment to find live spot freight.
+              </p>
+            </div>
+          </div>
+          <button type="button" class="btn-act" onclick="resetDatSearchFields()" style="background:#f8fafc; border:1px solid #cbd5e1; color:#475569; font-size:12px; padding:6px 12px;">
+            ↺ Reset Search
+          </button>
+        </div>
+
+        <!-- 1. Dedicated Pickup Schedule & Presets -->
+        <div class="schedule-toolbar">
+          <div class="schedule-toolbar-left">
+            <div class="schedule-label">
+              <span style="font-size:14px;">📅</span>
+              <span>Pickup Schedule:</span>
+            </div>
+            <div class="schedule-presets">
+              <button type="button" class="sched-pill active" id="pill-today" onclick="applyDatDatePreset('today')">
+                ⚡ Today <span class="sched-sub">(Ready Now)</span>
+              </button>
+              <button type="button" class="sched-pill" id="pill-tomorrow" onclick="applyDatDatePreset('tomorrow')">
+                📅 Tomorrow <span class="sched-sub">(Reload)</span>
+              </button>
+              <button type="button" class="sched-pill" id="pill-2days" onclick="applyDatDatePreset('+2days')">
+                🗓️ +2 Days
+              </button>
+            </div>
+            <div class="schedule-date-input-wrap">
+              <input type="date" id="dat-search-date" class="schedule-date-input" onchange="onDatDateChange(this.value)">
+            </div>
+          </div>
+          <div class="schedule-toolbar-right">
+            <div id="dat-date-indicator" class="date-status-indicator status-today">
+              ⚡ Today (Ready to Dispatch)
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Routing Fields Grid -->
+        <div class="routing-fields-grid">
+          <!-- Origin & DHO -->
+          <div class="routing-field-col">
+            <div class="field-header">
+              <label class="field-label" for="dat-search-origin">Origin (City, State or ZIP)</label>
+              <span class="radius-tag">DHO Radius</span>
+            </div>
+            <div class="field-input-combo">
+              <input type="text" id="dat-search-origin" class="combo-text" value="Dallas, TX" placeholder="e.g. 75201 or Dallas, TX">
+              <select id="dat-search-dho" class="combo-radius" title="Deadhead Origin Radius">
+                <option value="25">25 mi</option>
+                <option value="50">50 mi</option>
+                <option value="100" selected>100 mi</option>
+                <option value="150">150 mi</option>
+                <option value="200">200 mi</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Destination & DHD -->
+          <div class="routing-field-col">
+            <div class="field-header">
+              <label class="field-label" for="dat-search-dest">Destination(s) / States or ZIP</label>
+              <span class="radius-tag">DHD Radius</span>
+            </div>
+            <div class="field-input-combo">
+              <input type="text" id="dat-search-dest" class="combo-text" value="Anywhere" placeholder="e.g. 82001, Cheyenne, WY or TX, WY, CO">
+              <select id="dat-search-dhd" class="combo-radius" title="Deadhead Destination Radius">
+                <option value="25">25 mi</option>
+                <option value="50" selected>50 mi</option>
+                <option value="100">100 mi</option>
+                <option value="150">150 mi</option>
+                <option value="200">200 mi</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Equipment Type -->
+          <div class="routing-field-col">
+            <div class="field-header">
+              <label class="field-label" for="dat-search-equipment">Equipment Type</label>
+            </div>
+            <select id="dat-search-equipment" class="combo-text" style="font-weight:700;">
+              <option value="26ft Box Truck">26ft Box Truck</option>
+              <option value="53ft Dry Van">53ft Dry Van</option>
+              <option value="53ft Reefer">53ft Reefer</option>
+              <option value="Flatbed">Flatbed / Step Deck</option>
+              <option value="Power Only">Power Only</option>
+              <option value="Hotshot">Hotshot</option>
+            </select>
+          </div>
+
+          <!-- Active Truck / Carrier Unit -->
+          <div class="routing-field-col">
+            <div class="field-header">
+              <label class="field-label" for="dat-search-carrier">Target Fleet Unit</label>
+            </div>
+            <select id="dat-search-carrier" class="combo-text" style="font-weight:700;">
+              <!-- Populated dynamically with Unit #101, #102, etc. -->
+            </select>
+          </div>
+
+          <!-- Min Rate $/mi -->
+          <div class="routing-field-col">
+            <div class="field-header">
+              <label class="field-label" for="dat-search-min-rpm">Min $/Mile</label>
+            </div>
+            <div style="position:relative;">
+              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-weight:700;color:#64748b;font-size:13px;">$</span>
+              <input type="number" step="0.05" id="dat-search-min-rpm" class="combo-text" value="2.00" placeholder="2.00" style="padding-left:24px; font-weight:700;">
+            </div>
+          </div>
+
+          <!-- Search Buttons -->
+          <div class="routing-actions-col">
+            <button type="button" class="btn-search-primary" id="btn-run-dat-search" onclick="runDatManualSearch()">
+              <span>🔍</span> Search Loads
+            </button>
+            <button type="button" class="btn-ai-match" onclick="runDatAiMatch()" title="Run AI Smart Matching Engine">
+              <span>⚡</span> AI Match
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Quick Destinations -->
+        <div class="quick-lanes-bar">
+          <div class="quick-lanes-label">
+            <span>⚡ QUICK DESTINATIONS:</span>
+          </div>
+          <div class="quick-lanes-pills">
+            <button type="button" class="quick-lane-pill" onclick="applyDatDestPreset('TX, WY, CO')">TX, WY, CO</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDatDestPreset('WY, MT, ID')">WY, MT, ID</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDatDestPreset('Midwest (IL, IN, OH, MI)')">Midwest (IL, IN, OH, MI)</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDatDestPreset('Southeast (GA, FL, NC, SC, TN)')">Southeast (GA, FL, NC, SC, TN)</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDatDestPreset('West (CA, AZ, NV, UT, WA)')">West (CA, AZ, NV, UT, WA)</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDatDestPreset('Anywhere')">All 48 States / Anywhere</button>
+          </div>
+        </div>
+
+        <!-- 4. Quick Freight Hub ZIPs -->
+        <div class="quick-lanes-bar" style="margin-top:8px; background:rgba(37,99,235,0.04); border:1px dashed #bfdbfe; border-radius:10px; padding:8px 14px;">
+          <div class="quick-lanes-label" style="font-size:11px; font-weight:800; color:#1e40af;">
+            <span>📮 POPULAR FREIGHT ZIPs:</span>
+          </div>
+          <div class="quick-lanes-pills" style="gap:6px;">
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px; padding:3px 9px;" onclick="applyDatOriginPreset('75201', 'Dallas, TX')">📍 75201 (Dallas, TX)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px; padding:3px 9px;" onclick="applyDatOriginPreset('60601', 'Chicago, IL')">📍 60601 (Chicago, IL)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px; padding:3px 9px;" onclick="applyDatOriginPreset('30301', 'Atlanta, GA')">📍 30301 (Atlanta, GA)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px; padding:3px 9px;" onclick="applyDatOriginPreset('90001', 'Los Angeles, CA')">📍 90001 (LA, CA)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px; padding:3px 9px;" onclick="applyDatDestPreset('82001 (Cheyenne, WY)')">🏁 82001 (Cheyenne, WY)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px; padding:3px 9px;" onclick="applyDatDestPreset('80202 (Denver, CO)')">🏁 80202 (Denver, CO)</button>
+            <button type="button" class="quick-lane-pill" style="font-size:11.5px; padding:3px 9px;" onclick="applyDatDestPreset('19104 (Philadelphia, PA)')">🏁 19104 (Philly, PA)</button>
+          </div>
         </div>
       </section>
 
@@ -744,6 +1231,16 @@
       }
 
       renderTrucks();
+
+      // Populate DAT search target truck dropdown
+      const datCarrierSelect = document.getElementById('dat-search-carrier');
+      if (datCarrierSelect && currentRoster.length > 0) {
+        datCarrierSelect.innerHTML = currentRoster.map(r => `
+          <option value="${esc(r.id || r.truck_number)}">
+            Unit #${esc(r.truck_number)} · ${esc(r.equipment)} (${esc(r.driver_name || r.contact_name || r.company_name)})
+          </option>
+        `).join('');
+      }
 
       // Auto-select truck
       if (currentRoster.length > 0) {
@@ -1651,9 +2148,160 @@
     }
   });
 
+  // Mode switching
+  window.switchDispatchMode = function(mode) {
+    const fleetTab = document.getElementById('mode-tab-fleet');
+    const datTab = document.getElementById('mode-tab-dat');
+    const fleetSec = document.getElementById('section-fleet-roster');
+    const datSec = document.getElementById('section-dat-search-toolbar');
+
+    if (mode === 'fleet') {
+      fleetTab.classList.add('active');
+      datTab.classList.remove('active');
+      fleetSec.style.display = 'block';
+      datSec.style.display = 'none';
+    } else {
+      datTab.classList.add('active');
+      fleetTab.classList.remove('active');
+      fleetSec.style.display = 'none';
+      datSec.style.display = 'block';
+    }
+  };
+
+  // DAT Date Presets
+  window.applyDatDatePreset = function(preset) {
+    const today = new Date();
+    let target = new Date();
+    const ind = document.getElementById('dat-date-indicator');
+    const pills = document.querySelectorAll('#section-dat-search-toolbar .sched-pill');
+    pills.forEach(p => p.classList.remove('active'));
+
+    if (preset === 'today') {
+      const p = document.getElementById('pill-today');
+      if (p) p.classList.add('active');
+      if (ind) {
+        ind.className = 'date-status-indicator status-today';
+        ind.textContent = '⚡ Today (Ready to Dispatch)';
+      }
+    } else if (preset === 'tomorrow') {
+      target.setDate(today.getDate() + 1);
+      const p = document.getElementById('pill-tomorrow');
+      if (p) p.classList.add('active');
+      if (ind) {
+        ind.className = 'date-status-indicator status-tomorrow';
+        ind.textContent = '📅 Tomorrow (Reload)';
+      }
+    } else if (preset === '+2days') {
+      target.setDate(today.getDate() + 2);
+      const p = document.getElementById('pill-2days');
+      if (p) p.classList.add('active');
+      if (ind) {
+        ind.className = 'date-status-indicator status-advance';
+        ind.textContent = '🗓️ +2 Days Schedule';
+      }
+    }
+
+    const y = target.getFullYear();
+    const m = String(target.getMonth() + 1).padStart(2, '0');
+    const d = String(target.getDate()).padStart(2, '0');
+    const input = document.getElementById('dat-search-date');
+    if (input) input.value = `${y}-${m}-${d}`;
+  };
+
+  window.onDatDateChange = function(val) {
+    const ind = document.getElementById('dat-date-indicator');
+    const pills = document.querySelectorAll('#section-dat-search-toolbar .sched-pill');
+    pills.forEach(p => p.classList.remove('active'));
+    if (!val) return;
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (val === todayStr) {
+      applyDatDatePreset('today');
+    } else {
+      if (ind) {
+        ind.className = 'date-status-indicator status-advance';
+        ind.textContent = `🗓️ ${val}`;
+      }
+    }
+  };
+
+  window.applyDatDestPreset = function(dest) {
+    const el = document.getElementById('dat-search-dest');
+    if (el) el.value = dest;
+    runDatManualSearch();
+  };
+
+  window.applyDatOriginPreset = function(zip, city) {
+    const el = document.getElementById('dat-search-origin');
+    if (el) el.value = city ? `${city} (${zip})` : zip;
+    runDatManualSearch();
+  };
+
+  window.resetDatSearchFields = function() {
+    const origin = document.getElementById('dat-search-origin');
+    const dest = document.getElementById('dat-search-dest');
+    const dho = document.getElementById('dat-search-dho');
+    const rpm = document.getElementById('dat-search-min-rpm');
+    if (origin) origin.value = 'Dallas, TX';
+    if (dest) dest.value = 'Anywhere';
+    if (dho) dho.value = '100';
+    if (rpm) rpm.value = '2.00';
+    applyDatDatePreset('today');
+  };
+
+  window.runDatManualSearch = async function() {
+    const origin = (document.getElementById('dat-search-origin')?.value || 'Dallas, TX').trim();
+    const dest = (document.getElementById('dat-search-dest')?.value || 'Anywhere').trim();
+    const dho = parseInt(document.getElementById('dat-search-dho')?.value || '100', 10);
+    const equip = document.getElementById('dat-search-equipment')?.value || 'Box Truck';
+    const minRpm = parseFloat(document.getElementById('dat-search-min-rpm')?.value || '2.00');
+    const carrierSelect = document.getElementById('dat-search-carrier');
+    const selectedTruckKey = carrierSelect?.value;
+
+    let targetTruck = currentRoster.find(r => String(r.id) === String(selectedTruckKey) || String(r.truck_number) === String(selectedTruckKey)) || selectedTruck || currentRoster[0];
+
+    matcherTitleEl.innerHTML = `🔍 Live DAT One Search: <span style="color:#2563eb;">${esc(origin)} ➔ ${esc(dest)}</span>`;
+    matcherSubtitleEl.innerHTML = `Equip: <strong>${esc(equip)}</strong> · Min: <strong>$${minRpm.toFixed(2)}/mi</strong> · Max DHO: <strong>${dho} mi</strong> · Assigned to: <strong>Unit #${esc(targetTruck?.truck_number || '101')}</strong>`;
+
+    matchedContainerEl.innerHTML = `
+      <div style="padding:40px; text-align:center; color:#2563eb; grid-column:1/-1;">
+        <span class="pulse-dot" style="width:12px; height:12px; margin-bottom:10px;"></span>
+        <div style="font-weight:700; font-size:14px; margin-top:8px;">Searching live spot freight on LoadsNexus &amp; DAT One...</div>
+        <div style="font-size:12px; color:#64748b; margin-top:4px;">Origin: ${esc(origin)} · Dest: ${esc(dest)} · Eq: ${esc(equip)}</div>
+      </div>
+    `;
+
+    try {
+      const res = await api('/api/dispatch-desk/match-truck', {
+        method: 'POST',
+        body: JSON.stringify({
+          carrier_id: targetTruck?.carrier_id || targetTruck?.id || 1,
+          truck_number: targetTruck?.truck_number || '101',
+          origin: origin,
+          destination: dest,
+          equipment: equip,
+          min_rpm: minRpm,
+          max_deadhead: dho,
+          limit: 15
+        })
+      });
+
+      currentMatchedLoads = res.loads || [];
+      loadCountBadgeEl.textContent = `${currentMatchedLoads.length} Loads Found`;
+      renderMatchedLoads();
+      document.getElementById('ai-recommendations-section').scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      matchedContainerEl.innerHTML = `<div style="padding:30px; text-align:center; color:#dc2626; grid-column:1/-1;">Search error: ${esc(err.message)}</div>`;
+    }
+  };
+
+  window.runDatAiMatch = function() {
+    runDatManualSearch();
+  };
+
   // Init
   document.addEventListener('DOMContentLoaded', async () => {
     if (!(await guard())) return;
+    applyDatDatePreset('today');
     await loadRoster();
     await loadDispatchedOffers();
     await loadDatCloudStatus();

@@ -540,6 +540,11 @@ app.get(['/track/:token', '/tracking/:token'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tracking.html'));
 });
 
+// Consolidation: Redirect legacy /load-booking to unified /ai-dispatch
+app.get(['/load-booking', '/load-booking.html'], (req, res) => {
+  res.redirect(301, '/ai-dispatch');
+});
+
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // Security: Protect /uploads — require authentication so sensitive carrier files are not publicly scrapable

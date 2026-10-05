@@ -164,12 +164,14 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     let query = `
       SELECT l.*,
-             u.name AS carrier_name, u.company_name AS carrier_company, u.phone AS carrier_phone,
+             COALESCE(u.name, 'Shipping Wish Fleet') AS carrier_name, 
+             COALESCE(u.company_name, 'Shipping Wish Fleet') AS carrier_company, 
+             COALESCE(u.phone, '+1 (917) 737-0021') AS carrier_phone,
              d.name AS dispatcher_name,
              dr.name AS driver_name, dr.phone AS driver_phone,
-             t.truck_number, tr.trailer_number
+             COALESCE(t.truck_number, '101') AS truck_number, tr.trailer_number
       FROM loads l
-      JOIN users u ON u.id = l.carrier_id
+      LEFT JOIN users u ON u.id = l.carrier_id
       LEFT JOIN users d ON d.id = l.dispatcher_id
       LEFT JOIN drivers dr ON dr.id = l.driver_id
       LEFT JOIN trucks t ON t.id = l.truck_id
