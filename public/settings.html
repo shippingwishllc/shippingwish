@@ -345,48 +345,151 @@
           <!-- 5. GOOGLE MAPS PLATFORM -->
           <div id="section-google-maps" class="settings-section">
             <div class="settings-card">
-              <h2 class="settings-card-title">🗺️ Google Maps Platform</h2>
-              <p class="settings-card-desc">Powers address auto-complete, USPS CASS address validation, route calculation, and fleet distance matrix.</p>
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+                <h2 class="settings-card-title" style="margin-bottom:0;">🗺️ Google Maps Platform</h2>
+                <span id="gmaps-connection-status" style="background:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e8f0;transition:all 0.2s ease;">
+                  <span id="gmaps-status-dot" style="width:8px;height:8px;border-radius:50%;background:#94a3b8;display:inline-block;"></span>
+                  <span id="gmaps-status-text">Standby</span>
+                </span>
+              </div>
+              <p class="settings-card-desc">Powers address auto-complete, USPS CASS address validation, highway route calculation, and fleet distance matrix.</p>
 
               <div class="form-group">
                 <label>Google Maps Platform API Key</label>
                 <input type="password" class="form-input" id="int-gmaps-key" placeholder="AIzaSy..." autocomplete="off">
               </div>
 
+              <!-- Important Note for Key Restrictions -->
+              <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;margin-top:10px;font-size:12px;color:#92400e;line-height:1.5;">
+                <strong>⚠️ Google Cloud Restriction Notice:</strong>
+                <div>In Google Cloud Console, do <u>NOT</u> set Application Restrictions to <em>"HTTP referrers"</em> on server keys. Google blocks server-side Geocoding &amp; Routes APIs when HTTP referrers are required. Set Application Restrictions to <strong>"None"</strong> (or IP addresses).</div>
+              </div>
+
               <div style="background:var(--surface-base);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:14px;margin-top:14px;">
-                <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:8px;">Enabled Services on Key:</div>
+                <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:8px;">Active Services on Key:</div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:12px;">
-                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Places API (New)</strong></div>
-                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Routes API</strong></div>
-                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Geocoding API</strong></div>
-                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Address Validation API</strong></div>
-                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Maps JavaScript API</strong></div>
-                  <div style="display:flex;align-items:center;gap:6px;"><span>✅</span> <strong>Maps Embed API</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span id="svc-places">✅</span> <strong>Places API (New)</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span id="svc-routes">✅</span> <strong>Routes API</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span id="svc-geocoding">✅</span> <strong>Geocoding API</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span id="svc-validation">✅</span> <strong>Address Validation API</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span id="svc-maps-js">✅</span> <strong>Maps JavaScript API</strong></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span id="svc-embed">✅</span> <strong>Maps Embed API</strong></div>
                 </div>
               </div>
 
-              <div class="save-bar">
-                <button type="button" class="btn btn-primary" onclick="saveIntegrationCategory('google-maps')">💾 Save Google Maps Key</button>
-                <span id="save-status-google-maps" style="font-size:12px;color:var(--text-muted);"></span>
+              <div class="save-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;">
+                <button type="button" id="btn-save-google-maps" class="btn btn-primary" onclick="saveIntegrationCategory('google-maps')">💾 Save Google Maps Key</button>
+                <button type="button" id="btn-test-google-maps" class="btn btn-secondary" onclick="testGoogleMapsConnection()" style="font-weight:700;">⚡ Test Key Live</button>
+                <span id="save-status-google-maps" style="font-size:12px;"></span>
               </div>
+              <div id="test-gmaps-result" style="margin-top:12px;display:none;font-size:12.5px;padding:10px 14px;border-radius:8px;"></div>
             </div>
           </div>
 
           <!-- 6. AI ENGINE -->
           <div id="section-ai-models" class="settings-section">
             <div class="settings-card">
-              <h2 class="settings-card-title">🤖 AI Engine (OpenAI / Language Models)</h2>
-              <p class="settings-card-desc">Drives intelligent load matching, DAT text parsing into loads, driver SMS intent extraction, and automated replies.</p>
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+                <h2 class="settings-card-title" style="margin-bottom:0;">🤖 AI Engine (Multi-LLM Hub)</h2>
+                <span id="ai-connection-status" style="background:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e8f0;transition:all 0.2s ease;">
+                  <span id="ai-status-dot" style="width:8px;height:8px;border-radius:50%;background:#94a3b8;display:inline-block;"></span>
+                  <span id="ai-status-text">Standby</span>
+                </span>
+              </div>
+              <p class="settings-card-desc">Drives intelligent load matching, DAT text parsing into loads, driver SMS intent extraction, automated replies, and rate negotiation.</p>
 
-              <div class="form-group">
-                <label>OpenAI API Key</label>
-                <input type="password" class="form-input" id="int-openai-key" placeholder="sk-..." autocomplete="off">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-weight:700;">Active AI Provider</label>
+                  <select class="form-input" id="int-ai-provider" onchange="onAiProviderChange(this.value)" style="font-weight:700;">
+                    <option value="openai">OpenAI (ChatGPT / GPT-4o-mini / GPT-4o)</option>
+                    <option value="anthropic">Anthropic Claude (Claude 3.5 Sonnet / Haiku)</option>
+                    <option value="gemini">Google Gemini (Gemini 1.5 Flash / Pro)</option>
+                    <option value="deepseek">DeepSeek AI (DeepSeek-V3 / R1)</option>
+                    <option value="custom">Custom / Groq / OpenRouter (OpenAI-Compatible)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-weight:700;">Default Model</label>
+                  <input type="text" class="form-input" id="int-ai-default-model" placeholder="gpt-4o-mini" style="font-weight:600;">
+                </div>
               </div>
 
-              <div class="save-bar">
-                <button type="button" class="btn btn-primary" onclick="saveIntegrationCategory('ai-models')">💾 Save AI Key</button>
-                <span id="save-status-ai-models" style="font-size:12px;color:var(--text-muted);"></span>
+              <!-- Provider Fields: OpenAI -->
+              <div id="ai-fields-openai" class="ai-provider-fields" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
+                <div style="font-weight:800;font-size:13px;color:#0f172a;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                  <span>🟢</span> OpenAI (ChatGPT) Configuration
+                </div>
+                <div class="form-group" style="margin-bottom:6px;">
+                  <label style="font-size:12px;font-weight:700;">OpenAI API Key</label>
+                  <input type="password" class="form-input" id="int-openai-key" placeholder="sk-..." autocomplete="off">
+                  <small style="color:var(--text-muted);font-size:11px;">Recommended model: <code>gpt-4o-mini</code> (Ultra-fast, lowest cost) or <code>gpt-4o</code></small>
+                </div>
               </div>
+
+              <!-- Provider Fields: Anthropic Claude -->
+              <div id="ai-fields-anthropic" class="ai-provider-fields" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
+                <div style="font-weight:800;font-size:13px;color:#0f172a;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                  <span>🟣</span> Anthropic Claude Configuration
+                </div>
+                <div class="form-group" style="margin-bottom:6px;">
+                  <label style="font-size:12px;font-weight:700;">Anthropic API Key</label>
+                  <input type="password" class="form-input" id="int-anthropic-key" placeholder="sk-ant-..." autocomplete="off">
+                  <small style="color:var(--text-muted);font-size:11px;">Recommended model: <code>claude-3-5-sonnet-20241022</code></small>
+                </div>
+              </div>
+
+              <!-- Provider Fields: Google Gemini -->
+              <div id="ai-fields-gemini" class="ai-provider-fields" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
+                <div style="font-weight:800;font-size:13px;color:#0f172a;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                  <span>🔵</span> Google Gemini Configuration
+                </div>
+                <div class="form-group" style="margin-bottom:6px;">
+                  <label style="font-size:12px;font-weight:700;">Gemini API Key</label>
+                  <input type="password" class="form-input" id="int-gemini-key" placeholder="AIzaSy..." autocomplete="off">
+                  <small style="color:var(--text-muted);font-size:11px;">Recommended model: <code>gemini-1.5-flash</code></small>
+                </div>
+              </div>
+
+              <!-- Provider Fields: DeepSeek -->
+              <div id="ai-fields-deepseek" class="ai-provider-fields" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
+                <div style="font-weight:800;font-size:13px;color:#0f172a;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                  <span>🐋</span> DeepSeek AI Configuration
+                </div>
+                <div class="form-group" style="margin-bottom:6px;">
+                  <label style="font-size:12px;font-weight:700;">DeepSeek API Key</label>
+                  <input type="password" class="form-input" id="int-deepseek-key" placeholder="sk-..." autocomplete="off">
+                  <small style="color:var(--text-muted);font-size:11px;">Recommended model: <code>deepseek-chat</code></small>
+                </div>
+              </div>
+
+              <!-- Provider Fields: Custom / Groq / OpenRouter -->
+              <div id="ai-fields-custom" class="ai-provider-fields" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
+                <div style="font-weight:800;font-size:13px;color:#0f172a;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                  <span>⚡</span> Custom / Groq / OpenRouter Endpoint
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-size:12px;font-weight:700;">Base URL</label>
+                    <input type="text" class="form-input" id="int-custom-ai-base-url" placeholder="https://api.groq.com/openai/v1">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-size:12px;font-weight:700;">API Key (if required)</label>
+                    <input type="password" class="form-input" id="int-custom-ai-key" placeholder="gsk_... or sk-..." autocomplete="off">
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:12px;font-weight:700;">Custom Model Name</label>
+                  <input type="text" class="form-input" id="int-custom-ai-model" placeholder="llama-3.3-70b-versatile">
+                </div>
+              </div>
+
+              <div class="save-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;">
+                <button type="button" id="btn-save-ai-models" class="btn btn-primary" onclick="saveIntegrationCategory('ai-models')">💾 Save AI Settings</button>
+                <button type="button" id="btn-test-ai-models" class="btn btn-secondary" onclick="testAiConnection()" style="font-weight:700;">⚡ Test AI Connection</button>
+                <span id="save-status-ai-models" style="font-size:12px;"></span>
+              </div>
+              <div id="test-ai-result" style="margin-top:12px;display:none;font-size:12.5px;padding:10px 14px;border-radius:8px;"></div>
             </div>
           </div>
 
@@ -732,10 +835,41 @@
       updateVoiceStatusBadge(hasVoiceActive);
 
       // Google Maps
-      if (it.google_maps_api_key) document.getElementById('int-gmaps-key').placeholder = 'Configured (••••••••)';
+      if (it.google_maps_api_key || it.google_maps_has_key) {
+        document.getElementById('int-gmaps-key').placeholder = 'Configured (••••••••)';
+        updateGoogleMapsStatusBadge(true, 'Configured');
+      } else {
+        updateGoogleMapsStatusBadge(false);
+      }
 
-      // AI Models
-      if (it.openai_api_key) document.getElementById('int-openai-key').placeholder = 'Configured (••••••••)';
+      // AI Engine & Models
+      const activeProvider = it.ai_provider || 'openai';
+      const activeModel = it.ai_default_model || 'gpt-4o-mini';
+      const providerSelect = document.getElementById('int-ai-provider');
+      if (providerSelect) providerSelect.value = activeProvider;
+
+      const modelInput = document.getElementById('int-ai-default-model');
+      if (modelInput) modelInput.value = activeModel;
+
+      if (it.openai_api_key || it.openai_has_key) document.getElementById('int-openai-key').placeholder = 'Configured (••••••••)';
+      if (it.anthropic_api_key || it.anthropic_has_key) document.getElementById('int-anthropic-key').placeholder = 'Configured (••••••••)';
+      if (it.gemini_api_key || it.gemini_has_key) document.getElementById('int-gemini-key').placeholder = 'Configured (••••••••)';
+      if (it.deepseek_api_key || it.deepseek_has_key) document.getElementById('int-deepseek-key').placeholder = 'Configured (••••••••)';
+
+      if (it.custom_ai_base_url) document.getElementById('int-custom-ai-base-url').value = it.custom_ai_base_url;
+      if (it.custom_ai_api_key || it.custom_ai_has_key) document.getElementById('int-custom-ai-key').placeholder = 'Configured (••••••••)';
+      if (it.custom_ai_model) document.getElementById('int-custom-ai-model').value = it.custom_ai_model;
+
+      onAiProviderChange(activeProvider);
+
+      let hasAiKey = false;
+      if (activeProvider === 'openai') hasAiKey = Boolean(it.openai_has_key || it.openai_api_key);
+      else if (activeProvider === 'anthropic') hasAiKey = Boolean(it.anthropic_has_key || it.anthropic_api_key);
+      else if (activeProvider === 'gemini') hasAiKey = Boolean(it.gemini_has_key || it.gemini_api_key);
+      else if (activeProvider === 'deepseek') hasAiKey = Boolean(it.deepseek_has_key || it.deepseek_api_key);
+      else if (activeProvider === 'custom') hasAiKey = Boolean(it.custom_ai_base_url);
+
+      updateAiStatusBadge(hasAiKey, activeModel);
 
       // Email Mailer
       if (it.resend_api_key) document.getElementById('int-resend-key').placeholder = 'Configured (••••••••)';
@@ -743,6 +877,81 @@
       if (it.email_from_name) document.getElementById('int-email-from-name').value = it.email_from_name;
     } catch (err) {
       console.warn('Could not load integrations:', err);
+    }
+  }
+
+  function onAiProviderChange(provider) {
+    document.querySelectorAll('.ai-provider-fields').forEach(el => el.style.display = 'none');
+    const container = document.getElementById('ai-fields-' + provider);
+    if (container) container.style.display = 'block';
+
+    const modelInput = document.getElementById('int-ai-default-model');
+    if (modelInput) {
+      if (provider === 'openai') {
+        if (!modelInput.value || modelInput.value.includes('claude') || modelInput.value.includes('gemini') || modelInput.value.includes('deepseek') || modelInput.value.includes('llama')) {
+          modelInput.value = 'gpt-4o-mini';
+        }
+      } else if (provider === 'anthropic') {
+        if (!modelInput.value || !modelInput.value.includes('claude')) {
+          modelInput.value = 'claude-3-5-sonnet-20241022';
+        }
+      } else if (provider === 'gemini') {
+        if (!modelInput.value || !modelInput.value.includes('gemini')) {
+          modelInput.value = 'gemini-1.5-flash';
+        }
+      } else if (provider === 'deepseek') {
+        if (!modelInput.value || !modelInput.value.includes('deepseek')) {
+          modelInput.value = 'deepseek-chat';
+        }
+      } else if (provider === 'custom') {
+        if (!modelInput.value || modelInput.value.startsWith('gpt-')) {
+          modelInput.value = 'llama-3.3-70b-versatile';
+        }
+      }
+    }
+  }
+
+  function updateGoogleMapsStatusBadge(isLive, label = 'Live & Connected') {
+    const badge = document.getElementById('gmaps-connection-status');
+    const dot = document.getElementById('gmaps-status-dot');
+    const text = document.getElementById('gmaps-status-text');
+    if (!badge || !dot || !text) return;
+    if (isLive) {
+      badge.style.background = '#dcfce7';
+      badge.style.color = '#15803d';
+      badge.style.borderColor = '#86efac';
+      dot.style.background = '#16a34a';
+      dot.style.boxShadow = '0 0 8px #22c55e';
+      text.textContent = '🟢 ' + label;
+    } else {
+      badge.style.background = '#f1f5f9';
+      badge.style.color = '#64748b';
+      badge.style.borderColor = '#e2e8f0';
+      dot.style.background = '#94a3b8';
+      dot.style.boxShadow = 'none';
+      text.textContent = 'Standby';
+    }
+  }
+
+  function updateAiStatusBadge(isLive, model = 'Active') {
+    const badge = document.getElementById('ai-connection-status');
+    const dot = document.getElementById('ai-status-dot');
+    const text = document.getElementById('ai-status-text');
+    if (!badge || !dot || !text) return;
+    if (isLive) {
+      badge.style.background = '#dcfce7';
+      badge.style.color = '#15803d';
+      badge.style.borderColor = '#86efac';
+      dot.style.background = '#16a34a';
+      dot.style.boxShadow = '0 0 8px #22c55e';
+      text.textContent = '🟢 Live & Connected (' + model + ')';
+    } else {
+      badge.style.background = '#f1f5f9';
+      badge.style.color = '#64748b';
+      badge.style.borderColor = '#e2e8f0';
+      dot.style.background = '#94a3b8';
+      dot.style.boxShadow = 'none';
+      text.textContent = 'Standby';
     }
   }
 
@@ -804,14 +1013,47 @@
       const gKey = document.getElementById('int-gmaps-key').value.trim();
       if (gKey && !gKey.includes('••••')) payload.google_maps_api_key = gKey;
     } else if (cat === 'ai-models') {
+      const provider = document.getElementById('int-ai-provider').value;
+      const model = document.getElementById('int-ai-default-model').value.trim();
+      payload.ai_provider = provider;
+      if (model) payload.ai_default_model = model;
+
       const oKey = document.getElementById('int-openai-key').value.trim();
       if (oKey && !oKey.includes('••••')) payload.openai_api_key = oKey;
+
+      const aKey = document.getElementById('int-anthropic-key').value.trim();
+      if (aKey && !aKey.includes('••••')) payload.anthropic_api_key = aKey;
+
+      const gmKey = document.getElementById('int-gemini-key').value.trim();
+      if (gmKey && !gmKey.includes('••••')) payload.gemini_api_key = gmKey;
+
+      const dKey = document.getElementById('int-deepseek-key').value.trim();
+      if (dKey && !dKey.includes('••••')) payload.deepseek_api_key = dKey;
+
+      const cBase = document.getElementById('int-custom-ai-base-url').value.trim();
+      if (cBase) payload.custom_ai_base_url = cBase;
+
+      const cKey = document.getElementById('int-custom-ai-key').value.trim();
+      if (cKey && !cKey.includes('••••')) payload.custom_ai_api_key = cKey;
+
+      const cModel = document.getElementById('int-custom-ai-model').value.trim();
+      if (cModel) payload.custom_ai_model = cModel;
     } else if (cat === 'email-mailer') {
       const rKey = document.getElementById('int-resend-key').value.trim();
       if (rKey && !rKey.includes('••••')) payload.resend_api_key = rKey;
       payload.email_from_address = document.getElementById('int-email-from').value.trim();
       payload.email_from_name = document.getElementById('int-email-from-name').value.trim();
     }
+
+    const labelMap = {
+      'twilio-sms': 'Twilio & SMS',
+      'whatsapp': 'WhatsApp Business',
+      'voice-ai': 'Voice AI & Audio',
+      'google-maps': 'Google Maps Platform',
+      'ai-models': 'AI Engine & LLMs',
+      'email-mailer': 'Email & Outbound Mailer'
+    };
+    const catLabel = labelMap[cat] || 'Settings';
 
     try {
       const res = await fetch('/api/settings/integrations', {
@@ -824,7 +1066,7 @@
       if (!res.ok) throw new Error(data.error || 'Failed to save settings');
 
       if (statusEl) {
-        statusEl.innerHTML = '<span style="color:#15803d;background:#dcfce7;border:1px solid #86efac;padding:5px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">✅ Saved Successfully! Vapi AI is Live &amp; Ready</span>';
+        statusEl.innerHTML = `<span style="color:#15803d;background:#dcfce7;border:1px solid #86efac;padding:5px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">✅ Saved Successfully! ${catLabel} is Live</span>`;
         setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 6000);
       }
       if (btn) {
@@ -840,8 +1082,15 @@
       }
       if (cat === 'voice-ai') {
         updateVoiceStatusBadge(true);
+      } else if (cat === 'google-maps') {
+        updateGoogleMapsStatusBadge(true, 'Configured');
+        testGoogleMapsConnection();
+      } else if (cat === 'ai-models') {
+        const activeModel = document.getElementById('int-ai-default-model').value.trim() || 'Active';
+        updateAiStatusBadge(true, activeModel);
+        testAiConnection();
       }
-      showToast('Voice AI Settings saved successfully! Engine is active.', true);
+      showToast(`${catLabel} settings saved successfully!`, true);
     } catch (err) {
       if (statusEl) {
         statusEl.innerHTML = `<span style="color:#b91c1c;background:#fee2e2;border:1px solid #fca5a5;padding:5px 12px;border-radius:6px;font-weight:700;">❌ ${esc(err.message)}</span>`;
@@ -851,6 +1100,140 @@
         btn.disabled = false;
       }
       showToast(err.message, false);
+    }
+  }
+
+  // --- Live Google Maps Verification Tool ---
+  async function testGoogleMapsConnection() {
+    const resBox = document.getElementById('test-gmaps-result');
+    const btn = document.getElementById('btn-test-google-maps');
+    const input = document.getElementById('int-gmaps-key');
+    const key = input ? input.value.trim() : '';
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Testing…';
+    }
+    if (resBox) {
+      resBox.style.display = 'block';
+      resBox.style.background = '#f0f9ff';
+      resBox.style.color = '#0369a1';
+      resBox.style.border = '1px solid #bae6fd';
+      resBox.innerHTML = '⏳ Contacting Google Maps Platform API...';
+    }
+
+    try {
+      const res = await fetch('/api/settings/test-google-maps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        resBox.style.background = '#dcfce7';
+        resBox.style.color = '#15803d';
+        resBox.style.border = '1px solid #86efac';
+        resBox.innerHTML = `<strong>${esc(data.message)}</strong>`;
+        updateGoogleMapsStatusBadge(true, 'Verified Live');
+      } else {
+        if (data.status === 'REFERER_RESTRICTED') {
+          resBox.style.background = '#fef3c7';
+          resBox.style.color = '#92400e';
+          resBox.style.border = '1px solid #fde68a';
+          resBox.innerHTML = `<strong>${esc(data.error)}</strong>`;
+          updateGoogleMapsStatusBadge(false);
+        } else {
+          resBox.style.background = '#fee2e2';
+          resBox.style.color = '#b91c1c';
+          resBox.style.border = '1px solid #fca5a5';
+          resBox.innerHTML = `<strong>${esc(data.error || 'Google Maps test failed.')}</strong>`;
+          updateGoogleMapsStatusBadge(false);
+        }
+      }
+    } catch (err) {
+      if (resBox) {
+        resBox.style.background = '#fee2e2';
+        resBox.style.color = '#b91c1c';
+        resBox.style.border = '1px solid #fca5a5';
+        resBox.innerHTML = `<strong>❌ Network error: ${esc(err.message)}</strong>`;
+      }
+      updateGoogleMapsStatusBadge(false);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '⚡ Test Key Live';
+      }
+    }
+  }
+
+  // --- Live AI Engine Verification Tool ---
+  async function testAiConnection() {
+    const resBox = document.getElementById('test-ai-result');
+    const btn = document.getElementById('btn-test-ai-models');
+    const provider = document.getElementById('int-ai-provider').value;
+    const model = document.getElementById('int-ai-default-model').value.trim();
+
+    let key = '';
+    let baseUrl = '';
+
+    if (provider === 'openai') key = document.getElementById('int-openai-key').value.trim();
+    else if (provider === 'anthropic') key = document.getElementById('int-anthropic-key').value.trim();
+    else if (provider === 'gemini') key = document.getElementById('int-gemini-key').value.trim();
+    else if (provider === 'deepseek') key = document.getElementById('int-deepseek-key').value.trim();
+    else if (provider === 'custom') {
+      key = document.getElementById('int-custom-ai-key').value.trim();
+      baseUrl = document.getElementById('int-custom-ai-base-url').value.trim();
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Testing…';
+    }
+    if (resBox) {
+      resBox.style.display = 'block';
+      resBox.style.background = '#f0f9ff';
+      resBox.style.color = '#0369a1';
+      resBox.style.border = '1px solid #bae6fd';
+      resBox.innerHTML = `⏳ Testing connection to ${provider.toUpperCase()} (${model})...`;
+    }
+
+    try {
+      const res = await fetch('/api/settings/test-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ provider, key, model, baseUrl })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        resBox.style.background = '#dcfce7';
+        resBox.style.color = '#15803d';
+        resBox.style.border = '1px solid #86efac';
+        resBox.innerHTML = `<strong>${esc(data.message)}</strong>`;
+        updateAiStatusBadge(true, data.model || model);
+      } else {
+        resBox.style.background = '#fee2e2';
+        resBox.style.color = '#b91c1c';
+        resBox.style.border = '1px solid #fca5a5';
+        resBox.innerHTML = `<strong>❌ ${esc(data.error || 'AI Connection test failed.')}</strong>`;
+        updateAiStatusBadge(false);
+      }
+    } catch (err) {
+      if (resBox) {
+        resBox.style.background = '#fee2e2';
+        resBox.style.color = '#b91c1c';
+        resBox.style.border = '1px solid #fca5a5';
+        resBox.innerHTML = `<strong>❌ Network error: ${esc(err.message)}</strong>`;
+      }
+      updateAiStatusBadge(false);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '⚡ Test AI Connection';
+      }
     }
   }
 

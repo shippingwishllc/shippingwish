@@ -11,8 +11,11 @@
 
 const https = require('https');
 
+const { getAppSetting } = require('../routes/settings');
+
 function googleMapsKey() {
-  return String(process.env.GOOGLE_MAPS_API_KEY || '').trim();
+  const dbKey = typeof getAppSetting === 'function' ? getAppSetting('google_maps_api_key') : '';
+  return String(dbKey || process.env.GOOGLE_MAPS_API_KEY || '').trim();
 }
 
 /**

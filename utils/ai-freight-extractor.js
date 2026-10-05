@@ -122,7 +122,8 @@ async function parseFreightWithAI(rawText, defaultBroker = {}) {
     throw new Error('Please provide at least 1-2 lines of broker freight text to parse.');
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const { getAppSetting } = require('../routes/settings');
+  const apiKey = (typeof getAppSetting === 'function' ? getAppSetting('openai_api_key') : '') || process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
     console.log('[AI Extractor] No OPENAI_API_KEY found in environment. Using smart heuristic parser.');
