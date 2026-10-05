@@ -220,12 +220,14 @@ const EQUIPMENT_PROFILES = {
 // Enhanced Freight Load Generator with DHO, DHD, Exact Cities, Multi-State & Date-Wise Booking
 function generateSampleDATLoads(origin, destination, equipmentType, minRpm, dhoMax, dhdMax, pickupDate) {
   const brokers = [
+    { name: 'CW Carriers USA Inc', mc: 'MC-1098412', phone: '(440) 299-8959', email: 'filipb@cwcarriersinc.com' },
+    { name: 'First Call Logistics', mc: 'MC-984512', phone: '(866) 512-4411', email: 'dispatch@firstcalllogistics.com' },
+    { name: 'Landstar Ranger Inc', mc: 'MC-166949', phone: '(440) 299-8959', email: 'dispatch@landstar.com' },
+    { name: 'Echo Global Logistics', mc: 'MC-525458', phone: '+1 800 354 7993', email: 'booking@echoglobal.com' },
     { name: 'C.H. Robinson', mc: 'MC-159021', phone: '+1 800 326 9477', email: 'dispatch@chrobinson.com' },
     { name: 'TQL (Total Quality Logistics)', mc: 'MC-325990', phone: '+1 800 580 3101', email: 'loadbooking@tql.com' },
     { name: 'Coyote Logistics', mc: 'MC-561382', phone: '+1 877 626 9683', email: 'rates@coyote.com' },
-    { name: 'Landstar Ranger', mc: 'MC-166960', phone: '+1 800 872 9474', email: 'dispatch@landstar.com' },
     { name: 'RXO Freight', mc: 'MC-414732', phone: '+1 800 359 9350', email: 'rates@rxo.com' },
-    { name: 'Echo Global Logistics', mc: 'MC-525458', phone: '+1 800 354 7993', email: 'booking@echoglobal.com' },
     { name: 'J.B. Hunt Transport', mc: 'MC-135797', phone: '+1 800 452 4868', email: 'truckload@jbhunt.com' },
     { name: 'Mode Transportation', mc: 'MC-140665', phone: '+1 800 248 8345', email: 'capacity@modetransportation.com' },
     { name: 'Worldwide Express', mc: 'MC-274640', phone: '+1 800 758 7447', email: 'freightsupport@wwex.com' },

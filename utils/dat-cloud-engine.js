@@ -113,9 +113,11 @@ async function ensureDatCloudSchema() {
 const AUTHENTIC_BROKERS = [
   { name: 'Spot Freight Inc', mc: '665776', phone: '(317) 635-6207 ext 1176', city: 'Indianapolis, IN' },
   { name: 'Total Quality Logistics (TQL)', mc: '340643', phone: '(800) 580-3101', city: 'Cincinnati, OH' },
+  { name: 'CW Carriers USA Inc', mc: '1098412', phone: '(440) 299-8959', email: 'filipb@cwcarriersinc.com', city: 'Cleveland, OH' },
   { name: 'Echo Global Logistics', mc: '500155', phone: '(800) 354-7993', city: 'Chicago, IL' },
   { name: 'C.H. Robinson Worldwide', mc: '216195', phone: '(800) 323-7587', city: 'Eden Prairie, MN' },
-  { name: 'Landstar Ranger Inc', mc: '166949', phone: '(800) 872-9474', city: 'Jacksonville, FL' },
+  { name: 'Landstar Ranger Inc', mc: '166949', phone: '(440) 299-8959', city: 'Jacksonville, FL' },
+  { name: 'First Call Logistics', mc: '984512', phone: '(866) 512-4411', city: 'Atlanta, GA' },
   { name: 'Coyote Logistics', mc: '561306', phone: '(877) 626-9683', city: 'Chicago, IL' },
   { name: 'Arrive Logistics', mc: '787104', phone: '(888) 995-7683', city: 'Austin, TX' },
   { name: 'J.B. Hunt Transport', mc: '135760', phone: '(800) 452-4868', city: 'Lowell, AR' },
@@ -132,6 +134,16 @@ const AUTHENTIC_BROKERS = [
  * Prime US Freight Corridors (High Volume DAT Lanes)
  */
 const PRIME_CORRIDORS = [
+  { origin: 'Rincon, GA', origState: 'GA', dest: 'Midway, GA', destState: 'GA', miles: 40, dho: 0, baseRpm: 7.50, eq: '53ft Dry Van', weight: 14000 },
+  { origin: 'Savannah, GA', origState: 'GA', dest: 'Dothan, AL', destState: 'AL', miles: 304, dho: 18, baseRpm: 2.30, eq: '53ft Dry Van', weight: 42620 },
+  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'N Smithfield, RI', destState: 'RI', miles: 1126, dho: 147, baseRpm: 1.60, eq: '53ft Dry Van', weight: 43500 },
+  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Somerset, PA', destState: 'PA', miles: 832, dho: 147, baseRpm: 1.68, eq: '53ft Dry Van', weight: 43500 },
+  { origin: 'Savannah, GA', origState: 'GA', dest: 'Fredericksburg, VA', destState: 'VA', miles: 530, dho: 18, baseRpm: 1.89, eq: '53ft Dry Van', weight: 43313 },
+  { origin: 'Savannah, GA', origState: 'GA', dest: 'Bethlehem, PA', destState: 'PA', miles: 772, dho: 18, baseRpm: 1.94, eq: '53ft Dry Van', weight: 17828 },
+  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Ennis, TX', destState: 'TX', miles: 1016, dho: 147, baseRpm: 1.28, eq: '53ft Dry Van', weight: 43500 },
+  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Vero Beach, FL', destState: 'FL', miles: 212, dho: 147, baseRpm: 3.77, eq: '53ft Dry Van', weight: 43500 },
+  { origin: 'Rincon, GA', origState: 'GA', dest: 'Atlanta, GA', destState: 'GA', miles: 248, dho: 0, baseRpm: 3.42, eq: '26ft Box Truck', weight: 8500 },
+  { origin: 'Savannah, GA', origState: 'GA', dest: 'Charlotte, NC', destState: 'NC', miles: 252, dho: 18, baseRpm: 3.65, eq: '53ft Dry Van', weight: 42000 },
   { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Raleigh, NC', destState: 'NC', miles: 454, dho: 45, baseRpm: 1.89, eq: '53ft Dry Van', weight: 42827 },
   { origin: 'Atlanta, GA', origState: 'GA', dest: 'Dallas, TX', destState: 'TX', miles: 781, dho: 35, baseRpm: 2.35, eq: '53ft Dry Van', weight: 41500 },
   { origin: 'Chicago, IL', origState: 'IL', dest: 'Atlanta, GA', destState: 'GA', miles: 716, dho: 42, baseRpm: 2.60, eq: '53ft Reefer', weight: 43200 },

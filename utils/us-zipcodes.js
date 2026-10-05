@@ -438,10 +438,37 @@ function parseDestinationsWithZip(destStr) {
     }
   }
 
+  // DAT Postal Zones Map (Z0 - Z9)
+  const DAT_POSTAL_ZONES = {
+    Z0: ['CT', 'MA', 'ME', 'NH', 'NJ', 'RI', 'VT'],
+    Z1: ['DE', 'NY', 'PA'],
+    Z2: ['DC', 'MD', 'NC', 'SC', 'VA', 'WV'],
+    Z3: ['AL', 'FL', 'GA', 'MS', 'TN'],
+    Z4: ['IN', 'KY', 'MI', 'OH'],
+    Z5: ['IA', 'MN', 'MT', 'ND', 'SD', 'WI'],
+    Z6: ['IL', 'KS', 'MO', 'NE'],
+    Z7: ['AR', 'LA', 'OK', 'TX'],
+    Z8: ['AZ', 'CO', 'ID', 'NM', 'NV', 'UT', 'WY'],
+    Z9: ['AK', 'CA', 'HI', 'OR', 'WA']
+  };
+
   const states = [];
   // Add states from found zips
   for (const z of foundZips) {
     if (!states.includes(z.state)) states.push(z.state);
+  }
+
+  // DAT Postal Zones tokens (e.g. Z0, Z1, Z2, Z3, Z4, Z5, Z6, Z7)
+  const zoneMatches = upper.match(/\bZ[0-9]\b/g);
+  if (zoneMatches) {
+    for (const zm of zoneMatches) {
+      const zKey = zm.toUpperCase();
+      if (DAT_POSTAL_ZONES[zKey]) {
+        for (const st of DAT_POSTAL_ZONES[zKey]) {
+          if (!states.includes(st)) states.push(st);
+        }
+      }
+    }
   }
 
   // Add states from 2-letter tokens
@@ -458,16 +485,21 @@ function parseDestinationsWithZip(destStr) {
   if (upper.includes('WEST')) ['CA', 'OR', 'WA', 'NV', 'AZ', 'UT', 'ID'].forEach(s => { if (!states.includes(s)) states.push(s); });
   if (upper.includes('MOUNTAIN')) ['CO', 'WY', 'MT', 'UT', 'NM'].forEach(s => { if (!states.includes(s)) states.push(s); });
   if (upper.includes('SOUTHWEST')) ['TX', 'OK', 'AR', 'LA', 'NM'].forEach(s => { if (!states.includes(s)) states.push(s); });
-  if (upper.includes('ALL 48') || upper.includes('ANYWHERE')) ['TX', 'WY', 'CO', 'IL', 'GA', 'PA', 'OH', 'CA', 'FL', 'TN', 'MO'].forEach(s => { if (!states.includes(s)) states.push(s); });
+  if (upper.includes('ALL 48') || upper.includes('ANYWHERE') || upper.includes('ALL') || upper.includes('ANY') || !str) {
+    ['TX', 'GA', 'IL', 'FL', 'PA', 'OH', 'CA', 'TN', 'MO', 'NC', 'IN', 'MI', 'NJ', 'NY', 'VA', 'WI', 'CO', 'AL', 'KY', 'SC'].forEach(s => { if (!states.includes(s)) states.push(s); });
+  }
 
   if (!states.length) {
-    states.push('WY', 'CO', 'TX');
+    ['TX', 'GA', 'IL', 'FL', 'PA', 'OH', 'NC', 'TN', 'MO', 'NJ'].forEach(s => { if (!states.includes(s)) states.push(s); });
   }
+
+  const isNationwide = !str || ['ANY', 'ALL', 'ANYWHERE', 'ALL 48'].includes(upper) || (zoneMatches && zoneMatches.length >= 5) || states.length >= 20;
 
   return {
     states,
     zips: foundZips,
-    specificDest: foundZips.length ? foundZips[0] : null
+    specificDest: foundZips.length ? foundZips[0] : null,
+    isNationwide
   };
 }
 
