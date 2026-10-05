@@ -231,6 +231,7 @@
     { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' },
     { key: 'fleet', href: '/fleet', icon: IC.truck, label: 'Fleet & Drivers' },
     { section: 'Sales & Communications' },
+    { key: 'dispatch-comms', href: '/dispatch-communications.html', icon: IC.inbox, label: 'Dispatch Comms Hub' },
     { key: 'crm', href: '/crm-sales', icon: IC.chart, label: 'Sales CRM & Leads' },
     { key: 'census', href: '/census-desk', icon: IC.census, label: 'Census Desk' },
     { key: 'voice-calls', href: '/voice-calls', icon: IC.phone, label: 'AI Calls & Audio' },
@@ -274,6 +275,7 @@
     { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' },
     { key: 'documents', href: '/documents', icon: IC.docs, label: 'RateCons & BOLs' },
     { section: 'Communications' },
+    { key: 'dispatch-comms', href: '/dispatch-communications.html', icon: IC.inbox, label: 'Dispatch Comms Hub' },
     { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Replies' },
     { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Inbox' },
     { key: 'whatsapp', href: '/whatsapp', icon: IC.whatsapp, label: 'WhatsApp Chat' }

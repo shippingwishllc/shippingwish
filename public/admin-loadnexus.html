@@ -7232,7 +7232,8 @@
               </td>
               <td style="text-align:right;">
                 <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;">
-                  <button type="button" class="btn btn-sm btn-primary" onclick="datActionSendSms('${l.id}')" title="1-Click Send Driver SMS Offer" style="padding:3px 7px;font-size:10px;font-weight:800;">📱 SMS</button>
+                  <button type="button" class="btn btn-sm btn-primary" onclick="datActionSendSms('${l.id}', 'sms')" title="1-Click Send Driver SMS Offer" style="padding:3px 7px;font-size:10px;font-weight:800;">📱 SMS</button>
+                  <button type="button" class="btn btn-sm" onclick="datActionSendSms('${l.id}', 'whatsapp')" title="1-Click Send Driver WhatsApp Offer" style="background:#16a34a;color:#fff;padding:3px 7px;font-size:10px;font-weight:800;">💬 WA</button>
                   <button type="button" class="btn btn-sm btn-secondary" onclick="datActionEmail('${l.id}')" title="Option A: Email Broker" style="padding:3px 7px;font-size:10px;">📧 Email</button>
                   <button type="button" class="btn btn-sm btn-secondary" onclick="datActionCall('${l.id}')" title="Option B: Call Broker" style="padding:3px 7px;font-size:10px;">📞 Call</button>
                   <button type="button" class="btn btn-sm btn-secondary" onclick="datActionPacket('${l.id}')" title="1-Click Carrier Packet &amp; COI" style="padding:3px 7px;font-size:10px;">📁 Packet</button>
@@ -7252,10 +7253,11 @@
   };
 
   // 1-Click Action Handlers for the 5 Fail-Safe Buttons
-  window.datActionSendSms = async function(loadId) {
+  window.datActionSendSms = async function(loadId, channel = 'sms') {
     const load = (window.currentDatLoads || []).find(l => String(l.id) === String(loadId));
     if (!load) return alert('Load details not found.');
-    const phone = prompt(`📱 Enter Driver Phone to send 1-Click SMS Offer for Load ${load.id}:\n(${load.origin} ➔ ${load.destination} | $${Number(load.rate).toLocaleString()})`, '+1 (800) 580-3101');
+    const label = channel === 'whatsapp' ? 'WhatsApp' : 'SMS';
+    const phone = prompt(`📱 Enter Driver Phone to send 1-Click ${label} Offer for Load ${load.id}:\n(${load.origin} ➔ ${load.destination} | $${Number(load.rate).toLocaleString()})`, '+1 (800) 580-3101');
     if (!phone) return;
 
     try {
@@ -7269,17 +7271,18 @@
         body: JSON.stringify({
           load,
           carrier_phone: phone,
-          truck_number: '101'
+          truck_number: '101',
+          channel
         })
       });
       const data = await res.json();
       if (data.ok) {
-        alert(`✅ 1-Click SMS Offer Sent Successfully!\n\nDriver: ${data.carrier?.phone || phone}\nLoad: ${load.id} (${load.origin} ➔ ${load.destination})\nStatus: Outbound sent • Awaiting driver confirmation.`);
+        alert(`✅ 1-Click ${label} Offer Sent Successfully!\n\nDriver: ${data.carrier?.phone || phone}\nLoad: ${load.id} (${load.origin} ➔ ${load.destination})\nStatus: Outbound sent (${data.message_status}) • Awaiting driver confirmation.`);
       } else {
-        alert(`SMS Notice: ${data.error || 'Failed to dispatch SMS'}`);
+        alert(`${label} Notice: ${data.error || 'Failed to dispatch offer'}`);
       }
     } catch (err) {
-      alert(`Error sending driver SMS offer: ${err.message}`);
+      alert(`Error sending driver ${label} offer: ${err.message}`);
     }
   };
 

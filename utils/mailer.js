@@ -86,7 +86,11 @@ async function sendBrandedEmail({
     ? (process.env.MAIL_FROM_TRANSACTIONAL || process.env.MAIL_FROM_NOREPLY || mailFrom())
     : mailFrom());
   const resend = getResend(from);
-  const replyTo = replyToOverride || replyToAddress(leadId);
+  let replyTo = replyToOverride || replyToAddress(leadId);
+  if (typeof replyTo === 'string' && replyTo.includes(',')) {
+    const list = replyTo.split(',').map(s => s.trim()).filter(Boolean);
+    replyTo = list.length === 1 ? list[0] : list;
+  }
   const headers = isTx
     ? undefined
     : {

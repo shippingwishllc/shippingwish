@@ -955,9 +955,14 @@
           <div>
             <div id="match-status-${idx}" style="font-size:12px; font-weight:700; color:#2563eb; margin-bottom:8px; min-height:1.2em;"></div>
             <div style="display:flex; flex-direction:column; gap:6px;">
-              <button type="button" onclick="window.sendDriverOfferAction(${idx})" class="btn-act" style="background:#2563eb; color:#fff; font-size:13px; padding:10px;">
-                <span>📱 1-Click Send Driver SMS Offer</span>
-              </button>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <button type="button" onclick="window.sendDriverOfferAction(${idx}, 'sms')" class="btn-act" style="background:#2563eb; color:#fff; font-size:12px; padding:10px 6px;" title="1-Click Send Twilio SMS Offer">
+                  📱 1-Click SMS
+                </button>
+                <button type="button" onclick="window.sendDriverOfferAction(${idx}, 'whatsapp')" class="btn-act" style="background:#16a34a; color:#fff; font-size:12px; padding:10px 6px;" title="1-Click Send Twilio WhatsApp Offer">
+                  💬 1-Click WhatsApp
+                </button>
+              </div>
               
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                 <button type="button" onclick="window.emailBrokerAction(${idx})" class="btn-act" style="background:#0b1f3a; color:#fff;" title="Option A: Email broker booking request with carrier packet">
@@ -1062,25 +1067,27 @@
   }
 
   // Action Handlers
-  window.sendDriverOfferAction = async function(idx) {
+  window.sendDriverOfferAction = async function(idx, channel = 'sms') {
     const load = currentMatchedLoads[idx];
     if (!load) return;
     const statusEl = document.getElementById(`match-status-${idx}`);
     const carrierId = load.suggested_carrier_id || (selectedTruck ? selectedTruck.carrier_id : null) || 999;
     const truckNum = load.suggested_truck_number || (selectedTruck ? selectedTruck.truck_number : '101');
+    const label = channel === 'whatsapp' ? 'WhatsApp' : 'SMS';
 
-    statusEl.innerHTML = '<span style="color:#2563eb;">Sending SMS offer to driver phone...</span>';
+    statusEl.innerHTML = `<span style="color:#2563eb;">Sending ${label} offer to driver phone...</span>`;
     try {
       const data = await api('/api/dispatch-desk/send-driver-offer', {
         method: 'POST',
         body: JSON.stringify({
           load,
           carrier_id: carrierId,
-          truck_number: truckNum
+          truck_number: truckNum,
+          channel
         })
       });
       load.active_offer_id = data.offer_id;
-      statusEl.innerHTML = `<span style="color:#166534;">✓ SMS offer sent to ${esc(data.carrier.phone)}! Awaiting "BOOK IT" reply.</span>`;
+      statusEl.innerHTML = `<span style="color:#166534;">✓ ${label} offer sent to ${esc(data.carrier.phone)} (${data.message_status})! Awaiting "BOOK IT" reply.</span>`;
       await loadDispatchedOffers();
     } catch (err) {
       statusEl.innerHTML = `<span style="color:#dc2626;">Error: ${esc(err.message)}</span>`;

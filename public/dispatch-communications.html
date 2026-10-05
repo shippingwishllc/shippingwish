@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dispatch Communications Hub | Shipping Wish TMS</title>
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/design-system.css?v=38">
+  <style>
+    :root {
+      --comms-tab-active-border: #2563eb;
+    }
+    .kpi-grid-6 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .kpi-card-comms {
+      background: var(--bg-card, #ffffff);
+      border: 1px solid var(--border-default, #e2e8f0);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .kpi-card-comms:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
+    .kpi-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted, #64748b);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kpi-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-primary, #0f172a);
+      line-height: 1.1;
+    }
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-muted, #94a3b8);
+      margin-top: 2px;
+    }
+    .comms-tabs-bar {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid var(--border-default, #e2e8f0);
+      margin-bottom: 20px;
+      padding-bottom: 0;
+    }
+    .comms-tab-btn {
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted, #64748b);
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+      margin-bottom: -2px;
+    }
+    .comms-tab-btn:hover {
+      color: var(--color-primary, #2563eb);
+    }
+    .comms-tab-btn.active {
+      color: var(--color-primary, #2563eb);
+      border-bottom-color: var(--color-primary, #2563eb);
+      background: #eff6ff;
+      border-radius: 8px 8px 0 0;
+    }
+    .filter-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .filter-pills-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .filter-pill {
+      border: 1px solid var(--border-default, #cbd5e1);
+      background: #ffffff;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .filter-pill:hover, .filter-pill.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+    .table-container-card {
+      background: #ffffff;
+      border: 1px solid var(--border-default, #e2e8f0);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+    .comms-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+    .comms-data-table th {
+      background: #f8fafc;
+      color: #475569;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-default, #e2e8f0);
+      white-space: nowrap;
+    }
+    .comms-data-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
+      vertical-align: middle;
+    }
+    .comms-data-table tr:hover td {
+      background: #f8fafc;
+    }
+    .badge-channel-wa {
+      background: #dcfce7;
+      color: #15803d;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .badge-channel-sms {
+      background: #e0f2fe;
+      color: #0284c7;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .badge-direction-out {
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-direction-in {
+      background: #fef08a;
+      color: #854d0e;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-status-sent {
+      background: #ecfdf5;
+      color: #047857;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+    .badge-status-booked {
+      background: #15803d;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal-card {
+      background: #ffffff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      border: 1px solid #cbd5e1;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border-radius: 14px 14px 0 0;
+    }
+    .modal-body {
+      padding: 22px 24px;
+      flex: 1;
+    }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f8fafc;
+      border-radius: 0 0 14px 14px;
+    }
+    .btn-action-sm {
+      padding: 5px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--border-default, #cbd5e1);
+      background: #ffffff;
+      color: #1e293b;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      transition: all 0.12s ease;
+    }
+    .btn-action-sm:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+    .btn-primary-blue {
+      background: #2563eb !important;
+      color: #ffffff !important;
+      border-color: #1d4ed8 !important;
+    }
+    .btn-primary-blue:hover {
+      background: #1d4ed8 !important;
+    }
+    .btn-whatsapp-green {
+      background: #16a34a !important;
+      color: #ffffff !important;
+      border-color: #15803d !important;
+    }
+    .btn-whatsapp-green:hover {
+      background: #15803d !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <main class="app-main">
+      <div class="layout-container" style="padding-top:20px; padding-bottom:40px;">
+        
+        <!-- Breadcrumb & Page Header -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:4px;">
+              Operations &bull; Communications Desk
+            </div>
+            <h1 style="margin:0; font-size:24px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+              💬 Dispatch Communications Hub
+            </h1>
+            <p style="margin:4px 0 0; font-size:13.5px; color:#64748b;">
+              Unified omnichannel desk for outbound/inbound broker booking emails, voice calls &amp; driver offers (SMS + WhatsApp).
+            </p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-secondary" onclick="openComposeEmailModal()" style="display:inline-flex; align-items:center; gap:6px;">
+              📧 Compose Broker Email
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="openQuickDialModal()" style="display:inline-flex; align-items:center; gap:6px;">
+              📞 Quick Call Broker
+            </button>
+            <button type="button" class="btn btn-primary" onclick="openDriverOfferModal()" style="display:inline-flex; align-items:center; gap:6px;">
+              📱 Send Driver Offer
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="refreshCurrentTab()" title="Refresh" style="padding:8px 12px;">
+              🔄
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Summary Cards -->
+        <div class="kpi-grid-6">
+          <div class="kpi-card-comms">
+            <div class="kpi-label">📧 Broker Emails</div>
+            <div class="kpi-val" id="kpi-emails">--</div>
+            <div class="kpi-sub" id="kpi-emails-sub">Outbound Booking Requests</div>
+          </div>
+          <div class="kpi-card-comms">
+            <div class="kpi-label">📥 Broker Replies</div>
+            <div class="kpi-val" id="kpi-inbound">--</div>
+            <div class="kpi-sub">RateCons &amp; Inbound Messages</div>
+          </div>
+          <div class="kpi-card-comms">
+            <div class="kpi-label">📞 Broker Calls</div>
+            <div class="kpi-val" id="kpi-calls">--</div>
+            <div class="kpi-sub">Voice AI &amp; Dispatch Bridges</div>
+          </div>
+          <div class="kpi-card-comms">
+            <div class="kpi-label">📱 Driver SMS</div>
+            <div class="kpi-val" id="kpi-sms">--</div>
+            <div class="kpi-sub">Twilio Carrier Offers</div>
+          </div>
+          <div class="kpi-card-comms">
+            <div class="kpi-label">💬 Driver WhatsApp</div>
+            <div class="kpi-val" id="kpi-wa">--</div>
+            <div class="kpi-sub">Direct WhatsApp Dispatch</div>
+          </div>
+          <div class="kpi-card-comms">
+            <div class="kpi-label">🏆 Loads Booked</div>
+            <div class="kpi-val" id="kpi-booked" style="color:#15803d;">--</div>
+            <div class="kpi-sub">"BOOK IT" Driver Confirmations</div>
+          </div>
+        </div>
+
+        <!-- 3 Core Tabs Bar -->
+        <div class="comms-tabs-bar">
+          <button type="button" class="comms-tab-btn active" id="tab-btn-emails" onclick="switchCommsTab('emails')">
+            📧 Broker Emails (<span id="count-tab-emails">0</span>)
+          </button>
+          <button type="button" class="comms-tab-btn" id="tab-btn-calls" onclick="switchCommsTab('calls')">
+            📞 Broker Voice Calls (<span id="count-tab-calls">0</span>)
+          </button>
+          <button type="button" class="comms-tab-btn" id="tab-btn-messages" onclick="switchCommsTab('messages')">
+            📱 Driver SMS &amp; WhatsApp (<span id="count-tab-messages">0</span>)
+          </button>
+        </div>
+
+        <!-- TAB 1: BROKER EMAILS -->
+        <div id="tab-content-emails" class="tab-content-pane">
+          <div class="filter-action-row">
+            <div class="filter-pills-group">
+              <button type="button" class="filter-pill active" onclick="setFilterEmail('all', this)">All Emails</button>
+              <button type="button" class="filter-pill" onclick="setFilterEmail('outbound', this)">Outbound Bookings</button>
+              <button type="button" class="filter-pill" onclick="setFilterEmail('inbound', this)">Inbound Broker Replies</button>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="search-emails" placeholder="Search broker email, load #, or subject..." 
+                oninput="debounceSearchEmails()" style="padding:6px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; width:280px;">
+            </div>
+          </div>
+
+          <div class="table-container-card">
+            <table class="comms-data-table" id="emails-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Direction</th>
+                  <th>Broker Contact</th>
+                  <th>Load Reference</th>
+                  <th>Subject</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="emails-tbody">
+                <tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">Loading broker emails...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 2: BROKER CALLS -->
+        <div id="tab-content-calls" class="tab-content-pane" style="display:none;">
+          <div class="filter-action-row">
+            <div class="filter-pills-group">
+              <button type="button" class="filter-pill active" onclick="setFilterCall('all', this)">All Calls</button>
+              <button type="button" class="filter-pill" onclick="setFilterCall('connected', this)">Connected</button>
+              <button type="button" class="filter-pill" onclick="setFilterCall('initiated', this)">Queued / Initiated</button>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="search-calls" placeholder="Search broker phone, name, or load #..." 
+                oninput="debounceSearchCalls()" style="padding:6px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; width:280px;">
+            </div>
+          </div>
+
+          <div class="table-container-card">
+            <table class="comms-data-table" id="calls-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Broker Phone &amp; Name</th>
+                  <th>Load Reference</th>
+                  <th>Lane (Origin ➔ Dest)</th>
+                  <th>Provider</th>
+                  <th>Disposition</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="calls-tbody">
+                <tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">Loading broker calls...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 3: DRIVER SMS & WHATSAPP -->
+        <div id="tab-content-messages" class="tab-content-pane" style="display:none;">
+          <div class="filter-action-row">
+            <div class="filter-pills-group">
+              <button type="button" class="filter-pill active" onclick="setFilterMessage('all', this)">All Channels</button>
+              <button type="button" class="filter-pill" onclick="setFilterMessage('sms', this)">📱 Twilio SMS</button>
+              <button type="button" class="filter-pill" onclick="setFilterMessage('whatsapp', this)">💬 Twilio WhatsApp</button>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="search-messages" placeholder="Search driver, truck #, phone, or route..." 
+                oninput="debounceSearchMessages()" style="padding:6px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; width:280px;">
+            </div>
+          </div>
+
+          <div class="table-container-card">
+            <table class="comms-data-table" id="messages-table">
+              <thead>
+                <tr>
+                  <th>Sent At</th>
+                  <th>Channel</th>
+                  <th>Driver &amp; Truck</th>
+                  <th>Phone Number</th>
+                  <th>Message Preview</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="messages-tbody">
+                <tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">Loading driver offers...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: VIEW FULL EMAIL -->
+  <div class="modal-overlay" id="view-email-modal">
+    <div class="modal-card" style="max-width:760px;">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin:0; font-size:17px; font-weight:700; color:#0f172a;" id="view-email-subject">Email Preview</h3>
+          <p style="margin:2px 0 0; font-size:12px; color:#64748b;" id="view-email-meta">Details</p>
+        </div>
+        <button type="button" onclick="closeModal('view-email-modal')" style="background:none; border:none; font-size:20px; cursor:pointer; color:#64748b;">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px; line-height:1.6;">
+          <div><strong>To:</strong> <span id="view-email-to"></span></div>
+          <div><strong>From:</strong> <span id="view-email-from"></span></div>
+          <div><strong>Date:</strong> <span id="view-email-date"></span></div>
+          <div><strong>Status:</strong> <span id="view-email-status-badge"></span></div>
+        </div>
+        <div id="view-email-container" style="border:1px solid #e2e8f0; border-radius:8px; padding:18px; max-height:460px; overflow-y:auto; background:#ffffff;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a id="view-email-mailto-btn" href="#" target="_blank" class="btn-action-sm">✉️ Open in Email Client</a>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('view-email-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: COMPOSE DIRECT BROKER EMAIL -->
+  <div class="modal-overlay" id="compose-email-modal">
+    <div class="modal-card" style="max-width:640px;">
+      <div class="modal-header">
+        <h3 style="margin:0; font-size:17px; font-weight:700; color:#0f172a;">📧 Compose Broker Email</h3>
+        <button type="button" onclick="closeModal('compose-email-modal')" style="background:none; border:none; font-size:20px; cursor:pointer; color:#64748b;">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="compose-email-form" onsubmit="handleSendComposeEmail(event)">
+          <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Broker Recipient Email *</label>
+            <input type="email" id="compose-to" required placeholder="broker@freightco.com" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13.5px; box-sizing:border-box;">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Load Reference # (Optional)</label>
+            <input type="text" id="compose-load-ref" placeholder="e.g. DAT-849201" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13.5px; box-sizing:border-box;">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Subject *</label>
+            <input type="text" id="compose-subject" required placeholder="[LOAD #12345] Booking Request / Rate Confirmation Inquiry" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13.5px; box-sizing:border-box;">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Message Body *</label>
+            <textarea id="compose-body" required rows="7" placeholder="Write message to broker. Outbound sender will be Sam <sam@shippingwish.com>..." style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13.5px; box-sizing:border-box; resize:vertical; font-family:inherit;"></textarea>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('compose-email-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-compose">Dispatch via Resend</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SEND DRIVER OFFER (WITH TWO DEDICATED BUTTONS: SMS & WHATSAPP) -->
+  <div class="modal-overlay" id="driver-offer-modal">
+    <div class="modal-card" style="max-width:620px;">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin:0; font-size:17px; font-weight:700; color:#0f172a;">📱 Dispatch Driver Load Offer</h3>
+          <p style="margin:2px 0 0; font-size:12px; color:#64748b;">Direct mobile dispatch via Twilio SMS or Twilio WhatsApp</p>
+        </div>
+        <button type="button" onclick="closeModal('driver-offer-modal')" style="background:none; border:none; font-size:20px; cursor:pointer; color:#64748b;">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Truck Unit #</label>
+            <select id="offer-truck-num" onchange="updateOfferPreview()" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px;">
+              <option value="101">Unit #101 (26ft Box Truck)</option>
+              <option value="102">Unit #102 (53ft Dry Van)</option>
+              <option value="103">Unit #103 (53ft Reefer)</option>
+              <option value="104">Unit #104 (48ft Flatbed)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Driver Phone Number *</label>
+            <input type="text" id="offer-phone" value="+19177370021" placeholder="+19177370021" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Origin (City, ST)</label>
+            <input type="text" id="offer-origin" value="Eden Prairie, MN" oninput="updateOfferPreview()" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Destination (City, ST)</label>
+            <input type="text" id="offer-dest" value="Chicago, IL" oninput="updateOfferPreview()" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Loaded Miles</label>
+            <input type="number" id="offer-miles" value="415" oninput="updateOfferPreview()" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Total Rate ($)</label>
+            <input type="number" id="offer-rate" value="1250" oninput="updateOfferPreview()" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Deadhead (mi)</label>
+            <input type="number" id="offer-dho" value="25" oninput="updateOfferPreview()" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Structured Driver Offer Preview</label>
+          <pre id="offer-text-preview" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; font-size:12px; font-family:monospace; white-space:pre-wrap; margin:0; color:#0f172a;"></pre>
+        </div>
+
+        <!-- TWO DEDICATED SEPARATE DISPATCH BUTTONS -->
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+          <div style="font-size:12.5px; font-weight:700; color:#1e40af;">Select Dispatch Channel:</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button type="button" class="btn btn-primary-blue" onclick="dispatchDriverOfferWithChannel('sms')" style="padding:12px; font-weight:800; font-size:13.5px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              📱 1-Click Send Driver SMS
+            </button>
+            <button type="button" class="btn btn-whatsapp-green" onclick="dispatchDriverOfferWithChannel('whatsapp')" style="padding:12px; font-weight:800; font-size:13.5px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              💬 1-Click Send Driver WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: QUICK DIAL BROKER (WITH SCRIPT & TCPA CHECK) -->
+  <div class="modal-overlay" id="quick-dial-modal">
+    <div class="modal-card" style="max-width:580px;">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin:0; font-size:17px; font-weight:700; color:#0f172a;">📞 Quick Call Broker (Option B)</h3>
+          <p style="margin:2px 0 0; font-size:12px; color:#64748b;">Live dispatcher bridge with full carrier authority facts</p>
+        </div>
+        <button type="button" onclick="closeModal('quick-dial-modal')" style="background:none; border:none; font-size:20px; cursor:pointer; color:#64748b;">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Broker Phone Number *</label>
+          <input type="text" id="dial-phone" placeholder="+1 (800) 555-0199" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13.5px; box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:4px;">Broker Company / Load #</label>
+          <input type="text" id="dial-company" placeholder="e.g. C.H. Robinson • Load #DAT-9831" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13.5px; box-sizing:border-box;">
+        </div>
+
+        <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:14px; margin-bottom:14px; font-size:12.5px; color:#14532d; line-height:1.6;">
+          <div style="font-weight:800; text-transform:uppercase; margin-bottom:4px; color:#166534;">🛡️ Verified Fact Sheet For Broker Questions:</div>
+          <div>&bull; <strong>Carrier:</strong> Shipping Wish LLC Fleet</div>
+          <div>&bull; <strong>Authority:</strong> MC 1234567 • USDOT 3456789 (Common Carrier, Active)</div>
+          <div>&bull; <strong>Assigned Unit:</strong> Truck Unit #101 (26ft Box Truck, 10,000 lbs max)</div>
+          <div>&bull; <strong>Driver Status:</strong> Empty in Eden Prairie, MN, ready to roll immediately.</div>
+          <div>&bull; <strong>Insurance:</strong> $1,000,000 Auto Liability + $100,000 Cargo on file.</div>
+          <div>&bull; <strong>RateCon Email:</strong> sam@shippingwish.com &amp; operations@shippingwish.com</div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('quick-dial-modal')">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="initiateBrokerCallAction()">📞 1-Click Call / Bridge</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app-shell.js"></script>
+  <script>
+    let currentTab = 'emails';
+    let allEmails = [];
+    let allCalls = [];
+    let allMessages = [];
+    let filterEmailType = 'all';
+    let filterCallType = 'all';
+    let filterMessageType = 'all';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadSummaryKpis();
+      await loadTabEmails();
+      updateOfferPreview();
+    });
+
+    async function loadSummaryKpis() {
+      try {
+        const res = await fetch('/api/dispatch/communications/summary', { credentials: 'include' });
+        const data = await res.json();
+        if (data.ok && data.summary) {
+          const s = data.summary;
+          document.getElementById('kpi-emails').textContent = s.broker_emails_sent || s.total_emails || 0;
+          document.getElementById('kpi-inbound').textContent = s.emails_received || 0;
+          document.getElementById('kpi-calls').textContent = s.calls_placed || 0;
+          document.getElementById('kpi-sms').textContent = s.sms_sent || 0;
+          document.getElementById('kpi-wa').textContent = s.whatsapp_sent || 0;
+          document.getElementById('kpi-booked').textContent = s.loads_booked || 0;
+        }
+      } catch (err) {
+        console.warn('Could not load summary KPIs:', err);
+      }
+    }
+
+    function switchCommsTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.comms-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content-pane').forEach(p => p.style.display = 'none');
+
+      document.getElementById(`tab-btn-${tab}`).classList.add('active');
+      document.getElementById(`tab-content-${tab}`).style.display = 'block';
+
+      if (tab === 'emails' && allEmails.length === 0) loadTabEmails();
+      if (tab === 'calls' && allCalls.length === 0) loadTabCalls();
+      if (tab === 'messages' && allMessages.length === 0) loadTabMessages();
+    }
+
+    function refreshCurrentTab() {
+      loadSummaryKpis();
+      if (currentTab === 'emails') loadTabEmails();
+      else if (currentTab === 'calls') loadTabCalls();
+      else if (currentTab === 'messages') loadTabMessages();
+    }
+
+    // ==========================================
+    // TAB 1: EMAILS
+    // ==========================================
+    async function loadTabEmails() {
+      const tbody = document.getElementById('emails-tbody');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">Loading broker emails...</td></tr>';
+      try {
+        const res = await fetch('/api/dispatch/communications/emails', { credentials: 'include' });
+        const data = await res.json();
+        if (data.ok) {
+          allEmails = data.emails || [];
+          document.getElementById('count-tab-emails').textContent = allEmails.length;
+          renderEmailsTable();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#ef4444;">${data.error || 'Failed to load emails'}</td></tr>`;
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#ef4444;">Error loading emails: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderEmailsTable() {
+      const tbody = document.getElementById('emails-tbody');
+      const search = (document.getElementById('search-emails').value || '').toLowerCase();
+
+      const filtered = allEmails.filter(em => {
+        if (filterEmailType === 'outbound' && em.direction !== 'outbound') return false;
+        if (filterEmailType === 'inbound' && em.direction !== 'inbound') return false;
+        if (search) {
+          const str = `${em.recipient_email} ${em.from_email} ${em.subject} ${em.load_reference || ''}`.toLowerCase();
+          if (!str.includes(search)) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">No emails match the selected criteria.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(em => {
+        const dateStr = em.timestamp ? new Date(em.timestamp).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : 'Just now';
+        const isOut = em.direction === 'outbound';
+        const dirBadge = isOut ? '<span class="badge-direction-out">Outbound Booking</span>' : '<span class="badge-direction-in">Inbound Reply</span>';
+        const statusBadge = em.status === 'sent' 
+          ? '<span class="badge-status-sent">✓ Delivered</span>' 
+          : `<span class="badge-status-sent" style="background:#f1f5f9; color:#475569;">${em.status || 'Prepared'}</span>`;
+        const loadRef = em.load_reference ? `<strong>#${em.load_reference}</strong>` : '<span style="color:#94a3b8;">General</span>';
+
+        return `
+          <tr>
+            <td style="white-space:nowrap; color:#64748b; font-size:12px;">${dateStr}</td>
+            <td>${dirBadge}</td>
+            <td>
+              <div style="font-weight:700; color:#0f172a;">${escapeHtml(em.recipient_email || 'Broker')}</div>
+              <div style="font-size:11px; color:#64748b;">From: ${escapeHtml(em.from_email || 'Sam <sam@shippingwish.com>')}</div>
+            </td>
+            <td>${loadRef}</td>
+            <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;">
+              ${escapeHtml(em.subject || '(No Subject)')}
+            </td>
+            <td>${statusBadge}</td>
+            <td style="text-align:right; white-space:nowrap;">
+              <button type="button" class="btn-action-sm" onclick="viewEmailDetail(${em.id}, '${em.direction}')">👁️ View</button>
+              <button type="button" class="btn-action-sm" onclick="replyToEmail('${escapeHtml(em.recipient_email || em.from_email || '')}', '${escapeHtml(em.subject || '')}', '${em.load_reference || ''}')">↩️ Reply</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function setFilterEmail(type, el) {
+      filterEmailType = type;
+      el.parentElement.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      renderEmailsTable();
+    }
+
+    function debounceSearchEmails() {
+      renderEmailsTable();
+    }
+
+    function viewEmailDetail(id, direction) {
+      const em = allEmails.find(x => x.id === id && x.direction === direction);
+      if (!em) return;
+
+      document.getElementById('view-email-subject').textContent = em.subject || 'Email Preview';
+      document.getElementById('view-email-to').textContent = em.recipient_email || 'Broker Desk';
+      document.getElementById('view-email-from').textContent = em.from_email || 'Sam <sam@shippingwish.com>';
+      document.getElementById('view-email-date').textContent = em.timestamp ? new Date(em.timestamp).toLocaleString() : 'N/A';
+      document.getElementById('view-email-status-badge').textContent = em.status || 'Delivered';
+
+      const container = document.getElementById('view-email-container');
+      if (em.body_html) {
+        container.innerHTML = em.body_html;
+      } else {
+        container.innerHTML = `<pre style="font-family:inherit; white-space:pre-wrap; margin:0;">${escapeHtml(em.body_text || '(No body content)')}</pre>`;
+      }
+
+      const mailtoBtn = document.getElementById('view-email-mailto-btn');
+      mailtoBtn.href = `mailto:${encodeURIComponent(em.recipient_email || '')}?subject=${encodeURIComponent(em.subject || '')}&body=${encodeURIComponent(em.body_text || '')}`;
+
+      openModal('view-email-modal');
+    }
+
+    function replyToEmail(to, subject, loadRef) {
+      document.getElementById('compose-to').value = to;
+      document.getElementById('compose-subject').value = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
+      document.getElementById('compose-load-ref').value = loadRef || '';
+      document.getElementById('compose-body').value = `Hello,\n\nRegarding Load #${loadRef || ''}:\n\nThank you,\nSam | Shipping Wish Dispatch`;
+      openComposeEmailModal();
+    }
+
+    // ==========================================
+    // TAB 2: CALLS
+    // ==========================================
+    async function loadTabCalls() {
+      const tbody = document.getElementById('calls-tbody');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">Loading broker calls...</td></tr>';
+      try {
+        const res = await fetch('/api/dispatch/communications/calls', { credentials: 'include' });
+        const data = await res.json();
+        if (data.ok) {
+          allCalls = data.calls || [];
+          document.getElementById('count-tab-calls').textContent = allCalls.length;
+          renderCallsTable();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#ef4444;">${data.error || 'Failed to load calls'}</td></tr>`;
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#ef4444;">Error loading calls: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderCallsTable() {
+      const tbody = document.getElementById('calls-tbody');
+      const search = (document.getElementById('search-calls').value || '').toLowerCase();
+
+      const filtered = allCalls.filter(c => {
+        if (filterCallType === 'connected' && c.disposition !== 'completed' && c.disposition !== 'in-progress') return false;
+        if (filterCallType === 'initiated' && c.disposition !== 'initiated') return false;
+        if (search) {
+          const str = `${c.to_number} ${c.broker_name || ''} ${c.load_reference || ''} ${c.origin_label || ''} ${c.destination_label || ''}`.toLowerCase();
+          if (!str.includes(search)) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">No call records match the criteria.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(c => {
+        const timeStr = c.created_at ? new Date(c.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : 'N/A';
+        const cleanDigits = (c.to_number || '').replace(/[^\d+]/g, '');
+        const laneStr = (c.origin_label && c.destination_label) ? `${c.origin_label} ➔ ${c.destination_label}` : 'Direct Dial';
+        const loadRef = c.load_reference ? `<strong>#${c.load_reference}</strong>` : '<span style="color:#94a3b8;">General</span>';
+
+        return `
+          <tr>
+            <td style="white-space:nowrap; color:#64748b; font-size:12px;">${timeStr}</td>
+            <td>
+              <div style="font-weight:700; color:#0f172a;">${escapeHtml(c.to_number)}</div>
+              <div style="font-size:11px; color:#64748b;">${escapeHtml(c.broker_name || 'Freight Broker Desk')}</div>
+            </td>
+            <td>${loadRef}</td>
+            <td style="font-weight:600; color:#334155;">${escapeHtml(laneStr)}</td>
+            <td><span style="font-size:11.5px; font-weight:700; color:#2563eb;">${escapeHtml(c.voip_provider || 'Dispatcher Bridge')}</span></td>
+            <td><span class="badge-status-sent">${escapeHtml(c.disposition || 'Initiated')}</span></td>
+            <td style="text-align:right; white-space:nowrap;">
+              <a href="tel:${cleanDigits}" class="btn-action-sm btn-primary-blue" title="1-Click Direct Dial">📞 Dial</a>
+              <button type="button" class="btn-action-sm" onclick="showCallNotes('${escapeHtml(c.notes || 'No call notes available.')}')">📝 Note</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function setFilterCall(type, el) {
+      filterCallType = type;
+      el.parentElement.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      renderCallsTable();
+    }
+
+    function debounceSearchCalls() {
+      renderCallsTable();
+    }
+
+    function showCallNotes(note) {
+      alert(`Call Record Details:\n\n${note}`);
+    }
+
+    // ==========================================
+    // TAB 3: MESSAGES (SMS & WHATSAPP)
+    // ==========================================
+    async function loadTabMessages() {
+      const tbody = document.getElementById('messages-tbody');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">Loading driver messages...</td></tr>';
+      try {
+        const res = await fetch('/api/dispatch/communications/messages', { credentials: 'include' });
+        const data = await res.json();
+        if (data.ok) {
+          allMessages = data.messages || [];
+          document.getElementById('count-tab-messages').textContent = allMessages.length;
+          renderMessagesTable();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#ef4444;">${data.error || 'Failed to load messages'}</td></tr>`;
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#ef4444;">Error loading messages: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderMessagesTable() {
+      const tbody = document.getElementById('messages-tbody');
+      const search = (document.getElementById('search-messages').value || '').toLowerCase();
+
+      const filtered = allMessages.filter(m => {
+        const isWa = m.channel === 'whatsapp';
+        if (filterMessageType === 'sms' && isWa) return false;
+        if (filterMessageType === 'whatsapp' && !isWa) return false;
+        if (search) {
+          const str = `${m.company_name} ${m.truck_number} ${m.to_number} ${m.from_number} ${m.body}`.toLowerCase();
+          if (!str.includes(search)) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">No driver messages found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(m => {
+        const timeStr = m.created_at ? new Date(m.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : 'N/A';
+        const isWa = m.channel === 'whatsapp';
+        const chanBadge = isWa 
+          ? '<span class="badge-channel-wa">💬 WhatsApp</span>' 
+          : '<span class="badge-channel-sms">📱 Twilio SMS</span>';
+        const isBooked = (m.body || '').toUpperCase().includes('BOOK IT');
+        const statusBadge = isBooked 
+          ? '<span class="badge-status-booked">✅ BOOK IT Locked</span>' 
+          : `<span class="badge-status-sent">${escapeHtml(m.disposition || 'Sent')}</span>`;
+
+        return `
+          <tr>
+            <td style="white-space:nowrap; color:#64748b; font-size:12px;">${timeStr}</td>
+            <td>${chanBadge}</td>
+            <td>
+              <div style="font-weight:700; color:#0f172a;">${escapeHtml(m.company_name || 'Fleet Driver')}</div>
+              <div style="font-size:11px; color:#64748b;">Unit #${escapeHtml(m.truck_number || '101')}</div>
+            </td>
+            <td style="font-weight:600; font-size:12.5px;">${escapeHtml(m.to_number || m.from_number)}</td>
+            <td style="max-width:320px; font-size:12px; color:#334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              ${escapeHtml(m.body || '')}
+            </td>
+            <td>${statusBadge}</td>
+            <td style="text-align:right; white-space:nowrap;">
+              <button type="button" class="btn-action-sm btn-primary-blue" onclick="quickResendOffer('${m.to_number}', 'sms')" title="Resend via SMS">📱 SMS</button>
+              <button type="button" class="btn-action-sm btn-whatsapp-green" onclick="quickResendOffer('${m.to_number}', 'whatsapp')" title="Resend via WhatsApp">💬 WA</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function setFilterMessage(type, el) {
+      filterMessageType = type;
+      el.parentElement.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      renderMessagesTable();
+    }
+
+    function debounceSearchMessages() {
+      renderMessagesTable();
+    }
+
+    function quickResendOffer(phone, channel) {
+      document.getElementById('offer-phone').value = phone;
+      openDriverOfferModal();
+    }
+
+    // ==========================================
+    // MODAL HANDLERS
+    // ==========================================
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function openComposeEmailModal() {
+      openModal('compose-email-modal');
+    }
+    function openQuickDialModal() {
+      openModal('quick-dial-modal');
+    }
+    function openDriverOfferModal() {
+      updateOfferPreview();
+      openModal('driver-offer-modal');
+    }
+
+    function updateOfferPreview() {
+      const truck = document.getElementById('offer-truck-num').value;
+      const origin = document.getElementById('offer-origin').value || 'Origin';
+      const dest = document.getElementById('offer-dest').value || 'Destination';
+      const miles = document.getElementById('offer-miles').value || '400';
+      const rate = document.getElementById('offer-rate').value || '1200';
+      const dho = document.getElementById('offer-dho').value || '25';
+      const rpm = (rate / miles).toFixed(2);
+
+      const preview = `🚛 Shipping Wish Load Offer (Unit #${truck}):
+📍 ${origin} ➔ ${dest}
+🛣️ ${miles} mi ($${rpm}/mi) • ${dho} mi deadhead
+💰 Gross: $${Number(rate).toLocaleString()}
+Reply "BOOK IT" to lock in rate & receive pickup instructions.`;
+
+      document.getElementById('offer-text-preview').textContent = preview;
+    }
+
+    async function dispatchDriverOfferWithChannel(channel) {
+      const phone = document.getElementById('offer-phone').value.trim();
+      if (!phone) return alert('Driver phone number is required.');
+      const truckNum = document.getElementById('offer-truck-num').value;
+      const origin = document.getElementById('offer-origin').value;
+      const dest = document.getElementById('offer-dest').value;
+      const miles = Number(document.getElementById('offer-miles').value) || 400;
+      const rate = Number(document.getElementById('offer-rate').value) || 1200;
+      const dho = Number(document.getElementById('offer-dho').value) || 25;
+      const customSms = document.getElementById('offer-text-preview').textContent;
+
+      const load = {
+        origin,
+        destination,
+        loaded_miles: miles,
+        deadhead_miles: dho,
+        rate,
+        equipment_type: '26ft Box Truck',
+        weight: 9500
+      };
+
+      try {
+        const res = await fetch('/api/dispatch/send-driver-offer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            load,
+            truck_number: truckNum,
+            custom_sms: customSms,
+            channel
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          alert(`✓ Successfully dispatched load offer to driver via ${channel.toUpperCase()}!\nStatus: ${data.message_status}`);
+          closeModal('driver-offer-modal');
+          loadSummaryKpis();
+          if (currentTab === 'messages') loadTabMessages();
+        } else {
+          alert(data.error || 'Failed to send driver offer');
+        }
+      } catch (err) {
+        alert('Network error sending driver offer: ' + err.message);
+      }
+    }
+
+    async function handleSendComposeEmail(e) {
+      e.preventDefault();
+      const to = document.getElementById('compose-to').value.trim();
+      const subject = document.getElementById('compose-subject').value.trim();
+      const loadRef = document.getElementById('compose-load-ref').value.trim();
+      const body = document.getElementById('compose-body').value.trim();
+      const btn = document.getElementById('btn-submit-compose');
+
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        const res = await fetch('/api/dispatch/communications/direct-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            to,
+            subject,
+            text: body,
+            load_reference: loadRef
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          alert(`✓ ${data.message}`);
+          closeModal('compose-email-modal');
+          document.getElementById('compose-email-form').reset();
+          loadSummaryKpis();
+          if (currentTab === 'emails') loadTabEmails();
+        } else {
+          alert(data.error || 'Failed to dispatch email');
+        }
+      } catch (err) {
+        alert('Network error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Dispatch via Resend';
+      }
+    }
+
+    async function initiateBrokerCallAction() {
+      const phone = document.getElementById('dial-phone').value.trim();
+      const company = document.getElementById('dial-company').value.trim();
+      if (!phone) return alert('Broker phone number is required.');
+
+      try {
+        const res = await fetch('/api/dispatch/contact-broker-call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            broker_phone: phone,
+            broker_name: company
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          if (data.tcpa_notice) {
+            alert(`⚠️ ${data.message}`);
+          } else {
+            alert(`✓ ${data.message}`);
+          }
+          if (data.dial_url) {
+            window.location.href = data.dial_url;
+          }
+          closeModal('quick-dial-modal');
+          loadSummaryKpis();
+          if (currentTab === 'calls') loadTabCalls();
+        } else {
+          alert(data.error || 'Failed to place call');
+        }
+      } catch (err) {
+        alert('Call initiation error: ' + err.message);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
