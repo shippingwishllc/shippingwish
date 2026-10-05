@@ -5,6 +5,7 @@ const { lookupZip, getZipForCityState, parseOriginWithZip, parseDestinationsWith
 const { generateRateConfirmationPDF } = require('../utils/ratecon-generator');
 const { requestBrokerBooking, realEmail } = require('../utils/broker-booking-request');
 const { parseFreightWithAI, saveLoadsToDatabase, normalizeEquipmentAndWeight } = require('../utils/ai-freight-extractor');
+const { getFreightDeadhead, ADJACENT_STATES } = require('../utils/geo');
 
 const router = express.Router();
 
@@ -530,20 +531,44 @@ router.get('/search', optionalAuth, async (req, res) => {
     ];
     const sqlParams = [];
 
-    if (origin && String(origin).trim()) {
-      sqlParams.push(`%${String(origin).trim()}%`);
-      sqlConditions.push(`pickup_location ILIKE $${sqlParams.length}`);
+    // Clean and parse origin (strip trailing , US / , USA from Google Places autocomplete)
+    const cleanOrigin = String(origin || '').replace(/,\s*US(?:A)?$/i, '').trim();
+    const origInfo = cleanOrigin ? parseOriginWithZip(cleanOrigin) : null;
+    const maxDho = (dho !== undefined && dho !== null && dho !== '') ? parseInt(dho, 10) : 100;
+
+    if (origInfo) {
+      if (maxDho === 0) {
+        sqlParams.push(`%${origInfo.city}%`);
+        sqlConditions.push(`pickup_location ILIKE $${sqlParams.length}`);
+      } else {
+        let candidateStates = [origInfo.state];
+        if (maxDho >= 60 && ADJACENT_STATES[origInfo.state]) {
+          candidateStates = candidateStates.concat(ADJACENT_STATES[origInfo.state]);
+        }
+        const stateClauses = candidateStates.map(st => {
+          sqlParams.push(`%${st}%`);
+          return `pickup_location ILIKE $${sqlParams.length}`;
+        });
+        sqlParams.push(`%${origInfo.city}%`);
+        stateClauses.push(`pickup_location ILIKE $${sqlParams.length}`);
+        sqlConditions.push(`(${stateClauses.join(' OR ')})`);
+      }
     }
-    if (destination && String(destination).trim() && !['any', 'all', 'anywhere'].includes(String(destination).trim().toLowerCase())) {
-      const parsedDest = parseDestinationsWithZip(destination);
-      if (parsedDest.states && parsedDest.states.length > 0) {
+
+    // Clean and parse destination (support DAT Zones Z0-Z9, All 48 states, multi-state corridors)
+    const cleanDest = String(destination || '').replace(/,\s*US(?:A)?$/i, '').trim();
+    if (cleanDest && !['any', 'all', 'anywhere'].includes(cleanDest.toLowerCase())) {
+      const parsedDest = parseDestinationsWithZip(cleanDest);
+      if (parsedDest.isNationwide || cleanDest.toLowerCase().includes('all 48')) {
+        // Nationwide search: matches all states, no delivery clause needed
+      } else if (parsedDest.states && parsedDest.states.length > 0) {
         const stateClauses = parsedDest.states.map(st => {
           sqlParams.push(`%${st}%`);
           return `delivery_location ILIKE $${sqlParams.length}`;
         });
         sqlConditions.push(`(${stateClauses.join(' OR ')})`);
       } else {
-        sqlParams.push(`%${String(destination).trim()}%`);
+        sqlParams.push(`%${cleanDest}%`);
         sqlConditions.push(`delivery_location ILIKE $${sqlParams.length}`);
       }
     }
@@ -585,7 +610,7 @@ router.get('/search', optionalAuth, async (req, res) => {
          FROM loads
          ${whereClause}
          ORDER BY created_at DESC
-         LIMIT 60`,
+         LIMIT 250`,
         sqlParams
       );
 
@@ -625,6 +650,9 @@ router.get('/search', optionalAuth, async (req, res) => {
           const dDate = r.delivery_date ? new Date(r.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Direct Transit';
           const isCovered = (r.status === 'covered');
 
+          const loadDho = origInfo ? getFreightDeadhead(origInfo, r.pickup_location) : 10;
+          const loadDhd = cleanDest ? getFreightDeadhead(cleanDest, r.delivery_location) : 15;
+
           return {
             id: r.load_number || `SW-${r.id}`,
             origin: r.pickup_location,
@@ -639,8 +667,8 @@ router.get('/search', optionalAuth, async (req, res) => {
             commodity: r.commodity || 'General Freight',
             pickup_date: pDate,
             delivery_date: dDate,
-            dho: 10,
-            dhd: 15,
+            dho: loadDho,
+            dhd: loadDhd,
             broker_name: bName,
             broker_mc: bMc,
             broker_phone: bPhone,
@@ -664,6 +692,11 @@ router.get('/search', optionalAuth, async (req, res) => {
 
     // Only genuine live loads from database (e.g. synced from TAL One / verified carriers)
     let combinedRawLoads = [...liveDbLoads];
+
+    // Filter by calculated DHO deadhead radius if origin is provided
+    if (origInfo && maxDho > 0) {
+      combinedRawLoads = combinedRawLoads.filter(l => l.dho <= maxDho);
+    }
 
     // Secondary client-level filtering for equipment and minRpm
     if (equipmentType && equipmentType !== 'all' && equipmentType !== 'any') {
@@ -797,8 +830,11 @@ router.get('/search', optionalAuth, async (req, res) => {
 router.post('/ai-match', optionalAuth, async (req, res) => {
   const { carrierId, currentCity, desiredDestination, equipmentType, targetRpm, dho, dhd, pickupDate } = req.body;
   try {
-    const origin = currentCity || 'Dallas, TX';
-    const destination = desiredDestination || 'TX, WY, CO';
+    const cleanOrigin = String(currentCity || origin || '').replace(/,\s*US(?:A)?$/i, '').trim();
+    const origInfo = cleanOrigin ? parseOriginWithZip(cleanOrigin) : null;
+    const maxDho = (dho !== undefined && dho !== null && dho !== '') ? parseInt(dho, 10) : 100;
+
+    const cleanDest = String(desiredDestination || destination || '').replace(/,\s*US(?:A)?$/i, '').trim();
     const eq = equipmentType || '53ft Dry Van';
     const minRpm = targetRpm || '2.85';
 
@@ -811,20 +847,37 @@ router.post('/ai-match', optionalAuth, async (req, res) => {
     ];
     const sqlParams = [];
 
-    if (origin && String(origin).trim()) {
-      sqlParams.push(`%${String(origin).trim()}%`);
-      sqlConditions.push(`pickup_location ILIKE $${sqlParams.length}`);
+    if (origInfo) {
+      if (maxDho === 0) {
+        sqlParams.push(`%${origInfo.city}%`);
+        sqlConditions.push(`pickup_location ILIKE $${sqlParams.length}`);
+      } else {
+        let candidateStates = [origInfo.state];
+        if (maxDho >= 60 && ADJACENT_STATES[origInfo.state]) {
+          candidateStates = candidateStates.concat(ADJACENT_STATES[origInfo.state]);
+        }
+        const stateClauses = candidateStates.map(st => {
+          sqlParams.push(`%${st}%`);
+          return `pickup_location ILIKE $${sqlParams.length}`;
+        });
+        sqlParams.push(`%${origInfo.city}%`);
+        stateClauses.push(`pickup_location ILIKE $${sqlParams.length}`);
+        sqlConditions.push(`(${stateClauses.join(' OR ')})`);
+      }
     }
-    if (destination && String(destination).trim() && !['any', 'all', 'anywhere'].includes(String(destination).trim().toLowerCase())) {
-      const parsedDest = parseDestinationsWithZip(destination);
-      if (parsedDest.states && parsedDest.states.length > 0) {
+
+    if (cleanDest && !['any', 'all', 'anywhere'].includes(cleanDest.toLowerCase())) {
+      const parsedDest = parseDestinationsWithZip(cleanDest);
+      if (parsedDest.isNationwide || cleanDest.toLowerCase().includes('all 48')) {
+        // Nationwide search: matches all states, no delivery clause needed
+      } else if (parsedDest.states && parsedDest.states.length > 0) {
         const stateClauses = parsedDest.states.map(st => {
           sqlParams.push(`%${st}%`);
           return `delivery_location ILIKE $${sqlParams.length}`;
         });
         sqlConditions.push(`(${stateClauses.join(' OR ')})`);
       } else {
-        sqlParams.push(`%${String(destination).trim()}%`);
+        sqlParams.push(`%${cleanDest}%`);
         sqlConditions.push(`delivery_location ILIKE $${sqlParams.length}`);
       }
     }
@@ -897,7 +950,7 @@ router.post('/ai-match', optionalAuth, async (req, res) => {
 
     res.json({
       ok: true,
-      ai_summary: `AI Match Engine analyzed ${matches.length} high-confidence loads for ${origin} ➔ ${destination}. Verified rate corridors and DAT One capacity benchmarked at $${minRpm || '2.85'}+/mi.`,
+      ai_summary: `AI Match Engine analyzed ${matches.length} high-confidence loads for ${cleanOrigin || 'All Areas'} ➔ ${cleanDest || 'Nationwide'}. Verified rate corridors and DAT One capacity benchmarked at $${minRpm || '2.85'}+/mi.`,
       matches
     });
   } catch (err) {

@@ -176,12 +176,206 @@ async function geocode(input) {
   return result;
 }
 
+const ADJACENT_STATES = {
+  AL: ['MS', 'TN', 'GA', 'FL'],
+  AK: [],
+  AZ: ['CA', 'NV', 'UT', 'NM'],
+  AR: ['MO', 'TN', 'MS', 'LA', 'TX', 'OK'],
+  CA: ['OR', 'NV', 'AZ'],
+  CO: ['WY', 'NE', 'KS', 'OK', 'NM', 'UT'],
+  CT: ['NY', 'MA', 'RI'],
+  DE: ['MD', 'PA', 'NJ'],
+  FL: ['GA', 'AL'],
+  GA: ['FL', 'AL', 'TN', 'NC', 'SC'],
+  HI: [],
+  ID: ['WA', 'OR', 'NV', 'UT', 'WY', 'MT'],
+  IL: ['WI', 'IA', 'MO', 'KY', 'IN'],
+  IN: ['MI', 'IL', 'KY', 'OH'],
+  IA: ['MN', 'SD', 'NE', 'MO', 'IL', 'WI'],
+  KS: ['NE', 'MO', 'OK', 'CO'],
+  KY: ['IL', 'IN', 'OH', 'WV', 'VA', 'TN', 'MO'],
+  LA: ['TX', 'AR', 'MS'],
+  ME: ['NH'],
+  MD: ['VA', 'WV', 'PA', 'DE', 'DC'],
+  MA: ['RI', 'CT', 'NY', 'NH', 'VT'],
+  MI: ['OH', 'IN', 'WI'],
+  MN: ['ND', 'SD', 'IA', 'WI'],
+  MS: ['LA', 'AR', 'TN', 'AL'],
+  MO: ['IA', 'IL', 'KY', 'TN', 'AR', 'OK', 'KS', 'NE'],
+  MT: ['ID', 'WY', 'SD', 'ND'],
+  NE: ['SD', 'IA', 'MO', 'KS', 'CO', 'WY'],
+  NV: ['CA', 'OR', 'ID', 'UT', 'AZ'],
+  NH: ['ME', 'MA', 'VT'],
+  NJ: ['NY', 'PA', 'DE'],
+  NM: ['AZ', 'UT', 'CO', 'OK', 'TX'],
+  NY: ['NJ', 'PA', 'CT', 'MA', 'VT'],
+  NC: ['VA', 'TN', 'GA', 'SC'],
+  ND: ['MT', 'SD', 'MN'],
+  OH: ['PA', 'WV', 'KY', 'IN', 'MI'],
+  OK: ['KS', 'MO', 'AR', 'TX', 'NM', 'CO'],
+  OR: ['WA', 'ID', 'NV', 'CA'],
+  PA: ['NY', 'NJ', 'DE', 'MD', 'WV', 'OH'],
+  RI: ['CT', 'MA'],
+  SC: ['NC', 'GA'],
+  SD: ['ND', 'MN', 'IA', 'NE', 'WY', 'MT'],
+  TN: ['KY', 'VA', 'NC', 'GA', 'AL', 'MS', 'AR', 'MO'],
+  TX: ['NM', 'OK', 'AR', 'LA'],
+  UT: ['ID', 'WY', 'CO', 'NM', 'AZ', 'NV'],
+  VT: ['NY', 'MA', 'NH'],
+  VA: ['MD', 'DC', 'NC', 'TN', 'KY', 'WV'],
+  WA: ['ID', 'OR'],
+  WV: ['OH', 'PA', 'MD', 'VA', 'KY'],
+  WI: ['MI', 'MN', 'IA', 'IL'],
+  WY: ['MT', 'SD', 'NE', 'CO', 'UT', 'ID']
+};
+
+const FREIGHT_COORDINATES = {
+  // Georgia
+  'rincon, ga': { lat: 32.2960, lng: -81.2354 },
+  'savannah, ga': { lat: 32.0809, lng: -81.0912 },
+  'pooler, ga': { lat: 32.1158, lng: -81.2493 },
+  'midway, ga': { lat: 31.8055, lng: -81.4304 },
+  'riceboro, ga': { lat: 31.7347, lng: -81.4390 },
+  'augusta, ga': { lat: 33.4735, lng: -82.0105 },
+  'macon, ga': { lat: 32.8407, lng: -83.6324 },
+  'atlanta, ga': { lat: 33.7490, lng: -84.3880 },
+  'mcintyre, ga': { lat: 32.8446, lng: -83.1979 },
+  'sandersville, ga': { lat: 32.9818, lng: -82.8101 },
+  'ellabell, ga': { lat: 32.1224, lng: -81.4884 },
+  'douglas, ga': { lat: 31.5088, lng: -82.8499 },
+  'tifton, ga': { lat: 31.4505, lng: -83.5085 },
+  'lagrange, ga': { lat: 33.0393, lng: -85.0313 },
+  // South Carolina
+  'charleston, sc': { lat: 32.7765, lng: -79.9311 },
+  'mt holly, sc': { lat: 33.0560, lng: -80.0381 },
+  'summerville, sc': { lat: 33.0185, lng: -80.1757 },
+  'goose creek, sc': { lat: 32.9810, lng: -80.0326 },
+  'sumter, sc': { lat: 33.9204, lng: -80.3415 },
+  'columbia, sc': { lat: 34.0007, lng: -81.0348 },
+  'orangeburg, sc': { lat: 33.4918, lng: -80.8557 },
+  'barnwell, sc': { lat: 33.2435, lng: -81.3637 },
+  'greenville, sc': { lat: 34.8526, lng: -82.3940 },
+  'spartanburg, sc': { lat: 34.9496, lng: -81.9320 },
+  'myrtle beach, sc': { lat: 33.6891, lng: -78.8867 },
+  // Florida
+  'jacksonville, fl': { lat: 30.3322, lng: -81.6557 },
+  'orlando, fl': { lat: 28.5383, lng: -81.3792 },
+  'tampa, fl': { lat: 27.9506, lng: -82.4572 },
+  'miami, fl': { lat: 25.7617, lng: -80.1918 },
+  'lakeland, fl': { lat: 28.0395, lng: -81.9498 },
+  'ft pierce, fl': { lat: 27.4467, lng: -80.3256 },
+  'pompano beach, fl': { lat: 26.2379, lng: -80.1248 },
+  // North Carolina
+  'charlotte, nc': { lat: 35.2271, lng: -80.8431 },
+  'raleigh, nc': { lat: 35.7796, lng: -78.6382 },
+  'durham, nc': { lat: 35.9940, lng: -78.8986 },
+  'greensboro, nc': { lat: 36.0726, lng: -79.7920 },
+  // Tennessee
+  'nashville, tn': { lat: 36.1627, lng: -86.7816 },
+  'memphis, tn': { lat: 35.1495, lng: -90.0490 },
+  'knoxville, tn': { lat: 35.9606, lng: -83.9207 },
+  'chattanooga, tn': { lat: 35.0456, lng: -85.3097 },
+  'cookeville, tn': { lat: 36.1628, lng: -85.5016 },
+  // Alabama
+  'birmingham, al': { lat: 33.5186, lng: -86.8104 },
+  'mobile, al': { lat: 30.6954, lng: -88.0399 },
+  'montgomery, al': { lat: 32.3792, lng: -86.3077 },
+  'huntsville, al': { lat: 34.7304, lng: -86.5861 },
+  // Ohio
+  'columbus, oh': { lat: 39.9612, lng: -82.9988 },
+  'cleveland, oh': { lat: 41.4993, lng: -81.6944 },
+  'cincinnati, oh': { lat: 39.1031, lng: -84.5120 },
+  'toledo, oh': { lat: 41.6528, lng: -83.5379 },
+  'akron, oh': { lat: 41.0814, lng: -81.5190 },
+  'fostoria, oh': { lat: 41.1578, lng: -83.4169 },
+  'fairfield, oh': { lat: 39.3448, lng: -84.5613 },
+  'uhrichsville, oh': { lat: 40.3956, lng: -81.3484 },
+  'w jefferson, oh': { lat: 39.9609, lng: -83.2757 },
+  // Pennsylvania
+  'philadelphia, pa': { lat: 39.9526, lng: -75.1652 },
+  'pittsburgh, pa': { lat: 40.4406, lng: -79.9959 },
+  'allentown, pa': { lat: 40.6023, lng: -75.4714 },
+  'harrisburg, pa': { lat: 40.2732, lng: -76.8867 },
+  'reading, pa': { lat: 40.3356, lng: -75.9269 },
+  'scranton, pa': { lat: 41.4090, lng: -75.6624 },
+  'bethlehem, pa': { lat: 40.6259, lng: -75.3705 },
+  // Texas
+  'dallas, tx': { lat: 32.7767, lng: -96.7970 },
+  'fort worth, tx': { lat: 32.7555, lng: -97.3308 },
+  'houston, tx': { lat: 29.7604, lng: -95.3698 },
+  'san antonio, tx': { lat: 29.4241, lng: -98.4936 },
+  'austin, tx': { lat: 30.2672, lng: -97.7431 },
+  'el paso, tx': { lat: 31.7619, lng: -106.4850 },
+  'laredo, tx': { lat: 27.5036, lng: -99.5076 },
+  'longview, tx': { lat: 32.5007, lng: -94.7405 },
+  'mesquite, tx': { lat: 32.7668, lng: -96.5992 },
+  'coppell, tx': { lat: 32.9546, lng: -97.0150 },
+  'georgetown, tx': { lat: 30.6333, lng: -97.6778 },
+  'sugar land, tx': { lat: 29.6197, lng: -95.6349 },
+  // Illinois & Midwest
+  'chicago, il': { lat: 41.8781, lng: -87.6298 },
+  'joliet, il': { lat: 41.5250, lng: -88.0817 },
+  'indianapolis, in': { lat: 39.7684, lng: -86.1581 },
+  'detroit, mi': { lat: 42.3314, lng: -83.0458 },
+  'grandview, mo': { lat: 38.8858, lng: -94.5330 },
+  'kansas city, mo': { lat: 39.0997, lng: -94.5786 },
+  'st. louis, mo': { lat: 38.6270, lng: -90.1994 },
+  'stevens point, wi': { lat: 44.5236, lng: -89.5746 },
+  // Oklahoma
+  'oklahoma city, ok': { lat: 35.4676, lng: -97.5164 },
+  'tulsa, ok': { lat: 36.1540, lng: -95.9928 },
+  'broken arrow, ok': { lat: 36.0609, lng: -95.7975 },
+  // Colorado & West
+  'denver, co': { lat: 39.7392, lng: -104.9903 },
+  'cheyenne, wy': { lat: 41.1400, lng: -104.8202 },
+  'los angeles, ca': { lat: 34.0522, lng: -118.2437 },
+  'taunton, ma': { lat: 41.9001, lng: -71.0898 }
+};
+
+function getFreightDeadhead(origPlace, destPlace) {
+  if (!origPlace || !destPlace) return 15;
+  const o = typeof origPlace === 'string' ? parsePlace(origPlace) : origPlace;
+  const d = typeof destPlace === 'string' ? parsePlace(destPlace) : destPlace;
+  if (!o || !d) return 20;
+
+  if (o.city && d.city && o.city.toLowerCase() === d.city.toLowerCase()) {
+    return 0;
+  }
+
+  const k1 = (o.city && o.state) ? `${o.city.toLowerCase()}, ${o.state.toLowerCase()}` : null;
+  const k2 = (d.city && d.state) ? `${d.city.toLowerCase()}, ${d.state.toLowerCase()}` : null;
+
+  if (k1 && k2 && FREIGHT_COORDINATES[k1] && FREIGHT_COORDINATES[k2]) {
+    const dist = roadMiles(FREIGHT_COORDINATES[k1], FREIGHT_COORDINATES[k2]);
+    if (dist != null) return dist;
+  }
+
+  const p1 = (k1 && FREIGHT_COORDINATES[k1]) || (o.state && stateCenter(o.state));
+  const p2 = (k2 && FREIGHT_COORDINATES[k2]) || (d.state && stateCenter(d.state));
+
+  if (p1 && p2) {
+    const dist = roadMiles(p1, p2);
+    if (dist != null) {
+      if (o.state && d.state && o.state === d.state) {
+        return Math.min(Math.max(dist, 10), 95);
+      }
+      return dist;
+    }
+  }
+
+  if (o.state && d.state && o.state === d.state) return 30;
+  return 85;
+}
+
 module.exports = {
   STATE_CENTERS,
   STATE_NAMES,
   REGIONS,
   AMBIGUOUS_CODES,
   KNOWN_CITIES,
+  ADJACENT_STATES,
+  FREIGHT_COORDINATES,
+  getFreightDeadhead,
   milesBetween,
   roadMiles,
   stateOf,
