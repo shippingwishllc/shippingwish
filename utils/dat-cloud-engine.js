@@ -134,39 +134,38 @@ const AUTHENTIC_BROKERS = [
  * Prime US Freight Corridors (High Volume DAT Lanes)
  */
 const PRIME_CORRIDORS = [
+  { origin: 'Dallas, TX', origState: 'TX', dest: 'Cheyenne, WY', destState: 'WY', miles: 980, dho: 12, baseRpm: 2.92, eq: '53ft Dry Van', weight: 42500 },
+  { origin: 'Dallas, TX', origState: 'TX', dest: 'Denver, CO', destState: 'CO', miles: 792, dho: 15, baseRpm: 3.05, eq: '53ft Dry Van', weight: 41800 },
+  { origin: 'Dallas, TX', origState: 'TX', dest: 'Houston, TX', destState: 'TX', miles: 240, dho: 18, baseRpm: 3.25, eq: '26ft Box Truck', weight: 6500 },
+  { origin: 'Dallas, TX', origState: 'TX', dest: 'Atlanta, GA', destState: 'GA', miles: 780, dho: 22, baseRpm: 2.95, eq: '53ft Dry Van', weight: 43200 },
+  { origin: 'Dallas, TX', origState: 'TX', dest: 'Chicago, IL', destState: 'IL', miles: 925, dho: 20, baseRpm: 2.88, eq: '53ft Dry Van', weight: 42000 },
+  { origin: 'Fort Worth, TX', origState: 'TX', dest: 'Denver, CO', destState: 'CO', miles: 785, dho: 14, baseRpm: 3.15, eq: '53ft Reefer', weight: 42800 },
+  { origin: 'Dallas, TX', origState: 'TX', dest: 'San Antonio, TX', destState: 'TX', miles: 275, dho: 16, baseRpm: 3.40, eq: '26ft Box Truck', weight: 7400 },
+  { origin: 'Cheyenne, WY', origState: 'WY', dest: 'Dallas, TX', destState: 'TX', miles: 980, dho: 25, baseRpm: 2.85, eq: '53ft Dry Van', weight: 43000 },
+  { origin: 'Denver, CO', origState: 'CO', dest: 'Dallas, TX', destState: 'TX', miles: 792, dho: 20, baseRpm: 2.95, eq: '53ft Dry Van', weight: 41500 },
   { origin: 'Rincon, GA', origState: 'GA', dest: 'Midway, GA', destState: 'GA', miles: 40, dho: 0, baseRpm: 7.50, eq: '53ft Dry Van', weight: 14000 },
   { origin: 'Savannah, GA', origState: 'GA', dest: 'Dothan, AL', destState: 'AL', miles: 304, dho: 18, baseRpm: 2.30, eq: '53ft Dry Van', weight: 42620 },
   { origin: 'Jacksonville, FL', origState: 'FL', dest: 'N Smithfield, RI', destState: 'RI', miles: 1126, dho: 147, baseRpm: 1.60, eq: '53ft Dry Van', weight: 43500 },
-  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Somerset, PA', destState: 'PA', miles: 832, dho: 147, baseRpm: 1.68, eq: '53ft Dry Van', weight: 43500 },
   { origin: 'Savannah, GA', origState: 'GA', dest: 'Fredericksburg, VA', destState: 'VA', miles: 530, dho: 18, baseRpm: 1.89, eq: '53ft Dry Van', weight: 43313 },
   { origin: 'Savannah, GA', origState: 'GA', dest: 'Bethlehem, PA', destState: 'PA', miles: 772, dho: 18, baseRpm: 1.94, eq: '53ft Dry Van', weight: 17828 },
   { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Ennis, TX', destState: 'TX', miles: 1016, dho: 147, baseRpm: 1.28, eq: '53ft Dry Van', weight: 43500 },
-  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Vero Beach, FL', destState: 'FL', miles: 212, dho: 147, baseRpm: 3.77, eq: '53ft Dry Van', weight: 43500 },
   { origin: 'Rincon, GA', origState: 'GA', dest: 'Atlanta, GA', destState: 'GA', miles: 248, dho: 0, baseRpm: 3.42, eq: '26ft Box Truck', weight: 8500 },
   { origin: 'Savannah, GA', origState: 'GA', dest: 'Charlotte, NC', destState: 'NC', miles: 252, dho: 18, baseRpm: 3.65, eq: '53ft Dry Van', weight: 42000 },
-  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Raleigh, NC', destState: 'NC', miles: 454, dho: 45, baseRpm: 1.89, eq: '53ft Dry Van', weight: 42827 },
   { origin: 'Atlanta, GA', origState: 'GA', dest: 'Dallas, TX', destState: 'TX', miles: 781, dho: 35, baseRpm: 2.35, eq: '53ft Dry Van', weight: 41500 },
   { origin: 'Chicago, IL', origState: 'IL', dest: 'Atlanta, GA', destState: 'GA', miles: 716, dho: 42, baseRpm: 2.60, eq: '53ft Reefer', weight: 43200 },
-  { origin: 'Dallas, TX', origState: 'TX', dest: 'Houston, TX', destState: 'TX', miles: 240, dho: 18, baseRpm: 3.10, eq: '26ft Box Truck', weight: 6500 },
   { origin: 'Memphis, TN', origState: 'TN', dest: 'Columbus, OH', destState: 'OH', miles: 554, dho: 60, baseRpm: 2.45, eq: '53ft Dry Van', weight: 42000 },
   { origin: 'Charlotte, NC', origState: 'NC', dest: 'Philadelphia, PA', destState: 'PA', miles: 535, dho: 25, baseRpm: 2.85, eq: '53ft Dry Van', weight: 44000 },
   { origin: 'Indianapolis, IN', origState: 'IN', dest: 'Nashville, TN', destState: 'TN', miles: 288, dho: 30, baseRpm: 2.90, eq: '53ft Dry Van', weight: 39500 },
   { origin: 'Houston, TX', origState: 'TX', dest: 'New Orleans, LA', destState: 'LA', miles: 348, dho: 22, baseRpm: 2.75, eq: '26ft Box Truck', weight: 7200 },
-  { origin: 'Savannah, GA', origState: 'GA', dest: 'Orlando, FL', destState: 'FL', miles: 282, dho: 45, baseRpm: 2.65, eq: 'Flatbed', weight: 38000 },
+  { origin: 'Savannah, GA', origState: 'GA', dest: 'Orlando, FL', destState: 'FL', miles: 282, dho: 45, baseRpm: 2.65, eq: '48ft Flatbed', weight: 38000 },
   { origin: 'Ontario, CA', origState: 'CA', dest: 'Phoenix, AZ', destState: 'AZ', miles: 326, dho: 15, baseRpm: 3.40, eq: '53ft Reefer', weight: 40500 },
   { origin: 'Fort Worth, TX', origState: 'TX', dest: 'Kansas City, MO', destState: 'MO', miles: 508, dho: 28, baseRpm: 2.55, eq: '53ft Dry Van', weight: 43000 },
   { origin: 'Allentown, PA', origState: 'PA', dest: 'Richmond, VA', destState: 'VA', miles: 280, dho: 32, baseRpm: 2.95, eq: '26ft Box Truck', weight: 5800 },
   { origin: 'Louisville, KY', origState: 'KY', dest: 'Detroit, MI', destState: 'MI', miles: 362, dho: 40, baseRpm: 2.70, eq: '53ft Dry Van', weight: 41800 },
-  { origin: 'Birmingham, AL', origState: 'AL', dest: 'Tampa, FL', destState: 'FL', miles: 562, dho: 50, baseRpm: 2.60, eq: '53ft Reefer', weight: 42600 },
-  { origin: 'St. Louis, MO', origState: 'MO', dest: 'Cincinnati, OH', destState: 'OH', miles: 351, dho: 38, baseRpm: 2.75, eq: '53ft Dry Van', weight: 40200 },
   { origin: 'Hopkinsville, KY', origState: 'KY', dest: "D'Iberville, MS", destState: 'MS', miles: 563, dho: 18, baseRpm: 2.45, eq: '26ft Box Truck', weight: 6400 },
-  { origin: 'Clarksville, TN', origState: 'TN', dest: 'Gulfport, MS', destState: 'MS', miles: 540, dho: 24, baseRpm: 2.50, eq: '26ft Box Truck', weight: 7100 },
-  { origin: 'Nashville, TN', origState: 'TN', dest: 'Biloxi, MS', destState: 'MS', miles: 510, dho: 68, baseRpm: 2.55, eq: '26ft Box Truck', weight: 5900 },
-  { origin: 'Bowling Green, KY', origState: 'KY', dest: 'Jackson, MS', destState: 'MS', miles: 495, dho: 58, baseRpm: 2.35, eq: '26ft Box Truck', weight: 6800 },
-  { origin: 'Nashville, TN', origState: 'TN', dest: 'Charlotte, NC', destState: 'NC', miles: 410, dho: 35, baseRpm: 2.80, eq: '53ft Dry Van', weight: 42000 },
   { origin: 'Denver, CO', origState: 'CO', dest: 'Salt Lake City, UT', destState: 'UT', miles: 520, dho: 40, baseRpm: 2.65, eq: '53ft Reefer', weight: 43500 },
   { origin: 'Laredo, TX', origState: 'TX', dest: 'Dallas, TX', destState: 'TX', miles: 430, dho: 20, baseRpm: 2.90, eq: '53ft Dry Van', weight: 44200 },
-  { origin: 'Gary, IN', origState: 'IN', dest: 'Cleveland, OH', destState: 'OH', miles: 315, dho: 25, baseRpm: 2.85, eq: 'Flatbed', weight: 45000 }
+  { origin: 'Gary, IN', origState: 'IN', dest: 'Cleveland, OH', destState: 'OH', miles: 315, dho: 25, baseRpm: 2.85, eq: '48ft Flatbed', weight: 45000 }
 ];
 
 /**
@@ -455,7 +454,7 @@ async function executeSyncPulse() {
          SET status = 'covered', updated_at = NOW() 
          WHERE source_type = 'dat_sync' 
            AND status = 'new' 
-           AND created_at < NOW() - INTERVAL '15 minutes'
+           AND created_at < NOW() - INTERVAL '6 hours'
          RETURNING id, load_number`
       );
       coveredCount = staleRes.rows.length;
