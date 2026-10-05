@@ -601,13 +601,10 @@
         </summary>
         <div style="margin-top:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
           <div style="display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:stretch;">
-            <textarea id="dat-raw-input" rows="3" placeholder="Paste DAT One text here or click 'Sample Load'..." style="width:100%; border-radius:10px; border:1px solid #cbd5e1; padding:10px 12px; font-family:monospace; font-size:12px; box-sizing:border-box;"></textarea>
+            <textarea id="dat-raw-input" rows="3" placeholder="Paste copied DAT One loads table here (or sync automatically via TAL One bridge)..." style="width:100%; border-radius:10px; border:1px solid #cbd5e1; padding:10px 12px; font-family:monospace; font-size:12px; box-sizing:border-box;"></textarea>
             <div style="display:flex; flex-direction:column; gap:6px;">
-              <button type="button" id="btn-parse-dat" class="btn-act" style="flex:1; background:#0b1f3a; color:#fff; white-space:nowrap; padding:0 16px;">
+              <button type="button" id="btn-parse-dat" class="btn-act" style="flex:1; background:#0b1f3a; color:#fff; white-space:nowrap; padding:0 20px;">
                 <span>⚡ Parse &amp; Match</span>
-              </button>
-              <button type="button" id="btn-sample-load" class="btn-act" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; font-size:11px;">
-                Sample Load
               </button>
             </div>
           </div>
@@ -1390,13 +1387,10 @@
     if (!currentMatchedLoads.length) {
       matchedContainerEl.innerHTML = `
         <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:14px; padding:30px; text-align:center; grid-column:1/-1;">
-          <p style="margin:0 0 8px; font-weight:800; font-size:14px; color:#0f172a;">No exact loads in this radius right now.</p>
-          <p style="margin:0 0 14px; font-size:12px; color:#64748b;">
-            Paste DAT One loads in the toolbar above, or click "Sample Load" to test instant 1-click dispatch.
+          <p style="margin:0 0 8px; font-weight:800; font-size:14px; color:#0f172a;">No active loads matching this truck's lane and equipment.</p>
+          <p style="margin:0; font-size:12px; color:#64748b;">
+            Loads will appear here automatically when synced from TAL One / LoadsNexus.
           </p>
-          <button type="button" onclick="document.getElementById('btn-sample-load').click()" class="btn-act" style="background:#2563eb; color:#fff;">
-            📋 Fill &amp; Dispatch Sample Load
-          </button>
         </div>
       `;
       return;
@@ -2121,16 +2115,10 @@
   });
 
   // Quick Ingestion Toolbar
-  const sampleDatLoadText = `𝗗𝗛𝗢: 72\n𝗟𝗼𝗮𝗱𝗲𝗱 𝗠𝗶𝗹𝗲𝘀 : 563\n\n𝗙𝗿𝗼𝗺: Hopkinsville KY\n𝗧𝗼: DIBERSVILLE MS\n\n𝗣𝗶𝗰𝗸𝘂𝗽: TODAY BEFORE 5PM\n𝗗𝗲𝗹𝗶𝘃𝗲𝗿𝘆: TOMORROW 8 TO 3PM\n\n𝗪𝗲𝗶𝗴𝗵𝘁: 2500\nRATE: 1000\nDRIVER ASSIST AT RECEIVER`;
-  document.getElementById('btn-sample-load').addEventListener('click', () => {
-    document.getElementById('dat-raw-input').value = sampleDatLoadText;
-    document.getElementById('btn-parse-dat').click();
-  });
-
   document.getElementById('btn-parse-dat').addEventListener('click', async () => {
     const text = document.getElementById('dat-raw-input').value.trim();
     const msgEl = document.getElementById('dat-parse-msg');
-    if (!text) { msgEl.textContent = 'Please paste DAT One load details or click "Sample Load".'; return; }
+    if (!text) { msgEl.textContent = 'Please paste DAT One load details into the box.'; return; }
 
     msgEl.textContent = 'Parsing DAT text and matching fleet trucks...';
     try {

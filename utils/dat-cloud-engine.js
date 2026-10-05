@@ -107,66 +107,8 @@ async function ensureDatCloudSchema() {
   }
 }
 
-/**
- * Authentic US Broker Pool for Real DAT Load Generation
- */
-const AUTHENTIC_BROKERS = [
-  { name: 'Spot Freight Inc', mc: '665776', phone: '(317) 635-6207 ext 1176', city: 'Indianapolis, IN' },
-  { name: 'Total Quality Logistics (TQL)', mc: '340643', phone: '(800) 580-3101', city: 'Cincinnati, OH' },
-  { name: 'CW Carriers USA Inc', mc: '1098412', phone: '(440) 299-8959', email: 'filipb@cwcarriersinc.com', city: 'Cleveland, OH' },
-  { name: 'Echo Global Logistics', mc: '500155', phone: '(800) 354-7993', city: 'Chicago, IL' },
-  { name: 'C.H. Robinson Worldwide', mc: '216195', phone: '(800) 323-7587', city: 'Eden Prairie, MN' },
-  { name: 'Landstar Ranger Inc', mc: '166949', phone: '(440) 299-8959', city: 'Jacksonville, FL' },
-  { name: 'First Call Logistics', mc: '984512', phone: '(866) 512-4411', city: 'Atlanta, GA' },
-  { name: 'Coyote Logistics', mc: '561306', phone: '(877) 626-9683', city: 'Chicago, IL' },
-  { name: 'Arrive Logistics', mc: '787104', phone: '(888) 995-7683', city: 'Austin, TX' },
-  { name: 'J.B. Hunt Transport', mc: '135760', phone: '(800) 452-4868', city: 'Lowell, AR' },
-  { name: 'Worldwide Express', mc: '300344', phone: '(800) 825-4763', city: 'Dallas, TX' },
-  { name: 'Nolan Transportation Group (NTG)', mc: '514588', phone: '(800) 417-6405', city: 'Atlanta, GA' },
-  { name: 'Mode Transportation', mc: '165034', phone: '(800) 348-1850', city: 'Dallas, TX' },
-  { name: 'Schneider National', mc: '133655', phone: '(800) 558-6767', city: 'Green Bay, WI' },
-  { name: 'Werner Logistics', mc: '185423', phone: '(800) 228-2240', city: 'Omaha, NE' },
-  { name: 'Transfix Logistics', mc: '884877', phone: '(888) 991-3850', city: 'New York, NY' },
-  { name: 'Uber Freight LLC', mc: '987790', phone: '(844) 822-8237', city: 'San Francisco, CA' }
-];
-
-/**
- * Prime US Freight Corridors (High Volume DAT Lanes)
- */
-const PRIME_CORRIDORS = [
-  { origin: 'Dallas, TX', origState: 'TX', dest: 'Cheyenne, WY', destState: 'WY', miles: 980, dho: 12, baseRpm: 2.92, eq: '53ft Dry Van', weight: 42500 },
-  { origin: 'Dallas, TX', origState: 'TX', dest: 'Denver, CO', destState: 'CO', miles: 792, dho: 15, baseRpm: 3.05, eq: '53ft Dry Van', weight: 41800 },
-  { origin: 'Dallas, TX', origState: 'TX', dest: 'Houston, TX', destState: 'TX', miles: 240, dho: 18, baseRpm: 3.25, eq: '26ft Box Truck', weight: 6500 },
-  { origin: 'Dallas, TX', origState: 'TX', dest: 'Atlanta, GA', destState: 'GA', miles: 780, dho: 22, baseRpm: 2.95, eq: '53ft Dry Van', weight: 43200 },
-  { origin: 'Dallas, TX', origState: 'TX', dest: 'Chicago, IL', destState: 'IL', miles: 925, dho: 20, baseRpm: 2.88, eq: '53ft Dry Van', weight: 42000 },
-  { origin: 'Fort Worth, TX', origState: 'TX', dest: 'Denver, CO', destState: 'CO', miles: 785, dho: 14, baseRpm: 3.15, eq: '53ft Reefer', weight: 42800 },
-  { origin: 'Dallas, TX', origState: 'TX', dest: 'San Antonio, TX', destState: 'TX', miles: 275, dho: 16, baseRpm: 3.40, eq: '26ft Box Truck', weight: 7400 },
-  { origin: 'Cheyenne, WY', origState: 'WY', dest: 'Dallas, TX', destState: 'TX', miles: 980, dho: 25, baseRpm: 2.85, eq: '53ft Dry Van', weight: 43000 },
-  { origin: 'Denver, CO', origState: 'CO', dest: 'Dallas, TX', destState: 'TX', miles: 792, dho: 20, baseRpm: 2.95, eq: '53ft Dry Van', weight: 41500 },
-  { origin: 'Rincon, GA', origState: 'GA', dest: 'Midway, GA', destState: 'GA', miles: 40, dho: 0, baseRpm: 7.50, eq: '53ft Dry Van', weight: 14000 },
-  { origin: 'Savannah, GA', origState: 'GA', dest: 'Dothan, AL', destState: 'AL', miles: 304, dho: 18, baseRpm: 2.30, eq: '53ft Dry Van', weight: 42620 },
-  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'N Smithfield, RI', destState: 'RI', miles: 1126, dho: 147, baseRpm: 1.60, eq: '53ft Dry Van', weight: 43500 },
-  { origin: 'Savannah, GA', origState: 'GA', dest: 'Fredericksburg, VA', destState: 'VA', miles: 530, dho: 18, baseRpm: 1.89, eq: '53ft Dry Van', weight: 43313 },
-  { origin: 'Savannah, GA', origState: 'GA', dest: 'Bethlehem, PA', destState: 'PA', miles: 772, dho: 18, baseRpm: 1.94, eq: '53ft Dry Van', weight: 17828 },
-  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Ennis, TX', destState: 'TX', miles: 1016, dho: 147, baseRpm: 1.28, eq: '53ft Dry Van', weight: 43500 },
-  { origin: 'Rincon, GA', origState: 'GA', dest: 'Atlanta, GA', destState: 'GA', miles: 248, dho: 0, baseRpm: 3.42, eq: '26ft Box Truck', weight: 8500 },
-  { origin: 'Savannah, GA', origState: 'GA', dest: 'Charlotte, NC', destState: 'NC', miles: 252, dho: 18, baseRpm: 3.65, eq: '53ft Dry Van', weight: 42000 },
-  { origin: 'Atlanta, GA', origState: 'GA', dest: 'Dallas, TX', destState: 'TX', miles: 781, dho: 35, baseRpm: 2.35, eq: '53ft Dry Van', weight: 41500 },
-  { origin: 'Chicago, IL', origState: 'IL', dest: 'Atlanta, GA', destState: 'GA', miles: 716, dho: 42, baseRpm: 2.60, eq: '53ft Reefer', weight: 43200 },
-  { origin: 'Memphis, TN', origState: 'TN', dest: 'Columbus, OH', destState: 'OH', miles: 554, dho: 60, baseRpm: 2.45, eq: '53ft Dry Van', weight: 42000 },
-  { origin: 'Charlotte, NC', origState: 'NC', dest: 'Philadelphia, PA', destState: 'PA', miles: 535, dho: 25, baseRpm: 2.85, eq: '53ft Dry Van', weight: 44000 },
-  { origin: 'Indianapolis, IN', origState: 'IN', dest: 'Nashville, TN', destState: 'TN', miles: 288, dho: 30, baseRpm: 2.90, eq: '53ft Dry Van', weight: 39500 },
-  { origin: 'Houston, TX', origState: 'TX', dest: 'New Orleans, LA', destState: 'LA', miles: 348, dho: 22, baseRpm: 2.75, eq: '26ft Box Truck', weight: 7200 },
-  { origin: 'Savannah, GA', origState: 'GA', dest: 'Orlando, FL', destState: 'FL', miles: 282, dho: 45, baseRpm: 2.65, eq: '48ft Flatbed', weight: 38000 },
-  { origin: 'Ontario, CA', origState: 'CA', dest: 'Phoenix, AZ', destState: 'AZ', miles: 326, dho: 15, baseRpm: 3.40, eq: '53ft Reefer', weight: 40500 },
-  { origin: 'Fort Worth, TX', origState: 'TX', dest: 'Kansas City, MO', destState: 'MO', miles: 508, dho: 28, baseRpm: 2.55, eq: '53ft Dry Van', weight: 43000 },
-  { origin: 'Allentown, PA', origState: 'PA', dest: 'Richmond, VA', destState: 'VA', miles: 280, dho: 32, baseRpm: 2.95, eq: '26ft Box Truck', weight: 5800 },
-  { origin: 'Louisville, KY', origState: 'KY', dest: 'Detroit, MI', destState: 'MI', miles: 362, dho: 40, baseRpm: 2.70, eq: '53ft Dry Van', weight: 41800 },
-  { origin: 'Hopkinsville, KY', origState: 'KY', dest: "D'Iberville, MS", destState: 'MS', miles: 563, dho: 18, baseRpm: 2.45, eq: '26ft Box Truck', weight: 6400 },
-  { origin: 'Denver, CO', origState: 'CO', dest: 'Salt Lake City, UT', destState: 'UT', miles: 520, dho: 40, baseRpm: 2.65, eq: '53ft Reefer', weight: 43500 },
-  { origin: 'Laredo, TX', origState: 'TX', dest: 'Dallas, TX', destState: 'TX', miles: 430, dho: 20, baseRpm: 2.90, eq: '53ft Dry Van', weight: 44200 },
-  { origin: 'Gary, IN', origState: 'IN', dest: 'Cleveland, OH', destState: 'OH', miles: 315, dho: 25, baseRpm: 2.85, eq: '48ft Flatbed', weight: 45000 }
-];
+// Note: Synthetic load generators have been permanently removed.
+// All loads strictly originate from genuine live sources (TAL One sync bridge or LoadsNexus broker posts).
 
 /**
  * Get current configuration
