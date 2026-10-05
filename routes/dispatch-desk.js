@@ -1151,17 +1151,40 @@ router.post('/sync-dat-bulk', optionalAuth, async (req, res) => {
     const matchedOffers = [];
 
     for (const load of loadsToProcess) {
-      const origin = String(load.origin || load.pickup_location || '').trim();
-      const dest = String(load.destination || load.delivery_location || '').trim();
-      const rate = parseFloat(load.rate) || 0;
-      const miles = parseInt(load.loaded_miles || load.miles, 10) || 0;
-      const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : (parseFloat(load.rpm) || 0);
-      const broker = String(load.broker_name || 'DAT Verified Broker').trim();
-      const email = load.broker_email || null;
-      const phone = load.broker_phone || null;
-      const dho = parseInt(load.dho, 10) || 0;
-      const weight = parseInt(load.weight, 10) || 5000;
-      const equipment = load.equipment_type || '26ft Box Truck';
+      // Origin parsing: string or object { city, state }
+      let origin = '';
+      if (typeof load.origin === 'object' && load.origin) {
+        origin = `${load.origin.city || ''}, ${load.origin.state || ''}`.replace(/^,\s*|,\s*$/g, '');
+      } else {
+        origin = String(load.origin || load.pickup_location || load.originLocation || load.originCity || '').trim();
+      }
+
+      // Destination parsing: string or object { city, state }
+      let dest = '';
+      if (typeof load.destination === 'object' && load.destination) {
+        dest = `${load.destination.city || ''}, ${load.destination.state || ''}`.replace(/^,\s*|,\s*$/g, '');
+      } else {
+        dest = String(load.destination || load.delivery_location || load.destLocation || load.destCity || '').trim();
+      }
+
+      const rate = parseFloat(load.rate || load.rateUsd || load.targetRate || load.totalRate) || 0;
+      const miles = parseInt(load.loaded_miles || load.miles || load.tripMiles || load.trip, 10) || 0;
+      const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : (parseFloat(load.rpm || load.ratePerMile) || 0);
+
+      const broker = String(
+        load.broker_name ||
+        load.company ||
+        load.companyName ||
+        load.poster?.companyName ||
+        load.broker?.name ||
+        'DAT Verified Broker'
+      ).trim();
+
+      const email = load.broker_email || load.email || load.poster?.email || null;
+      const phone = load.broker_phone || load.phone || load.poster?.phone || null;
+      const dho = parseInt(load.dho || load.deadhead_miles || load.deadheadOrigin, 10) || 0;
+      const weight = parseInt(load.weight || load.weightLbs, 10) || 5000;
+      const equipment = load.equipment_type || load.equipment || load.equipmentType || '53ft Dry Van';
       const notes = load.notes || null;
       const pickupDate = load.pickup_date || new Date().toISOString().slice(0, 10);
 
