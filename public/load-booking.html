@@ -3118,14 +3118,83 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
     }
   }
 
+  function getAutocompleteQueryInfo(type, rawVal) {
+    const str = String(rawVal || '');
+    if (type !== 'dest') {
+      const trimmed = str.trim();
+      return {
+        prefix: '',
+        activeToken: trimmed,
+        query: trimmed.toLowerCase(),
+        isMulti: false
+      };
+    }
+    const lastComma = str.lastIndexOf(',');
+    if (lastComma === -1) {
+      const trimmed = str.trim();
+      return {
+        prefix: '',
+        activeToken: trimmed,
+        query: trimmed.toLowerCase(),
+        isMulti: false
+      };
+    }
+    const prefix = str.substring(0, lastComma + 1);
+    const activeToken = str.substring(lastComma + 1).trim();
+    return {
+      prefix,
+      activeToken,
+      query: activeToken.toLowerCase(),
+      isMulti: true
+    };
+  }
+
+  function renderDestQuickSuggestions(type) {
+    const dropdown = document.getElementById(`${type}-autocomplete-dropdown`);
+    if (!dropdown) return;
+    let html = `<div style="padding:6px 12px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">⚡ Select Destination State or Corridor</div>`;
+
+    DEST_MULTI_STATE_PRESETS.slice(0, 3).forEach((group, idx) => {
+      html += `
+        <div class="places-item" data-index="${idx}" data-val="${escapeHtml(group.value)}" onclick="selectAutocompleteItem('${type}', '${escapeHtml(group.value)}')">
+          <div class="places-item-main">
+            <span>🗺️ ${escapeHtml(group.label)}</span>
+            <span class="places-item-sub">• ${escapeHtml(group.desc)}</span>
+          </div>
+          <span class="places-item-badge">Corridor</span>
+        </div>`;
+    });
+
+    const popularStates = ['TX', 'FL', 'GA', 'NC', 'PA', 'OH', 'IL', 'CA'];
+    const popularMatches = US_STATES.filter(s => popularStates.includes(s.code));
+    popularMatches.forEach((st, idx) => {
+      html += `
+        <div class="places-item" data-index="${idx + 3}" data-val="${escapeHtml(st.code)}" onclick="selectAutocompleteItem('${type}', '${escapeHtml(st.code)}')">
+          <div class="places-item-main">
+            <span>${escapeHtml(st.code)} — ${escapeHtml(st.name)}</span>
+            <span class="places-item-sub">• Add ${escapeHtml(st.name)}</span>
+          </div>
+          <span class="places-item-badge state">State</span>
+        </div>`;
+    });
+
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+  }
+
   function renderPlacesAutocomplete(type, val) {
     const dropdown = document.getElementById(`${type}-autocomplete-dropdown`);
     if (!dropdown) return;
 
-    const query = String(val || '').trim().toLowerCase();
+    const queryInfo = getAutocompleteQueryInfo(type, val);
+    const { activeToken, query, isMulti } = queryInfo;
     activeAutocompleteIndex[type] = -1;
 
     if (!query) {
+      if (type === 'dest' && isMulti) {
+        renderDestQuickSuggestions(type);
+        return;
+      }
       dropdown.style.display = 'none';
       dropdown.innerHTML = '';
       return;
@@ -3145,7 +3214,7 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
           display: `${st.code} — ${st.name}`,
           sub: `Statewide Search (${st.name})`,
           badge: 'State',
-          priority: isExactCode ? 100 : (startsWithCode ? 80 : 50)
+          priority: isExactCode ? 100 : (startsWithCode ? 85 : 50)
         });
       }
     }
@@ -3212,7 +3281,7 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
     }
 
     if (uniqueMatches.length === 0) {
-      dropdown.innerHTML = `<div class="places-empty">No matching city or state found for "${escapeHtml(val)}"</div>`;
+      dropdown.innerHTML = `<div class="places-empty" style="padding:10px 14px;color:#64748b;font-size:12px;">No matching city or state found for "${escapeHtml(activeToken)}"</div>`;
       dropdown.style.display = 'block';
     } else {
       let html = '';
@@ -3231,39 +3300,45 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
       dropdown.style.display = 'block';
     }
 
-    // Debounced query to backend Google Places API endpoint (if API key active)
+    // Debounced query to backend Google Places API endpoint (only query active token if >= 2 chars)
     clearTimeout(autocompleteDebounceTimer);
-    autocompleteDebounceTimer = setTimeout(async () => {
-      try {
-        const res = await fetch('/api/routes/autocomplete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: val })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.suggestions && data.suggestions.length > 0) {
-            let googleHtml = '';
-            data.suggestions.slice(0, 4).forEach((s) => {
-              const fullDesc = s.description || `${s.main_text}, ${s.secondary_text}`;
-              googleHtml += `
-                <div class="places-item" data-val="${escapeHtml(fullDesc)}" onclick="selectAutocompleteItem('${type}', '${escapeHtml(fullDesc)}')">
-                  <div class="places-item-main">
-                    <span>🌐 ${escapeHtml(s.main_text || fullDesc)}</span>
-                    <span class="places-item-sub">${escapeHtml(s.secondary_text || '')}</span>
-                  </div>
-                  <span class="places-item-badge google">Google</span>
-                </div>`;
-            });
-            if (googleHtml && dropdown.style.display === 'block') {
-              dropdown.innerHTML += googleHtml;
+    if (activeToken.length >= 2) {
+      autocompleteDebounceTimer = setTimeout(async () => {
+        try {
+          const res = await fetch('/api/routes/autocomplete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input: activeToken })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.suggestions && data.suggestions.length > 0) {
+              let googleHtml = '';
+              data.suggestions.slice(0, 4).forEach((s) => {
+                const fullDesc = s.description || `${s.main_text}, ${s.secondary_text}`;
+                if (!seen.has(fullDesc) && !seen.has(s.main_text)) {
+                  googleHtml += `
+                    <div class="places-item" data-val="${escapeHtml(fullDesc)}" onclick="selectAutocompleteItem('${type}', '${escapeHtml(fullDesc)}')">
+                      <div class="places-item-main">
+                        <span>🌐 ${escapeHtml(s.main_text || fullDesc)}</span>
+                        <span class="places-item-sub">${escapeHtml(s.secondary_text || '')}</span>
+                      </div>
+                      <span class="places-item-badge google">Google</span>
+                    </div>`;
+                }
+              });
+              if (googleHtml && dropdown.style.display === 'block') {
+                const emptyMsg = dropdown.querySelector('.places-empty');
+                if (emptyMsg) emptyMsg.remove();
+                dropdown.innerHTML += googleHtml;
+              }
             }
           }
+        } catch (e) {
+          // Silent fallback
         }
-      } catch (e) {
-        // Silent fallback
-      }
-    }, 280);
+      }, 250);
+    }
   }
 
   function handleAutocompleteKeydown(event, type) {
@@ -3306,10 +3381,33 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
   function selectAutocompleteItem(type, value) {
     const input = document.getElementById(`search-${type}`);
     if (input) {
-      input.value = value;
-      syncActiveTabField(type, value);
-      if (type === 'origin') handleOriginZipInput(value);
-      if (type === 'dest') handleDestZipInput(value);
+      if (type === 'dest') {
+        const rawVal = input.value;
+        const lastComma = rawVal.lastIndexOf(',');
+        if (lastComma !== -1) {
+          const prefix = rawVal.substring(0, lastComma + 1).trim();
+          const prevTokens = prefix.split(',').map(s => s.trim()).filter(Boolean);
+          const lastToken = prevTokens[prevTokens.length - 1] || '';
+          
+          if (lastToken && value.toLowerCase().startsWith(lastToken.toLowerCase()) && !US_STATES.some(s => s.code.toLowerCase() === lastToken.toLowerCase())) {
+            prevTokens.pop();
+            prevTokens.push(value);
+            input.value = prevTokens.join(', ');
+          } else {
+            if (!prevTokens.includes(value)) {
+              prevTokens.push(value);
+            }
+            input.value = prevTokens.join(', ');
+          }
+        } else {
+          input.value = value;
+        }
+      } else {
+        input.value = value;
+      }
+      syncActiveTabField(type, input.value);
+      if (type === 'origin') handleOriginZipInput(input.value);
+      if (type === 'dest') handleDestZipInput(input.value);
     }
     const dropdown = document.getElementById(`${type}-autocomplete-dropdown`);
     if (dropdown) dropdown.style.display = 'none';

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, optionalAuth } = require('../middleware/auth');
 const axios = require('axios');
 
 const {
@@ -69,7 +69,7 @@ router.get('/config', requireAuth, (req, res) => {
 });
 
 // POST /api/routes/autocomplete - Search Places/Cities via Google Places API (New)
-router.post('/autocomplete', requireAuth, async (req, res) => {
+router.post('/autocomplete', optionalAuth, async (req, res) => {
   try {
     const { input, sessionToken } = req.body;
     const suggestions = await searchPlaceAutocomplete(input, sessionToken);
