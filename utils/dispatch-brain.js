@@ -85,10 +85,47 @@ function citiesIn(text) {
   return found;
 }
 
+const DAT_POSTAL_ZONES = {
+  Z0: ['CT', 'MA', 'ME', 'NH', 'NJ', 'RI', 'VT'],
+  Z1: ['DE', 'NY', 'PA'],
+  Z2: ['DC', 'MD', 'NC', 'SC', 'VA', 'WV'],
+  Z3: ['AL', 'FL', 'GA', 'MS', 'TN'],
+  Z4: ['IN', 'KY', 'MI', 'OH'],
+  Z5: ['IA', 'MN', 'MT', 'ND', 'SD', 'WI'],
+  Z6: ['IL', 'KS', 'MO', 'NE'],
+  Z7: ['AR', 'LA', 'OK', 'TX'],
+  Z8: ['AZ', 'CO', 'ID', 'NM', 'NV', 'UT', 'WY'],
+  Z9: ['AK', 'CA', 'HI', 'OR', 'WA']
+};
+
 function parseDestination(text, carrier) {
   const raw = String(text || '').trim();
   if (!raw) return null;
   if (/\b(any ?where|any|all 48|open)\b/i.test(raw)) return { any: true, states: [], label: 'anywhere' };
+
+  // DAT One Postal Zones (e.g. Z0,Z1,Z2,Z3,Z4,Z5,Z6,Z7)
+  const zoneMatches = raw.match(/\bZ[0-9]\b/gi);
+  if (zoneMatches && zoneMatches.length) {
+    const statesFromZones = [];
+    for (const zm of zoneMatches) {
+      const zKey = zm.toUpperCase();
+      if (DAT_POSTAL_ZONES[zKey]) {
+        for (const st of DAT_POSTAL_ZONES[zKey]) {
+          if (!statesFromZones.includes(st)) statesFromZones.push(st);
+        }
+      }
+    }
+    if (statesFromZones.length) {
+      const isBroad = statesFromZones.length >= 15 || zoneMatches.length >= 4;
+      return {
+        any: isBroad,
+        states: statesFromZones,
+        label: isBroad ? `DAT Zones (${zoneMatches.join(',')})` : statesFromZones.join('/'),
+        point: null
+      };
+    }
+  }
+
   const states = [];
   let point = null;
   if (/\bhome\b/i.test(raw) && carrier && carrier.home_state) states.push(carrier.home_state);
@@ -256,7 +293,7 @@ async function findMatches(carrier, { origin, destination, equipment, excludeLoa
     const loadKind = equipmentKind(load.equipment_type);
     if (wantKind && loadKind && wantKind !== loadKind && !(wantKind === 'power only')) { reasons.equipment++; continue; }
     const loadWeight = Number(load.weight) || 0;
-    if (wantKind === 'box truck' || (carrier.equipment && /box/i.test(carrier.equipment))) {
+    if (wantKind === 'box truck') {
       // Standard 26ft Box Truck cargo weight must be under 10,000 lbs
       if (loadWeight > 10000) { reasons.equipment++; continue; }
     }

@@ -429,11 +429,20 @@ router.post('/match-truck', ...staff, async (req, res) => {
     const effectiveDest = destination || carrier.prefer_destination || 'Anywhere';
     const effectiveEquip = equipment || carrier.equipment || 'Box Truck';
 
+    const effectiveCarrier = {
+      ...carrier,
+      equipment: effectiveEquip,
+      empty_zip: effectiveOrigin,
+      prefer_destination: effectiveDest,
+      min_rpm: min_rpm ? parseFloat(min_rpm) : (parseFloat(carrier.min_rpm) || 2.00),
+      max_deadhead: max_deadhead ? parseInt(max_deadhead, 10) : (parseInt(carrier.max_deadhead, 10) || 150)
+    };
+
     const parsedOrigin = brain.parseOrigin(effectiveOrigin) || { city: effectiveOrigin };
-    const parsedDest = brain.parseDestination(effectiveDest, carrier);
+    const parsedDest = brain.parseDestination(effectiveDest, effectiveCarrier);
 
     // Call findMatches from brain
-    const matchResult = await brain.findMatches(carrier, {
+    const matchResult = await brain.findMatches(effectiveCarrier, {
       origin: parsedOrigin,
       destination: parsedDest,
       equipment: effectiveEquip,
