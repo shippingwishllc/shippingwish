@@ -15,8 +15,8 @@ let memConfig = {
   last_sync_at: new Date(),
   last_status_message: '24/7 Autonomous Cloud Background Engine ACTIVE • Continuous Load Ingestion',
   last_error: null,
-  loads_synced_today: 148,
-  loads_covered_today: 32,
+  loads_synced_today: 0,
+  loads_covered_today: 0,
   proxy_configured: true
 };
 
@@ -77,7 +77,7 @@ async function ensureDatCloudSchema() {
         INSERT INTO dat_cloud_engine_config (
           id, dat_username, enabled, status, sync_interval_seconds, min_rpm, last_status_message, loads_synced_today, loads_covered_today
         ) VALUES (
-          1, 'dat_cloud_sync_master', TRUE, 'active', 30, 1.80, '24/7 Cloud Background Engine Initialized', 148, 32
+          1, 'dat_cloud_sync_master', TRUE, 'active', 30, 1.80, '24/7 Cloud Background Engine Initialized', 0, 0
         ) ON CONFLICT (id) DO NOTHING
       `);
     } else {

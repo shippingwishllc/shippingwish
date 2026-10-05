@@ -466,8 +466,8 @@ router.get('/zip-lookup', (req, res) => {
 router.get('/public-stats', async (req, res) => {
   try {
     const stats = await pool.query(`
-      SELECT COUNT(*) FILTER (WHERE status NOT IN ('cancelled', 'covered', 'expired')) AS active,
-             ROUND(AVG(rpm) FILTER (WHERE rpm > 0 AND status NOT IN ('cancelled', 'covered', 'expired'))::numeric, 2) AS avg_rpm
+      SELECT COUNT(*) FILTER (WHERE status NOT IN ('cancelled', 'covered', 'expired') AND load_number NOT LIKE 'SW-AI-%' AND COALESCE(broker_name, '') NOT ILIKE '%LoadNexus Direct%') AS active,
+             ROUND(AVG(rpm) FILTER (WHERE rpm > 0 AND status NOT IN ('cancelled', 'covered', 'expired') AND load_number NOT LIKE 'SW-AI-%')::numeric, 2) AS avg_rpm
       FROM loads
     `);
     const active = parseInt(stats.rows[0].active, 10) || 0;

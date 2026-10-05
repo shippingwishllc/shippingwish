@@ -49,7 +49,7 @@ foreach ($p in $possiblePaths) {
 if (-not $talExe) {
     try {
         $sh = New-Object -ComObject WScript.Shell
-        $desktopLnk = Get-ChildItem -Path @($env:USERPROFILE\Desktop, "$env:PUBLIC\Desktop") -Filter "*TAL*.lnk" -ErrorAction SilentlyContinue | Select-Object -First 1
+        $desktopLnk = Get-ChildItem -Path @("$env:USERPROFILE\Desktop", "$env:PUBLIC\Desktop") -Filter "*TAL*.lnk" -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($desktopLnk) {
             $target = $sh.CreateShortcut($desktopLnk.FullName).TargetPath
             if (Test-Path $target) { $talExe = $target }

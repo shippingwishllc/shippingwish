@@ -1248,7 +1248,7 @@
             <span class="stat-kpi-title">Active Board Loads</span>
             <div class="stat-kpi-icon">🎯</div>
           </div>
-          <div class="stat-kpi-val" id="kpi-board-loads">2,480+</div>
+          <div class="stat-kpi-val" id="kpi-board-loads">0</div>
           <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:6px;">Live Spot Market &amp; Broker Corridors</div>
         </div>
 
@@ -1257,7 +1257,7 @@
             <span class="stat-kpi-title">Market Average RPM</span>
             <div class="stat-kpi-icon">📈</div>
           </div>
-          <div class="stat-kpi-val" id="kpi-avg-rpm">$3.24 / mi</div>
+          <div class="stat-kpi-val" id="kpi-avg-rpm">—</div>
           <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:6px;">National Average Rate (Dry Van / Reefer)</div>
         </div>
 
@@ -2455,7 +2455,25 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
 
     renderTabsBar();
     loadTabInputs(ACTIVE_TAB_ID);
+    await loadPublicBoardStats();
     await runActiveTabSearch();
+  }
+
+  async function loadPublicBoardStats() {
+    try {
+      const res = await fetch('/api/loadboard/public-stats');
+      if (res.ok) {
+        const data = await res.json();
+        const kpiLoads = document.getElementById('kpi-board-loads');
+        const kpiRpm = document.getElementById('kpi-avg-rpm');
+        if (kpiLoads && data.loads_count !== undefined) {
+          kpiLoads.textContent = Number(data.loads_count).toLocaleString();
+        }
+        if (kpiRpm && data.avg_rpm && data.avg_rpm !== '—') {
+          kpiRpm.textContent = data.avg_rpm;
+        }
+      }
+    } catch (_) {}
   }
 
   window.openLoadBoardSubscribeModal = function() {
@@ -2576,8 +2594,8 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
       // Increment KPI counter
       const kpiEl = document.getElementById('kpi-board-loads');
       if (kpiEl) {
-        const curVal = parseInt(kpiEl.textContent.replace(/[^0-9]/g, ''), 10) || 2480;
-        kpiEl.textContent = (curVal + 1).toLocaleString() + '+';
+        const curVal = parseInt(kpiEl.textContent.replace(/[^0-9]/g, ''), 10) || 0;
+        kpiEl.textContent = (curVal + 1).toLocaleString();
       }
 
       // Refresh search results
@@ -3464,6 +3482,12 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
 
       document.getElementById('active-tab-results-badge').textContent = `${tab.results.length} loads`;
       document.getElementById('board-search-status').textContent = `Found ${tab.results.length} loads for ${formatDisplayDate(tab.pickupDate)} (${data.provider || 'Spot Freight Network'})`;
+
+      const kpiBoardLoads = document.getElementById('kpi-board-loads');
+      if (kpiBoardLoads) {
+        const totalCount = (data.total_loads !== undefined) ? data.total_loads : tab.results.length;
+        kpiBoardLoads.textContent = Number(totalCount).toLocaleString();
+      }
     } catch (e) {
       tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:35px;color:#b91c1c;">Could not load board freight. Please check your connection.</td></tr>';
     }

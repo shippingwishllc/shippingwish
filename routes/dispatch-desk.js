@@ -280,7 +280,7 @@ router.get('/roster', ...staff, async (req, res) => {
     }
 
     // 3. Count board stats
-    const openLoadsCountRes = await pool.query(`SELECT COUNT(*)::int AS count FROM loads WHERE status = 'new'`).catch(() => ({ rows: [{ count: 0 }] }));
+    const openLoadsCountRes = await pool.query(`SELECT COUNT(*)::int AS count FROM loads WHERE status = 'new' AND load_number NOT LIKE 'SW-AI-%'`).catch(() => ({ rows: [{ count: 0 }] }));
     const bookedTodayRes = await pool.query(`
       SELECT COUNT(*)::int AS count, COALESCE(SUM(rate), 0)::numeric AS revenue 
       FROM loads 
@@ -490,108 +490,6 @@ router.post('/match-truck', ...staff, async (req, res) => {
             estimated: true
           };
         });
-      } else {
-        // 2. Generate authentic DAT spot loads specifically for this truck's requested origin, destination & equipment
-        const targetCity = effectiveDest && !effectiveDest.toLowerCase().includes('anywhere') ? effectiveDest : "Dallas, TX";
-        const brokers = [
-          { name: 'Spot Freight Inc', mc: '665776', phone: '(317) 635-6207 ext 1176' },
-          { name: 'Total Quality Logistics (TQL)', mc: '340643', phone: '(800) 580-3101' },
-          { name: 'Echo Global Logistics', mc: '500155', phone: '(800) 354-7993' },
-          { name: 'Landstar Ranger Inc', mc: '166949', phone: '(800) 872-9474' },
-          { name: 'C.H. Robinson Worldwide', mc: '216195', phone: '(800) 323-7587' }
-        ];
-
-        // Calculate actual miles between requested origin and destination
-        let tripMiles = 540;
-        try {
-          const ptA = await geocode(effectiveOrigin);
-          const ptB = await geocode(targetCity);
-          if (ptA && ptB) {
-            const calculatedMiles = roadMiles(ptA, ptB) || milesBetween(ptA, ptB);
-            if (calculatedMiles && calculatedMiles > 40) {
-              tripMiles = Math.round(calculatedMiles);
-            }
-          }
-        } catch (_) {}
-
-        // Base RPM depending on equipment
-        let baseRpm = 2.45;
-        if (isReefer) baseRpm = 2.70;
-        else if (isFlatbed) baseRpm = 2.80;
-        else if (isDryVan) baseRpm = 2.35;
-        else if (isBox) baseRpm = 2.55;
-
-        const candidateOrigins = [
-          { city: effectiveOrigin, dho: 0, dest: targetCity },
-          { city: effectiveOrigin, dho: 12, dest: targetCity },
-          { city: effectiveOrigin, dho: 28, dest: targetCity },
-          { city: effectiveOrigin, dho: 45, dest: targetCity },
-          { city: effectiveOrigin, dho: 18, dest: 'Atlanta, GA' },
-          { city: effectiveOrigin, dho: 35, dest: 'Chicago, IL' },
-          { city: effectiveOrigin, dho: 24, dest: 'Dallas, TX' },
-          { city: effectiveOrigin, dho: 50, dest: 'Columbus, OH' }
-        ];
-
-        for (let i = 0; i < candidateOrigins.length; i++) {
-          const cand = candidateOrigins[i];
-          const b = brokers[i % brokers.length];
-          const destForCand = cand.dest || targetCity;
-          const milesForCandidate = tripMiles + (i * 25) - 30;
-          const rateRpm = parseFloat((baseRpm + ((i % 4) * 0.12) - (Math.random() * 0.04)).toFixed(2));
-          const totalRate = Math.round(milesForCandidate * rateRpm);
-
-          // Realistic weight strictly matching equipment type
-          let loadWeight;
-          if (isBox) loadWeight = Math.floor(5200 + Math.random() * 3000); // 5,200 - 8,200 lbs (strictly <= 10,000 lbs)
-          else if (isReefer) loadWeight = Math.floor(41000 + Math.random() * 2500); // 41,000 - 43,500 lbs
-          else if (isFlatbed) loadWeight = Math.floor(42000 + Math.random() * 4000); // 42,000 - 46,000 lbs
-          else loadWeight = Math.floor(39000 + Math.random() * 3800); // 39,000 - 42,800 lbs (Dry Van)
-
-          const loadNum = `DAT-${Math.floor(200000 + Math.random() * 700000)}`;
-
-          const synthLoad = {
-            id: 9100 + i,
-            load_number: loadNum,
-            pickup_location: cand.city,
-            delivery_location: destForCand,
-            pickup_time: 'Ready Today Before 5PM',
-            delivery_time: 'Next Day Before 3PM',
-            equipment_type: effectiveEquip,
-            weight: loadWeight,
-            miles: milesForCandidate,
-            rate: totalRate,
-            rpm: rateRpm,
-            broker_name: b.name,
-            broker_mc: b.mc,
-            broker_contact: b.phone,
-            notes: `24/7 DAT Spot Match • DHO ${cand.dho} mi • Verified ${effectiveEquip} Freight`
-          };
-
-          try {
-            await pool.query(
-              `INSERT INTO loads (
-                load_number, broker_name, broker_contact, broker_mc,
-                pickup_location, delivery_location, pickup_time, delivery_time,
-                equipment_type, weight, miles, rate, rpm, status, source_type, notes
-              ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'new','dat_sync',$14)
-              ON CONFLICT (load_number) DO NOTHING`,
-              [
-                loadNum, b.name, b.phone, b.mc,
-                cand.city, destForCand, synthLoad.pickup_time, synthLoad.delivery_time,
-                effectiveEquip, loadWeight, milesForCandidate, totalRate, rateRpm, synthLoad.notes
-              ]
-            );
-          } catch (_) {}
-
-          matchedLoads.push({
-            load: synthLoad,
-            deadhead: cand.dho,
-            loaded: milesForCandidate,
-            allInRpm: parseFloat((totalRate / (milesForCandidate + cand.dho)).toFixed(2)),
-            loadedRpm: rateRpm,
-            estimated: false
-          });
-        }
       }
     }
 
@@ -1309,6 +1207,26 @@ router.post('/sync-dat-bulk', optionalAuth, async (req, res) => {
       }
     } catch (e) {
       console.warn('[DAT Bulk Sync] Stale cover check warning:', e.message);
+    }
+
+    // Update 24/7 telemetry config counters with real synced load count
+    try {
+      await pool.query(
+        `UPDATE dat_cloud_engine_config
+         SET loads_synced_today = loads_synced_today + $1,
+             loads_covered_today = loads_covered_today + $2,
+             last_sync_at = NOW(),
+             last_status_message = $3,
+             updated_at = NOW()
+         WHERE id = 1`,
+        [
+          insertedLoads.length,
+          coveredStaleCount,
+          `Pulse complete: +${insertedLoads.length} active loads synced via TAL One, -${coveredStaleCount} covered/deducted.`
+        ]
+      );
+    } catch (e) {
+      console.warn('[DAT Bulk Sync] Config telemetry update warning:', e.message);
     }
 
     res.json({
