@@ -467,8 +467,8 @@ function parseDatInput(text) {
  * Format Driver SMS Message in User's exact required format
  */
 function formatDriverSms(load, truckNumber = '101') {
-  const dho = load.dho || 0;
-  const miles = load.loaded_miles || 0;
+  const dho = Math.round(parseFloat(load.dho ?? load.deadhead_miles ?? 0) || 0);
+  const miles = Math.round(parseFloat(load.loaded_miles ?? load.miles ?? 0) || 0);
   const rpm = miles > 0 && load.rate > 0 ? (load.rate / miles).toFixed(2) : '0.00';
   const notesLine = load.notes ? `\n𝗡𝗢𝗧𝗘𝗦: ${load.notes.toUpperCase()}` : '';
 

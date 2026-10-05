@@ -101,6 +101,7 @@ const EXACT_ZIP_FREIGHT_MAP = {
   '38103': { city: 'Memphis', state: 'TN', zip: '38103' },
   '37902': { city: 'Knoxville', state: 'TN', zip: '37902' },
   '37402': { city: 'Chattanooga', state: 'TN', zip: '37402' },
+  '37040': { city: 'Clarksville', state: 'TN', zip: '37040' },
 
   // North Carolina
   '28202': { city: 'Charlotte', state: 'NC', zip: '28202' },
@@ -197,10 +198,14 @@ const EXACT_ZIP_FREIGHT_MAP = {
   // Mississippi
   '39201': { city: 'Jackson', state: 'MS', zip: '39201' },
   '39501': { city: 'Gulfport', state: 'MS', zip: '39501' },
+  '39530': { city: 'Biloxi', state: 'MS', zip: '39530' },
+  '39540': { city: "D'Iberville", state: 'MS', zip: '39540' },
 
   // Kentucky
   '40202': { city: 'Louisville', state: 'KY', zip: '40202' },
   '40507': { city: 'Lexington', state: 'KY', zip: '40507' },
+  '42240': { city: 'Hopkinsville', state: 'KY', zip: '42240' },
+  '42101': { city: 'Bowling Green', state: 'KY', zip: '42101' },
 
   // Nevada
   '89101': { city: 'Las Vegas', state: 'NV', zip: '89101' },

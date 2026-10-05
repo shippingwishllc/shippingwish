@@ -255,6 +255,11 @@ async function findMatches(carrier, { origin, destination, equipment, excludeLoa
     const dState = (load.delivery_state || stateOf(load.delivery_location) || '').toUpperCase().trim();
     const loadKind = equipmentKind(load.equipment_type);
     if (wantKind && loadKind && wantKind !== loadKind && !(wantKind === 'power only')) { reasons.equipment++; continue; }
+    const loadWeight = Number(load.weight) || 0;
+    if (wantKind === 'box truck' || (carrier.equipment && /box/i.test(carrier.equipment))) {
+      // Standard 26ft Box Truck cargo weight must be under 10,000 lbs
+      if (loadWeight > 10000) { reasons.equipment++; continue; }
+    }
     if (dState && avoid.includes(dState)) { reasons.avoided_state++; continue; }
     const homeSkip = homeTimeSkipReason(carrier, { pickupDate: load.pickup_date, deliveryState: dState, deadhead: 0, loaded: 0 });
     if (homeSkip === 'home_day_pickup') { reasons.home_time++; continue; }

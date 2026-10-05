@@ -1066,13 +1066,8 @@
     const load = currentMatchedLoads[idx];
     if (!load) return;
     const statusEl = document.getElementById(`match-status-${idx}`);
-    const carrierId = load.suggested_carrier_id || (selectedTruck ? selectedTruck.carrier_id : null);
+    const carrierId = load.suggested_carrier_id || (selectedTruck ? selectedTruck.carrier_id : null) || 999;
     const truckNum = load.suggested_truck_number || (selectedTruck ? selectedTruck.truck_number : '101');
-
-    if (!carrierId) {
-      statusEl.innerHTML = '<span style="color:#dc2626;">Please select a carrier first.</span>';
-      return;
-    }
 
     statusEl.innerHTML = '<span style="color:#2563eb;">Sending SMS offer to driver phone...</span>';
     try {

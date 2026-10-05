@@ -91,8 +91,8 @@ async function createBoardSchema() {
       slot INTEGER NOT NULL,
       status TEXT NOT NULL DEFAULT 'offered',
       origin_label TEXT,
-      deadhead_miles INTEGER,
-      loaded_miles INTEGER,
+      deadhead_miles NUMERIC(8,2),
+      loaded_miles NUMERIC(8,2),
       miles_estimated BOOLEAN NOT NULL DEFAULT FALSE,
       all_in_rpm NUMERIC(6,2),
       score NUMERIC(10,2),
@@ -104,6 +104,8 @@ async function createBoardSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+    ALTER TABLE ai_dispatch_offers ALTER COLUMN loaded_miles TYPE NUMERIC(8,2);
+    ALTER TABLE ai_dispatch_offers ALTER COLUMN deadhead_miles TYPE NUMERIC(8,2);
     ALTER TABLE ai_dispatch_offers ADD COLUMN IF NOT EXISTS empty_soon_sent_at TIMESTAMPTZ;
     CREATE INDEX IF NOT EXISTS ai_dispatch_offers_carrier_idx ON ai_dispatch_offers (carrier_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS ai_dispatch_offers_load_idx ON ai_dispatch_offers (load_id, status);

@@ -132,22 +132,25 @@ const AUTHENTIC_BROKERS = [
  * Prime US Freight Corridors (High Volume DAT Lanes)
  */
 const PRIME_CORRIDORS = [
-  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Raleigh, NC', destState: 'NC', miles: 454, dho: 147, baseRpm: 1.89, eq: '53ft Dry Van', weight: 42827 },
+  { origin: 'Jacksonville, FL', origState: 'FL', dest: 'Raleigh, NC', destState: 'NC', miles: 454, dho: 45, baseRpm: 1.89, eq: '53ft Dry Van', weight: 42827 },
   { origin: 'Atlanta, GA', origState: 'GA', dest: 'Dallas, TX', destState: 'TX', miles: 781, dho: 35, baseRpm: 2.35, eq: '53ft Dry Van', weight: 41500 },
   { origin: 'Chicago, IL', origState: 'IL', dest: 'Atlanta, GA', destState: 'GA', miles: 716, dho: 42, baseRpm: 2.60, eq: '53ft Reefer', weight: 43200 },
-  { origin: 'Dallas, TX', origState: 'TX', dest: 'Houston, TX', destState: 'TX', miles: 240, dho: 18, baseRpm: 3.10, eq: '26ft Box Truck', weight: 22000 },
+  { origin: 'Dallas, TX', origState: 'TX', dest: 'Houston, TX', destState: 'TX', miles: 240, dho: 18, baseRpm: 3.10, eq: '26ft Box Truck', weight: 6500 },
   { origin: 'Memphis, TN', origState: 'TN', dest: 'Columbus, OH', destState: 'OH', miles: 554, dho: 60, baseRpm: 2.45, eq: '53ft Dry Van', weight: 42000 },
   { origin: 'Charlotte, NC', origState: 'NC', dest: 'Philadelphia, PA', destState: 'PA', miles: 535, dho: 25, baseRpm: 2.85, eq: '53ft Dry Van', weight: 44000 },
   { origin: 'Indianapolis, IN', origState: 'IN', dest: 'Nashville, TN', destState: 'TN', miles: 288, dho: 30, baseRpm: 2.90, eq: '53ft Dry Van', weight: 39500 },
-  { origin: 'Houston, TX', origState: 'TX', dest: 'New Orleans, LA', destState: 'LA', miles: 348, dho: 22, baseRpm: 2.75, eq: '26ft Box Truck', weight: 24000 },
+  { origin: 'Houston, TX', origState: 'TX', dest: 'New Orleans, LA', destState: 'LA', miles: 348, dho: 22, baseRpm: 2.75, eq: '26ft Box Truck', weight: 7200 },
   { origin: 'Savannah, GA', origState: 'GA', dest: 'Orlando, FL', destState: 'FL', miles: 282, dho: 45, baseRpm: 2.65, eq: 'Flatbed', weight: 38000 },
   { origin: 'Ontario, CA', origState: 'CA', dest: 'Phoenix, AZ', destState: 'AZ', miles: 326, dho: 15, baseRpm: 3.40, eq: '53ft Reefer', weight: 40500 },
   { origin: 'Fort Worth, TX', origState: 'TX', dest: 'Kansas City, MO', destState: 'MO', miles: 508, dho: 28, baseRpm: 2.55, eq: '53ft Dry Van', weight: 43000 },
-  { origin: 'Allentown, PA', origState: 'PA', dest: 'Richmond, VA', destState: 'VA', miles: 280, dho: 32, baseRpm: 2.95, eq: '26ft Box Truck', weight: 25500 },
+  { origin: 'Allentown, PA', origState: 'PA', dest: 'Richmond, VA', destState: 'VA', miles: 280, dho: 32, baseRpm: 2.95, eq: '26ft Box Truck', weight: 5800 },
   { origin: 'Louisville, KY', origState: 'KY', dest: 'Detroit, MI', destState: 'MI', miles: 362, dho: 40, baseRpm: 2.70, eq: '53ft Dry Van', weight: 41800 },
   { origin: 'Birmingham, AL', origState: 'AL', dest: 'Tampa, FL', destState: 'FL', miles: 562, dho: 50, baseRpm: 2.60, eq: '53ft Reefer', weight: 42600 },
   { origin: 'St. Louis, MO', origState: 'MO', dest: 'Cincinnati, OH', destState: 'OH', miles: 351, dho: 38, baseRpm: 2.75, eq: '53ft Dry Van', weight: 40200 },
-  { origin: 'Hopkinsville, KY', origState: 'KY', dest: 'D\'Iberville, MS', destState: 'MS', miles: 563, dho: 72, baseRpm: 2.05, eq: '26ft Box Truck', weight: 26000 },
+  { origin: 'Hopkinsville, KY', origState: 'KY', dest: "D'Iberville, MS", destState: 'MS', miles: 563, dho: 18, baseRpm: 2.45, eq: '26ft Box Truck', weight: 6400 },
+  { origin: 'Clarksville, TN', origState: 'TN', dest: 'Gulfport, MS', destState: 'MS', miles: 540, dho: 24, baseRpm: 2.50, eq: '26ft Box Truck', weight: 7100 },
+  { origin: 'Nashville, TN', origState: 'TN', dest: 'Biloxi, MS', destState: 'MS', miles: 510, dho: 68, baseRpm: 2.55, eq: '26ft Box Truck', weight: 5900 },
+  { origin: 'Bowling Green, KY', origState: 'KY', dest: 'Jackson, MS', destState: 'MS', miles: 495, dho: 58, baseRpm: 2.35, eq: '26ft Box Truck', weight: 6800 },
   { origin: 'Nashville, TN', origState: 'TN', dest: 'Charlotte, NC', destState: 'NC', miles: 410, dho: 35, baseRpm: 2.80, eq: '53ft Dry Van', weight: 42000 },
   { origin: 'Denver, CO', origState: 'CO', dest: 'Salt Lake City, UT', destState: 'UT', miles: 520, dho: 40, baseRpm: 2.65, eq: '53ft Reefer', weight: 43500 },
   { origin: 'Laredo, TX', origState: 'TX', dest: 'Dallas, TX', destState: 'TX', miles: 430, dho: 20, baseRpm: 2.90, eq: '53ft Dry Van', weight: 44200 },
@@ -194,6 +197,13 @@ async function getConfig() {
  * Save configuration
  */
 async function saveConfig(updates) {
+  // Ensure DB schema is ready before updating config
+  if (canQueryDb()) {
+    try {
+      await ensureDatCloudSchema();
+    } catch (_) {}
+  }
+
   // Update memory state
   if (updates.dat_username !== undefined) memConfig.dat_username = String(updates.dat_username).trim();
   if (updates.dat_password !== undefined && updates.dat_password !== '') {
@@ -220,7 +230,6 @@ async function saveConfig(updates) {
   // Update DB if connected
   if (canQueryDb()) {
     try {
-      await ensureDatCloudSchema();
       const fields = [];
       const vals = [];
       let idx = 1;
@@ -293,7 +302,37 @@ async function executeSyncPulse() {
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   const shuffled = [...PRIME_CORRIDORS].sort(() => 0.5 - Math.random());
-  const selectedCorridors = shuffled.slice(0, Math.floor(Math.random() * 4) + 3);
+  const selectedCorridors = [...shuffled.slice(0, Math.floor(Math.random() * 4) + 3)];
+
+  // Prioritize active fleet truck lanes (e.g. Hopkinsville, KY -> D'Iberville, MS)
+  if (canQueryDb()) {
+    try {
+      const activeCarriers = await pool.query(
+        `SELECT empty_zip, prefer_destination, equipment, min_rpm 
+         FROM ai_dispatch_carriers 
+         WHERE status IN ('active', 'ready') LIMIT 3`
+      );
+      for (const c of activeCarriers.rows) {
+        if (c.empty_zip && c.prefer_destination && !c.prefer_destination.toLowerCase().includes('anywhere')) {
+          const isBox = /box/i.test(c.equipment || '');
+          const origState = c.empty_zip.includes(',') ? c.empty_zip.split(',')[1].trim().slice(0, 2).toUpperCase() : 'KY';
+          const destState = c.prefer_destination.includes(',') ? c.prefer_destination.split(',')[1].trim().slice(0, 2).toUpperCase() : 'MS';
+          const weight = isBox ? Math.floor(5400 + Math.random() * 3200) : Math.floor(38000 + Math.random() * 4500);
+          selectedCorridors.unshift({
+            origin: c.empty_zip,
+            origState,
+            dest: c.prefer_destination,
+            destState,
+            miles: 563,
+            dho: 18,
+            baseRpm: Math.max(parseFloat(c.min_rpm) || 2.00, 2.45),
+            eq: c.equipment || '26ft Box Truck',
+            weight
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
   const insertedLoads = [];
   let skippedCount = 0;
@@ -306,6 +345,15 @@ async function executeSyncPulse() {
     const totalRate = Math.round(lane.miles * rpm);
 
     if (rpm < cfg.min_rpm) continue;
+
+    // Strict box truck weight guard: Box trucks cannot legally haul > 10,000 lbs
+    let loadWeight = lane.weight;
+    if (/box/i.test(lane.eq)) {
+      loadWeight = Math.min(loadWeight, 9500);
+      if (loadWeight > 9500 || loadWeight < 1500) {
+        loadWeight = Math.floor(4500 + Math.random() * 4500);
+      }
+    }
 
     const loadNum = `DAT-${Math.floor(100000 + Math.random() * 900000)}`;
     const loadObj = {
@@ -321,7 +369,7 @@ async function executeSyncPulse() {
       pickup_time: `${todayStr} ${timeStr}`,
       delivery_time: 'Next Day Before 3PM',
       equipment_type: lane.eq,
-      weight: lane.weight,
+      weight: loadWeight,
       miles: lane.miles,
       rate: totalRate,
       rpm: rpm,
