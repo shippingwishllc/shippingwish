@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dispatcher Desk Login — Shipping Wish LLC</title>
+  <title>Admin Command Center Login — Shipping Wish LLC</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -11,18 +11,18 @@
   <link rel="stylesheet" href="/css/design-system.css?v=38">
   <style>
     :root {
-      --disp-bg: #0b1525;
-      --disp-card: rgba(15, 29, 49, 0.95);
-      --disp-border: rgba(59, 130, 246, 0.35);
-      --blue-accent: #3b82f6;
-      --blue-light: #60a5fa;
+      --admin-bg: #0b1120;
+      --admin-card: rgba(15, 23, 42, 0.95);
+      --admin-border: rgba(245, 158, 11, 0.3);
+      --amber-accent: #f59e0b;
+      --amber-light: #fbbf24;
       --text-main: #f8fafc;
       --text-sub: #94a3b8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--disp-bg);
+      background-color: var(--admin-bg);
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
@@ -36,8 +36,8 @@
       position: fixed;
       inset: 0;
       background-image: 
-        linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+        linear-gradient(rgba(245, 158, 11, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 158, 11, 0.04) 1px, transparent 1px);
       background-size: 36px 36px;
       pointer-events: none;
       z-index: 0;
@@ -45,7 +45,7 @@
     .bg-glow {
       position: fixed;
       inset: 0;
-      background: radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 60%);
+      background: radial-gradient(circle at 50% 20%, rgba(245, 158, 11, 0.1) 0%, transparent 60%);
       pointer-events: none;
       z-index: 0;
     }
@@ -54,27 +54,27 @@
       z-index: 10;
       width: 100%;
       max-width: 440px;
-      background: var(--disp-card);
-      border: 1px solid var(--disp-border);
+      background: var(--admin-card);
+      border: 1px solid var(--admin-border);
       border-radius: 18px;
       padding: 36px 32px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(245, 158, 11, 0.08);
       backdrop-filter: blur(12px);
     }
     .card-top-bar {
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 3px;
-      background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
+      background: linear-gradient(90deg, #f59e0b, #3b82f6, #f59e0b);
       border-radius: 18px 18px 0 0;
     }
     .badge-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(59, 130, 246, 0.15);
-      border: 1px solid rgba(59, 130, 246, 0.35);
-      color: var(--blue-light);
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--amber-light);
       font-size: 11px;
       font-weight: 700;
       padding: 4px 10px;
@@ -86,8 +86,8 @@
     .badge-dot {
       width: 6px; height: 6px;
       border-radius: 50%;
-      background: var(--blue-accent);
-      box-shadow: 0 0 6px var(--blue-accent);
+      background: var(--amber-accent);
+      box-shadow: 0 0 6px var(--amber-accent);
     }
     .brand-title {
       font-size: 22px;
@@ -118,8 +118,8 @@
     .form-input {
       width: 100%;
       padding: 11px 14px;
-      background: rgba(11, 21, 37, 0.85);
-      border: 1px solid #1e3a5f;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid #334155;
       border-radius: 9px;
       color: #ffffff;
       font-size: 14px;
@@ -127,20 +127,20 @@
       transition: all 0.2s ease;
     }
     .form-input:focus {
-      border-color: var(--blue-accent);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+      border-color: var(--amber-accent);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
     }
     .btn-submit {
       width: 100%;
       padding: 12px;
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-      color: #ffffff;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #0f172a;
       border: none;
       border-radius: 9px;
       font-size: 14px;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
       transition: all 0.2s ease;
     }
     .btn-submit:hover:not(:disabled) {
@@ -176,7 +176,7 @@
       color: #64748b;
     }
     .footer-note a {
-      color: var(--blue-light);
+      color: var(--amber-accent);
       text-decoration: none;
       font-weight: 600;
     }
@@ -190,30 +190,30 @@
   <div class="card-top-bar"></div>
 
   <div class="badge-pill">
-    <span class="badge-dot"></span> Operations Desk Gateway
+    <span class="badge-dot"></span> Executive Gateway
   </div>
 
-  <h1 class="brand-title">🎧 Dispatch Control Desk</h1>
-  <p class="brand-sub">Shipping Wish LLC • Freight Dispatcher &amp; Fleet Operations</p>
+  <h1 class="brand-title">👑 Admin Command Center</h1>
+  <p class="brand-sub">Shipping Wish LLC • Internal Administration &amp; Staff Operations</p>
 
   <div id="login-alert" class="alert-box"></div>
 
-  <form id="disp-login-form">
+  <form id="admin-login-form">
     <div class="form-group">
-      <label class="form-label" for="disp-email">Dispatcher Email Address</label>
-      <input type="email" id="disp-email" class="form-input" placeholder="dispatcher@shippingwish.com" required autocomplete="email">
+      <label class="form-label" for="admin-email">Admin Email Address</label>
+      <input type="email" id="admin-email" class="form-input" placeholder="admin@shippingwish.com" required autocomplete="email">
     </div>
 
     <div class="form-group">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <label class="form-label" for="disp-password" style="margin-bottom:0;">Password</label>
-        <a href="javascript:void(0)" onclick="openForgotModal()" style="font-size:11.5px; color:var(--blue-light); text-decoration:none; font-weight:600;">Forgot password?</a>
+        <label class="form-label" for="admin-password" style="margin-bottom:0;">Password</label>
+        <a href="javascript:void(0)" onclick="openForgotModal()" style="font-size:11.5px; color:var(--amber-accent); text-decoration:none; font-weight:600;">Forgot password?</a>
       </div>
-      <input type="password" id="disp-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+      <input type="password" id="admin-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
     </div>
 
-    <button type="submit" id="disp-submit-btn" class="btn-submit">
-      Sign In to Dispatch Desk →
+    <button type="submit" id="admin-submit-btn" class="btn-submit">
+      Sign In to Admin Center →
     </button>
   </form>
 
@@ -223,10 +223,10 @@
 </main>
 
 <!-- Forgot Password Modal -->
-<div id="forgot-modal" style="display:none;position:fixed;inset:0;background:rgba(11,21,37,0.85);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#0f1d31;border:1px solid rgba(59,130,246,0.35);border-radius:16px;max-width:440px;width:100%;padding:28px;color:#f8fafc;position:relative;">
+<div id="forgot-modal" style="display:none;position:fixed;inset:0;background:rgba(11,17,32,0.85);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#0f172a;border:1px solid rgba(245,158,11,0.3);border-radius:16px;max-width:440px;width:100%;padding:28px;color:#f8fafc;position:relative;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h3 style="font-size:17px;font-weight:800;color:#fff;margin:0;">Reset Dispatcher Password</h3>
+      <h3 style="font-size:17px;font-weight:800;color:#fff;margin:0;">Reset Admin Password</h3>
       <button type="button" onclick="closeForgotModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1;">&times;</button>
     </div>
     
@@ -234,10 +234,10 @@
 
     <div id="forgot-step-1">
       <p style="font-size:13px;color:#94a3b8;margin-bottom:16px;line-height:1.5;">
-        Enter your registered dispatcher email. We will send a 6-digit verification code to reset your password.
+        Enter your registered Admin email. We will send a 6-digit OTP code to verify and reset your credentials.
       </p>
       <div class="form-group">
-        <label class="form-label" for="forgot-email">Dispatcher Email</label>
+        <label class="form-label" for="forgot-email">Admin Email</label>
         <input class="form-input" id="forgot-email" type="email" placeholder="you@shippingwish.com" required>
       </div>
       <button type="button" class="btn-submit" id="forgot-send-btn" onclick="sendResetOtp()">
@@ -247,7 +247,7 @@
 
     <div id="forgot-step-2" style="display:none;">
       <p style="font-size:13px;color:#94a3b8;margin-bottom:16px;line-height:1.5;">
-        Enter the 6-digit OTP code sent to <strong id="forgot-sent-email" style="color:#60a5fa;"></strong> and enter your new password.
+        Enter the 6-digit OTP sent to <strong id="forgot-sent-email" style="color:#fbbf24;"></strong> and enter your new password.
       </p>
       <div class="form-group">
         <label class="form-label" for="forgot-otp">6-Digit Code</label>
@@ -265,23 +265,19 @@
 </div>
 
 <script>
-  // Auto-redirect if already logged in as Dispatcher or Admin
+  // Auto-redirect if already logged in as Admin or SuperAdmin
   fetch('/api/me', { credentials: 'include' })
     .then(r => r.ok ? r.json() : null)
     .then(data => {
-      if (data && data.user) {
-        if (data.user.role === 'dispatcher') {
-          window.location.replace('/dispatcher-dashboard');
-        } else if (['admin', 'super_admin'].includes(data.user.role)) {
-          window.location.replace('/admin-dashboard');
-        }
+      if (data && data.user && ['admin', 'super_admin'].includes(data.user.role)) {
+        window.location.replace('/admin-dashboard');
       }
     })
     .catch(() => {});
 
-  const form = document.getElementById('disp-login-form');
+  const form = document.getElementById('admin-login-form');
   const alertBox = document.getElementById('login-alert');
-  const submitBtn = document.getElementById('disp-submit-btn');
+  const submitBtn = document.getElementById('admin-submit-btn');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -289,8 +285,8 @@
     submitBtn.disabled = true;
     submitBtn.textContent = 'Signing in...';
 
-    const email = document.getElementById('disp-email').value.trim();
-    const password = document.getElementById('disp-password').value;
+    const email = document.getElementById('admin-email').value.trim();
+    const password = document.getElementById('admin-password').value;
 
     try {
       const res = await fetch('/api/login', {
@@ -302,11 +298,11 @@
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        alertBox.textContent = data.error || 'Authentication failed. Please check credentials.';
+        alertBox.textContent = data.error || 'Authentication failed. Please verify credentials.';
         alertBox.className = 'alert-box error';
         alertBox.style.display = 'block';
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In to Dispatch Desk →';
+        submitBtn.textContent = 'Sign In to Admin Center →';
       } else if (data.requires_2fa) {
         if (data.temp_token) sessionStorage.setItem('sw_2fa_temp_token', data.temp_token);
         if (data.email_masked || email) sessionStorage.setItem('sw_2fa_masked_email', data.email_masked || email);
@@ -324,12 +320,12 @@
             }
           } catch (_) {}
         }
-        submitBtn.textContent = 'Authorized — Entering Desk...';
-        const role = data.user?.role || 'dispatcher';
-        if (role === 'dispatcher') {
-          window.location.href = '/dispatcher-dashboard';
-        } else if (['admin', 'super_admin'].includes(role)) {
+        submitBtn.textContent = 'Authorized — Entering Dashboard...';
+        const role = data.user?.role || 'admin';
+        if (['admin', 'super_admin'].includes(role)) {
           window.location.href = '/admin-dashboard';
+        } else if (role === 'dispatcher') {
+          window.location.href = '/dispatcher-dashboard';
         } else if (role === 'sales_rep') {
           window.location.href = '/sales-dashboard';
         } else {
@@ -341,7 +337,7 @@
       alertBox.className = 'alert-box error';
       alertBox.style.display = 'block';
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Sign In to Dispatch Desk →';
+      submitBtn.textContent = 'Sign In to Admin Center →';
     }
   });
 
@@ -351,7 +347,7 @@
     document.getElementById('forgot-alert').style.display = 'none';
     document.getElementById('forgot-step-1').style.display = 'block';
     document.getElementById('forgot-step-2').style.display = 'none';
-    const email = document.getElementById('disp-email').value.trim();
+    const email = document.getElementById('admin-email').value.trim();
     if (email) document.getElementById('forgot-email').value = email;
   };
 
@@ -364,7 +360,7 @@
     const alert = document.getElementById('forgot-alert');
     const btn = document.getElementById('forgot-send-btn');
     if (!email) {
-      alert.textContent = 'Enter your dispatcher email.';
+      alert.textContent = 'Enter your admin email.';
       alert.className = 'alert-box error';
       alert.style.display = 'block';
       return;
@@ -435,9 +431,9 @@
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         closeForgotModal();
-        document.getElementById('disp-email').value = email;
-        document.getElementById('disp-password').value = new_password;
-        alertBox.textContent = 'Password updated! Click Sign In to enter your desk.';
+        document.getElementById('admin-email').value = email;
+        document.getElementById('admin-password').value = new_password;
+        alertBox.textContent = 'Password updated! Click Sign In to enter your account.';
         alertBox.className = 'alert-box success';
         alertBox.style.display = 'block';
       } else {

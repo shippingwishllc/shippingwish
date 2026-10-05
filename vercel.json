@@ -35,6 +35,34 @@
       "destination": "/superadmin-login.html"
     },
     {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/admin-login",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/dispatch",
+      "destination": "/dispatch.html"
+    },
+    {
+      "source": "/dispatch-login",
+      "destination": "/dispatch.html"
+    },
+    {
+      "source": "/dispatcher-login",
+      "destination": "/dispatch.html"
+    },
+    {
+      "source": "/sales",
+      "destination": "/sales.html"
+    },
+    {
+      "source": "/sales-login",
+      "destination": "/sales.html"
+    },
+    {
       "source": "/",
       "has": [{"type": "host", "value": "(?:www\\.)?loadsnexus\\.com"}],
       "destination": "/loadsnexus/index.html"

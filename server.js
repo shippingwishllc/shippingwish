@@ -545,6 +545,19 @@ app.get(['/load-booking', '/load-booking.html'], (req, res) => {
   res.redirect(301, '/ai-dispatch');
 });
 
+// Dedicated Staff Gateways
+app.get(['/admin', '/admin-login', '/admin.html', '/admin-login.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get(['/dispatch', '/dispatch-login', '/dispatcher-login', '/dispatch.html', '/dispatcher-login.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dispatch.html'));
+});
+
+app.get(['/sales', '/sales-login', '/sales.html', '/sales-login.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'sales.html'));
+});
+
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // Security: Protect /uploads — require authentication so sensitive carrier files are not publicly scrapable

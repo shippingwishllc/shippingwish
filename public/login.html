@@ -297,16 +297,13 @@
       <!-- Active Session Banner (if user is already authenticated) -->
       <div id="active-session-banner" style="display:none;margin-bottom:16px;"></div>
 
-      <!-- Carrier / Broker / Admin Role Toggle -->
+      <!-- Carrier / Broker Role Toggle -->
       <div class="login-role-tabs" style="display:flex;gap:6px;margin-bottom:var(--space-5);background:var(--color-gray-100,#f1f5f9);padding:4px;border-radius:12px;border:1px solid var(--border-default,#e2e8f0);">
-        <button type="button" class="role-tab active" id="tab-role-carrier" onclick="selectLoginRole('carrier')" style="flex:1;padding:9px 8px;border:none;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;background:#ffffff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.1);transition:all 0.2s ease;">
+        <button type="button" class="role-tab active" id="tab-role-carrier" onclick="selectLoginRole('carrier')" style="flex:1;padding:9px 12px;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;background:#ffffff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.1);transition:all 0.2s ease;">
           🚛 Carrier
         </button>
-        <button type="button" class="role-tab" id="tab-role-broker" onclick="selectLoginRole('broker')" style="flex:1;padding:9px 8px;border:none;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;background:transparent;color:#64748b;transition:all 0.2s ease;">
+        <button type="button" class="role-tab" id="tab-role-broker" onclick="selectLoginRole('broker')" style="flex:1;padding:9px 12px;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;background:transparent;color:#64748b;transition:all 0.2s ease;">
           📋 Broker / 3PL
-        </button>
-        <button type="button" class="role-tab" id="tab-role-admin" onclick="selectLoginRole('admin')" style="flex:1;padding:9px 8px;border:none;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;background:transparent;color:#64748b;transition:all 0.2s ease;">
-          👑 Admin / Staff
         </button>
       </div>
 
@@ -455,16 +452,15 @@
   }
 
   function updateRoleUI(role) {
-    selectedRole = role;
+    selectedRole = role === 'broker' ? 'broker' : 'carrier';
     const carrierBtn = document.getElementById('tab-role-carrier');
     const brokerBtn = document.getElementById('tab-role-broker');
-    const adminBtn = document.getElementById('tab-role-admin');
     const subtitle = document.querySelector('.auth-form-subtitle');
     const signupBtn = document.getElementById('signup-from-login-btn');
     const emailInput = document.getElementById('login-email');
     
-    // Reset all tabs
-    [carrierBtn, brokerBtn, adminBtn].forEach(b => {
+    // Reset tabs
+    [carrierBtn, brokerBtn].forEach(b => {
       if (b) {
         b.style.background = 'transparent';
         b.style.color = '#64748b';
@@ -472,7 +468,7 @@
       }
     });
 
-    if (role === 'broker') {
+    if (selectedRole === 'broker') {
       if (brokerBtn) {
         brokerBtn.style.background = '#8b5cf6';
         brokerBtn.style.color = '#ffffff';
@@ -483,19 +479,6 @@
       if (signupBtn) {
         signupBtn.textContent = 'Register as Broker / Shipper';
         signupBtn.href = '/contact?subject=broker-partner';
-        signupBtn.onclick = null;
-      }
-    } else if (role === 'admin' || role === 'staff') {
-      if (adminBtn) {
-        adminBtn.style.background = '#0f172a';
-        adminBtn.style.color = '#ffffff';
-        adminBtn.style.boxShadow = '0 2px 6px rgba(15,23,42,0.3)';
-      }
-      if (subtitle) subtitle.textContent = 'Sign in to Shipping Wish Admin Command Center';
-      if (emailInput) emailInput.placeholder = 'admin@shippingwish.com';
-      if (signupBtn) {
-        signupBtn.textContent = 'Company Staff & Admin Portal';
-        signupBtn.href = '/staff-management';
         signupBtn.onclick = null;
       }
     } else {
