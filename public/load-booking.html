@@ -498,23 +498,113 @@
     /* ========================================================== */
     html, body {
       max-width: 100vw;
-      overflow-x: hidden;
+      overflow-x: hidden !important;
       -webkit-text-size-adjust: 100%;
     }
 
-    #erp-shell {
-      max-width: 100vw;
-      overflow-x: hidden;
+    @media (min-width: 1025px) {
+      html, body.app-body {
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
+      }
+      #erp-shell, .app-shell {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+      }
+      .app-main {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+      }
     }
 
-    .app-main {
-      max-width: 100vw;
-      overflow-x: hidden;
+    @media (max-width: 1024px) {
+      html, body.app-body {
+        height: auto !important;
+        overflow-y: auto !important;
+      }
+      #erp-shell, .app-shell, .app-main {
+        height: auto !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+        overflow-x: hidden !important;
+      }
     }
 
     .app-content {
       max-width: 100vw;
       box-sizing: border-box;
+    }
+
+    /* Places & States Autocomplete Dropdown */
+    .places-autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.18), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+      max-height: 280px;
+      overflow-y: auto;
+      z-index: 1050;
+      padding: 6px 0;
+    }
+    .places-item {
+      padding: 8px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: background 0.15s ease;
+      font-size: 13px;
+      color: #1e293b;
+      user-select: none;
+    }
+    .places-item:hover, .places-item.selected {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .places-item-main {
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .places-item-sub {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 500;
+    }
+    .places-item-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    .places-item-badge.state {
+      background: #fef3c7;
+      color: #b45309;
+    }
+    .places-item-badge.google {
+      background: #ecfdf5;
+      color: #047857;
+    }
+    .places-empty {
+      padding: 12px 14px;
+      font-size: 12px;
+      color: #94a3b8;
+      text-align: center;
+      font-style: italic;
     }
 
     /* Mobile Cards Grid & Load Card Styling */
@@ -1265,9 +1355,13 @@
               <label class="form-label field-label" for="search-origin">Origin (City, State or ZIP)</label>
               <span class="radius-tag">DHO Radius</span>
             </div>
-            <div class="field-input-combo">
+            <div class="field-input-combo" style="position:relative;">
               <input type="text" id="search-origin" class="form-input combo-text" value="Dallas, TX" 
-                     placeholder="e.g. 75201 or Dallas, TX" oninput="handleOriginZipInput(this.value)" onchange="syncActiveTabField('origin', this.value)">
+                     placeholder="e.g. 75201, Dallas, TX or TX" autocomplete="off"
+                     oninput="handleOriginAutocompleteInput(this.value)" 
+                     onkeydown="handleAutocompleteKeydown(event, 'origin')"
+                     onfocus="handleOriginAutocompleteInput(this.value)"
+                     onchange="syncActiveTabField('origin', this.value)">
               <select id="search-dho" class="form-select combo-radius" onchange="syncActiveTabField('dho', this.value)" title="Deadhead Origin Radius">
                 <option value="25">25 mi</option>
                 <option value="50">50 mi</option>
@@ -1275,6 +1369,7 @@
                 <option value="150">150 mi</option>
                 <option value="200">200 mi</option>
               </select>
+              <div id="origin-autocomplete-dropdown" class="places-autocomplete-dropdown" style="display:none;"></div>
             </div>
             <div id="origin-zip-hint" style="display:none;font-size:11px;color:#2563eb;font-weight:700;margin-top:3px;"></div>
           </div>
@@ -1285,9 +1380,13 @@
               <label class="form-label field-label" for="search-dest">Destination(s) / States or ZIP</label>
               <span class="radius-tag">DHD Radius</span>
             </div>
-            <div class="field-input-combo">
+            <div class="field-input-combo" style="position:relative;">
               <input type="text" id="search-dest" class="form-input combo-text" value="TX, WY, CO" 
-                     placeholder="e.g. 82001, Cheyenne, WY or TX, WY, CO" oninput="handleDestZipInput(this.value)" onchange="syncActiveTabField('dest', this.value)">
+                     placeholder="e.g. 82001, Cheyenne, WY or TX, WY, CO" autocomplete="off"
+                     oninput="handleDestAutocompleteInput(this.value)" 
+                     onkeydown="handleAutocompleteKeydown(event, 'dest')"
+                     onfocus="handleDestAutocompleteInput(this.value)"
+                     onchange="syncActiveTabField('dest', this.value)">
               <select id="search-dhd" class="form-select combo-radius" onchange="syncActiveTabField('dhd', this.value)" title="Deadhead Destination Radius">
                 <option value="25">25 mi</option>
                 <option value="50" selected>50 mi</option>
@@ -1295,6 +1394,7 @@
                 <option value="150">150 mi</option>
                 <option value="200">200 mi</option>
               </select>
+              <div id="dest-autocomplete-dropdown" class="places-autocomplete-dropdown" style="display:none;"></div>
             </div>
             <div id="dest-zip-hint" style="display:none;font-size:11px;color:#2563eb;font-weight:700;margin-top:3px;"></div>
           </div>
@@ -1343,6 +1443,9 @@
             </button>
             <button type="button" class="btn-ai-match" id="btn-run-ai" onclick="runActiveTabAiMatch()" title="Run AI Smart Matching Engine">
               <span>⚡</span> AI Match
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-open-dat-paste" onclick="openDatPasteModal()" title="Import copied loads from your active DAT One subscription" style="display:inline-flex;align-items:center;gap:5px;font-weight:700;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;height:38px;padding:0 12px;border-radius:8px;">
+              <span>📋</span> Import DAT Loads
             </button>
           </div>
         </div>
@@ -1943,6 +2046,57 @@
         </button>
       </div>
     </form>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: IMPORT LIVE LOADS FROM DAT ONE                    -->
+<!-- ======================================================== -->
+<div class="modal-backdrop" id="modal-dat-paste" role="dialog" aria-modal="true" aria-labelledby="modal-datpaste-title">
+  <div class="modal-card" style="max-width:680px;">
+    <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);color:#fff;padding:20px 24px;border-bottom:2px solid #2563eb;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <span style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#60a5fa;background:rgba(37,99,235,0.15);padding:3px 10px;border-radius:20px;border:1px solid rgba(96,165,250,0.3);">
+            ⚡ Live DAT One™ Ingestion
+          </span>
+          <h3 id="modal-datpaste-title" style="font-size:19px;font-weight:900;color:#fff;margin:8px 0 4px;">
+            Import Spot Freight from DAT One™
+          </h3>
+          <p style="font-size:12.5px;color:#cbd5e1;margin:0;">
+            Sync your 200+ active loads directly from your active DAT One subscription.
+          </p>
+        </div>
+        <button type="button" style="background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;line-height:1;" onclick="closeDatPasteModal()">&times;</button>
+      </div>
+    </div>
+
+    <div style="padding:22px 24px;">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:#1e40af;line-height:1.5;">
+        <strong>💡 How it works:</strong>
+        <div style="margin-top:4px;">1. Open your search on <a href="https://one.dat.com" target="_blank" style="color:#2563eb;text-decoration:underline;font-weight:700;">one.dat.com</a>.</div>
+        <div>2. Select and copy the table or loads text (<strong>Ctrl+A, Ctrl+C</strong>).</div>
+        <div>3. Paste it in the box below. Shipping Wish AI will extract Origin, Destination, Broker Name, MC#, Phone, Rate &amp; Miles, and inject them into your live board!</div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">Copied DAT One Text / Table *</label>
+        <textarea id="dat-paste-textarea" class="form-input" rows="7" placeholder="Paste your copied DAT One text or table rows here... Example:
+Dallas, TX -> Cheyenne, WY | 53V | 42,000 lbs | $2,800 | CW Carriers Inc (MC-1098412) | (440) 299-8959
+Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800) 580-3101" style="width:100%;font-family:monospace;font-size:12px;line-height:1.45;padding:10px;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;"></textarea>
+      </div>
+
+      <div id="dat-paste-feedback" style="display:none;padding:10px 14px;border-radius:8px;font-size:12.5px;margin-bottom:14px;"></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:11.5px;color:#64748b;">Instant regex &amp; AI extraction</div>
+        <div style="display:flex;gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeDatPasteModal()" style="padding:8px 16px;font-size:13px;font-weight:600;">Cancel</button>
+          <button type="button" class="btn btn-primary" id="btn-submit-dat-paste" onclick="submitDatPasteLoads()" style="padding:8px 20px;font-size:13px;font-weight:800;background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);border:none;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+            <span>⚡ Ingest &amp; Sync Loads</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2774,6 +2928,142 @@
     '73102': 'Oklahoma City, OK'
   };
 
+  const US_STATES = [
+    { code: 'AL', name: 'Alabama' }, { code: 'AK', name: 'Alaska' }, { code: 'AZ', name: 'Arizona' },
+    { code: 'AR', name: 'Arkansas' }, { code: 'CA', name: 'California' }, { code: 'CO', name: 'Colorado' },
+    { code: 'CT', name: 'Connecticut' }, { code: 'DE', name: 'Delaware' }, { code: 'FL', name: 'Florida' },
+    { code: 'GA', name: 'Georgia' }, { code: 'HI', name: 'Hawaii' }, { code: 'ID', name: 'Idaho' },
+    { code: 'IL', name: 'Illinois' }, { code: 'IN', name: 'Indiana' }, { code: 'IA', name: 'Iowa' },
+    { code: 'KS', name: 'Kansas' }, { code: 'KY', name: 'Kentucky' }, { code: 'LA', name: 'Louisiana' },
+    { code: 'ME', name: 'Maine' }, { code: 'MD', name: 'Maryland' }, { code: 'MA', name: 'Massachusetts' },
+    { code: 'MI', name: 'Michigan' }, { code: 'MN', name: 'Minnesota' }, { code: 'MS', name: 'Mississippi' },
+    { code: 'MO', name: 'Missouri' }, { code: 'MT', name: 'Montana' }, { code: 'NE', name: 'Nebraska' },
+    { code: 'NV', name: 'Nevada' }, { code: 'NH', name: 'New Hampshire' }, { code: 'NJ', name: 'New Jersey' },
+    { code: 'NM', name: 'New Mexico' }, { code: 'NY', name: 'New York' }, { code: 'NC', name: 'North Carolina' },
+    { code: 'ND', name: 'North Dakota' }, { code: 'OH', name: 'Ohio' }, { code: 'OK', name: 'Oklahoma' },
+    { code: 'OR', name: 'Oregon' }, { code: 'PA', name: 'Pennsylvania' }, { code: 'RI', name: 'Rhode Island' },
+    { code: 'SC', name: 'South Carolina' }, { code: 'SD', name: 'South Dakota' }, { code: 'TN', name: 'Tennessee' },
+    { code: 'TX', name: 'Texas' }, { code: 'UT', name: 'Utah' }, { code: 'VT', name: 'Vermont' },
+    { code: 'VA', name: 'Virginia' }, { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' },
+    { code: 'WI', name: 'Wisconsin' }, { code: 'WY', name: 'Wyoming' }
+  ];
+
+  const US_FREIGHT_HUBS = [
+    { city: 'Dallas', state: 'TX', hub: 'DFW Freight Capital' },
+    { city: 'Houston', state: 'TX', hub: 'Gulf Port & Petro Hub' },
+    { city: 'Fort Worth', state: 'TX', hub: 'Alliance Cargo Hub' },
+    { city: 'San Antonio', state: 'TX', hub: 'I-35 Logistics Spine' },
+    { city: 'Austin', state: 'TX', hub: 'Central Texas Corridor' },
+    { city: 'El Paso', state: 'TX', hub: 'Border Gateway & Crossdock' },
+    { city: 'Laredo', state: 'TX', hub: 'World Trade Bridge #1 Port' },
+    { city: 'Amarillo', state: 'TX', hub: 'I-40 Cross-Country Freight' },
+    { city: 'Cheyenne', state: 'WY', hub: 'I-80 / I-25 Major Junction' },
+    { city: 'Casper', state: 'WY', hub: 'Central Wyoming Distribution' },
+    { city: 'Laramie', state: 'WY', hub: 'I-80 Freight Lane' },
+    { city: 'Gillette', state: 'WY', hub: 'Powder River Freight Hub' },
+    { city: 'Denver', state: 'CO', hub: 'Rocky Mountain Mega-Hub' },
+    { city: 'Aurora', state: 'CO', hub: 'Denver Metro Logistics' },
+    { city: 'Colorado Springs', state: 'CO', hub: 'South Front Range Corridor' },
+    { city: 'Pueblo', state: 'CO', hub: 'Southern Colorado Hub' },
+    { city: 'Chicago', state: 'IL', hub: 'Midwest Mega Freight Center' },
+    { city: 'Joliet', state: 'IL', hub: 'Global Intermodal Logistics' },
+    { city: 'Rockford', state: 'IL', hub: 'Northern Illinois Hub' },
+    { city: 'Peoria', state: 'IL', hub: 'Central Illinois Distribution' },
+    { city: 'Atlanta', state: 'GA', hub: 'Southeast Distribution Super-Hub' },
+    { city: 'Savannah', state: 'GA', hub: 'Deep-Water Ocean Container Port' },
+    { city: 'Augusta', state: 'GA', hub: 'I-20 Freight Hub' },
+    { city: 'Macon', state: 'GA', hub: 'I-75 / I-16 Confluence' },
+    { city: 'Los Angeles', state: 'CA', hub: 'SoCal Ports & Cargo Hub' },
+    { city: 'Ontario', state: 'CA', hub: 'Inland Empire Mega Distribution' },
+    { city: 'Fontana', state: 'CA', hub: 'Inland Empire Logistics Spine' },
+    { city: 'Bakersfield', state: 'CA', hub: 'South Central Valley' },
+    { city: 'Stockton', state: 'CA', hub: 'Central Valley Inland Port' },
+    { city: 'Fresno', state: 'CA', hub: 'San Joaquin Ag Hub' },
+    { city: 'Sacramento', state: 'CA', hub: 'Northern CA Freight Hub' },
+    { city: 'Philadelphia', state: 'PA', hub: 'Mid-Atlantic Distribution' },
+    { city: 'Pittsburgh', state: 'PA', hub: 'Western PA Freight Hub' },
+    { city: 'Allentown', state: 'PA', hub: 'Lehigh Valley Warehousing' },
+    { city: 'Harrisburg', state: 'PA', hub: 'I-81 Logistics Corridor' },
+    { city: 'Columbus', state: 'OH', hub: 'Rickenbacker Freight Mega-Hub' },
+    { city: 'Cleveland', state: 'OH', hub: 'Lake Erie Industrial Corridor' },
+    { city: 'Cincinnati', state: 'OH', hub: 'Ohio River Logistics Gateway' },
+    { city: 'Indianapolis', state: 'IN', hub: 'Crossroads of America' },
+    { city: 'Gary', state: 'IN', hub: 'Chicago South Freight Suburb' },
+    { city: 'Memphis', state: 'TN', hub: 'Mid-South Global Cargo Hub' },
+    { city: 'Nashville', state: 'TN', hub: 'Middle Tennessee Distribution' },
+    { city: 'Knoxville', state: 'TN', hub: 'I-40 / I-75 Freight Junction' },
+    { city: 'Chattanooga', state: 'TN', hub: 'Tri-State Rail & Highway Spine' },
+    { city: 'Jacksonville', state: 'FL', hub: 'Northeast Florida Port Hub' },
+    { city: 'Orlando', state: 'FL', hub: 'Central Florida Distribution' },
+    { city: 'Tampa', state: 'FL', hub: 'I-4 Freight Corridor & Port' },
+    { city: 'Miami', state: 'FL', hub: 'South Florida International Port' },
+    { city: 'Lakeland', state: 'FL', hub: 'I-4 Mega Warehouse District' },
+    { city: 'Charlotte', state: 'NC', hub: 'Carolinas Logistics Hub' },
+    { city: 'Raleigh', state: 'NC', hub: 'Research Triangle Distribution' },
+    { city: 'Greensboro', state: 'NC', hub: 'I-85 / I-40 Freight Crossroads' },
+    { city: 'Phoenix', state: 'AZ', hub: 'Southwest Freight Distribution' },
+    { city: 'Tucson', state: 'AZ', hub: 'I-10 Cross-Country Corridor' },
+    { city: 'Kansas City', state: 'MO', hub: 'US Central Rail & Truck Hub' },
+    { city: 'St. Louis', state: 'MO', hub: 'Midwest Freight Confluence' },
+    { city: 'Detroit', state: 'MI', hub: 'Automotive Freight Capital' },
+    { city: 'Grand Rapids', state: 'MI', hub: 'West Michigan Distribution' },
+    { city: 'Louisville', state: 'KY', hub: 'UPS Worldport Mega-Hub' },
+    { city: 'Seattle', state: 'WA', hub: 'Pacific Northwest Container Port' },
+    { city: 'Tacoma', state: 'WA', hub: 'PNW Container Port' },
+    { city: 'Newark', state: 'NJ', hub: 'NY/NJ Major Port Distribution' },
+    { city: 'Jersey City', state: 'NJ', hub: 'Hudson County Freight Center' },
+    { city: 'Edison', state: 'NJ', hub: 'Central NJ Logistics Center' },
+    { city: 'New York', state: 'NY', hub: 'NYC Metro Distribution' },
+    { city: 'Buffalo', state: 'NY', hub: 'US-Canada Border Crossing' },
+    { city: 'Birmingham', state: 'AL', hub: 'Central Alabama Heavy Freight' },
+    { city: 'Mobile', state: 'AL', hub: 'Gulf Coast Deep-Water Port' },
+    { city: 'Oklahoma City', state: 'OK', hub: 'I-35 / I-40 Crossway' },
+    { city: 'Tulsa', state: 'OK', hub: 'Port of Catoosa Intermodal' },
+    { city: 'New Orleans', state: 'LA', hub: 'Mississippi River Ocean Port' },
+    { city: 'Baton Rouge', state: 'LA', hub: 'I-10 Industrial Corridor' },
+    { city: 'Charleston', state: 'SC', hub: 'Deep-Water Ocean Port' },
+    { city: 'Greenville', state: 'SC', hub: 'I-85 Manufacturing Corridor' },
+    { city: 'Richmond', state: 'VA', hub: 'I-95 Mid-Atlantic Logistics' },
+    { city: 'Norfolk', state: 'VA', hub: 'Hampton Roads Marine Terminal' },
+    { city: 'Milwaukee', state: 'WI', hub: 'Lake Michigan Industrial' },
+    { city: 'Minneapolis', state: 'MN', hub: 'Twin Cities Distribution' },
+    { city: 'Des Moines', state: 'IA', hub: 'I-35 / I-80 Midwest Crossroads' },
+    { city: 'Salt Lake City', state: 'UT', hub: 'Intermountain West Mega-Hub' },
+    { city: 'Little Rock', state: 'AR', hub: 'I-40 / I-30 Freight Gateway' },
+    { city: 'Las Vegas', state: 'NV', hub: 'Southwest Logistics Hub' },
+    { city: 'Reno', state: 'NV', hub: 'Northern Nevada Distribution' },
+    { city: 'Portland', state: 'OR', hub: 'Columbia River Industrial Port' },
+    { city: 'Omaha', state: 'NE', hub: 'Heartland Freight & Rail Hub' },
+    { city: 'Albuquerque', state: 'NM', hub: 'I-40 / I-25 Mountain Hub' },
+    { city: 'Boise', state: 'ID', hub: 'Treasure Valley Freight Hub' },
+    { city: 'Baltimore', state: 'MD', hub: 'Mid-Atlantic Container Port' },
+    { city: 'Boston', state: 'MA', hub: 'New England Metro Distribution' },
+    { city: 'Billings', state: 'MT', hub: 'Northern Rockies Distribution' }
+  ];
+
+  const DEST_MULTI_STATE_PRESETS = [
+    { label: 'TX, WY, CO', value: 'TX, WY, CO', desc: 'Texas, Wyoming, Colorado Corridor' },
+    { label: 'Midwest (IL, IN, OH, MI, WI)', value: 'IL, IN, OH, MI, WI', desc: '5-State Industrial Heartland' },
+    { label: 'Southeast (GA, FL, NC, SC, TN)', value: 'GA, FL, NC, SC, TN', desc: 'Sunbelt Freight Belt' },
+    { label: 'West (CA, AZ, NV, UT, WA)', value: 'CA, AZ, NV, UT, WA', desc: 'Western States Corridor' },
+    { label: 'Northeast (PA, NJ, NY, MA)', value: 'PA, NJ, NY, MA', desc: 'I-95 Dense Consumer Corridor' },
+    { label: 'South (TX, OK, AR, LA)', value: 'TX, OK, AR, LA', desc: 'Gulf South Corridor' },
+    { label: 'All 48 States', value: 'Anywhere / All 48 States', desc: 'Nationwide Open Destination' }
+  ];
+
+  let autocompleteDebounceTimer = null;
+  const activeAutocompleteIndex = { origin: -1, dest: -1 };
+
+  function handleOriginAutocompleteInput(val) {
+    handleOriginZipInput(val);
+    renderPlacesAutocomplete('origin', val);
+  }
+
+  function handleDestAutocompleteInput(val) {
+    handleDestZipInput(val);
+    renderPlacesAutocomplete('dest', val);
+  }
+
   function handleOriginZipInput(val) {
     const hint = document.getElementById('origin-zip-hint');
     if (!hint) return;
@@ -2807,6 +3097,299 @@
       }
     } else {
       hint.style.display = 'none';
+    }
+  }
+
+  function renderPlacesAutocomplete(type, val) {
+    const dropdown = document.getElementById(`${type}-autocomplete-dropdown`);
+    if (!dropdown) return;
+
+    const query = String(val || '').trim().toLowerCase();
+    activeAutocompleteIndex[type] = -1;
+
+    if (!query) {
+      dropdown.style.display = 'none';
+      dropdown.innerHTML = '';
+      return;
+    }
+
+    const matches = [];
+
+    // 1. Match States (Code or Full Name)
+    for (const st of US_STATES) {
+      const isExactCode = st.code.toLowerCase() === query;
+      const startsWithCode = st.code.toLowerCase().startsWith(query);
+      const nameMatches = st.name.toLowerCase().includes(query);
+      if (isExactCode || startsWithCode || nameMatches) {
+        matches.push({
+          type: 'state',
+          value: st.code,
+          display: `${st.code} — ${st.name}`,
+          sub: `Statewide Search (${st.name})`,
+          badge: 'State',
+          priority: isExactCode ? 100 : (startsWithCode ? 80 : 50)
+        });
+      }
+    }
+
+    // 2. Match Top Freight Cities
+    for (const hub of US_FREIGHT_HUBS) {
+      const cityLower = hub.city.toLowerCase();
+      const stateLower = hub.state.toLowerCase();
+      const full = `${hub.city}, ${hub.state}`;
+      const fullLower = full.toLowerCase();
+
+      if (cityLower.startsWith(query) || fullLower.includes(query) || (query.length === 2 && stateLower === query)) {
+        matches.push({
+          type: 'city',
+          value: full,
+          display: `📍 ${full}`,
+          sub: hub.hub,
+          badge: hub.state,
+          priority: cityLower.startsWith(query) ? 90 : 60
+        });
+      }
+    }
+
+    // 3. Match Destination Multi-State Presets (dest only)
+    if (type === 'dest') {
+      for (const group of DEST_MULTI_STATE_PRESETS) {
+        if (group.label.toLowerCase().includes(query) || group.value.toLowerCase().includes(query)) {
+          matches.push({
+            type: 'group',
+            value: group.value,
+            display: `🗺️ ${group.label}`,
+            sub: group.desc,
+            badge: 'Corridor',
+            priority: 95
+          });
+        }
+      }
+    }
+
+    // 4. Match ZIP Directory
+    for (const [zip, cityState] of Object.entries(CLIENT_ZIP_DIRECTORY)) {
+      if (zip.startsWith(query) || cityState.toLowerCase().includes(query)) {
+        matches.push({
+          type: 'zip',
+          value: `${cityState} ${zip}`,
+          display: `📮 ${cityState} (${zip})`,
+          sub: `US Postal ZIP #${zip}`,
+          badge: 'ZIP',
+          priority: 70
+        });
+      }
+    }
+
+    // Sort by priority and limit to top 8 items
+    matches.sort((a, b) => b.priority - a.priority);
+    const uniqueMatches = [];
+    const seen = new Set();
+    for (const m of matches) {
+      if (!seen.has(m.value)) {
+        seen.add(m.value);
+        uniqueMatches.push(m);
+      }
+      if (uniqueMatches.length >= 8) break;
+    }
+
+    if (uniqueMatches.length === 0) {
+      dropdown.innerHTML = `<div class="places-empty">No matching city or state found for "${escapeHtml(val)}"</div>`;
+      dropdown.style.display = 'block';
+    } else {
+      let html = '';
+      uniqueMatches.forEach((m, idx) => {
+        const badgeClass = m.badge === 'State' ? 'state' : '';
+        html += `
+          <div class="places-item" data-index="${idx}" data-val="${escapeHtml(m.value)}" onclick="selectAutocompleteItem('${type}', '${escapeHtml(m.value)}')">
+            <div class="places-item-main">
+              <span>${escapeHtml(m.display)}</span>
+              <span class="places-item-sub">• ${escapeHtml(m.sub)}</span>
+            </div>
+            <span class="places-item-badge ${badgeClass}">${escapeHtml(m.badge)}</span>
+          </div>`;
+      });
+      dropdown.innerHTML = html;
+      dropdown.style.display = 'block';
+    }
+
+    // Debounced query to backend Google Places API endpoint (if API key active)
+    clearTimeout(autocompleteDebounceTimer);
+    autocompleteDebounceTimer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/routes/autocomplete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: val })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.suggestions && data.suggestions.length > 0) {
+            let googleHtml = '';
+            data.suggestions.slice(0, 4).forEach((s) => {
+              const fullDesc = s.description || `${s.main_text}, ${s.secondary_text}`;
+              googleHtml += `
+                <div class="places-item" data-val="${escapeHtml(fullDesc)}" onclick="selectAutocompleteItem('${type}', '${escapeHtml(fullDesc)}')">
+                  <div class="places-item-main">
+                    <span>🌐 ${escapeHtml(s.main_text || fullDesc)}</span>
+                    <span class="places-item-sub">${escapeHtml(s.secondary_text || '')}</span>
+                  </div>
+                  <span class="places-item-badge google">Google</span>
+                </div>`;
+            });
+            if (googleHtml && dropdown.style.display === 'block') {
+              dropdown.innerHTML += googleHtml;
+            }
+          }
+        }
+      } catch (e) {
+        // Silent fallback
+      }
+    }, 280);
+  }
+
+  function handleAutocompleteKeydown(event, type) {
+    const dropdown = document.getElementById(`${type}-autocomplete-dropdown`);
+    if (!dropdown || dropdown.style.display !== 'block') return;
+
+    const items = dropdown.querySelectorAll('.places-item');
+    if (!items.length) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      activeAutocompleteIndex[type] = Math.min(items.length - 1, activeAutocompleteIndex[type] + 1);
+      updateHighlightedItem(items, activeAutocompleteIndex[type]);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      activeAutocompleteIndex[type] = Math.max(0, activeAutocompleteIndex[type] - 1);
+      updateHighlightedItem(items, activeAutocompleteIndex[type]);
+    } else if (event.key === 'Enter') {
+      if (activeAutocompleteIndex[type] >= 0 && items[activeAutocompleteIndex[type]]) {
+        event.preventDefault();
+        const val = items[activeAutocompleteIndex[type]].getAttribute('data-val');
+        if (val) selectAutocompleteItem(type, val);
+      }
+    } else if (event.key === 'Escape') {
+      dropdown.style.display = 'none';
+    }
+  }
+
+  function updateHighlightedItem(items, activeIdx) {
+    items.forEach((item, idx) => {
+      if (idx === activeIdx) {
+        item.classList.add('selected');
+        item.scrollIntoView({ block: 'nearest' });
+      } else {
+        item.classList.remove('selected');
+      }
+    });
+  }
+
+  function selectAutocompleteItem(type, value) {
+    const input = document.getElementById(`search-${type}`);
+    if (input) {
+      input.value = value;
+      syncActiveTabField(type, value);
+      if (type === 'origin') handleOriginZipInput(value);
+      if (type === 'dest') handleDestZipInput(value);
+    }
+    const dropdown = document.getElementById(`${type}-autocomplete-dropdown`);
+    if (dropdown) dropdown.style.display = 'none';
+
+    // Instant search trigger upon selection
+    runActiveTabSearch();
+  }
+
+  // Close autocomplete dropdowns when clicking outside
+  document.addEventListener('click', (e) => {
+    ['origin', 'dest'].forEach(type => {
+      const dropdown = document.getElementById(`${type}-autocomplete-dropdown`);
+      const input = document.getElementById(`search-${type}`);
+      if (dropdown && input && !dropdown.contains(e.target) && !input.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+  });
+
+  // DAT One Paste Modal Handlers
+  function openDatPasteModal() {
+    const m = document.getElementById('modal-dat-paste');
+    if (m) {
+      m.classList.add('active');
+      m.style.display = 'flex';
+      const ta = document.getElementById('dat-paste-textarea');
+      if (ta) setTimeout(() => ta.focus(), 80);
+    }
+  }
+
+  function closeDatPasteModal() {
+    const m = document.getElementById('modal-dat-paste');
+    if (m) {
+      m.classList.remove('active');
+      m.style.display = 'none';
+      const fb = document.getElementById('dat-paste-feedback');
+      if (fb) fb.style.display = 'none';
+    }
+  }
+
+  async function submitDatPasteLoads() {
+    const ta = document.getElementById('dat-paste-textarea');
+    const btn = document.getElementById('btn-submit-dat-paste');
+    const fb = document.getElementById('dat-paste-feedback');
+    const text = (ta?.value || '').trim();
+
+    if (!text) {
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.background = '#fee2e2';
+        fb.style.color = '#991b1b';
+        fb.innerHTML = '⚠️ Please paste your copied loads text from your DAT One load search.';
+      }
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Ingesting DAT Loads...</span>';
+    }
+
+    try {
+      const res = await fetch('/api/dispatch-desk/sync-dat-bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+
+      if (res.ok && data.ok) {
+        const count = data.inserted_count || (data.loads ? data.loads.length : 0);
+        if (fb) {
+          fb.style.display = 'block';
+          fb.style.background = '#ecfdf5';
+          fb.style.color = '#065f46';
+          fb.innerHTML = `✅ Successfully imported <strong>${count} real loads</strong> from DAT One into your active live board!`;
+        }
+        if (ta) ta.value = '';
+        setTimeout(() => {
+          closeDatPasteModal();
+          runActiveTabSearch();
+        }, 1200);
+      } else {
+        throw new Error(data.error || 'Failed to parse DAT One loads text');
+      }
+    } catch (err) {
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.background = '#fee2e2';
+        fb.style.color = '#991b1b';
+        fb.innerHTML = `⚠️ Error importing loads: ${escapeHtml(err.message)}`;
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>⚡ Ingest & Sync Loads</span>';
+      }
     }
   }
 

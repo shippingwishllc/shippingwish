@@ -1459,12 +1459,27 @@ html, body.app-body {
   overflow-x: hidden;
 }
 
-body.app-body {
-  overflow-y: scroll;
-}
-
 html {
   background: var(--color-gray-50);
+  overflow-x: hidden;
+}
+
+@media (min-width: 1025px) {
+  html:has(body.app-body),
+  body.app-body,
+  body:has(.app-shell) {
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  html, body.app-body {
+    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
 }
 
 .app-sidebar {

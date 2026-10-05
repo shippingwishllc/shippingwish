@@ -12,10 +12,11 @@ const { STATE_NAMES } = require('./geo');
 function cleanLocation(raw) {
   if (!raw) return { city: '', state: '', full: '' };
   let str = String(raw).replace(/[\t\r\n]/g, ' ').replace(/[•·→\->]/g, '').trim();
-  str = str.replace(/^(?:mi|miles|k)\s+/i, '').trim();
+  str = str.replace(/^(?:mi|miles|k|to)\s+/i, '').trim();
   const match = str.match(/([A-Za-z\s.]+?)(?:,\s*|\s+)([A-Za-z]{2})$/i);
   if (match) {
-    const city = match[1].trim().replace(/^[^\w]+/, '');
+    let city = match[1].trim().replace(/^[^\w]+/, '');
+    city = city.replace(/^to\s+/i, '').trim();
     const state = match[2].toUpperCase().trim();
     return {
       city: city,
