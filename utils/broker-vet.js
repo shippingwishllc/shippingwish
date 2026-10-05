@@ -207,15 +207,56 @@ const TOP_BROKERS = {
     bondStatus: 'BMC-84 $75,000 Active Surety Bond (Travelers Casualty)',
     factoringStatus: 'APPROVED (Immediate Factor Acceptance)',
     aboutBroker: 'Schneider is one of the most recognized freight brands in North America. Features high-volume freight matching on Schneider FreightPower, consistent lanes, and guaranteed payment settlement.'
+  },
+  '254848': {
+    companyName: 'PLS LOGISTICS SERVICES, INC.',
+    mcNumber: 'MC-254848',
+    dotNumber: '2218084',
+    cityState: 'Cranberry Twp, PA / Tampa, FL',
+    address: '3120 Enterprise Dr, Cranberry Twp, PA 16066',
+    phone: '+1 (813) 518-4918',
+    email: 'loads@plslogistics.com',
+    officer: 'Greg Burns (Chairman & CEO)',
+    creditScore: 95,
+    creditRating: 'A+',
+    riskLevel: 'A+ PRIME (Established 1991 Solvency)',
+    daysToPay: 24,
+    bondStatus: 'BMC-84 $75,000 Active Surety Bond (Travelers Casualty & Surety Co)',
+    factoringStatus: 'APPROVED (Pre-Approved by RTS, Apex, TriumphPay, OTR Solutions)',
+    aboutBroker: 'PLS Logistics Services is one of the largest independent freight management and 3PL brokers in the US. Over $1.2B in annual freight under management. High payment reliability, standard 21-30 day payment terms, and direct carrier portal.'
+  },
+  '592813': {
+    companyName: 'INTEGRITY EXPRESS LOGISTICS LLC (IEL)',
+    mcNumber: 'MC-592813',
+    dotNumber: '2237973',
+    cityState: 'Blue Ash, OH',
+    address: '10200 Alliance Rd Ste 200, Blue Ash, OH 45242',
+    phone: '+1 (888) 374-5138',
+    email: 'dispatch@ielbrokerage.com',
+    officer: 'James Berutti / Operations Desk',
+    creditScore: 94,
+    creditRating: 'A',
+    riskLevel: 'A PRIME (Top 50 US Brokerage)',
+    daysToPay: 25,
+    bondStatus: 'BMC-84 $75,000 Active Surety Bond (Lexon Insurance Co)',
+    factoringStatus: 'APPROVED (Pre-Approved across all Tier 1 Factoring Partners)',
+    aboutBroker: 'Integrity Express Logistics (IEL) is a premier full-service 3PL operating across all 48 states. High volume spot freight across Dry Van, Reefer, and Flatbed. Strong financial backing and prompt settlement terms.'
   }
 };
 
 function getKnownBroker(query) {
+  if (!query) return null;
   const d = digits(query);
   if (d && TOP_BROKERS[d]) return TOP_BROKERS[d];
-  const qLower = String(query || '').toLowerCase().trim();
+  const qClean = String(query).toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+  const qWords = qClean.split(/\s+/).filter(w => w.length > 2);
+
   for (const b of Object.values(TOP_BROKERS)) {
-    if (b.companyName.toLowerCase().includes(qLower) || (b.mcNumber && b.mcNumber.toLowerCase().includes(qLower))) {
+    const bClean = b.companyName.toLowerCase().replace(/[^a-z0-9]/g, ' ');
+    if (bClean.includes(qClean) || qClean.includes(bClean.slice(0, 10))) return b;
+    if (b.mcNumber && query.toUpperCase().includes(b.mcNumber)) return b;
+    // Match significant keywords (e.g. "PLS", "Integrity Express", "Nolan")
+    if (qWords.length > 0 && qWords.some(w => ['pls', 'iel', 'ntg', 'coyote', 'robinson', 'tql', 'arrive', 'megacorp', 'schneider'].includes(w) && bClean.includes(w))) {
       return b;
     }
   }

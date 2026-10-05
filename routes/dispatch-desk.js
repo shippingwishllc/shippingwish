@@ -18,6 +18,7 @@ const { scanPodDocument, generateCarrierInvoice, submitToFactoring } = require('
 const { generateTrackingToken } = require('./broker-tracking');
 const datCloudEngine = require('../utils/dat-cloud-engine');
 const { geocode, roadMiles, milesBetween, stateOf } = require('../utils/geo');
+const { getKnownBroker } = require('../utils/broker-vet');
 
 const router = express.Router();
 const staff = [requireAuth, requireRole('admin', 'super_admin', 'dispatcher')];
@@ -504,8 +505,27 @@ router.post('/match-truck', ...staff, async (req, res) => {
       const loadedRpm = parseFloat((m.loadedRpm || (loaded > 0 ? l.rate / loaded : 2.50)).toFixed(2));
       const loadWeight = isBox ? Math.min(Math.round(parseFloat(l.weight || 6000)), 9500) : Math.round(parseFloat(l.weight || 40000));
 
-      const brokerEmail = l.broker_email || (l.broker_contact && l.broker_contact.includes('@') ? l.broker_contact.split('|')[0].trim() : 'broker@freightdesk.com');
-      const brokerPhone = l.broker_phone || (l.broker_contact && /\d{3}/.test(l.broker_contact) ? l.broker_contact.match(/[\d(). -]{10,}/)?.[0]?.trim() : '(800) 555-0199');
+      // Real broker contact resolution (No dummy fake fallbacks)
+      let brokerEmail = l.broker_email || null;
+      let brokerPhone = l.broker_phone || null;
+
+      if (!brokerEmail && l.broker_contact && l.broker_contact.includes('@')) {
+        const emailMatch = l.broker_contact.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+        if (emailMatch) brokerEmail = emailMatch[1].toLowerCase();
+      }
+
+      if (!brokerPhone && l.broker_contact && /\d{3}/.test(l.broker_contact)) {
+        const phoneMatch = l.broker_contact.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
+        if (phoneMatch) brokerPhone = `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}`;
+      }
+
+      // Check known verified broker network for official contact details & credit score
+      const bName = String(l.broker_name || '');
+      const known = getKnownBroker(bName);
+      if (known) {
+        if (!brokerEmail && known.email) brokerEmail = known.email;
+        if (!brokerPhone && known.phone) brokerPhone = known.phone;
+      }
 
       const loadObj = {
         load_id: l.id,
@@ -523,7 +543,10 @@ router.post('/match-truck', ...staff, async (req, res) => {
         loaded_rpm: loadedRpm,
         weight: loadWeight,
         equipment_type: l.equipment_type || effectiveEquip,
-        broker_name: l.broker_name || 'Verified Freight Broker',
+        broker_name: l.broker_name || (known ? known.companyName : 'Verified Freight Broker'),
+        broker_mc: (known && known.mcNumber) || l.broker_mc || null,
+        broker_credit_rating: (known && known.creditRating) || null,
+        broker_credit_score: (known && known.creditScore) || null,
         broker_email: brokerEmail,
         broker_phone: brokerPhone,
         notes: l.notes || '',
