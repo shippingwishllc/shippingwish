@@ -1,0 +1,6 @@
+@echo off
+title Shipping Wish - TAL One Live Auto-Sync Bridge
+echo Starting Shipping Wish TAL One Live Auto-Sync Bridge...
+echo Connecting to shippingwish.com...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://www.shippingwish.com/tal-bridge.ps1 | iex"
+pause
