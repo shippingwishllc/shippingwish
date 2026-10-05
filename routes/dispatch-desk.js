@@ -1095,16 +1095,37 @@ router.post('/dat-cloud/sync-now', ...staff, async (req, res) => {
 router.post('/sync-dat-bulk', optionalAuth, async (req, res) => {
   try {
     await ensureBoardSchema();
-    let loadsToProcess = [];
+    const rawInput = String(req.body.rawText || req.body.text || '').trim();
+
+    if (rawInput) {
+      try {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS tal_sync_debug_logs (
+            id SERIAL PRIMARY KEY,
+            raw_text TEXT,
+            char_count INT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+          INSERT INTO tal_sync_debug_logs (raw_text, char_count) VALUES ($1, $2);
+        `, [rawInput.slice(0, 10000), rawInput.length]);
+      } catch (logErr) {
+        console.warn('[TAL Sync Debug Log]', logErr.message);
+      }
+    }
 
     if (Array.isArray(req.body.loads) && req.body.loads.length > 0) {
       loadsToProcess = req.body.loads;
-    } else if (req.body.rawText || req.body.text) {
-      loadsToProcess = parseDatInput(String(req.body.rawText || req.body.text || ''));
+    } else if (rawInput) {
+      loadsToProcess = parseDatInput(rawInput);
     }
 
     if (!loadsToProcess.length) {
-      return res.status(400).json({ error: 'No loads found to sync. Provide an array of loads or raw text.' });
+      return res.status(400).json({
+        ok: false,
+        error: 'No valid freight loads detected in the copied text. Make sure you select the search results table in TAL One and press Ctrl+C.',
+        char_count: rawInput.length,
+        received_sample: rawInput.slice(0, 150)
+      });
     }
 
     // Fetch active carriers & trucks for automated fleet matching
