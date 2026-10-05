@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -424,7 +424,9 @@
 
   async function checkAuth() {
     try {
-      const res = await fetch('/api/me', { credentials: 'include' });
+      const token = localStorage.getItem('sw_token') || localStorage.getItem('sw_auth_token') || sessionStorage.getItem('sw_token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch('/api/me', { credentials: 'include', headers });
       if (!res.ok) { window.location.href = '/login'; return; }
       const data = await res.json();
       if (!data.user || !['super_admin', 'admin'].includes(data.user.role)) {

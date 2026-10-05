@@ -294,13 +294,19 @@
       <h2 id="login-title" class="auth-form-title">Welcome back</h2>
       <p class="auth-form-subtitle">Sign in to your carrier portal</p>
 
-      <!-- Carrier / Broker Role Toggle -->
+      <!-- Active Session Banner (if user is already authenticated) -->
+      <div id="active-session-banner" style="display:none;margin-bottom:16px;"></div>
+
+      <!-- Carrier / Broker / Admin Role Toggle -->
       <div class="login-role-tabs" style="display:flex;gap:6px;margin-bottom:var(--space-5);background:var(--color-gray-100,#f1f5f9);padding:4px;border-radius:12px;border:1px solid var(--border-default,#e2e8f0);">
-        <button type="button" class="role-tab active" id="tab-role-carrier" onclick="selectLoginRole('carrier')" style="flex:1;padding:9px 12px;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;background:#ffffff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.1);transition:all 0.2s ease;">
+        <button type="button" class="role-tab active" id="tab-role-carrier" onclick="selectLoginRole('carrier')" style="flex:1;padding:9px 8px;border:none;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;background:#ffffff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.1);transition:all 0.2s ease;">
           🚛 Carrier
         </button>
-        <button type="button" class="role-tab" id="tab-role-broker" onclick="selectLoginRole('broker')" style="flex:1;padding:9px 12px;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;background:transparent;color:#64748b;transition:all 0.2s ease;">
+        <button type="button" class="role-tab" id="tab-role-broker" onclick="selectLoginRole('broker')" style="flex:1;padding:9px 8px;border:none;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;background:transparent;color:#64748b;transition:all 0.2s ease;">
           📋 Broker / 3PL
+        </button>
+        <button type="button" class="role-tab" id="tab-role-admin" onclick="selectLoginRole('admin')" style="flex:1;padding:9px 8px;border:none;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;background:transparent;color:#64748b;transition:all 0.2s ease;">
+          👑 Admin / Staff
         </button>
       </div>
 
@@ -324,7 +330,7 @@
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2);">
               <label class="form-label" for="login-password" style="margin-bottom:0;">Password</label>
-              <a href="/contact" style="font-size:var(--text-xs);color:var(--color-amber-600);" id="forgot-password-link">Forgot password?</a>
+              <a href="javascript:void(0)" onclick="openForgotModal()" style="font-size:var(--text-xs);color:var(--color-amber-600);text-decoration:none;font-weight:600;" id="forgot-password-link">Forgot password?</a>
             </div>
             <input
               class="form-input"
@@ -352,6 +358,50 @@
       <p class="auth-footer-link">
         Or <a href="/contact" id="contact-from-login-link">contact our dispatch team</a> to get started.
       </p>
+
+      <!-- Forgot Password Modal -->
+      <div id="forgot-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#ffffff;border-radius:16px;max-width:440px;width:100%;padding:28px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2),0 10px 10px -5px rgba(0,0,0,0.04);position:relative;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin:0;">Reset Account Password</h3>
+            <button type="button" onclick="closeForgotModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
+          </div>
+          
+          <div id="forgot-alert" class="form-alert" style="display:none;margin-bottom:14px;"></div>
+
+          <!-- Step 1: Request OTP -->
+          <div id="forgot-step-1">
+            <p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5;">
+              Enter your registered email address (Carrier, Broker, Dispatcher, or Admin). We will send a 6-digit verification code to reset your password.
+            </p>
+            <div class="form-group" style="margin-bottom:16px;">
+              <label class="form-label required" for="forgot-email">Email Address</label>
+              <input class="form-input" id="forgot-email" type="email" placeholder="you@company.com" required>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" id="forgot-send-btn" onclick="sendResetOtp()">
+              Send Verification Code →
+            </button>
+          </div>
+
+          <!-- Step 2: Enter OTP & New Password -->
+          <div id="forgot-step-2" style="display:none;">
+            <p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5;">
+              Enter the 6-digit code sent to <strong id="forgot-sent-email"></strong> and choose your new password.
+            </p>
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label required" for="forgot-otp">6-Digit Code</label>
+              <input class="form-input" id="forgot-otp" type="text" placeholder="123456" maxlength="6" style="letter-spacing:4px;font-weight:700;text-align:center;font-size:18px;" required>
+            </div>
+            <div class="form-group" style="margin-bottom:18px;">
+              <label class="form-label required" for="forgot-new-password">New Password (min 8 chars)</label>
+              <input class="form-input" id="forgot-new-password" type="password" placeholder="Enter new secure password" minlength="8" required>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" id="forgot-verify-btn" onclick="verifyAndResetPassword()">
+              Update Password & Sign In →
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div id="login-role-display" style="display:none;text-align:center;margin-top:var(--space-4);">
         <span class="badge" id="login-role-badge"></span>
@@ -408,32 +458,58 @@
     selectedRole = role;
     const carrierBtn = document.getElementById('tab-role-carrier');
     const brokerBtn = document.getElementById('tab-role-broker');
+    const adminBtn = document.getElementById('tab-role-admin');
     const subtitle = document.querySelector('.auth-form-subtitle');
     const signupBtn = document.getElementById('signup-from-login-btn');
+    const emailInput = document.getElementById('login-email');
     
+    // Reset all tabs
+    [carrierBtn, brokerBtn, adminBtn].forEach(b => {
+      if (b) {
+        b.style.background = 'transparent';
+        b.style.color = '#64748b';
+        b.style.boxShadow = 'none';
+      }
+    });
+
     if (role === 'broker') {
-      carrierBtn.style.background = 'transparent';
-      carrierBtn.style.color = '#64748b';
-      carrierBtn.style.boxShadow = 'none';
-      brokerBtn.style.background = '#8b5cf6';
-      brokerBtn.style.color = '#ffffff';
-      brokerBtn.style.boxShadow = '0 2px 6px rgba(139,92,246,0.3)';
+      if (brokerBtn) {
+        brokerBtn.style.background = '#8b5cf6';
+        brokerBtn.style.color = '#ffffff';
+        brokerBtn.style.boxShadow = '0 2px 6px rgba(139,92,246,0.3)';
+      }
       if (subtitle) subtitle.textContent = isFromLoadsNexus ? 'Sign in to LoadsNexus Broker Portal' : 'Sign in to Freight Broker & Shipper Portal';
+      if (emailInput) emailInput.placeholder = 'broker@freightbroker.com';
       if (signupBtn) {
         signupBtn.textContent = 'Register as Broker / Shipper';
         signupBtn.href = '/contact?subject=broker-partner';
+        signupBtn.onclick = null;
+      }
+    } else if (role === 'admin' || role === 'staff') {
+      if (adminBtn) {
+        adminBtn.style.background = '#0f172a';
+        adminBtn.style.color = '#ffffff';
+        adminBtn.style.boxShadow = '0 2px 6px rgba(15,23,42,0.3)';
+      }
+      if (subtitle) subtitle.textContent = 'Sign in to Shipping Wish Admin Command Center';
+      if (emailInput) emailInput.placeholder = 'admin@shippingwish.com';
+      if (signupBtn) {
+        signupBtn.textContent = 'Company Staff & Admin Portal';
+        signupBtn.href = '/staff-management';
+        signupBtn.onclick = null;
       }
     } else {
-      brokerBtn.style.background = 'transparent';
-      brokerBtn.style.color = '#64748b';
-      brokerBtn.style.boxShadow = 'none';
-      carrierBtn.style.background = '#ffffff';
-      carrierBtn.style.color = '#0f172a';
-      carrierBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      if (carrierBtn) {
+        carrierBtn.style.background = '#ffffff';
+        carrierBtn.style.color = '#0f172a';
+        carrierBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      }
       if (subtitle) subtitle.textContent = isFromLoadsNexus ? 'Sign in to LoadsNexus Carrier Portal' : 'Sign in to your carrier portal';
+      if (emailInput) emailInput.placeholder = 'you@yourcompany.com';
       if (signupBtn) {
         signupBtn.textContent = 'Create Carrier Account';
         signupBtn.href = '/signup' + (isFromLoadsNexus ? '?from=loadsnexus' : '');
+        signupBtn.onclick = null;
       }
     }
   }
@@ -501,6 +577,19 @@
         }, 500);
       } else {
         const role = data.user?.role || 'carrier';
+        // Persist token in localStorage & sessionStorage for fallback cross-origin/cookie restrictions
+        if (data.token) {
+          try {
+            localStorage.setItem('sw_token', data.token);
+            sessionStorage.setItem('sw_token', data.token);
+            localStorage.setItem('sw_auth_token', data.token);
+            sessionStorage.setItem('sw_auth_token', data.token);
+            if (data.user) {
+              localStorage.setItem('sw_user', JSON.stringify(data.user));
+              sessionStorage.setItem('sw_user', JSON.stringify(data.user));
+            }
+          } catch (_) {}
+        }
         submitBtn.textContent = 'Redirecting...';
         if (isFromLoadsNexus && (role === 'carrier' || role === 'carrier_admin')) {
           window.location.href = '/load-booking';
@@ -517,17 +606,158 @@
     }
   });
 
-  // If already logged in, redirect (skip if user just signed out)
-  if (!isLoggedOut) {
+  // Switch account helper: clears current session and resets form
+  window.signOutToSwitch = async function() {
+    try { sessionStorage.clear(); } catch (_) {}
+    try { localStorage.clear(); } catch (_) {}
+    document.cookie = 'sw_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    const banner = document.getElementById('active-session-banner');
+    if (banner) banner.style.display = 'none';
+    alertBox.textContent = 'Previous session signed out. You can now log into your Admin or Staff account.';
+    alertBox.className = 'form-alert success';
+    alertBox.style.display = 'block';
+  };
+
+  // Forgot password modal handlers
+  window.openForgotModal = function() {
+    const modal = document.getElementById('forgot-modal');
+    if (modal) modal.style.display = 'flex';
+    const alert = document.getElementById('forgot-alert');
+    if (alert) alert.style.display = 'none';
+    document.getElementById('forgot-step-1').style.display = 'block';
+    document.getElementById('forgot-step-2').style.display = 'none';
+    const loginEmail = document.getElementById('login-email').value.trim();
+    if (loginEmail) {
+      document.getElementById('forgot-email').value = loginEmail;
+    }
+  };
+
+  window.closeForgotModal = function() {
+    const modal = document.getElementById('forgot-modal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.sendResetOtp = async function() {
+    const email = document.getElementById('forgot-email').value.trim();
+    const alert = document.getElementById('forgot-alert');
+    const btn = document.getElementById('forgot-send-btn');
+    if (!email) {
+      alert.textContent = 'Please enter your registered email address.';
+      alert.className = 'form-alert error';
+      alert.style.display = 'block';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Sending Code...';
+    alert.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/auth/forgot-password/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        document.getElementById('forgot-sent-email').textContent = email;
+        document.getElementById('forgot-step-1').style.display = 'none';
+        document.getElementById('forgot-step-2').style.display = 'block';
+        alert.textContent = data.message || 'Verification code sent to your email!';
+        alert.className = 'form-alert success';
+        alert.style.display = 'block';
+      } else {
+        alert.textContent = data.error || 'Could not send verification code.';
+        alert.className = 'form-alert error';
+        alert.style.display = 'block';
+      }
+    } catch (e) {
+      alert.textContent = 'Network error. Please try again.';
+      alert.className = 'form-alert error';
+      alert.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Verification Code →';
+    }
+  };
+
+  window.verifyAndResetPassword = async function() {
+    const email = document.getElementById('forgot-email').value.trim();
+    const otp = document.getElementById('forgot-otp').value.trim();
+    const new_password = document.getElementById('forgot-new-password').value;
+    const alert = document.getElementById('forgot-alert');
+    const btn = document.getElementById('forgot-verify-btn');
+
+    if (!otp || otp.length < 6) {
+      alert.textContent = 'Please enter the 6-digit verification code from your email.';
+      alert.className = 'form-alert error';
+      alert.style.display = 'block';
+      return;
+    }
+    if (!new_password || new_password.length < 8) {
+      alert.textContent = 'New password must be at least 8 characters long.';
+      alert.className = 'form-alert error';
+      alert.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Updating Password...';
+    alert.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/auth/forgot-password/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, new_password })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        closeForgotModal();
+        document.getElementById('login-email').value = email;
+        document.getElementById('login-password').value = new_password;
+        alertBox.textContent = 'Password reset successfully! Click Sign In to enter your account.';
+        alertBox.className = 'form-alert success';
+        alertBox.style.display = 'block';
+      } else {
+        alert.textContent = data.error || 'Failed to update password. Code may be incorrect or expired.';
+        alert.className = 'form-alert error';
+        alert.style.display = 'block';
+      }
+    } catch (e) {
+      alert.textContent = 'Network error. Please try again.';
+      alert.className = 'form-alert error';
+      alert.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Update Password & Sign In →';
+    }
+  };
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Active session check: Inform user if already logged in and allow switching
+  if (!isLoggedOut && !loginParams.has('switch')) {
     fetch('/api/me', { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data && data.user) {
-          const role = data.user.role;
-          if (isFromLoadsNexus && (role === 'carrier' || role === 'carrier_admin')) {
-            window.location.href = '/load-booking';
-          } else {
-            window.location.href = ROLE_REDIRECT[role] || '/carrier-overview';
+          const banner = document.getElementById('active-session-banner');
+          if (banner) {
+            banner.innerHTML = `
+              <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px;font-size:12px;color:#334155;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <div>
+                  <strong>Active Session:</strong> Signed in as <b>${escapeHtml(data.user.email)}</b> (${(data.user.role || '').toUpperCase()})
+                </div>
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                  <a href="${ROLE_REDIRECT[data.user.role] || '/admin-dashboard'}" class="btn btn-sm btn-primary" style="padding:4px 8px;font-size:11px;">Dashboard →</a>
+                  <button type="button" onclick="signOutToSwitch()" class="btn btn-sm btn-light" style="padding:4px 8px;font-size:11px;">Sign Out to Switch</button>
+                </div>
+              </div>
+            `;
+            banner.style.display = 'block';
           }
         }
       })
