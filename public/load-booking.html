@@ -1356,8 +1356,8 @@
               <span class="radius-tag">DHO Radius</span>
             </div>
             <div class="field-input-combo" style="position:relative;">
-              <input type="text" id="search-origin" class="form-input combo-text" value="Dallas, TX" 
-                     placeholder="e.g. 75201, Dallas, TX or TX" autocomplete="off"
+              <input type="text" id="search-origin" class="form-input combo-text" value="Rincon, GA" 
+                     placeholder="e.g. Rincon, GA or All Origin" autocomplete="off"
                      oninput="handleOriginAutocompleteInput(this.value)" 
                      onkeydown="handleAutocompleteKeydown(event, 'origin')"
                      onfocus="handleOriginAutocompleteInput(this.value)"
@@ -1365,8 +1365,8 @@
               <select id="search-dho" class="form-select combo-radius" onchange="syncActiveTabField('dho', this.value)" title="Deadhead Origin Radius">
                 <option value="25">25 mi</option>
                 <option value="50">50 mi</option>
-                <option value="100" selected>100 mi</option>
-                <option value="150">150 mi</option>
+                <option value="100">100 mi</option>
+                <option value="150" selected>150 mi</option>
                 <option value="200">200 mi</option>
               </select>
               <div id="origin-autocomplete-dropdown" class="places-autocomplete-dropdown" style="display:none;"></div>
@@ -1381,16 +1381,16 @@
               <span class="radius-tag">DHD Radius</span>
             </div>
             <div class="field-input-combo" style="position:relative;">
-              <input type="text" id="search-dest" class="form-input combo-text" value="TX, WY, CO" 
-                     placeholder="e.g. 82001, Cheyenne, WY or TX, WY, CO" autocomplete="off"
+              <input type="text" id="search-dest" class="form-input combo-text" value="" 
+                     placeholder="e.g. All 48 States, or TX, FL, GA" autocomplete="off"
                      oninput="handleDestAutocompleteInput(this.value)" 
                      onkeydown="handleAutocompleteKeydown(event, 'dest')"
                      onfocus="handleDestAutocompleteInput(this.value)"
                      onchange="syncActiveTabField('dest', this.value)">
               <select id="search-dhd" class="form-select combo-radius" onchange="syncActiveTabField('dhd', this.value)" title="Deadhead Destination Radius">
                 <option value="25">25 mi</option>
-                <option value="50" selected>50 mi</option>
-                <option value="100">100 mi</option>
+                <option value="50">50 mi</option>
+                <option value="100" selected>100 mi</option>
                 <option value="150">150 mi</option>
                 <option value="200">200 mi</option>
               </select>
@@ -1431,8 +1431,8 @@
             </div>
             <div style="position:relative;">
               <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--text-muted);font-size:13px;">$</span>
-              <input type="number" step="0.05" id="search-min-rpm" class="form-input" value="2.85" 
-                     placeholder="2.85" onchange="syncActiveTabField('minRpm', this.value)" style="padding-left:24px;font-weight:700;">
+              <input type="number" step="0.05" id="search-min-rpm" class="form-input" value="" 
+                     placeholder="All Rates / Any" onchange="syncActiveTabField('minRpm', this.value)" style="padding-left:24px;font-weight:700;">
             </div>
           </div>
 
@@ -2256,29 +2256,29 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
   let SEARCH_TABS = [
     {
       id: 1,
-      title: 'Truck 1 (Dallas ➔ WY · Today)',
+      title: 'Truck 1 (Rincon, GA · Open)',
       carrierId: '',
-      origin: 'Dallas, TX',
-      dho: '100',
-      dest: 'TX, WY, CO',
-      dhd: '50',
+      origin: 'Rincon, GA',
+      dho: '150',
+      dest: '',
+      dhd: '100',
       equipment: '53ft Dry Van',
-      minRpm: '2.85',
+      minRpm: '',
       pickupDate: getTodayString(),
       results: [],
       aiSummary: null
     },
     {
       id: 2,
-      title: 'Truck 2 (Chicago ➔ GA · Tomorrow)',
+      title: 'Truck 2 (Nationwide · Open)',
       carrierId: '',
-      origin: 'Chicago, IL',
-      dho: '100',
-      dest: 'GA, FL, NC, SC',
-      dhd: '50',
+      origin: '',
+      dho: '150',
+      dest: '',
+      dhd: '100',
       equipment: '53ft Reefer',
-      minRpm: '3.10',
-      pickupDate: getOffsetDateString(1),
+      minRpm: '',
+      pickupDate: getTodayString(),
       results: [],
       aiSummary: null
     }
@@ -2795,16 +2795,16 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
 
     ACTIVE_TAB_ID = tabId;
     document.getElementById('tab-custom-title').value = tab.title || `Truck #${tab.id}`;
-    document.getElementById('search-origin').value = tab.origin || 'Dallas, TX';
-    document.getElementById('search-dho').value = tab.dho || '100';
-    document.getElementById('search-dest').value = tab.dest || 'TX, WY, CO';
-    document.getElementById('search-dhd').value = tab.dhd || '50';
+    document.getElementById('search-origin').value = tab.origin || '';
+    document.getElementById('search-dho').value = tab.dho || '150';
+    document.getElementById('search-dest').value = tab.dest || '';
+    document.getElementById('search-dhd').value = tab.dhd || '100';
     document.getElementById('search-equipment').value = tab.equipment || '53ft Dry Van';
-    document.getElementById('search-min-rpm').value = tab.minRpm || '2.85';
+    document.getElementById('search-min-rpm').value = tab.minRpm || '';
     document.getElementById('search-date').value = tab.pickupDate || getTodayString();
     updateDateUI(tab.pickupDate || getTodayString());
-    handleOriginZipInput(tab.origin || 'Dallas, TX');
-    handleDestZipInput(tab.dest || 'TX, WY, CO');
+    handleOriginZipInput(tab.origin || '');
+    handleDestZipInput(tab.dest || '');
 
     const carrierSelect = document.getElementById('search-carrier-id');
     if (carrierSelect) carrierSelect.value = tab.carrierId || '';
@@ -2908,12 +2908,12 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
   function resetActiveTabFilters() {
     const tab = getActiveTab();
     if (!tab) return;
-    tab.origin = 'Dallas, TX';
-    tab.dho = '100';
-    tab.dest = 'TX, WY, CO';
-    tab.dhd = '50';
+    tab.origin = 'Rincon, GA';
+    tab.dho = '150';
+    tab.dest = '';
+    tab.dhd = '100';
     tab.equipment = '53ft Dry Van';
-    tab.minRpm = '2.85';
+    tab.minRpm = '';
     tab.carrierId = '';
     tab.pickupDate = getTodayString();
     loadTabInputs(tab.id);
@@ -3561,12 +3561,12 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
 
     try {
       const qs = new URLSearchParams({
-        origin: tab.origin || 'Dallas, TX',
-        destination: tab.dest || 'TX, WY, CO',
-        equipmentType: tab.equipment || '53ft Dry Van',
-        minRpm: tab.minRpm || '2.85',
-        dho: tab.dho || '100',
-        dhd: tab.dhd || '50',
+        origin: tab.origin || '',
+        destination: tab.dest || '',
+        equipmentType: tab.equipment || '',
+        minRpm: tab.minRpm || '0',
+        dho: tab.dho || '150',
+        dhd: tab.dhd || '100',
         pickupDate: tab.pickupDate || getTodayString()
       });
 
@@ -3604,13 +3604,13 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          currentCity: tab.origin || 'Dallas, TX',
-          desiredDestination: tab.dest || 'TX, WY, CO',
+          currentCity: tab.origin || '',
+          desiredDestination: tab.dest || '',
           equipmentType: tab.equipment || '53ft Dry Van',
-          targetRpm: tab.minRpm || '2.85',
+          targetRpm: tab.minRpm || '1.50',
           carrierId: tab.carrierId || undefined,
-          dho: tab.dho || '100',
-          dhd: tab.dhd || '50',
+          dho: tab.dho || '150',
+          dhd: tab.dhd || '100',
           pickupDate: tab.pickupDate || getTodayString()
         })
       });
@@ -3807,7 +3807,8 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
         brokerHtml = `
           <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(load.broker_name || 'Broker')}</div>
           <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(load.broker_mc || 'MC-ON-FILE')}</div>
-          ${load.broker_phone ? `<a href="tel:${escapeHtml(load.broker_phone)}" style="font-size:11px;color:#2563eb;font-weight:600;">📞 ${escapeHtml(load.broker_phone)}</a>` : ''}
+          ${load.broker_phone ? `<a href="tel:${escapeHtml(load.broker_phone)}" style="font-size:11px;color:#2563eb;font-weight:600;display:block;">📞 ${escapeHtml(load.broker_phone)}</a>` : ''}
+          ${load.broker_email ? `<a href="mailto:${escapeHtml(load.broker_email)}" style="font-size:11px;color:#059669;font-weight:600;display:block;word-break:break-all;">✉️ ${escapeHtml(load.broker_email)}</a>` : ''}
         `;
       }
 

@@ -6,6 +6,8 @@ const { generateRateConfirmationPDF } = require('../utils/ratecon-generator');
 const { requestBrokerBooking, realEmail } = require('../utils/broker-booking-request');
 const { parseFreightWithAI, saveLoadsToDatabase, normalizeEquipmentAndWeight } = require('../utils/ai-freight-extractor');
 const { getFreightDeadhead, ADJACENT_STATES } = require('../utils/geo');
+const { extractPhoneWithExt } = require('../utils/dat-load-parser');
+const { getKnownBroker } = require('../utils/broker-vet');
 
 const router = express.Router();
 
@@ -616,31 +618,34 @@ router.get('/search', optionalAuth, async (req, res) => {
 
       if (dbRes.rows && dbRes.rows.length) {
         liveDbLoads = dbRes.rows.map(r => {
-          let bName = r.broker_name || 'LoadsNexus™ Verified Brokerage';
-          let bMc = r.broker_mc || 'MC-981240';
-          let bPhone = '+1 (800) 580-3101';
-          let bEmail = 'dispatch@loadsnexus.com';
+          let bName = r.broker_name || 'Verified Freight Broker';
+          let bMc = r.broker_mc || null;
+          let bPhone = null;
+          let bEmail = null;
 
           if (r.broker_contact) {
-            const parts = r.broker_contact.split('|');
-            if (parts.length >= 2) {
-              bPhone = parts[0].trim();
-              bEmail = parts[1].trim();
-            } else if (r.broker_contact.includes('@')) {
-              bEmail = r.broker_contact.trim();
-            } else {
-              bPhone = r.broker_contact.trim();
-            }
+            const emailMatch = r.broker_contact.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+            if (emailMatch) bEmail = emailMatch[1].toLowerCase();
+
+            const phone = extractPhoneWithExt(r.broker_contact);
+            if (phone) bPhone = phone;
           }
           if (r.notes) {
             const pMatch = r.notes.match(/Phone:\s*([^\.]+)/i);
             const eMatch = r.notes.match(/Email:\s*([^\.]+)/i);
             const bMatch = r.notes.match(/Posted by (?:Verified )?Broker:\s*([^\(]+)/i);
             const mMatch = r.notes.match(/\(([MC\-\d]+)\)/i);
-            if (pMatch) bPhone = pMatch[1].trim();
-            if (eMatch) bEmail = eMatch[1].trim();
-            if (bMatch) bName = bMatch[1].trim();
-            if (mMatch) bMc = mMatch[1].trim();
+            if (pMatch && !bPhone) bPhone = extractPhoneWithExt(pMatch[1]) || pMatch[1].trim();
+            if (eMatch && !bEmail) bEmail = eMatch[1].trim().toLowerCase();
+            if (bMatch && (!bName || bName.includes('Verified Freight Broker'))) bName = bMatch[1].trim();
+            if (mMatch && !bMc) bMc = mMatch[1].trim();
+          }
+
+          // Check known broker database for verified MC and fallback contacts
+          const known = getKnownBroker(bName);
+          if (known) {
+            if (!bMc) bMc = known.mcNumber;
+            if (!bPhone && known.phone) bPhone = known.phone;
           }
 
           const miles = Number(r.miles) || 650;
