@@ -458,9 +458,9 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
           `SELECT (l.id + 20000000) AS id, l.id AS lead_id, l.email AS peer_email,
                   COALESCE(l.company_name, l.owner_name, l.email) AS peer_name,
                   'operations@shippingwish.com' AS from_email,
-                  CONCAT('↗ Outbound Outreach: ', COALESCE(l.company_name, 'Carrier')) AS subject,
-                  CONCAT('Outbound Email sent to ', l.email) AS body_text,
-                  CONCAT('<p>Outbound Email sent to <strong>', l.email, '</strong></p>') AS body_html,
+                  CONCAT('↗ Operations manager for ', COALESCE(l.company_name, 'your fleet')) AS subject,
+                  CONCAT('Hello ', COALESCE(NULLIF(l.owner_name, ''), 'there'), ', I am writing from Shipping Wish LLC. We place a Dedicated Fleet Operations Manager with small motor carriers...') AS body_text,
+                  NULL::text AS body_html,
                   TRUE AS is_read, l.created_at AS created_at,
                   l.company_name, l.owner_name, l.phone, l.mc_number,
                   'outbound' AS direction
@@ -610,8 +610,9 @@ async function fetchEmailThread(peerEmail, leadId) {
               'Shipping Wish Operations' AS from_name,
               COALESCE(l.company_name, l.owner_name, e.recipient_email) AS peer_name,
               e.subject,
-              COALESCE(e.body_text, CONCAT('Outbound Email sent to ', e.recipient_email)) AS body_text,
-              e.body_html AS body_html,
+              e.body_text,
+              e.body_html,
+              e.template_key,
               TRUE AS is_read, '[]'::jsonb AS attachments, e.resend_id AS resend_email_id,
               e.sent_at AS created_at, 'outbound' AS direction
        FROM email_logs e
@@ -638,10 +639,27 @@ async function fetchEmailThread(peerEmail, leadId) {
       attachments: parseAttachments(m.attachments)
     }));
 
-    const outbounds = (outboundRes.rows || []).map((m) => ({
-      ...m,
-      attachments: []
-    }));
+    const outbounds = (outboundRes.rows || []).map((m) => {
+      let bHtml = m.body_html;
+      let bText = m.body_text;
+      if (!bHtml) {
+        try {
+          const tpl = buildTemplate(m.template_key || 'dedicated_manager', {
+            ownerName: m.peer_name || 'there',
+            companyName: m.peer_name,
+            recipientEmail: m.to_email
+          });
+          bHtml = tpl.html;
+          if (!bText) bText = tpl.text;
+        } catch (_) {}
+      }
+      return {
+        ...m,
+        body_html: bHtml,
+        body_text: bText || `Outbound Email sent to ${m.to_email}`,
+        attachments: []
+      };
+    });
 
     thread = [...inbounds, ...outbounds];
     thread.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -686,23 +704,24 @@ router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
       const lr = await pool.query(`SELECT * FROM crm_leads WHERE id = $1`, [realLeadId]);
       if (!lr.rows.length) return res.status(404).json({ error: 'Lead not found' });
       const l = lr.rows[0];
+
+      // Reconstruct the real high-converting outreach email sent to the carrier
+      const tpl = buildTemplate('dedicated_manager', {
+        ownerName: l.owner_name || 'there',
+        companyName: l.company_name,
+        recipientEmail: l.email
+      });
+
       const leadMsg = {
         id: numericId,
         direction: 'outbound',
         lead_id: l.id,
         from_email: 'operations@shippingwish.com',
         to_email: l.email,
-        subject: `↗ Outbound Outreach: ${l.company_name || 'Carrier'}`,
-        body_text: `Outbound Outreach Email sent to ${l.email}.\nEquipment: ${l.equipment_type || 'Dry Van'}\nStatus: ${l.status}`,
-        body_html: `<div style="padding:18px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">
-          <h4 style="margin:0 0 10px;color:#f59e0b;font-size:16px;">↗ Outbound Email Sent to ${escapeHtml(l.email)}</h4>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Company:</strong> ${escapeHtml(l.company_name)} (${escapeHtml(l.mc_number || 'N/A')})</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Recipient Email:</strong> ${escapeHtml(l.email)}</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Equipment:</strong> ${escapeHtml(l.equipment_type || '53ft Dry Van')}</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Status:</strong> <span class="badge badge-paid">${escapeHtml(l.status)}</span></p>
-          <p style="margin:8px 0 0;font-size:11px;color:#94a3b8;">Sent via Shipping Wish AI Outreach Engine</p>
-        </div>`,
-        created_at: l.created_at,
+        subject: tpl.subject || `Dedicated operations manager for ${l.company_name || 'Carrier'}`,
+        body_text: tpl.text,
+        body_html: tpl.html,
+        created_at: l.last_contacted_at || l.created_at,
         is_read: true,
         company_name: l.company_name,
         owner_name: l.owner_name,
@@ -729,6 +748,21 @@ router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
       );
       if (!result.rows.length) return res.status(404).json({ error: 'Outbound email log not found' });
       const e = result.rows[0];
+
+      let renderedHtml = e.body_html;
+      let renderedText = e.body_text;
+      if (!renderedHtml) {
+        try {
+          const tpl = buildTemplate(e.template_key || 'dedicated_manager', {
+            ownerName: e.owner_name || 'there',
+            companyName: e.company_name,
+            recipientEmail: e.recipient_email
+          });
+          renderedHtml = tpl.html;
+          if (!renderedText) renderedText = tpl.text;
+        } catch (_) {}
+      }
+
       const logMsg = {
         id: numericId,
         direction: 'outbound',
@@ -736,16 +770,8 @@ router.get('/inbox/:id', requireAuth, staffEmailOnly, async (req, res) => {
         from_email: e.from_email || 'operations@shippingwish.com',
         to_email: e.recipient_email,
         subject: e.subject,
-        body_text: e.body_text || `Outbound Email (${e.email_type || 'campaign'}) sent to ${e.recipient_email}.\nStatus: ${e.status || 'sent'}`,
-        body_html: `<div style="padding:18px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.3);border-radius:10px;">
-          <h4 style="margin:0 0 10px;color:#f59e0b;font-size:16px;">↗ Outbound Email Sent to ${escapeHtml(e.recipient_email)}</h4>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Recipient:</strong> ${escapeHtml(e.recipient_email)}</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Subject:</strong> ${escapeHtml(e.subject)}</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Campaign Type:</strong> ${escapeHtml(e.email_type || 'campaign')}</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Status:</strong> <span class="badge badge-paid">${escapeHtml(e.status || 'sent')}</span></p>
-          ${e.body_text ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(245,158,11,0.2);white-space:pre-wrap;font-size:13px;color:#334155;">${escapeHtml(e.body_text)}</div>` : ''}
-          <p style="margin:8px 0 0;font-size:11px;color:#94a3b8;">Sent via Shipping Wish Resend Email Engine</p>
-        </div>`,
+        body_text: renderedText || `Outbound Email (${e.email_type || 'campaign'}) sent to ${e.recipient_email}.\nStatus: ${e.status || 'sent'}`,
+        body_html: renderedHtml,
         created_at: e.sent_at,
         is_read: true,
         company_name: e.company_name,
