@@ -1218,7 +1218,7 @@ router.post('/sync-dat-bulk', optionalAuth, async (req, res) => {
          SET status = 'covered', updated_at = NOW() 
          WHERE source_type = 'dat_sync' 
            AND status = 'new' 
-           AND updated_at < NOW() - INTERVAL '15 minutes'
+           AND updated_at < NOW() - INTERVAL '12 hours'
          RETURNING id, load_number`
       );
       coveredStaleCount = staleRes.rows.length;
@@ -2252,7 +2252,7 @@ async function autoCoverStaleDatLoads() {
        SET status = 'covered', updated_at = NOW() 
        WHERE source_type = 'dat_sync' 
          AND status = 'new' 
-         AND updated_at < NOW() - INTERVAL '15 minutes'
+         AND updated_at < NOW() - INTERVAL '12 hours'
        RETURNING id, load_number`
     );
     if (rows.length > 0 && typeof loadboardRouter.broadcastLoadboardEvent === 'function') {
