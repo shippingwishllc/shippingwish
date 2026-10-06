@@ -142,9 +142,46 @@ $ExtractScript = @"
             const txt = (r.innerText || '').trim();
             if (txt && txt.length > 20) list.push(txt);
         });
+
+        // Identify virtual scroll container
+        const scroller = document.querySelector('cdk-virtual-scroll-viewport') ||
+                         document.querySelector('[role="grid"]') ||
+                         document.querySelector('.load-board-results') ||
+                         document.querySelector('.virtual-scroll-viewport') ||
+                         document.querySelector('div[style*="overflow-y: auto"], div[style*="overflow-y: scroll"]');
+
+        if (window.__sw_scroll_cycle === undefined) {
+            window.__sw_scroll_cycle = 0;
+            window.__sw_last_top = '';
+        }
+
+        const topRow = rows[1] ? rows[1].innerText : (rows[0] ? rows[0].innerText : '');
+        const isNewTopLoad = Boolean(topRow && topRow !== window.__sw_last_top);
+
+        if (isNewTopLoad) {
+            // New load posted at top! Prioritize immediately and reset to top
+            window.__sw_last_top = topRow;
+            window.__sw_scroll_cycle = 0;
+            if (scroller && scroller.scrollTop > 50) {
+                scroller.scrollTop = 0;
+            }
+        } else if (scroller) {
+            // Deep background scan: Every 3 cycles (~4s), advance scroll to pull next batch of rows
+            window.__sw_scroll_cycle++;
+            if (window.__sw_scroll_cycle % 3 === 0) {
+                const maxScroll = (scroller.scrollHeight || 10000) - (scroller.clientHeight || 500);
+                if (scroller.scrollTop < Math.min(maxScroll, 4000)) {
+                    scroller.scrollTop += (scroller.clientHeight ? Math.floor(scroller.clientHeight * 0.85) : 450);
+                } else {
+                    scroller.scrollTop = 0;
+                }
+            }
+        }
+
         const main = document.querySelector('[role="grid"], table, .load-board-results') || document.body;
         return JSON.stringify({
             count: list.length,
+            isNewTopLoad: isNewTopLoad,
             fullText: main ? main.innerText : document.body.innerText
         });
     } catch(e) {
@@ -249,7 +286,11 @@ while ($true) {
 
                                 if ($currHash -ne $LastCdpHash) {
                                     $LastCdpHash = $currHash
-                                    Write-Host "[$timestamp] ⚡ Auto-detected live search results in TAL One! Streaming..." -ForegroundColor Cyan
+                                    if ($parsedResult.isNewTopLoad) {
+                                        Write-Host "[$timestamp] 🚨 NEW FRESH LOAD ARRIVED AT TOP! Instant priority stream..." -ForegroundColor Magenta
+                                    } else {
+                                        Write-Host "[$timestamp] ⚡ Auto-detected live loads in TAL One! Streaming..." -ForegroundColor Cyan
+                                    }
 
                                     $postBody = @{ rawText = $textToPush } | ConvertTo-Json
                                     $apiRes = Invoke-RestMethod -Uri "https://www.shippingwish.com/api/dispatch/sync-dat-bulk" -Method Post -Body $postBody -ContentType "application/json" -TimeoutSec 15
