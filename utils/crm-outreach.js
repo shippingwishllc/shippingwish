@@ -174,8 +174,19 @@ async function sendLeadVapi(lead, user, opts = {}) {
   }
   if (opts.consentConfirmed === true) await recordPriorConsent(lead.id);
 
-  const vapiApiKey = String(process.env.VAPI_API_KEY || '').trim();
-  const vapiPhoneId = String(process.env.VAPI_PHONE_NUMBER_ID || '').trim();
+  let vapiApiKey = String(process.env.VAPI_API_KEY || '').trim();
+  let vapiPhoneId = String(process.env.VAPI_PHONE_NUMBER_ID || '').trim();
+  if (!vapiApiKey || !vapiPhoneId) {
+    try {
+      const { rows } = await pool.query("SELECT key, value FROM site_settings WHERE key IN ('vapi_api_key', 'vapi_phone_number_id')");
+      rows.forEach(r => {
+        if (r.key === 'vapi_api_key' && !vapiApiKey) vapiApiKey = (r.value || '').trim();
+        if (r.key === 'vapi_phone_number_id' && !vapiPhoneId) vapiPhoneId = (r.value || '').trim();
+      });
+    } catch (_) {}
+  }
+  if (!vapiPhoneId) vapiPhoneId = '7e43a8e4-a844-4cb7-9f71-017467f38d33';
+  if (!vapiApiKey) vapiApiKey = '49988777-7a8a-4da0-99ac-ec3e4ec0bd76';
   const transfer = process.env.MIGHTYCALL_TRANSFER_NUMBER || process.env.OUR_NUMBER || '+18005803101';
   const company = lead.company_name || 'your fleet';
   const name = lead.owner_name || 'Fleet Manager';

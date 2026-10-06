@@ -34,7 +34,7 @@ psFile = scriptDir & "\tal-auto-bridge.ps1"
 Set WshShell = CreateObject("WScript.Shell")
 WshShell.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & psFile & """", 0, False
 "@
-Set-Content -Path $vbsPath -Value $vbsContent -Encoding UTF8
+[System.IO.File]::WriteAllText($vbsPath, $vbsContent, [System.Text.Encoding]::ASCII)
 Write-Host "      ✓ Silent runner created: $vbsPath" -ForegroundColor Green
 
 Write-Host "[3/5] Registering with Windows Startup (24/7 Auto-Start on boot)..." -ForegroundColor Yellow

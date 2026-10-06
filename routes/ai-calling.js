@@ -303,7 +303,8 @@ async function ensureAiCallingSchema() {
       ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS transcript TEXT;
       ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS summary TEXT;
       ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS duration_seconds INT DEFAULT 0;
-      ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS call_sentiment VARCHAR(50) DEFAULT 'CALM';
+      ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS call_sentiment VARCHAR(150) DEFAULT 'CALM';
+      ALTER TABLE ai_dispatch_calls ALTER COLUMN call_sentiment TYPE VARCHAR(150);
       ALTER TABLE ai_dispatch_calls ALTER COLUMN recording_url TYPE TEXT;
       ALTER TABLE ai_dispatch_calls ALTER COLUMN audio_hash DROP NOT NULL;
       ALTER TABLE ai_dispatch_calls ALTER COLUMN audio_hash SET DEFAULT '';
