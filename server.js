@@ -642,6 +642,7 @@ app.use('/api/superadmin', require('./routes/superadmin'));                 // E
 app.use('/api/nyclimo', require('./routes/nyclimo'));                       // NYC Limo Wish public, customer, driver, and ERP API
 app.use('/api/nyclimo', require('./routes/nyclimo-partners'));              // TLC-verified base offers, partner portal, status, and commission ledger
 app.use('/api/buywish', require('./routes/buywish'));                       // BuyWishOnline E-Commerce, Zendrop Sync & AI Hunter API
+app.use('/api/social', require('./routes/social-media'));                   // 4-Brand Autonomous AI Social Media & Content Auto-Pilot API
 
 // ---------- Public Contact / Service Request Form ----------
 function escapeHtml(str) {

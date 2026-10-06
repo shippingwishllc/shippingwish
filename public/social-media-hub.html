@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4-Brand Autonomous Social Media &amp; AI Auto-Pilot | Shipping Wish LLC</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <style>
+    .brand-pill-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .brand-pill-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      border: 1px solid var(--border-default, #e2e8f0);
+      background: var(--bg-elevated, #ffffff);
+      color: var(--text-muted, #64748b);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .brand-pill-btn.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    }
+    .brand-pill-btn.active.sw { background: #0f172a; border-color: #f59e0b; color: #f59e0b; }
+    .brand-pill-btn.active.ln { background: #082f49; border-color: #38bdf8; color: #38bdf8; }
+    .brand-pill-btn.active.nl { background: #172554; border-color: #93c5fd; color: #93c5fd; }
+    .brand-pill-btn.active.bw { background: #431407; border-color: #fb923c; color: #fb923c; }
+
+    .platform-status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .platform-card {
+      background: var(--bg-elevated, #ffffff);
+      border: 1px solid var(--border-default, #e2e8f0);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .platform-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
+    .platform-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .platform-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .studio-layout {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+    @media (max-width: 1024px) {
+      .studio-layout { grid-template-columns: 1fr; }
+    }
+
+    .studio-panel {
+      background: var(--bg-elevated, #ffffff);
+      border: 1px solid var(--border-default, #e2e8f0);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .post-preview-card {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 18px;
+      font-family: system-ui, -apple-system, sans-serif;
+      margin-top: 14px;
+    }
+    .post-preview-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .preview-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #0f172a;
+      color: #f59e0b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .preview-body {
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.65;
+      color: #1e293b;
+      word-break: break-word;
+    }
+    .preview-image-badge {
+      margin-top: 14px;
+      background: #eff6ff;
+      border: 1px dashed #3b82f6;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 12.5px;
+      color: #1d4ed8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: #ffffff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+
+  <div class="app-main">
+    <header class="app-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;display:flex;align-items:center;gap:10px;">
+          <span>📱</span> 4-Brand Autonomous AI Social Media &amp; Auto-Pilot Desk
+        </h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">
+          Dynamic non-repetitive AI content creation, official Graph API distribution, and compliant community auto-replies
+        </p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-secondary btn-sm" onclick="openCredentialsModal()" style="font-weight:700;">⚙️ API Credentials</button>
+        <button class="btn btn-secondary btn-sm" onclick="openGuideModal()" style="font-weight:700;">📖 Setup &amp; Anti-Ban Guide</button>
+      </div>
+    </header>
+
+    <main class="app-content" style="padding-top:20px;padding-bottom:40px;">
+
+      <!-- BRAND SELECTOR -->
+      <div class="brand-pill-bar">
+        <button class="brand-pill-btn active sw" id="btn-brand-shippingwish" onclick="selectBrand('shippingwish')">
+          <span>🚚</span> Shipping Wish LLC (Dispatch Desk)
+        </button>
+        <button class="brand-pill-btn ln" id="btn-brand-loadsnexus" onclick="selectBrand('loadsnexus')">
+          <span>🛡️</span> LoadsNexus™ (Capacity Exchange)
+        </button>
+        <button class="brand-pill-btn nl" id="btn-brand-nyclimowish" onclick="selectBrand('nyclimowish')">
+          <span>🗽</span> NYC Limo Wish (Executive Chauffeur)
+        </button>
+        <button class="brand-pill-btn bw" id="btn-brand-buywish" onclick="selectBrand('buywish')">
+          <span>🛍️</span> BuyWish Online (Lifestyle E-Commerce)
+        </button>
+      </div>
+
+      <!-- PLATFORM CONNECTIVITY CARDS -->
+      <div class="platform-status-grid">
+        <!-- Facebook -->
+        <div class="platform-card">
+          <div>
+            <div class="platform-card-header">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="platform-icon" style="background:#1877f2;color:#fff;">📘</div>
+                <strong>Facebook Page</strong>
+              </div>
+              <span class="badge" id="badge-fb">Checking...</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 10px;">Official Page Posts via Meta Graph API v19</p>
+          </div>
+          <button class="btn btn-secondary btn-xs" onclick="openCredentialsModal()">Configure</button>
+        </div>
+
+        <!-- Instagram -->
+        <div class="platform-card">
+          <div>
+            <div class="platform-card-header">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="platform-icon" style="background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;">📸</div>
+                <strong>Instagram Business</strong>
+              </div>
+              <span class="badge" id="badge-ig">Checking...</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 10px;">Feed Photos, Carousels &amp; Captions</p>
+          </div>
+          <button class="btn btn-secondary btn-xs" onclick="openCredentialsModal()">Configure</button>
+        </div>
+
+        <!-- LinkedIn -->
+        <div class="platform-card">
+          <div>
+            <div class="platform-card-header">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="platform-icon" style="background:#0a66c2;color:#fff;">💼</div>
+                <strong>LinkedIn Company</strong>
+              </div>
+              <span class="badge" id="badge-li">Checking...</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 10px;">B2B Logistics &amp; Corporate Network</p>
+          </div>
+          <button class="btn btn-secondary btn-xs" onclick="openCredentialsModal()">Configure</button>
+        </div>
+
+        <!-- 24/7 AI Auto-Pilot -->
+        <div class="platform-card" style="border-left:3px solid #10b981;">
+          <div>
+            <div class="platform-card-header">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="platform-icon" style="background:#10b981;color:#fff;">⚡</div>
+                <strong>AI Auto-Pilot</strong>
+              </div>
+              <span class="badge badge-paid" id="badge-autopilot">Standby</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 10px;" id="text-autopilot-time">Daily Scheduled Time: 10:00 AM</p>
+          </div>
+          <button class="btn btn-secondary btn-xs" onclick="openCredentialsModal()">Schedule</button>
+        </div>
+      </div>
+
+      <!-- STUDIO LAYOUT -->
+      <div class="studio-layout">
+        <!-- LEFT: GENERATOR CONTROLS -->
+        <div class="studio-panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 style="font-size:16px;font-weight:800;margin:0;">✨ AI Content Creation Studio</h2>
+            <span class="badge badge-booked" id="active-brand-label">Shipping Wish LLC</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+              <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px;">Select Content Pillar (Never Repeats):</label>
+              <select class="form-input" id="sel-category" style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;">
+                <!-- Populated dynamically based on brand -->
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px;">Custom Angle or Trend (Optional):</label>
+              <input type="text" class="form-input" id="inp-custom-angle" placeholder="e.g. Focus on national diesel drop, or new FMCSA broker bond rule..." style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;">
+            </div>
+
+            <button class="btn btn-primary" id="btn-generate" onclick="generatePost()" style="font-weight:800;padding:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
+              <span>⚡ Generate 100% Unique Post with AI</span>
+            </button>
+
+            <div style="height:1px;background:#e2e8f0;margin:10px 0;"></div>
+
+            <!-- POST EDITOR -->
+            <div>
+              <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px;">Editable Post Caption:</label>
+              <textarea class="form-input" id="editor-content" rows="8" style="width:100%;font-size:13.5px;line-height:1.6;padding:10px 12px;border-radius:8px;" placeholder="Click 'Generate 100% Unique Post' above to let AI craft an authoritative industry update..."></textarea>
+            </div>
+
+            <div>
+              <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px;">Target Distribution Channels:</label>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                  <input type="checkbox" id="chk-fb" checked> 📘 Facebook
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                  <input type="checkbox" id="chk-ig" checked> 📸 Instagram
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                  <input type="checkbox" id="chk-li" checked> 💼 LinkedIn
+                </label>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:6px;">
+              <button class="btn btn-primary" id="btn-publish" onclick="publishPost()" style="flex:1;font-weight:800;padding:12px;">🚀 Publish Live Now</button>
+              <button class="btn btn-secondary" onclick="saveAsDraft()" style="font-weight:700;">💾 Save Archive</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: LIVE VISUAL PREVIEW & COMMUNITY AUTO-RESPONDER -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <!-- LIVE FEED PREVIEW -->
+          <div class="studio-panel">
+            <h3 style="font-size:15px;font-weight:800;margin:0 0 10px;">👁️ Live Social Feed Preview</h3>
+            
+            <div class="post-preview-card" id="preview-container">
+              <div class="post-preview-header">
+                <div class="preview-avatar" id="prev-avatar">SW</div>
+                <div>
+                  <div style="font-weight:800;font-size:14px;color:#0f172a;" id="prev-brand-name">Shipping Wish LLC</div>
+                  <div style="font-size:11px;color:#64748b;" id="prev-time">Just now · 🌐 Public</div>
+                </div>
+              </div>
+              <div class="preview-body" id="prev-body">
+                Select a category and click "Generate 100% Unique Post with AI" to see real-time preview here.
+              </div>
+              <div class="preview-image-badge" id="prev-image-box">
+                <span>🖼️ <strong>Visual Design Concept:</strong> Clean logistics infographic with fuel price graph &amp; official logo</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- COMMUNITY AUTO-RESPONDER TESTER -->
+          <div class="studio-panel">
+            <h3 style="font-size:15px;font-weight:800;margin:0 0 8px;">💬 AI Community Auto-Responder Test</h3>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;">
+              Test how AI instantly answers carrier/customer questions in comment threads or DMs (100% policy-safe).
+            </p>
+            <div style="display:flex;gap:8px;">
+              <input type="text" class="form-input" id="inp-test-comment" placeholder="e.g. How much do you charge for Reefer trucks?" style="flex:1;font-size:13px;">
+              <button class="btn btn-secondary btn-sm" onclick="testAutoReply()" style="font-weight:700;">Test Reply</button>
+            </div>
+            <div id="reply-result-box" style="display:none;margin-top:12px;padding:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;font-size:13px;color:#166534;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT POSTS LOG TABLE -->
+      <div class="studio-panel">
+        <h3 style="font-size:16px;font-weight:800;margin:0 0 16px;">📜 Recent Social Distribution &amp; Archive Log</h3>
+        <div class="table-responsive">
+          <table class="tms-table-v2" style="width:100%;font-size:13px;">
+            <thead>
+              <tr>
+                <th>Brand</th>
+                <th>Category</th>
+                <th>Platform</th>
+                <th>Post Snippet</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="posts-table-body">
+              <tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">Loading post history...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- API CREDENTIALS MODAL -->
+<div class="modal-overlay" id="credentials-modal">
+  <div class="modal-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <h3 style="margin:0;font-size:18px;font-weight:800;" id="modal-title">⚙️ Configure API Credentials</h3>
+      <button style="border:none;background:none;font-size:20px;cursor:pointer;" onclick="closeModal('credentials-modal')">✕</button>
+    </div>
+
+    <form id="creds-form" onsubmit="saveCredentials(event)">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <!-- Facebook -->
+        <div style="background:#f8fafc;padding:14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <h4 style="margin:0 0 8px;font-size:14px;color:#1877f2;">📘 Meta / Facebook Graph API</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:11px;font-weight:700;">Facebook Page ID:</label>
+              <input type="text" class="form-input" id="cfg-fb-page-id" placeholder="1049281728192" style="width:100%;font-size:12px;">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;">Page Access Token (Permanent):</label>
+              <input type="password" class="form-input" id="cfg-fb-token" placeholder="EAA..." style="width:100%;font-size:12px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Instagram -->
+        <div style="background:#f8fafc;padding:14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <h4 style="margin:0 0 8px;font-size:14px;color:#dc2743;">📸 Instagram Business API</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:11px;font-weight:700;">Instagram Account ID:</label>
+              <input type="text" class="form-input" id="cfg-ig-id" placeholder="1784140028192" style="width:100%;font-size:12px;">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;">Instagram Access Token:</label>
+              <input type="password" class="form-input" id="cfg-ig-token" placeholder="EAA..." style="width:100%;font-size:12px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- LinkedIn -->
+        <div style="background:#f8fafc;padding:14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <h4 style="margin:0 0 8px;font-size:14px;color:#0a66c2;">💼 LinkedIn Company API</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:11px;font-weight:700;">Organization URN:</label>
+              <input type="text" class="form-input" id="cfg-li-urn" placeholder="urn:li:organization:12345678" style="width:100%;font-size:12px;">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;">OAuth 2.0 Access Token:</label>
+              <input type="password" class="form-input" id="cfg-li-token" placeholder="AQV..." style="width:100%;font-size:12px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto-Pilot Toggle -->
+        <div style="background:#f0fdf4;padding:14px;border-radius:10px;border:1px solid #bbf7d0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <h4 style="margin:0;font-size:14px;color:#166534;">⚡ Autonomous Daily Auto-Pilot</h4>
+              <p style="margin:2px 0 0;font-size:11.5px;color:#15803d;">Automatically synthesize &amp; publish 1 fresh post every day.</p>
+            </div>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;cursor:pointer;">
+              <input type="checkbox" id="cfg-autopilot-enable"> Enable Auto-Pilot
+            </label>
+          </div>
+          <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+            <label style="font-size:11.5px;font-weight:700;">Publishing Time (EST):</label>
+            <input type="time" class="form-input" id="cfg-autopilot-time" value="10:00" style="font-size:12px;padding:4px 8px;">
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('credentials-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="font-weight:800;">Save Credentials Live</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- STEP-BY-STEP API & ANTI-BAN GUIDE MODAL -->
+<div class="modal-overlay" id="guide-modal">
+  <div class="modal-content" style="max-width:760px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <h3 style="margin:0;font-size:18px;font-weight:800;">📖 Official Social Media API Setup &amp; Zero-Ban Guide</h3>
+      <button style="border:none;background:none;font-size:20px;cursor:pointer;" onclick="closeModal('guide-modal')">✕</button>
+    </div>
+
+    <div style="font-size:13.5px;line-height:1.7;color:#334155;display:flex;flex-direction:column;gap:16px;">
+      <div style="background:#eff6ff;border-left:4px solid #3b82f6;padding:12px 16px;border-radius:4px;">
+        <strong style="color:#1d4ed8;">🛡️ Kyun Humare Accounts Block Nahi Honge?</strong><br>
+        Hum koi illegal browser bot ya scraping extension use nahi karte. Hum Meta aur LinkedIn ke <strong>Official Developer Portals</strong> se generate kiye gaye business tokens use karte hain jo 100% legal aur compliant hain.
+      </div>
+
+      <div>
+        <h4 style="margin:0 0 6px;color:#1877f2;font-size:15px;">1. Meta (Facebook Pages &amp; Instagram Business) API Hasil Karne Ka Tareeqa:</h4>
+        <ol style="margin:0;padding-left:20px;">
+          <li>Go to <a href="https://developers.facebook.com" target="_blank" style="color:#2563eb;font-weight:700;">developers.facebook.com</a> par login karein.</li>
+          <li><strong>Create App</strong> dabayein &rarr; Type select karein: <strong>Business</strong>.</li>
+          <li>App Dashboard me add karein: <strong>Facebook Pages API</strong> aur <strong>Instagram Graph API</strong>.</li>
+          <li><strong>Tools &rarr; Graph API Explorer</strong> par jayein. Apna Facebook Page select karein aur permissions tick karein:
+            <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">pages_manage_posts</code>, 
+            <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">pages_read_engagement</code>, 
+            <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">instagram_content_publish</code>.
+          </li>
+          <li><strong>Generate Access Token</strong> dabayein aur is token ko <em>Long-Lived (Never Expire)</em> me convert karein.</li>
+          <li>Page ID aur Token copy karke hamare <strong>API Credentials</strong> box me paste kar dein!</li>
+        </ol>
+      </div>
+
+      <div>
+        <h4 style="margin:0 0 6px;color:#0a66c2;font-size:15px;">2. LinkedIn Company Page API Hasil Karne Ka Tareeqa:</h4>
+        <ol style="margin:0;padding-left:20px;">
+          <li>Go to <a href="https://www.linkedin.com/developers" target="_blank" style="color:#2563eb;font-weight:700;">linkedin.com/developers</a> &rarr; <strong>Create App</strong>.</li>
+          <li>App ko apne official LinkedIn Company Page ke sath verify/connect karein.</li>
+          <li>Products tab me add karein: <strong>Share on LinkedIn</strong>.</li>
+          <li>Auth tab me permissions: <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">w_organization_social</code>.</li>
+          <li>OAuth 2.0 Token aur Organization URN copy karke hamare dashboard me save karein.</li>
+        </ol>
+      </div>
+
+      <div style="background:#fdf2f8;border-left:4px solid #db2777;padding:12px 16px;border-radius:4px;">
+        <strong style="color:#9d174d;">💡 Har Brand ki Alag Settings:</strong><br>
+        Aap Shipping Wish, LoadsNexus, NYC Limo Wish, aur BuyWish Online sabhi ke alag alag pages connect kar sakte hain. AI har brand ki alag personality aur hashtags ke sath post banayega!
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let activeBrand = 'shippingwish';
+  let brandsData = {};
+  let currentGeneratedPost = null;
+
+  const CATEGORY_LABELS = {
+    market_conditions: '📈 Market Conditions & Fuel Trends',
+    fmcsa_compliance: '🛡️ FMCSA Safety Rules & DOT Compliance',
+    profit_optimization: '💰 Owner-Operator Profit & RPM Maximization',
+    ratecon_protection: '📑 RateCon OCR Audit & Scam Red Flags',
+    industry_news: '🚨 Breaking Freight & Supply Chain News',
+    dispatch_promotional: '⚡ Shipping Wish $149/wk Dispatch ($0 Trial)',
+    driver_lifestyle: '🛣️ Trucker Life, Health & Highway Tips',
+    broker_credit_check: '🔍 Broker Credit Scores & Days-to-Pay',
+    spot_market_rates: '📊 Spot Freight Rates & Capacity Trends',
+    capacity_matching: '🤝 Automated Carrier-Broker Matching',
+    loadboard_transparency: '✨ 100% Unmasked Broker Contacts',
+    free_load_posting: '🆓 100% Free Load Posting for Brokers',
+    airport_transfer_tips: '✈️ JFK, EWR, LGA Airport Transfer Tips',
+    corporate_travel: '👔 Executive Corporate Travel & Roadshows',
+    manhattan_luxury: '🏙️ Manhattan Luxury Skyline & Evening Charter',
+    vip_events_weddings: '🥂 Wedding & VIP Gala Black Car Chauffeur',
+    chauffeur_hospitality: '🎩 Professional Chauffeur Standards & Fleet',
+    product_spotlight: '⭐ Viral Product Spotlight & Benefits',
+    lifestyle_hacks: '💡 Smart Living Hacks for Home & Office',
+    seasonal_discounts: '🏷️ Limited Weekend Discount & Flash Sale',
+    customer_reviews: '🌟 Verified Customer Unboxing & Reviews',
+    smart_gadget_review: '📱 Smart Gadget In-Depth Performance'
+  };
+
+  async function initHub() {
+    try {
+      const res = await fetch('/api/social/brands');
+      const data = await res.json();
+      if (data.ok && data.brands) {
+        data.brands.forEach(b => { brandsData[b.key] = b; });
+        renderBrandState();
+        loadRecentPosts();
+      }
+    } catch (err) {
+      console.warn('Init error:', err);
+    }
+  }
+
+  function selectBrand(key) {
+    activeBrand = key;
+    document.querySelectorAll('.brand-pill-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById(`btn-brand-${key}`);
+    if (activeBtn) activeBtn.classList.add('active');
+    renderBrandState();
+    loadRecentPosts();
+  }
+
+  function renderBrandState() {
+    const brand = brandsData[activeBrand] || {};
+    const status = brand.status || {};
+
+    // Badges
+    const updateBadge = (id, connected) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (connected) {
+        el.className = 'badge badge-paid';
+        el.textContent = 'Connected';
+      } else {
+        el.className = 'badge badge-overdue';
+        el.textContent = 'Disconnected';
+      }
+    };
+
+    updateBadge('badge-fb', status.facebook_connected);
+    updateBadge('badge-ig', status.instagram_connected);
+    updateBadge('badge-li', status.linkedin_connected);
+
+    const apBadge = document.getElementById('badge-autopilot');
+    if (apBadge) {
+      apBadge.className = status.autopilot_enabled ? 'badge badge-paid' : 'badge badge-pending';
+      apBadge.textContent = status.autopilot_enabled ? 'Active (Auto)' : 'Standby';
+    }
+    const apTime = document.getElementById('text-autopilot-time');
+    if (apTime) apTime.textContent = `Daily Scheduled Time: ${status.autopilot_time || '10:00 AM'}`;
+
+    const brandLbl = document.getElementById('active-brand-label');
+    if (brandLbl) brandLbl.textContent = brand.name || 'Brand';
+
+    // Populate Category Dropdown
+    const selCat = document.getElementById('sel-category');
+    if (selCat) {
+      const cats = brand.categories || ['market_conditions'];
+      selCat.innerHTML = cats.map(c => `
+        <option value="${c}">${CATEGORY_LABELS[c] || c.replace(/_/g, ' ')}</option>
+      `).join('');
+    }
+
+    // Update Preview Header
+    const prevName = document.getElementById('prev-brand-name');
+    if (prevName) prevName.textContent = brand.name || 'Brand';
+    const prevAvatar = document.getElementById('prev-avatar');
+    if (prevAvatar) {
+      const initials = (brand.name || 'SW').split(' ').map(n => n[0]).slice(0,2).join('');
+      prevAvatar.textContent = initials;
+    }
+  }
+
+  async function generatePost() {
+    const btn = document.getElementById('btn-generate');
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ Synthesizing unique authoritative post with AI...</span>';
+
+    const category = document.getElementById('sel-category').value;
+    const customAngle = document.getElementById('inp-custom-angle').value;
+
+    try {
+      const res = await fetch('/api/social/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand: activeBrand,
+          category,
+          custom_angle: customAngle
+        })
+      });
+      const data = await res.json();
+      if (data.ok && data.post) {
+        currentGeneratedPost = data.post;
+        document.getElementById('editor-content').value = data.post.content;
+        document.getElementById('prev-body').textContent = data.post.content;
+        
+        const imgBox = document.getElementById('prev-image-box');
+        if (imgBox) {
+          imgBox.innerHTML = `<span>🖼️ <strong>Visual Design Concept:</strong> ${escapeHtml(data.post.image_prompt || 'Branded Graphic Banner')}</span>`;
+        }
+      } else {
+        alert(data.error || 'Failed to generate post');
+      }
+    } catch (err) {
+      alert('Error generating post: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>⚡ Generate 100% Unique Post with AI</span>';
+    }
+  }
+
+  // Update preview as user types in editor
+  document.getElementById('editor-content')?.addEventListener('input', function() {
+    const prev = document.getElementById('prev-body');
+    if (prev) prev.textContent = this.value;
+  });
+
+  async function publishPost() {
+    const content = document.getElementById('editor-content').value.trim();
+    if (!content) return alert('Please generate or write post content first.');
+
+    const platforms = [];
+    if (document.getElementById('chk-fb').checked) platforms.push('facebook');
+    if (document.getElementById('chk-ig').checked) platforms.push('instagram');
+    if (document.getElementById('chk-li').checked) platforms.push('linkedin');
+
+    if (!platforms.length) return alert('Please select at least one distribution platform.');
+
+    const btn = document.getElementById('btn-publish');
+    btn.disabled = true;
+    btn.textContent = '🚀 Publishing to channels...';
+
+    try {
+      const res = await fetch('/api/social/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand: activeBrand,
+          category: document.getElementById('sel-category').value,
+          title: (currentGeneratedPost && currentGeneratedPost.title) || 'Social Post',
+          content,
+          platforms
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert(data.message || 'Post published successfully!');
+        loadRecentPosts();
+      } else {
+        alert(data.error || 'Publishing error');
+      }
+    } catch (err) {
+      alert('Network error: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🚀 Publish Live Now';
+    }
+  }
+
+  async function saveAsDraft() {
+    const content = document.getElementById('editor-content').value.trim();
+    if (!content) return alert('Post content is empty.');
+
+    const res = await fetch('/api/social/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brand: activeBrand,
+        category: document.getElementById('sel-category').value,
+        title: (currentGeneratedPost && currentGeneratedPost.title) || 'Draft Post',
+        content,
+        platforms: ['archive']
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert('Saved to brand archive successfully!');
+      loadRecentPosts();
+    }
+  }
+
+  async function loadRecentPosts() {
+    try {
+      const res = await fetch(`/api/social/posts?brand=${activeBrand}`);
+      const data = await res.json();
+      const tbody = document.getElementById('posts-table-body');
+      if (!tbody) return;
+
+      if (!data.posts || !data.posts.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">No posts recorded yet for this brand. Generate one above!</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.posts.map(p => `
+        <tr>
+          <td><strong>${p.brand}</strong></td>
+          <td><span class="badge badge-booked">${escapeHtml(p.category || 'General')}</span></td>
+          <td><span style="font-weight:700;text-transform:capitalize;">${p.platform}</span></td>
+          <td style="max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${escapeHtml(p.content)}
+          </td>
+          <td>
+            <span class="badge ${p.status === 'published' ? 'badge-paid' : 'badge-pending'}">
+              ${p.status}
+            </span>
+          </td>
+          <td style="color:#64748b;font-size:11.5px;">${new Date(p.created_at).toLocaleString([], { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      console.warn('Load posts error:', err);
+    }
+  }
+
+  async function testAutoReply() {
+    const input = document.getElementById('inp-test-comment');
+    const comment = input.value.trim();
+    if (!comment) return alert('Please enter a test comment or question.');
+
+    const box = document.getElementById('reply-result-box');
+    box.style.display = 'block';
+    box.innerHTML = '<em>Thinking like official community manager...</em>';
+
+    try {
+      const res = await fetch('/api/social/auto-reply-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand: activeBrand,
+          user_comment: comment
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        box.innerHTML = `<strong>🤖 Official AI Reply:</strong><br>${escapeHtml(data.reply)}`;
+      } else {
+        box.innerHTML = `<span style="color:#b91c1c;">Error: ${escapeHtml(data.error)}</span>`;
+      }
+    } catch (err) {
+      box.innerHTML = `<span style="color:#b91c1c;">Error: ${escapeHtml(err.message)}</span>`;
+    }
+  }
+
+  // Credentials Modal logic
+  async function openCredentialsModal() {
+    const brand = activeBrand;
+    document.getElementById('modal-title').textContent = `⚙️ Configure APIs: ${brandsData[brand]?.name || brand}`;
+    
+    try {
+      const res = await fetch(`/api/social/credentials/${brand}`);
+      const data = await res.json();
+      if (data.ok) {
+        document.getElementById('cfg-fb-page-id').value = data.facebook_page_id || '';
+        document.getElementById('cfg-fb-token').value = '';
+        document.getElementById('cfg-fb-token').placeholder = data.facebook_access_token_masked || 'Paste new token...';
+
+        document.getElementById('cfg-ig-id').value = data.instagram_account_id || '';
+        document.getElementById('cfg-ig-token').value = '';
+        document.getElementById('cfg-ig-token').placeholder = data.instagram_access_token_masked || 'Paste new token...';
+
+        document.getElementById('cfg-li-urn').value = data.linkedin_org_urn || '';
+        document.getElementById('cfg-li-token').value = '';
+        document.getElementById('cfg-li-token').placeholder = data.linkedin_access_token_masked || 'Paste new token...';
+
+        document.getElementById('cfg-autopilot-enable').checked = Boolean(data.autopilot_enabled);
+        document.getElementById('cfg-autopilot-time').value = data.autopilot_time || '10:00';
+      }
+    } catch (_) {}
+
+    document.getElementById('credentials-modal').classList.add('active');
+  }
+
+  async function saveCredentials(e) {
+    e.preventDefault();
+    const brand = activeBrand;
+    const body = {
+      facebook_page_id: document.getElementById('cfg-fb-page-id').value.trim(),
+      facebook_access_token: document.getElementById('cfg-fb-token').value.trim(),
+      instagram_account_id: document.getElementById('cfg-ig-id').value.trim(),
+      instagram_access_token: document.getElementById('cfg-ig-token').value.trim(),
+      linkedin_org_urn: document.getElementById('cfg-li-urn').value.trim(),
+      linkedin_access_token: document.getElementById('cfg-li-token').value.trim(),
+      autopilot_enabled: document.getElementById('cfg-autopilot-enable').checked,
+      autopilot_time: document.getElementById('cfg-autopilot-time').value
+    };
+
+    try {
+      const res = await fetch(`/api/social/credentials/${brand}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert(data.message || 'Saved successfully!');
+        closeModal('credentials-modal');
+        initHub();
+      } else {
+        alert(data.error || 'Save error');
+      }
+    } catch (err) {
+      alert('Save failed: ' + err.message);
+    }
+  }
+
+  function openGuideModal() {
+    document.getElementById('guide-modal').classList.add('active');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  document.addEventListener('DOMContentLoaded', initHub);
+</script>
+</body>
+</html>

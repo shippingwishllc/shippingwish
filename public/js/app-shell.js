@@ -222,6 +222,7 @@
     { section: 'Executive Command', superAdminOnly: true },
     { key: 'superadmin', href: '/superadmin', icon: IC.crown, label: 'Command Center (4-Brand)', superAdminOnly: true },
     { key: 'loadnexus', href: '/admin-loadnexus', icon: IC.shield, label: '🛡️ LoadNexus Superadmin Command', superAdminOnly: true },
+    { key: 'social', href: '/social-media-hub', icon: IC.webcms, label: '📱 AI Social Auto-Pilot (4-Brand)', adminOnly: true },
     { section: 'Operations Workflow' },
     { key: 'loadboard', href: '/load-booking', icon: IC.target, label: '⚡ Load Board & AI Match' },
     { key: 'ai-dispatch', href: '/ai-dispatch', icon: IC.robot, label: '🤖 AI Dispatch Operations' },
@@ -355,7 +356,9 @@
     'dashboard.html': 'home',
     'driver-app.html': 'driver',
     'trash.html': 'trash',
-    'settings.html': 'settings'
+    'settings.html': 'settings',
+    'social-media-hub.html': 'social',
+    'social-media-hub': 'social'
   };
 
   function pageName() {
