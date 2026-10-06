@@ -28,6 +28,26 @@ function cleanLocation(raw) {
 }
 
 /**
+ * Extract phone number with extension from load post text
+ * Examples: (813) 518-4918 ext 104, 888-374-5138 x22, (800) 555-0199 #304
+ */
+function extractPhoneWithExt(str) {
+  if (!str) return null;
+  const phoneMatch = str.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
+  if (!phoneMatch) return null;
+
+  let phone = `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}`;
+
+  const afterPhone = str.slice(phoneMatch.index + phoneMatch[0].length, phoneMatch.index + phoneMatch[0].length + 35);
+  const extMatch = afterPhone.match(/^(?:[\s,·\-|/]*)(?:ext(?:ension)?\.?|x|#)\s*([0-9]{1,6})\b/i) ||
+                   str.match(/\b(?:ext(?:ension)?\.?|x)\s*#?([0-9]{1,6})\b/i);
+  if (extMatch && extMatch[1]) {
+    phone += ` ext ${extMatch[1]}`;
+  }
+  return phone;
+}
+
+/**
  * Parse money strings into pure float
  */
 function parseMoney(val) {
@@ -101,9 +121,8 @@ function parseKeyValueFormat(text) {
   // Extract email & phone anywhere in text if not explicitly tagged
   const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
   if (emailMatch) data.broker_email = emailMatch[1].toLowerCase();
-
-  const phoneMatch = text.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
-  if (phoneMatch) data.broker_phone = `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}`;
+  const phone = extractPhoneWithExt(text);
+  if (phone) data.broker_phone = phone;
 
   if (data.origin || data.destination) {
     const orig = cleanLocation(data.origin);
@@ -187,8 +206,7 @@ function parseDatTableRows(text) {
       const emailMatch = line.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
       const email = emailMatch ? emailMatch[1].toLowerCase() : null;
 
-      const phoneMatch = line.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
-      const phone = phoneMatch ? `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}` : null;
+      const phone = extractPhoneWithExt(line);
 
       // Extract Broker company name
       let brokerName = 'DAT Verified Broker';
@@ -307,14 +325,7 @@ function parseDatCard(text) {
   }
 
   // 6. Phone & Extension
-  const phoneMatch = text.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
-  if (phoneMatch) {
-    data.broker_phone = `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}`;
-  }
-  const extMatch = text.match(/(?:EXT|extension)\s*#?([0-9]{1,6})/i);
-  if (extMatch && data.broker_phone) {
-    data.broker_phone += ` ext ${extMatch[1]}`;
-  }
+  data.broker_phone = extractPhoneWithExt(text);
 
   // 7. Email
   const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
@@ -464,8 +475,7 @@ function parseUniversalDat(text) {
     else if (/\b(SD|STEP)\b/i.test(chunk)) eq = 'Step Deck';
     else if (/\b(V|VAN)\b/i.test(chunk)) eq = '53ft Dry Van';
 
-    const phoneMatch = chunk.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
-    const phone = phoneMatch ? `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}` : null;
+    const phone = extractPhoneWithExt(chunk);
 
     const emailMatch = chunk.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
     const email = emailMatch ? emailMatch[1].toLowerCase() : null;
@@ -477,6 +487,15 @@ function parseUniversalDat(text) {
     } else if (email) {
       const domain = email.split('@')[1]?.replace(/\.[a-z]{2,}$/i, '');
       if (domain) broker = domain.toUpperCase() + ' Logistics';
+    }
+
+    // Extract any notes, comments, commodity, or special instructions from chunk
+    let notes = '';
+    const noteMatches = chunk.match(/(?:commodity|comments?|notes?|ref(?:erence)?\s*#?|details?|special instructions?|dock|hours|appointment|appt)[:\s]+([^\n\r]+)/i);
+    if (noteMatches) {
+      notes = noteMatches[0].trim();
+    } else if (chunk.includes('Partial')) {
+      notes = 'Partial load';
     }
 
     const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : 0;
@@ -501,7 +520,7 @@ function parseUniversalDat(text) {
       rpm,
       pickup_time: 'Ready Today',
       delivery_time: 'Standard Delivery',
-      notes: 'Live TAL One sync',
+      notes: notes,
       raw_source: chunk.slice(0, 300)
     });
   }
@@ -559,9 +578,7 @@ function parseDatInput(text) {
     const rate = rateMatch ? parseMoney(rateMatch[1]) : 0;
     const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : 0;
 
-    const phoneMatch = trimmed.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
-    const phone = phoneMatch ? `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}` : null;
-
+    const phone = extractPhoneWithExt(trimmed);
     const emailMatch = trimmed.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
     const email = emailMatch ? emailMatch[1].toLowerCase() : null;
 
@@ -627,5 +644,6 @@ module.exports = {
   parseDatInput,
   formatDriverSms,
   mapEquipment,
-  cleanLocation
+  cleanLocation,
+  extractPhoneWithExt
 };

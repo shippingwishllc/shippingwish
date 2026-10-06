@@ -7,7 +7,7 @@ const { assertPublicHttps, ensureBoardSchema, syncSource, syncDueSources } = req
 const { isWithinTcpaHours } = require('../utils/us-timezones');
 const { parseHomeDays, formatHomeDays } = require('../utils/dispatch-home-time');
 const brain = require('../utils/dispatch-brain');
-const { parseDatInput, formatDriverSms } = require('../utils/dat-load-parser');
+const { parseDatInput, formatDriverSms, extractPhoneWithExt } = require('../utils/dat-load-parser');
 const { sendBrandedEmail } = require('../utils/mailer');
 const { COMPANY } = require('../utils/email-templates');
 const multer = require('multer');
@@ -505,7 +505,7 @@ router.post('/match-truck', ...staff, async (req, res) => {
       const loadedRpm = parseFloat((m.loadedRpm || (loaded > 0 ? l.rate / loaded : 2.50)).toFixed(2));
       const loadWeight = isBox ? Math.min(Math.round(parseFloat(l.weight || 6000)), 9500) : Math.round(parseFloat(l.weight || 40000));
 
-      // Real broker contact resolution (No dummy fake fallbacks)
+      // Real broker contact resolution from specific TAL One post
       let brokerEmail = l.broker_email || null;
       let brokerPhone = l.broker_phone || null;
 
@@ -514,16 +514,15 @@ router.post('/match-truck', ...staff, async (req, res) => {
         if (emailMatch) brokerEmail = emailMatch[1].toLowerCase();
       }
 
-      if (!brokerPhone && l.broker_contact && /\d{3}/.test(l.broker_contact)) {
-        const phoneMatch = l.broker_contact.match(/(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/);
-        if (phoneMatch) brokerPhone = `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}`;
+      if (!brokerPhone && l.broker_contact) {
+        brokerPhone = extractPhoneWithExt(l.broker_contact);
       }
 
-      // Check known verified broker network for official contact details & credit score
+      // Broker Intelligence (MC, Credit Score, Bond Vetting)
       const bName = String(l.broker_name || '');
       const known = getKnownBroker(bName);
       if (known) {
-        if (!brokerEmail && known.email) brokerEmail = known.email;
+        // If phone completely missing from post, fallback to known phone
         if (!brokerPhone && known.phone) brokerPhone = known.phone;
       }
 
