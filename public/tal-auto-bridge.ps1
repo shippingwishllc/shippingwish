@@ -194,8 +194,13 @@ while ($true) {
         }
     } catch {}
 
-    # B. If CDP port 9222 is active, query CDP in background
-    if ($connectedCdp) {
+    # B. Dynamic CDP check: If port 9222 becomes active (or was active), query CDP in background
+    $cdpActive = Test-PortListening
+    if ($cdpActive) {
+        if (-not $connectedCdp) {
+            $connectedCdp = $true
+            Write-Host "[$timestamp] 🟢 TAL One connected on port 9222! Zero-Click Auto-Streaming is LIVE." -ForegroundColor Green
+        }
         try {
             $targets = Invoke-RestMethod -Uri $CdpUrl -TimeoutSec 2 -ErrorAction SilentlyContinue
             $datTarget = $targets | Where-Object { $_.title -like "*DAT One*" -or $_.url -like "*dat.com*" -or $_.type -eq "page" } | Select-Object -First 1
@@ -264,6 +269,11 @@ while ($true) {
                 }
             }
         } catch {}
+    } else {
+        if ($connectedCdp) {
+            $connectedCdp = $false
+            Write-Host "[$timestamp] ℹ️ TAL One closed. Bridge waiting in background for reopen..." -ForegroundColor Gray
+        }
     }
 
     Start-Sleep -Milliseconds 1500
