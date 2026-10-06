@@ -425,7 +425,7 @@ function parseOriginWithZip(originStr) {
  * Extract destination states, cities, and zip codes from a query string
  */
 function parseDestinationsWithZip(destStr) {
-  if (!destStr) return { states: ['WY', 'CO', 'TX'], zips: [], specificDest: null };
+  if (!destStr) return { states: [], zips: [], specificDest: null, isNationwide: true };
   const str = String(destStr).trim();
   const upper = str.toUpperCase();
 

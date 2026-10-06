@@ -1808,7 +1808,7 @@
             <div style="margin-top:4px; padding-top:4px; border-top:1px dashed #e2e8f0;">
               📍 <strong>Empty Location:</strong> <span style="color:#0f172a; font-weight:800;">${esc(truck.empty_zip)}</span>
             </div>
-            <div>🏁 <strong>Target Lane:</strong> <span style="color:#0f172a; font-weight:800;">${esc(truck.prefer_destination)}</span></div>
+            <div>🏁 <strong>Target Lane:</strong> <span style="color:#0f172a; font-weight:800;">${esc(truck.prefer_destination || 'Anywhere (All States)')}</span></div>
             <div>💵 <strong>Target Pay:</strong> Min $${Number(truck.min_rpm || 2).toFixed(2)}/mi · Max ${esc(truck.max_deadhead || 150)} mi DHO</div>
           </div>
 
@@ -1840,7 +1840,7 @@
     renderTrucks();
 
     matcherTitleEl.innerHTML = `🎯 AI Matched Loads for <span style="color:#2563eb;">Unit #${esc(truck.truck_number)}</span> (${esc(truck.company_name)})`;
-    matcherSubtitleEl.innerHTML = `Origin: <strong>${esc(truck.empty_zip)}</strong> ➔ Target: <strong>${esc(truck.prefer_destination)}</strong> · Eq: <strong>${esc(truck.equipment)}</strong> · Min: <strong>$${Number(truck.min_rpm || 2).toFixed(2)}/mi</strong>`;
+    matcherSubtitleEl.innerHTML = `Origin: <strong>${esc(truck.empty_zip)}</strong> ➔ Target: <strong>${esc(truck.prefer_destination || 'Anywhere (All States)')}</strong> · Eq: <strong>${esc(truck.equipment)}</strong> · Min: <strong>$${Number(truck.min_rpm || 2).toFixed(2)}/mi</strong>`;
 
     matchedContainerEl.innerHTML = `
       <div style="padding:40px; text-align:center; color:#2563eb; grid-column:1/-1;">
@@ -2334,7 +2334,7 @@
     document.getElementById('edit-driver-name').value = truck.driver_name || truck.contact_name || '';
     document.getElementById('edit-driver-phone').value = truck.driver_phone || truck.phone || '';
     document.getElementById('edit-empty-zip').value = truck.empty_zip || '';
-    document.getElementById('edit-prefer-dest').value = truck.prefer_destination || '';
+    document.getElementById('edit-prefer-dest').value = (truck.prefer_destination && !truck.prefer_destination.toLowerCase().includes('anywhere')) ? truck.prefer_destination : '';
     document.getElementById('edit-equipment').value = truck.equipment || '26ft Box Truck';
     document.getElementById('edit-status').value = truck.status || 'active';
     document.getElementById('edit-min-rpm').value = truck.min_rpm || 2.00;
