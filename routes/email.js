@@ -611,7 +611,7 @@ async function fetchEmailThread(peerEmail, leadId) {
               COALESCE(l.company_name, l.owner_name, e.recipient_email) AS peer_name,
               e.subject,
               COALESCE(e.body_text, CONCAT('Outbound Email sent to ', e.recipient_email)) AS body_text,
-              NULL AS body_html,
+              e.body_html AS body_html,
               TRUE AS is_read, '[]'::jsonb AS attachments, e.resend_id AS resend_email_id,
               e.sent_at AS created_at, 'outbound' AS direction
        FROM email_logs e

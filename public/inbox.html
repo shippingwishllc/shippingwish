@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Carrier Replies Inbox | Shipping Wish TMS</title>
+  <title>Carrier Email Inbox | Shipping Wish TMS</title>
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -203,7 +203,7 @@
   <div class="app-main">
     <header class="app-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
       <div>
-        <h1 id="inbox-title" style="font-size:var(--text-lg);font-weight:800;margin:0;">Carrier Replies &amp; Email Inbox</h1>
+        <h1 id="inbox-title" style="font-size:var(--text-lg);font-weight:800;margin:0;">Carrier Email Inbox</h1>
         <p id="inbox-subtitle" style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">Omnichannel centralized mailbox for carrier email replies across all brands</p>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
@@ -615,6 +615,27 @@
     return { main: text, quoted: '' };
   }
 
+  function renderBodyWithLinks(rawText) {
+    if (!rawText) return '';
+    let safe = escapeHtml(rawText);
+
+    // Style Unsubscribe / Opt out links into a clean, professional banner:
+    safe = safe.replace(/(?:To opt out[^\n]*|Unsubscribe:\s*)(https?:\/\/[^\s]+)/gi, function (match, url) {
+      return `<div style="margin-top:20px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#64748b;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span>To stop receiving communications, reply &quot;STOP&quot; or opt out:</span>
+        <a href="${url}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;background:#ffffff;border:1px solid #cbd5e1;padding:4px 10px;border-radius:6px;color:#2563eb;font-weight:700;text-decoration:none;font-size:11.5px;">Unsubscribe Link &rarr;</a>
+      </div>`;
+    });
+
+    // Auto-link any other URLs:
+    safe = safe.replace(/(https?:\/\/[^\s<]+)(?![^<]*>|[^<>]*<\/a>)/gi, function (url) {
+      if (url.includes('unsubscribe') || url.includes('/opt-out')) return url;
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;font-weight:600;text-decoration:underline;">${url}</a>`;
+    });
+
+    return safe;
+  }
+
   async function openMessage(id) {
     selectedId = id;
     document.querySelectorAll('.inbox-item').forEach(el => el.classList.remove('active'));
@@ -740,13 +761,13 @@
               ${hasHtml ? `
                 <iframe id="email-frame-${item.id}" style="width:100%;border:none;min-height:200px;background:#ffffff;display:block;" srcdoc="${escapeHtml(sanitizeIframeHtml(item.body_html))}" onload="autoResizeIframe(this)"></iframe>
               ` : (bodyText ? `
-                <div style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.65;color:#0f172a;word-break:break-word;overflow-wrap:anywhere;">${escapeHtml(parsedText.main || bodyText)}</div>
+                <div style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.65;color:#0f172a;word-break:break-word;overflow-wrap:anywhere;">${renderBodyWithLinks(parsedText.main || bodyText)}</div>
                 ${parsedText.quoted ? `
                   <div class="quoted-wrapper" style="margin-top:12px;padding-top:10px;border-top:1px dashed #cbd5e1;">
                     <button type="button" class="btn-quote-toggle" onclick="toggleQuotedContent(${item.id})">
                       <span style="font-weight:900;letter-spacing:1px;">···</span> <span id="lbl-quote-${item.id}">Show quoted text</span>
                     </button>
-                    <div id="content-quote-${item.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8fafc;border-left:3px solid #cbd5e1;border-radius:4px;font-size:12px;color:#64748b;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">${escapeHtml(parsedText.quoted)}</div>
+                    <div id="content-quote-${item.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8fafc;border-left:3px solid #cbd5e1;border-radius:4px;font-size:12px;color:#64748b;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">${renderBodyWithLinks(parsedText.quoted)}</div>
                   </div>
                 ` : ''}
               ` : `
@@ -1097,13 +1118,13 @@
       const txt = (m.body_text || '').trim();
       const parsed = splitQuotedHistory(txt);
       box.innerHTML = `
-        <div style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.65;color:#0f172a;word-break:break-word;overflow-wrap:anywhere;">${escapeHtml(parsed.main || txt || '(No plain text available)')}</div>
+        <div style="white-space:pre-wrap;font-family:inherit;font-size:13.5px;line-height:1.65;color:#0f172a;word-break:break-word;overflow-wrap:anywhere;">${renderBodyWithLinks(parsed.main || txt || '(No plain text available)')}</div>
         ${parsed.quoted ? `
           <div class="quoted-wrapper" style="margin-top:12px;padding-top:10px;border-top:1px dashed #cbd5e1;">
             <button type="button" class="btn-quote-toggle" onclick="toggleQuotedContent(${m.id})">
               <span style="font-weight:900;letter-spacing:1px;">···</span> <span id="lbl-quote-${m.id}">Show quoted text</span>
             </button>
-            <div id="content-quote-${m.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8fafc;border-left:3px solid #cbd5e1;border-radius:4px;font-size:12px;color:#64748b;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">${escapeHtml(parsed.quoted)}</div>
+            <div id="content-quote-${m.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8fafc;border-left:3px solid #cbd5e1;border-radius:4px;font-size:12px;color:#64748b;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">${renderBodyWithLinks(parsed.quoted)}</div>
           </div>
         ` : ''}
       `;

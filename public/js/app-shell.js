@@ -234,7 +234,7 @@
     { key: 'crm', href: '/crm-sales', icon: IC.chart, label: 'Sales CRM & Leads' },
     { key: 'census', href: '/census-desk', icon: IC.census, label: 'Census Desk' },
     { key: 'voice-calls', href: '/voice-calls', icon: IC.phone, label: 'AI Calls & Audio' },
-    { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Replies' },
+    { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Email Inbox' },
     { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Inbox' },
     { key: 'whatsapp', href: '/whatsapp', icon: IC.whatsapp, label: 'WhatsApp Chat' },
     { section: 'Accounting' },
@@ -276,7 +276,7 @@
     { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' },
     { key: 'documents', href: '/documents', icon: IC.docs, label: 'RateCons & BOLs' },
     { section: 'Communications' },
-    { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Replies' },
+    { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Email Inbox' },
     { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Inbox' },
     { key: 'whatsapp', href: '/whatsapp', icon: IC.whatsapp, label: 'WhatsApp Chat' }
   ];
@@ -289,7 +289,7 @@
     { key: 'census', href: '/census-desk', icon: IC.census, label: 'DOT Census Desk' },
     { key: 'voice-calls', href: '/voice-calls', icon: IC.phone, label: 'AI Cold Calling & Audio' },
     { section: 'Inbound' },
-    { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Carrier Email Replies' },
+    { key: 'inbox', href: '/inbox', icon: IC.inbox, label: 'Email Inbox' },
     { key: 'sms-inbox', href: '/sms-inbox', icon: IC.sms, label: 'SMS Inbox' },
     { key: 'whatsapp', href: '/whatsapp', icon: IC.whatsapp, label: 'WhatsApp Chat' },
     { key: 'brokers', href: '/brokers', icon: IC.handshake, label: 'Broker Directory' }

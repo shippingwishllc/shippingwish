@@ -159,7 +159,8 @@ Shipping Wish LLC
 ${COMPANY.address}
 ${COMPANY.phone} · ${COMPANY.operationsEmail}
 
-Unsubscribe: ${unsubscribeUrl(recipientEmail)}`;
+To opt out, reply STOP or visit:
+${unsubscribeUrl(recipientEmail)}`;
 
   return {
     subject: `Operations manager for ${company}`,
@@ -196,7 +197,8 @@ function followUpEmail({ ownerName, companyName, recipientEmail }) {
 Checking in on a Dedicated Fleet Operations Manager for ${company}. If you already have this covered, ignore this. If not, reply and I will send the setup and weekly billing link.
 
 ${COMPANY.name} · ${COMPANY.phone}
-Unsubscribe: ${unsubscribeUrl(recipientEmail)}`;
+To opt out, reply STOP or visit:
+${unsubscribeUrl(recipientEmail)}`;
   return {
     subject: `Following up — ${company}`,
     html: wrapCorporateEmail({
@@ -237,7 +239,8 @@ function onboardingEmail({ ownerName, companyName, recipientEmail, billingUrl })
 To assign a Dedicated Fleet Operations Manager to ${companyName || 'your company'}, send MC/DOT, COI, equipment, lanes, load-approval contact, and complete weekly Stripe billing${billingUrl ? ': ' + billingUrl : ''}.
 
 ${COMPANY.name} · ${COMPANY.phone}
-Unsubscribe: ${unsubscribeUrl(recipientEmail)}`;
+To opt out, reply STOP or visit:
+${unsubscribeUrl(recipientEmail)}`;
   return {
     subject: `Dedicated Operations Manager setup — ${companyName || 'Shipping Wish LLC'}`,
     html: wrapCorporateEmail({

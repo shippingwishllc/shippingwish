@@ -149,20 +149,20 @@ async function sendBrandedEmail({
   }
 
   const fromEmail = (String(from).match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i) || [null])[0];
-  const bodyTextToLog = text || (html ? html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '');
+  const bodyHtmlToLog = html || null;
   try {
     await pool.query(
-      `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key, from_email, body_text)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [leadId || null, to, subject, emailType || templateKey || 'outreach', status, providerId, sentBy || null, templateKey || emailType || null, fromEmail, bodyTextToLog]
+      `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key, from_email, body_text, body_html)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [leadId || null, to, subject, emailType || templateKey || 'outreach', status, providerId, sentBy || null, templateKey || emailType || null, fromEmail, bodyTextToLog, bodyHtmlToLog]
     );
   } catch (err) {
-    // template_key/body_text column may not exist yet — fall back
+    // column may not exist yet — fall back
     try {
       await pool.query(
-        `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [leadId || null, to, subject, emailType || 'outreach', status, providerId, sentBy || null]
+        `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, from_email, body_text)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [leadId || null, to, subject, emailType || templateKey || 'outreach', status, providerId, sentBy || null, fromEmail, bodyTextToLog]
       );
     } catch (e2) {
       console.warn('[MAILER] email_logs insert failed:', e2.message);
