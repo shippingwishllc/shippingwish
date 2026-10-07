@@ -245,6 +245,7 @@
     { section: 'System' },
     { key: 'staff', href: '/staff-management', icon: IC.staff, label: 'Company Staff', adminOnly: true },
     { key: 'settings', href: '/settings', icon: IC.settings, label: 'Settings', adminOnly: true },
+    { key: 'social-settings', href: '/social-media-hub#settings', icon: IC.webcms, label: 'Social & AI APIs', adminOnly: true },
     { key: 'trash', href: '/trash', icon: IC.trash, label: 'Trash', adminOnly: true },
     { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: IC.auditlog, label: 'Audit Logs', adminOnly: true },
     { key: 'webcms', navId: 'nav-tab-settings', href: '/admin-dashboard#settings', icon: IC.webcms, label: 'Website CMS', adminOnly: true },

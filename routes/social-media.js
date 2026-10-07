@@ -239,21 +239,36 @@ router.get('/auth/linkedin', (req, res) => {
  * Handle LinkedIn OAuth callback and save token in DB
  */
 router.get('/callback/linkedin', async (req, res) => {
+  const fs = require('fs');
+  const logFile = path.resolve(__dirname, '../callback.log');
+  try {
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] CALLBACK HIT: ${JSON.stringify(req.query)}\n`);
+  } catch (_) {}
+
   const { code, state, error, error_description } = req.query;
   const brand = state || 'shippingwish';
 
   if (error) {
+    try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] OAUTH ERROR: ${error} - ${error_description}\n`); } catch (_) {}
     console.error('LinkedIn OAuth Error:', error, error_description);
     return res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_error=${encodeURIComponent(error_description || error)}`);
   }
 
   if (!code) {
+    try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] MISSING CODE\n`); } catch (_) {}
     return res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_error=missing_code`);
   }
 
   try {
     const clientId = (process.env.LINKEDIN_CLIENT_ID || '78rycmk7yv1kfj').trim();
-    const clientSecret = (process.env.LINKEDIN_CLIENT_SECRET || '').trim();
+    let clientSecret = (process.env.LINKEDIN_CLIENT_SECRET || '').trim();
+    if (!clientSecret) {
+      try {
+        const envContent = fs.readFileSync(path.resolve(__dirname, '../.env'), 'utf8');
+        const envParsed = require('dotenv').parse(envContent);
+        clientSecret = (envParsed.LINKEDIN_CLIENT_SECRET || '').trim();
+      } catch (_) {}
+    }
     const redirectUri = (process.env.LINKEDIN_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/linkedin').trim();
 
     const tokenRes = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
@@ -321,8 +336,10 @@ router.get('/callback/linkedin', async (req, res) => {
       `, [b, accessToken, authorUrn || null]);
     }
 
+    try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] SUCCESS: Saved token for all 4 brands, authorUrn: ${authorUrn}\n`); } catch (_) {}
     res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_connected=success`);
   } catch (err) {
+    try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] CATCH ERROR: ${err.message}\n`); } catch (_) {}
     console.error('LinkedIn Callback Error:', err);
     res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_error=${encodeURIComponent(err.message)}`);
   }
