@@ -214,6 +214,113 @@ router.post('/credentials/:brand', requireAuth, staffOnly, async (req, res) => {
 });
 
 /**
+ * GET /api/social/auth/linkedin
+ * Initiate LinkedIn 1-Click OAuth 2.0 flow
+ */
+router.get('/auth/linkedin', (req, res) => {
+  const brand = req.query.brand || 'shippingwish';
+  const clientId = (process.env.LINKEDIN_CLIENT_ID || '').trim();
+  const redirectUri = (process.env.LINKEDIN_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/linkedin').trim();
+  const scope = encodeURIComponent('openid profile email w_member_social');
+  
+  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(brand)}&scope=${scope}`;
+  res.redirect(authUrl);
+});
+
+/**
+ * GET /api/social/callback/linkedin
+ * Handle LinkedIn OAuth callback and save token in DB
+ */
+router.get('/callback/linkedin', async (req, res) => {
+  const { code, state, error, error_description } = req.query;
+  const brand = state || 'shippingwish';
+
+  if (error) {
+    console.error('LinkedIn OAuth Error:', error, error_description);
+    return res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_error=${encodeURIComponent(error_description || error)}`);
+  }
+
+  if (!code) {
+    return res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_error=missing_code`);
+  }
+
+  try {
+    const clientId = (process.env.LINKEDIN_CLIENT_ID || '').trim();
+    const clientSecret = (process.env.LINKEDIN_CLIENT_SECRET || '').trim();
+    const redirectUri = (process.env.LINKEDIN_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/linkedin').trim();
+
+    const tokenRes = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        client_secret: clientSecret
+      }).toString()
+    });
+
+    const tokenData = await tokenRes.json();
+    if (tokenData.error) {
+      throw new Error(tokenData.error_description || tokenData.error);
+    }
+
+    const accessToken = tokenData.access_token;
+    let authorUrn = '';
+
+    // Fetch user profile (OpenID)
+    try {
+      const userRes = await fetch('https://api.linkedin.com/v2/userinfo', {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+      const userData = await userRes.json();
+      if (userData.sub) {
+        authorUrn = `urn:li:person:${userData.sub}`;
+      }
+    } catch (uErr) {
+      console.warn('Could not fetch LinkedIn userinfo:', uErr.message);
+    }
+
+    // Try fetching company organization ACLs
+    try {
+      const aclRes = await fetch('https://api.linkedin.com/v2/organizationalAcls?q=roleAssignee', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'X-Restli-Protocol-Version': '2.0.0'
+        }
+      });
+      const aclData = await aclRes.json();
+      if (aclData.elements && aclData.elements.length > 0) {
+        const orgEl = aclData.elements[0];
+        if (orgEl.organization) {
+          authorUrn = orgEl.organization;
+        }
+      }
+    } catch (oErr) {
+      console.warn('Could not fetch LinkedIn organization ACLs:', oErr.message);
+    }
+
+    await ensureSocialSchema();
+    await pool.query(`
+      INSERT INTO social_brand_credentials (brand, linkedin_access_token, linkedin_org_urn, autopilot_enabled, autopilot_time)
+      VALUES ($1, $2, $3, true, '10:00')
+      ON CONFLICT (brand) DO UPDATE SET
+        linkedin_access_token = EXCLUDED.linkedin_access_token,
+        linkedin_org_urn = COALESCE(EXCLUDED.linkedin_org_urn, social_brand_credentials.linkedin_org_urn),
+        autopilot_enabled = EXCLUDED.autopilot_enabled,
+        updated_at = now()
+    `, [brand, accessToken, authorUrn || null]);
+
+    res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_connected=success`);
+  } catch (err) {
+    console.error('LinkedIn Callback Error:', err);
+    res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_error=${encodeURIComponent(err.message)}`);
+  }
+});
+
+
+/**
  * POST /api/social/generate
  * Generate a fresh, unique AI social media post
  */
