@@ -104,6 +104,7 @@ router.get('/credentials/:brand', async (req, res) => {
 
     const c = rows[0];
     const mask = (s) => (s && s.length > 8 ? `${s.slice(0, 4)}••••••••${s.slice(-4)}` : s || '');
+    const defUrls = (BRANDS[brand] && BRANDS[brand].defaultSocialUrls) || {};
 
     res.json({
       ok: true,
@@ -115,6 +116,10 @@ router.get('/credentials/:brand', async (req, res) => {
       linkedin_org_urn: c.linkedin_org_urn || '',
       linkedin_access_token_masked: mask(c.linkedin_access_token),
       x_api_key_masked: mask(c.x_api_key),
+      facebook_url: c.facebook_url || defUrls.facebook || '',
+      linkedin_url: c.linkedin_url || defUrls.linkedin || '',
+      instagram_url: c.instagram_url || defUrls.instagram || '',
+      twitter_url: c.twitter_url || defUrls.twitter || '',
       autopilot_enabled: Boolean(c.autopilot_enabled),
       autopilot_time: c.autopilot_time || '10:00',
       last_posted_at: c.last_posted_at
@@ -125,8 +130,33 @@ router.get('/credentials/:brand', async (req, res) => {
 });
 
 /**
+ * GET /api/social/public-links
+ * Public endpoint to fetch website social links for all 4 brands
+ */
+router.get('/public-links', async (req, res) => {
+  try {
+    await ensureSocialSchema();
+    const { rows } = await pool.query('SELECT brand, facebook_url, linkedin_url, instagram_url, twitter_url FROM social_brand_credentials');
+    const links = {};
+    for (const b of Object.keys(BRANDS)) {
+      const dbRow = rows.find(r => r.brand === b) || {};
+      const def = (BRANDS[b] && BRANDS[b].defaultSocialUrls) || {};
+      links[b] = {
+        facebook: dbRow.facebook_url || def.facebook || '',
+        linkedin: dbRow.linkedin_url || def.linkedin || '',
+        instagram: dbRow.instagram_url || def.instagram || '',
+        twitter: dbRow.twitter_url || def.twitter || ''
+      };
+    }
+    res.json({ ok: true, links });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * POST /api/social/credentials/:brand
- * Save API credentials and Auto-Pilot settings
+ * Save API credentials, public social links, and Auto-Pilot settings
  */
 router.post('/credentials/:brand', async (req, res) => {
   try {
@@ -139,6 +169,10 @@ router.post('/credentials/:brand', async (req, res) => {
       instagram_access_token,
       linkedin_org_urn,
       linkedin_access_token,
+      facebook_url,
+      linkedin_url,
+      instagram_url,
+      twitter_url,
       x_api_key,
       x_api_secret,
       x_access_token,
@@ -146,6 +180,17 @@ router.post('/credentials/:brand', async (req, res) => {
       autopilot_enabled,
       autopilot_time
     } = req.body;
+
+    // Auto-normalize LinkedIn Organization URN: accepts digits, URL, or raw string
+    let cleanLiUrn = (linkedin_org_urn || '').trim();
+    if (cleanLiUrn) {
+      const digits = cleanLiUrn.match(/(\d{5,12})/);
+      if (digits) {
+        cleanLiUrn = `urn:li:organization:${digits[1]}`;
+      } else if (!cleanLiUrn.startsWith('urn:li:')) {
+        cleanLiUrn = `urn:li:organization:${cleanLiUrn}`;
+      }
+    }
 
     const existing = await pool.query('SELECT * FROM social_brand_credentials WHERE brand = $1', [brand]);
 
@@ -155,17 +200,22 @@ router.post('/credentials/:brand', async (req, res) => {
           brand, facebook_page_id, facebook_access_token,
           instagram_account_id, instagram_access_token,
           linkedin_org_urn, linkedin_access_token,
+          facebook_url, linkedin_url, instagram_url, twitter_url,
           x_api_key, x_api_secret, x_access_token, x_access_secret,
           autopilot_enabled, autopilot_time
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       `, [
         brand,
         facebook_page_id || null,
         facebook_access_token || null,
         instagram_account_id || null,
         instagram_access_token || null,
-        linkedin_org_urn || null,
+        cleanLiUrn || null,
         linkedin_access_token || null,
+        facebook_url || null,
+        linkedin_url || null,
+        instagram_url || null,
+        twitter_url || null,
         x_api_key || null,
         x_api_secret || null,
         x_access_token || null,
@@ -188,12 +238,16 @@ router.post('/credentials/:brand', async (req, res) => {
           instagram_access_token = COALESCE($5, instagram_access_token),
           linkedin_org_urn = COALESCE(NULLIF($6, ''), linkedin_org_urn),
           linkedin_access_token = COALESCE($7, linkedin_access_token),
-          x_api_key = COALESCE(NULLIF($8, ''), x_api_key),
-          x_api_secret = COALESCE(NULLIF($9, ''), x_api_secret),
-          x_access_token = COALESCE(NULLIF($10, ''), x_access_token),
-          x_access_secret = COALESCE(NULLIF($11, ''), x_access_secret),
-          autopilot_enabled = $12,
-          autopilot_time = COALESCE(NULLIF($13, ''), autopilot_time),
+          facebook_url = COALESCE(NULLIF($8, ''), facebook_url),
+          linkedin_url = COALESCE(NULLIF($9, ''), linkedin_url),
+          instagram_url = COALESCE(NULLIF($10, ''), instagram_url),
+          twitter_url = COALESCE(NULLIF($11, ''), twitter_url),
+          x_api_key = COALESCE(NULLIF($12, ''), x_api_key),
+          x_api_secret = COALESCE(NULLIF($13, ''), x_api_secret),
+          x_access_token = COALESCE(NULLIF($14, ''), x_access_token),
+          x_access_secret = COALESCE(NULLIF($15, ''), x_access_secret),
+          autopilot_enabled = $16,
+          autopilot_time = COALESCE(NULLIF($17, ''), autopilot_time),
           updated_at = now()
         WHERE brand = $1
       `, [
@@ -202,8 +256,12 @@ router.post('/credentials/:brand', async (req, res) => {
         finalFbToken,
         instagram_account_id || null,
         finalIgToken,
-        linkedin_org_urn || null,
+        cleanLiUrn || null,
         finalLiToken,
+        facebook_url || null,
+        linkedin_url || null,
+        instagram_url || null,
+        twitter_url || null,
         x_api_key || null,
         x_api_secret || null,
         x_access_token || null,
@@ -213,7 +271,11 @@ router.post('/credentials/:brand', async (req, res) => {
       ]);
     }
 
-    res.json({ ok: true, message: `Social API credentials updated successfully for ${brand}!` });
+    res.json({
+      ok: true,
+      message: `Social API credentials and public links updated successfully for ${brand}!`,
+      normalized_linkedin_urn: cleanLiUrn
+    });
   } catch (err) {
     console.error('Save social credentials error:', err);
     res.status(500).json({ error: err.message });

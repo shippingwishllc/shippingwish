@@ -1,6 +1,7 @@
 const NETWORKS = {
   facebook: ['facebook.com', 'fb.com', 'fb.me'],
   instagram: ['instagram.com'],
+  linkedin: ['linkedin.com'],
   tiktok: ['tiktok.com'],
   x: ['x.com', 'twitter.com']
 };

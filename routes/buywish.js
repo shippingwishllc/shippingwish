@@ -1592,7 +1592,7 @@ let socialLinkCache = { at: 0, links: null };
 
 async function readSocialLinks() {
   if (socialLinkCache.links && Date.now() - socialLinkCache.at < 60000) return socialLinkCache.links;
-  const links = { facebook: '', instagram: '', tiktok: '', x: '' };
+  const links = { facebook: '', instagram: '', linkedin: '', tiktok: '', x: '' };
   try {
     await ensureBuyWishSchema();
     const { rows } = await pool.query(
@@ -1604,11 +1604,30 @@ async function readSocialLinks() {
       if (!NETWORKS[name]) return;
       links[name] = cleanSocialUrl(row.value, name) || '';
     });
+
+    // Fallback to social_brand_credentials if not configured in buywish_settings
+    try {
+      const { rows: credRows } = await pool.query("SELECT facebook_url, instagram_url, linkedin_url, twitter_url FROM social_brand_credentials WHERE brand = 'buywishonline'");
+      if (credRows.length) {
+        const c = credRows[0];
+        if (!links.facebook && c.facebook_url) links.facebook = c.facebook_url;
+        if (!links.instagram && c.instagram_url) links.instagram = c.instagram_url;
+        if (!links.linkedin && c.linkedin_url) links.linkedin = c.linkedin_url;
+        if (!links.x && c.twitter_url) links.x = c.twitter_url;
+      }
+    } catch (_) {}
+
+    // Fallback to verified defaults
+    if (!links.facebook) links.facebook = 'https://facebook.com/110487588698183';
+    if (!links.instagram) links.instagram = 'https://instagram.com/buywishonline';
+    if (!links.linkedin) links.linkedin = 'https://linkedin.com/company/buywishonline';
+    if (!links.x) links.x = 'https://x.com/buywishonline';
   } catch (err) {
-    links.facebook = '';
-    links.instagram = '';
+    links.facebook = 'https://facebook.com/110487588698183';
+    links.instagram = 'https://instagram.com/buywishonline';
+    links.linkedin = 'https://linkedin.com/company/buywishonline';
     links.tiktok = '';
-    links.x = '';
+    links.x = 'https://x.com/buywishonline';
   }
   socialLinkCache = { at: Date.now(), links };
   return links;

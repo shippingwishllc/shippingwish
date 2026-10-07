@@ -26,6 +26,12 @@ const BRANDS = {
     targetAudience: 'Independent Owner-Operators, Fleet Owners, CDL-A Truck Drivers (Dry Van, Reefer, Flatbed, Box Trucks)',
     valueProp: 'Flat $149/wk per truck instead of 8-10% commission. 7-Day $0 Risk-Free Trial. Instant 10-second carrier packet submission, RateCon OCR audit protection ($50/hr detention, $250 TONU), and 24/7 dedicated American dispatch team.',
     defaultHashtags: '#Trucking #OwnerOperator #FreightDispatch #TruckDrivers #Logistics #ShippingWish #CDLA #Flatbed #Reefer #DryVan',
+    defaultSocialUrls: {
+      facebook: 'https://facebook.com/shippingwish',
+      linkedin: 'https://linkedin.com/company/shippingwish',
+      instagram: 'https://instagram.com/shippingwish',
+      twitter: 'https://x.com/shippingwish'
+    },
     categories: [
       'market_conditions',
       'fmcsa_compliance',
@@ -45,6 +51,12 @@ const BRANDS = {
     targetAudience: 'Freight Brokers, 3PL Logistics Providers, and Motor Carriers',
     valueProp: '$19/month Solo Pass for motor carriers with 100% unmasked broker phone and email. 100% FREE spot load posting for licensed brokers with instant credit scores & Days-to-Pay rating.',
     defaultHashtags: '#LoadsNexus #FreightBrokers #LoadBoard #SpotFreight #LogisticsTech #TruckingLoads #CapacityExchange',
+    defaultSocialUrls: {
+      facebook: 'https://facebook.com/1297152946819472',
+      linkedin: 'https://linkedin.com/company/loadsnexus',
+      instagram: 'https://instagram.com/loadsnexus',
+      twitter: 'https://x.com/loadsnexus'
+    },
     categories: [
       'broker_credit_check',
       'spot_market_rates',
@@ -62,6 +74,12 @@ const BRANDS = {
     targetAudience: 'Corporate Executives, VIP Travelers, Wedding Parties, Tourists visiting NYC/Tri-State',
     valueProp: 'JFK, EWR, LGA Airport transfers with flight monitoring, sanitized Mercedes & Cadillac luxury SUVs, licensed professional chauffeurs, fixed transparent upfront pricing, 24/7 dispatch.',
     defaultHashtags: '#NYCLimo #JFKAirport #EWR #LaGuardia #ExecutiveChauffeur #LuxuryTravel #NYCBlackCar #WallStreetTravel',
+    defaultSocialUrls: {
+      facebook: 'https://facebook.com/102796912575296',
+      linkedin: 'https://linkedin.com/company/nyclimowish',
+      instagram: 'https://instagram.com/nyclimowish',
+      twitter: 'https://x.com/nyclimowish'
+    },
     categories: [
       'airport_transfer_tips',
       'corporate_travel',
@@ -79,6 +97,12 @@ const BRANDS = {
     targetAudience: 'Online Shoppers, Home Owners, Gadget Lovers looking for high-quality tested essentials',
     valueProp: 'Direct fast US fulfillment, strict quality vetting, 30-day money-back guarantee, secure Stripe checkout, trending seasonal lifestyle items at wholesale direct pricing.',
     defaultHashtags: '#BuyWish #OnlineShopping #SmartHome #TrendingGadgets #HomeEssentials #DailyDeals #ECommerce',
+    defaultSocialUrls: {
+      facebook: 'https://facebook.com/110487588698183',
+      linkedin: 'https://linkedin.com/company/buywishonline',
+      instagram: 'https://instagram.com/buywishonline',
+      twitter: 'https://x.com/buywishonline'
+    },
     categories: [
       'product_spotlight',
       'lifestyle_hacks',
@@ -107,12 +131,21 @@ async function ensureSocialSchema() {
       x_api_secret TEXT,
       x_access_token TEXT,
       x_access_secret TEXT,
+      facebook_url TEXT,
+      linkedin_url TEXT,
+      instagram_url TEXT,
+      twitter_url TEXT,
       autopilot_enabled BOOLEAN DEFAULT FALSE,
       autopilot_time VARCHAR(10) DEFAULT '10:00',
       last_posted_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT now(),
       updated_at TIMESTAMPTZ DEFAULT now()
     );
+
+    ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS facebook_url TEXT;
+    ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS linkedin_url TEXT;
+    ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS instagram_url TEXT;
+    ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS twitter_url TEXT;
 
     CREATE TABLE IF NOT EXISTS social_posts_log (
       id SERIAL PRIMARY KEY,
@@ -288,7 +321,13 @@ async function publishToInstagram(igUserId, accessToken, caption, imageUrl) {
 async function publishToLinkedIn(orgUrn, accessToken, text) {
   if (!orgUrn || !accessToken) throw new Error('LinkedIn Org URN and Access Token are required');
   
-  const formattedUrn = orgUrn.startsWith('urn:li:organization:') ? orgUrn : `urn:li:organization:${orgUrn}`;
+  let formattedUrn = String(orgUrn || '').trim();
+  const digits = formattedUrn.match(/(\d{5,12})/);
+  if (!formattedUrn.startsWith('urn:li:') && digits) {
+    formattedUrn = `urn:li:organization:${digits[1]}`;
+  } else if (!formattedUrn.startsWith('urn:li:')) {
+    formattedUrn = `urn:li:organization:${formattedUrn}`;
+  }
 
   const payload = {
     author: formattedUrn,

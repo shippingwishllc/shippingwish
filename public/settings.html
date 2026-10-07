@@ -711,8 +711,45 @@
                   </div>
                 </div>
                 <div class="form-group" style="margin-top:12px;margin-bottom:0;">
-                  <label>Organization URN (or Person URN)</label>
-                  <input type="text" class="form-input" id="sm-li-urn" placeholder="urn:li:organization:... or 78rycmk7yv1kfj">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <label style="margin:0;font-weight:700;">LinkedIn Company Page ID / Organization Number</label>
+                    <span id="sm-li-status-pill" class="settings-badge badge-blue" style="font-size:11px;">Enter Number</span>
+                  </div>
+                  <input type="text" class="form-input" id="sm-li-urn" placeholder="Paste Page ID number (e.g. 10582914) or full LinkedIn URL" oninput="formatLinkedInUrnInput(this)">
+                  <small style="color:var(--text-muted);font-size:11.5px;margin-top:4px;display:block;">
+                    💡 <strong>Auto-Format:</strong> Sirf apna Page ID number (e.g. <code>10582914</code>) ya LinkedIn URL paste karein, system automatically <code>urn:li:organization:10582914</code> format me lock kar ke green checkmark active kar dega!
+                  </small>
+                </div>
+              </div>
+
+              <!-- 4. Public Website Social Media Links for this Brand -->
+              <div style="background:var(--surface-base);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                  <div style="font-size:14px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:16px;">🌐</span> Public Website Social Links (<span id="sm-public-brand-title">Shipping Wish LLC</span>)
+                  </div>
+                  <span class="settings-badge badge-blue">Powers Website Footers</span>
+                </div>
+                <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;">
+                  Yeh public links is brand ki website ke footer aur header me social media icons (Facebook, LinkedIn, Instagram, X) par click karne se open honge.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Facebook Public Page Link</label>
+                    <input type="url" class="form-input" id="sm-url-fb" placeholder="https://facebook.com/...">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>LinkedIn Public Company Link</label>
+                    <input type="url" class="form-input" id="sm-url-li" placeholder="https://linkedin.com/company/...">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Instagram Public Profile Link</label>
+                    <input type="url" class="form-input" id="sm-url-ig" placeholder="https://instagram.com/...">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>X / Twitter Profile Link</label>
+                    <input type="url" class="form-input" id="sm-url-x" placeholder="https://x.com/...">
+                  </div>
                 </div>
               </div>
 
@@ -1642,7 +1679,32 @@
         }
       }
     });
+    const brandNames = {
+      shippingwish: 'Shipping Wish LLC',
+      loadsnexus: 'LoadsNexus™',
+      nyclimowish: 'NYC Limo Wish',
+      buywish: 'BuyWish Online'
+    };
+    const titleEl = document.getElementById('sm-public-brand-title');
+    if (titleEl) titleEl.textContent = brandNames[brand] || brand;
+
     loadSocialMediaSettings(brand);
+  }
+
+  function formatLinkedInUrnInput(el) {
+    let val = el.value.trim();
+    const pill = document.getElementById('sm-li-status-pill');
+    if (!val) {
+      if (pill) { pill.className = 'settings-badge badge-blue'; pill.textContent = 'Enter Number'; }
+      return;
+    }
+    const digits = val.match(/(\d{5,12})/);
+    if (digits) {
+      el.value = 'urn:li:organization:' + digits[1];
+      if (pill) { pill.className = 'settings-badge badge-green'; pill.textContent = '✅ Valid (ID: ' + digits[1] + ')'; }
+    } else if (val.startsWith('urn:li:')) {
+      if (pill) { pill.className = 'settings-badge badge-green'; pill.textContent = '✅ Valid URN'; }
+    }
   }
 
   async function loadSocialMediaSettings(brand = selectedSmBrand) {
@@ -1661,18 +1723,40 @@
         }
 
         document.getElementById('sm-ig-id').value = data.instagram_account_id || (pageId ? `Linked via Facebook (${pageId})` : '');
-        document.getElementById('sm-li-urn').value = data.linkedin_org_urn || '';
+        
+        const liUrn = data.linkedin_org_urn || '';
+        document.getElementById('sm-li-urn').value = liUrn;
+        const pill = document.getElementById('sm-li-status-pill');
+        if (pill) {
+          if (liUrn) {
+            const digits = liUrn.match(/(\d{5,12})/);
+            pill.className = 'settings-badge badge-green';
+            pill.textContent = digits ? '✅ Connected (ID: ' + digits[1] + ')' : '✅ Configured';
+          } else {
+            pill.className = 'settings-badge badge-blue';
+            pill.textContent = 'Enter Number';
+          }
+        }
         
         const liBadge = document.getElementById('badge-sm-li');
         if (liBadge) {
-          if (data.linkedin_access_token_masked) {
+          if (data.linkedin_access_token_masked && liUrn) {
             liBadge.className = 'settings-badge badge-green';
-            liBadge.textContent = 'Connected';
+            liBadge.textContent = 'Connected & Configured';
+          } else if (liUrn) {
+            liBadge.className = 'settings-badge badge-green';
+            liBadge.textContent = 'Page ID Configured';
           } else {
             liBadge.className = 'settings-badge badge-amber';
             liBadge.textContent = 'Ready to Connect';
           }
         }
+
+        // Public website links
+        if (document.getElementById('sm-url-fb')) document.getElementById('sm-url-fb').value = data.facebook_url || '';
+        if (document.getElementById('sm-url-li')) document.getElementById('sm-url-li').value = data.linkedin_url || '';
+        if (document.getElementById('sm-url-ig')) document.getElementById('sm-url-ig').value = data.instagram_url || '';
+        if (document.getElementById('sm-url-x')) document.getElementById('sm-url-x').value = data.twitter_url || '';
 
         document.getElementById('sm-autopilot-enable').checked = Boolean(data.autopilot_enabled ?? true);
         document.getElementById('sm-autopilot-time').value = data.autopilot_time || '10:00';
@@ -1684,13 +1768,25 @@
     const brand = selectedSmBrand;
     const statusEl = document.getElementById('save-status-social-media');
     const fbVal = document.getElementById('sm-fb-token').value.trim();
+
+    let liUrnVal = document.getElementById('sm-li-urn').value.trim();
+    const liDigits = liUrnVal.match(/(\d{5,12})/);
+    if (liDigits) {
+      liUrnVal = 'urn:li:organization:' + liDigits[1];
+      document.getElementById('sm-li-urn').value = liUrnVal;
+    }
+
     const payload = {
       facebook_page_id: document.getElementById('sm-fb-page-id').value.trim() || VERIFIED_SM_PAGE_IDS[brand],
       facebook_access_token: fbVal.includes('••') ? '' : fbVal,
       instagram_account_id: document.getElementById('sm-ig-id').value.trim(),
       instagram_access_token: '',
-      linkedin_org_urn: document.getElementById('sm-li-urn').value.trim(),
+      linkedin_org_urn: liUrnVal,
       linkedin_access_token: '',
+      facebook_url: document.getElementById('sm-url-fb') ? document.getElementById('sm-url-fb').value.trim() : '',
+      linkedin_url: document.getElementById('sm-url-li') ? document.getElementById('sm-url-li').value.trim() : '',
+      instagram_url: document.getElementById('sm-url-ig') ? document.getElementById('sm-url-ig').value.trim() : '',
+      twitter_url: document.getElementById('sm-url-x') ? document.getElementById('sm-url-x').value.trim() : '',
       autopilot_enabled: document.getElementById('sm-autopilot-enable').checked,
       autopilot_time: document.getElementById('sm-autopilot-time').value
     };
