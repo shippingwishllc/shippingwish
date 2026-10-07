@@ -4,6 +4,8 @@
  * 4-Brand Social Media Command Center & AI Auto-Pilot API
  */
 
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
@@ -219,7 +221,7 @@ router.post('/credentials/:brand', requireAuth, staffOnly, async (req, res) => {
  */
 router.get('/auth/linkedin', (req, res) => {
   const brand = req.query.brand || 'shippingwish';
-  const clientId = (process.env.LINKEDIN_CLIENT_ID || '').trim();
+  const clientId = (process.env.LINKEDIN_CLIENT_ID || '78rycmk7yv1kfj').trim();
   const redirectUri = (process.env.LINKEDIN_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/linkedin').trim();
   const scope = encodeURIComponent('openid profile email w_member_social');
   
@@ -245,7 +247,7 @@ router.get('/callback/linkedin', async (req, res) => {
   }
 
   try {
-    const clientId = (process.env.LINKEDIN_CLIENT_ID || '').trim();
+    const clientId = (process.env.LINKEDIN_CLIENT_ID || '78rycmk7yv1kfj').trim();
     const clientSecret = (process.env.LINKEDIN_CLIENT_SECRET || '').trim();
     const redirectUri = (process.env.LINKEDIN_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/linkedin').trim();
 
