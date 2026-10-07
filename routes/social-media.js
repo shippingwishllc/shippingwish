@@ -440,7 +440,7 @@ router.get('/auth/tiktok', async (req, res) => {
     const { rows } = await pool.query('SELECT tiktok_client_key FROM social_brand_credentials WHERE brand = $1', [brand]);
     const clientKey = (rows[0]?.tiktok_client_key || process.env.TIKTOK_CLIENT_KEY || 'awg53d0yh4au6mli').trim();
     const redirectUri = (process.env.TIKTOK_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/tiktok').trim();
-    const scope = 'user.info.basic,video.publish,video.upload';
+    const scope = 'user.info.basic,video.upload';
 
     if (!clientKey) {
       return res.redirect(`/settings?section=social-media&tiktok_error=missing_client_key#social-media`);
