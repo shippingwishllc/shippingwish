@@ -116,10 +116,10 @@ router.get('/credentials/:brand', async (req, res) => {
       linkedin_org_urn: c.linkedin_org_urn || '',
       linkedin_access_token_masked: mask(c.linkedin_access_token),
       x_api_key_masked: mask(c.x_api_key),
-      facebook_url: c.facebook_url || defUrls.facebook || '',
-      linkedin_url: c.linkedin_url || defUrls.linkedin || '',
-      instagram_url: c.instagram_url || defUrls.instagram || '',
-      twitter_url: c.twitter_url || defUrls.twitter || '',
+      facebook_url: c.facebook_url || '',
+      linkedin_url: c.linkedin_url || '',
+      instagram_url: c.instagram_url || '',
+      twitter_url: c.twitter_url || '',
       autopilot_enabled: Boolean(c.autopilot_enabled),
       autopilot_time: c.autopilot_time || '10:00',
       last_posted_at: c.last_posted_at
@@ -140,12 +140,11 @@ router.get('/public-links', async (req, res) => {
     const links = {};
     for (const b of Object.keys(BRANDS)) {
       const dbRow = rows.find(r => r.brand === b) || {};
-      const def = (BRANDS[b] && BRANDS[b].defaultSocialUrls) || {};
       links[b] = {
-        facebook: dbRow.facebook_url || def.facebook || '',
-        linkedin: dbRow.linkedin_url || def.linkedin || '',
-        instagram: dbRow.instagram_url || def.instagram || '',
-        twitter: dbRow.twitter_url || def.twitter || ''
+        facebook: dbRow.facebook_url || '',
+        linkedin: dbRow.linkedin_url || '',
+        instagram: dbRow.instagram_url || '',
+        twitter: dbRow.twitter_url || ''
       };
     }
     res.json({ ok: true, links });
@@ -236,12 +235,12 @@ router.post('/credentials/:brand', async (req, res) => {
           facebook_access_token = COALESCE($3, facebook_access_token),
           instagram_account_id = COALESCE(NULLIF($4, ''), instagram_account_id),
           instagram_access_token = COALESCE($5, instagram_access_token),
-          linkedin_org_urn = COALESCE(NULLIF($6, ''), linkedin_org_urn),
+          linkedin_org_urn = $6,
           linkedin_access_token = COALESCE($7, linkedin_access_token),
-          facebook_url = COALESCE(NULLIF($8, ''), facebook_url),
-          linkedin_url = COALESCE(NULLIF($9, ''), linkedin_url),
-          instagram_url = COALESCE(NULLIF($10, ''), instagram_url),
-          twitter_url = COALESCE(NULLIF($11, ''), twitter_url),
+          facebook_url = $8,
+          linkedin_url = $9,
+          instagram_url = $10,
+          twitter_url = $11,
           x_api_key = COALESCE(NULLIF($12, ''), x_api_key),
           x_api_secret = COALESCE(NULLIF($13, ''), x_api_secret),
           x_access_token = COALESCE(NULLIF($14, ''), x_access_token),
@@ -258,10 +257,10 @@ router.post('/credentials/:brand', async (req, res) => {
         finalIgToken,
         cleanLiUrn || null,
         finalLiToken,
-        facebook_url || null,
-        linkedin_url || null,
-        instagram_url || null,
-        twitter_url || null,
+        facebook_url ? String(facebook_url).trim() : null,
+        linkedin_url ? String(linkedin_url).trim() : null,
+        instagram_url ? String(instagram_url).trim() : null,
+        twitter_url ? String(twitter_url).trim() : null,
         x_api_key || null,
         x_api_secret || null,
         x_access_token || null,
