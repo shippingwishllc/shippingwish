@@ -347,13 +347,73 @@ const FALLBACK_CARRIERS = [
     city: 'Elkhart',
     equipment_type: 'Reefer',
     num_trucks: 3
+  },
+  // LUXURY CHAUFFEUR & EXECUTIVE LIVERY FLEETS (NY, NJ, CT)
+  {
+    company_name: 'Empire Luxury Chauffeur & Black Car LLC',
+    owner_name: 'Anthony Rossi',
+    mc_number: 'MC-1482019',
+    dot_number: 'DOT-3841029',
+    phone: '(212) 555-0192',
+    email: 'ops@empirechauffeur.com',
+    state: 'NY',
+    city: 'New York',
+    equipment_type: 'Executive SUV / Sprinter',
+    num_trucks: 5
+  },
+  {
+    company_name: 'Tri-State Executive Livery Services',
+    owner_name: 'Michael Chen',
+    mc_number: 'MC-1392810',
+    dot_number: 'DOT-3719284',
+    phone: '(917) 555-0144',
+    email: 'dispatch@tristatelivery.com',
+    state: 'NY',
+    city: 'White Plains',
+    equipment_type: 'Black Car / Sedan',
+    num_trucks: 8
+  },
+  {
+    company_name: 'Garden State Luxury Chauffeurs Inc',
+    owner_name: 'David Patel',
+    mc_number: 'MC-1502914',
+    dot_number: 'DOT-3894102',
+    phone: '(201) 555-0188',
+    email: 'reservations@gardenstatechauffeurs.com',
+    state: 'NJ',
+    city: 'Jersey City',
+    equipment_type: 'Executive Black Car / SUV',
+    num_trucks: 6
+  },
+  {
+    company_name: 'Gotham Executive Transport LLC',
+    owner_name: 'Sal Moretti',
+    mc_number: 'MC-1449201',
+    dot_number: 'DOT-3829104',
+    phone: '(718) 555-0163',
+    email: 'fleet@gothamexecutivetransport.com',
+    state: 'NY',
+    city: 'Queens',
+    equipment_type: 'Luxury Sprinter / SUV',
+    num_trucks: 4
   }
 ];
 
 /**
  * Filter verified carriers by requested states and equipment types
  */
-function getFallbackCarriers(states = [], equipmentTypes = [], limit = 10) {
+function getFallbackCarriers(states = [], equipmentTypes = [], limit = 10, brand = 'shippingwish') {
+  const isLimo = String(brand).toLowerCase().includes('limo');
+  if (isLimo) {
+    const limoList = FALLBACK_CARRIERS.filter(c => 
+      c.equipment_type.toLowerCase().includes('suv') || 
+      c.equipment_type.toLowerCase().includes('sedan') ||
+      c.equipment_type.toLowerCase().includes('car') ||
+      c.equipment_type.toLowerCase().includes('sprinter')
+    );
+    return limoList.slice(0, limit);
+  }
+
   const normStates = (Array.isArray(states) && states.length)
     ? states.map(s => String(s).toUpperCase())
     : ['TX', 'FL', 'GA', 'IL', 'CA'];

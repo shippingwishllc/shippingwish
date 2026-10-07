@@ -185,14 +185,35 @@
           </select>
         </section>
         <section class="cd-card" style="grid-column:span 3;">
-          <h3>Send after import</h3>
-          <p class="cd-help">Email can go cold. SMS and Vapi only if they already agreed, or you check consent below.</p>
-          <label class="form-label" for="ai-bot-limit">Batch size</label>
+          <h3>Campaign Setup</h3>
+          <p class="cd-help">Select target brand and audience. Safe &amp; compliant outreach.</p>
+          <label class="form-label" for="ai-bot-brand" style="font-weight:700;margin-top:6px;">Brand &amp; Target</label>
+          <select id="ai-bot-brand" class="form-select" onchange="onCampaignBrandChange(this.value)">
+            <optgroup label="Shipping Wish LLC">
+              <option value="shippingwish:carrier" selected>🚚 Shipping Wish — Truck Carriers (7-Day Trial)</option>
+            </optgroup>
+            <optgroup label="LoadsNexus™">
+              <option value="loadsnexus:carrier">📦 LoadsNexus™ — Carriers ($19/mo Pass)</option>
+              <option value="loadsnexus:broker">💼 LoadsNexus™ — Brokers (Free Load Posting)</option>
+            </optgroup>
+            <optgroup label="NYC Limo Wish">
+              <option value="nyclimowish:partner">🚗 NYC Limo Wish — Chauffeurs &amp; Fleet Partners</option>
+              <option value="nyclimowish:corporate">👔 NYC Limo Wish — Corporate Travel Accounts</option>
+            </optgroup>
+            <optgroup label="BuyWish Online (E-Commerce)">
+              <option value="buywishonline:abandoned">🛒 BuyWish — Abandoned Cart Recovery (Email &amp; SMS)</option>
+              <option value="buywishonline:promo">🛍️ BuyWish — VIP Store Promotions (Email Only)</option>
+            </optgroup>
+          </select>
+          <div id="ai-bot-tcpa-badge" style="display:none;margin-top:8px;font-size:11px;color:#047857;background:#ecfdf5;padding:6px 10px;border-radius:6px;border:1px solid #a7f3d0;line-height:1.4;">
+            🛡️ <strong>TCPA Safe:</strong> E-commerce uses high-converting lifecycle Email &amp; Opt-In SMS. Voice calls are disabled to keep you 100% compliant.
+          </div>
+          <label class="form-label" for="ai-bot-limit" style="margin-top:10px;">Batch size</label>
           <select id="ai-bot-limit" class="form-select">
-            <option value="5">5 carriers</option>
-            <option value="10" selected>10 carriers</option>
-            <option value="25">25 carriers</option>
-            <option value="50">50 carriers</option>
+            <option value="5">5 leads</option>
+            <option value="10" selected>10 leads</option>
+            <option value="25">25 leads</option>
+            <option value="50">50 leads</option>
           </select>
           <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;"><input type="checkbox" id="ai-bot-email" checked> Email</label>
           <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-sms"> SMS (consent only)</label>
@@ -920,6 +941,10 @@
       });
     }
 
+    const brandVal = (document.getElementById('ai-bot-brand')?.value || 'shippingwish:carrier').split(':');
+    const brand = brandVal[0] || 'shippingwish';
+    const campaign_target = brandVal[1] || 'carrier';
+
     const limit = document.getElementById('ai-bot-limit').value;
     const sendEmail = document.getElementById('ai-bot-email').checked;
     const sendSms = document.getElementById('ai-bot-sms').checked;
@@ -931,11 +956,12 @@
     }
 
     btn.disabled = true;
-    btn.textContent = 'Searching census…';
+    btn.textContent = 'Searching leads…';
 
     resultsBox.style.display = 'block';
     header.textContent = 'Campaign in progress';
-    summary.textContent = `Scanning ${selectedStates.join(', ')} for ${selectedEq.join(', ') || 'dry_van'}…`;
+    const targetLabel = (document.getElementById('ai-bot-brand')?.selectedOptions[0]?.text || brand).split('—')[0].trim();
+    summary.textContent = `Running ${targetLabel} campaign in ${selectedStates.join(', ')}…`;
     list.innerHTML = '';
 
     const controller = new AbortController();
@@ -948,6 +974,8 @@
         credentials: 'include',
         signal: controller.signal,
         body: JSON.stringify({
+          brand,
+          campaign_target,
           states: selectedStates,
           equipment_types: selectedEq.length ? selectedEq : ['dry_van'],
           limit: parseInt(limit, 10),
@@ -1561,6 +1589,23 @@
     }
   }
 
+  function onCampaignBrandChange(val) {
+    const vapiCb = document.getElementById('ai-bot-vapi');
+    const tcpaBadge = document.getElementById('ai-bot-tcpa-badge');
+    const isEcommerce = (val || '').startsWith('buywish');
+    if (isEcommerce) {
+      if (vapiCb) {
+        vapiCb.checked = false;
+        vapiCb.disabled = true;
+      }
+      if (tcpaBadge) tcpaBadge.style.display = 'block';
+    } else {
+      if (vapiCb) vapiCb.disabled = false;
+      if (tcpaBadge) tcpaBadge.style.display = 'none';
+    }
+  }
+
+  window.onCampaignBrandChange = onCampaignBrandChange;
   window.sendWeeklyLink = sendWeeklyLink;
   window.searchLeadsTable = searchLeadsTable;
   window.triggerFmcsaFromTableSearch = triggerFmcsaFromTableSearch;

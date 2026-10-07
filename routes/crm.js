@@ -101,10 +101,172 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       send_email = true,
       send_sms = false,
       send_vapi = false,
-      consent_confirmed = false
+      consent_confirmed = false,
+      brand = 'shippingwish',
+      campaign_target = 'carrier'
     } = req.body;
 
+    let normalizedBrand = String(brand || 'shippingwish').toLowerCase();
+    let normalizedTarget = String(campaign_target || '').toLowerCase();
+
+    if (normalizedBrand.includes('loadsnexus')) {
+      if (normalizedBrand.includes('broker') || normalizedTarget === 'broker') {
+        normalizedBrand = 'loadsnexus';
+        normalizedTarget = 'broker';
+      } else {
+        normalizedBrand = 'loadsnexus';
+        normalizedTarget = 'carrier';
+      }
+    } else if (normalizedBrand.includes('nyclimo')) {
+      if (normalizedBrand.includes('corporate') || normalizedTarget === 'corporate') {
+        normalizedBrand = 'nyclimowish';
+        normalizedTarget = 'corporate';
+      } else {
+        normalizedBrand = 'nyclimowish';
+        normalizedTarget = 'partner';
+      }
+    } else if (normalizedBrand.includes('buywish')) {
+      normalizedBrand = 'buywish';
+      normalizedTarget = 'consumer';
+    } else {
+      normalizedBrand = 'shippingwish';
+      normalizedTarget = 'carrier';
+    }
+
     const maxLimit = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
+
+    // ============================================================
+    // BRAND 4: BUYWISH ONLINE (E-COMMERCE ABANDONED CART RECOVERY)
+    // Note: Automated outbound robocalls are strictly illegal for retail e-commerce under US TCPA.
+    // Safe & compliant: Abandoned cart recovery emails + opt-in SMS with 10% discount promo code.
+    // ============================================================
+    if (normalizedBrand === 'buywish') {
+      await pool.query(`ALTER TABLE ecommerce_orders ADD COLUMN IF NOT EXISTS recovery_sent_at TIMESTAMPTZ`).catch(() => {});
+
+      const abandonedRes = await pool.query(`
+        SELECT id, order_number, customer_name, customer_email, customer_phone,
+               shipping_city, shipping_state, items, total_amount, created_at
+        FROM ecommerce_orders
+        WHERE payment_status = 'pending'
+          AND recovery_sent_at IS NULL
+          AND customer_email IS NOT NULL AND customer_email <> ''
+        ORDER BY created_at DESC
+        LIMIT $1
+      `, [maxLimit]);
+
+      let emailsSent = 0;
+      let smsSent = 0;
+      const processedOrders = [];
+      const skippedOutreach = [];
+
+      for (const order of abandonedRes.rows) {
+        const orderNum = order.order_number || `ORD-${order.id}`;
+        const custName = order.customer_name || 'Valued Customer';
+        const custEmail = String(order.customer_email || '').trim();
+        const custPhone = String(order.customer_phone || '').trim();
+        const orderTotal = parseFloat(order.total_amount || 0).toFixed(2);
+
+        let emailSent = false;
+        let smsSentOrder = false;
+
+        if (send_email && custEmail) {
+          try {
+            const recoverySubject = `Complete your BuyWish Online order (${orderNum}) — Take 10% OFF with code SAVE10`;
+            const recoveryHtml = `
+              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="text-align: center; margin-bottom: 24px; border-bottom: 1px solid #f1f5f9; padding-bottom: 16px;">
+                  <h1 style="color: #4f46e5; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">BuyWish Online</h1>
+                  <p style="color: #64748b; margin-top: 4px; font-size: 14px;">Your order has been reserved</p>
+                </div>
+                <p style="font-size: 16px;">Hi <strong>${custName}</strong>,</p>
+                <p style="font-size: 15px; color: #334155; line-height: 1.6;">You left items in your shopping cart! We are holding your items for a limited time so they don't sell out.</p>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                  <p style="margin: 0 0 6px; font-weight: 600; color: #0f172a; font-size: 14px;">Order Number: <span style="font-family: monospace;">${orderNum}</span></p>
+                  <p style="margin: 0; color: #475569; font-size: 14px;">Subtotal: <strong style="color: #0f172a;">$${orderTotal}</strong></p>
+                </div>
+                <div style="background: #ecfdf5; border: 1px dashed #10b981; border-radius: 8px; padding: 18px; text-align: center; margin: 24px 0;">
+                  <p style="margin: 0 0 6px; color: #065f46; font-size: 13px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Exclusive 10% Off Voucher</p>
+                  <p style="margin: 0; font-size: 26px; font-weight: 900; color: #047857; letter-spacing: 2px;">SAVE10</p>
+                  <p style="margin: 6px 0 0; font-size: 12px; color: #065f46;">Apply code at checkout to claim your instant discount.</p>
+                </div>
+                <div style="text-align: center; margin: 28px 0;">
+                  <a href="https://buywishonline.com/checkout.html?order=${encodeURIComponent(orderNum)}" style="background: #4f46e5; color: #ffffff; padding: 14px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; text-decoration: none; display: inline-block;">Complete Your Checkout &rarr;</a>
+                </div>
+                <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 32px; border-top: 1px solid #f1f5f9; padding-top: 16px; line-height: 1.5;">
+                  Need assistance? Our 24/7 AI Concierge & Support desk is available at <strong>+1 (800) 580-3101</strong> or reply to this email.<br>
+                  BuyWish Online &bull; Safe, Verified & Encrypted Checkout
+                </p>
+              </div>
+            `;
+            const recoveryText = `Hi ${custName},\n\nYou left items in your BuyWish Online cart (Order: ${orderNum}, Total: $${orderTotal}).\nComplete your checkout with promo code SAVE10 for 10% off: https://buywishonline.com/checkout.html?order=${orderNum}\n\nQuestions? Call 24/7 at +1 (800) 580-3101.`;
+
+            const { sendBrandedEmail } = require('../utils/mailer');
+            await sendBrandedEmail({
+              to: custEmail,
+              subject: recoverySubject,
+              html: recoveryHtml,
+              text: recoveryText,
+              emailType: 'buywish_cart_recovery'
+            });
+            emailSent = true;
+            emailsSent++;
+          } catch (eErr) {
+            skippedOutreach.push({ id: order.id, channel: 'email', reason: eErr.message });
+          }
+        }
+
+        if (send_sms && custPhone && consent_confirmed) {
+          try {
+            const smsText = `BuyWish: Hi ${custName}, your cart is waiting! Use code SAVE10 for 10% off your order ${orderNum}. Checkout here: https://buywishonline.com/checkout.html?order=${orderNum} Reply STOP to opt out.`;
+            const { sendTwilioSms } = require('../routes/voip');
+            const sRes = await sendTwilioSms(custPhone, smsText);
+            if (sRes && (sRes.status === 'sent' || sRes.status === 'logged')) {
+              smsSentOrder = true;
+              smsSent++;
+            }
+          } catch (sErr) {
+            skippedOutreach.push({ id: order.id, channel: 'sms', reason: sErr.message });
+          }
+        }
+
+        await pool.query(`UPDATE ecommerce_orders SET recovery_sent_at = NOW() WHERE id = $1`, [order.id]).catch(() => {});
+
+        processedOrders.push({
+          id: order.id,
+          company_name: `BuyWish Customer: ${custName}`,
+          owner_name: custName,
+          email: custEmail,
+          phone: custPhone,
+          state: order.shipping_state || 'US',
+          equipment_type: 'E-Commerce Cart',
+          email_sent: emailSent,
+          sms_sent: smsSentOrder,
+          vapi_sent: false,
+          brand: 'buywish',
+          campaign_target: 'consumer'
+        });
+      }
+
+      return res.json({
+        ok: true,
+        brand: 'buywish',
+        campaign_target: 'consumer',
+        processed: abandonedRes.rows.length,
+        imported: processedOrders.length,
+        emails_sent: emailsSent,
+        sms_sent: smsSent,
+        vapi_sent: 0,
+        tcpa_notice: 'Outbound automated phone calls are strictly blocked for retail e-commerce under US TCPA regulations. BuyWish AI voice is active for 24/7 inbound customer support at +1 (800) 580-3101.',
+        skipped_duplicates: 0,
+        filtered_out: 0,
+        skipped_outreach: skippedOutreach,
+        leads: processedOrders
+      });
+    }
+
+    // ============================================================
+    // BRANDS 1, 2, 3: SHIPPING WISH, LOADSNEXUS, NYC LIMO WISH
+    // ============================================================
     const targetStates = Array.isArray(states) && states.length ? states : ['TX', 'FL', 'GA', 'IL', 'CA'];
     const equipmentKeys = normalizeEquipmentKeys(equipment_types).length
       ? normalizeEquipmentKeys(equipment_types)
@@ -152,11 +314,22 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       // Filter 3: Banned Category Exclusions
       const compName = String(c.company_name || '').toLowerCase();
       const cargoDesc = String(c.equipment_type || c.cargo_carried || '').toLowerCase();
-      const isBannedCategory = 
-        compName.includes('bus') || compName.includes('limo') || compName.includes('charter') || compName.includes('tours') ||
-        compName.includes('farm') || compName.includes('ranch') || compName.includes('cattle') || compName.includes('livestock') ||
-        compName.includes('moving') || compName.includes('movers') || compName.includes('van lines') ||
-        cargoDesc.includes('passenger') || cargoDesc.includes('school bus') || cargoDesc.includes('farm supp') || cargoDesc.includes('household');
+      
+      let isBannedCategory = false;
+      if (normalizedBrand === 'nyclimowish') {
+        // NYC Limo Wish targets executive chauffeur / livery / black car fleets; ban cattle, farm, waste, moving
+        isBannedCategory = 
+          compName.includes('farm') || compName.includes('ranch') || compName.includes('cattle') || compName.includes('livestock') ||
+          compName.includes('moving') || compName.includes('movers') || compName.includes('van lines') ||
+          cargoDesc.includes('farm supp') || cargoDesc.includes('household');
+      } else {
+        // Freight operations (Shipping Wish & LoadsNexus): ban passenger, bus, tours, farm, movers
+        isBannedCategory = 
+          compName.includes('bus') || compName.includes('limo') || compName.includes('charter') || compName.includes('tours') ||
+          compName.includes('farm') || compName.includes('ranch') || compName.includes('cattle') || compName.includes('livestock') ||
+          compName.includes('moving') || compName.includes('movers') || compName.includes('van lines') ||
+          cargoDesc.includes('passenger') || cargoDesc.includes('school bus') || cargoDesc.includes('farm supp') || cargoDesc.includes('household');
+      }
 
       if (isBannedCategory) {
         excludedBanned++;
@@ -203,18 +376,89 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       const ownerName = c.owner_name || 'Fleet Manager';
       const numUnits = c.num_trucks || 1;
 
-      const emailSubject = `Dedicated Freight & Load Booking for ${c.company_name} (${matchedEquip} Fleet)`;
-      const emailBodyText = `Hi ${ownerName},\n\n` +
-        `Shipping Wish LLC places a named fleet operations manager with small fleets. ${c.company_name} shows as ${numUnits} ${matchedEquip} unit(s) out of ${stateName} on the public FMCSA census.\n\n` +
-        `Weekly desk. You keep broker pay. First week $0 if you want to try it.\n\n` +
-        `Best regards,\nShipping Wish Operations\nhttps://www.shippingwish.com`;
+      let emailSubject = '';
+      let emailBodyText = '';
+      let emailHtml = '';
+      let smsText = '';
 
-      const emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
-        `<p>Shipping Wish LLC places a named fleet operations manager with small fleets. <strong>${c.company_name}</strong> shows as ${numUnits} ${matchedEquip} unit(s) out of <strong>${stateName}</strong> on the public FMCSA census.</p>` +
-        `<p>Weekly desk. You keep broker pay. First week $0 if you want to try it.</p>` +
-        `<p><a href="https://www.shippingwish.com/services" style="background:#f59e0b;color:#0f172a;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">See the operations desk &rarr;</a></p>`;
+      // Tailored multi-brand copy
+      if (normalizedBrand === 'loadsnexus') {
+        if (normalizedTarget === 'broker') {
+          emailSubject = `Post Spot Loads for Free on LoadsNexus™ — Reach 10,000+ Verified Carriers`;
+          emailBodyText = `Hi ${ownerName},\n\n` +
+            `LoadsNexus™ (loadsnexus.com) connects freight brokers directly with verified motor carriers across ${stateName} and all 48 states.\n\n` +
+            `100% free load posting. No booking fees. Direct carrier dispatch with automated FMCSA safety verification.\n\n` +
+            `Post your freight today:\nhttps://loadsnexus.com\n\n` +
+            `Best regards,\nLoadsNexus Broker Relations`;
 
-      const smsText = `Hi ${ownerName}, Shipping Wish LLC emailed a one-pager about a named ops manager for ${matchedEquip} out of ${stateName}. Reply YES if useful, STOP to opt out.`;
+          emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
+            `<p>LoadsNexus&trade; (<a href="https://loadsnexus.com">loadsnexus.com</a>) connects freight brokers directly with verified motor carriers across <strong>${stateName}</strong> and nationwide.</p>` +
+            `<p><strong>100% Free Load Posting:</strong> Zero subscription fees for brokers, direct carrier contact, and automated FMCSA safety & insurance checks.</p>` +
+            `<p><a href="https://loadsnexus.com" style="background:#0284c7;color:#ffffff;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">Post Loads on LoadsNexus &rarr;</a></p>`;
+
+          smsText = `Hi ${ownerName}, LoadsNexus offers 100% free load posting for brokers with instant carrier matching in ${stateName}. Post free at loadsnexus.com. Reply STOP to opt out.`;
+        } else {
+          // Carrier
+          emailSubject = `LoadsNexus™ Solo Pass ($19/mo) — Direct Broker Loads for ${c.company_name}`;
+          emailBodyText = `Hi ${ownerName},\n\n` +
+            `Looking for higher-paying direct broker freight for your ${numUnits} ${matchedEquip} unit(s) in ${stateName}?\n\n` +
+            `The LoadsNexus™ Solo Pass is just $19/month — unlimited direct broker loads, zero per-load booking fees, and live DAT/Truckstop lane parity.\n\n` +
+            `Activate your carrier pass:\nhttps://loadsnexus.com\n\n` +
+            `Best regards,\nLoadsNexus Carrier Support`;
+
+          emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
+            `<p>Looking for higher-paying direct freight for <strong>${c.company_name}</strong> (${numUnits} ${matchedEquip} units in <strong>${stateName}</strong>)?</p>` +
+            `<p>The <strong>LoadsNexus&trade; Solo Pass</strong> gives your trucks direct access to verified broker freight for only <strong>$19/month</strong>. No commission cuts, no middlemen.</p>` +
+            `<p><a href="https://loadsnexus.com" style="background:#0284c7;color:#ffffff;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">Get Your $19/mo Solo Pass &rarr;</a></p>`;
+
+          smsText = `Hi ${ownerName}, LoadsNexus gives your ${matchedEquip} fleet direct broker loads for only $19/mo. Check it out at loadsnexus.com. Reply YES for info, STOP to opt out.`;
+        }
+      } else if (normalizedBrand === 'nyclimowish') {
+        if (normalizedTarget === 'corporate') {
+          emailSubject = `Executive Corporate Transportation & Airport Transfers — NYC Limo Wish`;
+          emailBodyText = `Hi ${ownerName},\n\n` +
+            `NYC Limo Wish provides premium black car, executive SUV, and luxury chauffeur services across the Greater New York tri-state area.\n\n` +
+            `Corporate accounts receive dedicated 24/7 dispatch, guaranteed on-time pickups, and flat rates to JFK, LGA, and EWR.\n\n` +
+            `Book corporate travel or open an account:\nhttps://nyclimowish.com\n\n` +
+            `Warm regards,\nNYC Limo Wish Corporate Travel Desk`;
+
+          emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
+            `<p>NYC Limo Wish (<a href="https://nyclimowish.com">nyclimowish.com</a>) provides executive black car and luxury chauffeur services across Manhattan, Brooklyn, Westchester, and the tri-state area.</p>` +
+            `<p><strong>Corporate Perks:</strong> Dedicated account manager, 24/7 executive dispatch, flight tracking, and flat rates to JFK, LGA, and EWR airports.</p>` +
+            `<p><a href="https://nyclimowish.com" style="background:#0f172a;color:#f59e0b;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">Open Corporate Account &rarr;</a></p>`;
+
+          smsText = `Hi ${ownerName}, NYC Limo Wish offers executive black car & flat airport rates in NYC. Book corporate travel at nyclimowish.com or call 24/7. Reply STOP to opt out.`;
+        } else {
+          // Partner (Chauffeur / Fleet Operator)
+          emailSubject = `Chauffeur Affiliate Network — Join NYC Limo Wish Luxury Fleet`;
+          emailBodyText = `Hi ${ownerName},\n\n` +
+            `NYC Limo Wish invites licensed TLC chauffeurs and luxury vehicle operators to join our premium reservation network.\n\n` +
+            `High-yield airport transfers, corporate roadshows, weekly direct deposits, and zero monthly platform fees.\n\n` +
+            `Join our affiliate fleet:\nhttps://nyclimowish.com\n\n` +
+            `Best regards,\nNYC Limo Wish Fleet Operations`;
+
+          emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
+            `<p>NYC Limo Wish invites professional luxury chauffeurs and fleet operators for <strong>${c.company_name}</strong> to join our premier affiliate network.</p>` +
+            `<p><strong>Why Drive With Us:</strong> Premium airport & corporate bookings, weekly instant payouts, zero monthly fees, and dedicated 24/7 support.</p>` +
+            `<p><a href="https://nyclimowish.com" style="background:#0f172a;color:#f59e0b;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">Join Chauffeur Network &rarr;</a></p>`;
+
+          smsText = `Hi ${ownerName}, NYC Limo Wish is onboarding luxury chauffeurs in NY for high-paying airport reservations. Join free at nyclimowish.com. Reply STOP to opt out.`;
+        }
+      } else {
+        // Shipping Wish LLC (Default Freight Dispatch)
+        emailSubject = `Dedicated Freight & Load Booking for ${c.company_name} (${matchedEquip} Fleet)`;
+        emailBodyText = `Hi ${ownerName},\n\n` +
+          `Shipping Wish LLC places a named fleet operations manager with small fleets. ${c.company_name} shows as ${numUnits} ${matchedEquip} unit(s) out of ${stateName} on the public FMCSA census.\n\n` +
+          `Weekly desk. You keep broker pay. First week $0 if you want to try it.\n\n` +
+          `Best regards,\nShipping Wish Operations\nhttps://www.shippingwish.com`;
+
+        emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
+          `<p>Shipping Wish LLC places a named fleet operations manager with small fleets. <strong>${c.company_name}</strong> shows as ${numUnits} ${matchedEquip} unit(s) out of <strong>${stateName}</strong> on the public FMCSA census.</p>` +
+          `<p>Weekly desk. You keep broker pay. First week $0 if you want to try it.</p>` +
+          `<p><a href="https://www.shippingwish.com/services" style="background:#f59e0b;color:#0f172a;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">See the operations desk &rarr;</a></p>`;
+
+        smsText = `Hi ${ownerName}, Shipping Wish LLC emailed a one-pager about a named ops manager for ${matchedEquip} out of ${stateName}. Reply YES if useful, STOP to opt out.`;
+      }
 
       // Save lead in PostgreSQL CRM table
       const insertRes = await pool.query(
@@ -235,7 +479,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
           numUnits,
           stateName,
           req.user ? req.user.id : null,
-          `Imported via AI Auto-Prospecting Bot for ${stateName} (${matchedEquip})`
+          `Imported via AI Auto-Prospecting Bot for ${stateName} (${matchedEquip}) [${normalizedBrand.toUpperCase()}:${normalizedTarget.toUpperCase()}]`
         ]
       );
 
@@ -265,7 +509,9 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
         email_subject: emailSubject,
         email_text: emailBodyText,
         email_html: emailHtml,
-        sms_text: smsText
+        sms_text: smsText,
+        brand: normalizedBrand,
+        campaign_target: normalizedTarget
       };
 
       importedLeads.push(leadItem);
@@ -286,7 +532,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
             exclusive: true,
             activeOnly: true,
             forHire: true,
-            excludePassengers: true,
+            excludePassengers: normalizedBrand !== 'nyclimowish',
             hasPhone: true,
             limit: 25
           }),
@@ -311,10 +557,10 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       }
     }
 
-    // 2. Fallback to Verified FMCSA Carrier Directory if live census rate-limited or yielded too few
+    // 2. Fallback to Verified Directory if live census rate-limited or yielded too few
     if (importedLeads.length < maxLimit) {
       const needed = maxLimit - importedLeads.length;
-      const fallbackList = getFallbackCarriers(targetStates, equipmentKeys, needed + 10);
+      const fallbackList = getFallbackCarriers(targetStates, equipmentKeys, needed + 10, normalizedBrand);
       for (const fc of fallbackList) {
         if (importedLeads.length >= maxLimit) break;
         await ingestCarrierCandidate(fc, fc.state);
@@ -335,14 +581,19 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
         email: leadItem.raw_email,
         phone: leadItem.raw_phone,
         phy_state: leadItem.state,
-        equipment_type: leadItem.equipment_type
+        equipment_type: leadItem.equipment_type,
+        brand: leadItem.brand
       };
 
       // Email
       if (send_email && leadItem.raw_email) {
         try {
           const result = await Promise.race([
-            outreach.sendLeadEmail(leadRow, req.user, 'dedicated_manager'),
+            outreach.sendLeadEmail(leadRow, req.user, 'dedicated_manager', {
+              customSubject: leadItem.email_subject,
+              customHtml: leadItem.email_html,
+              customText: leadItem.email_text
+            }),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 4000))
           ]);
           if (result && result.ok) {
@@ -379,12 +630,14 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
         }
       }
 
-      // Vapi AI Call
+      // Vapi AI Call (Multi-brand persona & TCPA guarded)
       if (send_vapi && leadItem.raw_phone) {
         try {
           const result = await Promise.race([
             outreach.sendLeadVapi(leadRow, req.user, {
-              consentConfirmed: consent_confirmed === true
+              consentConfirmed: consent_confirmed === true,
+              brand: normalizedBrand,
+              targetRole: normalizedTarget
             }),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Vapi timeout')), 4000))
           ]);
@@ -407,6 +660,8 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
 
     res.json({
       ok: true,
+      brand: normalizedBrand,
+      campaign_target: normalizedTarget,
       processed: scrapedCount,
       imported: clientLeads.length,
       emails_sent: emailsSent,

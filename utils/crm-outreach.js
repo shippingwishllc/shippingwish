@@ -57,19 +57,25 @@ function usablePhone(phone) {
   return tail && tail.length >= 10 && String(phone).toLowerCase() !== 'unknown' ? tail : '';
 }
 
-async function sendLeadEmail(lead, user, templateKey) {
+async function sendLeadEmail(lead, user, templateKey, opts = {}) {
   const to = sanitizeEmail(lead.email);
   if (!to) return { ok: false, reason: 'No valid email on this row' };
-  const tpl = buildTemplate(templateKey || 'dedicated_manager', {
-    ownerName: lead.owner_name || 'there',
-    companyName: lead.company_name,
-    recipientEmail: to
-  });
+  const customSub = opts.customSubject || opts.subject || lead.custom_email_subject;
+  const customHtml = opts.customHtml || opts.html || lead.custom_email_html;
+  const customText = opts.customText || opts.text || lead.custom_email_text;
+
+  const tpl = (customSub && customHtml)
+    ? { subject: customSub, html: customHtml, text: customText || customHtml }
+    : buildTemplate(templateKey || 'dedicated_manager', {
+        ownerName: lead.owner_name || 'there',
+        companyName: lead.company_name,
+        recipientEmail: to
+      });
   const result = await sendBrandedEmail({
     to,
-    subject: tpl.subject,
-    html: tpl.html,
-    text: tpl.text,
+    subject: customSub || tpl.subject,
+    html: customHtml || tpl.html,
+    text: customText || tpl.text,
     leadId: lead.id,
     sentBy: user && user.id,
     emailType: 'crm_outreach',
@@ -201,9 +207,43 @@ async function sendLeadVapi(lead, user, opts = {}) {
     };
   }
 
-  const firstMessage = `Hi this is Alex with Shipping Wish Logistics operations. Am I speaking with the fleet owner or manager for ${company}?`;
-  const assistantName = 'Alex - Operations Manager'; // 25 chars (strictly <= 40 chars for Vapi validation)
-  
+  const brand = String(opts.brand || lead.brand || 'shippingwish').toLowerCase();
+  const targetRole = String(opts.targetRole || opts.campaign_target || '').toLowerCase();
+
+  // TCPA E-commerce safety guard
+  if (brand.includes('buywish')) {
+    return {
+      ok: false,
+      reason: 'Outbound automated calls for retail e-commerce are restricted by US TCPA law. BuyWish voice is configured for 24/7 Inbound Support at 1-800-580-3101 only.'
+    };
+  }
+
+  let assistantName = 'Alex - Operations Manager';
+  let firstMessage = `Hi this is Alex with Shipping Wish Logistics operations. Am I speaking with the fleet owner or manager for ${company}?`;
+  let systemPromptContent = `You are Alex at Shipping Wish LLC. Keep replies to 1-3 sentences. Offer a named operations manager, weekly retainer, they keep broker pay, first week $0. Never quote a rate per mile or load count. If they ask to stop, apologize and end the call. Transfer ready deals to ${transfer}.`;
+
+  if (brand === 'loadsnexus' || targetRole.includes('nexus')) {
+    if (targetRole.includes('broker')) {
+      assistantName = 'Jordan - Broker Desk';
+      firstMessage = `Hi, this is Jordan with LoadsNexus freight exchange. Do you have any open spot freight that needs reliable truck capacity covered today?`;
+      systemPromptContent = `You are Jordan at LoadsNexus (loadsnexus.com). 100% free load posting for brokers. Direct carrier contact, verified authority checks. Never quote load counts. Transfer interested brokers to ${transfer}.`;
+    } else {
+      assistantName = 'Jordan - Carrier Pass';
+      firstMessage = `Hello! This is Jordan with LoadsNexus freight network. Are you looking for high-paying loads for your ${equipment} today?`;
+      systemPromptContent = `You are Jordan at LoadsNexus (loadsnexus.com). Introduce the $19/mo Solo Pass for carriers to find direct broker loads. Never quote rates or count. Transfer interested carriers to ${transfer}.`;
+    }
+  } else if (brand === 'nyclimowish' || brand === 'nyclimo' || targetRole.includes('limo')) {
+    if (targetRole.includes('corporate')) {
+      assistantName = 'Elena - Corporate Limo';
+      firstMessage = `Hello! This is Elena with NYC Limo Wish executive transportation. Does your company regularly arrange executive black car or airport travel in New York?`;
+      systemPromptContent = `You are Elena at NYC Limo Wish (nyclimowish.com). Introduce corporate accounts, 24/7 dedicated dispatch, flat airport rates to JFK, LGA, and EWR. Transfer to ${transfer}.`;
+    } else {
+      assistantName = 'Elena - Chauffeur Fleet';
+      firstMessage = `Hi, this is Elena with NYC Limo Wish executive transportation. Am I speaking with the fleet owner or chauffeur for ${company}?`;
+      systemPromptContent = `You are Elena at NYC Limo Wish (nyclimowish.com). Invite licensed luxury chauffeurs to join our affiliate network. High-paying airport and corporate reservations, instant weekly payouts, zero monthly fee. Transfer to ${transfer}.`;
+    }
+  }
+
   const buildPayload = (useVoice = true) => ({
     name: `CRM Call to ${String(name || 'Lead').slice(0, 25)}`,
     phoneNumberId: vapiPhoneId || undefined,
@@ -216,7 +256,7 @@ async function sendLeadVapi(lead, user, opts = {}) {
         model: 'gpt-4o-mini',
         messages: [{
           role: 'system',
-          content: `You are Alex at Shipping Wish LLC. Keep replies to 1-3 sentences. Offer a named operations manager, weekly retainer, they keep broker pay, first week $0. Never quote a rate per mile or load count. If they ask to stop, apologize and end the call. Transfer ready deals to ${transfer}.`
+          content: systemPromptContent
         }],
         tools: [{
           type: 'transferCall',
@@ -224,7 +264,7 @@ async function sendLeadVapi(lead, user, opts = {}) {
         }]
       },
       ...(useVoice ? { voice: { provider: '11labs', voiceId: '21m00Tcm4TlvDq8ikWAM' } } : {}),
-      endCallMessage: 'Thank you for your time. Have a safe drive!',
+      endCallMessage: 'Thank you for your time. Have a wonderful day!',
       recordingEnabled: true
     }
   });
