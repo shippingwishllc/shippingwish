@@ -438,7 +438,7 @@ router.get('/auth/tiktok', async (req, res) => {
   try {
     await ensureSocialSchema();
     const { rows } = await pool.query('SELECT tiktok_client_key FROM social_brand_credentials WHERE brand = $1', [brand]);
-    const clientKey = (rows[0]?.tiktok_client_key || process.env.TIKTOK_CLIENT_KEY || '').trim();
+    const clientKey = (rows[0]?.tiktok_client_key || process.env.TIKTOK_CLIENT_KEY || 'awg53d0yh4au6mli').trim();
     const redirectUri = (process.env.TIKTOK_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/tiktok').trim();
     const scope = 'user.info.basic,video.publish,video.upload';
 
@@ -471,8 +471,8 @@ router.get('/callback/tiktok', async (req, res) => {
   try {
     await ensureSocialSchema();
     const { rows } = await pool.query('SELECT tiktok_client_key, tiktok_client_secret FROM social_brand_credentials WHERE brand = $1', [brand]);
-    const clientKey = (rows[0]?.tiktok_client_key || process.env.TIKTOK_CLIENT_KEY || '').trim();
-    const clientSecret = (rows[0]?.tiktok_client_secret || process.env.TIKTOK_CLIENT_SECRET || '').trim();
+    const clientKey = (rows[0]?.tiktok_client_key || process.env.TIKTOK_CLIENT_KEY || 'awg53d0yh4au6mli').trim();
+    const clientSecret = (rows[0]?.tiktok_client_secret || process.env.TIKTOK_CLIENT_SECRET || 'PoAqg8v10OYA1H8Mxu3ug55aeR18OP2r').trim();
     const redirectUri = (process.env.TIKTOK_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/tiktok').trim();
 
     const tokenRes = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
