@@ -347,6 +347,10 @@
       "destination": "/api"
     },
     {
+      "source": "/tiktok-developers-site-verification(.*)",
+      "destination": "/api"
+    },
+    {
       "source": "/privacy-policy",
       "destination": "/api"
     },

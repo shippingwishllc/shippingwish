@@ -3,3 +3,5 @@ node_modules/
 *.log
 /nyclimowish/
 uploads/
+scripts/*token*.js
+scripts/*cred*.js

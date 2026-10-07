@@ -535,6 +535,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// TikTok Developer Domain & Site Verification Endpoint
+app.use((req, res, next) => {
+  const p = req.path || '';
+  if (p.includes('tiktok-developers-site-verification') || p.includes('DeEB4oB9GUW7gmCkw04Rdq63jFnRF822')) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.send('tiktok-developers-site-verification=DeEB4oB9GUW7gmCkw04Rdq63jFnRF822');
+  }
+  next();
+});
+
 // Live Public Freight Broker Tracking Route
 app.get(['/track/:token', '/tracking/:token'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tracking.html'));
