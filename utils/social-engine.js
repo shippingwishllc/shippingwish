@@ -146,6 +146,12 @@ async function ensureSocialSchema() {
     ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS linkedin_url TEXT;
     ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS instagram_url TEXT;
     ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS twitter_url TEXT;
+    ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS tiktok_access_token TEXT;
+    ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS tiktok_refresh_token TEXT;
+    ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS tiktok_open_id VARCHAR(120);
+    ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS tiktok_url TEXT;
+    ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS tiktok_client_key VARCHAR(100);
+    ALTER TABLE social_brand_credentials ADD COLUMN IF NOT EXISTS tiktok_client_secret TEXT;
 
     CREATE TABLE IF NOT EXISTS social_posts_log (
       id SERIAL PRIMARY KEY,
@@ -361,6 +367,45 @@ async function publishToLinkedIn(orgUrn, accessToken, text) {
 }
 
 /**
+ * Publish Video to TikTok Creator Account using Official Content Posting API v2
+ */
+async function publishToTikTok(accessToken, videoUrl, title, privacyLevel = 'PUBLIC_TO_EVERYONE') {
+  if (!accessToken) throw new Error('TikTok Access Token is required');
+  if (!videoUrl) throw new Error('TikTok requires a valid video URL (MP4 format) to publish');
+
+  const endpoint = 'https://open.tiktokapis.com/v2/post/publish/video/init/';
+  const body = {
+    post_info: {
+      title: String(title || '').slice(0, 2200),
+      privacy_level: privacyLevel,
+      disable_duet: false,
+      disable_stitch: false,
+      disable_comment: false,
+      video_cover_timestamp_ms: 1000
+    },
+    source_info: {
+      source: 'PULL_FROM_URL',
+      video_url: videoUrl
+    }
+  };
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json; charset=UTF-8'
+    },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+  if (data.error && data.error.code && data.error.code !== 'ok') {
+    throw new Error(`TikTok API Error: ${data.error.message || JSON.stringify(data.error)}`);
+  }
+  return { platform: 'tiktok', id: (data.data && data.data.publish_id) || 'tt_' + Date.now() };
+}
+
+/**
  * AI Auto-Responder for Inbound Comments & DMs (100% Policy Compliant)
  */
 async function generateAiCommentReply(brandKey, incomingUserComment, postContext = '') {
@@ -417,5 +462,6 @@ module.exports = {
   publishToFacebook,
   publishToInstagram,
   publishToLinkedIn,
+  publishToTikTok,
   generateAiCommentReply
 };

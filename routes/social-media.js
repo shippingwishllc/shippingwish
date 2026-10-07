@@ -17,6 +17,7 @@ const {
   publishToFacebook,
   publishToInstagram,
   publishToLinkedIn,
+  publishToTikTok,
   generateAiCommentReply
 } = require('../utils/social-engine');
 
@@ -116,10 +117,14 @@ router.get('/credentials/:brand', async (req, res) => {
       linkedin_org_urn: c.linkedin_org_urn || '',
       linkedin_access_token_masked: mask(c.linkedin_access_token),
       x_api_key_masked: mask(c.x_api_key),
+      tiktok_access_token_masked: mask(c.tiktok_access_token),
+      tiktok_client_key: c.tiktok_client_key || '',
+      tiktok_open_id: c.tiktok_open_id || '',
       facebook_url: c.facebook_url || '',
       linkedin_url: c.linkedin_url || '',
       instagram_url: c.instagram_url || '',
       twitter_url: c.twitter_url || '',
+      tiktok_url: c.tiktok_url || '',
       autopilot_enabled: Boolean(c.autopilot_enabled),
       autopilot_time: c.autopilot_time || '10:00',
       last_posted_at: c.last_posted_at
@@ -136,7 +141,7 @@ router.get('/credentials/:brand', async (req, res) => {
 router.get('/public-links', async (req, res) => {
   try {
     await ensureSocialSchema();
-    const { rows } = await pool.query('SELECT brand, facebook_url, linkedin_url, instagram_url, twitter_url FROM social_brand_credentials');
+    const { rows } = await pool.query('SELECT brand, facebook_url, linkedin_url, instagram_url, twitter_url, tiktok_url FROM social_brand_credentials');
     const links = {};
     for (const b of Object.keys(BRANDS)) {
       const dbRow = rows.find(r => r.brand === b) || {};
@@ -144,7 +149,8 @@ router.get('/public-links', async (req, res) => {
         facebook: dbRow.facebook_url || '',
         linkedin: dbRow.linkedin_url || '',
         instagram: dbRow.instagram_url || '',
-        twitter: dbRow.twitter_url || ''
+        twitter: dbRow.twitter_url || '',
+        tiktok: dbRow.tiktok_url || ''
       };
     }
     res.json({ ok: true, links });
@@ -172,6 +178,9 @@ router.post('/credentials/:brand', async (req, res) => {
       linkedin_url,
       instagram_url,
       twitter_url,
+      tiktok_url,
+      tiktok_client_key,
+      tiktok_client_secret,
       x_api_key,
       x_api_secret,
       x_access_token,
@@ -199,10 +208,11 @@ router.post('/credentials/:brand', async (req, res) => {
           brand, facebook_page_id, facebook_access_token,
           instagram_account_id, instagram_access_token,
           linkedin_org_urn, linkedin_access_token,
-          facebook_url, linkedin_url, instagram_url, twitter_url,
+          facebook_url, linkedin_url, instagram_url, twitter_url, tiktok_url,
+          tiktok_client_key, tiktok_client_secret,
           x_api_key, x_api_secret, x_access_token, x_access_secret,
           autopilot_enabled, autopilot_time
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
       `, [
         brand,
         facebook_page_id || null,
@@ -215,6 +225,9 @@ router.post('/credentials/:brand', async (req, res) => {
         linkedin_url || null,
         instagram_url || null,
         twitter_url || null,
+        tiktok_url || null,
+        tiktok_client_key || null,
+        tiktok_client_secret || null,
         x_api_key || null,
         x_api_secret || null,
         x_access_token || null,
@@ -241,12 +254,15 @@ router.post('/credentials/:brand', async (req, res) => {
           linkedin_url = $9,
           instagram_url = $10,
           twitter_url = $11,
-          x_api_key = COALESCE(NULLIF($12, ''), x_api_key),
-          x_api_secret = COALESCE(NULLIF($13, ''), x_api_secret),
-          x_access_token = COALESCE(NULLIF($14, ''), x_access_token),
-          x_access_secret = COALESCE(NULLIF($15, ''), x_access_secret),
-          autopilot_enabled = $16,
-          autopilot_time = COALESCE(NULLIF($17, ''), autopilot_time),
+          tiktok_url = $12,
+          tiktok_client_key = COALESCE(NULLIF($13, ''), tiktok_client_key),
+          tiktok_client_secret = COALESCE(NULLIF($14, ''), tiktok_client_secret),
+          x_api_key = COALESCE(NULLIF($15, ''), x_api_key),
+          x_api_secret = COALESCE(NULLIF($16, ''), x_api_secret),
+          x_access_token = COALESCE(NULLIF($17, ''), x_access_token),
+          x_access_secret = COALESCE(NULLIF($18, ''), x_access_secret),
+          autopilot_enabled = $19,
+          autopilot_time = COALESCE(NULLIF($20, ''), autopilot_time),
           updated_at = now()
         WHERE brand = $1
       `, [
@@ -261,6 +277,9 @@ router.post('/credentials/:brand', async (req, res) => {
         linkedin_url ? String(linkedin_url).trim() : null,
         instagram_url ? String(instagram_url).trim() : null,
         twitter_url ? String(twitter_url).trim() : null,
+        tiktok_url ? String(tiktok_url).trim() : null,
+        tiktok_client_key || null,
+        tiktok_client_secret || null,
         x_api_key || null,
         x_api_secret || null,
         x_access_token || null,
@@ -410,6 +429,88 @@ router.get('/callback/linkedin', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/social/auth/tiktok
+ * Initiate TikTok 1-Click OAuth 2.0 flow
+ */
+router.get('/auth/tiktok', async (req, res) => {
+  const brand = req.query.brand || 'shippingwish';
+  try {
+    await ensureSocialSchema();
+    const { rows } = await pool.query('SELECT tiktok_client_key FROM social_brand_credentials WHERE brand = $1', [brand]);
+    const clientKey = (rows[0]?.tiktok_client_key || process.env.TIKTOK_CLIENT_KEY || '').trim();
+    const redirectUri = (process.env.TIKTOK_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/tiktok').trim();
+    const scope = 'user.info.basic,video.publish,video.upload';
+
+    if (!clientKey) {
+      return res.redirect(`/settings?section=social-media&tiktok_error=missing_client_key#social-media`);
+    }
+
+    const authUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${clientKey}&scope=${encodeURIComponent(scope)}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(brand)}`;
+    res.redirect(authUrl);
+  } catch (err) {
+    res.redirect(`/settings?section=social-media&tiktok_error=${encodeURIComponent(err.message)}#social-media`);
+  }
+});
+
+/**
+ * GET /api/social/callback/tiktok
+ * Handle TikTok OAuth callback and save token in DB
+ */
+router.get('/callback/tiktok', async (req, res) => {
+  const { code, state, error, error_description } = req.query;
+  const brand = state || 'shippingwish';
+
+  if (error) {
+    return res.redirect(`/settings?section=social-media&tiktok_error=${encodeURIComponent(error_description || error)}#social-media`);
+  }
+  if (!code) {
+    return res.redirect(`/settings?section=social-media&tiktok_error=missing_code#social-media`);
+  }
+
+  try {
+    await ensureSocialSchema();
+    const { rows } = await pool.query('SELECT tiktok_client_key, tiktok_client_secret FROM social_brand_credentials WHERE brand = $1', [brand]);
+    const clientKey = (rows[0]?.tiktok_client_key || process.env.TIKTOK_CLIENT_KEY || '').trim();
+    const clientSecret = (rows[0]?.tiktok_client_secret || process.env.TIKTOK_CLIENT_SECRET || '').trim();
+    const redirectUri = (process.env.TIKTOK_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/tiktok').trim();
+
+    const tokenRes = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_key: clientKey,
+        client_secret: clientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri
+      }).toString()
+    });
+
+    const tokenData = await tokenRes.json();
+    if (tokenData.error && tokenData.error.code && tokenData.error.code !== 'ok') {
+      throw new Error(tokenData.error.message || tokenData.error_description || 'TikTok token exchange failed');
+    }
+
+    const accessToken = tokenData.data?.access_token || tokenData.access_token;
+    const refreshToken = tokenData.data?.refresh_token || tokenData.refresh_token;
+    const openId = tokenData.data?.open_id || tokenData.open_id;
+
+    await pool.query(`
+      UPDATE social_brand_credentials SET
+        tiktok_access_token = $1,
+        tiktok_refresh_token = $2,
+        tiktok_open_id = $3,
+        updated_at = now()
+      WHERE brand = $4
+    `, [accessToken, refreshToken, openId, brand]);
+
+    res.redirect(`/settings?section=social-media&tiktok_connected=success#social-media`);
+  } catch (err) {
+    console.error('TikTok callback error:', err);
+    res.redirect(`/settings?section=social-media&tiktok_error=${encodeURIComponent(err.message)}#social-media`);
+  }
+});
 
 /**
  * POST /api/social/generate
@@ -439,6 +540,7 @@ router.post('/publish', async (req, res) => {
       title = 'Social Post',
       content = '',
       image_url = null,
+      video_url = null,
       platforms = ['facebook', 'linkedin']
     } = req.body;
 
@@ -480,6 +582,17 @@ router.post('/publish', async (req, res) => {
           } else {
             status = 'saved_draft';
             error = 'LinkedIn Org URN & token not connected. Saved to database archive.';
+          }
+        } else if (p === 'tiktok') {
+          const mediaUrl = video_url || image_url;
+          if (creds.tiktok_access_token && mediaUrl) {
+            const ttRes = await publishToTikTok(creds.tiktok_access_token, mediaUrl, content);
+            extId = ttRes.id;
+          } else {
+            status = 'saved_draft';
+            error = !creds.tiktok_access_token
+              ? 'TikTok Creator account not connected. Connect in Settings & Saved to archive.'
+              : 'TikTok requires an MP4 video URL (HeyGen/Runway/Google Veo AI). Saved to archive.';
           }
         } else {
           status = 'saved_draft';

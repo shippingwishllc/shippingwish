@@ -722,7 +722,39 @@
                 </div>
               </div>
 
-              <!-- 4. Public Website Social Media Links for this Brand -->
+              <!-- 4. TikTok Content Posting API -->
+              <div style="background:var(--surface-base);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                  <div style="font-size:14px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:16px;">🎵</span> TikTok Content Posting API (Direct Video Post)
+                  </div>
+                  <span id="badge-sm-tt" class="settings-badge badge-amber">Ready to Connect</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;background:#fdf2f8;padding:12px 14px;border-radius:8px;border:1px solid #fbcfe8;margin-bottom:12px;">
+                  <div>
+                    <div style="font-weight:700;font-size:13px;color:#9d174d;">1-Click TikTok OAuth Connection</div>
+                    <div style="font-size:11.5px;color:#be185d;">Auto-publishes 9:16 vertical AI videos directly to your brand's TikTok account</div>
+                  </div>
+                  <a id="btn-connect-tiktok" href="/api/social/auth/tiktok?brand=shippingwish" class="btn btn-primary btn-sm" style="background:#fe2c55;border-color:#fe2c55;font-weight:700;text-decoration:none;">
+                    🔗 Connect TikTok
+                  </a>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>TikTok Client Key</label>
+                    <input type="text" class="form-input" id="sm-tt-client-key" placeholder="Client Key from developers.tiktok.com">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>TikTok Client Secret</label>
+                    <input type="password" class="form-input" id="sm-tt-client-secret" placeholder="Client Secret">
+                  </div>
+                </div>
+                <small style="color:var(--text-muted);font-size:11.5px;margin-top:8px;display:block;">
+                  💡 <strong>Setup Guide:</strong> Create an App on <code>developers.tiktok.com</code> with product <em>Content Posting API</em> and redirect URI <code>https://www.shippingwish.com/api/social/callback/tiktok</code>.
+                </small>
+              </div>
+
+              <!-- 5. Public Website Social Media Links for this Brand -->
               <div style="background:var(--surface-base);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                   <div style="font-size:14px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
@@ -731,7 +763,7 @@
                   <span class="settings-badge badge-blue">Powers Website Footers</span>
                 </div>
                 <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;">
-                  Yeh public links is brand ki website ke footer aur header me social media icons (Facebook, LinkedIn, Instagram, X) par click karne se open honge.
+                  Yeh public links is brand ki website ke footer aur header me social media icons (Facebook, LinkedIn, Instagram, X, TikTok) par click karne se open honge.
                 </p>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                   <div class="form-group" style="margin-bottom:0;">
@@ -747,6 +779,10 @@
                     <input type="text" class="form-input" id="sm-url-ig" placeholder="https://instagram.com/...">
                   </div>
                   <div class="form-group" style="margin-bottom:0;">
+                    <label>TikTok Public Profile Link</label>
+                    <input type="text" class="form-input" id="sm-url-tt" placeholder="Optional (e.g. https://www.tiktok.com/@...)">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;grid-column:1 / -1;">
                     <label>X / Twitter Profile Link</label>
                     <input type="text" class="form-input" id="sm-url-x" placeholder="Optional (leave empty if not created yet)">
                   </div>
@@ -1752,10 +1788,29 @@
           }
         }
 
+        // TikTok status
+        const ttBadge = document.getElementById('badge-sm-tt');
+        if (ttBadge) {
+          if (data.tiktok_access_token_masked) {
+            ttBadge.className = 'settings-badge badge-green';
+            ttBadge.textContent = 'Connected (Direct Post Active)';
+          } else if (data.tiktok_client_key) {
+            ttBadge.className = 'settings-badge badge-blue';
+            ttBadge.textContent = 'App Configured';
+          } else {
+            ttBadge.className = 'settings-badge badge-amber';
+            ttBadge.textContent = 'Ready to Connect';
+          }
+        }
+        if (document.getElementById('sm-tt-client-key')) document.getElementById('sm-tt-client-key').value = data.tiktok_client_key || '';
+        const btnTt = document.getElementById('btn-connect-tiktok');
+        if (btnTt) btnTt.href = '/api/social/auth/tiktok?brand=' + brand;
+
         // Public website links
         if (document.getElementById('sm-url-fb')) document.getElementById('sm-url-fb').value = data.facebook_url || '';
         if (document.getElementById('sm-url-li')) document.getElementById('sm-url-li').value = data.linkedin_url || '';
         if (document.getElementById('sm-url-ig')) document.getElementById('sm-url-ig').value = data.instagram_url || '';
+        if (document.getElementById('sm-url-tt')) document.getElementById('sm-url-tt').value = data.tiktok_url || '';
         if (document.getElementById('sm-url-x')) document.getElementById('sm-url-x').value = data.twitter_url || '';
 
         document.getElementById('sm-autopilot-enable').checked = Boolean(data.autopilot_enabled ?? true);
@@ -1783,9 +1838,12 @@
       instagram_access_token: '',
       linkedin_org_urn: liUrnVal,
       linkedin_access_token: '',
+      tiktok_client_key: document.getElementById('sm-tt-client-key') ? document.getElementById('sm-tt-client-key').value.trim() : '',
+      tiktok_client_secret: document.getElementById('sm-tt-client-secret') ? document.getElementById('sm-tt-client-secret').value.trim() : '',
       facebook_url: document.getElementById('sm-url-fb') ? document.getElementById('sm-url-fb').value.trim() : '',
       linkedin_url: document.getElementById('sm-url-li') ? document.getElementById('sm-url-li').value.trim() : '',
       instagram_url: document.getElementById('sm-url-ig') ? document.getElementById('sm-url-ig').value.trim() : '',
+      tiktok_url: document.getElementById('sm-url-tt') ? document.getElementById('sm-url-tt').value.trim() : '',
       twitter_url: document.getElementById('sm-url-x') ? document.getElementById('sm-url-x').value.trim() : '',
       autopilot_enabled: document.getElementById('sm-autopilot-enable').checked,
       autopilot_time: document.getElementById('sm-autopilot-time').value
