@@ -305,7 +305,7 @@
                 <div class="feed-preview-avatar" id="prev-avatar">SW</div>
                 <div>
                   <div style="font-weight:800;font-size:14px;color:#0f172a;" id="prev-brand-name">Shipping Wish LLC</div>
-                  <div style="font-size:11.5px;color:#64748b;">Just now &bull; 🌐 Public</div>
+                  <div style="font-size:11.5px;color:#64748b;" id="prev-brand-sub">Dedicated Fleet Operations &bull; Just now &bull; 🌐 Public</div>
                 </div>
               </div>
               <div class="feed-preview-body" id="prev-body">
@@ -516,13 +516,25 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
       `).join('');
     }
 
-    // Update Preview Header
+    // Update Preview Header with distinct brand identity
     const prevName = document.getElementById('prev-brand-name');
     if (prevName) prevName.textContent = brand.name || 'Brand';
     const prevAvatar = document.getElementById('prev-avatar');
     if (prevAvatar) {
-      const initials = (brand.name || 'SW').split(' ').map(n => n[0]).slice(0,2).join('');
-      prevAvatar.textContent = initials;
+      const brandStyles = {
+        shippingwish: { emoji: '🚚', bg: '#0f172a', color: '#f59e0b' },
+        loadsnexus:   { emoji: '🛡️', bg: '#0284c7', color: '#ffffff' },
+        nyclimowish:  { emoji: '🗽', bg: '#09090b', color: '#f8fafc' },
+        buywish:      { emoji: '🛍️', bg: '#059669', color: '#ffffff' }
+      };
+      const st = brandStyles[activeBrand] || { emoji: '🏢', bg: '#1e293b', color: '#ffffff' };
+      prevAvatar.style.background = st.bg;
+      prevAvatar.style.color = st.color;
+      prevAvatar.textContent = st.emoji;
+    }
+    const prevSub = document.getElementById('prev-brand-sub');
+    if (prevSub) {
+      prevSub.textContent = `${brand.tagline || brand.website} • Just now • 🌐 Public`;
     }
   }
 
