@@ -302,15 +302,17 @@ router.get('/callback/linkedin', async (req, res) => {
     }
 
     await ensureSocialSchema();
-    await pool.query(`
-      INSERT INTO social_brand_credentials (brand, linkedin_access_token, linkedin_org_urn, autopilot_enabled, autopilot_time)
-      VALUES ($1, $2, $3, true, '10:00')
-      ON CONFLICT (brand) DO UPDATE SET
-        linkedin_access_token = EXCLUDED.linkedin_access_token,
-        linkedin_org_urn = COALESCE(EXCLUDED.linkedin_org_urn, social_brand_credentials.linkedin_org_urn),
-        autopilot_enabled = EXCLUDED.autopilot_enabled,
-        updated_at = now()
-    `, [brand, accessToken, authorUrn || null]);
+    const allBrands = ['shippingwish', 'loadsnexus', 'nyclimowish', 'buywish'];
+    for (const b of allBrands) {
+      await pool.query(`
+        INSERT INTO social_brand_credentials (brand, linkedin_access_token, linkedin_org_urn, autopilot_enabled, autopilot_time)
+        VALUES ($1, $2, $3, true, '10:00')
+        ON CONFLICT (brand) DO UPDATE SET
+          linkedin_access_token = EXCLUDED.linkedin_access_token,
+          linkedin_org_urn = COALESCE(EXCLUDED.linkedin_org_urn, social_brand_credentials.linkedin_org_urn),
+          updated_at = now()
+      `, [b, accessToken, authorUrn || null]);
+    }
 
     res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_connected=success`);
   } catch (err) {
