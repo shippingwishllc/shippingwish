@@ -588,16 +588,36 @@ router.post('/publish', async (req, res) => {
             error = 'Facebook API credentials not connected. Saved to database archive.';
           }
         } else if (p === 'instagram') {
-          if (creds.instagram_account_id && creds.instagram_access_token && image_url) {
-            const igRes = await publishToInstagram(creds.instagram_account_id, creds.instagram_access_token, content, image_url);
+          let igId = creds.instagram_account_id;
+          let igToken = creds.instagram_access_token || creds.facebook_access_token;
+
+          // Auto-detect linked Instagram Business Account from Facebook Page
+          if ((!igId || !igId.match(/^\d+$/)) && creds.facebook_page_id && creds.facebook_access_token) {
+            try {
+              const pageIgRes = await fetch(`https://graph.facebook.com/v21.0/${creds.facebook_page_id}?fields=instagram_business_account&access_token=${creds.facebook_access_token}`);
+              const pageIgData = await pageIgRes.json();
+              if (pageIgData.instagram_business_account?.id) {
+                igId = pageIgData.instagram_business_account.id;
+                await pool.query('UPDATE social_brand_credentials SET instagram_account_id = $1, instagram_access_token = $2 WHERE brand = $3', [igId, igToken, brand]).catch(() => {});
+              }
+            } catch (igErr) {
+              console.warn('Auto-detect IG account error:', igErr.message);
+            }
+          }
+
+          if (igId && igId.match(/^\d+$/) && igToken && image_url) {
+            const igRes = await publishToInstagram(igId, igToken, content, image_url);
             extId = igRes.id;
+          } else if (!image_url) {
+            status = 'saved_draft';
+            error = 'Instagram requires an image or visual graphic to publish.';
           } else {
             status = 'saved_draft';
-            error = 'Instagram requires verified media URL and connected token. Saved to archive.';
+            error = 'Instagram account Facebook Page ke sath linked nahi hai. Meta Business Suite / Facebook Page Settings me ja kar Linked Accounts -> Instagram connect karein.';
           }
         } else if (p === 'linkedin') {
           if (creds.linkedin_org_urn && creds.linkedin_access_token) {
-            const liRes = await publishToLinkedIn(creds.linkedin_org_urn, creds.linkedin_access_token, content);
+            const liRes = await publishToLinkedIn(creds.linkedin_org_urn, creds.linkedin_access_token, content, image_url);
             extId = liRes.id;
           } else {
             status = 'saved_draft';

@@ -427,9 +427,9 @@ async function publishToInstagram(igUserId, accessToken, caption, imageUrl) {
 }
 
 /**
- * Publish Post to LinkedIn Company Page using Official API
+ * Publish Post to LinkedIn Company Page using Official API (with Image Upload Support)
  */
-async function publishToLinkedIn(orgUrn, accessToken, text) {
+async function publishToLinkedIn(orgUrn, accessToken, text, imageUrl = null) {
   if (!orgUrn || !accessToken) throw new Error('LinkedIn Org URN and Access Token are required');
   
   let formattedUrn = String(orgUrn || '').trim();
@@ -440,13 +440,78 @@ async function publishToLinkedIn(orgUrn, accessToken, text) {
     formattedUrn = `urn:li:organization:${formattedUrn}`;
   }
 
+  let mediaCategory = 'NONE';
+  let mediaArr = [];
+
+  if (imageUrl) {
+    try {
+      let buffer = null;
+      const imgMatch = String(imageUrl).match(/\/api\/social\/image\/([a-zA-Z0-9_-]+)/);
+      if (imgMatch) {
+        const { rows } = await pool.query('SELECT data FROM social_generated_images WHERE image_id = $1', [imgMatch[1]]);
+        if (rows.length && rows[0].data) buffer = rows[0].data;
+      }
+      if (!buffer) {
+        const imgFetch = await fetch(imageUrl);
+        buffer = Buffer.from(await imgFetch.arrayBuffer());
+      }
+
+      if (buffer) {
+        // Step 1: Register upload with LinkedIn
+        const regRes = await fetch('https://api.linkedin.com/v2/assets?action=registerUpload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            registerUploadRequest: {
+              recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+              owner: formattedUrn,
+              serviceRelationships: [{
+                relationshipType: 'OWNER',
+                identifier: 'urn:li:userGeneratedContent'
+              }]
+            }
+          })
+        });
+        const regData = await regRes.json();
+        const uploadUrl = regData.value?.uploadMechanism?.['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']?.uploadUrl;
+        const asset = regData.value?.asset;
+
+        if (uploadUrl && asset) {
+          // Step 2: Upload binary image buffer
+          await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'image/png',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            body: buffer
+          });
+
+          mediaCategory = 'IMAGE';
+          mediaArr = [{
+            status: 'READY',
+            description: { text: text.slice(0, 100) },
+            media: asset,
+            title: { text: 'Shipping Wish Update' }
+          }];
+        }
+      }
+    } catch (liImgErr) {
+      console.warn('LinkedIn image upload fallback to text:', liImgErr.message);
+    }
+  }
+
   const payload = {
     author: formattedUrn,
     lifecycleState: 'PUBLISHED',
     specificContent: {
       'com.linkedin.ugc.ShareContent': {
         shareCommentary: { text },
-        shareMediaCategory: 'NONE'
+        shareMediaCategory: mediaCategory,
+        ...(mediaArr.length ? { media: mediaArr } : {})
       }
     },
     visibility: {
