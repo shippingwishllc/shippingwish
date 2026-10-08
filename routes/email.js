@@ -10,6 +10,15 @@ const { buildTemplate, verifyUnsubscribeToken, COMPANY } = require('../utils/ema
 const { notifyAdmins, createNotification } = require('../utils/notifications');
 const { isValidEmail, emailValidationError } = require('../utils/email-valid');
 const { knownMailbox, filterBrandMessages, normalizeFolder } = require('../utils/brand-mailboxes');
+const {
+  isDmarcReportEmail,
+  processInboundDmarcEmail,
+  getDomainDeliverabilityStats,
+  scanAndParseAllDmarc
+} = require('../utils/dmarc-analyzer');
+const {
+  handleCampaignEmailReply
+} = require('../utils/campaign-auto-responder');
 
 const emailUpload = multer({
   storage: multer.memoryStorage(),
@@ -84,6 +93,8 @@ async function ensureInboundColumns() {
   await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS from_name TEXT`).catch(() => {});
   await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'`).catch(() => {});
   await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS is_spam BOOLEAN DEFAULT FALSE`).catch(() => {});
+  await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS is_dmarc_report BOOLEAN DEFAULT FALSE`).catch(() => {});
+  await pool.query(`ALTER TABLE email_inbound ADD COLUMN IF NOT EXISTS dmarc_processed BOOLEAN DEFAULT FALSE`).catch(() => {});
   await pool.query(`ALTER TABLE email_logs ADD COLUMN IF NOT EXISTS from_email TEXT`).catch(() => {});
   await pool.query(`ALTER TABLE email_logs ADD COLUMN IF NOT EXISTS body_text TEXT`).catch(() => {});
   await pool.query(`
@@ -406,11 +417,14 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
 
     // Layer 1: Inbound emails
     let inboundRows = [];
+    const isDmarcFolder = folder === 'dmarc';
     const inboundWhere = folder === 'trash'
       ? 'i.deleted_at IS NOT NULL'
       : folder === 'spam'
         ? 'i.deleted_at IS NULL AND COALESCE(i.is_spam, FALSE) = TRUE'
-        : `i.deleted_at IS NULL AND COALESCE(i.is_spam, FALSE) = FALSE ${unreadOnly ? 'AND i.is_read = FALSE' : ''}`;
+        : isDmarcFolder
+          ? `i.deleted_at IS NULL AND (COALESCE(i.is_dmarc_report, FALSE) = TRUE OR i.from_email ILIKE '%dmarc%' OR i.from_email ILIKE 'noreply-dmarc-support@google.com' OR i.from_email ILIKE 'dmarcreport@microsoft.com' OR i.from_email ILIKE 'noreply@dmarc.yahoo.com')`
+          : `i.deleted_at IS NULL AND COALESCE(i.is_spam, FALSE) = FALSE AND COALESCE(i.is_dmarc_report, FALSE) = FALSE AND i.from_email NOT ILIKE '%dmarc%' AND i.from_email NOT ILIKE 'noreply-dmarc-support@google.com' AND i.from_email NOT ILIKE 'dmarcreport@microsoft.com' AND i.from_email NOT ILIKE 'noreply@dmarc.yahoo.com' ${unreadOnly ? 'AND i.is_read = FALSE' : ''}`;
     try {
       const ibRes = await pool.query(
         `SELECT i.id, i.lead_id, i.from_email AS peer_email,
@@ -431,7 +445,7 @@ router.get('/inbox', requireAuth, staffEmailOnly, async (req, res) => {
 
     // Layer 2: Outbound email logs
     let outboundRows = [];
-    if (!unreadOnly) {
+    if (!unreadOnly && !isDmarcFolder) {
       try {
         const obRes = await pool.query(
           `SELECT (e.id + 10000000) AS id, e.lead_id, e.recipient_email AS peer_email,
@@ -1014,11 +1028,21 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
   }
 
   await ensureInboundColumns();
+  const isDmarc = isDmarcReportEmail(from, subjectFinal);
   const ins = await pool.query(
-    `INSERT INTO email_inbound (lead_id, from_email, to_email, subject, body_text, body_html, resend_email_id, attachments)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb) RETURNING *`,
-    [leadId, from, toEmailFinal, subjectFinal, bodyTextFinal, bodyHtmlFinal, payload.resendId || resendId || null, attachmentsFinal]
+    `INSERT INTO email_inbound (lead_id, from_email, to_email, subject, body_text, body_html, resend_email_id, attachments, is_dmarc_report)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9) RETURNING *`,
+    [leadId, from, toEmailFinal, subjectFinal, bodyTextFinal, bodyHtmlFinal, payload.resendId || resendId || null, attachmentsFinal, isDmarc]
   );
+
+  if (isDmarc) {
+    try {
+      await processInboundDmarcEmail(ins.rows[0]);
+    } catch (dErr) {
+      console.warn('[DMARC] Auto-parse error:', dErr.message);
+    }
+    return { ok: true, inbound: ins.rows[0], is_dmarc: true };
+  }
 
   if (leadId) {
     await pool.query(
@@ -1064,11 +1088,26 @@ async function ingestInbound({ fromEmail, toEmail, subject, bodyText, bodyHtml, 
   } catch (err) {
     console.warn('[OUTREACH] inbound reply:', err.message);
   }
-  if (!leadId && !outreach && !booking) {
+
+  let campaignReply = null;
+  if (!booking && !outreach) {
+    try {
+      campaignReply = await handleCampaignEmailReply({
+        fromEmail: from,
+        subject: subjectFinal,
+        bodyText: bodyTextFinal || htmlToPlain(bodyHtmlFinal),
+        leadId
+      });
+    } catch (err) {
+      console.warn('[CAMPAIGN AUTO-RESPONDER] reply error:', err.message);
+    }
+  }
+
+  if (!leadId && !outreach && !booking && !campaignReply?.handled) {
     await notifyAdmins(`Unmatched inbound email from ${from}`, (subject || '').slice(0, 140), 'warning', '/inbox.html');
   }
 
-  return { ok: true, inbound: ins.rows[0], lead_id: leadId, outreach, booking };
+  return { ok: true, inbound: ins.rows[0], lead_id: leadId, outreach, booking, campaignReply };
 }
 
 function pickAddress(value) {
@@ -1159,6 +1198,29 @@ router.post('/unsubscribe', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Could not unsubscribe' });
+  }
+});
+
+// GET /api/email/dmarc-stats — Get domain deliverability health scores and aggregate metrics
+router.get('/dmarc-stats', requireAuth, staffEmailOnly, async (req, res) => {
+  try {
+    const domain = req.query.domain || 'shippingwish.com';
+    const stats = await getDomainDeliverabilityStats(domain);
+    res.json({ ok: true, stats });
+  } catch (err) {
+    console.error('DMARC stats error:', err);
+    res.status(500).json({ error: 'Could not load domain deliverability stats' });
+  }
+});
+
+// POST /api/email/dmarc-scan — Scan and parse any unparsed DMARC emails in DB
+router.post('/dmarc-scan', requireAuth, staffEmailOnly, async (req, res) => {
+  try {
+    const result = await scanAndParseAllDmarc();
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('DMARC scan error:', err);
+    res.status(500).json({ error: 'Failed to scan DMARC reports' });
   }
 });
 

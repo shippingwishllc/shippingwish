@@ -482,15 +482,22 @@ router.all('/twilio-inbound', async (req, res) => {
       if (!offerApproved) {
         disposition = 'ai_deal_reply';
         try {
-          const { generateSmsReply } = require('../utils/ai-deal-maker');
+          const isWa = String(from).startsWith('whatsapp:') || String(to).startsWith('whatsapp:');
           const lead = await findLeadByPhone(from);
-          reply = await generateSmsReply({
-            fromPhone: from,
-            incomingText: body,
-            leadInfo: lead || {}
-          });
+          if (isWa) {
+            const { handleCampaignWhatsAppReply } = require('../utils/campaign-auto-responder');
+            const waRes = await handleCampaignWhatsAppReply({ fromPhone: from, incomingText: body, lead });
+            reply = waRes?.text || helpReply();
+          } else {
+            const { generateSmsReply } = require('../utils/ai-deal-maker');
+            reply = await generateSmsReply({
+              fromPhone: from,
+              incomingText: body,
+              leadInfo: lead || {}
+            });
+          }
         } catch (aiErr) {
-          console.warn('[VOIP] AI Deal Maker SMS reply error:', aiErr.message);
+          console.warn('[VOIP] AI Deal Maker SMS/WA reply error:', aiErr.message);
           reply = helpReply();
         }
       }

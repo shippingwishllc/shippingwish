@@ -531,14 +531,24 @@ router.post('/webhook', async (req, res) => {
       const isInterested = lower.includes('yes') || lower.includes('send') || lower.includes('sign up') || lower.includes('interested') || lower.includes('free trial') || lower.includes('pass');
 
       if (isInterested && customerPhone) {
-        // Auto-send follow-up SMS via Twilio
-        const isOptedOut = await isSmsOptedOut(customerPhone);
-        if (!isOptedOut) {
-          const smsText = lower.includes('loadsnexus') || lower.includes('load board')
-            ? `Hi ${customerName}, here is the LoadsNexus link we talked about. The Solo Pass is $19/mo: https://www.loadsnexus.com`
-            : `Hi ${customerName}, thanks for speaking with our dispatch desk! Start your 7-day free trial ($0 today) here: https://www.shippingwish.com/services`;
-          
-          await sendTwilioSms(customerPhone, smsText).catch(e => console.warn('Auto follow-up SMS error:', e.message));
+        // Auto-send follow-up SMS and Email Carrier Packet
+        try {
+          const { handleVapiVoiceFollowUp } = require('../utils/campaign-auto-responder');
+          let leadEmail = null;
+          const leadMatch = await pool.query(
+            `SELECT email FROM crm_leads WHERE regexp_replace(phone, '\\D', '', 'g') LIKE '%' || right(regexp_replace($1, '\\D', '', 'g'), 10) LIMIT 1`,
+            [customerPhone]
+          ).catch(() => ({ rows: [] }));
+          if (leadMatch.rows.length) leadEmail = leadMatch.rows[0].email;
+
+          await handleVapiVoiceFollowUp({
+            customerPhone,
+            customerName,
+            transcript,
+            leadEmail
+          });
+        } catch (fErr) {
+          console.warn('[AI Calling Webhook] Voice follow-up error:', fErr.message);
         }
       }
     }

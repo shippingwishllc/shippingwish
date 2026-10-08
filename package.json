@@ -23,6 +23,7 @@
     "build:all": "npm --prefix apps/loadsnexus run build && npm --prefix apps/shippingwish run build"
   },
   "dependencies": {
+    "adm-zip": "^0.6.1",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.4.5",
