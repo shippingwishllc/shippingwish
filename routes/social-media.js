@@ -308,7 +308,7 @@ router.get('/auth/linkedin', (req, res) => {
   const brand = req.query.brand || 'shippingwish';
   const clientId = (process.env.LINKEDIN_CLIENT_ID || '78rycmk7yv1kfj').trim();
   const redirectUri = (process.env.LINKEDIN_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/linkedin').trim();
-  const scope = encodeURIComponent('openid profile email w_member_social');
+  const scope = encodeURIComponent('openid profile email w_member_social w_organization_social r_organization_social');
   
   const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(brand)}&scope=${scope}`;
   res.redirect(authUrl);
@@ -373,54 +373,30 @@ router.get('/callback/linkedin', async (req, res) => {
     }
 
     const accessToken = tokenData.access_token;
-    let authorUrn = '';
 
-    // Fetch user profile (OpenID)
-    try {
-      const userRes = await fetch('https://api.linkedin.com/v2/userinfo', {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-      });
-      const userData = await userRes.json();
-      if (userData.sub) {
-        authorUrn = `urn:li:person:${userData.sub}`;
-      }
-    } catch (uErr) {
-      console.warn('Could not fetch LinkedIn userinfo:', uErr.message);
-    }
-
-    // Try fetching company organization ACLs
-    try {
-      const aclRes = await fetch('https://api.linkedin.com/v2/organizationalAcls?q=roleAssignee', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'X-Restli-Protocol-Version': '2.0.0'
-        }
-      });
-      const aclData = await aclRes.json();
-      if (aclData.elements && aclData.elements.length > 0) {
-        const orgEl = aclData.elements[0];
-        if (orgEl.organization) {
-          authorUrn = orgEl.organization;
-        }
-      }
-    } catch (oErr) {
-      console.warn('Could not fetch LinkedIn organization ACLs:', oErr.message);
-    }
+    // Preserved official Company Organization URNs for all 4 brands
+    const BRAND_COMPANY_URNS = {
+      shippingwish: 'urn:li:organization:99856183',
+      loadsnexus:   'urn:li:organization:146706195',
+      nyclimowish:  'urn:li:organization:87202851',
+      buywish:      'urn:li:organization:146708156'
+    };
 
     await ensureSocialSchema();
     const allBrands = ['shippingwish', 'loadsnexus', 'nyclimowish', 'buywish'];
     for (const b of allBrands) {
+      const targetCompanyUrn = BRAND_COMPANY_URNS[b];
       await pool.query(`
         INSERT INTO social_brand_credentials (brand, linkedin_access_token, linkedin_org_urn, autopilot_enabled, autopilot_time)
         VALUES ($1, $2, $3, true, '10:00')
         ON CONFLICT (brand) DO UPDATE SET
           linkedin_access_token = EXCLUDED.linkedin_access_token,
-          linkedin_org_urn = COALESCE(EXCLUDED.linkedin_org_urn, social_brand_credentials.linkedin_org_urn),
+          linkedin_org_urn = $3,
           updated_at = now()
-      `, [b, accessToken, authorUrn || null]);
+      `, [b, accessToken, targetCompanyUrn]);
     }
 
-    try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] SUCCESS: Saved token for all 4 brands, authorUrn: ${authorUrn}\n`); } catch (_) {}
+    try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] SUCCESS: Saved company org tokens for all 4 brands\n`); } catch (_) {}
     res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_connected=success`);
   } catch (err) {
     try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] CATCH ERROR: ${err.message}\n`); } catch (_) {}
