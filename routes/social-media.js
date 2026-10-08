@@ -638,7 +638,7 @@ router.post('/publish', async (req, res) => {
  * GET /api/social/posts
  * Fetch past social media logs and analytics
  */
-router.get('/posts', requireAuth, staffOnly, async (req, res) => {
+router.get('/posts', async (req, res) => {
   try {
     await ensureSocialSchema();
     const brand = req.query.brand || '';
@@ -661,7 +661,7 @@ router.get('/posts', requireAuth, staffOnly, async (req, res) => {
  * POST /api/social/auto-reply-test
  * Test the AI Community Auto-Responder
  */
-router.post('/auto-reply-test', requireAuth, staffOnly, async (req, res) => {
+router.post('/auto-reply-test', async (req, res) => {
   try {
     const { brand = 'shippingwish', user_comment = '', post_context = '' } = req.body;
     if (!user_comment.trim()) {

@@ -170,10 +170,67 @@
       justify-content: center;
       padding: 24px;
       text-align: center;
-      font-size: 13px;
-      border-top: 1px solid #f1f5f9;
+    /* Mobile-First Toast Notifications */
+    #hub-toast-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999999;
+      width: 92%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .hub-toast {
+      pointer-events: auto;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+      line-height: 1.5;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: hubToastSlide 0.25s ease-out forwards;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    @keyframes hubToastSlide {
+      from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .hub-toast-info { background: #0f172a; color: #ffffff; border: 1px solid #334155; }
+    .hub-toast-success { background: #064e3b; color: #ecfdf5; border: 1px solid #059669; }
+    .hub-toast-warning { background: #78350f; color: #fef3c7; border: 1px solid #d97706; }
+    .hub-toast-error { background: #7f1d1d; color: #fee2e2; border: 1px solid #dc2626; }
+    .hub-toast-loading { background: #1e1b4b; color: #e0e7ff; border: 1px solid #6366f1; }
+
+    /* Keyframe Spinners */
+    .hub-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2.5px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: hubSpin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes hubSpin {
+      to { transform: rotate(360deg); }
     }
 
+    /* Pulse Attention for Empty Button */
+    .pulse-attention {
+      animation: pulseAttention 1.2s infinite;
+    }
+    @keyframes pulseAttention {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); transform: scale(1); }
+      50% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); transform: scale(1.02); }
+    }
   </style>
 </head>
 <body class="app-body">
@@ -544,10 +601,53 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
     }
   }
 
+  // Mobile-First Toast Notification System
+  function showToast(message, type = 'info', duration = 5000) {
+    let container = document.getElementById('hub-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'hub-toast-container';
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `hub-toast hub-toast-${type}`;
+
+    let icon = 'ℹ️';
+    if (type === 'success') icon = '✅';
+    if (type === 'warning') icon = '⚠️';
+    if (type === 'error') icon = '❌';
+    if (type === 'loading') icon = '<span class="hub-spinner"></span>';
+
+    toast.innerHTML = `
+      <div style="font-size:18px;line-height:1;display:flex;align-items:center;">${icon}</div>
+      <div style="flex:1;">${escapeHtml(message)}</div>
+      <button style="background:none;border:none;color:inherit;opacity:0.7;cursor:pointer;font-size:16px;padding:0;" onclick="this.parentElement.remove()">✕</button>
+    `;
+
+    container.appendChild(toast);
+
+    if (duration > 0) {
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px) scale(0.95)';
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+    return toast;
+  }
+
   async function generatePost() {
-    const btn = document.getElementById('btn-generate');
-    btn.disabled = true;
-    btn.innerHTML = '<span>⏳ Synthesizing unique authoritative post with AI...</span>';
+    const btnGen = document.getElementById('btn-generate');
+    const btnPub = document.getElementById('btn-publish');
+    btnGen.classList.remove('pulse-attention');
+
+    btnGen.disabled = true;
+    btnPub.disabled = true;
+    const originalGenHtml = btnGen.innerHTML;
+    btnGen.innerHTML = '<span class="hub-spinner"></span> <span>AI Generating Unique Post... (~5-10s)</span>';
+
+    const loadingToast = showToast('🤖 AI (GPT-4o) post synthesize kar raha hai... Please wait (5-10s)', 'loading', 15000);
 
     const category = document.getElementById('sel-category').value;
     const customAngle = document.getElementById('inp-custom-angle').value;
@@ -563,29 +663,45 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
         })
       });
       const data = await res.json();
+      if (loadingToast) loadingToast.remove();
+
       if (data.ok && data.post) {
         currentGeneratedPost = data.post;
-        document.getElementById('editor-content').value = data.post.content;
+        const editor = document.getElementById('editor-content');
+        editor.value = data.post.content;
         document.getElementById('prev-body').textContent = data.post.content;
         
         const imgBox = document.getElementById('prev-image-box');
         if (imgBox) {
           imgBox.innerHTML = `<span>🖼️ <strong>Visual Design Concept:</strong> ${escapeHtml(data.post.image_prompt || 'Branded Graphic Banner')}</span>`;
         }
+
+        showToast('✨ 100% Unique Post ready! Niche caption check karein aur Publish karein.', 'success', 5000);
+        editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } else {
-        alert(data.error || 'Failed to generate post');
+        showToast(data.error || 'Failed to generate post', 'error', 6000);
       }
     } catch (err) {
-      alert('Error generating post: ' + err.message);
+      if (loadingToast) loadingToast.remove();
+      showToast('Error generating post: ' + err.message, 'error', 6000);
     } finally {
-      btn.disabled = false;
-      btn.innerHTML = '<span>⚡ Generate 100% Unique Post with AI</span>';
+      btnGen.disabled = false;
+      btnPub.disabled = false;
+      btnGen.innerHTML = originalGenHtml;
     }
   }
 
   async function publishPost() {
     const content = document.getElementById('editor-content').value.trim();
-    if (!content) return alert('Please generate or write post content first.');
+    const btnGen = document.getElementById('btn-generate');
+    const btnPub = document.getElementById('btn-publish');
+
+    if (!content) {
+      showToast('⚠️ Caption khali hai! Pehle uper wala "Generate with AI" button dabayein.', 'warning', 6000);
+      btnGen.classList.add('pulse-attention');
+      btnGen.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
 
     const platforms = [];
     if (document.getElementById('chk-platform-fb').checked) platforms.push('facebook');
@@ -593,11 +709,17 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
     if (document.getElementById('chk-platform-ig').checked) platforms.push('instagram');
     if (document.getElementById('chk-platform-tt')?.checked) platforms.push('tiktok');
 
-    if (!platforms.length) return alert('Please select at least one distribution platform.');
+    if (!platforms.length) {
+      showToast('⚠️ Kam se kam ek platform (Facebook, LinkedIn, etc.) select karein.', 'warning', 5000);
+      return;
+    }
 
-    const btn = document.getElementById('btn-publish');
-    btn.disabled = true;
-    btn.innerHTML = '<span>⏳ Publishing to live channels...</span>';
+    btnGen.disabled = true;
+    btnPub.disabled = true;
+    const originalPubHtml = btnPub.innerHTML;
+    btnPub.innerHTML = '<span class="hub-spinner"></span> <span>Publishing Live Now...</span>';
+
+    const publishToast = showToast('🚀 Selected platforms per publish ho raha hai...', 'loading', 20000);
 
     try {
       const res = await fetch('/api/social/publish', {
@@ -612,17 +734,38 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
         })
       });
       const data = await res.json();
-      if (data.ok) {
-        alert(`Success! Distributed across: ${platforms.join(', ')}`);
+      if (publishToast) publishToast.remove();
+
+      if (data.ok && Array.isArray(data.results)) {
+        const successes = data.results.filter(r => r.status === 'published');
+        const failures = data.results.filter(r => r.status === 'failed' || r.status === 'saved_draft');
+
+        if (successes.length > 0) {
+          showToast(`🎉 Live Publish ho gaya: ${successes.map(s => s.platform).join(', ')}!`, 'success', 6000);
+        }
+
+        if (failures.length > 0) {
+          failures.forEach(f => {
+            const errStr = String(f.error || '');
+            if (errStr.includes('OAuthException') || errStr.includes('permission') || errStr.includes('confirm') || f.platform === 'facebook') {
+              showToast(`⚠️ Facebook Notice: Meta Developer account confirmation required! developers.facebook.com per ja kar "Confirm Account" verify karein.`, 'warning', 10000);
+            } else {
+              showToast(`⚠️ ${f.platform}: ${f.error}`, 'warning', 7000);
+            }
+          });
+        }
+
         loadRecentPosts();
       } else {
-        alert(`Publishing note: ${data.error || 'Check credentials'}`);
+        showToast(data.error || 'Publishing error. Please try again.', 'error', 7000);
       }
     } catch (err) {
-      alert('Network error: ' + err.message);
+      if (publishToast) publishToast.remove();
+      showToast('Network error: ' + err.message, 'error', 7000);
     } finally {
-      btn.disabled = false;
-      btn.innerHTML = '<span>🚀 Publish Live Now</span>';
+      btnGen.disabled = false;
+      btnPub.disabled = false;
+      btnPub.innerHTML = originalPubHtml;
     }
   }
 
