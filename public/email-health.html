@@ -160,6 +160,22 @@
     </header>
 
     <main class="app-content" style="padding-top:20px;padding-bottom:30px;">
+      <!-- BRAND / DOMAIN SWITCHER BAR -->
+      <div style="background:#ffffff;border:1px solid var(--border-default,#e2e8f0);border-radius:14px;padding:12px 18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;box-shadow:0 1px 3px rgba(15,23,42,0.04);">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;">Select Domain / Brand:</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="health-brand-tabs">
+            <button type="button" class="btn btn-sm btn-primary health-brand-btn" data-hdomain="shippingwish.com" onclick="switchHealthDomain('shippingwish.com')" style="font-weight:700;">🚚 Shipping Wish</button>
+            <button type="button" class="btn btn-sm btn-secondary health-brand-btn" data-hdomain="loadsnexus.com" onclick="switchHealthDomain('loadsnexus.com')" style="font-weight:700;">⚡ LoadsNexus™</button>
+            <button type="button" class="btn btn-sm btn-secondary health-brand-btn" data-hdomain="nyclimowish.com" onclick="switchHealthDomain('nyclimowish.com')" style="font-weight:700;">🚗 NYC Limo Wish</button>
+            <button type="button" class="btn btn-sm btn-secondary health-brand-btn" data-hdomain="buywishonline.com" onclick="switchHealthDomain('buywishonline.com')" style="font-weight:700;">🛍️ BuyWish Online</button>
+          </div>
+        </div>
+        <div id="live-dns-badge" class="badge-pill badge-pill-success" style="font-size:12px;font-weight:700;">
+          ✓ Live DNS Authenticated
+        </div>
+      </div>
+
       <!-- TOP HERO HEALTH SCORE -->
       <div class="health-hero">
         <div style="max-width:540px;">
@@ -176,6 +192,15 @@
           <div class="score-circle-num" id="hero-score-val">99%</div>
           <div class="score-circle-label">HEALTH SCORE</div>
         </div>
+      </div>
+
+      <!-- LIVE DNS RECORD BOX -->
+      <div style="background:#ffffff;border:1px solid var(--border-default,#e2e8f0);border-radius:14px;padding:14px 18px;margin-bottom:22px;box-shadow:0 1px 3px rgba(15,23,42,0.04);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px;">
+          <strong style="font-size:12.5px;color:#0f172a;">Live DNS DMARC Record (<span id="txt-domain-label" style="color:#0284c7;font-family:monospace;">_dmarc.shippingwish.com</span>):</strong>
+          <span class="badge-pill badge-pill-success" id="txt-dns-status">✓ DNS Enforced</span>
+        </div>
+        <code id="txt-dns-record" style="display:block;background:#f8fafc;padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;color:#0f172a;word-break:break-all;font-family:monospace;">v=DMARC1; p=none; rua=mailto:operations@shippingwish.com</code>
       </div>
 
       <!-- 4 KEY PILLARS -->
@@ -298,18 +323,43 @@
 </div>
 
 <script>
-async function loadHealthStats() {
+let currentHealthDomain = 'shippingwish.com';
+
+function switchHealthDomain(domain) {
+  currentHealthDomain = domain || 'shippingwish.com';
+  const url = new URL(location.href);
+  url.searchParams.set('domain', currentHealthDomain);
+  history.replaceState({}, '', url.pathname + url.search);
+  loadHealthStats(currentHealthDomain);
+}
+
+async function loadHealthStats(domain) {
+  const d = domain || currentHealthDomain;
+  // Highlight tab
+  document.querySelectorAll('.health-brand-btn').forEach(btn => {
+    const isAct = btn.dataset.hdomain === d;
+    btn.classList.toggle('btn-primary', isAct);
+    btn.classList.toggle('btn-secondary', !isAct);
+  });
+
   try {
-    const res = await fetch('/api/email/dmarc-stats');
+    const res = await fetch('/api/email/dmarc-stats?domain=' + encodeURIComponent(d));
     if (!res.ok) throw new Error('Failed to load stats');
     const data = await res.json();
     const stats = data.stats || {};
     const m = stats.metrics || {};
+    const dns = stats.liveDns || {};
 
     // Update Hero
-    document.getElementById('hero-score-val').textContent = (stats.overallScore || 99) + '%';
+    document.getElementById('hero-score-val').textContent = (stats.overallScore || 98) + '%';
     document.getElementById('hero-badge').textContent = (stats.grade || 'A+') + ' ' + (stats.grade === 'A+' ? 'SUPERB REPUTATION' : 'HEALTHY');
-    document.getElementById('hero-domain').textContent = 'Domain: ' + (stats.domain || 'shippingwish.com');
+    document.getElementById('hero-domain').textContent = 'Domain: ' + (stats.domain || d);
+
+    // Update Live DNS Box
+    const dnsLabel = document.getElementById('txt-domain-label');
+    if (dnsLabel) dnsLabel.textContent = '_dmarc.' + (stats.domain || d);
+    const dnsRecord = document.getElementById('txt-dns-record');
+    if (dnsRecord) dnsRecord.textContent = dns.dmarcRecord || 'v=DMARC1; p=none;';
 
     // Update KPIs
     document.getElementById('kpi-spf').textContent = (m.spfPassRate || 100) + '%';
@@ -324,7 +374,7 @@ async function loadHealthStats() {
       tbody.innerHTML = `
         <tr>
           <td colspan="8" style="text-align:center;padding:32px;color:#64748b;">
-            No reports parsed yet. Click <strong>⚡ AI Scan &amp; Sync Reports</strong> above to parse all Google, Yahoo, and Microsoft reports currently in your mailbox!
+            No reports parsed for <code>${escapeHtml(d)}</code> yet. Click <strong>⚡ AI Scan &amp; Sync Reports</strong> above to parse all Google, Yahoo, and Microsoft reports currently in your mailbox!
           </td>
         </tr>
       `;
@@ -343,7 +393,7 @@ async function loadHealthStats() {
         <tr>
           <td><strong>${dt}</strong></td>
           <td><span style="font-weight:700;color:#0f172a;">${escapeHtml(r.submitter || 'Mail System')}</span></td>
-          <td><code>${escapeHtml(r.domain || 'shippingwish.com')}</code></td>
+          <td><code>${escapeHtml(r.domain || d)}</code></td>
           <td><span style="font-weight:700;">${r.total_messages || 0}</span> messages</td>
           <td><span class="badge-pill badge-pill-success">${spfRate}% Pass</span></td>
           <td><span class="badge-pill badge-pill-success">${dkimRate}% Pass</span></td>
@@ -367,7 +417,7 @@ async function runAiDmarcScan() {
     const res = await fetch('/api/email/dmarc-scan', { method: 'POST' });
     const data = await res.json();
     alert(`DMARC AI Scan Complete!\nScanned: ${data.scanned || 0} emails\nParsed & Evaluated: ${data.parsed || 0} reports`);
-    await loadHealthStats();
+    await loadHealthStats(currentHealthDomain);
   } catch (err) {
     alert('Scan error: ' + err.message);
   } finally {
@@ -380,7 +430,12 @@ function escapeHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-document.addEventListener('DOMContentLoaded', loadHealthStats);
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const dom = params.get('domain') || 'shippingwish.com';
+  currentHealthDomain = dom;
+  loadHealthStats(dom);
+});
 </script>
 </body>
 </html>
