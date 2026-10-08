@@ -170,11 +170,79 @@ async function ensureSocialSchema() {
       published_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS social_generated_images (
+      id SERIAL PRIMARY KEY,
+      image_id VARCHAR(100) UNIQUE NOT NULL,
+      mime_type VARCHAR(50) DEFAULT 'image/png',
+      data BYTEA NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
   `).catch(err => console.warn('ensureSocialSchema warning:', err.message));
 }
 
 /**
- * Generate a 100% Unique, High-Converting Social Post using OpenAI GPT-4o
+ * Format & clean social copy: strip markdown asterisks, clean links, ensure double spacing
+ */
+function cleanSocialCopy(text) {
+  if (!text) return '';
+  return text
+    // Replace markdown links [Text](http...) with Text: http...
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '$1: $2')
+    // Remove markdown bold / italic asterisks
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    // Remove markdown headers #
+    .replace(/^#+\s+/gm, '')
+    // Normalize line breaks: ensure bullet points have clean breathing room
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
+ * Generate a high-resolution 1024x1024 AI graphic banner using gpt-image-1.5
+ */
+async function generateAiSocialImage(brandKey, imagePrompt) {
+  const brand = BRANDS[brandKey] || BRANDS.shippingwish;
+  const key = getOpenAiKey();
+  if (!key) return null;
+
+  try {
+    const refinedPrompt = `Create a striking, high-impact commercial advertisement graphic poster for "${brand.name}". Category: ${brand.industry}. Visual theme: ${imagePrompt}. Style: Premium 3D photorealistic render, sleek corporate aesthetics, vibrant professional lighting, 8k resolution, crisp clean design. Absolutely NO text typos, NO watermarks, NO blurry elements.`;
+
+    const res = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-image-1.5',
+        prompt: refinedPrompt,
+        n: 1,
+        size: '1024x1024'
+      })
+    });
+
+    const data = await res.json();
+    if (data.data && data.data[0] && data.data[0].b64_json) {
+      const buffer = Buffer.from(data.data[0].b64_json, 'base64');
+      const imageId = `post_${brandKey}_${Date.now()}`;
+      await pool.query(
+        'INSERT INTO social_generated_images (image_id, mime_type, data) VALUES ($1, $2, $3)',
+        [imageId, 'image/png', buffer]
+      );
+      return `https://www.shippingwish.com/api/social/image/${imageId}.png`;
+    }
+  } catch (err) {
+    console.warn('generateAiSocialImage error:', err.message);
+  }
+  return null;
+}
+
+/**
+ * Generate a 100% Unique, Scroll-Stopping Social Post with Real AI Visual
  */
 async function generateAiSocialPost(brandKey = 'shippingwish', category = 'market_conditions', customAngle = '') {
   const brand = BRANDS[brandKey] || BRANDS.shippingwish;
@@ -186,7 +254,7 @@ async function generateAiSocialPost(brandKey = 'shippingwish', category = 'marke
   const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   const prompt = `
-You are the Chief Social Media & Brand Director for "${brand.name}".
+You are the Chief Creative Officer & Elite Social Media Strategist for "${brand.name}".
 Website: ${brand.website}
 Phone: ${brand.phone}
 Target Audience: ${brand.targetAudience}
@@ -195,25 +263,32 @@ Category: ${category}
 Current Date: ${currentDate}
 ${customAngle ? `Specific Angle / Focus: ${customAngle}` : ''}
 
-Generate a viral, high-authority, and highly engaging social media post suitable for LinkedIn, Facebook, and Instagram.
+Generate a scroll-stopping, high-converting social media post for Facebook, Instagram, and LinkedIn.
 
-STRICT CONTENT CRITERIA:
-1. DO NOT sound like generic marketing spam. Provide genuine, actionable, high-value industry insight first.
-2. Structure the post:
-   - Hook: Provocative question, surprising stat, or bold industry truth.
-   - Meat: 3-4 structured bullet points with real numbers, actionable tips, or insider knowledge.
-   - Value/Takeaway: Clear benefit to the reader.
-   - Call to Action (CTA): Natural invitation to check out ${brand.name} (${brand.website}) or call ${brand.phone}.
-   - Hashtags: 5-8 relevant, high-traffic hashtags.
-3. Keep the tone authoritative, modern, confident, and professional.
-4. Also create a detailed visual design concept (Image Prompt) describing what graphic banner or photography should accompany this post.
+CRITICAL FORMATTING RULES (DO NOT BREAK):
+1. ZERO MARKDOWN: DO NOT use asterisks (**bold**). DO NOT use Markdown links ([text](url)). Social feeds show raw asterisks which look ugly.
+2. EMOJIS & SPACING:
+   - Use bold emojis (🔥, 🚛, 💡, 💰, 📈, 🛡️, ⚡, 🚀, 📞) at the start of every point.
+   - Put DOUBLE LINE BREAKS between EVERY section and bullet point so the text has ample breathing room and looks readable on mobile screens.
+3. STRUCTURE:
+   - Hook: Eye-catching 1-liner with an emoji and intriguing fact or question.
+   - Space
+   - 3-4 structured bullet points with real numbers, actionable tips, or insider advice.
+   - Space
+   - Bottom Line / Value: 1 concise punchline.
+   - Space
+   - Frictionless Call to Action:
+     👉 Learn more: ${brand.website}
+     📞 Call our 24/7 team: ${brand.phone}
+   - Space
+   - 5-7 popular, relevant hashtags on the final line.
+4. IMAGE PROMPT: Create a detailed description for a high-end 1024x1024 3D commercial graphic poster that visually illustrates this update.
 
 RETURN STRICT JSON ONLY:
 {
   "title": "Short catchy title / internal reference (max 60 chars)",
-  "hook": "Opening 1-line hook",
-  "content": "Full formatted post text including bullets, emojis, CTA, and hashtags",
-  "image_prompt": "Photorealistic or clean graphic banner description with company branding",
+  "content": "Full formatted post text with emojis and double spacing (NO asterisks, NO markdown links)",
+  "image_prompt": "Photorealistic 3D corporate graphic poster description with company branding",
   "category_label": "Human friendly category name"
 }
 `;
@@ -241,13 +316,22 @@ RETURN STRICT JSON ONLY:
   }
 
   const parsed = JSON.parse(aiData.choices[0].message.content);
+  const cleanedContent = cleanSocialCopy(parsed.content || '');
+
+  // Generate visual graphic banner
+  let imageUrl = null;
+  if (parsed.image_prompt) {
+    imageUrl = await generateAiSocialImage(brandKey, parsed.image_prompt).catch(() => null);
+  }
+
   return {
     brand: brandKey,
     brand_name: brand.name,
     category,
     title: parsed.title || `${brand.name} Update`,
-    content: parsed.content || '',
+    content: cleanedContent,
     image_prompt: parsed.image_prompt || '',
+    image_url: imageUrl,
     category_label: parsed.category_label || category,
     created_at: new Date().toISOString()
   };
@@ -266,7 +350,28 @@ async function publishToFacebook(pageId, pageAccessToken, message, imageUrl = nu
   };
 
   if (imageUrl) {
-    endpoint = `https://graph.facebook.com/v19.0/${pageId}/photos`;
+    const imgMatch = String(imageUrl).match(/\/api\/social\/image\/([a-zA-Z0-9_-]+)/);
+    if (imgMatch) {
+      try {
+        const imgId = imgMatch[1];
+        const { rows } = await pool.query('SELECT data, mime_type FROM social_generated_images WHERE image_id = $1', [imgId]);
+        if (rows.length && rows[0].data) {
+          const formData = new FormData();
+          const blob = new Blob([rows[0].data], { type: rows[0].mime_type || 'image/png' });
+          formData.append('source', blob, `${imgId}.png`);
+          formData.append('caption', message);
+          formData.append('access_token', pageAccessToken);
+          const res = await fetch(`https://graph.facebook.com/v21.0/${pageId}/photos`, { method: 'POST', body: formData });
+          const data = await res.json();
+          if (data.error) throw new Error(`Facebook API Error: ${data.error.message}`);
+          return { platform: 'facebook', id: data.id || data.post_id };
+        }
+      } catch (err) {
+        console.warn('Binary FB photo upload fallback to URL:', err.message);
+      }
+    }
+
+    endpoint = `https://graph.facebook.com/v21.0/${pageId}/photos`;
     body = {
       caption: message,
       url: imageUrl,

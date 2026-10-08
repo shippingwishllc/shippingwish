@@ -513,6 +513,26 @@ router.get('/callback/tiktok', async (req, res) => {
 });
 
 /**
+ * GET /api/social/image/:imageId
+ * Serve generated social media graphic from DB for public feeds, Facebook, and Instagram
+ */
+router.get('/image/:imageId', async (req, res) => {
+  try {
+    const rawId = req.params.imageId.replace(/\.(png|jpg|jpeg)$/i, '');
+    const { rows } = await pool.query('SELECT mime_type, data FROM social_generated_images WHERE image_id = $1', [rawId]);
+    if (!rows.length || !rows[0].data) {
+      return res.status(404).send('Image not found');
+    }
+    res.setHeader('Content-Type', rows[0].mime_type || 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(rows[0].data);
+  } catch (err) {
+    console.error('Error serving social image:', err);
+    res.status(500).send('Error serving image');
+  }
+});
+
+/**
  * POST /api/social/generate
  * Generate a fresh, unique AI social media post
  */

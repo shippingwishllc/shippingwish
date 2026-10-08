@@ -673,10 +673,17 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
         
         const imgBox = document.getElementById('prev-image-box');
         if (imgBox) {
-          imgBox.innerHTML = `<span>🖼️ <strong>Visual Design Concept:</strong> ${escapeHtml(data.post.image_prompt || 'Branded Graphic Banner')}</span>`;
+          if (data.post.image_url) {
+            imgBox.innerHTML = `
+              <img src="${data.post.image_url}" alt="AI Generated Graphic Banner" style="width:100%;max-height:380px;object-fit:cover;border-radius:10px;display:block;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+              <div style="font-size:12px;color:#94a3b8;margin-top:10px;text-align:left;line-height:1.4;">🎨 <strong>AI Visual Artwork:</strong> ${escapeHtml(data.post.image_prompt || '')}</div>
+            `;
+          } else {
+            imgBox.innerHTML = `<span>🖼️ <strong>Visual Design Concept:</strong> ${escapeHtml(data.post.image_prompt || 'Branded Graphic Banner')}</span>`;
+          }
         }
 
-        showToast('✨ 100% Unique Post ready! Niche caption check karein aur Publish karein.', 'success', 5000);
+        showToast('✨ 100% Unique Post & AI Visual Graphic Ready! Niche review karein aur Publish karein.', 'success', 6000);
         editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } else {
         showToast(data.error || 'Failed to generate post', 'error', 6000);
@@ -719,7 +726,7 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
     const originalPubHtml = btnPub.innerHTML;
     btnPub.innerHTML = '<span class="hub-spinner"></span> <span>Publishing Live Now...</span>';
 
-    const publishToast = showToast('🚀 Selected platforms per publish ho raha hai...', 'loading', 20000);
+    const publishToast = showToast('🚀 Selected platforms per publish ho raha hai...', 'loading', 25000);
 
     try {
       const res = await fetch('/api/social/publish', {
@@ -730,6 +737,7 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
           category: document.getElementById('sel-category').value,
           title: currentGeneratedPost?.title || 'Social Update',
           content,
+          image_url: currentGeneratedPost?.image_url || null,
           platforms
         })
       });
