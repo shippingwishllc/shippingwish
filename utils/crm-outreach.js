@@ -115,10 +115,17 @@ async function sendLeadSms(lead, user, opts = {}) {
   }
   if (opts.consentConfirmed === true) await recordPriorConsent(lead.id);
 
-  const owner = lead.owner_name || 'there';
-  const company = lead.company_name || 'your fleet';
+  const rawOwner = lead.owner_name || '';
+  let ownerFirst = 'there';
+  if (rawOwner && !/^(owner|manager|president|ceo|n\/a|none|unknown)$/i.test(rawOwner)) {
+    const f = rawOwner.split(/\s+/)[0];
+    ownerFirst = f.charAt(0).toUpperCase() + f.slice(1).toLowerCase();
+  }
+  const cleanEquip = (lead.equipment_type || 'Dry Van').replace(/,/g, '/').split('/')[0].trim() || 'Dry Van';
+  const state = lead.phy_state || lead.target_lanes || lead.state || 'your area';
+
   const body = String(opts.customMessage || '').trim()
-    || `Hi ${owner}, Shipping Wish LLC emailed a one-pager about a named ops manager for ${company}. Reply YES if useful, STOP to opt out.`;
+    || `Hi ${ownerFirst}, Alex with Shipping Wish. Got your ${cleanEquip} in ${state}. We book spot freight ($2.85+/mi) with 0% commission ($149 flat). Looking for loads this week? Reply STOP to opt out.`;
 
   const { sendTwilioSms } = require('../routes/voip');
   const smsRes = await sendTwilioSms(phone, body);

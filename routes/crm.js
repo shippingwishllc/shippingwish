@@ -370,10 +370,32 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
         } catch {}
       }
 
-      let matchedEquip = c.equipment_type || 'Dry Van';
-      if (!matchedEquip || matchedEquip === 'dry_van') matchedEquip = 'Dry Van';
+      function cleanPrimaryEquipment(raw) {
+        if (!raw) return 'Dry Van';
+        const str = String(raw).trim();
+        if (/dry van/i.test(str)) return 'Dry Van';
+        if (/reefer/i.test(str)) return 'Reefer';
+        if (/flatbed/i.test(str)) return 'Flatbed';
+        if (/box truck/i.test(str)) return 'Box Truck';
+        if (/auto hauler|car hauler/i.test(str)) return 'Auto Hauler';
+        if (/hotshot/i.test(str)) return 'Hotshot';
+        if (/power only/i.test(str)) return 'Power Only';
+        return str.split(',')[0].trim() || 'Dry Van';
+      }
+
+      function formatFirstName(raw) {
+        if (!raw) return 'there';
+        let str = String(raw).trim();
+        if (/^(owner|manager|president|ceo|n\/a|none|unknown)$/i.test(str)) return 'there';
+        let first = str.split(/\s+/)[0];
+        if (first.length <= 1 && str.split(/\s+/)[1]) first = str.split(/\s+/)[1];
+        return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+      }
+
+      const matchedEquip = cleanPrimaryEquipment(c.equipment_type);
       const stateName = c.state || sourceState || 'TX';
       const ownerName = c.owner_name || 'Fleet Manager';
+      const firstName = formatFirstName(c.owner_name);
       const numUnits = c.num_trucks || 1;
 
       let emailSubject = '';
@@ -385,79 +407,96 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       if (normalizedBrand === 'loadsnexus') {
         if (normalizedTarget === 'broker') {
           emailSubject = `Post Spot Loads for Free on LoadsNexus™ — Reach 10,000+ Verified Carriers`;
-          emailBodyText = `Hi ${ownerName},\n\n` +
+          emailBodyText = `Hi ${firstName},\n\n` +
             `LoadsNexus™ (loadsnexus.com) connects freight brokers directly with verified motor carriers across ${stateName} and all 48 states.\n\n` +
             `100% free load posting. No booking fees. Direct carrier dispatch with automated FMCSA safety verification.\n\n` +
             `Post your freight today:\nhttps://loadsnexus.com\n\n` +
             `Best regards,\nLoadsNexus Broker Relations`;
 
-          emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
+          emailHtml = `<p>Hi <strong>${firstName}</strong>,</p>` +
             `<p>LoadsNexus&trade; (<a href="https://loadsnexus.com">loadsnexus.com</a>) connects freight brokers directly with verified motor carriers across <strong>${stateName}</strong> and nationwide.</p>` +
             `<p><strong>100% Free Load Posting:</strong> Zero subscription fees for brokers, direct carrier contact, and automated FMCSA safety & insurance checks.</p>` +
             `<p><a href="https://loadsnexus.com" style="background:#0284c7;color:#ffffff;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">Post Loads on LoadsNexus &rarr;</a></p>`;
 
-          smsText = `Hi ${ownerName}, LoadsNexus offers 100% free load posting for brokers with instant carrier matching in ${stateName}. Post free at loadsnexus.com. Reply STOP to opt out.`;
+          smsText = `Hi ${firstName}, LoadsNexus offers 100% free load posting for brokers with instant carrier matching in ${stateName}. Post free at loadsnexus.com. Reply STOP to opt out.`;
         } else {
           // Carrier
           emailSubject = `LoadsNexus™ Solo Pass ($19/mo) — Direct Broker Loads for ${c.company_name}`;
-          emailBodyText = `Hi ${ownerName},\n\n` +
+          emailBodyText = `Hi ${firstName},\n\n` +
             `Looking for higher-paying direct broker freight for your ${numUnits} ${matchedEquip} unit(s) in ${stateName}?\n\n` +
             `The LoadsNexus™ Solo Pass is just $19/month — unlimited direct broker loads, zero per-load booking fees, and live DAT/Truckstop lane parity.\n\n` +
             `Activate your carrier pass:\nhttps://loadsnexus.com\n\n` +
             `Best regards,\nLoadsNexus Carrier Support`;
 
-          emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
+          emailHtml = `<p>Hi <strong>${firstName}</strong>,</p>` +
             `<p>Looking for higher-paying direct freight for <strong>${c.company_name}</strong> (${numUnits} ${matchedEquip} units in <strong>${stateName}</strong>)?</p>` +
             `<p>The <strong>LoadsNexus&trade; Solo Pass</strong> gives your trucks direct access to verified broker freight for only <strong>$19/month</strong>. No commission cuts, no middlemen.</p>` +
             `<p><a href="https://loadsnexus.com" style="background:#0284c7;color:#ffffff;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">Get Your $19/mo Solo Pass &rarr;</a></p>`;
 
-          smsText = `Hi ${ownerName}, LoadsNexus gives your ${matchedEquip} fleet direct broker loads for only $19/mo. Check it out at loadsnexus.com. Reply YES for info, STOP to opt out.`;
+          smsText = `Hi ${firstName}, LoadsNexus gives your ${matchedEquip} fleet direct broker loads for only $19/mo. Check it out at loadsnexus.com. Reply YES for info, STOP to opt out.`;
         }
       } else if (normalizedBrand === 'nyclimowish') {
         if (normalizedTarget === 'corporate') {
           emailSubject = `Executive Corporate Transportation & Airport Transfers — NYC Limo Wish`;
-          emailBodyText = `Hi ${ownerName},\n\n` +
+          emailBodyText = `Hi ${firstName},\n\n` +
             `NYC Limo Wish provides premium black car, executive SUV, and luxury chauffeur services across the Greater New York tri-state area.\n\n` +
             `Corporate accounts receive dedicated 24/7 dispatch, guaranteed on-time pickups, and flat rates to JFK, LGA, and EWR.\n\n` +
             `Book corporate travel or open an account:\nhttps://nyclimowish.com\n\n` +
             `Warm regards,\nNYC Limo Wish Corporate Travel Desk`;
 
-          emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
+          emailHtml = `<p>Hi <strong>${firstName}</strong>,</p>` +
             `<p>NYC Limo Wish (<a href="https://nyclimowish.com">nyclimowish.com</a>) provides executive black car and luxury chauffeur services across Manhattan, Brooklyn, Westchester, and the tri-state area.</p>` +
             `<p><strong>Corporate Perks:</strong> Dedicated account manager, 24/7 executive dispatch, flight tracking, and flat rates to JFK, LGA, and EWR airports.</p>` +
             `<p><a href="https://nyclimowish.com" style="background:#0f172a;color:#f59e0b;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">Open Corporate Account &rarr;</a></p>`;
 
-          smsText = `Hi ${ownerName}, NYC Limo Wish offers executive black car & flat airport rates in NYC. Book corporate travel at nyclimowish.com or call 24/7. Reply STOP to opt out.`;
+          smsText = `Hi ${firstName}, NYC Limo Wish offers executive black car & flat airport rates in NYC. Book corporate travel at nyclimowish.com or call 24/7. Reply STOP to opt out.`;
         } else {
           // Partner (Chauffeur / Fleet Operator)
           emailSubject = `Chauffeur Affiliate Network — Join NYC Limo Wish Luxury Fleet`;
-          emailBodyText = `Hi ${ownerName},\n\n` +
+          emailBodyText = `Hi ${firstName},\n\n` +
             `NYC Limo Wish invites licensed TLC chauffeurs and luxury vehicle operators to join our premium reservation network.\n\n` +
             `High-yield airport transfers, corporate roadshows, weekly direct deposits, and zero monthly platform fees.\n\n` +
             `Join our affiliate fleet:\nhttps://nyclimowish.com\n\n` +
             `Best regards,\nNYC Limo Wish Fleet Operations`;
 
-          emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
+          emailHtml = `<p>Hi <strong>${firstName}</strong>,</p>` +
             `<p>NYC Limo Wish invites professional luxury chauffeurs and fleet operators for <strong>${c.company_name}</strong> to join our premier affiliate network.</p>` +
             `<p><strong>Why Drive With Us:</strong> Premium airport & corporate bookings, weekly instant payouts, zero monthly fees, and dedicated 24/7 support.</p>` +
             `<p><a href="https://nyclimowish.com" style="background:#0f172a;color:#f59e0b;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">Join Chauffeur Network &rarr;</a></p>`;
 
-          smsText = `Hi ${ownerName}, NYC Limo Wish is onboarding luxury chauffeurs in NY for high-paying airport reservations. Join free at nyclimowish.com. Reply STOP to opt out.`;
+          smsText = `Hi ${firstName}, NYC Limo Wish is onboarding luxury chauffeurs in NY for high-paying airport reservations. Join free at nyclimowish.com. Reply STOP to opt out.`;
         }
       } else {
         // Shipping Wish LLC (Default Freight Dispatch)
-        emailSubject = `Dedicated Freight & Load Booking for ${c.company_name} (${matchedEquip} Fleet)`;
-        emailBodyText = `Hi ${ownerName},\n\n` +
-          `Shipping Wish LLC places a named fleet operations manager with small fleets. ${c.company_name} shows as ${numUnits} ${matchedEquip} unit(s) out of ${stateName} on the public FMCSA census.\n\n` +
-          `Weekly desk. You keep broker pay. First week $0 if you want to try it.\n\n` +
-          `Best regards,\nShipping Wish Operations\nhttps://www.shippingwish.com`;
+        emailSubject = `Spot loads & dedicated dispatch for your ${matchedEquip} out of ${stateName}`;
+        emailBodyText = `Hi ${firstName},\n\n` +
+          `Saw your fleet (${c.company_name}) registered on FMCSA running ${matchedEquip} out of ${stateName}.\n\n` +
+          `Are you tired of dispatchers taking 8-10% of your gross freight check? At Shipping Wish LLC, we take 0% commission ($149 flat/week) and negotiate top spot rates ($2.85–$3.25/mile avg) with verified brokers.\n\n` +
+          `• 100% of broker gross pay is yours (keep every dollar)\n` +
+          `• 1-Click RateCon auditing & 10-second broker setup packets\n` +
+          `• 7-Day $0 Free Trial — test our dedicated dispatch desk for 1 full week at zero cost.\n\n` +
+          `Do you have trucks rolling or looking for loads out of ${stateName} this week?\n\n` +
+          `Best regards,\nAlex — Shipping Wish Dispatch Desk\nDirect: +1 (917) 737-0021\nhttps://www.shippingwish.com/services`;
 
-        emailHtml = `<p>Hi <strong>${ownerName}</strong>,</p>` +
-          `<p>Shipping Wish LLC places a named fleet operations manager with small fleets. <strong>${c.company_name}</strong> shows as ${numUnits} ${matchedEquip} unit(s) out of <strong>${stateName}</strong> on the public FMCSA census.</p>` +
-          `<p>Weekly desk. You keep broker pay. First week $0 if you want to try it.</p>` +
-          `<p><a href="https://www.shippingwish.com/services" style="background:#f59e0b;color:#0f172a;padding:10px 18px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">See the operations desk &rarr;</a></p>`;
+        emailHtml = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#1e293b;">` +
+          `<p>Hi <strong>${firstName}</strong>,</p>` +
+          `<p>Saw your fleet (<strong>${c.company_name}</strong>) registered on FMCSA running <strong>${matchedEquip}</strong> out of <strong>${stateName}</strong>.</p>` +
+          `<p>Are you tired of dispatchers taking <strong>8% to 10%</strong> of your gross freight check? At <strong>Shipping Wish LLC</strong>, we take <strong>0% commission</strong>—just a flat $149/week retainer—and our dispatchers negotiate top spot rates (<strong>$2.85 – $3.25/mile</strong>).</p>` +
+          `<ul style="padding-left:20px;margin:12px 0;">` +
+            `<li><strong>Keep 100% of the freight pay:</strong> You collect directly from the broker.</li>` +
+            `<li><strong>Zero paperwork headache:</strong> We audit RateCons for hidden fines, handle broker packets, and manage check-calls.</li>` +
+            `<li><strong>7-Day Free Trial ($0 Today):</strong> Test our dispatch desk for 1 full week at zero risk.</li>` +
+          `</ul>` +
+          `<p style="margin:20px 0;">` +
+            `<a href="https://www.shippingwish.com/services" style="background:#2563eb;color:#ffffff;padding:11px 22px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">Start 7-Day Free Week ($0) &rarr;</a>` +
+            `&nbsp;&nbsp;` +
+            `<a href="https://www.shippingwish.com/carrier-setup" style="background:#0f172a;color:#ffffff;padding:11px 22px;border-radius:6px;font-weight:bold;text-decoration:none;display:inline-block;">Complete Carrier Packet &rarr;</a>` +
+          `</p>` +
+          `<p>Do you have trucks looking for freight this week? Reply to this email or call our desk at <strong>+1 (917) 737-0021</strong>.</p>` +
+          `<p>Best regards,<br><strong>Alex — Operations Desk</strong><br>Shipping Wish LLC · shippingwish.com</p>` +
+        `</div>`;
 
-        smsText = `Hi ${ownerName}, Shipping Wish LLC emailed a one-pager about a named ops manager for ${matchedEquip} out of ${stateName}. Reply YES if useful, STOP to opt out.`;
+        smsText = `Hi ${firstName}, Alex with Shipping Wish. Got your ${matchedEquip} in ${stateName}. We book top spot freight ($2.85+/mi) with 0% commission ($149 flat). Looking for loads this week? Reply STOP to opt out.`;
       }
 
       // Save lead in PostgreSQL CRM table
