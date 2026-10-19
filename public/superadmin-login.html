@@ -10,70 +10,230 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --bg-dark: #070b14;
-      --card-bg: rgba(15, 23, 42, 0.85);
-      --card-border: rgba(245, 158, 11, 0.25);
-      --amber-glow: #f59e0b;
-      --amber-light: #fbbf24;
-      --blue-accent: #3b82f6;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --danger: #ef4444;
-      --success: #10b981;
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --border-subtle: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --brand-navy: #0f172a;
+      --brand-navy-light: #1e293b;
+      --brand-blue: #2563eb;
+      --brand-blue-hover: #1d4ed8;
+      --brand-amber: #f59e0b;
+      --brand-amber-dark: #d97706;
+      --text-main: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --danger: #dc2626;
+      --success: #059669;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--bg-dark);
+      background-color: var(--bg-page);
       color: var(--text-main);
       min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Left Showcase Panel (ShippingWish Brand Identity) */
+    .showcase-panel {
+      background: linear-gradient(155deg, #0f172a 0%, #1e293b 55%, #1e3a8a 100%);
+      color: #ffffff;
+      padding: 48px 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .showcase-panel::before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      right: -120px;
+      width: 420px;
+      height: 420px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.28) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .showcase-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -100px;
+      left: -100px;
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.16) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .brand-top {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-logo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #ffffff;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      color: #ffffff;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+    }
+
+    .brand-name-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-name {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .brand-tag {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .showcase-body {
       position: relative;
-      overflow-x: hidden;
-      padding: 24px;
+      z-index: 2;
+      max-width: 480px;
+      margin: 40px 0;
     }
 
-    /* Ambient background grid and glow */
-    .bg-grid {
-      position: fixed;
-      inset: 0;
-      background-image: 
-        linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
+    .exec-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 20px;
     }
 
-    .bg-radial {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at 50% 25%, rgba(245, 158, 11, 0.08) 0%, transparent 60%),
-                  radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: 0;
+    .exec-pill::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #fbbf24;
+      box-shadow: 0 0 8px #fbbf24;
+    }
+
+    .showcase-title {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.18;
+      margin-bottom: 14px;
+      color: #ffffff;
+    }
+
+    .showcase-desc {
+      font-size: 15px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .empire-brands-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .empire-brand-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 14px 16px;
+      backdrop-filter: blur(8px);
+    }
+
+    .empire-brand-card strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 3px;
+    }
+
+    .empire-brand-card span {
+      font-size: 11.5px;
+      color: #94a3b8;
+    }
+
+    .showcase-footer {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 20px;
+    }
+
+    /* Right Auth Panel (Clean Light Surface) */
+    .auth-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 24px;
+      background: var(--bg-page);
     }
 
     .login-container {
-      position: relative;
-      z-index: 10;
       width: 100%;
-      max-width: 480px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
+      max-width: 460px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
       border-radius: 20px;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7),
-                  0 0 30px rgba(245, 158, 11, 0.08);
+      box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.08),
+                  0 4px 12px -2px rgba(15, 23, 42, 0.04);
       padding: 40px 36px;
+      position: relative;
       overflow: hidden;
     }
 
@@ -82,68 +242,54 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #f59e0b, #3b82f6, #f59e0b);
-      background-size: 200% 100%;
-      animation: pulseGradient 4s linear infinite;
-    }
-
-    @keyframes pulseGradient {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 200% 50%; }
+      height: 4px;
+      background: linear-gradient(90deg, #2563eb, #f59e0b);
     }
 
     .header-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(245, 158, 11, 0.12);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      color: var(--amber-light);
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       padding: 5px 12px;
       border-radius: 999px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .header-badge::before {
       content: '';
       width: 6px;
       height: 6px;
-      background: var(--amber-glow);
+      background: #2563eb;
       border-radius: 50%;
-      box-shadow: 0 0 8px var(--amber-glow);
-      animation: blink 2s infinite;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
     }
 
     .brand-title {
       font-size: 24px;
       font-weight: 800;
-      letter-spacing: -0.02em;
-      color: #ffffff;
+      letter-spacing: -0.025em;
+      color: var(--text-main);
       margin-bottom: 6px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .brand-title span.gold {
-      color: var(--amber-light);
+      color: var(--brand-blue);
     }
 
     .brand-subtitle {
-      font-size: 13px;
-      color: var(--text-muted);
+      font-size: 13.5px;
+      color: var(--text-secondary);
       line-height: 1.5;
-      margin-bottom: 28px;
+      margin-bottom: 26px;
     }
 
     .alert-box {
@@ -151,43 +297,44 @@
       padding: 12px 16px;
       border-radius: 10px;
       font-size: 13px;
+      font-weight: 500;
       line-height: 1.45;
       margin-bottom: 20px;
       border: 1px solid transparent;
-      animation: fadeIn 0.3s ease;
+      animation: fadeIn 0.25s ease;
     }
 
     .alert-box.error {
-      background: rgba(239, 68, 68, 0.12);
-      border-color: rgba(239, 68, 68, 0.35);
-      color: #fca5a5;
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #b91c1c;
     }
 
     .alert-box.success {
-      background: rgba(16, 185, 129, 0.12);
-      border-color: rgba(16, 185, 129, 0.35);
-      color: #86efac;
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #047857;
     }
 
     .alert-box.info {
-      background: rgba(59, 130, 246, 0.12);
-      border-color: rgba(59, 130, 246, 0.35);
-      color: #93c5fd;
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
     }
 
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       text-align: left;
     }
 
     .form-label {
       display: block;
       font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      letter-spacing: 0.05em;
+      font-weight: 700;
+      color: #334155;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
     }
 
     .input-wrapper {
@@ -196,64 +343,74 @@
 
     .form-input {
       width: 100%;
-      background: rgba(30, 41, 59, 0.7);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      color: #ffffff;
-      padding: 13px 16px;
+      background: #ffffff;
+      border: 1.5px solid var(--border-strong);
+      color: var(--text-main);
+      padding: 12px 14px;
       border-radius: 10px;
       font-size: 14px;
+      font-weight: 500;
       outline: none;
-      transition: all 0.2s ease;
+      transition: all 0.18s ease;
       font-family: inherit;
     }
 
+    .form-input::placeholder {
+      color: #94a3b8;
+    }
+
     .form-input:focus {
-      border-color: var(--amber-glow);
-      background: rgba(30, 41, 59, 0.95);
-      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+      border-color: var(--brand-blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
     }
 
     .password-toggle {
       position: absolute;
-      right: 14px;
+      right: 12px;
       top: 50%;
       transform: translateY(-50%);
       background: none;
       border: none;
       color: var(--text-muted);
       cursor: pointer;
-      font-size: 13px;
-      padding: 4px;
+      font-size: 14px;
+      padding: 4px 6px;
+      border-radius: 6px;
+    }
+
+    .password-toggle:hover {
+      background: #f1f5f9;
+      color: var(--text-main);
     }
 
     .btn-submit {
       width: 100%;
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #070b14;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
       border: none;
-      padding: 14px 20px;
+      padding: 13px 20px;
       border-radius: 10px;
       font-size: 14px;
       font-weight: 700;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.01em;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.18s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
-      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+      margin-top: 8px;
     }
 
     .btn-submit:hover:not(:disabled) {
-      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.32);
     }
 
     .btn-submit:disabled {
-      opacity: 0.55;
+      opacity: 0.6;
       cursor: not-allowed;
       transform: none;
     }
@@ -261,41 +418,64 @@
     /* Step 2: 2FA Screen */
     .step-2fa {
       display: none;
-      animation: fadeIn 0.3s ease;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .twofa-info-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      border-radius: 10px;
+      padding: 13px 15px;
+      margin-bottom: 20px;
+    }
+
+    .twofa-info-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .twofa-info-desc {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.5;
     }
 
     .otp-display-group {
-      margin: 24px 0;
+      margin: 20px 0;
       text-align: center;
     }
 
     .otp-input-single {
       width: 100%;
-      background: rgba(30, 41, 59, 0.85);
-      border: 2px solid var(--amber-glow);
-      color: var(--amber-light);
-      padding: 16px 20px;
+      background: #f8fafc;
+      border: 2px solid var(--brand-blue);
+      color: var(--text-main);
+      padding: 14px 18px;
       border-radius: 12px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 32px;
+      font-size: 30px;
       font-weight: 700;
       text-align: center;
       letter-spacing: 12px;
       outline: none;
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.08);
       transition: all 0.2s ease;
     }
 
     .otp-input-single:focus {
-      border-color: #fbbf24;
-      box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);
+      background: #ffffff;
+      border-color: #1d4ed8;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
     }
 
     .otp-meta {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-top: 14px;
+      margin-top: 12px;
       font-size: 12px;
       color: var(--text-muted);
     }
@@ -304,11 +484,12 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      color: var(--amber-light);
+      color: #1d4ed8;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      font-weight: 600;
-      background: rgba(245, 158, 11, 0.1);
+      font-size: 12.5px;
+      font-weight: 700;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
       padding: 3px 10px;
       border-radius: 6px;
     }
@@ -316,151 +497,232 @@
     .resend-btn {
       background: none;
       border: none;
-      color: var(--blue-accent);
+      color: var(--brand-blue);
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       text-decoration: underline;
       padding: 4px;
     }
 
     .resend-btn:disabled {
-      color: #64748b;
+      color: #94a3b8;
       cursor: not-allowed;
       text-decoration: none;
     }
 
     .security-notice {
-      margin-top: 28px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(148, 163, 184, 0.12);
-      font-size: 11px;
-      color: #64748b;
-      line-height: 1.5;
+      margin-top: 26px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.55;
       text-align: center;
     }
 
-    .security-notice a {
-      color: var(--amber-glow);
+    .back-link-row {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 12.5px;
+    }
+
+    .back-link-row a {
+      color: var(--text-secondary);
       text-decoration: none;
+      font-weight: 600;
+    }
+
+    .back-link-row a:hover {
+      color: var(--brand-blue);
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
+      from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 960px) {
+      body {
+        grid-template-columns: 1fr;
+      }
+      .showcase-panel {
+        padding: 28px 24px;
+      }
+      .showcase-body {
+        margin: 20px 0;
+      }
+      .showcase-title {
+        font-size: 24px;
+      }
+      .auth-panel {
+        padding: 24px 16px 40px;
+      }
+      .login-container {
+        padding: 32px 24px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <div class="bg-grid"></div>
-  <div class="bg-radial"></div>
-
-  <div class="login-container">
-    <div class="container-highlight"></div>
-
-    <!-- Header Badge -->
-    <div class="header-badge">Executive Security Zone</div>
-
-    <div class="brand-title">
-      <span>Command</span>
-      <span class="gold">Center</span>
-    </div>
-    <div class="brand-subtitle">
-      Shipping Wish LLC &bull; LoadsNexus &bull; NYC Limo Wish &bull; BuyWishOnline
+  <!-- Left Brand Showcase Panel -->
+  <aside class="showcase-panel">
+    <div class="brand-top">
+      <a href="/" class="brand-logo-link">
+        <div class="brand-mark">SW</div>
+        <div class="brand-name-wrap">
+          <span class="brand-name">Shipping Wish</span>
+          <span class="brand-tag">Executive Operations</span>
+        </div>
+      </a>
     </div>
 
-    <!-- Feedback alerts -->
-    <div id="alertBox" class="alert-box"></div>
+    <div class="showcase-body">
+      <div class="exec-pill">Unified 4-Brand Control</div>
+      <h1 class="showcase-title">Executive Command &amp; Live Operations</h1>
+      <p class="showcase-desc">
+        Real-time oversight of active carriers, fleet dispatch status, live spot freight corridors, chauffeur reservations, and store fulfillment.
+      </p>
 
-    <!-- STEP 1: CREDENTIALS AUTHENTICATION -->
-    <form id="step1Form" autocomplete="on">
-      <div class="form-group">
-        <label class="form-label" for="superEmail">Executive Email</label>
-        <div class="input-wrapper">
-          <input 
-            type="email" 
-            id="superEmail" 
-            class="form-input" 
-            value="" 
-            required 
-            autocomplete="username"
-            placeholder="Executive account email"
-          >
+      <div class="empire-brands-grid">
+        <div class="empire-brand-card">
+          <strong>🚛 ShippingWish.com</strong>
+          <span>TMS, Fleet Roster &amp; AI Dispatch</span>
+        </div>
+        <div class="empire-brand-card">
+          <strong>⚡ LoadsNexus.com</strong>
+          <span>50-State Broker Spot Load Board</span>
+        </div>
+        <div class="empire-brand-card">
+          <strong>🗽 NYCLimoWish.com</strong>
+          <span>VIP Chauffeur &amp; Airport Rides</span>
+        </div>
+        <div class="empire-brand-card">
+          <strong>🛍️ BuyWishOnline.com</strong>
+          <span>E-Commerce Orders &amp; Fulfillment</span>
         </div>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label class="form-label" for="superPassword">Security Password</label>
-        <div class="input-wrapper">
-          <input 
-            type="password" 
-            id="superPassword" 
-            class="form-input" 
-            required 
-            autocomplete="current-password"
-            placeholder="••••••••••••••••"
-          >
-          <button type="button" class="password-toggle" id="togglePassBtn" title="Toggle password visibility">👁️</button>
-        </div>
+    <div class="showcase-footer">
+      <span>Shipping Wish LLC &bull; Delaware, USA</span>
+      <span>2FA Protected Gateway</span>
+    </div>
+  </aside>
+
+  <!-- Right Login & 2FA Verification Panel -->
+  <main class="auth-panel">
+    <div class="login-container">
+      <div class="container-highlight"></div>
+
+      <!-- Header Badge -->
+      <div class="header-badge">Executive Security Zone</div>
+
+      <div class="brand-title">
+        <span>SuperAdmin</span>
+        <span class="gold">Sign In</span>
+      </div>
+      <div class="brand-subtitle">
+        Sign in with your executive credentials to access the unified command dashboard.
       </div>
 
-      <button type="submit" id="step1Btn" class="btn-submit">
-        <span>Verify Credentials &amp; Request OTP</span>
-        <span>&rarr;</span>
-      </button>
-    </form>
+      <!-- Feedback alerts -->
+      <div id="alertBox" class="alert-box"></div>
 
-    <!-- STEP 2: 2FA OTP / TOTP SCREEN -->
-    <div id="step2Container" class="step-2fa">
-      <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 10px; padding: 12px 14px; margin-bottom: 20px;">
-        <div style="font-size: 13px; font-weight: 700; color: var(--amber-light); margin-bottom: 4px;">
-          🔐 Two-Factor Authentication Required
-        </div>
-        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.45;">
-          A 6-digit one-time passcode was dispatched to <strong id="maskedEmailSpan" style="color:#ffffff;">your email</strong>.
-          Enter the code below (or your Google Authenticator token) to proceed.
-        </div>
-      </div>
-
-      <form id="step2Form" autocomplete="off">
-        <div class="otp-display-group">
-          <label class="form-label" for="otpInput" style="text-align:center;">6-Digit Authorization Code</label>
-          <input 
-            type="text" 
-            id="otpInput" 
-            class="otp-input-single" 
-            maxlength="6" 
-            pattern="[0-9]*" 
-            inputmode="numeric" 
-            placeholder="000000" 
-            autofocus
-            required
-          >
-          <div class="otp-meta">
-            <span>Expires in: <span id="timerPill" class="timer-pill">10:00</span></span>
-            <button type="button" id="resendBtn" class="resend-btn">Resend OTP</button>
+      <!-- STEP 1: CREDENTIALS AUTHENTICATION -->
+      <form id="step1Form" autocomplete="on">
+        <div class="form-group">
+          <label class="form-label" for="superEmail">Executive Email</label>
+          <div class="input-wrapper">
+            <input 
+              type="email" 
+              id="superEmail" 
+              class="form-input" 
+              value="" 
+              required 
+              autocomplete="username"
+              placeholder="name@shippingwish.com"
+            >
           </div>
         </div>
 
-        <button type="submit" id="step2Btn" class="btn-submit">
-          <span>Authorize Executive Session</span>
+        <div class="form-group">
+          <label class="form-label" for="superPassword">Security Password</label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="superPassword" 
+              class="form-input" 
+              required 
+              autocomplete="current-password"
+              placeholder="Enter your password"
+            >
+            <button type="button" class="password-toggle" id="togglePassBtn" title="Toggle password visibility">👁️</button>
+          </div>
+        </div>
+
+        <button type="submit" id="step1Btn" class="btn-submit">
+          <span>Verify Credentials &amp; Request OTP</span>
           <span>&rarr;</span>
         </button>
-
-        <div style="text-align: center; margin-top: 16px;">
-          <button type="button" id="backToStep1" style="background:none; border:none; color: #94a3b8; font-size: 12px; cursor: pointer;">
-            &larr; Use a different account
-          </button>
-        </div>
       </form>
-    </div>
 
-    <div class="security-notice">
-      🛡️ 256-Bit Encrypted Hardware Session &bull; Single-Admin Authorization<br>
-      Automated IP logging &amp; brute-force protection active.
+      <!-- STEP 2: 2FA OTP / TOTP SCREEN -->
+      <div id="step2Container" class="step-2fa">
+        <div class="twofa-info-card">
+          <div class="twofa-info-title">
+            🔐 Two-Factor Authentication Required
+          </div>
+          <div class="twofa-info-desc">
+            A 6-digit one-time passcode was sent to <strong id="maskedEmailSpan" style="color:var(--text-main);">your email</strong>.
+            Enter the code below (or your Google Authenticator token) to continue.
+          </div>
+        </div>
+
+        <form id="step2Form" autocomplete="off">
+          <div class="otp-display-group">
+            <label class="form-label" for="otpInput" style="text-align:center;">6-Digit Authorization Code</label>
+            <input 
+              type="text" 
+              id="otpInput" 
+              class="otp-input-single" 
+              maxlength="6" 
+              pattern="[0-9]*" 
+              inputmode="numeric" 
+              placeholder="000000" 
+              autofocus
+              required
+            >
+            <div class="otp-meta">
+              <span>Expires in: <span id="timerPill" class="timer-pill">10:00</span></span>
+              <button type="button" id="resendBtn" class="resend-btn">Resend OTP</button>
+            </div>
+          </div>
+
+          <button type="submit" id="step2Btn" class="btn-submit">
+            <span>Authorize Executive Session</span>
+            <span>&rarr;</span>
+          </button>
+
+          <div style="text-align: center; margin-top: 16px;">
+            <button type="button" id="backToStep1" style="background:none; border:none; color: var(--text-secondary); font-size: 12.5px; font-weight: 600; cursor: pointer;">
+              &larr; Use a different account
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="security-notice">
+        🛡️ 256-Bit Encrypted Session &bull; Role-Verified Access<br>
+        Automated IP audit logging &amp; brute-force protection active.
+      </div>
+
+      <div class="back-link-row">
+        <a href="/login">&larr; Return to Standard Portal Login</a>
+      </div>
     </div>
-  </div>
+  </main>
 
   <script>
     const alertBox = document.getElementById('alertBox');
@@ -578,7 +840,6 @@
           startOtpTimer();
           startResendCooldown();
         } else if (data.user && (data.user.role === 'super_admin' || data.user.is_super_admin)) {
-          // Direct login (if 2FA was bypass - standard redirects to superadmin)
           showAlert('Authentication confirmed. Entering Executive Command Center...', 'success');
           setTimeout(() => {
             window.location.href = '/superadmin';

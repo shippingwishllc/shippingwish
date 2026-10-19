@@ -14,20 +14,21 @@
 
   <style>
     :root {
-      --bg-base: #060911;
-      --bg-surface: #0b111e;
-      --bg-card: rgba(17, 24, 39, 0.85);
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-focus: rgba(245, 158, 11, 0.4);
-      --gold-primary: #f59e0b;
-      --gold-light: #fbbf24;
-      --gold-dark: #b45309;
-      --blue-accent: #3b82f6;
-      --green-success: #10b981;
-      --red-danger: #ef4444;
-      --purple-accent: #a855f7;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --border-subtle: #e2e8f0;
+      --border-focus: #93c5fd;
+      --gold-primary: #2563eb;
+      --gold-light: #1d4ed8;
+      --gold-dark: #1e40af;
+      --amber-accent: #d97706;
+      --blue-accent: #2563eb;
+      --green-success: #059669;
+      --red-danger: #dc2626;
+      --purple-accent: #7c3aed;
+      --text-main: #0f172a;
+      --text-muted: #475569;
       --text-subtle: #64748b;
     }
 
@@ -38,29 +39,29 @@
       color: var(--text-main);
       min-height: 100vh;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Ambient background grid */
+    /* Subtle clean ambient background */
     .ambient-grid {
       position: fixed;
       inset: 0;
       background-image: 
-        linear-gradient(rgba(245, 158, 11, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(245, 158, 11, 0.02) 1px, transparent 1px);
-      background-size: 50px 50px;
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.04) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.04) 0px, transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
 
-    /* Top Navigation Bar */
+    /* Top Navigation Bar (Clean Navy & White Enterprise Header) */
     .topbar {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(11, 17, 30, 0.92);
-      backdrop-filter: blur(14px);
+      background: #ffffff;
       border-bottom: 1px solid var(--border-subtle);
-      padding: 12px 28px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      padding: 14px 28px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -74,89 +75,88 @@
     }
 
     .brand-logo-shield {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      border-radius: 9px;
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 900;
-      font-size: 18px;
-      color: #060911;
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.35);
+      font-size: 16px;
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
     }
 
     .brand-titles h1 {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: #ffffff;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
-    .brand-titles h1 span.gold { color: var(--gold-light); }
+    .brand-titles h1 span.gold { color: var(--blue-accent); }
     .brand-titles p {
-      font-size: 11px;
+      font-size: 11.5px;
       color: var(--text-muted);
-      letter-spacing: 0.02em;
+      font-weight: 500;
     }
 
     .pulse-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #34d399;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #047857;
       font-size: 11px;
       font-weight: 700;
       padding: 4px 10px;
       border-radius: 999px;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
     }
 
     .pulse-dot {
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
       background: #10b981;
       border-radius: 50%;
-      box-shadow: 0 0 8px #10b981;
       animation: pulse 1.8s infinite;
     }
 
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(1.3); }
+      50% { opacity: 0.45; transform: scale(1.25); }
     }
 
     .user-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .user-badge {
       display: flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.04);
+      gap: 6px;
+      background: #f8fafc;
       border: 1px solid var(--border-subtle);
-      padding: 5px 12px;
+      padding: 6px 12px;
       border-radius: 8px;
       font-size: 12px;
+      color: var(--text-muted);
     }
 
-    .user-badge strong { color: var(--gold-light); }
+    .user-badge strong { color: var(--text-main); font-weight: 700; }
 
     .btn-action {
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-main);
-      padding: 6px 14px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #1e293b;
+      padding: 7px 14px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
@@ -164,22 +164,26 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.2s ease;
+      transition: all 0.18s ease;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
 
     .btn-action:hover {
-      background: rgba(51, 65, 85, 0.8);
-      border-color: var(--gold-primary);
+      background: #f8fafc;
+      border-color: var(--blue-accent);
+      color: var(--blue-accent);
     }
 
     .btn-logout {
-      background: rgba(239, 68, 68, 0.15);
-      border-color: rgba(239, 68, 68, 0.3);
-      color: #fca5a5;
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
     }
 
     .btn-logout:hover {
-      background: rgba(239, 68, 68, 0.25);
+      background: #fee2e2;
+      border-color: #f87171;
+      color: #b91c1c;
     }
 
     /* Layout Container */
@@ -194,7 +198,7 @@
     /* Executive KPI Banner Strip */
     .kpi-strip {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
       gap: 14px;
       margin-bottom: 24px;
     }
@@ -203,16 +207,17 @@
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: 14px;
-      padding: 16px 18px;
+      padding: 18px;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      transition: transform 0.2s ease, border-color 0.2s ease;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
     }
 
     .kpi-card:hover {
       transform: translateY(-2px);
-      border-color: var(--border-focus);
+      border-color: #cbd5e1;
+      box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.08);
     }
 
     .kpi-card::before {
@@ -221,18 +226,18 @@
       top: 0;
       left: 0;
       width: 100%;
-      height: 2px;
-      background: linear-gradient(90deg, var(--gold-primary), transparent);
+      height: 3px;
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
     }
 
-    .kpi-card.blue::before { background: linear-gradient(90deg, var(--blue-accent), transparent); }
-    .kpi-card.green::before { background: linear-gradient(90deg, var(--green-success), transparent); }
-    .kpi-card.purple::before { background: linear-gradient(90deg, var(--purple-accent), transparent); }
+    .kpi-card.blue::before { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+    .kpi-card.green::before { background: linear-gradient(90deg, #059669, #34d399); }
+    .kpi-card.purple::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
 
     .kpi-label {
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--text-muted);
       margin-bottom: 8px;
@@ -245,35 +250,37 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 26px;
       font-weight: 800;
-      color: #ffffff;
-      line-height: 1.1;
+      color: var(--text-main);
+      line-height: 1.15;
       margin-bottom: 6px;
     }
 
     .kpi-sub {
-      font-size: 11px;
+      font-size: 11.5px;
       color: var(--text-subtle);
+      font-weight: 500;
     }
 
-    .kpi-sub span.pos { color: #34d399; font-weight: 600; }
-    .kpi-sub span.warn { color: var(--gold-light); font-weight: 600; }
+    .kpi-sub span.pos { color: #059669; font-weight: 700; }
+    .kpi-sub span.warn { color: #d97706; font-weight: 700; }
 
     /* Navigation Tabs */
     .tab-bar {
       display: flex;
       align-items: center;
       gap: 6px;
-      background: var(--bg-surface);
+      background: #ffffff;
       border: 1px solid var(--border-subtle);
       border-radius: 12px;
       padding: 6px;
       margin-bottom: 24px;
       overflow-x: auto;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
 
     .tab-btn {
       background: transparent;
-      border: none;
+      border: 1px solid transparent;
       color: var(--text-muted);
       padding: 10px 18px;
       border-radius: 8px;
@@ -288,21 +295,22 @@
     }
 
     .tab-btn:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      background: #f1f5f9;
     }
 
     .tab-btn.active {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      color: var(--gold-light);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      font-weight: 700;
+      box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
     }
 
     /* Tab Panels */
     .tab-panel {
       display: none;
-      animation: fadeIn 0.25s ease;
+      animation: fadeIn 0.22s ease;
     }
 
     .tab-panel.active {
@@ -334,7 +342,7 @@
       border: 1px solid var(--border-subtle);
       border-radius: 16px;
       padding: 22px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
     }
 
     .card-header {
@@ -348,8 +356,8 @@
 
     .card-title {
       font-size: 15px;
-      font-weight: 700;
-      color: #ffffff;
+      font-weight: 800;
+      color: var(--text-main);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -357,11 +365,12 @@
 
     .card-title span.tag {
       font-size: 11px;
-      font-weight: 600;
-      color: var(--gold-light);
-      background: rgba(245, 158, 11, 0.12);
+      font-weight: 700;
+      color: #1d4ed8;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
       padding: 2px 8px;
-      border-radius: 4px;
+      border-radius: 6px;
     }
 
     /* Tables */
@@ -369,6 +378,7 @@
       overflow-x: auto;
       border-radius: 10px;
       border: 1px solid var(--border-subtle);
+      background: #ffffff;
     }
 
     table {
@@ -379,8 +389,8 @@
     }
 
     thead th {
-      background: rgba(30, 41, 59, 0.7);
-      color: var(--text-muted);
+      background: #f8fafc;
+      color: #475569;
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
@@ -391,13 +401,13 @@
 
     tbody td {
       padding: 12px 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      color: #e2e8f0;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
       vertical-align: middle;
     }
 
     tbody tr:hover {
-      background: rgba(255, 255, 255, 0.02);
+      background: #f8fafc;
     }
 
     /* Status Badges */
@@ -407,63 +417,65 @@
       gap: 5px;
       font-size: 11px;
       font-weight: 700;
-      padding: 3px 8px;
+      padding: 3px 9px;
       border-radius: 6px;
       letter-spacing: 0.02em;
     }
 
-    .badge-booked { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .badge-empty { background: rgba(16, 185, 129, 0.15); color: #86efac; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-unloading { background: rgba(245, 158, 11, 0.15); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-paid { background: rgba(16, 185, 129, 0.15); color: #86efac; }
-    .badge-pending { background: rgba(245, 158, 11, 0.15); color: #fde68a; }
-    .badge-processing { background: rgba(168, 85, 247, 0.15); color: #d8b4fe; }
-    .badge-shipping { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
-    .badge-delivered { background: rgba(16, 185, 129, 0.15); color: #86efac; }
+    .badge-booked { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-empty { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge-unloading { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .badge-paid { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge-pending { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .badge-processing { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+    .badge-shipping { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-delivered { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
 
     /* Interactive Selectors inside table */
     .status-select {
-      background: rgba(30, 41, 59, 0.9);
-      border: 1px solid var(--border-subtle);
-      color: #ffffff;
-      padding: 4px 8px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: var(--text-main);
+      padding: 5px 10px;
       border-radius: 6px;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 600;
       cursor: pointer;
       outline: none;
     }
 
     .status-select:focus {
-      border-color: var(--gold-primary);
+      border-color: var(--blue-accent);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
     }
 
     /* AI Tools Section */
     .ai-box {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.8));
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+      border: 1px solid #bfdbfe;
       border-radius: 14px;
       padding: 20px;
       margin-bottom: 20px;
     }
 
     .btn-ai-gold {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #060911;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
       border: none;
-      padding: 10px 18px;
+      padding: 9px 16px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 700;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.2s ease;
+      transition: all 0.18s ease;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
     }
 
     .btn-ai-gold:hover {
-      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
       transform: translateY(-1px);
     }
 
@@ -472,8 +484,8 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
       z-index: 200;
       align-items: center;
       justify-content: center;
@@ -481,25 +493,37 @@
     }
 
     .modal-content {
-      background: var(--bg-surface);
-      border: 1px solid var(--gold-primary);
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
       border-radius: 18px;
       width: 100%;
       max-width: 520px;
       padding: 30px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
       position: relative;
+      color: var(--text-main);
     }
 
     .modal-close {
       position: absolute;
       top: 18px;
       right: 18px;
-      background: none;
+      background: #f1f5f9;
       border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
       color: var(--text-muted);
       font-size: 18px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      background: #e2e8f0;
+      color: var(--text-main);
     }
 
     .modal-content.wide {
@@ -508,18 +532,19 @@
 
     .form-input {
       width: 100%;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid var(--border-subtle);
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
       border-radius: 8px;
-      color: #ffffff;
+      color: var(--text-main);
       padding: 9px 12px;
       font-size: 13px;
       box-sizing: border-box;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
     .form-input:focus {
-      border-color: var(--gold-primary);
+      border-color: var(--blue-accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
     .form-grid-2 {
       display: grid;
@@ -533,28 +558,29 @@
       display: block;
       font-size: 11px;
       font-weight: 700;
-      color: var(--text-muted);
+      color: #334155;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       margin-bottom: 5px;
     }
     .btn-submit {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #060911;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
       border: none;
       padding: 11px 20px;
       border-radius: 8px;
       font-size: 13px;
-      font-weight: 800;
+      font-weight: 700;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
     }
     .btn-submit:hover {
-      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
       transform: translateY(-1px);
     }
 
@@ -570,13 +596,14 @@
     }
 
     .toast {
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid var(--gold-primary);
+      background: #0f172a;
+      border: 1px solid #334155;
       color: #ffffff;
       padding: 12px 18px;
       border-radius: 10px;
       font-size: 13px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -1072,17 +1099,17 @@
             <h3 class="card-title">Fleet Dispatch Pipeline <span class="tag">Real-Time</span></h3>
           </div>
           <div class="pipeline-grid">
-            <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px; text-align:center;">
-              <div style="font-size:11px; color:#a7f3d0; font-weight:700;">🟢 EMPTY / NEED LOADS</div>
-              <div id="overviewEmptyCount" style="font-size:24px; font-weight:800; color:#34d399; font-family:'JetBrains Mono', monospace;">0</div>
+            <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:14px; text-align:center;">
+              <div style="font-size:11px; color:#047857; font-weight:700;">🟢 EMPTY / NEED LOADS</div>
+              <div id="overviewEmptyCount" style="font-size:24px; font-weight:800; color:#059669; font-family:'JetBrains Mono', monospace;">0</div>
             </div>
-            <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.25); border-radius:10px; padding:12px; text-align:center;">
-              <div style="font-size:11px; color:#bfdbfe; font-weight:700;">🔴 CURRENTLY BOOKED</div>
-              <div id="overviewBookedCount" style="font-size:24px; font-weight:800; color:#60a5fa; font-family:'JetBrains Mono', monospace;">0</div>
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px; text-align:center;">
+              <div style="font-size:11px; color:#1d4ed8; font-weight:700;">🔴 CURRENTLY BOOKED</div>
+              <div id="overviewBookedCount" style="font-size:24px; font-weight:800; color:#2563eb; font-family:'JetBrains Mono', monospace;">0</div>
             </div>
-            <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); border-radius:10px; padding:12px; text-align:center;">
-              <div style="font-size:11px; color:#fde68a; font-weight:700;">🟡 UNLOADING TOMORROW</div>
-              <div id="overviewUnloadingCount" style="font-size:24px; font-weight:800; color:#fbbf24; font-family:'JetBrains Mono', monospace;">0</div>
+            <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:14px; text-align:center;">
+              <div style="font-size:11px; color:#b45309; font-weight:700;">🟡 UNLOADING TOMORROW</div>
+              <div id="overviewUnloadingCount" style="font-size:24px; font-weight:800; color:#d97706; font-family:'JetBrains Mono', monospace;">0</div>
             </div>
           </div>
           <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
@@ -1094,9 +1121,9 @@
       <div class="content-card" style="margin-top:20px;">
         <div class="card-header">
           <h3 class="card-title">Carrier setup requests <span class="tag">Form</span></h3>
-          <a href="/admin-dashboard" style="font-size:12px;color:#93c5fd;">Open admin desk</a>
+          <a href="/admin-dashboard" style="font-size:12px;color:#2563eb;font-weight:600;text-decoration:none;">Open admin desk &rarr;</a>
         </div>
-        <div id="carrier-setup-requests" style="font-size:13px;color:#cbd5e1;">Loading carrier setup forms…</div>
+        <div id="carrier-setup-requests" style="font-size:13px;color:var(--text-muted);">Loading carrier setup forms…</div>
       </div>
 
       <!-- STRIPE ACCOUNTS DUAL BRAND GATEWAYS -->
@@ -1106,22 +1133,22 @@
           <span style="font-size:12px; color:var(--text-muted);">Real-time account webhook health</span>
         </div>
         <div class="grid-2">
-          <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:16px; min-width:0; max-width:100%; box-sizing:border-box;">
+          <div style="background:#f8fafc; border:1px solid #a7f3d0; border-radius:12px; padding:16px; min-width:0; max-width:100%; box-sizing:border-box;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-              <strong style="color:#ffffff; font-size:14px; min-width:0;">ShippingWish.com TMS Gateway</strong>
+              <strong style="color:var(--text-main); font-size:14px; min-width:0;">ShippingWish.com TMS Gateway</strong>
               <span id="stripeSwBadge" class="badge badge-paid" style="white-space:normal; text-align:right;">🟢 LIVE PRODUCTION</span>
             </div>
             <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
               Weekly recurring billing plans ($149 / $350 / $500), load factoring payouts, and instant detention invoice processing via Stripe Billing &amp; Webhooks.
             </p>
           </div>
-          <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:16px; min-width:0; max-width:100%; box-sizing:border-box;">
+          <div style="background:#f8fafc; border:1px solid #bfdbfe; border-radius:12px; padding:16px; min-width:0; max-width:100%; box-sizing:border-box;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-              <strong style="color:#ffffff; font-size:14px; min-width:0;">LoadsNexus.com AI Load Board Gateway</strong>
-              <span id="stripeLnBadge" class="badge badge-unloading" style="white-space:normal; text-align:right;">🟡 CONNECTED &bull; ID VERIFICATION IN REVIEW</span>
+              <strong style="color:var(--text-main); font-size:14px; min-width:0;">LoadsNexus.com AI Load Board Gateway</strong>
+              <span id="stripeLnBadge" class="badge badge-paid" style="white-space:normal; text-align:right;">🟢 LIVE PRODUCTION</span>
             </div>
             <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
-              Dedicated LoadsNexus Stripe account with automated fallback to parent Stripe. Subscriptions for $19 Solo, $39 Team, and $69 Fleet Pass with 24-hr webhook sync.
+              Unified Shipping Wish LLC Stripe merchant account powering $19 Solo, $39 Team, and $69 Fleet Pass subscriptions with 24-hr webhook sync.
             </p>
           </div>
         </div>
@@ -1131,10 +1158,10 @@
     <!-- TAB 2: SHIPPING WISH TMS & FLEET -->
     <div id="tab-tms" class="tab-panel">
       <!-- TMS ADMIN QUICK-LAUNCH TOOLBAR -->
-      <div class="content-card" style="margin-bottom:20px; background:linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border-color:rgba(59, 130, 246, 0.35);">
+      <div class="content-card" style="margin-bottom:20px; background:linear-gradient(135deg, #f8fafc, #eff6ff); border-color:#bfdbfe;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border-subtle);">
           <div>
-            <h3 style="font-size:15px; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px;">
+            <h3 style="font-size:15px; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:8px;">
               🏢 ShippingWish TMS Full Admin Operations Suite
               <span class="badge badge-paid">10+ Portals Connected</span>
             </h3>
@@ -1142,7 +1169,7 @@
               Executive 1-click launcher for all dispatch desk, staff HR, carrier CRM, and billing portals
             </p>
           </div>
-          <a href="/admin-dashboard" class="btn-action" style="background:#2563eb; color:#fff; text-decoration:none; font-weight:700;" target="_blank">
+          <a href="/admin-dashboard" class="btn-action" style="background:#2563eb; color:#fff; border-color:#1d4ed8; text-decoration:none; font-weight:700;" target="_blank">
             Open Standalone TMS Admin ↗
           </a>
         </div>
@@ -1196,14 +1223,14 @@
       </div>
 
       <!-- PENDING LOAD CANCELLATION APPROVAL WIDGET -->
-      <div id="superadminCancellationWidget" style="display:none; background:linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); border:1.5px solid #6366f1; border-radius:14px; padding:18px; color:#fff; margin-bottom:20px; box-shadow:0 12px 30px rgba(99,102,241,0.25);">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+      <div id="superadminCancellationWidget" style="display:none; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:14px; padding:18px; color:var(--text-main); margin-bottom:20px; box-shadow:0 4px 12px rgba(245,158,11,0.12);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #fde68a; padding-bottom:10px;">
           <div>
-            <div style="font-size:15px; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px;">
+            <div style="font-size:15px; font-weight:800; color:#92400e; display:flex; align-items:center; gap:8px;">
               ⚠️ Pending Load Cancellation Approval Requests
-              <span class="badge" style="background:#ef4444; color:#fff; font-weight:800;" id="cntCancellationRequests">0</span>
+              <span class="badge" style="background:#dc2626; color:#fff; font-weight:800;" id="cntCancellationRequests">0</span>
             </div>
-            <p style="font-size:12px; color:#cbd5e1; margin-top:2px;">Dispatchers requested load cancellations. Review the dispatcher's reason and approve or reject.</p>
+            <p style="font-size:12px; color:#78350f; margin-top:2px;">Dispatchers requested load cancellations. Review the dispatcher's reason and approve or reject.</p>
           </div>
           <button class="btn-action" onclick="loadDashboardData()">🔄 Refresh Requests</button>
         </div>
@@ -1219,12 +1246,12 @@
         </div>
         <div class="content-card">
           <div class="card-title" style="margin-bottom:8px;">Stripe Invoices Collected</div>
-          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#34d399;" id="tmsPaidInvoices">$0</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#059669;" id="tmsPaidInvoices">$0</div>
           <div style="font-size:12px; color:var(--text-muted);"><span id="tmsPendingInvoices">$0</span> pending collection</div>
         </div>
         <div class="content-card">
           <div class="card-title" style="margin-bottom:8px;">Past Due / Expired</div>
-          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#f87171;" id="tmsPastDueCarriers">0</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#dc2626;" id="tmsPastDueCarriers">0</div>
           <div style="font-size:12px; color:var(--text-muted);">Accounts requiring card re-authorization</div>
         </div>
       </div>
@@ -1424,7 +1451,7 @@
               <input type="url" class="form-input" id="setYoutubeUrl">
             </div>
           </div>
-          <h4 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#fbbf24;">ShippingWish.com tracking</h4>
+          <h4 style="font-size:13px;font-weight:700;margin:0 0 8px;color:var(--text-main);">ShippingWish.com tracking</h4>
           <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;">
             Google Tag Manager and Google Analytics are on the public Shipping Wish site. If this same G- ID is later added as a tag inside GTM, keep it in only one place. Facebook Pixel stays empty until Events Manager gives you a number.
           </p>
@@ -1498,7 +1525,7 @@
         </div>
         <div class="content-card">
           <div class="card-title" style="margin-bottom:8px;">Spot Freight Valuation</div>
-          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#34d399;" id="lnFreightValuation">$0</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#059669;" id="lnFreightValuation">$0</div>
           <div style="font-size:12px; color:var(--text-muted);"><span id="lnTotalLoads">0</span> total spot loads processed</div>
         </div>
       </div>
@@ -1541,12 +1568,12 @@
         </div>
         <div class="content-card">
           <div class="card-title" style="margin-bottom:8px;">Confirmed / Active</div>
-          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#60a5fa;" id="limoConfirmedCount">0</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#2563eb;" id="limoConfirmedCount">0</div>
           <div style="font-size:12px; color:var(--text-muted);"><span id="limoPendingCount">0</span> awaiting dispatch confirmation</div>
         </div>
         <div class="content-card">
           <div class="card-title" style="margin-bottom:8px;">Limo Gross Revenue</div>
-          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#34d399;" id="limoTotalRevenue">$0</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#059669;" id="limoTotalRevenue">$0</div>
           <div style="font-size:12px; color:var(--text-muted);"><span id="limoCompletedCount">0</span> completed rides</div>
         </div>
       </div>
@@ -1586,17 +1613,17 @@
           <div class="card-title" style="margin-bottom:8px;">Paid Store Orders</div>
           <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono';" id="ecomOrdersCount">0</div>
           <div style="font-size:12px; color:var(--text-muted);">
-            <span id="ecomAbandonedCount" style="color:var(--gold-light); font-weight:700;">0</span> abandoned checkout clicks
+            <span id="ecomAbandonedCount" style="color:#d97706; font-weight:700;">0</span> abandoned checkout clicks
           </div>
         </div>
         <div class="content-card">
           <div class="card-title" style="margin-bottom:8px;">Verified Paid Sales</div>
-          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#60a5fa;" id="ecomSales">$0</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#2563eb;" id="ecomSales">$0</div>
           <div style="font-size:12px; color:var(--text-muted);"><span id="ecomInTransit">0</span> orders in transit</div>
         </div>
         <div class="content-card">
           <div class="card-title" style="margin-bottom:8px;">Net Margin / Profit</div>
-          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#34d399;" id="ecomProfit">$0</div>
+          <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono'; color:#059669;" id="ecomProfit">$0</div>
           <div style="font-size:12px; color:var(--text-muted);">After supplier product cost</div>
         </div>
       </div>
@@ -1658,7 +1685,7 @@
       <div class="ai-box">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
           <div>
-            <h3 style="font-size:16px; font-weight:800; color:var(--gold-light);">🤖 AI Empty Fleet Matchmaker</h3>
+            <h3 style="font-size:16px; font-weight:800; color:var(--text-main);">🤖 AI Empty Fleet Matchmaker</h3>
             <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
               Cross-references our Empty and Unloading-Tomorrow fleet trucks with LoadsNexus spot corridors.
             </p>
@@ -1722,12 +1749,12 @@
           </div>
         </div>
 
-        <div id="mktOutputBox" style="display:none; background:rgba(15,23,42,0.9); border:1px solid rgba(245,158,11,0.25); border-radius:12px; padding:18px;">
+        <div id="mktOutputBox" style="display:none; background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:18px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div id="mktTitle" style="font-size:13px; font-weight:700; color:var(--gold-light);"></div>
+            <div id="mktTitle" style="font-size:13px; font-weight:700; color:var(--blue-accent);"></div>
             <button class="btn-action" onclick="copyMktCopy()">📋 Copy Content</button>
           </div>
-          <pre id="mktContent" style="white-space:pre-wrap; font-family:'Inter', sans-serif; font-size:13px; line-height:1.6; color:#e2e8f0;"></pre>
+          <pre id="mktContent" style="white-space:pre-wrap; font-family:'Inter', sans-serif; font-size:13px; line-height:1.6; color:var(--text-main);"></pre>
         </div>
       </div>
     </div>
@@ -1738,7 +1765,7 @@
   <div id="addCarrierModal" class="modal-overlay">
     <div class="modal-content wide">
       <button class="modal-close" onclick="closeAddCarrierModal()">&times;</button>
-      <h3 style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:6px;">
+      <h3 style="font-size:18px; font-weight:800; color:var(--text-main); margin-bottom:6px;">
         🚛 Onboard Carrier &amp; Fleet Unit
       </h3>
       <p style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">
@@ -1783,8 +1810,8 @@
           </div>
         </div>
 
-        <div style="background:rgba(30,41,59,0.5); border:1px dashed var(--border-subtle); border-radius:10px; padding:12px; margin-bottom:16px;">
-          <div style="font-size:12px; font-weight:700; color:var(--gold-light); margin-bottom:10px;">TRUCK UNIT SPECIFICATION</div>
+        <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:12px; margin-bottom:16px;">
+          <div style="font-size:12px; font-weight:700; color:var(--blue-accent); margin-bottom:10px;">TRUCK UNIT SPECIFICATION</div>
           <div class="form-grid-2">
             <div class="form-group">
               <label class="form-label">Unit Number</label>
@@ -1840,7 +1867,7 @@
   <div id="addLoadModal" class="modal-overlay">
     <div class="modal-content wide">
       <button class="modal-close" onclick="closeAddLoadModal()">&times;</button>
-      <h3 style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:6px;">
+      <h3 style="font-size:18px; font-weight:800; color:var(--text-main); margin-bottom:6px;">
         ⚡ Post Spot Freight Load to LoadsNexus
       </h3>
       <p style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">
@@ -1908,7 +1935,7 @@
   <div id="addLimoModal" class="modal-overlay">
     <div class="modal-content wide">
       <button class="modal-close" onclick="closeAddLimoModal()">&times;</button>
-      <h3 style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:6px;">
+      <h3 style="font-size:18px; font-weight:800; color:var(--text-main); margin-bottom:6px;">
         🗽 New NYC Limo Wish Chauffeur Reservation
       </h3>
       <p style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">
@@ -1977,23 +2004,23 @@
   <div id="totpModal" class="modal-overlay">
     <div class="modal-content">
       <button class="modal-close" onclick="closeTotpModal()">&times;</button>
-      <h3 style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:8px;">
+      <h3 style="font-size:18px; font-weight:800; color:var(--text-main); margin-bottom:8px;">
         📱 Google Authenticator Setup
       </h3>
       <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:20px;">
         Pair your Google Authenticator or Microsoft Authenticator app for instant 1-touch 2FA logins without waiting for Yahoo emails.
       </p>
 
-      <div style="background:rgba(30,41,59,0.7); border:1px dashed var(--gold-primary); border-radius:10px; padding:16px; text-align:center; margin-bottom:20px;">
+      <div style="background:#f8fafc; border:1px dashed var(--blue-accent); border-radius:10px; padding:16px; text-align:center; margin-bottom:20px;">
         <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;">Manual Setup Secret Key</div>
-        <div id="totpSecretKey" style="font-family:'JetBrains Mono', monospace; font-size:18px; font-weight:700; color:var(--gold-light); letter-spacing:2px; user-select:all;">
+        <div id="totpSecretKey" style="font-family:'JetBrains Mono', monospace; font-size:18px; font-weight:700; color:var(--blue-accent); letter-spacing:2px; user-select:all;">
           LOADING...
         </div>
       </div>
 
       <div style="margin-bottom:20px;">
         <label style="font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:6px;">Enter 6-Digit Code from App to Confirm</label>
-        <input type="text" id="verifyTotpInput" class="otp-input-single" maxlength="6" placeholder="000000" style="padding:10px; font-size:22px;">
+        <input type="text" id="verifyTotpInput" class="form-input" maxlength="6" placeholder="000000" style="padding:10px; font-size:22px; text-align:center; font-family:'JetBrains Mono', monospace; font-weight:700; letter-spacing:8px;">
       </div>
 
       <button id="confirmTotpBtn" class="btn-submit" style="width:100%;">
@@ -2087,6 +2114,13 @@
       const limo = data.nyclimo_wish || {};
       const ecom = data.buywish_online || {};
 
+      if (data.current_user) {
+        const adminNameEl = document.getElementById('adminName');
+        if (adminNameEl) {
+          adminNameEl.textContent = data.current_user.name || data.current_user.email || 'SuperAdmin';
+        }
+      }
+
       // Top KPI Strip
       document.getElementById('kpiMrr').textContent = fmtMoney(exec.total_empire_mrr_dollars);
       document.getElementById('kpiGrossVolume').textContent = fmtMoney(exec.total_gross_volume_dollars);
@@ -2106,6 +2140,8 @@
       document.getElementById('matrixLnSubs').textContent = (ln.active_subscribers || 0) + ' Paying Members';
       document.getElementById('matrixLnRevenue').textContent = fmtMoney(ln.mrr_dollars) + ' / mo';
       document.getElementById('matrixLimoBookings').textContent = (limo.total_bookings || 0) + ' Total Rides';
+      const matrixLimoRevEl = document.getElementById('matrixLimoRev');
+      if (matrixLimoRevEl) matrixLimoRevEl.textContent = fmtMoney(limo.revenue_dollars) + ' Gross';
       const ecomPaidCount = ecom.total_orders || 0;
       const ecomAbCount = ecom.abandoned_checkouts || 0;
       document.getElementById('matrixEcomOrders').textContent = ecomAbCount > 0 
@@ -2124,7 +2160,7 @@
               const esc = (value) => String(value || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
               const when = row.created_at ? new Date(row.created_at).toLocaleString() : '';
               const mc = esc(row.mc_number ? 'MC ' + row.mc_number : 'No MC');
-              return '<div style="padding:8px 0;border-top:1px solid rgba(148,163,184,0.25);"><strong style="color:#fff;">' + esc(row.company_name || 'Carrier') + '</strong> · ' + mc + '<br><span style="color:#94a3b8;">' + esc([row.owner_name, row.email, row.phone, when].filter(Boolean).join(' · ')) + '</span></div>';
+              return '<div style="padding:10px 0;border-top:1px solid #e2e8f0;"><strong style="color:var(--text-main);">' + esc(row.company_name || 'Carrier') + '</strong> · ' + mc + '<br><span style="color:var(--text-muted);">' + esc([row.owner_name, row.email, row.phone, when].filter(Boolean).join(' · ')) + '</span></div>';
             }).join('')
           : 'No carrier setup forms yet. A submission on shippingwish.com/carrier-setup will show here.';
       }
@@ -2140,7 +2176,7 @@
         }
         const lnBadge = document.getElementById('stripeLnBadge');
         if (lnBadge) {
-          lnBadge.textContent = lnStripe.mode === 'LIVE PRODUCTION' ? '🟢 LIVE PRODUCTION' : '🟡 IN REVIEW (PASSPORT VERIFIED)';
+          lnBadge.textContent = lnStripe.mode === 'LIVE PRODUCTION' ? '🟢 LIVE PRODUCTION' : '🟡 TEST MODE';
           lnBadge.className = lnStripe.mode === 'LIVE PRODUCTION' ? 'badge badge-paid' : 'badge badge-unloading';
         }
       }
@@ -2217,22 +2253,23 @@
           badgeLabel = '🟡 Unloading Tomorrow';
         }
 
+        const srcAttr = t.source === 'ai_dispatch' ? 'ai_dispatch' : 'tms';
         return `
           <tr>
-            <td><strong>#${t.unit_number || t.truck_number || ('TRK-' + t.id)}</strong></td>
+            <td><strong>${escapeHtml(t.unit_number || t.truck_number || ('TRK-' + t.id))}</strong></td>
             <td>
-              <div><strong>${t.carrier_name || 'Fleet Partner'}</strong></div>
-              <div style="font-size:11px; color:var(--text-muted);">${t.carrier_mc ? 'MC: ' + t.carrier_mc : 'ID: #' + t.id}</div>
+              <div><strong>${escapeHtml(t.carrier_name || 'Fleet Partner')}</strong></div>
+              <div style="font-size:11px; color:var(--text-muted);">${t.carrier_mc ? 'MC: ' + escapeHtml(t.carrier_mc) : 'ID: #' + t.id}</div>
             </td>
-            <td>${t.equipment_type || t.trailer_type || '53ft Dry Van'}</td>
+            <td>${escapeHtml(t.equipment_type || t.trailer_type || '53ft Dry Van')}</td>
             <td>
-              <div>${t.assigned_driver_name || 'Assigned Driver'}</div>
-              <div style="font-size:11px; color:var(--gold-light);">${t.assigned_driver_phone || t.carrier_phone || 'Call Ops'}</div>
+              <div>${escapeHtml(t.assigned_driver_name || 'Assigned Driver')}</div>
+              <div style="font-size:11px; color:var(--blue-accent); font-weight:600;">${escapeHtml(t.assigned_driver_phone || t.carrier_phone || '—')}</div>
             </td>
-            <td>${t.next_available_city || 'Regional Hub'}<br><span style="font-size:11px; color:var(--text-subtle);">${t.next_available_date ? new Date(t.next_available_date).toLocaleDateString() : 'Immediate'}</span></td>
+            <td>${escapeHtml(t.next_available_city || '—')}<br><span style="font-size:11px; color:var(--text-subtle);">${t.next_available_date ? new Date(t.next_available_date).toLocaleDateString() : 'Immediate'}</span></td>
             <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
             <td>
-              <select class="status-select" onchange="updateTruckStatus(${t.id}, this.value)">
+              <select class="status-select" onchange="updateTruckStatus(${t.id}, this.value, '${srcAttr}')">
                 <option value="empty" ${st === 'empty' ? 'selected' : ''}>🟢 Empty</option>
                 <option value="booked" ${(st === 'booked' || st === 'dispatched') ? 'selected' : ''}>🔴 Booked</option>
                 <option value="unloading_tomorrow" ${st === 'unloading_tomorrow' ? 'selected' : ''}>🟡 Unloading Tomorrow</option>
@@ -2250,13 +2287,13 @@
       }
     };
 
-    window.updateTruckStatus = async function(truckId, newStatus) {
+    window.updateTruckStatus = async function(truckId, newStatus, source) {
       try {
         const res = await fetch('/api/superadmin/trucks/status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ truck_id: truckId, status: newStatus })
+          body: JSON.stringify({ truck_id: truckId, status: newStatus, source: source || 'tms' })
         });
         const resData = await res.json();
         if (!res.ok) throw new Error(resData.error || 'Failed to update truck status');
@@ -2277,13 +2314,13 @@
       }
       tbody.innerHTML = carriers.map(c => `
         <tr>
-          <td><strong>${c.company_name || c.name}</strong></td>
-          <td>${c.name}</td>
-          <td>${c.mc_number || 'N/A'} / ${c.dot_number || 'N/A'}</td>
-          <td><a href="tel:${c.phone}" style="color:var(--gold-light); text-decoration:none;">${c.phone || 'N/A'}</a></td>
-          <td>${c.email}</td>
+          <td><strong>${escapeHtml(c.company_name || c.name)}</strong></td>
+          <td>${escapeHtml(c.name)}</td>
+          <td>${escapeHtml(c.mc_number || 'N/A')} / ${escapeHtml(c.dot_number || 'N/A')}</td>
+          <td><a href="tel:${escapeHtml(c.phone || '')}" style="color:var(--blue-accent); font-weight:600; text-decoration:none;">${escapeHtml(c.phone || 'N/A')}</a></td>
+          <td>${escapeHtml(c.email)}</td>
           <td><span class="badge badge-booked">${c.truck_count || 1} Trucks</span></td>
-          <td><span class="badge badge-paid">${c.weekly_plan || 'Active TMS'}</span></td>
+          <td><span class="badge badge-paid">${escapeHtml(c.weekly_plan || 'Active TMS')}</span></td>
         </tr>
       `).join('');
     }
@@ -2304,23 +2341,23 @@
       if (cntEl) cntEl.textContent = requests.length;
 
       list.innerHTML = requests.map(r => `
-        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div style="background:#ffffff; border:1px solid #fde68a; border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
-            <div style="font-weight:800; font-size:14px; color:#fff;">
-              Load #${escapeHtml(r.load_number)} &bull; ${escapeHtml(r.pickup_location)} &rarr; ${escapeHtml(r.delivery_location)} &bull; <span style="color:#34d399;">$${parseFloat(r.rate || 0).toLocaleString()}</span>
+            <div style="font-weight:800; font-size:14px; color:var(--text-main);">
+              Load #${escapeHtml(r.load_number)} &bull; ${escapeHtml(r.pickup_location)} &rarr; ${escapeHtml(r.delivery_location)} &bull; <span style="color:#059669;">$${parseFloat(r.rate || 0).toLocaleString()}</span>
             </div>
-            <div style="font-size:12px; color:#fde68a; margin-top:4px;">
+            <div style="font-size:12px; color:#b45309; margin-top:4px;">
               <strong>Reason:</strong> ${escapeHtml(r.cancellation_reason || 'No cancellation reason provided')}
             </div>
-            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
               Requested by: ${escapeHtml(r.requested_by_name || 'Dispatcher')} (${escapeHtml(r.requested_by_email || '')}) &bull; ${r.cancellation_requested_at ? new Date(r.cancellation_requested_at).toLocaleString() : ''}
             </div>
           </div>
           <div style="display:flex; gap:8px;">
-            <button type="button" class="btn-action" style="background:#ef4444; color:#fff; border-color:#dc2626;" onclick="handleCancellationDecision(${r.id}, 'approve')">
+            <button type="button" class="btn-action" style="background:#dc2626; color:#fff; border-color:#b91c1c;" onclick="handleCancellationDecision(${r.id}, 'approve')">
               ✅ Approve Cancellation
             </button>
-            <button type="button" class="btn-action" style="background:#3b82f6; color:#fff; border-color:#2563eb;" onclick="handleCancellationDecision(${r.id}, 'reject')">
+            <button type="button" class="btn-action" style="background:#2563eb; color:#fff; border-color:#1d4ed8;" onclick="handleCancellationDecision(${r.id}, 'reject')">
               ❌ Keep Load Active
             </button>
           </div>
@@ -2385,13 +2422,13 @@
 
         return `
           <tr>
-            <td><strong style="color:#fff;">#${escapeHtml(l.load_number)}</strong></td>
+            <td><strong style="color:var(--text-main);">#${escapeHtml(l.load_number)}</strong></td>
             <td><strong>${escapeHtml(l.carrier_company || 'Unassigned')}</strong></td>
             <td>${escapeHtml(l.dispatcher_name || 'Unassigned')}</td>
             <td>${escapeHtml(l.broker_name || 'Direct Broker')}</td>
             <td>${escapeHtml(l.pickup_location)} ${l.pickup_state ? `(${escapeHtml(l.pickup_state)})` : ''}</td>
             <td>${escapeHtml(l.delivery_location)} ${l.delivery_state ? `(${escapeHtml(l.delivery_state)})` : ''}</td>
-            <td><strong style="color:#34d399;">$${parseFloat(l.rate || 0).toLocaleString()}</strong></td>
+            <td><strong style="color:#059669;">$${parseFloat(l.rate || 0).toLocaleString()}</strong></td>
             <td><span class="badge ${badgeClass}">${(l.status || '').replace('_', ' ').toUpperCase()}</span></td>
             <td>
               <div style="display:flex; gap:6px;">
@@ -2432,7 +2469,7 @@
           <td>${escapeHtml(d.email)}<br><span style="font-size:11px; color:var(--text-muted);">${escapeHtml(d.phone || '')}</span></td>
           <td><span class="badge badge-booked">${d.assigned_carriers_count || 0} Fleets</span></td>
           <td><span class="badge badge-empty">${d.active_loads_count || 0} Active</span></td>
-          <td><strong style="color:#34d399;">$${parseFloat(d.total_revenue || 0).toLocaleString()}</strong></td>
+          <td><strong style="color:#059669;">$${parseFloat(d.total_revenue || 0).toLocaleString()}</strong></td>
         </tr>
       `).join('');
     }
@@ -2540,14 +2577,14 @@
         const rpm = l.miles > 0 ? (l.rate / l.miles).toFixed(2) : '0.00';
         return `
           <tr>
-            <td><strong>#${l.load_number || l.id}</strong></td>
-            <td>${l.origin || (l.origin_city ? l.origin_city + ', ' + l.origin_state : 'Regional Hub')} &rarr; ${l.destination || (l.destination_city ? l.destination_city + ', ' + l.destination_state : 'Dest Hub')}</td>
-            <td>${l.equipment_type || 'Dry Van'}</td>
+            <td><strong>#${escapeHtml(l.load_number || l.id)}</strong></td>
+            <td>${escapeHtml(l.origin || (l.origin_city ? l.origin_city + ', ' + l.origin_state : '—'))} &rarr; ${escapeHtml(l.destination || (l.destination_city ? l.destination_city + ', ' + l.destination_state : '—'))}</td>
+            <td>${escapeHtml(l.equipment_type || 'Dry Van')}</td>
             <td>${Number(l.miles || 0).toLocaleString()} mi</td>
-            <td><strong style="color:#34d399;">${fmtMoney(l.rate)}</strong></td>
-            <td><span style="color:var(--gold-light); font-weight:700;">$${rpm}/mi</span></td>
-            <td>${l.broker_name || 'Direct Broker'}</td>
-            <td><span class="badge ${l.status === 'covered' ? 'badge-booked' : 'badge-empty'}">${l.status || 'Available'}</span></td>
+            <td><strong style="color:#059669;">${fmtMoney(l.rate)}</strong></td>
+            <td><span style="color:var(--blue-accent); font-weight:700;">$${rpm}/mi</span></td>
+            <td>${escapeHtml(l.broker_name || 'Direct Broker')}</td>
+            <td><span class="badge ${l.status === 'covered' ? 'badge-booked' : 'badge-empty'}">${escapeHtml(l.status || 'Available')}</span></td>
           </tr>
         `;
       }).join('');
@@ -2562,16 +2599,16 @@
       }
       tbody.innerHTML = bookings.map(b => `
         <tr>
-          <td><strong>#${b.booking_number || b.id}</strong></td>
+          <td><strong>#${escapeHtml(b.booking_number || b.id)}</strong></td>
           <td>
-            <div>${b.passenger_first_name} ${b.passenger_last_name}</div>
-            <div style="font-size:11px; color:var(--text-muted);">${b.passenger_phone || b.passenger_email}</div>
+            <div>${escapeHtml(b.passenger_first_name)} ${escapeHtml(b.passenger_last_name)}</div>
+            <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(b.passenger_phone || b.passenger_email)}</div>
           </td>
-          <td>${b.service_type || 'Airport Transfer'}</td>
-          <td style="max-width:220px; font-size:12px;">${b.pickup_address} &rarr; ${b.dropoff_address}</td>
-          <td>${b.pickup_date} @ ${b.pickup_time}</td>
-          <td><span class="badge badge-booked">${b.vehicle_id || 'Sedan / SUV'}</span></td>
-          <td><strong style="color:#34d399;">${fmtMoney(b.total_price)}</strong></td>
+          <td>${escapeHtml(b.service_type || 'Airport Transfer')}</td>
+          <td style="max-width:220px; font-size:12px;">${escapeHtml(b.pickup_address)} &rarr; ${escapeHtml(b.dropoff_address)}</td>
+          <td>${escapeHtml(b.pickup_date)} @ ${escapeHtml(b.pickup_time)}</td>
+          <td><span class="badge badge-booked">${escapeHtml(b.vehicle_id || 'Sedan / SUV')}</span></td>
+          <td><strong style="color:#059669;">${fmtMoney(b.total_price)}</strong></td>
           <td>
             <select class="status-select" onchange="updateLimoStatus(${b.id}, this.value)">
               <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>Pending</option>
@@ -2665,12 +2702,12 @@
       }
       tbody.innerHTML = products.map(p => `
         <tr>
-          <td><strong>${p.title}</strong></td>
-          <td>${p.category || 'General'}</td>
+          <td><strong>${escapeHtml(p.title)}</strong></td>
+          <td>${escapeHtml(p.category || 'General')}</td>
           <td>${fmtMoney(p.retail_price)}</td>
           <td style="color:var(--text-muted);">${fmtMoney(p.supplier_cost)}</td>
           <td><span class="badge badge-paid">+${p.estimated_margin}%</span></td>
-          <td><strong style="color:var(--gold-light);">${p.trend_score}/100</strong></td>
+          <td><strong style="color:var(--blue-accent);">${p.trend_score}/100</strong></td>
         </tr>
       `).join('');
     }
@@ -2701,14 +2738,14 @@
 
         aiMatchesBody.innerHTML = data.matches.map(m => `
           <tr>
-            <td><strong>#${m.truck.unit || m.truck.id}</strong><br><span style="font-size:11px; color:var(--text-muted);">${m.truck.equipment}</span></td>
-            <td><strong>${m.truck.carrier}</strong><br><span style="font-size:11px; color:var(--gold-light);">${m.truck.phone || 'Ops Call'}</span></td>
-            <td>${m.truck.location}</td>
-            <td><strong>#${m.recommended_load.load_number || m.recommended_load.id}</strong> (${m.recommended_load.broker_name || 'Direct Broker'})</td>
-            <td>${m.recommended_load.origin || m.recommended_load.origin_city || 'Origin'} &rarr; ${m.recommended_load.destination || m.recommended_load.destination_city || 'Destination'}</td>
-            <td><strong style="color:#34d399;">${fmtMoney(m.recommended_load.rate)}</strong></td>
+            <td><strong>${escapeHtml(m.truck.unit || m.truck.id)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${escapeHtml(m.truck.equipment)}</span></td>
+            <td><strong>${escapeHtml(m.truck.carrier)}</strong><br><span style="font-size:11px; color:var(--blue-accent); font-weight:600;">${escapeHtml(m.truck.phone || '—')}</span></td>
+            <td>${escapeHtml(m.truck.location)}</td>
+            <td><strong>#${escapeHtml(m.recommended_load.load_number || m.recommended_load.id)}</strong> (${escapeHtml(m.recommended_load.broker_name || 'Direct Broker')})</td>
+            <td>${escapeHtml(m.recommended_load.origin || m.recommended_load.origin_city || '—')} &rarr; ${escapeHtml(m.recommended_load.destination || m.recommended_load.destination_city || '—')}</td>
+            <td><strong style="color:#059669;">${fmtMoney(m.recommended_load.rate)}</strong></td>
             <td>
-              <button class="btn-action" onclick="showToast('Dispatch packet pre-generated for truck #${m.truck.unit}', 'success')">
+              <button class="btn-action" onclick="showToast('Dispatch packet pre-generated for truck ${escapeHtml(m.truck.unit)}', 'success')">
                 Dispatch Load &rarr;
               </button>
             </td>

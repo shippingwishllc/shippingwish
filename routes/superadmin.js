@@ -120,8 +120,7 @@ async function ensureSuperAdminTables() {
     await pool.query(`
       DELETE FROM ecommerce_orders 
       WHERE order_number IN ('BWO-89102', 'BWO-89103', 'BWO-89104', 'BWO-89105') 
-         OR payment_status = 'demo' 
-         OR (payment_status != 'paid' AND upper(order_number) <> 'BWO-8A280115652B');
+         OR payment_status = 'demo';
       DELETE FROM ecommerce_products WHERE handle IN ('cordless-muscle-gun', 'smart-car-mount', 'rgb-light-bar', 'tactical-cargo-organizer');
       DELETE FROM limo_bookings 
       WHERE booking_number IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084') 
@@ -129,11 +128,11 @@ async function ensureSuperAdminTables() {
          OR passenger_email IN ('vip@nyclimowish.com', 'admin@nyclimowish.com') 
          OR total_price = 985 
          OR passenger_first_name IN ('James', 'Alexander', 'Sophia', 'Marcus');
-      DELETE FROM loads WHERE load_number IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016');
+      DELETE FROM loads 
+      WHERE load_number IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
+         OR COALESCE(source_type, '') = 'dat_sync';
       DELETE FROM trucks 
-      WHERE truck_number IN ('TRK-101', 'TRK-102', 'TRK-103', 'TRK-104') 
-         OR unit_number IN ('101', '102', '103', '104', 'Unit #101', 'Unit #102', 'Unit #103', 'Unit #104')
-         OR carrier_id IN (SELECT id FROM users WHERE email IN ('ops@apexfreight.com', 'elena@ironcladhauling.com', 'demo@shippingwish.com'));
+      WHERE carrier_id IN (SELECT id FROM users WHERE email IN ('ops@apexfreight.com', 'elena@ironcladhauling.com', 'demo@shippingwish.com'));
       DELETE FROM users WHERE email IN ('ops@apexfreight.com', 'elena@ironcladhauling.com', 'demo@shippingwish.com');
       DELETE FROM billing_subscriptions WHERE stripe_subscription_id IN ('sub_live_sw_01', 'sub_live_sw_02', 'sub_live_ln_01');
       DELETE FROM audit_log WHERE action = 'DEMO_SEED_ARCHIVED' OR (ip_address = '127.0.0.1' AND action = 'SUPERADMIN_INITIALIZED');
@@ -213,16 +212,16 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         u.created_at,
         count(t.id) as truck_count
       FROM users u
-      LEFT JOIN trucks t ON t.carrier_id = u.id AND t.is_active IS NOT FALSE AND t.truck_number NOT IN ('TRK-101', 'TRK-102', 'TRK-103', 'TRK-104')
+      LEFT JOIN trucks t ON t.carrier_id = u.id AND t.is_active IS NOT FALSE
       WHERE u.role IN ('carrier', 'carrier_admin') 
         AND u.deleted_at IS NULL
-        AND u.email NOT IN ('ops@apexfreight.com', 'elena@ironcladhauling.com')
+        AND u.email NOT IN ('ops@apexfreight.com', 'elena@ironcladhauling.com', 'demo@shippingwish.com')
       GROUP BY u.id, u.name, u.company_name, u.email, u.phone, u.mc_number, u.dot_number, u.weekly_plan, u.created_at
       ORDER BY u.created_at DESC
       LIMIT 25
     `).catch(() => ({ rows: [] }));
 
-    // Fleet Trucks Status: Booked vs Empty vs Unloading Tomorrow
+    // Fleet Trucks Status: Booked vs Empty vs Unloading Tomorrow (combines TMS trucks + AI Dispatch roster trucks)
     const trucksQuery = await pool.query(`
       SELECT 
         t.id,
@@ -242,12 +241,44 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       FROM trucks t
       LEFT JOIN users u ON u.id = t.carrier_id
       WHERE t.is_active IS NOT FALSE
-        AND t.truck_number NOT IN ('TRK-101', 'TRK-102', 'TRK-103', 'TRK-104')
-        AND COALESCE(t.unit_number, '') NOT IN ('101', '102', '103', '104', 'Unit #101', 'Unit #102', 'Unit #103', 'Unit #104')
         AND COALESCE(u.email, '') NOT IN ('ops@apexfreight.com', 'elena@ironcladhauling.com', 'demo@shippingwish.com')
       ORDER BY t.id DESC
       LIMIT 50
     `).catch(() => ({ rows: [] }));
+
+    // Also include active trucks from ai_dispatch_carriers if not already in trucksQuery
+    const aiCarriersRes = await pool.query(`
+      SELECT id, company_name, contact_name, phone, email, mc_number, equipment, empty_zip, status, truck_number
+      FROM ai_dispatch_carriers
+      ORDER BY id DESC
+      LIMIT 50
+    `).catch(() => ({ rows: [] }));
+
+    const combinedTrucks = [...trucksQuery.rows];
+    const existingNums = new Set(combinedTrucks.map(t => String(t.truck_number || t.unit_number || '').replace(/^Unit\s*#?/i, '').trim().toLowerCase()).filter(Boolean));
+    for (const ac of aiCarriersRes.rows) {
+      const num = String(ac.truck_number || ac.id || '101').replace(/^Unit\s*#?/i, '').trim();
+      if (existingNums.has(num.toLowerCase())) continue;
+      existingNums.add(num.toLowerCase());
+      const acStatus = String(ac.status || 'active').toLowerCase();
+      combinedTrucks.push({
+        id: ac.id,
+        source: 'ai_dispatch',
+        unit_number: `Unit #${num}`,
+        truck_number: num,
+        equipment_type: ac.equipment || 'Box Truck',
+        trailer_type: ac.equipment || 'Box Truck',
+        status: acStatus,
+        dispatch_status: acStatus === 'booked' ? 'booked' : (acStatus === 'rolling' ? 'booked' : 'empty'),
+        next_available_date: null,
+        next_available_city: ac.empty_zip || '—',
+        assigned_driver_name: ac.contact_name || ac.company_name || 'Driver',
+        assigned_driver_phone: ac.phone || '',
+        carrier_name: ac.company_name || 'Fleet Carrier',
+        carrier_phone: ac.phone || '',
+        carrier_mc: ac.mc_number || ''
+      });
+    }
 
     let trucksBooked = 0;
     let trucksEmpty = 0;
@@ -257,10 +288,10 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toISOString().slice(0, 10);
 
-    trucksQuery.rows.forEach(t => {
+    combinedTrucks.forEach(t => {
       const st = String(t.dispatch_status || t.status || 'empty').toLowerCase();
       const nextDate = t.next_available_date ? new Date(t.next_available_date).toISOString().slice(0, 10) : '';
-      if (st === 'booked' || st === 'dispatched' || st === 'in_transit') {
+      if (st === 'booked' || st === 'dispatched' || st === 'in_transit' || st === 'rolling') {
         trucksBooked++;
       } else if (st === 'unloading_tomorrow' || nextDate === tomorrowStr) {
         trucksUnloadingTomorrow++;
@@ -274,12 +305,12 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       SELECT 
         l.id,
         l.load_number,
-        COALESCE(c.company_name, c.name, 'Unassigned Carrier') as carrier_company,
-        COALESCE(d.name, 'Unassigned Dispatcher') as dispatcher_name,
+        COALESCE(c.company_name, c.name, 'Unassigned') as carrier_company,
+        COALESCE(d.name, 'Unassigned') as dispatcher_name,
         COALESCE(l.broker_name, 'Direct Broker') as broker_name,
-        COALESCE(l.pickup_location, 'Origin') as pickup_location,
+        COALESCE(l.pickup_location, '—') as pickup_location,
         l.pickup_state,
-        COALESCE(l.delivery_location, 'Destination') as delivery_location,
+        COALESCE(l.delivery_location, '—') as delivery_location,
         l.delivery_state,
         COALESCE(l.rate, 0) as rate,
         l.status,
@@ -289,6 +320,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       LEFT JOIN users c ON c.id = l.carrier_id
       LEFT JOIN users d ON d.id = l.dispatcher_id
       WHERE l.load_number NOT IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
+        AND COALESCE(l.source_type, '') <> 'dat_sync'
       ORDER BY l.id DESC
       LIMIT 50
     `).catch(() => ({ rows: [] }));
@@ -425,16 +457,19 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       SELECT count(*) as total_brokers FROM users WHERE role = 'broker' AND deleted_at IS NULL
     `).catch(() => ({ rows: [{ total_brokers: 0 }] }));
 
-    // Loads Metrics
+    // Loads Metrics (only real loads, excluding synthetic dat_sync rows)
     const loadsStatsQuery = await pool.query(`
       SELECT 
         count(*) as total_loads,
         count(*) FILTER (WHERE status::text = 'new') as available_loads,
         count(*) FILTER (WHERE status::text IN ('booked', 'covered', 'delivered', 'in_transit', 'dispatched', 'paid')) as covered_loads,
+        coalesce(sum(rate) FILTER (WHERE rate > 0 AND status::text = 'new'), 0) as open_freight_valuation,
+        coalesce(sum(rate) FILTER (WHERE rate > 0 AND status::text IN ('booked', 'covered', 'delivered', 'in_transit', 'dispatched', 'paid')), 0) as booked_freight_valuation,
         coalesce(sum(rate) FILTER (WHERE rate > 0), 0) as total_freight_valuation
       FROM loads
       WHERE load_number NOT IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
-    `).catch(() => ({ rows: [{ total_loads: 0, available_loads: 0, covered_loads: 0, total_freight_valuation: 0 }] }));
+        AND COALESCE(source_type, '') <> 'dat_sync'
+    `).catch(() => ({ rows: [{ total_loads: 0, available_loads: 0, covered_loads: 0, open_freight_valuation: 0, booked_freight_valuation: 0, total_freight_valuation: 0 }] }));
 
     const loadStats = loadsStatsQuery.rows[0];
 
@@ -443,8 +478,8 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       SELECT 
         id,
         load_number,
-        COALESCE(pickup_location, 'Chicago, IL') as origin,
-        COALESCE(delivery_location, 'Atlanta, GA') as destination,
+        COALESCE(pickup_location, '—') as origin,
+        COALESCE(delivery_location, '—') as destination,
         equipment_type,
         rate,
         miles,
@@ -454,6 +489,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         broker_name
       FROM loads
       WHERE load_number NOT IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
+        AND COALESCE(source_type, '') <> 'dat_sync'
       ORDER BY id DESC
       LIMIT 20
     `).catch(() => ({ rows: [] }));
@@ -533,14 +569,13 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
     `).catch(() => ({ rows: [] }));
 
     // ---------------------------------------------------------
-    // COMBINED EXECUTIVE TOTALS
+    // COMBINED EXECUTIVE TOTALS (100% Real Verified Revenue)
     // ---------------------------------------------------------
     const totalEmpireMrrDollars = Math.round((swWeeklyMrrCents + lnMrrCents) / 100);
     const totalGrossVolumeDollars = Math.round(
       parseFloat(invoiceStats.paid_amount || 0) +
       parseFloat(limoStats.total_revenue || 0) +
-      parseFloat(ecomStats.total_sales || 0) +
-      (parseFloat(loadStats.total_freight_valuation || 0) * 0.10) // 10% brokerage commission
+      parseFloat(ecomStats.total_sales || 0)
     );
 
     // Stripe accounts operational health
@@ -585,17 +620,25 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
     res.json({
       ok: true,
       timestamp: new Date().toISOString(),
+      current_user: req.user ? {
+        id: req.user.id,
+        name: req.user.name || 'Super Admin',
+        email: req.user.email || '',
+        role: req.user.role || 'super_admin'
+      } : null,
       stripe_health: stripeHealth,
       carrier_setup_requests: carrierSetupRequests,
       executive_summary: {
         total_empire_mrr_dollars: totalEmpireMrrDollars,
         total_subscribers: swActiveSubsCount + lnActiveSubsCount,
         total_gross_volume_dollars: totalGrossVolumeDollars,
-        total_trucks: trucksQuery.rows.length,
+        total_trucks: combinedTrucks.length,
         trucks_booked: trucksBooked,
         trucks_empty: trucksEmpty,
         trucks_unloading_tomorrow: trucksUnloadingTomorrow,
         active_loads_valuation: parseFloat(loadStats.total_freight_valuation || 0),
+        open_loads_valuation: parseFloat(loadStats.open_freight_valuation || 0),
+        booked_loads_valuation: parseFloat(loadStats.booked_freight_valuation || 0),
         total_limo_rides: parseInt(limoStats.total_bookings, 10),
         total_ecom_orders: parseInt(ecomStats.total_orders, 10),
         abandoned_checkouts: parseInt(ecomStats.abandoned_checkouts_count || 0, 10)
@@ -607,7 +650,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         total_invoices_paid_dollars: parseFloat(invoiceStats.paid_amount || 0),
         total_invoices_pending_dollars: parseFloat(invoiceStats.pending_amount || 0),
         onboarded_carriers: carriersQuery.rows,
-        fleet_trucks: trucksQuery.rows,
+        fleet_trucks: combinedTrucks,
         trucks_breakdown: {
           booked: trucksBooked,
           empty: trucksEmpty,
@@ -756,7 +799,7 @@ router.post('/carriers/add', requireAuth, requireSuperAdmin, async (req, res) =>
 // 3. TRUCK STATUS TOGGLE (Empty / Booked / Unloading Tomorrow)
 // -------------------------------------------------------------
 router.post('/trucks/status', requireAuth, requireSuperAdmin, async (req, res) => {
-  const { truck_id, status, next_available_date, next_available_city } = req.body;
+  const { truck_id, status, next_available_date, next_available_city, source } = req.body;
   if (!truck_id || !status) {
     return res.status(400).json({ error: 'Truck ID and status are required.' });
   }
@@ -767,13 +810,27 @@ router.post('/trucks/status', requireAuth, requireSuperAdmin, async (req, res) =
   }
 
   try {
-    await pool.query(`
-      UPDATE trucks SET
-        dispatch_status = $1,
-        next_available_date = COALESCE($2, next_available_date),
-        next_available_city = COALESCE($3, next_available_city)
-      WHERE id = $4
-    `, [status, next_available_date || null, next_available_city || null, truck_id]);
+    let updatedCount = 0;
+    if (source !== 'ai_dispatch') {
+      const r1 = await pool.query(`
+        UPDATE trucks SET
+          dispatch_status = $1,
+          next_available_date = COALESCE($2, next_available_date),
+          next_available_city = COALESCE($3, next_available_city)
+        WHERE id = $4
+      `, [status, next_available_date || null, next_available_city || null, truck_id]);
+      updatedCount = r1.rowCount || 0;
+    }
+
+    if (source === 'ai_dispatch' || updatedCount === 0) {
+      await pool.query(`
+        UPDATE ai_dispatch_carriers SET
+          status = $1,
+          current_location = COALESCE($2, current_location),
+          updated_at = NOW()
+        WHERE id = $3
+      `, [status, next_available_city || null, truck_id]).catch(() => {});
+    }
 
     res.json({ ok: true, message: `Truck #${truck_id} status updated to ${status}.` });
   } catch (err) {
@@ -815,8 +872,8 @@ router.post('/loads/add', requireAuth, requireSuperAdmin, async (req, res) => {
       calcRate,
       rpm,
       broker_name || 'Direct Broker Partner',
-      broker_phone || '(800) 555-0199',
-      broker_mc || 'MC-889102',
+      broker_phone || '',
+      broker_mc || '',
       commodity || 'General Freight'
     ]);
 
@@ -864,7 +921,7 @@ router.post('/limo/add', requireAuth, requireSuperAdmin, async (req, res) => {
       firstName,
       lastName,
       email || 'vip@nyclimowish.com',
-      phone || '(212) 555-0100',
+      phone || '',
       total_price ? parseFloat(total_price) : 195.00,
       payment_status || 'paid'
     ]);
@@ -925,29 +982,49 @@ router.post('/ecom/order-status', requireAuth, requireSuperAdmin, async (req, re
 // -------------------------------------------------------------
 router.post('/ai/match-loads', requireAuth, requireSuperAdmin, async (req, res) => {
   try {
-    // Find all empty or unloading tomorrow trucks
+    // Find all empty or unloading tomorrow trucks across both tables
     const emptyTrucks = await pool.query(`
       SELECT t.id, t.unit_number, t.truck_number, t.equipment_type, t.next_available_city, u.company_name, u.phone
       FROM trucks t
-      JOIN users u ON u.id = t.carrier_id
+      LEFT JOIN users u ON u.id = t.carrier_id
       WHERE coalesce(t.dispatch_status, 'empty') IN ('empty', 'unloading_tomorrow')
       LIMIT 15
     `).catch(() => ({ rows: [] }));
 
-    // Find live available loads
+    const aiTrucks = await pool.query(`
+      SELECT id, truck_number AS unit_number, truck_number, equipment_type, current_location AS next_available_city, company_name, phone
+      FROM ai_dispatch_carriers
+      WHERE is_active = true AND coalesce(status, 'empty') IN ('empty', 'unloading_tomorrow', 'available')
+      LIMIT 15
+    `).catch(() => ({ rows: [] }));
+
+    const allEmptyTrucks = [...emptyTrucks.rows];
+    const seenUnits = new Set(allEmptyTrucks.map(t => String(t.unit_number || t.truck_number || '').trim().toLowerCase()));
+    aiTrucks.rows.forEach(at => {
+      const uKey = String(at.unit_number || '').trim().toLowerCase();
+      if (!uKey || !seenUnits.has(uKey)) {
+        seenUnits.add(uKey);
+        allEmptyTrucks.push(at);
+      }
+    });
+
+    // Find live available loads (excluding synthetic dat_sync loads)
     const liveLoads = await pool.query(`
       SELECT id, load_number,
-        COALESCE(pickup_location, 'Chicago, IL') as origin,
-        COALESCE(delivery_location, 'Atlanta, GA') as destination,
+        COALESCE(NULLIF(pickup_location, ''), '—') as origin,
+        COALESCE(NULLIF(delivery_location, ''), '—') as destination,
         equipment_type, rate, miles, broker_name
       FROM loads
       WHERE status::text = 'new'
+        AND deleted_at IS NULL
+        AND COALESCE(source_type, '') <> 'dat_sync'
+      ORDER BY created_at DESC
       LIMIT 30
     `).catch(() => ({ rows: [] }));
 
     // AI heuristic matching by equipment compatibility and location
     const matches = [];
-    emptyTrucks.rows.forEach(truck => {
+    allEmptyTrucks.forEach(truck => {
       const candidates = liveLoads.rows.filter(load => {
         if (!truck.equipment_type || !load.equipment_type) return true;
         const tEq = String(truck.equipment_type).toLowerCase();
@@ -965,8 +1042,8 @@ router.post('/ai/match-loads', requireAuth, requireSuperAdmin, async (req, res) 
             unit: truck.unit_number || truck.truck_number || `Unit #${truck.id}`,
             equipment: truck.equipment_type || '53ft Dry Van',
             carrier: truck.company_name || 'Fleet Carrier Partner',
-            phone: truck.phone || '(800) 555-0100',
-            location: truck.next_available_city || 'Regional Hub'
+            phone: truck.phone || '—',
+            location: truck.next_available_city || '—'
           },
           recommended_load: candidates[0],
           alternate_loads_count: Math.max(0, candidates.length - 1)
@@ -976,7 +1053,7 @@ router.post('/ai/match-loads', requireAuth, requireSuperAdmin, async (req, res) 
 
     res.json({
       ok: true,
-      total_empty_trucks: emptyTrucks.rows.length,
+      total_empty_trucks: allEmptyTrucks.length,
       total_available_loads: liveLoads.rows.length,
       matches
     });
