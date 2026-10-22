@@ -547,6 +547,11 @@
         selectBrand(activeBrand);
         loadRecentPosts('');
         loadEngagementLogs();
+        // Trigger background 24/7 MCP check for overdue daily posts & unanswered comments/DMs
+        fetch('/api/social/cron/tick').then(() => {
+          loadRecentPosts('');
+          loadEngagementLogs();
+        }).catch(() => {});
       }
     } catch (err) {
       console.warn('Init error:', err);
@@ -834,32 +839,41 @@
     const btn = document.getElementById('btn-blast-all');
     btn.disabled = true;
     const origHtml = btn.innerHTML;
-    btn.innerHTML = '<span class="hub-spinner"></span> <span>Publishing All 4 Brands (~35-50s)...</span>';
-
-    const toast = showToast('🚀 MCP AI Agent charon brands (Shipping Wish, LoadsNexus, NYC Limo Wish, BuyWish) ke liye unique posts aur Leica photos bana kar live publish kar raha hai...', 'loading', 65000);
+    const allBrandKeys = ['shippingwish', 'loadsnexus', 'nyclimowish', 'buywish'];
+    let totalPublished = 0;
 
     try {
-      const res = await fetch('/api/social/autopilot/run-all', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-      const data = await res.json();
-      if (toast) toast.remove();
+      for (let i = 0; i < allBrandKeys.length; i++) {
+        const bKey = allBrandKeys[i];
+        const bName = brandsData[bKey]?.name || bKey;
+        btn.innerHTML = `<span class="hub-spinner"></span> <span>Publishing (${i + 1}/4): ${escapeHtml(bName)}...</span>`;
+        const stepToast = showToast(`🚀 [${i + 1}/4] ${bName}: Synthesizing unique GPT-4o post & Leica photo and publishing live...`, 'loading', 30000);
 
-      if (data.ok && Array.isArray(data.published)) {
-        const totalPublished = data.published.reduce((acc, b) => {
-          const okCount = Array.isArray(b.results) ? b.results.filter(r => r.status === 'published').length : 0;
-          return acc + okCount;
-        }, 0);
-        showToast(`🎉 All 4 Brands Auto-Pilot Complete! ${totalPublished} live posts published across your connected channels!`, 'success', 9000);
-        loadRecentPosts('');
-        loadEngagementLogs();
-      } else {
-        showToast(data.error || 'Auto-Pilot finished with notices.', 'warning', 7000);
+        const res = await fetch('/api/social/autopilot/run-all', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brand: bKey })
+        });
+        const data = await res.json();
+        if (stepToast) stepToast.remove();
+
+        if (data.ok && Array.isArray(data.published)) {
+          data.published.forEach(item => {
+            const okList = Array.isArray(item.results) ? item.results.filter(r => r.status === 'published') : [];
+            totalPublished += okList.length;
+            if (okList.length > 0) {
+              showToast(`✅ ${bName}: Published "${item.title}" (${item.visual_style || 'Editorial'}) on ${okList.map(r => r.platform.toUpperCase()).join(', ')}!`, 'success', 6000);
+            } else if (item.error) {
+              showToast(`⚠️ ${bName}: ${item.error}`, 'warning', 7000);
+            }
+          });
+          loadRecentPosts('');
+        }
       }
+      showToast(`🎉 4-Brand Auto-Pilot Complete! ${totalPublished} live post(s) published across your channels!`, 'success', 9000);
+      loadRecentPosts('');
+      loadEngagementLogs();
     } catch (err) {
-      if (toast) toast.remove();
       showToast('Auto-Pilot error: ' + err.message, 'error', 7000);
     } finally {
       btn.disabled = false;

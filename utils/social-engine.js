@@ -1278,18 +1278,16 @@ async function runAutonomousSocialManagerTick(options = {}) {
     const brandKeys = targetBrand ? [targetBrand] : Object.keys(BRANDS);
     const { rows: credsList } = await pool.query('SELECT * FROM social_brand_credentials WHERE brand = ANY($1)', [brandKeys]);
 
-    const publishedSummary = [];
-
-    for (const brandKey of brandKeys) {
+    const publishedSummary = await Promise.all(brandKeys.map(async (brandKey) => {
       const creds = credsList.find(c => c.brand === brandKey);
-      if (!creds) continue;
+      if (!creds) return null;
 
-      if (!forcePublishAll && !creds.autopilot_enabled) continue;
+      if (!forcePublishAll && !creds.autopilot_enabled) return null;
 
       // Check if already posted within the last 20 hours (unless forcePublishAll is true)
       if (!forcePublishAll && creds.last_posted_at) {
         const hoursSinceLast = (Date.now() - new Date(creds.last_posted_at).getTime()) / (1000 * 60 * 60);
-        if (hoursSinceLast < 20) continue;
+        if (hoursSinceLast < 20) return null;
       }
 
       try {
@@ -1299,28 +1297,28 @@ async function runAutonomousSocialManagerTick(options = {}) {
         if (creds.linkedin_access_token) activePlatforms.push('linkedin');
 
         const pubResults = await publishBrandPost(brandKey, postObj, activePlatforms);
-        publishedSummary.push({
+        return {
           brand: brandKey,
           title: postObj.title,
           category: postObj.category,
           visual_style: postObj.visual_style_label,
           image_url: postObj.image_url,
           results: pubResults
-        });
+        };
       } catch (brandErr) {
-        publishedSummary.push({
+        return {
           brand: brandKey,
           error: brandErr.message
-        });
+        };
       }
-    }
+    }));
 
     // Also scan & auto-reply to new comments and DMs across all brands
     const engagementActions = await scanAndReplySocialEngagement(targetBrand).catch(() => []);
 
     return {
       ok: true,
-      published: publishedSummary,
+      published: publishedSummary.filter(Boolean),
       engagement_replies: engagementActions
     };
   } finally {
