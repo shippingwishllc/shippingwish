@@ -34,17 +34,15 @@ router.get('/brands', async (req, res) => {
     for (const c of creds) {
       let igId = c.instagram_account_id;
       if (!igId && c.facebook_page_id && c.facebook_access_token) {
-        // Non-blocking auto-detect of linked Instagram Business Account
-        detectInstagramAccount(c.facebook_page_id, c.facebook_access_token)
-          .then(detected => {
-            if (detected) {
-              pool.query(
-                'UPDATE social_brand_credentials SET instagram_account_id = $1, instagram_access_token = COALESCE(instagram_access_token, facebook_access_token) WHERE brand = $2',
-                [detected, c.brand]
-              ).catch(() => {});
-            }
-          })
-          .catch(() => {});
+        // Await auto-detection so serverless does not freeze before saving
+        const detected = await detectInstagramAccount(c.facebook_page_id, c.facebook_access_token).catch(() => null);
+        if (detected) {
+          igId = detected;
+          await pool.query(
+            'UPDATE social_brand_credentials SET instagram_account_id = $1, instagram_access_token = COALESCE(instagram_access_token, facebook_access_token) WHERE brand = $2',
+            [detected, c.brand]
+          ).catch(() => {});
+        }
       }
 
       if (c.autopilot_enabled) {
@@ -711,6 +709,37 @@ router.post('/auto-reply-test', async (req, res) => {
     }
     const reply = await generateAiCommentReply(brand, user_comment, post_context);
     res.json({ ok: true, reply });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/social/sync-instagram
+ * Live sync & inspect linked Instagram Business Accounts across all 4 Facebook Pages
+ */
+router.get('/sync-instagram', async (req, res) => {
+  try {
+    await ensureSocialSchema();
+    const { rows: creds } = await pool.query('SELECT * FROM social_brand_credentials ORDER BY brand');
+    const report = [];
+    for (const c of creds) {
+      const dbg = await detectInstagramAccount(c.facebook_page_id, c.facebook_access_token, true);
+      if (dbg && dbg.igId) {
+        await pool.query(
+          'UPDATE social_brand_credentials SET instagram_account_id = $1, instagram_access_token = COALESCE(instagram_access_token, facebook_access_token) WHERE brand = $2',
+          [dbg.igId, c.brand]
+        ).catch(() => {});
+      }
+      report.push({
+        brand: c.brand,
+        facebook_page_id: c.facebook_page_id,
+        saved_ig_id: dbg?.igId || c.instagram_account_id || null,
+        ig_username: dbg?.username || null,
+        meta_response: dbg?.raw || null
+      });
+    }
+    res.json({ ok: true, report });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

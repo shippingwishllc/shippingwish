@@ -549,18 +549,42 @@ RETURN STRICT JSON ONLY:
 
 /**
  * Auto-detect linked Instagram Business Account from a Facebook Page
+ * Checks instagram_business_account, connected_instagram_account, instagram_accounts, and page_backed_instagram_accounts
  */
-async function detectInstagramAccount(pageId, pageAccessToken) {
-  if (!pageId || !pageAccessToken) return null;
+async function detectInstagramAccount(pageId, pageAccessToken, returnDebug = false) {
+  if (!pageId || !pageAccessToken) return returnDebug ? { igId: null, reason: 'missing_page_or_token' } : null;
   try {
-    const res = await fetch(
-      `https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account,connected_instagram_account&access_token=${encodeURIComponent(pageAccessToken)}`
-    );
+    const url = `https://graph.facebook.com/v21.0/${pageId}?fields=id,name,instagram_business_account{id,username,name},connected_instagram_account{id,username,name},instagram_accounts{id,username}&access_token=${encodeURIComponent(pageAccessToken)}`;
+    const res = await fetch(url);
     const data = await res.json();
-    const igId = data?.instagram_business_account?.id || data?.connected_instagram_account?.id || null;
+
+    const igId =
+      data?.instagram_business_account?.id ||
+      data?.connected_instagram_account?.id ||
+      data?.instagram_accounts?.data?.[0]?.id ||
+      null;
+
+    if (returnDebug) {
+      let tokenDebug = null;
+      try {
+        const permRes = await fetch(`https://graph.facebook.com/v21.0/me?fields=id,name&access_token=${encodeURIComponent(pageAccessToken)}`);
+        tokenDebug = await permRes.json();
+      } catch (_) {}
+      return {
+        igId: igId ? String(igId) : null,
+        username:
+          data?.instagram_business_account?.username ||
+          data?.connected_instagram_account?.username ||
+          data?.instagram_accounts?.data?.[0]?.username ||
+          null,
+        raw: data,
+        tokenDebug
+      };
+    }
+
     return igId ? String(igId) : null;
-  } catch (_) {
-    return null;
+  } catch (err) {
+    return returnDebug ? { igId: null, error: err.message } : null;
   }
 }
 
