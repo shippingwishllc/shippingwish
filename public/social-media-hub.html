@@ -277,7 +277,7 @@
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
             <span style="font-size:14px;">📸</span> Instagram: <span class="badge badge-booked" id="badge-ig">Checking...</span>
-            <a href="/api/social/auth/meta?brand=shippingwish" id="btn-quick-ig-connect" style="font-size:11px;background:#e1306c;color:#fff;padding:2px 8px;border-radius:6px;text-decoration:none;font-weight:700;margin-left:4px;display:none;">1-Click Sync IG</a>
+            <button type="button" id="btn-quick-ig-connect" onclick="openIgSyncModal()" style="font-size:11px;background:#e1306c;color:#fff;padding:3px 9px;border-radius:6px;border:none;cursor:pointer;font-weight:700;margin-left:4px;display:none;">⚡ 1-Click Sync IG</button>
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
             <span style="font-size:14px;">💼</span> LinkedIn: <span class="badge badge-overdue" id="badge-li">Disconnected</span>
@@ -457,6 +457,55 @@
       </div>
 
     </main>
+  </div>
+</div>
+
+<!-- INSTAGRAM & META PERMANENT TOKEN SYNC MODAL -->
+<div class="modal-overlay" id="ig-sync-modal">
+  <div class="modal-content" style="max-width:720px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;font-size:18px;font-weight:800;">📸 Connect Instagram (@shippingwishllc) &amp; Meta Pages</h3>
+      <button style="border:none;background:none;font-size:20px;cursor:pointer;" onclick="closeModal('ig-sync-modal')">✕</button>
+    </div>
+
+    <div style="font-size:13.5px;line-height:1.65;color:#334155;display:flex;flex-direction:column;gap:14px;">
+      <div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:12px 14px;border-radius:6px;">
+        <strong style="color:#92400e;">🔍 Kyun "Can't load URL" Aaya Aur Instagram Connect Kaise Hoga?</strong><br>
+        Meta App (<code>Shipping Wish Social</code>) me domain whitelist na hone ki wajah se direct redirect block hota hai, lekin aap <strong>Meta Graph Explorer</strong> se 10 second me token copy kar ke niche paste karein — humara server khud-ba-khud charon brands ke <strong>Permanent Lifetime Tokens</strong> aur <strong>@shippingwishllc Instagram</strong> connect kar dega!
+      </div>
+
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
+        <div style="font-weight:800;color:#0f172a;margin-bottom:8px;">Step 1: Check Facebook Linked Account Type (Important)</div>
+        <div style="font-size:12.5px;color:#475569;">
+          Apne Facebook Page Settings (<code>facebook.com/settings/?tab=linked_profiles</code>) me jahan <strong>Instagram — Connected to @shippingwishllc</strong> likha hai, us par click kar ke dekhein:<br>
+          • Agar wahan <strong>"Review Connection" / "Confirm Connection"</strong> button hai to usay Confirm karein.<br>
+          • Aur yaqeen karein ke <code>@shippingwishllc</code> Instagram par <strong>Professional / Business Account</strong> par switch hai (Personal account par Meta API post allow nahi karti).
+        </div>
+      </div>
+
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
+        <div style="font-weight:800;color:#0f172a;margin-bottom:8px;">Step 2: Generate Token with <code>instagram_basic</code> Permission</div>
+        <ol style="margin:0;padding-left:18px;font-size:12.5px;color:#475569;display:flex;flex-direction:column;gap:6px;">
+          <li>
+            Click here to open Meta Graph Explorer:
+            <a href="https://developers.facebook.com/tools/explorer/?app_id=1405121158479894" target="_blank" style="color:#2563eb;font-weight:800;text-decoration:underline;">
+              🔗 Open Meta Graph API Explorer (App: Shipping Wish Social) &rarr;
+            </a>
+          </li>
+          <li>Right side par <strong>Permissions</strong> box me <strong><code>instagram_basic</code></strong> aur <strong><code>instagram_content_publish</code></strong> add karein (sath <code>pages_show_list</code>, <code>pages_read_engagement</code>, <code>pages_manage_posts</code>, <code>business_management</code>).</li>
+          <li>Blue button <strong>"Generate Access Token"</strong> dabayein aur <code>@shippingwishllc</code> select kar ke Allow karein.</li>
+          <li>Upar box se generated <strong>Access Token (`EAAT...`)</strong> copy kar ke niche paste karein:</li>
+        </ol>
+
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+          <input type="text" class="form-input" id="inp-meta-short-token" placeholder="Paste EAAT980OE... token from Graph API Explorer here" style="flex:1;min-width:240px;font-family:monospace;font-size:12.5px;">
+          <button type="button" class="btn btn-primary" id="btn-submit-meta-token" onclick="submitMetaExplorerToken()" style="background:#e1306c;border-color:#e1306c;font-weight:800;">
+            ⚡ Auto-Sync Instagram &amp; All 4 Pages
+          </button>
+        </div>
+        <div id="meta-token-sync-result" style="margin-top:10px;font-size:12.5px;display:none;"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1018,6 +1067,59 @@
       }
     } catch (err) {
       box.innerHTML = `<span style="color:#b91c1c;">Error: ${escapeHtml(err.message)}</span>`;
+    }
+  }
+
+  function openIgSyncModal() {
+    document.getElementById('ig-sync-modal').classList.add('active');
+  }
+
+  async function submitMetaExplorerToken() {
+    const inp = document.getElementById('inp-meta-short-token');
+    const btn = document.getElementById('btn-submit-meta-token');
+    const resBox = document.getElementById('meta-token-sync-result');
+    const token = (inp?.value || '').trim();
+
+    if (!token) {
+      return showToast('⚠️ Pehle Graph API Explorer se EAAT... token copy kar ke paste karein.', 'warning', 5000);
+    }
+
+    btn.disabled = true;
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="hub-spinner"></span> <span>Syncing...</span>';
+    resBox.style.display = 'block';
+    resBox.innerHTML = '<span style="color:#475569;">⏳ Exchanging for Permanent Lifetime Page Tokens &amp; detecting linked Instagram accounts...</span>';
+
+    try {
+      const res = await fetch('/api/social/exchange-meta-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token: token })
+      });
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.synced)) {
+        const igFound = data.synced.filter(s => s.instagram_id);
+        let html = `<div style="background:#dcfce7;border:1px solid #86efac;color:#14532d;padding:10px 12px;border-radius:8px;font-weight:700;">✅ ${escapeHtml(data.message)}</div>`;
+        html += `<ul style="margin:8px 0 0;padding-left:18px;color:#334155;">`;
+        data.synced.forEach(s => {
+          html += `<li><strong>${escapeHtml(s.page_name)}</strong> (${escapeHtml(s.brand)}): Facebook Connected ✅ | Instagram: ${
+            s.instagram_id
+              ? `<span style="color:#15803d;font-weight:800;">Connected (@${escapeHtml(s.instagram_username || s.instagram_id)}) ✅</span>`
+              : `<span style="color:#b45309;font-weight:700;">⚠️ IG Business ID not returned (Ensure @shippingwishllc is switched to a Business Account on Instagram &amp; instagram_basic permission was checked)</span>`
+          }</li>`;
+        });
+        html += `</ul>`;
+        resBox.innerHTML = html;
+        showToast(igFound.length ? `🎉 Instagram connected for ${igFound.length} brand(s)!` : '✅ Facebook Permanent Tokens updated!', 'success', 7000);
+        initHub();
+      } else {
+        resBox.innerHTML = `<div style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:10px 12px;border-radius:8px;font-weight:700;">❌ ${escapeHtml(data.error || 'Sync failed')}</div>`;
+      }
+    } catch (err) {
+      resBox.innerHTML = `<div style="color:#b91c1c;font-weight:700;">❌ Error: ${escapeHtml(err.message)}</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
     }
   }
 

@@ -813,6 +813,107 @@ router.get('/callback/meta', async (req, res) => {
 });
 
 /**
+ * POST /api/social/exchange-meta-token
+ * Accepts a short-lived User Token from Meta Graph API Explorer, exchanges it for a 60-day User Token,
+ * fetches Permanent Never-Expiring Page Tokens + linked Instagram Business Account IDs for all 4 brands,
+ * and saves them in social_brand_credentials.
+ */
+router.post('/exchange-meta-token', async (req, res) => {
+  try {
+    const shortToken = String(req.body?.access_token || '').trim();
+    if (!shortToken) {
+      return res.status(400).json({ error: 'Please paste the User Access Token from Meta Graph API Explorer.' });
+    }
+
+    const appId = (process.env.META_APP_ID || '1405121158479894').trim();
+    const appSecret = (process.env.META_APP_SECRET || '5f44933c8f162c46d7c8cd2d1480835b').trim();
+
+    // 1. Exchange short token for 60-day long-lived user token
+    let userToken = shortToken;
+    try {
+      const longRes = await fetch(
+        `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${encodeURIComponent(shortToken)}`
+      );
+      const longData = await longRes.json();
+      if (longData.access_token) {
+        userToken = longData.access_token;
+      }
+    } catch (_) {}
+
+    // 2. Fetch all managed pages + linked Instagram Business accounts
+    const pagesRes = await fetch(
+      `https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,instagram_business_account{id,username,name},connected_instagram_account{id,username,name}&limit=50&access_token=${encodeURIComponent(userToken)}`
+    );
+    const pagesData = await pagesRes.json();
+    if (pagesData.error) {
+      return res.status(400).json({ error: `Meta API Error: ${pagesData.error.message}` });
+    }
+
+    const pages = Array.isArray(pagesData?.data) ? pagesData.data : [];
+    if (!pages.length) {
+      return res.status(400).json({
+        error: 'No Facebook Pages returned. Make sure you selected User Token (not Page Token) and checked pages_show_list & instagram_basic permissions.'
+      });
+    }
+
+    const BRAND_PAGE_MAP = {
+      '110625842134996': 'shippingwish',
+      '1297152946819472': 'loadsnexus',
+      '102796912575296': 'nyclimowish',
+      '110487588698183': 'buywish'
+    };
+
+    await ensureSocialSchema();
+    const synced = [];
+
+    for (const p of pages) {
+      const bKey = BRAND_PAGE_MAP[String(p.id)];
+      if (!bKey) continue;
+
+      let igId = p.instagram_business_account?.id || p.connected_instagram_account?.id || null;
+      let igUsername = p.instagram_business_account?.username || p.connected_instagram_account?.username || null;
+
+      if (!igId && p.access_token) {
+        const dbg = await detectInstagramAccount(p.id, p.access_token, true).catch(() => null);
+        if (dbg?.igId) {
+          igId = dbg.igId;
+          igUsername = dbg.username || null;
+        }
+      }
+
+      await pool.query(`
+        INSERT INTO social_brand_credentials (
+          brand, facebook_page_id, facebook_access_token, instagram_account_id, instagram_access_token, autopilot_enabled, autopilot_time
+        ) VALUES ($1, $2, $3, $4, $5, true, '10:00')
+        ON CONFLICT (brand) DO UPDATE SET
+          facebook_page_id = EXCLUDED.facebook_page_id,
+          facebook_access_token = EXCLUDED.facebook_access_token,
+          instagram_account_id = COALESCE(EXCLUDED.instagram_account_id, social_brand_credentials.instagram_account_id),
+          instagram_access_token = EXCLUDED.instagram_access_token,
+          updated_at = now()
+      `, [bKey, String(p.id), p.access_token, igId ? String(igId) : null, p.access_token]);
+
+      synced.push({
+        brand: bKey,
+        page_name: p.name,
+        page_id: p.id,
+        instagram_id: igId || null,
+        instagram_username: igUsername || null
+      });
+    }
+
+    res.json({
+      ok: true,
+      synced,
+      message: `Successfully updated Permanent Page Tokens for ${synced.length} brand(s)!`
+    });
+  } catch (err) {
+    console.error('Exchange meta token error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * GET /api/social/sync-instagram
  * Live sync & inspect linked Instagram Business Accounts across all 4 Facebook Pages
  */
