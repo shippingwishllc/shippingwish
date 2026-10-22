@@ -217,6 +217,7 @@
         </p>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="openIgSyncModal()" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);border:none;color:#fff;font-weight:800;">📸 Paste / Sync Instagram Token</button>
         <a href="/settings#social-media" class="btn btn-secondary btn-sm" style="font-weight:700;text-decoration:none;">⚙️ API Settings</a>
         <button class="btn btn-secondary btn-sm" onclick="openGuideModal()" style="font-weight:700;">📖 Setup &amp; Anti-Ban Guide</button>
       </div>
@@ -277,7 +278,7 @@
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
             <span style="font-size:14px;">📸</span> Instagram: <span class="badge badge-booked" id="badge-ig">Checking...</span>
-            <button type="button" id="btn-quick-ig-connect" onclick="openIgSyncModal()" style="font-size:11px;background:#e1306c;color:#fff;padding:3px 9px;border-radius:6px;border:none;cursor:pointer;font-weight:700;margin-left:4px;display:none;">⚡ 1-Click Sync IG</button>
+            <button type="button" id="btn-quick-ig-connect" onclick="openIgSyncModal()" style="font-size:11px;background:#e1306c;color:#fff;padding:3px 9px;border-radius:6px;border:none;cursor:pointer;font-weight:700;margin-left:4px;display:inline-block;">🔑 Paste / Sync IG Token</button>
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
             <span style="font-size:14px;">💼</span> LinkedIn: <span class="badge badge-overdue" id="badge-li">Disconnected</span>
@@ -649,14 +650,17 @@
       if (status.instagram_connected) {
         igEl.className = 'badge badge-paid';
         igEl.textContent = 'Connected (IG Business)';
-        if (igBtn) igBtn.style.display = 'none';
+        if (igBtn) {
+          igBtn.style.display = 'inline-block';
+          igBtn.textContent = '🔑 Update / Paste IG Token';
+        }
       } else {
         igEl.className = 'badge badge-pending';
         igEl.textContent = 'Needs IG Permission';
-        igEl.title = 'Click 1-Click Sync IG to grant instagram_basic permission for @shippingwishllc';
+        igEl.title = 'Click Paste / Sync IG Token to connect @shippingwishllc';
         if (igBtn) {
           igBtn.style.display = 'inline-block';
-          igBtn.href = `/api/social/auth/meta?brand=${activeBrand}`;
+          igBtn.textContent = '⚡ 1-Click Sync IG';
         }
       }
     }
