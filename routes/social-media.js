@@ -821,8 +821,34 @@ router.get('/callback/meta', async (req, res) => {
 router.post('/exchange-meta-token', async (req, res) => {
   try {
     const shortToken = String(req.body?.access_token || '').trim();
+    const targetBrand = String(req.body?.brand || 'shippingwish').trim();
     if (!shortToken) {
-      return res.status(400).json({ error: 'Please paste the User Access Token from Meta Graph API Explorer.' });
+      return res.status(400).json({ error: 'Please paste the Access Token from Meta Graph API Explorer.' });
+    }
+
+    // Check if this is a direct Instagram Token (from "Generate Instagram Access Token" / graph.instagram.com)
+    if (shortToken.startsWith('IG')) {
+      const igMeRes = await fetch(`https://graph.instagram.com/v21.0/me?fields=id,user_id,username,name&access_token=${encodeURIComponent(shortToken)}`);
+      const igMe = await igMeRes.json();
+      if (igMe.error) {
+        return res.status(400).json({ error: `Instagram API Error: ${igMe.error.message}` });
+      }
+      const igAccountId = String(igMe.user_id || igMe.id);
+      await ensureSocialSchema();
+      await pool.query(
+        'UPDATE social_brand_credentials SET instagram_account_id = $1, instagram_access_token = $2, updated_at = now() WHERE brand = $3',
+        [igAccountId, shortToken, targetBrand]
+      );
+      return res.json({
+        ok: true,
+        synced: [{
+          brand: targetBrand,
+          page_name: targetBrand.toUpperCase(),
+          instagram_id: igAccountId,
+          instagram_username: igMe.username || igAccountId
+        }],
+        message: `Connected Instagram (@${igMe.username || igAccountId}) for ${targetBrand}!`
+      });
     }
 
     const appId = (process.env.META_APP_ID || '1405121158479894').trim();
@@ -929,19 +955,12 @@ router.get('/sync-instagram', async (req, res) => {
           'UPDATE social_brand_credentials SET instagram_account_id = $1, instagram_access_token = COALESCE(instagram_access_token, facebook_access_token) WHERE brand = $2',
           [dbg.igId, c.brand]
         ).catch(() => {});
-      } else if (dbg && !dbg.hasIgBasic) {
-        await pool.query(
-          'UPDATE social_brand_credentials SET instagram_account_id = NULL WHERE brand = $1',
-          [c.brand]
-        ).catch(() => {});
       }
       report.push({
         brand: c.brand,
         facebook_page_id: c.facebook_page_id,
-        saved_ig_id: dbg?.igId || null,
+        saved_ig_id: dbg?.igId || c.instagram_account_id || null,
         ig_username: dbg?.username || null,
-        has_ig_basic: Boolean(dbg?.hasIgBasic),
-        token_scopes: dbg?.tokenScopes || null,
         meta_response: dbg?.raw || null
       });
     }

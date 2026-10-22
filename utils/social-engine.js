@@ -554,7 +554,7 @@ RETURN STRICT JSON ONLY:
 async function detectInstagramAccount(pageId, pageAccessToken, returnDebug = false) {
   if (!pageId || !pageAccessToken) return returnDebug ? { igId: null, reason: 'missing_page_or_token' } : null;
   try {
-    const url = `https://graph.facebook.com/v21.0/${pageId}?fields=id,name,instagram_business_account{id,username,name},connected_instagram_account{id,username,name},instagram_accounts{id,username}&access_token=${encodeURIComponent(pageAccessToken)}`;
+    const url = `https://graph.facebook.com/v21.0/${pageId}?fields=id,name,instagram_business_account{id,username,name},connected_instagram_account{id,username,name},instagram_accounts{id,username},page_backed_instagram_accounts{id,username}&access_token=${encodeURIComponent(pageAccessToken)}`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -562,35 +562,25 @@ async function detectInstagramAccount(pageId, pageAccessToken, returnDebug = fal
       data?.instagram_business_account?.id ||
       data?.connected_instagram_account?.id ||
       data?.instagram_accounts?.data?.[0]?.id ||
+      data?.page_backed_instagram_accounts?.data?.[0]?.id ||
       null;
 
     let username =
       data?.instagram_business_account?.username ||
       data?.connected_instagram_account?.username ||
       data?.instagram_accounts?.data?.[0]?.username ||
+      data?.page_backed_instagram_accounts?.data?.[0]?.username ||
       null;
-
-    let tokenScopes = null;
-    try {
-      const appToken = '1405121158479894|5f44933c8f162c46d7c8cd2d1480835b';
-      const permRes = await fetch(`https://graph.facebook.com/v21.0/debug_token?input_token=${encodeURIComponent(pageAccessToken)}&access_token=${encodeURIComponent(appToken)}`);
-      const tokenDebug = await permRes.json();
-      tokenScopes = tokenDebug?.data?.scopes || null;
-    } catch (_) {}
-
-    const hasIgBasic = Array.isArray(tokenScopes) && tokenScopes.includes('instagram_basic');
 
     if (returnDebug) {
       return {
-        igId: (igId && hasIgBasic) ? String(igId) : null,
+        igId: igId ? String(igId) : null,
         username,
-        hasIgBasic,
-        tokenScopes,
         raw: data
       };
     }
 
-    return (igId && hasIgBasic) ? String(igId) : null;
+    return igId ? String(igId) : null;
   } catch (err) {
     return returnDebug ? { igId: null, error: err.message } : null;
   }
@@ -657,8 +647,11 @@ async function publishToInstagram(igUserId, accessToken, caption, imageUrl) {
   if (!igUserId || !accessToken) throw new Error('Instagram User ID and Access Token are required');
   if (!imageUrl) throw new Error('Instagram requires an image URL to publish a post');
 
+  const isIgDirectToken = String(accessToken).startsWith('IG');
+  const graphBase = isIgDirectToken ? 'https://graph.instagram.com/v21.0' : 'https://graph.facebook.com/v21.0';
+
   // Step 1: Create media container
-  const containerRes = await fetch(`https://graph.facebook.com/v21.0/${igUserId}/media`, {
+  const containerRes = await fetch(`${graphBase}/${igUserId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -677,7 +670,7 @@ async function publishToInstagram(igUserId, accessToken, caption, imageUrl) {
     await new Promise(r => setTimeout(r, 2000));
     try {
       const statusRes = await fetch(
-        `https://graph.facebook.com/v21.0/${creationId}?fields=status_code&access_token=${encodeURIComponent(accessToken)}`
+        `${graphBase}/${creationId}?fields=status_code&access_token=${encodeURIComponent(accessToken)}`
       );
       const statusData = await statusRes.json();
       if (statusData.status_code === 'FINISHED') break;
@@ -688,7 +681,7 @@ async function publishToInstagram(igUserId, accessToken, caption, imageUrl) {
   }
 
   // Step 3: Publish media container
-  const publishRes = await fetch(`https://graph.facebook.com/v21.0/${igUserId}/media_publish`, {
+  const publishRes = await fetch(`${graphBase}/${igUserId}/media_publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
