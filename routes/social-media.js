@@ -715,6 +715,104 @@ router.post('/auto-reply-test', async (req, res) => {
 });
 
 /**
+ * GET /api/social/auth/meta
+ * Initiate 1-Click Meta (Facebook Pages + Instagram Business) OAuth 2.0 flow
+ * Requests instagram_basic & instagram_content_publish so linked IG accounts (@shippingwishllc) auto-connect
+ */
+router.get('/auth/meta', (req, res) => {
+  const brand = req.query.brand || 'shippingwish';
+  const appId = (process.env.META_APP_ID || '1405121158479894').trim();
+  const redirectUri = (process.env.META_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/meta').trim();
+  const scope = [
+    'pages_show_list',
+    'pages_read_engagement',
+    'pages_manage_posts',
+    'business_management',
+    'instagram_basic',
+    'instagram_content_publish'
+  ].join(',');
+
+  const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(brand)}&scope=${encodeURIComponent(scope)}&response_type=code`;
+  res.redirect(authUrl);
+});
+
+/**
+ * GET /api/social/callback/meta
+ * Exchange Meta OAuth code for Permanent Lifetime Page Tokens + Auto-Link Instagram Business Accounts
+ */
+router.get('/callback/meta', async (req, res) => {
+  const { code, state, error, error_description } = req.query;
+  const brand = state || 'shippingwish';
+
+  if (error || !code) {
+    return res.redirect(`/social-media-hub?brand=${brand}&meta_error=${encodeURIComponent(error_description || error || 'missing_code')}`);
+  }
+
+  try {
+    const appId = (process.env.META_APP_ID || '1405121158479894').trim();
+    const appSecret = (process.env.META_APP_SECRET || '5f44933c8f162c46d7c8cd2d1480835b').trim();
+    const redirectUri = (process.env.META_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/meta').trim();
+
+    // 1. Exchange code for short-lived user token
+    const tokenRes = await fetch(
+      `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${appSecret}&code=${encodeURIComponent(code)}`
+    );
+    const tokenData = await tokenRes.json();
+    if (tokenData.error || !tokenData.access_token) {
+      throw new Error(tokenData.error?.message || 'Meta token exchange failed');
+    }
+
+    // 2. Exchange for 60-day long-lived user token
+    const longRes = await fetch(
+      `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${encodeURIComponent(tokenData.access_token)}`
+    );
+    const longData = await longRes.json();
+    const userToken = longData.access_token || tokenData.access_token;
+
+    // 3. Fetch all managed Facebook Pages + linked Instagram Business Accounts
+    const pagesRes = await fetch(
+      `https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,instagram_business_account{id,username},connected_instagram_account{id,username}&limit=50&access_token=${encodeURIComponent(userToken)}`
+    );
+    const pagesData = await pagesRes.json();
+    const pages = Array.isArray(pagesData?.data) ? pagesData.data : [];
+
+    const BRAND_PAGE_MAP = {
+      '110625842134996': 'shippingwish',
+      '1297152946819472': 'loadsnexus',
+      '102796912575296': 'nyclimowish',
+      '110487588698183': 'buywish'
+    };
+
+    await ensureSocialSchema();
+    for (const p of pages) {
+      const bKey = BRAND_PAGE_MAP[String(p.id)];
+      if (!bKey) continue;
+      let igId = p.instagram_business_account?.id || p.connected_instagram_account?.id || null;
+      if (!igId && p.access_token) {
+        igId = await detectInstagramAccount(p.id, p.access_token).catch(() => null);
+      }
+
+      await pool.query(`
+        INSERT INTO social_brand_credentials (
+          brand, facebook_page_id, facebook_access_token, instagram_account_id, instagram_access_token, autopilot_enabled, autopilot_time
+        ) VALUES ($1, $2, $3, $4, $5, true, '10:00')
+        ON CONFLICT (brand) DO UPDATE SET
+          facebook_page_id = EXCLUDED.facebook_page_id,
+          facebook_access_token = EXCLUDED.facebook_access_token,
+          instagram_account_id = COALESCE(EXCLUDED.instagram_account_id, social_brand_credentials.instagram_account_id),
+          instagram_access_token = EXCLUDED.instagram_access_token,
+          updated_at = now()
+      `, [bKey, String(p.id), p.access_token, igId ? String(igId) : null, p.access_token]);
+    }
+
+    res.redirect(`/social-media-hub?brand=${brand}&meta_connected=success`);
+  } catch (err) {
+    console.error('Meta OAuth Callback Error:', err);
+    res.redirect(`/social-media-hub?brand=${brand}&meta_error=${encodeURIComponent(err.message)}`);
+  }
+});
+
+/**
  * GET /api/social/sync-instagram
  * Live sync & inspect linked Instagram Business Accounts across all 4 Facebook Pages
  */
@@ -736,6 +834,8 @@ router.get('/sync-instagram', async (req, res) => {
         facebook_page_id: c.facebook_page_id,
         saved_ig_id: dbg?.igId || c.instagram_account_id || null,
         ig_username: dbg?.username || null,
+        token_scopes: dbg?.tokenScopes || null,
+        edge_check: dbg?.edgeCheck || null,
         meta_response: dbg?.raw || null
       });
     }

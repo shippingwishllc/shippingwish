@@ -277,6 +277,7 @@
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
             <span style="font-size:14px;">📸</span> Instagram: <span class="badge badge-booked" id="badge-ig">Checking...</span>
+            <a href="/api/social/auth/meta?brand=shippingwish" id="btn-quick-ig-connect" style="font-size:11px;background:#e1306c;color:#fff;padding:2px 8px;border-radius:6px;text-decoration:none;font-weight:700;margin-left:4px;display:none;">1-Click Sync IG</a>
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
             <span style="font-size:14px;">💼</span> LinkedIn: <span class="badge badge-overdue" id="badge-li">Disconnected</span>
@@ -562,6 +563,11 @@
     } else if (urlParams.get('linkedin_error')) {
       showToast('⚠️ LinkedIn notice: ' + decodeURIComponent(urlParams.get('linkedin_error')), 'warning', 8000);
     }
+    if (urlParams.get('meta_connected') === 'success') {
+      showToast('🎉 Instagram (@shippingwishllc) & Facebook Pages synced with Permanent Tokens!', 'success', 7000);
+    } else if (urlParams.get('meta_error')) {
+      showToast('⚠️ Meta notice: ' + decodeURIComponent(urlParams.get('meta_error')), 'warning', 8000);
+    }
   }
 
   function selectBrand(key) {
@@ -587,16 +593,22 @@
       fbEl.textContent = fbConnected ? 'Connected (Live)' : 'Disconnected';
     }
 
-    // 2. Instagram Badge (Honest status!)
+    // 2. Instagram Badge + 1-Click Meta IG Sync Button
     const igEl = document.getElementById('badge-ig');
+    const igBtn = document.getElementById('btn-quick-ig-connect');
     if (igEl) {
       if (status.instagram_connected) {
         igEl.className = 'badge badge-paid';
         igEl.textContent = 'Connected (IG Business)';
+        if (igBtn) igBtn.style.display = 'none';
       } else {
         igEl.className = 'badge badge-pending';
-        igEl.textContent = 'Link IG in FB Page Settings';
-        igEl.title = 'Open your Facebook Page Settings -> Linked Accounts -> Instagram to link your Instagram Business profile';
+        igEl.textContent = 'Needs IG Permission';
+        igEl.title = 'Click 1-Click Sync IG to grant instagram_basic permission for @shippingwishllc';
+        if (igBtn) {
+          igBtn.style.display = 'inline-block';
+          igBtn.href = `/api/social/auth/meta?brand=${activeBrand}`;
+        }
       }
     }
 
