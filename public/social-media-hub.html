@@ -3,47 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>4-Brand Autonomous AI Social Media &amp; Auto-Pilot Desk | Shipping Wish LLC</title>
-  <link rel="stylesheet" href="/css/design-system.css">
+  <title>4-Brand Autonomous AI Social Media &amp; MCP Manager | Shipping Wish LLC</title>
+  <link rel="stylesheet" href="/css/design-system.css?v=38">
   <style>
-    /* Tab Navigation Styles */
-    .hub-tabs-container {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 24px;
-      border-bottom: 2px solid var(--border-default, #e2e8f0);
-      padding-bottom: 12px;
-    }
-    .hub-nav-tab {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 22px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 14.5px;
-      border: 1px solid transparent;
-      background: #f1f5f9;
-      color: #64748b;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .hub-nav-tab:hover {
-      background: #e2e8f0;
-      color: #0f172a;
-    }
-    .hub-nav-tab.active {
-      background: #0f172a;
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
-    }
-
     /* Brand Switcher Bar */
     .brand-pill-bar {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .brand-pill-btn {
       display: flex;
@@ -59,6 +27,10 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
+    .brand-pill-btn:hover {
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
     .brand-pill-btn.active {
       background: #0f172a;
       color: #ffffff;
@@ -68,43 +40,36 @@
     .brand-pill-btn.active.sw { background: #0f172a; border-color: #f59e0b; color: #f59e0b; }
     .brand-pill-btn.active.ln { background: #082f49; border-color: #38bdf8; color: #38bdf8; }
     .brand-pill-btn.active.nl { background: #172554; border-color: #93c5fd; color: #93c5fd; }
-    .brand-pill-btn.active.bw { background: #431407; border-color: #fb923c; color: #fb923c; }
+    .brand-pill-btn.active.bw { background: #064e3b; border-color: #34d399; color: #34d399; }
 
-    /* Platform Status Grid */
-    .platform-status-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    /* MCP Autonomous Agent Command Banner */
+    .mcp-agent-banner {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
       gap: 16px;
-      margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+      border: 1px solid #334155;
     }
-    .platform-card {
-      background: var(--bg-elevated, #ffffff);
-      border: 1px solid var(--border-default, #e2e8f0);
-      border-radius: 14px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    .mcp-pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: mcpPulse 1.8s infinite;
+      display: inline-block;
     }
-    .platform-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-    }
-    .platform-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .platform-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
+    @keyframes mcpPulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
     /* Studio Layout */
@@ -112,7 +77,7 @@
       display: grid;
       grid-template-columns: 1.15fr 0.85fr;
       gap: 24px;
-      margin-bottom: 30px;
+      margin-bottom: 28px;
     }
     @media (max-width: 1024px) {
       .studio-layout { grid-template-columns: 1fr; }
@@ -150,12 +115,12 @@
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      font-size: 14px;
+      font-size: 16px;
       flex-shrink: 0;
     }
     .feed-preview-body {
       padding: 18px 16px;
-      font-size: 14px;
+      font-size: 13.5px;
       line-height: 1.65;
       color: #1e293b;
       white-space: pre-wrap;
@@ -163,13 +128,16 @@
     .feed-preview-media {
       background: #0f172a;
       color: #94a3b8;
-      min-height: 200px;
+      min-height: 220px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 20px;
       text-align: center;
+      border-top: 1px solid #f1f5f9;
+    }
+
     /* Mobile-First Toast Notifications */
     #hub-toast-container {
       position: fixed;
@@ -178,7 +146,7 @@
       transform: translateX(-50%);
       z-index: 999999;
       width: 92%;
-      max-width: 480px;
+      max-width: 520px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -236,24 +204,53 @@
 <body class="app-body">
 <div class="app-shell">
   <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
-  <script src="/js/app-shell-boot.js"></script>
+  <script src="/js/app-shell-boot.js?v=38"></script>
 
   <div class="app-main">
     <header class="app-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
       <div>
         <h1 style="font-size:var(--text-lg);font-weight:800;margin:0;display:flex;align-items:center;gap:10px;">
-          <span>📱</span> 4-Brand Social Media Studio &amp; Posting Desk
+          <span>🤖</span> 4-Brand Autonomous AI Social Media &amp; MCP Manager
         </h1>
         <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">
-          Dynamic non-repetitive AI content creation, official live publishing, and real-time feed previews
+          24/7 Non-Repetitive Editorial AI Publishing, Leica/Hasselblad Visual Photography &amp; Live Comment/DM Auto-Responder
         </p>
       </div>
-      <div style="display:flex;gap:10px;align-items:center;">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <a href="/settings#social-media" class="btn btn-secondary btn-sm" style="font-weight:700;text-decoration:none;">⚙️ API Settings</a>
         <button class="btn btn-secondary btn-sm" onclick="openGuideModal()" style="font-weight:700;">📖 Setup &amp; Anti-Ban Guide</button>
       </div>
     </header>
 
     <main class="app-content" style="padding-top:20px;padding-bottom:40px;">
+
+      <!-- 24/7 MCP AUTONOMOUS SOCIAL MEDIA MANAGER COMMAND BANNER -->
+      <div class="mcp-agent-banner">
+        <div style="display:flex;align-items:flex-start;gap:14px;max-width:680px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(245,158,11,0.18);border:1px solid rgba(245,158,11,0.4);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">
+            🧠
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+              <span style="font-weight:800;font-size:15.5px;color:#ffffff;">24/7 Autonomous MCP Social Media Manager</span>
+              <span style="background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);padding:2px 10px;border-radius:999px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+                <span class="mcp-pulse-dot"></span> ACTIVE 24/7
+              </span>
+            </div>
+            <div style="font-size:12.5px;color:#cbd5e1;line-height:1.5;">
+              AI automatically rotates topics &amp; pure editorial photography (zero repetitive flyers), publishes daily across all 4 brands, and replies to customer comments &amp; Messenger DMs 24/7.
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" id="btn-blast-all" onclick="runAllBrandsAutoPilot()" style="background:#f59e0b;border-color:#f59e0b;color:#0f172a;font-weight:800;padding:10px 16px;">
+            🚀 1-Click Auto-Post All 4 Brands Now
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btn-scan-engagement" onclick="scanAndReplyAllEngagement()" style="background:#1e293b;border-color:#475569;color:#f8fafc;font-weight:700;padding:10px 16px;">
+            💬 Scan &amp; Auto-Reply Comments / DMs Now
+          </button>
+        </div>
+      </div>
 
       <!-- BRAND SELECTOR -->
       <div class="brand-pill-bar">
@@ -271,24 +268,22 @@
         </button>
       </div>
 
-      <!-- COMPACT LIVE CHANNELS STATUS STRIP (CLEAN, NO CONFIGURE BUTTONS) -->
+      <!-- COMPACT LIVE CHANNELS STATUS STRIP -->
       <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 18px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.03);">
         <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
-          <span style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Live Channels:</span>
+          <span style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Live Channels (<span id="strip-brand-name">Shipping Wish LLC</span>):</span>
           <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
             <span style="font-size:14px;">📘</span> Facebook: <span class="badge badge-paid" id="badge-fb">Connected</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
-            <span style="font-size:14px;">💼</span> LinkedIn: <span class="badge badge-paid" id="badge-li">Connected</span>
+            <span style="font-size:14px;">📸</span> Instagram: <span class="badge badge-booked" id="badge-ig">Checking...</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
-            <span style="font-size:14px;">📸</span> Instagram: <span class="badge badge-booked" id="badge-ig">Linked via Meta</span>
+            <span style="font-size:14px;">💼</span> LinkedIn: <span class="badge badge-overdue" id="badge-li">Disconnected</span>
+            <a href="/api/social/auth/linkedin?brand=shippingwish" id="btn-quick-li-connect" style="font-size:11px;background:#0a66c2;color:#fff;padding:2px 8px;border-radius:6px;text-decoration:none;font-weight:700;margin-left:4px;">Connect 1-Click</a>
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
-            <span style="font-size:14px;">🎵</span> TikTok: <span class="badge badge-booked" id="badge-tt">Ready to Connect</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#1e293b;">
-            <span style="font-size:14px;">⚡</span> Daily Auto-Pilot: <span class="badge badge-paid" id="badge-autopilot">Active (10:00 AM)</span>
+            <span style="font-size:14px;">⚡</span> Daily Auto-Pilot: <span class="badge badge-paid" id="badge-autopilot">Active (24/7)</span>
           </div>
         </div>
         <a href="/settings#social-media" style="font-size:12px;color:#2563eb;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
@@ -296,131 +291,169 @@
         </a>
       </div>
 
-        <!-- STUDIO CREATIVE WORKSPACE -->
-        <div class="studio-layout">
-          <!-- LEFT: GENERATOR CONTROLS -->
-          <div class="studio-panel">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-              <h2 style="font-size:16px;font-weight:800;margin:0;">✨ AI Content Creation Studio</h2>
-              <span class="badge badge-booked" id="active-brand-label">Shipping Wish LLC</span>
-            </div>
+      <!-- STUDIO CREATIVE WORKSPACE -->
+      <div class="studio-layout">
+        <!-- LEFT: GENERATOR CONTROLS -->
+        <div class="studio-panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 style="font-size:16px;font-weight:800;margin:0;">✨ Fortune-500 AI Editorial &amp; Photography Studio</h2>
+            <span class="badge badge-booked" id="active-brand-label">Shipping Wish LLC</span>
+          </div>
 
-            <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div>
-                <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px;">Select Content Pillar (Never Repeats):</label>
+                <label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;">Content Pillar (Anti-Repeat Memory):</label>
                 <select class="form-input" id="sel-category" style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;">
                   <!-- Populated dynamically based on brand -->
                 </select>
               </div>
-
               <div>
-                <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px;">Custom Angle or Trend (Optional):</label>
-                <input type="text" class="form-input" id="inp-custom-angle" placeholder="e.g. Focus on national diesel drop, or new FMCSA broker bond rule..." style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;">
+                <label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;">Editorial Photography Style:</label>
+                <select class="form-input" id="sel-visual-style" style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;">
+                  <option value="auto">🔄 Auto-Rotate Fresh Photography (Recommended)</option>
+                </select>
               </div>
+            </div>
 
-              <button class="btn btn-primary" id="btn-generate" onclick="generatePost()" style="font-weight:800;padding:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
-                <span>⚡ Generate 100% Unique Post with AI</span>
+            <div>
+              <label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;">Custom Executive Angle or Topic (Optional):</label>
+              <input type="text" class="form-input" id="inp-custom-angle" placeholder="e.g. Q4 Midwest reefer surge, JFK executive roadshow tips, or leave blank for AI autonomy..." style="width:100%;font-size:13px;padding:8px 12px;border-radius:8px;">
+            </div>
+
+            <button class="btn btn-primary" id="btn-generate" onclick="generatePost()" style="font-weight:800;padding:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
+              <span>⚡ Synthesize Non-Repetitive Executive Post + Leica Photo</span>
+            </button>
+
+            <div style="height:1px;background:#e2e8f0;margin:6px 0;"></div>
+
+            <!-- POST EDITOR -->
+            <div>
+              <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px;">Editable Post Caption (Zero Markdown Asterisks):</label>
+              <textarea class="form-input" id="editor-content" rows="8" style="width:100%;font-size:13.5px;line-height:1.6;padding:10px 12px;border-radius:8px;" placeholder="Click 'Synthesize Non-Repetitive Executive Post' above to let GPT-4o craft an authoritative update with pure editorial photography..."></textarea>
+            </div>
+
+            <div>
+              <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px;">Target Distribution Channels:</label>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                  <input type="checkbox" id="chk-platform-fb" checked> 📘 Facebook Page
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                  <input type="checkbox" id="chk-platform-ig" checked> 📸 Instagram Business
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                  <input type="checkbox" id="chk-platform-li" checked> 💼 LinkedIn Company
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                  <input type="checkbox" id="chk-platform-tt"> 🎵 TikTok (9:16 Video)
+                </label>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;">
+              <button class="btn btn-primary" id="btn-publish" onclick="publishPost()" style="flex:1;font-weight:800;padding:12px;">
+                <span>🚀 Publish to Active Brand Now</span>
               </button>
-
-              <div style="height:1px;background:#e2e8f0;margin:10px 0;"></div>
-
-              <!-- POST EDITOR -->
-              <div>
-                <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px;">Editable Post Caption:</label>
-                <textarea class="form-input" id="editor-content" rows="8" style="width:100%;font-size:13.5px;line-height:1.6;padding:10px 12px;border-radius:8px;" placeholder="Click 'Generate 100% Unique Post' above to let AI craft an authoritative industry update..."></textarea>
-              </div>
-
-              <div>
-                <label style="font-size:12.5px;font-weight:700;display:block;margin-bottom:6px;">Target Distribution Channels:</label>
-                <div style="display:flex;gap:16px;flex-wrap:wrap;">
-                  <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
-                    <input type="checkbox" id="chk-platform-fb" checked> 📘 Facebook Page
-                  </label>
-                  <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
-                    <input type="checkbox" id="chk-platform-li" checked> 💼 LinkedIn Company
-                  </label>
-                  <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
-                    <input type="checkbox" id="chk-platform-ig" checked> 📸 Instagram Business
-                  </label>
-                  <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
-                    <input type="checkbox" id="chk-platform-tt"> 🎵 TikTok (9:16 Video)
-                  </label>
-                </div>
-              </div>
-
-              <div style="display:flex;gap:10px;margin-top:6px;">
-                <button class="btn btn-primary" id="btn-publish" onclick="publishPost()" style="flex:1;font-weight:800;padding:12px;">
-                  <span>🚀 Publish Live Now</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- RIGHT: LIVE PREVIEW -->
-          <div class="studio-panel" style="background:#f8fafc;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-              <h2 style="font-size:16px;font-weight:800;margin:0;">👁️ Live Social Feed Preview</h2>
-              <span style="font-size:12px;color:var(--text-muted);">Simulated Meta &amp; LinkedIn Rendering</span>
-            </div>
-
-            <div class="feed-preview-card">
-              <div class="feed-preview-header">
-                <div class="feed-preview-avatar" id="prev-avatar">SW</div>
-                <div>
-                  <div style="font-weight:800;font-size:14px;color:#0f172a;" id="prev-brand-name">Shipping Wish LLC</div>
-                  <div style="font-size:11.5px;color:#64748b;" id="prev-brand-sub">Dedicated Fleet Operations &bull; Just now &bull; 🌐 Public</div>
-                </div>
-              </div>
-              <div class="feed-preview-body" id="prev-body">
-Select a category and click "Generate 100% Unique Post with AI" to see real-time preview here.
-              </div>
-              <div class="feed-preview-media" id="prev-image-box">
-                <div style="font-size:32px;margin-bottom:8px;">🖼️</div>
-                <div style="font-weight:700;color:#cbd5e1;">Branded Graphic &amp; Banner Concept</div>
-                <div style="font-size:11.5px;max-width:320px;color:#94a3b8;margin-top:4px;">AI automatically plans high-conversion image themes &amp; visual typography matching the brand guidelines.</div>
-              </div>
             </div>
           </div>
         </div>
 
-        <!-- RECENT POSTS LOG -->
-        <div class="studio-panel" style="margin-bottom:30px;">
+        <!-- RIGHT: LIVE PREVIEW -->
+        <div class="studio-panel" style="background:#f8fafc;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h2 style="font-size:16px;font-weight:800;margin:0;">📊 Recent Posts Distribution Log</h2>
-            <button class="btn btn-secondary btn-xs" onclick="loadRecentPosts()">Refresh Log</button>
+            <h2 style="font-size:16px;font-weight:800;margin:0;">👁️ Live Social Feed Preview</h2>
+            <span style="font-size:12px;color:var(--text-muted);" id="prev-style-badge">Editorial Photography Mode</span>
           </div>
-          <div class="table-responsive">
-            <table class="tms-table-v2" style="width:100%;font-size:12.5px;">
-              <thead>
-                <tr>
-                  <th>Brand</th>
-                  <th>Category</th>
-                  <th>Platform</th>
-                  <th>Content Preview</th>
-                  <th>Status</th>
-                  <th>Date &amp; Time</th>
-                </tr>
-              </thead>
-              <tbody id="posts-log-tbody">
-                <tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b;">Loading recent publication history...</td></tr>
-              </tbody>
-            </table>
+
+          <div class="feed-preview-card">
+            <div class="feed-preview-header">
+              <div class="feed-preview-avatar" id="prev-avatar">🚚</div>
+              <div>
+                <div style="font-weight:800;font-size:14px;color:#0f172a;" id="prev-brand-name">Shipping Wish LLC</div>
+                <div style="font-size:11.5px;color:#64748b;" id="prev-brand-sub">Dedicated Fleet Operations &bull; Just now &bull; 🌐 Public</div>
+              </div>
+            </div>
+            <div class="feed-preview-body" id="prev-body">Select a Content Pillar and click "Synthesize Non-Repetitive Executive Post" to preview your post and photography here.</div>
+            <div class="feed-preview-media" id="prev-image-box">
+              <div style="font-size:32px;margin-bottom:8px;">📸</div>
+              <div style="font-weight:700;color:#cbd5e1;">Pure Editorial Photography (No Cheesy Flyer Text)</div>
+              <div style="font-size:11.5px;max-width:340px;color:#94a3b8;margin-top:4px;">
+                AI checks your last 12 posts so it never repeats the same scene, hook, or visual style.
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- AI AUTO-RESPONDER TEST -->
-        <div class="studio-panel">
-          <h2 style="font-size:16px;font-weight:800;margin:0 0 8px;">💬 24/7 AI Community Auto-Responder (Zero Account Ban Guarantee)</h2>
-          <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 16px;">
-            Test how our trained AI instantly and helpfully answers prospective drivers, brokers, and customers who comment on your social posts.
-          </p>
-          <div style="display:flex;gap:10px;">
-            <input type="text" class="form-input" id="inp-test-comment" placeholder="e.g. How much do you charge per week? Do you dispatch Flatbeds?" style="flex:1;font-size:13px;">
-            <button class="btn btn-secondary" onclick="testAutoReply()" style="font-weight:700;">Test AI Reply</button>
+      <!-- RECENT POSTS LOG -->
+      <div class="studio-panel" style="margin-bottom:28px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <h2 style="font-size:16px;font-weight:800;margin:0;">📊 Multi-Brand Publication History &amp; Channel Status</h2>
+            <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0;">Real-time log of posts across Shipping Wish, LoadsNexus, NYC Limo Wish, and BuyWish Online</p>
           </div>
-          <div id="reply-result-box" style="margin-top:12px;padding:12px 16px;background:#f1f5f9;border-radius:8px;font-size:13px;line-height:1.6;display:none;"></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary btn-xs" onclick="loadRecentPosts('')">Show All 4 Brands</button>
+            <button class="btn btn-secondary btn-xs" onclick="loadRecentPosts(activeBrand)">Filter Active Brand</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="tms-table-v2" style="width:100%;font-size:12.5px;">
+            <thead>
+              <tr>
+                <th>Brand</th>
+                <th>Pillar / Style</th>
+                <th>Platform</th>
+                <th>Headline &amp; Excerpt</th>
+                <th>Status / Notice</th>
+                <th>Date &amp; Time</th>
+              </tr>
+            </thead>
+            <tbody id="posts-log-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b;">Loading recent publication history...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 24/7 AI COMMENT & MESSENGER DM AUTO-RESPONDER -->
+      <div class="studio-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <h2 style="font-size:16px;font-weight:800;margin:0;">💬 24/7 Autonomous Comment &amp; DM Auto-Responder</h2>
+            <p style="font-size:12.5px;color:var(--text-muted);margin:2px 0 0;">
+              Automatically scans Facebook Page comments, Instagram comments, and Messenger DMs across all 4 brands and replies in real time.
+            </p>
+          </div>
+          <button class="btn btn-primary btn-xs" onclick="scanAndReplyAllEngagement()" style="font-weight:700;">🔄 Scan Live Comments &amp; DMs Now</button>
         </div>
 
+        <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+          <input type="text" class="form-input" id="inp-test-comment" placeholder="Simulate a customer comment or DM (e.g. How much do you charge per week? Do you have reefers loads?)" style="flex:1;min-width:240px;font-size:13px;">
+          <button class="btn btn-secondary" onclick="testAutoReply()" style="font-weight:700;">🧪 Test AI Reply</button>
+        </div>
+        <div id="reply-result-box" style="margin-bottom:18px;padding:12px 16px;background:#f1f5f9;border-radius:8px;font-size:13px;line-height:1.6;display:none;"></div>
+
+        <div class="table-responsive">
+          <table class="tms-table-v2" style="width:100%;font-size:12.5px;">
+            <thead>
+              <tr>
+                <th>Brand</th>
+                <th>Channel / Type</th>
+                <th>Visitor / Sender</th>
+                <th>Customer Comment / DM</th>
+                <th>AI Executive Reply Sent</th>
+                <th>Status</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="engagement-log-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:16px;color:#64748b;">Loading 24/7 AI comment &amp; DM reply log...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
     </main>
   </div>
@@ -430,29 +463,29 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
 <div class="modal-overlay" id="guide-modal">
   <div class="modal-content" style="max-width:760px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-      <h3 style="margin:0;font-size:18px;font-weight:800;">📖 Official Social Media API Setup &amp; Zero-Ban Guide</h3>
+      <h3 style="margin:0;font-size:18px;font-weight:800;">📖 4-Brand MCP Social Media Manager &amp; Channel Guide</h3>
       <button style="border:none;background:none;font-size:20px;cursor:pointer;" onclick="closeModal('guide-modal')">✕</button>
     </div>
 
     <div style="font-size:13.5px;line-height:1.7;color:#334155;display:flex;flex-direction:column;gap:16px;">
       <div style="background:#eff6ff;border-left:4px solid #3b82f6;padding:12px 16px;border-radius:4px;">
-        <strong style="color:#1d4ed8;">🛡️ Kyun Humare Accounts Block Nahi Honge?</strong><br>
-        Hum koi illegal browser bot ya scraping extension use nahi karte. Hum Meta aur LinkedIn ke <strong>Official Developer Portals</strong> se generate kiye gaye business tokens use karte hain jo 100% legal aur compliant hain.
+        <strong style="color:#1d4ed8;">🤖 24/7 Autonomous MCP Social Media Manager Kaise Kaam Karta Hai?</strong><br>
+        Humara built-in MCP Social Media Engine har roz charon brands (<strong>Shipping Wish, LoadsNexus, NYC Limo Wish, BuyWish Online</strong>) ke liye naye topics aur naye Leica/Hasselblad editorial scenes select karta hai (pichle 12 posts ki memory check kar ke taake koi post ya image repeat na ho), aur 24/7 Facebook/Instagram comments aur Messenger DMs ka khud reply deta hai.
       </div>
 
       <div>
-        <h4 style="margin:0 0 6px;color:#1877f2;font-size:15px;">1. Meta (Facebook Pages &amp; Instagram Business):</h4>
-        <p style="margin:0;">Charon Facebook Pages ke <strong>Permanent Lifetime Tokens</strong> pehle se generate ho kar Shipping Wish database me connect ho chuke hain.</p>
+        <h4 style="margin:0 0 6px;color:#1877f2;font-size:15px;">1. Facebook Pages (All 4 Brands Connected ✅):</h4>
+        <p style="margin:0;">Charon Facebook Pages (Shipping Wish, LoadsNexus, NYC Limo Wish, BuyWish Online) ke <strong>Permanent Lifetime Tokens</strong> active hain. Upar <strong>"🚀 1-Click Auto-Post All 4 Brands Now"</strong> dabate hi charon pages par alag-alag high-end posts live publish ho jati hain.</p>
       </div>
 
       <div>
-        <h4 style="margin:0 0 6px;color:#0a66c2;font-size:15px;">2. LinkedIn Company Pages:</h4>
-        <p style="margin:0;">Settings me ja kar <strong><a href="/settings#social-media" style="color:#0a66c2;font-weight:700;">⚙️ Settings &rarr; Social Media &amp; AI APIs</a></strong> me LinkedIn connect button dabayein aur Allow karein, charon pages ek sath connect ho jayenge.</p>
+        <h4 style="margin:0 0 6px;color:#e1306c;font-size:15px;">2. Instagram Business Auto-Publishing:</h4>
+        <p style="margin:0;">Instagram API Facebook Page ke zariye kaam karti hai. Apne Facebook Page par jayein &rarr; <strong>Settings &amp; Privacy &rarr; Linked Accounts &rarr; Instagram</strong> me apna Instagram Business account link karein. Link hote hi humara system khud Instagram ID detect kar ke wahan bhi photo posts aur comment replies shuru kar dega!</p>
       </div>
 
-      <div style="background:#fdf2f8;border-left:4px solid #db2777;padding:12px 16px;border-radius:4px;">
-        <strong style="color:#9d174d;">💡 Har Brand ki Alag Personality:</strong><br>
-        Shipping Wish, LoadsNexus, NYC Limo Wish, aur BuyWish Online sabhi ke alag alag audience target, alag hashtags, aur alag topics hain. AI har brand ko uske industry standard ke mutabiq manage karta hai!
+      <div>
+        <h4 style="margin:0 0 6px;color:#0a66c2;font-size:15px;">3. LinkedIn 1-Click Connection:</h4>
+        <p style="margin:0;">Status bar me <strong>"Connect 1-Click"</strong> (LinkedIn) button par click kar ke Authorize karein. Ek hi click me charon brands ke liye LinkedIn token active ho jayega!</p>
       </div>
     </div>
   </div>
@@ -473,26 +506,26 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
   const CATEGORY_LABELS = {
     market_conditions: '📈 Market Conditions & Fuel Trends',
     fmcsa_compliance: '🛡️ FMCSA Safety Rules & DOT Compliance',
-    profit_optimization: '💰 Owner-Operator Profit & RPM Maximization',
-    ratecon_protection: '📑 RateCon OCR Audit & Scam Red Flags',
-    industry_news: '🚨 Breaking Freight & Supply Chain News',
-    dispatch_promotional: '⚡ Shipping Wish $149/wk Dispatch ($0 Trial)',
-    driver_lifestyle: '🛣️ Trucker Life, Health & Highway Tips',
-    broker_credit_check: '🔍 Broker Credit Scores & Days-to-Pay',
-    spot_market_rates: '📊 Spot Freight Rates & Capacity Trends',
-    capacity_matching: '🤝 Automated Carrier-Broker Matching',
-    loadboard_transparency: '✨ 100% Unmasked Broker Contacts',
-    free_load_posting: '🆓 100% Free Load Posting for Brokers',
-    airport_transfer_tips: '✈️ JFK, EWR, LGA Airport Transfer Tips',
-    corporate_travel: '👔 Executive Corporate Travel & Roadshows',
-    manhattan_luxury: '🏙️ Manhattan Luxury Skyline & Evening Charter',
-    vip_events_weddings: '🥂 Wedding & VIP Gala Black Car Chauffeur',
-    chauffeur_hospitality: '🎩 Professional Chauffeur Standards & Fleet',
-    product_spotlight: '⭐ Viral Product Spotlight & Benefits',
-    lifestyle_hacks: '💡 Smart Living Hacks for Home & Office',
-    seasonal_discounts: '🏷️ Limited Weekend Discount & Flash Sale',
-    customer_reviews: '🌟 Verified Customer Unboxing & Reviews',
-    smart_gadget_review: '📱 Smart Gadget In-Depth Performance'
+    profit_optimization: '💰 Owner-Operator Profit & RPM Strategy',
+    ratecon_protection: '📑 RateCon OCR Audit & Detention Protection',
+    industry_news: '🚨 Breaking Freight & Supply Chain Intelligence',
+    dispatch_promotional: '⚡ Shipping Wish $149/wk Flat-Fee Dispatch',
+    driver_lifestyle: '🛣️ CDL-A Highway Life & Fleet Excellence',
+    broker_credit_check: '🔍 Broker Credit Scores & Days-to-Pay Audit',
+    spot_market_rates: '📊 Spot Freight Rates & Corridor Benchmarks',
+    capacity_matching: '🤝 Instant Carrier-Broker Capacity Matching',
+    loadboard_transparency: '✨ 100% Unmasked Direct Broker Contacts',
+    free_load_posting: '🆓 100% Free Spot Load Posting for Brokers',
+    airport_transfer_tips: '✈️ JFK, EWR & LGA Executive Flight Transfers',
+    corporate_travel: '👔 Wall Street Corporate Roadshow Chauffeur',
+    manhattan_luxury: '🏙️ Manhattan Evening Charter & Fine Dining',
+    vip_events_weddings: '🥂 VIP Gala & Luxury Wedding Fleet',
+    chauffeur_hospitality: '🎩 White-Glove TLC Chauffeur Standards',
+    product_spotlight: '⭐ Curated Smart Home Spotlight',
+    lifestyle_hacks: '💡 Modern Living & Workspace Upgrades',
+    seasonal_discounts: '🏷️ Exclusive Direct-to-Consumer Essentials',
+    customer_reviews: '🌟 Verified Customer Favorites & Aesthetics',
+    smart_gadget_review: '📱 Next-Gen Everyday Tech Architecture'
   };
 
   async function initHub() {
@@ -501,23 +534,28 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
       return;
     }
 
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('brand') && VERIFIED_PAGE_IDS[urlParams.get('brand')]) {
+      activeBrand = urlParams.get('brand');
+    }
+
     try {
       const res = await fetch('/api/social/brands');
       const data = await res.json();
       if (data.ok && data.brands) {
         data.brands.forEach(b => { brandsData[b.key] = b; });
-        renderBrandState();
-        loadRecentPosts();
+        selectBrand(activeBrand);
+        loadRecentPosts('');
+        loadEngagementLogs();
       }
     } catch (err) {
       console.warn('Init error:', err);
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('linkedin_connected') === 'success') {
-      alert('🎉 Success! LinkedIn account connected for all 4 brands!');
+      showToast('🎉 LinkedIn successfully connected across all 4 brands!', 'success', 6000);
     } else if (urlParams.get('linkedin_error')) {
-      alert('⚠️ LinkedIn notice: ' + decodeURIComponent(urlParams.get('linkedin_error')));
+      showToast('⚠️ LinkedIn notice: ' + decodeURIComponent(urlParams.get('linkedin_error')), 'warning', 8000);
     }
   }
 
@@ -527,45 +565,53 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
     const activeBtn = document.getElementById(`btn-brand-${key}`);
     if (activeBtn) activeBtn.classList.add('active');
     renderBrandState();
-    loadRecentPosts();
   }
 
   function renderBrandState() {
     const brand = brandsData[activeBrand] || {};
     const status = brand.status || {};
 
-    // Badges: Facebook is always connected because permanent tokens are active in DB
+    const stripName = document.getElementById('strip-brand-name');
+    if (stripName) stripName.textContent = brand.name || activeBrand;
+
+    // 1. Facebook Badge
     const fbConnected = Boolean(status.facebook_connected || VERIFIED_PAGE_IDS[activeBrand]);
-    const updateBadge = (id, connected) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (connected) {
-        el.className = 'badge badge-paid';
-        el.textContent = 'Connected';
+    const fbEl = document.getElementById('badge-fb');
+    if (fbEl) {
+      fbEl.className = fbConnected ? 'badge badge-paid' : 'badge badge-overdue';
+      fbEl.textContent = fbConnected ? 'Connected (Live)' : 'Disconnected';
+    }
+
+    // 2. Instagram Badge (Honest status!)
+    const igEl = document.getElementById('badge-ig');
+    if (igEl) {
+      if (status.instagram_connected) {
+        igEl.className = 'badge badge-paid';
+        igEl.textContent = 'Connected (IG Business)';
       } else {
-        el.className = 'badge badge-overdue';
-        el.textContent = 'Disconnected';
-      }
-    };
-
-    updateBadge('badge-fb', fbConnected);
-    updateBadge('badge-ig', status.instagram_connected || (fbConnected ? true : false));
-    if (fbConnected && !status.instagram_connected) {
-      const igBadge = document.getElementById('badge-ig');
-      if (igBadge) {
-        igBadge.className = 'badge badge-booked';
-        igBadge.textContent = 'Linked via Meta';
+        igEl.className = 'badge badge-pending';
+        igEl.textContent = 'Link IG in FB Page Settings';
+        igEl.title = 'Open your Facebook Page Settings -> Linked Accounts -> Instagram to link your Instagram Business profile';
       }
     }
-    updateBadge('badge-li', status.linkedin_connected);
 
-    const apBadge = document.getElementById('badge-autopilot');
-    if (apBadge) {
-      apBadge.className = 'badge badge-paid';
-      apBadge.textContent = 'Active (Auto)';
+    // 3. LinkedIn Badge + 1-Click Connect Button
+    const liEl = document.getElementById('badge-li');
+    const liBtn = document.getElementById('btn-quick-li-connect');
+    if (liEl) {
+      if (status.linkedin_connected) {
+        liEl.className = 'badge badge-paid';
+        liEl.textContent = 'Connected';
+        if (liBtn) liBtn.style.display = 'none';
+      } else {
+        liEl.className = 'badge badge-overdue';
+        liEl.textContent = 'Not Connected';
+        if (liBtn) {
+          liBtn.style.display = 'inline-block';
+          liBtn.href = `/api/social/auth/linkedin?brand=${activeBrand}`;
+        }
+      }
     }
-    const apTime = document.getElementById('text-autopilot-time');
-    if (apTime) apTime.textContent = `Daily Scheduled Time: ${status.autopilot_time || '10:00 AM'}`;
 
     const brandLbl = document.getElementById('active-brand-label');
     if (brandLbl) brandLbl.textContent = brand.name || 'Brand';
@@ -574,12 +620,19 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
     const selCat = document.getElementById('sel-category');
     if (selCat) {
       const cats = brand.categories || ['market_conditions'];
-      selCat.innerHTML = cats.map(c => `
-        <option value="${c}">${CATEGORY_LABELS[c] || c.replace(/_/g, ' ')}</option>
-      `).join('');
+      selCat.innerHTML = `<option value="">🔄 Auto-Pick Next Unposted Pillar (Never Repeats)</option>` +
+        cats.map(c => `<option value="${c}">${CATEGORY_LABELS[c] || c.replace(/_/g, ' ')}</option>`).join('');
     }
 
-    // Update Preview Header with distinct brand identity
+    // Populate Visual Photography Style Dropdown
+    const selStyle = document.getElementById('sel-visual-style');
+    if (selStyle) {
+      const scenes = brand.visual_scenes || [];
+      selStyle.innerHTML = `<option value="auto">🔄 Auto-Rotate Editorial Photography (Never Repeats)</option>` +
+        scenes.map(s => `<option value="${s.key}">📸 ${escapeHtml(s.label)}</option>`).join('');
+    }
+
+    // Update Preview Header
     const prevName = document.getElementById('prev-brand-name');
     if (prevName) prevName.textContent = brand.name || 'Brand';
     const prevAvatar = document.getElementById('prev-avatar');
@@ -601,7 +654,6 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
     }
   }
 
-  // Mobile-First Toast Notification System
   function showToast(message, type = 'info', duration = 5000) {
     let container = document.getElementById('hub-toast-container');
     if (!container) {
@@ -645,11 +697,12 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
     btnGen.disabled = true;
     btnPub.disabled = true;
     const originalGenHtml = btnGen.innerHTML;
-    btnGen.innerHTML = '<span class="hub-spinner"></span> <span>AI Generating Unique Post... (~5-10s)</span>';
+    btnGen.innerHTML = '<span class="hub-spinner"></span> <span>GPT-4o + Leica Visual Engine Synthesizing... (~8-15s)</span>';
 
-    const loadingToast = showToast('🤖 AI (GPT-4o) post synthesize kar raha hai... Please wait (5-10s)', 'loading', 15000);
+    const loadingToast = showToast('🤖 GPT-4o pichle posts check kar ke 100% naya executive post aur editorial photo bana raha hai...', 'loading', 25000);
 
     const category = document.getElementById('sel-category').value;
+    const visualStyle = document.getElementById('sel-visual-style').value;
     const customAngle = document.getElementById('inp-custom-angle').value;
 
     try {
@@ -659,6 +712,7 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
         body: JSON.stringify({
           brand: activeBrand,
           category,
+          visual_style: visualStyle,
           custom_angle: customAngle
         })
       });
@@ -670,21 +724,25 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
         const editor = document.getElementById('editor-content');
         editor.value = data.post.content;
         document.getElementById('prev-body').textContent = data.post.content;
-        
+
+        const styleBadge = document.getElementById('prev-style-badge');
+        if (styleBadge && data.post.visual_style_label) {
+          styleBadge.textContent = `📸 ${data.post.visual_style_label}`;
+        }
+
         const imgBox = document.getElementById('prev-image-box');
         if (imgBox) {
           if (data.post.image_url) {
             imgBox.innerHTML = `
-              <img src="${data.post.image_url}" alt="AI Generated Graphic Banner" style="width:100%;max-height:380px;object-fit:cover;border-radius:10px;display:block;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
-              <div style="font-size:12px;color:#94a3b8;margin-top:10px;text-align:left;line-height:1.4;">🎨 <strong>AI Visual Artwork:</strong> ${escapeHtml(data.post.image_prompt || '')}</div>
+              <img src="${data.post.image_url}" alt="Editorial Brand Photography" style="width:100%;max-height:380px;object-fit:cover;border-radius:10px;display:block;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+              <div style="font-size:11.5px;color:#94a3b8;margin-top:10px;text-align:left;line-height:1.4;">📸 <strong>${escapeHtml(data.post.visual_style_label || 'Editorial Photography')}:</strong> ${escapeHtml(data.post.image_prompt || '')}</div>
             `;
           } else {
-            imgBox.innerHTML = `<span>🖼️ <strong>Visual Design Concept:</strong> ${escapeHtml(data.post.image_prompt || 'Branded Graphic Banner')}</span>`;
+            imgBox.innerHTML = `<span>📸 <strong>Editorial Concept:</strong> ${escapeHtml(data.post.image_prompt || '')}</span>`;
           }
         }
 
-        showToast('✨ 100% Unique Post & AI Visual Graphic Ready! Niche review karein aur Publish karein.', 'success', 6000);
-        editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showToast('✨ Fresh Executive Post & Editorial Photo Ready! Review karein aur Publish dabayein.', 'success', 6000);
       } else {
         showToast(data.error || 'Failed to generate post', 'error', 6000);
       }
@@ -704,7 +762,7 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
     const btnPub = document.getElementById('btn-publish');
 
     if (!content) {
-      showToast('⚠️ Caption khali hai! Pehle uper wala "Generate with AI" button dabayein.', 'warning', 6000);
+      showToast('⚠️ Pehle uper wala "Synthesize Non-Repetitive Executive Post" button dabayein!', 'warning', 6000);
       btnGen.classList.add('pulse-attention');
       btnGen.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
@@ -712,12 +770,12 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
 
     const platforms = [];
     if (document.getElementById('chk-platform-fb').checked) platforms.push('facebook');
-    if (document.getElementById('chk-platform-li').checked) platforms.push('linkedin');
     if (document.getElementById('chk-platform-ig').checked) platforms.push('instagram');
+    if (document.getElementById('chk-platform-li').checked) platforms.push('linkedin');
     if (document.getElementById('chk-platform-tt')?.checked) platforms.push('tiktok');
 
     if (!platforms.length) {
-      showToast('⚠️ Kam se kam ek platform (Facebook, LinkedIn, etc.) select karein.', 'warning', 5000);
+      showToast('⚠️ Kam se kam ek platform select karein.', 'warning', 5000);
       return;
     }
 
@@ -726,7 +784,7 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
     const originalPubHtml = btnPub.innerHTML;
     btnPub.innerHTML = '<span class="hub-spinner"></span> <span>Publishing Live Now...</span>';
 
-    const publishToast = showToast('🚀 Selected platforms per publish ho raha hai...', 'loading', 25000);
+    const publishToast = showToast(`🚀 ${brandsData[activeBrand]?.name || activeBrand} ke selected channels par publish ho raha hai...`, 'loading', 30000);
 
     try {
       const res = await fetch('/api/social/publish', {
@@ -734,9 +792,11 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           brand: activeBrand,
-          category: document.getElementById('sel-category').value,
-          title: currentGeneratedPost?.title || 'Social Update',
+          category: currentGeneratedPost?.category || document.getElementById('sel-category').value || 'market_conditions',
+          visual_style: currentGeneratedPost?.visual_style || null,
+          title: currentGeneratedPost?.title || 'Executive Update',
           content,
+          image_prompt: currentGeneratedPost?.image_prompt || null,
           image_url: currentGeneratedPost?.image_url || null,
           platforms
         })
@@ -746,24 +806,17 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
 
       if (data.ok && Array.isArray(data.results)) {
         const successes = data.results.filter(r => r.status === 'published');
-        const failures = data.results.filter(r => r.status === 'failed' || r.status === 'saved_draft');
+        const nonPublished = data.results.filter(r => r.status !== 'published');
 
         if (successes.length > 0) {
-          showToast(`🎉 Live Publish ho gaya: ${successes.map(s => s.platform).join(', ')}!`, 'success', 6000);
+          showToast(`🎉 Live Published on: ${successes.map(s => s.platform.toUpperCase()).join(', ')}!`, 'success', 7000);
         }
 
-        if (failures.length > 0) {
-          failures.forEach(f => {
-            const errStr = String(f.error || '');
-            if (errStr.includes('OAuthException') || errStr.includes('permission') || errStr.includes('confirm') || f.platform === 'facebook') {
-              showToast(`⚠️ Facebook Notice: Meta Developer account confirmation required! developers.facebook.com per ja kar "Confirm Account" verify karein.`, 'warning', 10000);
-            } else {
-              showToast(`⚠️ ${f.platform}: ${f.error}`, 'warning', 7000);
-            }
-          });
-        }
+        nonPublished.forEach(f => {
+          showToast(`ℹ️ ${f.platform.toUpperCase()}: ${f.error || f.status}`, 'warning', 8000);
+        });
 
-        loadRecentPosts();
+        loadRecentPosts('');
       } else {
         showToast(data.error || 'Publishing error. Please try again.', 'error', 7000);
       }
@@ -777,27 +830,133 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
     }
   }
 
-  async function loadRecentPosts() {
+  async function runAllBrandsAutoPilot() {
+    const btn = document.getElementById('btn-blast-all');
+    btn.disabled = true;
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="hub-spinner"></span> <span>Publishing All 4 Brands (~35-50s)...</span>';
+
+    const toast = showToast('🚀 MCP AI Agent charon brands (Shipping Wish, LoadsNexus, NYC Limo Wish, BuyWish) ke liye unique posts aur Leica photos bana kar live publish kar raha hai...', 'loading', 65000);
+
+    try {
+      const res = await fetch('/api/social/autopilot/run-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      const data = await res.json();
+      if (toast) toast.remove();
+
+      if (data.ok && Array.isArray(data.published)) {
+        const totalPublished = data.published.reduce((acc, b) => {
+          const okCount = Array.isArray(b.results) ? b.results.filter(r => r.status === 'published').length : 0;
+          return acc + okCount;
+        }, 0);
+        showToast(`🎉 All 4 Brands Auto-Pilot Complete! ${totalPublished} live posts published across your connected channels!`, 'success', 9000);
+        loadRecentPosts('');
+        loadEngagementLogs();
+      } else {
+        showToast(data.error || 'Auto-Pilot finished with notices.', 'warning', 7000);
+      }
+    } catch (err) {
+      if (toast) toast.remove();
+      showToast('Auto-Pilot error: ' + err.message, 'error', 7000);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+    }
+  }
+
+  async function scanAndReplyAllEngagement() {
+    const btn = document.getElementById('btn-scan-engagement');
+    if (btn) btn.disabled = true;
+    const toast = showToast('💬 Scanning Facebook Pages, Instagram & Messenger DMs across all 4 brands for unanswered comments/messages...', 'loading', 25000);
+
+    try {
+      const res = await fetch('/api/social/engagement/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      const data = await res.json();
+      if (toast) toast.remove();
+
+      if (data.ok) {
+        const count = Array.isArray(data.new_replies) ? data.new_replies.length : 0;
+        if (count > 0) {
+          showToast(`✅ AI replied live to ${count} new customer comment(s)/DM(s)!`, 'success', 7000);
+        } else {
+          showToast('✅ All comments & Messenger DMs across all 4 brands are up to date (0 unanswered)!', 'info', 5000);
+        }
+        renderEngagementTable(data.history || []);
+      } else {
+        showToast(data.error || 'Could not scan engagement', 'error', 6000);
+      }
+    } catch (err) {
+      if (toast) toast.remove();
+      showToast('Scan error: ' + err.message, 'error', 6000);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function loadEngagementLogs() {
+    try {
+      const res = await fetch('/api/social/engagement/logs');
+      const data = await res.json();
+      if (data.ok) {
+        renderEngagementTable(data.logs || []);
+      }
+    } catch (_) {}
+  }
+
+  function renderEngagementTable(logs) {
+    const tbody = document.getElementById('engagement-log-tbody');
+    if (!tbody) return;
+    if (!logs || !logs.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:18px;color:#94a3b8;">24/7 AI Watcher is active. As soon as a customer comments or sends a DM on any of your 4 brands, the AI reply will appear here automatically.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = logs.map(l => `
+      <tr>
+        <td><strong style="text-transform:uppercase;font-size:11.5px;">${escapeHtml(l.brand)}</strong></td>
+        <td><span class="badge badge-booked" style="text-transform:uppercase;">${escapeHtml(l.platform)} • ${escapeHtml(l.interaction_type)}</span></td>
+        <td><strong>${escapeHtml(l.sender_name || 'Visitor')}</strong></td>
+        <td style="max-width:220px;">${escapeHtml(l.incoming_text)}</td>
+        <td style="max-width:280px;color:#0f172a;">${escapeHtml(l.ai_reply_text)}</td>
+        <td><span class="badge ${l.status === 'replied' ? 'badge-paid' : 'badge-pending'}">${escapeHtml(l.status)}</span></td>
+        <td style="color:#64748b;font-size:11.5px;">${new Date(l.created_at).toLocaleString([], { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function loadRecentPosts(brandFilter = '') {
     const tbody = document.getElementById('posts-log-tbody');
     try {
-      const res = await fetch(`/api/social/posts?brand=${activeBrand}`);
+      const url = brandFilter ? `/api/social/posts?brand=${encodeURIComponent(brandFilter)}` : '/api/social/posts';
+      const res = await fetch(url);
       const data = await res.json();
       if (!data.ok || !data.posts || !data.posts.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px;color:#94a3b8;">No posts published yet for this brand. Click "Generate 100% Unique Post with AI" above to start!</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:18px;color:#94a3b8;">No posts logged yet. Click "🚀 1-Click Auto-Post All 4 Brands Now" at the top to publish across all 4 brands!</td></tr>';
         return;
       }
       tbody.innerHTML = data.posts.map(p => `
         <tr>
-          <td><strong>${escapeHtml(p.brand)}</strong></td>
-          <td><span class="badge badge-booked">${escapeHtml(p.category || 'General')}</span></td>
-          <td><span style="font-weight:700;text-transform:capitalize;">${p.platform}</span></td>
-          <td style="max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-            ${escapeHtml(p.content)}
+          <td><strong style="text-transform:uppercase;font-size:11.5px;">${escapeHtml(p.brand)}</strong></td>
+          <td>
+            <span class="badge badge-booked">${escapeHtml(p.category || 'Editorial')}</span>
+            ${p.visual_style ? `<div style="font-size:10.5px;color:#64748b;margin-top:2px;">📸 ${escapeHtml(p.visual_style)}</div>` : ''}
+          </td>
+          <td><span style="font-weight:700;text-transform:capitalize;">${escapeHtml(p.platform)}</span></td>
+          <td style="max-width:300px;">
+            <div style="font-weight:700;color:#0f172a;font-size:12px;">${escapeHtml(p.title || '')}</div>
+            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#475569;font-size:11.5px;">${escapeHtml(p.content)}</div>
           </td>
           <td>
             <span class="badge ${p.status === 'published' ? 'badge-paid' : 'badge-pending'}">
-              ${p.status}
+              ${escapeHtml(p.status)}
             </span>
+            ${p.error_message ? `<div style="font-size:10.5px;color:#b45309;max-width:220px;margin-top:3px;line-height:1.3;">${escapeHtml(p.error_message)}</div>` : ''}
           </td>
           <td style="color:#64748b;font-size:11.5px;">${new Date(p.created_at).toLocaleString([], { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
         </tr>
@@ -810,11 +969,11 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
   async function testAutoReply() {
     const input = document.getElementById('inp-test-comment');
     const comment = input.value.trim();
-    if (!comment) return alert('Please enter a test comment or question.');
+    if (!comment) return showToast('Please enter a test comment or question first.', 'warning', 4000);
 
     const box = document.getElementById('reply-result-box');
     box.style.display = 'block';
-    box.innerHTML = '<em>Thinking like official community manager...</em>';
+    box.innerHTML = '<em>🤖 GPT-4o Executive Community Manager crafting response...</em>';
 
     try {
       const res = await fetch('/api/social/auto-reply-test', {
@@ -827,7 +986,7 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
       });
       const data = await res.json();
       if (data.ok) {
-        box.innerHTML = `<strong>🤖 Official AI Reply:</strong><br>${escapeHtml(data.reply)}`;
+        box.innerHTML = `<strong>🤖 Official ${escapeHtml(brandsData[activeBrand]?.name || activeBrand)} AI Reply:</strong><br>${escapeHtml(data.reply)}`;
       } else {
         box.innerHTML = `<span style="color:#b91c1c;">Error: ${escapeHtml(data.error)}</span>`;
       }
@@ -854,5 +1013,6 @@ Select a category and click "Generate 100% Unique Post with AI" to see real-time
 
   document.addEventListener('DOMContentLoaded', initHub);
 </script>
+<script src="/js/app-shell.js?v=38"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 /**
  * routes/social-media.js
  * 
- * 4-Brand Social Media Command Center & AI Auto-Pilot API
+ * 4-Brand Social Media Command Center & 24/7 Autonomous MCP AI Manager API
  */
 
 const path = require('path');
@@ -9,46 +9,71 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
 const {
   BRANDS,
   ensureSocialSchema,
   generateAiSocialPost,
-  publishToFacebook,
-  publishToInstagram,
-  publishToLinkedIn,
-  publishToTikTok,
-  generateAiCommentReply
+  generateAiCommentReply,
+  detectInstagramAccount,
+  publishBrandPost,
+  scanAndReplySocialEngagement,
+  runAutonomousSocialManagerTick
 } = require('../utils/social-engine');
-
-// Require staff/admin permissions
-function staffOnly(req, res, next) {
-  const role = req.user && req.user.role;
-  if (role === 'carrier' || role === 'carrier_admin' || role === 'driver') {
-    return res.status(403).json({ error: 'Staff access only' });
-  }
-  next();
-}
 
 /**
  * GET /api/social/brands
- * Return brands, metadata, and connection status
+ * Return brands, metadata, visual scenes, and real connection status
  */
 router.get('/brands', async (req, res) => {
   try {
     await ensureSocialSchema();
     const { rows: creds } = await pool.query('SELECT * FROM social_brand_credentials');
     const credMap = {};
+    let anyOverdue = false;
+
     for (const c of creds) {
+      let igId = c.instagram_account_id;
+      if (!igId && c.facebook_page_id && c.facebook_access_token) {
+        // Non-blocking auto-detect of linked Instagram Business Account
+        detectInstagramAccount(c.facebook_page_id, c.facebook_access_token)
+          .then(detected => {
+            if (detected) {
+              pool.query(
+                'UPDATE social_brand_credentials SET instagram_account_id = $1, instagram_access_token = COALESCE(instagram_access_token, facebook_access_token) WHERE brand = $2',
+                [detected, c.brand]
+              ).catch(() => {});
+            }
+          })
+          .catch(() => {});
+      }
+
+      if (c.autopilot_enabled) {
+        const hoursSince = c.last_posted_at
+          ? (Date.now() - new Date(c.last_posted_at).getTime()) / (1000 * 60 * 60)
+          : 999;
+        if (hoursSince >= 24) anyOverdue = true;
+      }
+
       credMap[c.brand] = {
         facebook_connected: Boolean(c.facebook_page_id && c.facebook_access_token),
-        instagram_connected: Boolean(c.instagram_account_id && c.instagram_access_token),
+        facebook_page_id: c.facebook_page_id || '',
+        instagram_connected: Boolean(igId && /^\d+$/.test(igId)),
+        instagram_account_id: igId || '',
         linkedin_connected: Boolean(c.linkedin_access_token),
+        linkedin_org_urn: c.linkedin_org_urn || '',
+        tiktok_connected: Boolean(c.tiktok_access_token),
         x_connected: Boolean(c.x_api_key && c.x_access_token),
         autopilot_enabled: Boolean(c.autopilot_enabled),
         autopilot_time: c.autopilot_time || '10:00',
         last_posted_at: c.last_posted_at
       };
+    }
+
+    // If any brand is overdue for its daily post, trigger background tick non-blockingly
+    if (anyOverdue) {
+      runAutonomousSocialManagerTick({ forcePublishAll: false }).catch(err =>
+        console.warn('[SOCIAL-AUTOPILOT] background tick note:', err.message)
+      );
     }
 
     const brandList = Object.keys(BRANDS).map(key => {
@@ -60,10 +85,12 @@ router.get('/brands', async (req, res) => {
         website: b.website,
         industry: b.industry,
         categories: b.categories,
+        visual_scenes: (b.visualScenes || []).map(s => ({ key: s.key, label: s.label })),
         status: credMap[key] || {
           facebook_connected: false,
           instagram_connected: false,
           linkedin_connected: false,
+          tiktok_connected: false,
           x_connected: false,
           autopilot_enabled: false,
           autopilot_time: '10:00'
@@ -105,7 +132,6 @@ router.get('/credentials/:brand', async (req, res) => {
 
     const c = rows[0];
     const mask = (s) => (s && s.length > 8 ? `${s.slice(0, 4)}••••••••${s.slice(-4)}` : s || '');
-    const defUrls = (BRANDS[brand] && BRANDS[brand].defaultSocialUrls) || {};
 
     res.json({
       ok: true,
@@ -189,7 +215,6 @@ router.post('/credentials/:brand', async (req, res) => {
       autopilot_time
     } = req.body;
 
-    // Auto-normalize LinkedIn Organization URN: accepts digits, URL, or raw string
     let cleanLiUrn = (linkedin_org_urn || '').trim();
     if (cleanLiUrn) {
       const digits = cleanLiUrn.match(/(\d{5,12})/);
@@ -309,34 +334,26 @@ router.get('/auth/linkedin', (req, res) => {
   const clientId = (process.env.LINKEDIN_CLIENT_ID || '78rycmk7yv1kfj').trim();
   const redirectUri = (process.env.LINKEDIN_REDIRECT_URI || 'https://www.shippingwish.com/api/social/callback/linkedin').trim();
   const scope = encodeURIComponent('openid profile email w_member_social');
-  
+
   const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(brand)}&scope=${scope}`;
   res.redirect(authUrl);
 });
 
 /**
  * GET /api/social/callback/linkedin
- * Handle LinkedIn OAuth callback and save token in DB
+ * Handle LinkedIn OAuth callback and save token in DB for all 4 brands
  */
 router.get('/callback/linkedin', async (req, res) => {
   const fs = require('fs');
-  const logFile = path.resolve(__dirname, '../callback.log');
-  try {
-    fs.appendFileSync(logFile, `[${new Date().toISOString()}] CALLBACK HIT: ${JSON.stringify(req.query)}\n`);
-  } catch (_) {}
-
   const { code, state, error, error_description } = req.query;
   const brand = state || 'shippingwish';
 
   if (error) {
-    try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] OAUTH ERROR: ${error} - ${error_description}\n`); } catch (_) {}
-    console.error('LinkedIn OAuth Error:', error, error_description);
-    return res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_error=${encodeURIComponent(error_description || error)}`);
+    return res.redirect(`/social-media-hub?brand=${brand}&linkedin_error=${encodeURIComponent(error_description || error)}`);
   }
 
   if (!code) {
-    try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] MISSING CODE\n`); } catch (_) {}
-    return res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_error=missing_code`);
+    return res.redirect(`/social-media-hub?brand=${brand}&linkedin_error=missing_code`);
   }
 
   try {
@@ -374,7 +391,6 @@ router.get('/callback/linkedin', async (req, res) => {
 
     const accessToken = tokenData.access_token;
 
-    // Preserved official Company Organization URNs for all 4 brands
     const BRAND_COMPANY_URNS = {
       shippingwish: 'urn:li:organization:99856183',
       loadsnexus:   'urn:li:organization:146706195',
@@ -391,17 +407,15 @@ router.get('/callback/linkedin', async (req, res) => {
         VALUES ($1, $2, $3, true, '10:00')
         ON CONFLICT (brand) DO UPDATE SET
           linkedin_access_token = EXCLUDED.linkedin_access_token,
-          linkedin_org_urn = $3,
+          linkedin_org_urn = COALESCE(NULLIF(social_brand_credentials.linkedin_org_urn, ''), $3),
           updated_at = now()
       `, [b, accessToken, targetCompanyUrn]);
     }
 
-    try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] SUCCESS: Saved company org tokens for all 4 brands\n`); } catch (_) {}
-    res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_connected=success`);
+    res.redirect(`/social-media-hub?brand=${brand}&linkedin_connected=success`);
   } catch (err) {
-    try { fs.appendFileSync(logFile, `[${new Date().toISOString()}] CATCH ERROR: ${err.message}\n`); } catch (_) {}
     console.error('LinkedIn Callback Error:', err);
-    res.redirect(`/social-media-hub.html?brand=${brand}&linkedin_error=${encodeURIComponent(err.message)}`);
+    res.redirect(`/social-media-hub?brand=${brand}&linkedin_error=${encodeURIComponent(err.message)}`);
   }
 });
 
@@ -510,12 +524,17 @@ router.get('/image/:imageId', async (req, res) => {
 
 /**
  * POST /api/social/generate
- * Generate a fresh, unique AI social media post
+ * Generate a fresh, unique AI social media post with non-repeating visual photography
  */
 router.post('/generate', async (req, res) => {
   try {
-    const { brand = 'shippingwish', category = 'market_conditions', custom_angle = '' } = req.body;
-    const post = await generateAiSocialPost(brand, category, custom_angle);
+    const {
+      brand = 'shippingwish',
+      category = '',
+      custom_angle = '',
+      visual_style = 'auto'
+    } = req.body;
+    const post = await generateAiSocialPost(brand, category, custom_angle, visual_style);
     res.json({ ok: true, post });
   } catch (err) {
     console.error('Social generate error:', err);
@@ -525,7 +544,7 @@ router.post('/generate', async (req, res) => {
 
 /**
  * POST /api/social/publish
- * Publish or schedule a post across selected platforms
+ * Publish a post across selected platforms for a brand
  */
 router.post('/publish', async (req, res) => {
   try {
@@ -533,121 +552,128 @@ router.post('/publish', async (req, res) => {
     const {
       brand = 'shippingwish',
       category = 'market_conditions',
-      title = 'Social Post',
+      visual_style = null,
+      title = 'Executive Update',
       content = '',
+      image_prompt = null,
       image_url = null,
       video_url = null,
-      platforms = ['facebook', 'linkedin']
+      platforms = ['facebook', 'instagram', 'linkedin']
     } = req.body;
 
     if (!content.trim()) {
       return res.status(400).json({ error: 'Post content cannot be empty' });
     }
 
-    const { rows: credRows } = await pool.query('SELECT * FROM social_brand_credentials WHERE brand = $1', [brand]);
-    const creds = credRows[0] || {};
+    const results = await publishBrandPost(
+      brand,
+      { category, visual_style, title, content, image_prompt, image_url, video_url },
+      platforms
+    );
 
-    const results = [];
-
-    for (const p of platforms) {
-      let extId = null;
-      let status = 'published';
-      let error = null;
-
-      try {
-        if (p === 'facebook') {
-          if (creds.facebook_page_id && creds.facebook_access_token) {
-            const fbRes = await publishToFacebook(creds.facebook_page_id, creds.facebook_access_token, content, image_url);
-            extId = fbRes.id;
-          } else {
-            status = 'saved_draft';
-            error = 'Facebook API credentials not connected. Saved to database archive.';
-          }
-        } else if (p === 'instagram') {
-          let igId = creds.instagram_account_id;
-          let igToken = creds.instagram_access_token || creds.facebook_access_token;
-
-          // Auto-detect linked Instagram Business Account from Facebook Page
-          if ((!igId || !igId.match(/^\d+$/)) && creds.facebook_page_id && creds.facebook_access_token) {
-            try {
-              const pageIgRes = await fetch(`https://graph.facebook.com/v21.0/${creds.facebook_page_id}?fields=instagram_business_account&access_token=${creds.facebook_access_token}`);
-              const pageIgData = await pageIgRes.json();
-              if (pageIgData.instagram_business_account?.id) {
-                igId = pageIgData.instagram_business_account.id;
-                await pool.query('UPDATE social_brand_credentials SET instagram_account_id = $1, instagram_access_token = $2 WHERE brand = $3', [igId, igToken, brand]).catch(() => {});
-              }
-            } catch (igErr) {
-              console.warn('Auto-detect IG account error:', igErr.message);
-            }
-          }
-
-          if (igId && igId.match(/^\d+$/) && igToken && image_url) {
-            const igRes = await publishToInstagram(igId, igToken, content, image_url);
-            extId = igRes.id;
-          } else if (!image_url) {
-            status = 'saved_draft';
-            error = 'Instagram requires an image or visual graphic to publish.';
-          } else {
-            status = 'saved_draft';
-            error = 'Instagram account Facebook Page ke sath linked nahi hai. Meta Business Suite / Facebook Page Settings me ja kar Linked Accounts -> Instagram connect karein.';
-          }
-        } else if (p === 'linkedin') {
-          if (creds.linkedin_org_urn && creds.linkedin_access_token) {
-            const liRes = await publishToLinkedIn(creds.linkedin_org_urn, creds.linkedin_access_token, content, image_url);
-            extId = liRes.id;
-          } else {
-            status = 'saved_draft';
-            error = 'LinkedIn Org URN & token not connected. Saved to database archive.';
-          }
-        } else if (p === 'tiktok') {
-          const mediaUrl = video_url || image_url;
-          if (creds.tiktok_access_token && mediaUrl) {
-            const ttRes = await publishToTikTok(creds.tiktok_access_token, mediaUrl, content);
-            extId = ttRes.id;
-          } else {
-            status = 'saved_draft';
-            error = !creds.tiktok_access_token
-              ? 'TikTok Creator account not connected. Connect in Settings & Saved to archive.'
-              : 'TikTok requires an MP4 video URL (HeyGen/Runway/Google Veo AI). Saved to archive.';
-          }
-        } else {
-          status = 'saved_draft';
-        }
-      } catch (err) {
-        status = 'failed';
-        error = err.message;
-      }
-
-      // Log into database
-      const insRes = await pool.query(`
-        INSERT INTO social_posts_log (
-          brand, category, platform, title, content, image_url, external_post_id, status, error_message, published_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING id
-      `, [
-        brand,
-        category,
-        p,
-        title,
-        content,
-        image_url,
-        extId,
-        status,
-        error,
-        status === 'published' ? new Date() : null
-      ]);
-
-      results.push({ platform: p, status, external_id: extId, log_id: insRes.rows[0].id, error });
-    }
-
-    // Update last_posted_at
-    await pool.query('UPDATE social_brand_credentials SET last_posted_at = now() WHERE brand = $1', [brand]).catch(() => {});
-
-    res.json({ ok: true, results, message: `Processed post distribution for ${brand} across ${platforms.length} platform(s)` });
+    res.json({
+      ok: true,
+      results,
+      message: `Processed post distribution for ${brand} across ${platforms.length} platform(s)`
+    });
   } catch (err) {
     console.error('Publish error:', err);
     res.status(500).json({ error: err.message });
   }
+});
+
+/**
+ * POST /api/social/autopilot/run-all
+ * 1-Click Autonomous Multi-Brand Blast: Generates & publishes unique posts for all 4 brands (or a specific brand)
+ */
+router.post('/autopilot/run-all', async (req, res) => {
+  try {
+    const { brand = null } = req.body || {};
+    const outcome = await runAutonomousSocialManagerTick({
+      forcePublishAll: true,
+      targetBrand: brand || null
+    });
+    res.json(outcome);
+  } catch (err) {
+    console.error('Run-all autopilot error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/social/cron/tick
+ * Background / Serverless Cron endpoint for 24/7 daily auto-posting and comment/DM replies
+ */
+router.get('/cron/tick', async (req, res) => {
+  try {
+    const outcome = await runAutonomousSocialManagerTick({ forcePublishAll: false });
+    res.json(outcome);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/social/engagement/scan
+ * Scan Facebook Pages, Messenger DMs, and linked Instagram accounts for unanswered comments/DMs and auto-reply live
+ */
+router.post('/engagement/scan', async (req, res) => {
+  try {
+    const { brand = null } = req.body || {};
+    const actions = await scanAndReplySocialEngagement(brand || null);
+    const { rows: history } = await pool.query(
+      'SELECT * FROM social_auto_replies_log ORDER BY created_at DESC LIMIT 30'
+    );
+    res.json({ ok: true, new_replies: actions, history });
+  } catch (err) {
+    console.error('Engagement scan error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/social/engagement/logs
+ * Fetch 24/7 AI Comment & DM Auto-Reply logs
+ */
+router.get('/engagement/logs', async (req, res) => {
+  try {
+    await ensureSocialSchema();
+    const brand = req.query.brand || '';
+    let query = 'SELECT * FROM social_auto_replies_log';
+    const params = [];
+    if (brand) {
+      query += ' WHERE brand = $1';
+      params.push(brand);
+    }
+    query += ' ORDER BY created_at DESC LIMIT 40';
+    const { rows } = await pool.query(query, params);
+    res.json({ ok: true, logs: rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET & POST /api/social/webhook/meta
+ * Real-Time Meta Graph Webhook for Instant Page Comment & Messenger DM Auto-Replies
+ */
+router.get('/webhook/meta', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+  const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || 'shippingwish_mcp_social_2026';
+  if (mode === 'subscribe' && token === verifyToken) {
+    return res.status(200).send(challenge);
+  }
+  return res.status(403).send('Verification failed');
+});
+
+router.post('/webhook/meta', async (req, res) => {
+  // Acknowledge immediately to Meta, then run engagement scanner
+  res.status(200).send('EVENT_RECEIVED');
+  scanAndReplySocialEngagement().catch(err =>
+    console.warn('[META-WEBHOOK] auto-reply scan error:', err.message)
+  );
 });
 
 /**
@@ -658,10 +684,10 @@ router.get('/posts', async (req, res) => {
   try {
     await ensureSocialSchema();
     const brand = req.query.brand || '';
-    let query = 'SELECT * FROM social_posts_log';
+    let query = "SELECT * FROM social_posts_log WHERE platform != 'schema_check_only'";
     const params = [];
     if (brand) {
-      query += ' WHERE brand = $1';
+      query += ' AND brand = $1';
       params.push(brand);
     }
     query += ' ORDER BY created_at DESC LIMIT 50';

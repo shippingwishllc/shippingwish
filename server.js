@@ -914,6 +914,7 @@ if (require.main === module) {
             dispatchDesk.autoCoverStaleDatLoads().catch((err) => console.warn('[LOADBOARD] auto-cover:', err.message));
             require('./utils/driver-assistant').tick().catch((err) => console.warn('[DRIVER-ASSISTANT] tick:', err.message));
             require('./utils/outreach-engine').tick().catch((err) => console.warn('[OUTREACH] tick:', err.message));
+            require('./utils/social-engine').runAutonomousSocialManagerTick().catch((err) => console.warn('[SOCIAL-MCP] tick:', err.message));
           }, 60000);
         }
       });

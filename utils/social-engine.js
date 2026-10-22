@@ -1,7 +1,7 @@
 /**
  * utils/social-engine.js
  * 
- * 4-Brand Autonomous AI Social Media & Content Marketing Engine
+ * 4-Brand Autonomous AI Social Media & 24/7 MCP Community Manager Engine
  * Supported Brands:
  * 1. Shipping Wish LLC (Freight Dispatch, Fleet Ops, 0% Commission)
  * 2. LoadsNexus™ (Capacity Exchange, $19/mo Solo Pass, Verified Spot Loads)
@@ -40,6 +40,38 @@ const BRANDS = {
       'industry_news',
       'dispatch_promotional',
       'driver_lifestyle'
+    ],
+    visualScenes: [
+      {
+        key: 'cinematic_mountain_pass',
+        label: 'Cinematic Highway Photography (Leica 85mm)',
+        prompt: 'Authentic National Geographic / Leica SL2 documentary photograph of a gleaming modern American long-nose Peterbilt 389 semi-truck hauling a clean white 53ft trailer through a scenic Rocky Mountain interstate pass at golden hour sunrise, crisp asphalt, dramatic natural clouds, shallow depth of field, zero text overlays, zero logos, photorealistic editorial quality.'
+      },
+      {
+        key: 'command_center_ops',
+        label: 'Executive Dispatch Operations Center',
+        prompt: 'High-end architectural editorial photograph inside a modern glass-walled American freight logistics command center at twilight, warm ambient lighting, multiple ultra-wide curved monitors displaying live US interstate GPS route maps and freight telemetry charts, a focused senior dispatcher with headset reviewing a route, shot on Sony A7R V 35mm lens, zero text overlays, photorealistic.'
+      },
+      {
+        key: 'driver_sunrise_inspection',
+        label: 'Owner-Operator Pre-Trip at Dawn',
+        prompt: 'Authentic editorial portrait photograph of a confident experienced American owner-operator truck driver in a clean work jacket doing a morning walk-around inspection beside a polished Kenworth W990 at a modern travel plaza at dawn, warm golden morning sunbeams, steam rising from a coffee thermos, Leica documentary realism, zero text overlays.'
+      },
+      {
+        key: 'intermodal_port_aerial',
+        label: 'Aerial Drone Supply Chain Hub',
+        prompt: 'Breathtaking high-altitude DJI Inspire 3 aerial drone photograph of a massive modern American logistics distribution hub and highway interchange at sunset, rows of pristine white 53ft dry van and reefer trailers, glowing highway light trails, ultra-sharp architectural composition, zero text overlays.'
+      },
+      {
+        key: 'cab_windshield_perspective',
+        label: 'Inside-the-Cab Open Road View',
+        prompt: 'First-person editorial photograph taken from inside the leather-trimmed cab of a modern Freightliner Cascadia looking out through the clean windshield onto a wide open American desert interstate in Arizona at sunset, glowing dashboard telemetry, crisp highway horizon, warm cinematic color grading, zero text overlays.'
+      },
+      {
+        key: 'flatbed_industrial_haul',
+        label: 'Heavy Industrial Flatbed Haul',
+        prompt: 'Editorial commercial photograph of a heavy-duty American flatbed semi-truck securely strapped with industrial steel coils pulling out of a modern American steel mill at golden hour, dramatic rim lighting, crisp detail on chains and chrome, shot on medium format Hasselblad camera, zero text overlays.'
+      }
     ]
   },
   loadsnexus: {
@@ -63,16 +95,38 @@ const BRANDS = {
       'capacity_matching',
       'loadboard_transparency',
       'free_load_posting'
+    ],
+    visualScenes: [
+      {
+        key: 'brokerage_trading_floor',
+        label: 'Modern Freight Brokerage Trading Floor',
+        prompt: 'Editorial architectural photograph of a sleek modern Chicago freight brokerage headquarters, analysts and freight brokers collaborating around glass desks with ultra-wide screens showing US freight lane heatmaps and capacity charts, natural daylight through floor-to-ceiling windows, Bloomberg Businessweek photography style, zero text overlays.'
+      },
+      {
+        key: 'interstate_corridor_drone',
+        label: 'US Freight Corridor Aerial Shot',
+        prompt: 'Stunning aerial drone photograph of a major US interstate highway bridge over a river at blue hour, several modern semi-trucks moving smoothly across the bridge with warm headlights, vibrant sky, high-end logistics technology editorial look, zero text overlays.'
+      },
+      {
+        key: 'carrier_tablet_booking',
+        label: 'Owner-Operator Booking Spot Load on Tablet',
+        prompt: 'Close-up over-the-shoulder editorial photograph of a truck driver sitting in a modern truck cab holding an iPad Pro displaying a clean dark-mode freight load map with glowing route lines across the USA, natural window light, shallow depth of field, zero text overlays.'
+      },
+      {
+        key: 'warehouse_loading_dock',
+        label: 'High-Tech Distribution Center Bays',
+        prompt: 'Crisp wide-angle architectural photograph of a state-of-the-art automated logistics fulfillment warehouse with clean concrete floors, electric forklifts loading pallets into 53ft trailers at bright loading bays, Fortune-500 supply chain photography, zero text overlays.'
+      }
     ]
   },
   nyclimowish: {
     name: 'NYC Limo Wish',
     tagline: 'Premier Executive Chauffeur & Luxury Limousine Service',
-    website: 'https://www.shippingwish.com/nyclimo',
+    website: 'https://www.nyclimowish.com',
     phone: '+1 (917) 737-0021',
     industry: 'Executive Ground Transportation & Black Car Fleet',
     targetAudience: 'Corporate Executives, VIP Travelers, Wedding Parties, Tourists visiting NYC/Tri-State',
-    valueProp: 'JFK, EWR, LGA Airport transfers with flight monitoring, sanitized Mercedes & Cadillac luxury SUVs, licensed professional chauffeurs, fixed transparent upfront pricing, 24/7 dispatch.',
+    valueProp: 'JFK, EWR, LGA Airport transfers with flight monitoring, sanitized Mercedes-Maybach & Cadillac Escalade ESV luxury fleet, TLC-licensed professional chauffeurs, fixed transparent upfront pricing, 24/7 dispatch.',
     defaultHashtags: '#NYCLimo #JFKAirport #EWR #LaGuardia #ExecutiveChauffeur #LuxuryTravel #NYCBlackCar #WallStreetTravel',
     defaultSocialUrls: {
       facebook: 'https://facebook.com/102796912575296',
@@ -86,6 +140,28 @@ const BRANDS = {
       'manhattan_luxury',
       'vip_events_weddings',
       'chauffeur_hospitality'
+    ],
+    visualScenes: [
+      {
+        key: 'manhattan_twilight_escalade',
+        label: 'Manhattan Twilight Cadillac Escalade ESV',
+        prompt: 'Ultra-luxury Conde Nast Traveler editorial photograph of a pristine black 2026 Cadillac Escalade ESV parked outside a prestigious glass skyscraper on Park Avenue in Midtown Manhattan at twilight, warm golden hotel portico lights reflecting off black paint, a white-gloved chauffeur in a tailored charcoal suit holding the rear door open, Leica 50mm f/1.2, zero text overlays.'
+      },
+      {
+        key: 'jfk_private_tarmac',
+        label: 'Private Jet & Executive Black Car Transfer',
+        prompt: 'Luxury aviation & executive travel editorial photograph of a sleek black Mercedes-Benz S-Class sedan waiting on a wet private aviation tarmac at sunset beside a Gulfstream business jet, warm sunset reflections, cinematic depth of field, zero text overlays.'
+      },
+      {
+        key: 'first_class_rear_cabin',
+        label: 'First-Class Leather Cabin Interior',
+        prompt: 'Interior luxury lifestyle photograph inside the rear executive cabin of a black Mercedes-Maybach S580 driving across the Brooklyn Bridge at night, quilted cognac leather reclining seats, soft ambient cabin lighting, blurred Manhattan skyline lights through the panoramic glass, zero text overlays.'
+      },
+      {
+        key: 'vip_gala_arrival',
+        label: 'Fifth Avenue VIP Evening Arrival',
+        prompt: 'Sophisticated editorial photograph of a luxury black executive SUV arriving at a historic Fifth Avenue landmark hotel in New York City during a soft evening rain, warm streetlamp bokeh reflections on cobblestones, timeless Vogue / Robb Report aesthetic, zero text overlays.'
+      }
     ]
   },
   buywish: {
@@ -93,10 +169,10 @@ const BRANDS = {
     tagline: 'Curated Smart Living & Everyday Viral Essentials',
     website: 'https://www.buywishonline.com',
     phone: '+1 (917) 737-0021',
-    industry: 'Modern Consumer E-Commerce & Dropshipping Catalog',
+    industry: 'Modern Consumer E-Commerce & Lifestyle Catalog',
     targetAudience: 'Online Shoppers, Home Owners, Gadget Lovers looking for high-quality tested essentials',
-    valueProp: 'Direct fast US fulfillment, strict quality vetting, 30-day money-back guarantee, secure Stripe checkout, trending seasonal lifestyle items at wholesale direct pricing.',
-    defaultHashtags: '#BuyWish #OnlineShopping #SmartHome #TrendingGadgets #HomeEssentials #DailyDeals #ECommerce',
+    valueProp: 'Direct fast US fulfillment, strict quality vetting, 30-day money-back guarantee, secure Stripe checkout, trending smart home, wellness, kitchen, and tech essentials.',
+    defaultHashtags: '#BuyWishOnline #SmartHome #ModernLiving #TechEssentials #HomeUpgrade #CuratedFinds #EverydayLuxury',
     defaultSocialUrls: {
       facebook: 'https://facebook.com/110487588698183',
       linkedin: 'https://linkedin.com/company/buywishonline',
@@ -109,12 +185,34 @@ const BRANDS = {
       'seasonal_discounts',
       'customer_reviews',
       'smart_gadget_review'
+    ],
+    visualScenes: [
+      {
+        key: 'minimalist_smart_home_studio',
+        label: 'Apple / Architectural Digest Smart Home Flatlay',
+        prompt: 'High-end Architectural Digest / Kinfolk magazine lifestyle studio photograph of a sunlit minimalist modern home desk and countertop featuring sleek wireless smart tech accessories, warm oak wood, matte ceramic coffee cup, soft natural morning shadows through linen curtains, shot on Hasselblad medium format, zero text overlays.'
+      },
+      {
+        key: 'modern_kitchen_wellness',
+        label: 'Modern Culinary & Wellness Countertop',
+        prompt: 'Bright, airy editorial lifestyle photograph of a luxury marble kitchen island with modern minimalist smart kitchen gadgets, fresh organic greens, warm morning sunlight, crisp studio depth of field, Crate & Barrel / Williams Sonoma editorial style, zero text overlays.'
+      },
+      {
+        key: 'cozy_ambient_living',
+        label: 'Scandinavian Smart Ambient Living Room',
+        prompt: 'Warm inviting interior design photograph of a modern Scandinavian living room at dusk illuminated by sleek minimalist smart LED ambient lighting, plush boucle sofa, curated coffee table accessories, ultra-clean aesthetic, zero text overlays.'
+      },
+      {
+        key: 'unboxing_premium_package',
+        label: 'Premium Curated E-Commerce Unboxing',
+        prompt: 'Editorial overhead lifestyle photograph of hands opening a crisp minimalist matte-black and warm kraft luxury e-commerce gift box on a clean travertine stone table, revealing sleek modern lifestyle gadgets wrapped in tissue paper, natural studio lighting, zero text overlays.'
+      }
     ]
   }
 };
 
 /**
- * Ensure database tables for Social Media
+ * Ensure database tables for Social Media & 24/7 Autonomous Auto-Responder
  */
 async function ensureSocialSchema() {
   await pool.query(`
@@ -163,13 +261,20 @@ async function ensureSocialSchema() {
       image_prompt TEXT,
       image_url TEXT,
       external_post_id VARCHAR(150),
-      status VARCHAR(30) DEFAULT 'draft', -- draft, published, failed, scheduled
+      status VARCHAR(30) DEFAULT 'draft',
       error_message TEXT,
       likes_count INT DEFAULT 0,
       comments_count INT DEFAULT 0,
       published_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT now()
     );
+
+    ALTER TABLE social_posts_log ADD COLUMN IF NOT EXISTS visual_style VARCHAR(80);
+    ALTER TABLE social_posts_log ADD COLUMN IF NOT EXISTS image_prompt TEXT;
+    ALTER TABLE social_posts_log ADD COLUMN IF NOT EXISTS image_url TEXT;
+    ALTER TABLE social_posts_log ADD COLUMN IF NOT EXISTS external_post_id VARCHAR(150);
+    ALTER TABLE social_posts_log ADD COLUMN IF NOT EXISTS error_message TEXT;
+    ALTER TABLE social_posts_log ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
 
     CREATE TABLE IF NOT EXISTS social_generated_images (
       id SERIAL PRIMARY KEY,
@@ -178,7 +283,27 @@ async function ensureSocialSchema() {
       data BYTEA NOT NULL,
       created_at TIMESTAMPTZ DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS social_auto_replies_log (
+      id SERIAL PRIMARY KEY,
+      brand VARCHAR(50) NOT NULL,
+      platform VARCHAR(40) NOT NULL,
+      interaction_type VARCHAR(30) NOT NULL DEFAULT 'comment',
+      external_object_id VARCHAR(180) UNIQUE NOT NULL,
+      parent_post_id VARCHAR(180),
+      sender_name TEXT,
+      sender_id VARCHAR(120),
+      incoming_text TEXT NOT NULL,
+      ai_reply_text TEXT NOT NULL,
+      reply_external_id VARCHAR(180),
+      status VARCHAR(30) DEFAULT 'replied',
+      error_message TEXT,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
   `).catch(err => console.warn('ensureSocialSchema warning:', err.message));
+
+  // Clean up any diagnostic schema check rows
+  await pool.query(`DELETE FROM social_posts_log WHERE platform = 'schema_check_only'`).catch(() => {});
 }
 
 /**
@@ -187,29 +312,87 @@ async function ensureSocialSchema() {
 function cleanSocialCopy(text) {
   if (!text) return '';
   return text
-    // Replace markdown links [Text](http...) with Text: http...
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '$1: $2')
-    // Remove markdown bold / italic asterisks
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
-    // Remove markdown headers #
     .replace(/^#+\s+/gm, '')
-    // Normalize line breaks: ensure bullet points have clean breathing room
+    .replace(/^(🔥\s*)?100%\s+Unique\s+AI\s+Post[^\n]*\n+/i, '')
     .replace(/\r\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
 /**
- * Generate a high-resolution 1024x1024 AI graphic banner using gpt-image-1.5
+ * Fetch recent post history for a brand so AI NEVER repeats topics, hooks, or visual scenes
  */
-async function generateAiSocialImage(brandKey, imagePrompt) {
+async function getRecentBrandPostHistory(brandKey, limit = 12) {
+  try {
+    await ensureSocialSchema();
+    const { rows } = await pool.query(
+      `SELECT category, title, visual_style, left(content, 160) AS hook_snippet, image_prompt, created_at
+       FROM social_posts_log
+       WHERE brand = $1 AND status = 'published'
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [brandKey, limit]
+    );
+    return rows;
+  } catch (_) {
+    return [];
+  }
+}
+
+/**
+ * Pick the next non-repeating visual scene for a brand
+ */
+function pickNextVisualScene(brandKey, requestedStyleKey, recentRows = []) {
+  const brand = BRANDS[brandKey] || BRANDS.shippingwish;
+  const scenes = brand.visualScenes || BRANDS.shippingwish.visualScenes;
+  if (requestedStyleKey && requestedStyleKey !== 'auto') {
+    const found = scenes.find(s => s.key === requestedStyleKey);
+    if (found) return found;
+  }
+  const usedStyles = new Set(recentRows.slice(0, scenes.length - 1).map(r => r.visual_style).filter(Boolean));
+  const freshScenes = scenes.filter(s => !usedStyles.has(s.key));
+  const poolList = freshScenes.length ? freshScenes : scenes;
+  const idx = Math.floor(Date.now() / 1000) % poolList.length;
+  return poolList[idx];
+}
+
+/**
+ * Pick the next non-repeating category for a brand
+ */
+function pickNextCategory(brandKey, recentRows = []) {
+  const brand = BRANDS[brandKey] || BRANDS.shippingwish;
+  const cats = brand.categories || ['market_conditions'];
+  const usedCats = new Set(recentRows.slice(0, Math.max(1, cats.length - 1)).map(r => r.category).filter(Boolean));
+  const freshCats = cats.filter(c => !usedCats.has(c));
+  const poolList = freshCats.length ? freshCats : cats;
+  const idx = Math.floor(Date.now() / 1000) % poolList.length;
+  return poolList[idx];
+}
+
+/**
+ * Generate a high-resolution 1024x1024 Editorial Photography Image using gpt-image-1.5
+ * Strictly forbids repetitive flyer text boxes or cheap promotional badges
+ */
+async function generateAiSocialImage(brandKey, imagePrompt, visualScene) {
   const brand = BRANDS[brandKey] || BRANDS.shippingwish;
   const key = getOpenAiKey();
   if (!key) return null;
 
   try {
-    const refinedPrompt = `Create a striking, high-impact commercial advertisement graphic poster for "${brand.name}". Category: ${brand.industry}. Visual theme: ${imagePrompt}. Style: Premium 3D photorealistic render, sleek corporate aesthetics, vibrant professional lighting, 8k resolution, crisp clean design. Absolutely NO text typos, NO watermarks, NO blurry elements.`;
+    const sceneDirection = visualScene?.prompt || imagePrompt;
+    const refinedPrompt = [
+      `Award-winning editorial & commercial photography for "${brand.name}" (${brand.industry}).`,
+      `Scene Direction: ${sceneDirection}`,
+      imagePrompt ? `Specific Topic Nuance: ${imagePrompt}` : '',
+      `CRITICAL ART DIRECTION RULES (STRICTLY ENFORCED):`,
+      `1. Pure, ultra-realistic Leica / Hasselblad / ARRI editorial photography ONLY.`,
+      `2. ZERO text overlays, ZERO pricing boxes, ZERO promotional banners ("$149/week", "7-Day Trial", "24/7 Support"), ZERO words or typography rendered inside the image.`,
+      `3. Do NOT generate a crowded poster, flyer, or collage. Do NOT put airplanes flying over trucks.`,
+      `4. Capture one clean, authentic, high-trust Fortune-500 visual moment with natural lighting, realistic textures, and cinematic depth of field.`
+    ].filter(Boolean).join('\n');
 
     const res = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -242,53 +425,75 @@ async function generateAiSocialImage(brandKey, imagePrompt) {
 }
 
 /**
- * Generate a 100% Unique, Scroll-Stopping Social Post with Real AI Visual
+ * Generate a 100% Unique, Fortune-500 Executive Social Post with Anti-Repetition Memory
  */
-async function generateAiSocialPost(brandKey = 'shippingwish', category = 'market_conditions', customAngle = '') {
+async function generateAiSocialPost(brandKey = 'shippingwish', category = '', customAngle = '', visualStyleKey = 'auto') {
   const brand = BRANDS[brandKey] || BRANDS.shippingwish;
   const key = getOpenAiKey();
   if (!key) {
     throw new Error('OPENAI_API_KEY is not configured in .env');
   }
 
-  const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const recentHistory = await getRecentBrandPostHistory(brandKey, 12);
+  const chosenCategory = category || pickNextCategory(brandKey, recentHistory);
+  const chosenScene = pickNextVisualScene(brandKey, visualStyleKey, recentHistory);
+
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const historyBlock = recentHistory.length
+    ? `RECENTLY PUBLISHED POSTS FOR ${brand.name.toUpperCase()} (STRICTLY FORBIDDEN TO REPEAT THESE HOOKS, ANGLES, OR SCENES):\n` +
+      recentHistory.map((r, i) => `${i + 1}. [${r.category}] "${r.title}" — ${String(r.hook_snippet || '').replace(/\n/g, ' ')}`).join('\n')
+    : 'No recent posts logged yet.';
+
+  const isPromoCategory = chosenCategory.includes('promotional') || chosenCategory.includes('free_load') || chosenCategory.includes('discount');
 
   const prompt = `
-You are the Chief Creative Officer & Elite Social Media Strategist for "${brand.name}".
+You are the Chief Communications Officer & Executive Editorial Director for "${brand.name}".
 Website: ${brand.website}
 Phone: ${brand.phone}
+Industry: ${brand.industry}
 Target Audience: ${brand.targetAudience}
-Core Value Proposition: ${brand.valueProp}
-Category: ${category}
+Brand Background Context: ${brand.valueProp}
+Content Pillar / Topic Category: ${chosenCategory}
+Selected Photography Direction: ${chosenScene.label} (${chosenScene.prompt})
 Current Date: ${currentDate}
-${customAngle ? `Specific Angle / Focus: ${customAngle}` : ''}
+${customAngle ? `Specific Executive Angle / Focus: ${customAngle}` : ''}
 
-Generate a scroll-stopping, high-converting social media post for Facebook, Instagram, and LinkedIn.
+${historyBlock}
 
-CRITICAL FORMATTING RULES (DO NOT BREAK):
-1. ZERO MARKDOWN: DO NOT use asterisks (**bold**). DO NOT use Markdown links ([text](url)). Social feeds show raw asterisks which look ugly.
-2. EMOJIS & SPACING:
-   - Use bold emojis (🔥, 🚛, 💡, 💰, 📈, 🛡️, ⚡, 🚀, 📞) at the start of every point.
-   - Put DOUBLE LINE BREAKS between EVERY section and bullet point so the text has ample breathing room and looks readable on mobile screens.
-3. STRUCTURE:
-   - Hook: Eye-catching 1-liner with an emoji and intriguing fact or question.
-   - Space
-   - 3-4 structured bullet points with real numbers, actionable tips, or insider advice.
-   - Space
-   - Bottom Line / Value: 1 concise punchline.
-   - Space
-   - Frictionless Call to Action:
-     👉 Learn more: ${brand.website}
-     📞 Call our 24/7 team: ${brand.phone}
-   - Space
-   - 5-7 popular, relevant hashtags on the final line.
-4. IMAGE PROMPT: Create a detailed description for a high-end 1024x1024 3D commercial graphic poster that visually illustrates this update.
+Write an authoritative, Fortune-500 caliber social media publication for ${brand.name} suitable for LinkedIn, Facebook, and Instagram.
+
+CRITICAL EDITORIAL & ANTI-REPETITION RULES:
+1. NO CHEAP FLYER LANGUAGE: Never start with generic phrases like "Ready to transform your trucking operations?", "100% Unique AI Post", or "Attention truckers!". Write like an insider executive analyst (think FreightWaves, Bloomberg Supply Chain, Maersk, Conde Nast Traveler, or Apple editorial).
+2. DO NOT REPEAT THE SAME PITCH EVERY POST:
+   ${isPromoCategory
+     ? `- Since this category is "${chosenCategory}", highlight ${brand.name}'s signature offering naturally with executive authority.`
+     : `- Because this post is an industry/editorial insight under "${chosenCategory}", focus 85% of the post on genuine, specific, high-value market intelligence, operational strategy, or client advice. Only mention ${brand.name} smoothly in the closing takeaway and Call-to-Action. Do NOT turn this into a repetitive pricing flyer.`}
+3. ZERO MARKDOWN: Do NOT use asterisks (**bold**) or markdown links ([text](url)).
+4. CLEAN MOBILE READABILITY:
+   - Open with a sharp, original 1-sentence executive hook or concrete industry observation.
+   - Leave a blank line.
+   - Provide 3 distinct, insightful bullet points (using tasteful emojis like 📊, 🛡️, ⚡, 📍, 💡, ✨) with specific operational details, real-world numbers, or actionable advice that you have NOT used in the recent history list above.
+   - Leave a blank line.
+   - Closing Executive Takeaway: 1 crisp sentence positioning ${brand.name} as the gold standard.
+   - Leave a blank line.
+   - Clean Call to Action:
+     🌐 ${brand.website}
+     📞 ${brand.phone}
+   - Leave a blank line.
+   - 5-6 curated hashtags on the final line.
+5. VISUAL SCENE DESCRIPTION: Describe a pure, text-free, photorealistic editorial photograph matching "${chosenScene.label}" (${chosenScene.prompt}) tailored to this post's specific topic. Strictly NO text, NO banners, NO pricing badges in the image prompt.
 
 RETURN STRICT JSON ONLY:
 {
-  "title": "Short catchy title / internal reference (max 60 chars)",
-  "content": "Full formatted post text with emojis and double spacing (NO asterisks, NO markdown links)",
-  "image_prompt": "Photorealistic 3D corporate graphic poster description with company branding",
+  "title": "Specific editorial headline for internal log (max 65 chars, never generic)",
+  "content": "Full formatted post text with double line breaks and zero markdown asterisks",
+  "image_prompt": "Pure photorealistic Leica/Hasselblad editorial photograph description with ZERO text or banners",
   "category_label": "Human friendly category name"
 }
 `;
@@ -300,12 +505,15 @@ RETURN STRICT JSON ONLY:
       'Authorization': `Bearer ${key}`
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'You are an elite B2B social media marketing director for logistics and luxury enterprises. Output valid JSON only.' },
+        {
+          role: 'system',
+          content: 'You are an elite Fortune-500 Chief Communications Officer and editorial strategist. You never repeat hooks or templates. Output valid JSON only.'
+        },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.85,
+      temperature: 0.9,
       response_format: { type: 'json_object' }
     })
   });
@@ -318,23 +526,42 @@ RETURN STRICT JSON ONLY:
   const parsed = JSON.parse(aiData.choices[0].message.content);
   const cleanedContent = cleanSocialCopy(parsed.content || '');
 
-  // Generate visual graphic banner
+  // Generate high-end editorial photograph
   let imageUrl = null;
-  if (parsed.image_prompt) {
-    imageUrl = await generateAiSocialImage(brandKey, parsed.image_prompt).catch(() => null);
+  if (parsed.image_prompt || chosenScene) {
+    imageUrl = await generateAiSocialImage(brandKey, parsed.image_prompt || '', chosenScene).catch(() => null);
   }
 
   return {
     brand: brandKey,
     brand_name: brand.name,
-    category,
-    title: parsed.title || `${brand.name} Update`,
+    category: chosenCategory,
+    visual_style: chosenScene.key,
+    visual_style_label: chosenScene.label,
+    title: parsed.title || `${brand.name} Executive Update`,
     content: cleanedContent,
-    image_prompt: parsed.image_prompt || '',
+    image_prompt: parsed.image_prompt || chosenScene.prompt,
     image_url: imageUrl,
-    category_label: parsed.category_label || category,
+    category_label: parsed.category_label || chosenCategory,
     created_at: new Date().toISOString()
   };
+}
+
+/**
+ * Auto-detect linked Instagram Business Account from a Facebook Page
+ */
+async function detectInstagramAccount(pageId, pageAccessToken) {
+  if (!pageId || !pageAccessToken) return null;
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account,connected_instagram_account&access_token=${encodeURIComponent(pageAccessToken)}`
+    );
+    const data = await res.json();
+    const igId = data?.instagram_business_account?.id || data?.connected_instagram_account?.id || null;
+    return igId ? String(igId) : null;
+  } catch (_) {
+    return null;
+  }
 }
 
 /**
@@ -343,7 +570,7 @@ RETURN STRICT JSON ONLY:
 async function publishToFacebook(pageId, pageAccessToken, message, imageUrl = null) {
   if (!pageId || !pageAccessToken) throw new Error('Facebook Page ID and Page Access Token are required');
   
-  let endpoint = `https://graph.facebook.com/v19.0/${pageId}/feed`;
+  let endpoint = `https://graph.facebook.com/v21.0/${pageId}/feed`;
   let body = {
     message,
     access_token: pageAccessToken
@@ -364,7 +591,7 @@ async function publishToFacebook(pageId, pageAccessToken, message, imageUrl = nu
           const res = await fetch(`https://graph.facebook.com/v21.0/${pageId}/photos`, { method: 'POST', body: formData });
           const data = await res.json();
           if (data.error) throw new Error(`Facebook API Error: ${data.error.message}`);
-          return { platform: 'facebook', id: data.id || data.post_id };
+          return { platform: 'facebook', id: data.post_id || data.id };
         }
       } catch (err) {
         console.warn('Binary FB photo upload fallback to URL:', err.message);
@@ -387,18 +614,19 @@ async function publishToFacebook(pageId, pageAccessToken, message, imageUrl = nu
 
   const data = await res.json();
   if (data.error) throw new Error(`Facebook API Error: ${data.error.message}`);
-  return { platform: 'facebook', id: data.id || data.post_id };
+  return { platform: 'facebook', id: data.post_id || data.id };
 }
 
 /**
  * Publish Post to Instagram Business using Official Graph API
+ * Waits for container processing (FINISHED) before calling media_publish
  */
 async function publishToInstagram(igUserId, accessToken, caption, imageUrl) {
   if (!igUserId || !accessToken) throw new Error('Instagram User ID and Access Token are required');
-  if (!imageUrl) throw new Error('Instagram requires an image or video URL to publish a post');
+  if (!imageUrl) throw new Error('Instagram requires an image URL to publish a post');
 
   // Step 1: Create media container
-  const containerRes = await fetch(`https://graph.facebook.com/v19.0/${igUserId}/media`, {
+  const containerRes = await fetch(`https://graph.facebook.com/v21.0/${igUserId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -412,8 +640,23 @@ async function publishToInstagram(igUserId, accessToken, caption, imageUrl) {
 
   const creationId = containerData.id;
 
-  // Step 2: Publish media container
-  const publishRes = await fetch(`https://graph.facebook.com/v19.0/${igUserId}/media_publish`, {
+  // Step 2: Poll container status until FINISHED (up to 12 seconds)
+  for (let i = 0; i < 6; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    try {
+      const statusRes = await fetch(
+        `https://graph.facebook.com/v21.0/${creationId}?fields=status_code&access_token=${encodeURIComponent(accessToken)}`
+      );
+      const statusData = await statusRes.json();
+      if (statusData.status_code === 'FINISHED') break;
+      if (statusData.status_code === 'ERROR') {
+        throw new Error('Instagram rejected the media container format.');
+      }
+    } catch (_) {}
+  }
+
+  // Step 3: Publish media container
+  const publishRes = await fetch(`https://graph.facebook.com/v21.0/${igUserId}/media_publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -427,77 +670,52 @@ async function publishToInstagram(igUserId, accessToken, caption, imageUrl) {
 }
 
 /**
- * Publish Post to LinkedIn Company Page using Official API (with Image Upload Support)
+ * Helper to publish a LinkedIn UGC post for a given author URN (Organization or Person)
  */
-async function publishToLinkedIn(orgUrn, accessToken, text, imageUrl = null) {
-  if (!orgUrn || !accessToken) throw new Error('LinkedIn Org URN and Access Token are required');
-  
-  let formattedUrn = String(orgUrn || '').trim();
-  const digits = formattedUrn.match(/(\d{5,12})/);
-  if (!formattedUrn.startsWith('urn:li:') && digits) {
-    formattedUrn = `urn:li:organization:${digits[1]}`;
-  } else if (!formattedUrn.startsWith('urn:li:')) {
-    formattedUrn = `urn:li:organization:${formattedUrn}`;
-  }
-
+async function executeLinkedInUgcPost(authorUrn, accessToken, text, imageBuffer) {
   let mediaCategory = 'NONE';
   let mediaArr = [];
 
-  if (imageUrl) {
+  if (imageBuffer) {
     try {
-      let buffer = null;
-      const imgMatch = String(imageUrl).match(/\/api\/social\/image\/([a-zA-Z0-9_-]+)/);
-      if (imgMatch) {
-        const { rows } = await pool.query('SELECT data FROM social_generated_images WHERE image_id = $1', [imgMatch[1]]);
-        if (rows.length && rows[0].data) buffer = rows[0].data;
-      }
-      if (!buffer) {
-        const imgFetch = await fetch(imageUrl);
-        buffer = Buffer.from(await imgFetch.arrayBuffer());
-      }
+      const regRes = await fetch('https://api.linkedin.com/v2/assets?action=registerUpload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          registerUploadRequest: {
+            recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+            owner: authorUrn,
+            serviceRelationships: [{
+              relationshipType: 'OWNER',
+              identifier: 'urn:li:userGeneratedContent'
+            }]
+          }
+        })
+      });
+      const regData = await regRes.json();
+      const uploadUrl = regData.value?.uploadMechanism?.['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']?.uploadUrl;
+      const asset = regData.value?.asset;
 
-      if (buffer) {
-        // Step 1: Register upload with LinkedIn
-        const regRes = await fetch('https://api.linkedin.com/v2/assets?action=registerUpload', {
+      if (uploadUrl && asset) {
+        await fetch(uploadUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'image/png',
             'Authorization': `Bearer ${accessToken}`
           },
-          body: JSON.stringify({
-            registerUploadRequest: {
-              recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
-              owner: formattedUrn,
-              serviceRelationships: [{
-                relationshipType: 'OWNER',
-                identifier: 'urn:li:userGeneratedContent'
-              }]
-            }
-          })
+          body: imageBuffer
         });
-        const regData = await regRes.json();
-        const uploadUrl = regData.value?.uploadMechanism?.['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']?.uploadUrl;
-        const asset = regData.value?.asset;
 
-        if (uploadUrl && asset) {
-          // Step 2: Upload binary image buffer
-          await fetch(uploadUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'image/png',
-              'Authorization': `Bearer ${accessToken}`
-            },
-            body: buffer
-          });
-
-          mediaCategory = 'IMAGE';
-          mediaArr = [{
-            status: 'READY',
-            description: { text: text.slice(0, 100) },
-            media: asset,
-            title: { text: 'Shipping Wish Update' }
-          }];
-        }
+        mediaCategory = 'IMAGE';
+        mediaArr = [{
+          status: 'READY',
+          description: { text: text.slice(0, 100) },
+          media: asset,
+          title: { text: 'Executive Update' }
+        }];
       }
     } catch (liImgErr) {
       console.warn('LinkedIn image upload fallback to text:', liImgErr.message);
@@ -505,7 +723,7 @@ async function publishToLinkedIn(orgUrn, accessToken, text, imageUrl = null) {
   }
 
   const payload = {
-    author: formattedUrn,
+    author: authorUrn,
     lifecycleState: 'PUBLISHED',
     specificContent: {
       'com.linkedin.ugc.ShareContent': {
@@ -530,10 +748,62 @@ async function publishToLinkedIn(orgUrn, accessToken, text, imageUrl = null) {
   });
 
   const data = await res.json();
-  if (data.status && data.status >= 400) {
-    throw new Error(`LinkedIn API Error: ${data.message || JSON.stringify(data)}`);
+  return { status: res.status, data };
+}
+
+/**
+ * Publish Post to LinkedIn Company Page or Executive Profile using Official API
+ * Automatically falls back to authenticated member URN if company org scope is pending
+ */
+async function publishToLinkedIn(orgUrn, accessToken, text, imageUrl = null) {
+  if (!accessToken) throw new Error('LinkedIn Access Token is not connected. Click "1-Click Connect LinkedIn" to authorize.');
+
+  let formattedUrn = String(orgUrn || '').trim();
+  const digits = formattedUrn.match(/(\d{5,12})/);
+  if (formattedUrn && !formattedUrn.startsWith('urn:li:') && digits) {
+    formattedUrn = `urn:li:organization:${digits[1]}`;
+  } else if (formattedUrn && !formattedUrn.startsWith('urn:li:')) {
+    formattedUrn = `urn:li:organization:${formattedUrn}`;
   }
-  return { platform: 'linkedin', id: data.id };
+
+  let imageBuffer = null;
+  if (imageUrl) {
+    try {
+      const imgMatch = String(imageUrl).match(/\/api\/social\/image\/([a-zA-Z0-9_-]+)/);
+      if (imgMatch) {
+        const { rows } = await pool.query('SELECT data FROM social_generated_images WHERE image_id = $1', [imgMatch[1]]);
+        if (rows.length && rows[0].data) imageBuffer = rows[0].data;
+      }
+      if (!imageBuffer) {
+        const imgFetch = await fetch(imageUrl);
+        imageBuffer = Buffer.from(await imgFetch.arrayBuffer());
+      }
+    } catch (_) {}
+  }
+
+  // Try organization URN first if provided
+  if (formattedUrn) {
+    const attempt = await executeLinkedInUgcPost(formattedUrn, accessToken, text, imageBuffer);
+    if (attempt.status < 400 && attempt.data && attempt.data.id) {
+      return { platform: 'linkedin', id: attempt.data.id, author: formattedUrn };
+    }
+  }
+
+  // Fallback to authenticated member profile (urn:li:person:...) via OpenID /v2/userinfo
+  const userRes = await fetch('https://api.linkedin.com/v2/userinfo', {
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  });
+  const userData = await userRes.json();
+  if (userData && userData.sub) {
+    const personUrn = `urn:li:person:${userData.sub}`;
+    const fallbackAttempt = await executeLinkedInUgcPost(personUrn, accessToken, text, imageBuffer);
+    if (fallbackAttempt.status < 400 && fallbackAttempt.data && fallbackAttempt.data.id) {
+      return { platform: 'linkedin', id: fallbackAttempt.data.id, author: personUrn };
+    }
+    throw new Error(`LinkedIn API Error: ${fallbackAttempt.data?.message || JSON.stringify(fallbackAttempt.data)}`);
+  }
+
+  throw new Error('LinkedIn token expired or lacks permission. Please re-connect via 1-Click Connect LinkedIn.');
 }
 
 /**
@@ -576,12 +846,12 @@ async function publishToTikTok(accessToken, videoUrl, title, privacyLevel = 'PUB
 }
 
 /**
- * AI Auto-Responder for Inbound Comments & DMs (100% Policy Compliant)
+ * AI Auto-Responder for Inbound Comments & DMs (100% Policy Compliant, GPT-4o Powered)
  */
 async function generateAiCommentReply(brandKey, incomingUserComment, postContext = '') {
   const brand = BRANDS[brandKey] || BRANDS.shippingwish;
   const key = getOpenAiKey();
-  if (!key) return `Thank you for your message! Please reach out to our team at ${brand.phone} or visit ${brand.website}.`;
+  if (!key) return `Thank you for reaching out to ${brand.name}! Feel free to contact our 24/7 team at ${brand.phone} or visit ${brand.website}.`;
 
   try {
     const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -591,37 +861,470 @@ async function generateAiCommentReply(brandKey, incomingUserComment, postContext
         'Authorization': `Bearer ${key}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: `You are the friendly official social media community manager for "${brand.name}".
+            content: `You are the official 24/7 Executive Community & Client Relations Manager for "${brand.name}".
 Industry: ${brand.industry}
 Website: ${brand.website}
 Phone: ${brand.phone}
 Target Audience: ${brand.targetAudience}
 Core Value Proposition: ${brand.valueProp}
 
-A prospective client, customer, driver, or traveler just left a comment or sent a question on our official social channel.
-STRICT BRAND RULES:
-1. Respond warmly, concisely, and helpfully in 1 to 2 sentences.
-2. Address their question strictly based on ${brand.name}'s specific services: "${brand.valueProp}".
-3. Always invite them to contact us at ${brand.phone} or visit ${brand.website}.
-4. Sound human, conversational, and respectful. Never mention any other company, industry, or service outside ${brand.name}.`
+A prospective client, carrier, broker, or customer just commented or sent a direct message on our official social media page.
+STRICT BRAND & QUALITY RULES:
+1. Respond warmly, intelligently, and directly to their exact question or comment in 1 to 3 concise sentences.
+2. Address their inquiry strictly using ${brand.name}'s real services and facts: "${brand.valueProp}".
+3. Include a natural, polite invitation to call/text us at ${brand.phone} or visit ${brand.website}.
+4. Sound 100% like a sharp, helpful human executive — never robotic, never repetitive, and never use markdown asterisks.`
           },
           {
             role: 'user',
-            content: `Post Context: ${postContext}\nUser's Message/Comment: "${incomingUserComment}"`
+            content: `Post Context: ${postContext || 'General page inquiry'}\nUser's Message/Comment: "${incomingUserComment}"`
           }
         ],
         temperature: 0.7,
-        max_tokens: 120
+        max_tokens: 150
       })
     });
     const aiData = await aiRes.json();
-    return (aiData.choices && aiData.choices[0]?.message?.content?.trim()) || `Thank you for reaching out to ${brand.name}! Feel free to call us at ${brand.phone}.`;
+    return cleanSocialCopy(aiData.choices?.[0]?.message?.content?.trim()) || `Thank you for reaching out to ${brand.name}! Please call or text our team anytime at ${brand.phone}.`;
   } catch (_) {
     return `Thank you for reaching out to ${brand.name}! Call our team at ${brand.phone} or visit ${brand.website}.`;
+  }
+}
+
+/**
+ * Publish a generated post across all active/selected platforms for a single brand
+ */
+async function publishBrandPost(brandKey, postObj, requestedPlatforms = ['facebook', 'instagram', 'linkedin']) {
+  await ensureSocialSchema();
+  const { rows: credRows } = await pool.query('SELECT * FROM social_brand_credentials WHERE brand = $1', [brandKey]);
+  const creds = credRows[0] || {};
+  const results = [];
+
+  for (const p of requestedPlatforms) {
+    let extId = null;
+    let status = 'published';
+    let error = null;
+
+    try {
+      if (p === 'facebook') {
+        if (creds.facebook_page_id && creds.facebook_access_token) {
+          const fbRes = await publishToFacebook(creds.facebook_page_id, creds.facebook_access_token, postObj.content, postObj.image_url);
+          extId = fbRes.id;
+        } else {
+          status = 'saved_draft';
+          error = 'Facebook Page token not configured.';
+        }
+      } else if (p === 'instagram') {
+        let igId = creds.instagram_account_id;
+        const igToken = creds.instagram_access_token || creds.facebook_access_token;
+
+        if ((!igId || !/^\d+$/.test(igId)) && creds.facebook_page_id && creds.facebook_access_token) {
+          const detectedIg = await detectInstagramAccount(creds.facebook_page_id, creds.facebook_access_token);
+          if (detectedIg) {
+            igId = detectedIg;
+            await pool.query(
+              'UPDATE social_brand_credentials SET instagram_account_id = $1, instagram_access_token = $2 WHERE brand = $3',
+              [igId, igToken, brandKey]
+            ).catch(() => {});
+          }
+        }
+
+        if (igId && /^\d+$/.test(igId) && igToken && postObj.image_url) {
+          const igRes = await publishToInstagram(igId, igToken, postObj.content, postObj.image_url);
+          extId = igRes.id;
+        } else if (!postObj.image_url) {
+          status = 'saved_draft';
+          error = 'Instagram requires an image URL.';
+        } else {
+          status = 'saved_draft';
+          error = 'Instagram Business account is not linked to this Facebook Page yet (Link in Facebook Page Settings -> Linked Accounts -> Instagram).';
+        }
+      } else if (p === 'linkedin') {
+        if (creds.linkedin_access_token) {
+          const liRes = await publishToLinkedIn(creds.linkedin_org_urn, creds.linkedin_access_token, postObj.content, postObj.image_url);
+          extId = liRes.id;
+        } else {
+          status = 'saved_draft';
+          error = 'LinkedIn OAuth token not connected yet. Click "1-Click Connect LinkedIn" in Studio or Settings.';
+        }
+      } else if (p === 'tiktok') {
+        const mediaUrl = postObj.video_url || postObj.image_url;
+        if (creds.tiktok_access_token && postObj.video_url) {
+          const ttRes = await publishToTikTok(creds.tiktok_access_token, mediaUrl, postObj.content);
+          extId = ttRes.id;
+        } else {
+          status = 'saved_draft';
+          error = !creds.tiktok_access_token
+            ? 'TikTok account not connected.'
+            : 'TikTok requires an MP4 video URL.';
+        }
+      } else {
+        status = 'saved_draft';
+      }
+    } catch (err) {
+      status = 'failed';
+      error = err.message;
+    }
+
+    try {
+      const insRes = await pool.query(`
+        INSERT INTO social_posts_log (
+          brand, category, visual_style, platform, title, content, image_prompt, image_url, external_post_id, status, error_message, published_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING id
+      `, [
+        brandKey,
+        postObj.category || 'market_conditions',
+        postObj.visual_style || null,
+        p,
+        postObj.title || 'Executive Update',
+        postObj.content,
+        postObj.image_prompt || null,
+        postObj.image_url || null,
+        extId,
+        status,
+        error,
+        status === 'published' ? new Date() : null
+      ]);
+      results.push({ brand: brandKey, platform: p, status, external_id: extId, log_id: insRes.rows[0]?.id, error });
+    } catch (dbErr) {
+      results.push({ brand: brandKey, platform: p, status, external_id: extId, error: error || dbErr.message });
+    }
+  }
+
+  if (results.some(r => r.status === 'published')) {
+    await pool.query('UPDATE social_brand_credentials SET last_posted_at = now() WHERE brand = $1', [brandKey]).catch(() => {});
+  }
+
+  return results;
+}
+
+/**
+ * 24/7 Autonomous Comment & Messenger DM Scanner + Live Auto-Responder
+ * Scans Facebook Pages & linked Instagram Business accounts for unanswered comments and DMs,
+ * crafts context-aware AI replies, posts them live via Meta Graph API, and logs every reply.
+ */
+async function scanAndReplySocialEngagement(targetBrand = null) {
+  await ensureSocialSchema();
+  const brandKeys = targetBrand ? [targetBrand] : Object.keys(BRANDS);
+  const { rows: credsList } = await pool.query('SELECT * FROM social_brand_credentials WHERE brand = ANY($1)', [brandKeys]);
+
+  const actions = [];
+
+  for (const creds of credsList) {
+    const brandKey = creds.brand;
+    const pageId = creds.facebook_page_id;
+    const token = creds.facebook_access_token;
+    if (!pageId || !token) continue;
+
+    // 1. Scan Facebook Page Posts & Unanswered Comments
+    try {
+      const feedUrl = `https://graph.facebook.com/v21.0/${pageId}/published_posts?fields=id,message,comments.limit(20){id,message,from,created_time,comments.limit(10){from,message}}&limit=8&access_token=${encodeURIComponent(token)}`;
+      const feedRes = await fetch(feedUrl);
+      const feedData = await feedRes.json();
+      const posts = Array.isArray(feedData?.data) ? feedData.data : [];
+
+      for (const post of posts) {
+        const postContext = String(post.message || '').slice(0, 300);
+        const comments = Array.isArray(post.comments?.data) ? post.comments.data : [];
+
+        for (const c of comments) {
+          const commentId = c.id;
+          const commentText = String(c.message || '').trim();
+          const senderId = c.from?.id || '';
+          const senderName = c.from?.name || 'Valued Visitor';
+
+          if (!commentId || !commentText) continue;
+          // Never reply to the Page's own comments
+          if (senderId && String(senderId) === String(pageId)) continue;
+
+          // Check if Page already replied in sub-comments
+          const subComments = Array.isArray(c.comments?.data) ? c.comments.data : [];
+          const alreadyRepliedOnFb = subComments.some(sc => String(sc.from?.id || '') === String(pageId));
+          if (alreadyRepliedOnFb) continue;
+
+          // Check if already logged in social_auto_replies_log
+          const existing = await pool.query(
+            'SELECT id FROM social_auto_replies_log WHERE external_object_id = $1',
+            [`fb_comment_${commentId}`]
+          );
+          if (existing.rows.length > 0) continue;
+
+          // Generate AI reply & post live to Facebook comment thread
+          const aiReply = await generateAiCommentReply(brandKey, commentText, postContext);
+          const replyRes = await fetch(`https://graph.facebook.com/v21.0/${commentId}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: aiReply,
+              access_token: token
+            })
+          });
+          const replyData = await replyRes.json();
+          const replyStatus = replyData.error ? 'failed' : 'replied';
+          const replyError = replyData.error ? replyData.error.message : null;
+
+          await pool.query(`
+            INSERT INTO social_auto_replies_log (
+              brand, platform, interaction_type, external_object_id, parent_post_id,
+              sender_name, sender_id, incoming_text, ai_reply_text, reply_external_id, status, error_message
+            ) VALUES ($1, 'facebook', 'comment', $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ON CONFLICT (external_object_id) DO NOTHING
+          `, [
+            brandKey,
+            `fb_comment_${commentId}`,
+            post.id,
+            senderName,
+            senderId,
+            commentText,
+            aiReply,
+            replyData.id || null,
+            replyStatus,
+            replyError
+          ]);
+
+          actions.push({
+            brand: brandKey,
+            platform: 'facebook',
+            type: 'comment',
+            sender: senderName,
+            incoming: commentText,
+            reply: aiReply,
+            status: replyStatus,
+            error: replyError
+          });
+        }
+      }
+    } catch (fbScanErr) {
+      console.warn(`[SOCIAL-MCP] FB comment scan note (${brandKey}):`, fbScanErr.message);
+    }
+
+    // 2. Scan Facebook Page Messenger Conversations (DMs)
+    try {
+      const convUrl = `https://graph.facebook.com/v21.0/${pageId}/conversations?fields=id,updated_time,messages.limit(3){id,message,from,created_time}&limit=8&access_token=${encodeURIComponent(token)}`;
+      const convRes = await fetch(convUrl);
+      const convData = await convRes.json();
+      const convs = Array.isArray(convData?.data) ? convData.data : [];
+
+      for (const conv of convs) {
+        const msgs = Array.isArray(conv.messages?.data) ? conv.messages.data : [];
+        if (!msgs.length) continue;
+        const latestMsg = msgs[0]; // Most recent message in thread
+        const msgId = latestMsg.id;
+        const msgText = String(latestMsg.message || '').trim();
+        const senderId = latestMsg.from?.id || '';
+        const senderName = latestMsg.from?.name || 'Messenger User';
+
+        if (!msgId || !msgText || !senderId) continue;
+        // If the most recent message in the thread was sent by our Page, we already answered!
+        if (String(senderId) === String(pageId)) continue;
+
+        const existing = await pool.query(
+          'SELECT id FROM social_auto_replies_log WHERE external_object_id = $1',
+          [`fb_dm_${msgId}`]
+        );
+        if (existing.rows.length > 0) continue;
+
+        const aiReply = await generateAiCommentReply(brandKey, msgText, 'Direct Message Inquiry');
+        const dmRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: { id: senderId },
+            message: { text: aiReply },
+            messaging_type: 'RESPONSE',
+            access_token: token
+          })
+        });
+        const dmData = await dmRes.json();
+        const dmStatus = dmData.error ? 'failed' : 'replied';
+        const dmError = dmData.error ? dmData.error.message : null;
+
+        await pool.query(`
+          INSERT INTO social_auto_replies_log (
+            brand, platform, interaction_type, external_object_id, parent_post_id,
+            sender_name, sender_id, incoming_text, ai_reply_text, reply_external_id, status, error_message
+          ) VALUES ($1, 'facebook', 'dm', $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          ON CONFLICT (external_object_id) DO NOTHING
+        `, [
+          brandKey,
+          `fb_dm_${msgId}`,
+          conv.id,
+          senderName,
+          senderId,
+          msgText,
+          aiReply,
+          dmData.message_id || null,
+          dmStatus,
+          dmError
+        ]);
+
+        actions.push({
+          brand: brandKey,
+          platform: 'facebook',
+          type: 'dm',
+          sender: senderName,
+          incoming: msgText,
+          reply: aiReply,
+          status: dmStatus,
+          error: dmError
+        });
+      }
+    } catch (dmScanErr) {
+      console.warn(`[SOCIAL-MCP] FB DM scan note (${brandKey}):`, dmScanErr.message);
+    }
+
+    // 3. Scan Linked Instagram Business Account Comments (if linked)
+    const igId = creds.instagram_account_id;
+    const igToken = creds.instagram_access_token || token;
+    if (igId && /^\d+$/.test(igId) && igToken) {
+      try {
+        const igMediaUrl = `https://graph.facebook.com/v21.0/${igId}/media?fields=id,caption,comments.limit(20){id,text,username,timestamp,replies{username,text}}&limit=6&access_token=${encodeURIComponent(igToken)}`;
+        const igRes = await fetch(igMediaUrl);
+        const igData = await igRes.json();
+        const mediaItems = Array.isArray(igData?.data) ? igData.data : [];
+
+        for (const item of mediaItems) {
+          const captionContext = String(item.caption || '').slice(0, 300);
+          const comments = Array.isArray(item.comments?.data) ? item.comments.data : [];
+
+          for (const c of comments) {
+            const commentId = c.id;
+            const commentText = String(c.text || '').trim();
+            const username = c.username || 'ig_user';
+            if (!commentId || !commentText) continue;
+
+            const replies = Array.isArray(c.replies?.data) ? c.replies.data : [];
+            if (replies.length > 0) continue;
+
+            const existing = await pool.query(
+              'SELECT id FROM social_auto_replies_log WHERE external_object_id = $1',
+              [`ig_comment_${commentId}`]
+            );
+            if (existing.rows.length > 0) continue;
+
+            const aiReply = await generateAiCommentReply(brandKey, commentText, captionContext);
+            const repRes = await fetch(`https://graph.facebook.com/v21.0/${commentId}/replies`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                message: aiReply,
+                access_token: igToken
+              })
+            });
+            const repData = await repRes.json();
+            const repStatus = repData.error ? 'failed' : 'replied';
+            const repError = repData.error ? repData.error.message : null;
+
+            await pool.query(`
+              INSERT INTO social_auto_replies_log (
+                brand, platform, interaction_type, external_object_id, parent_post_id,
+                sender_name, sender_id, incoming_text, ai_reply_text, reply_external_id, status, error_message
+              ) VALUES ($1, 'instagram', 'comment', $2, $3, $4, $5, $6, $7, $8, $9, $10)
+              ON CONFLICT (external_object_id) DO NOTHING
+            `, [
+              brandKey,
+              `ig_comment_${commentId}`,
+              item.id,
+              `@${username}`,
+              username,
+              commentText,
+              aiReply,
+              repData.id || null,
+              repStatus,
+              repError
+            ]);
+
+            actions.push({
+              brand: brandKey,
+              platform: 'instagram',
+              type: 'comment',
+              sender: `@${username}`,
+              incoming: commentText,
+              reply: aiReply,
+              status: repStatus,
+              error: repError
+            });
+          }
+        }
+      } catch (igScanErr) {
+        console.warn(`[SOCIAL-MCP] IG comment scan note (${brandKey}):`, igScanErr.message);
+      }
+    }
+  }
+
+  return actions;
+}
+
+/**
+ * 24/7 Autonomous Daily Multi-Brand Publisher & Engagement Tick
+ * Automatically publishes 1 fresh, non-repeating post per brand per day when due,
+ * and scans/replies to comments & DMs across all 4 brands.
+ */
+let autoPilotRunning = false;
+async function runAutonomousSocialManagerTick(options = {}) {
+  const { forcePublishAll = false, targetBrand = null } = options;
+  if (autoPilotRunning && !forcePublishAll) {
+    return { ok: true, skipped: 'already_running' };
+  }
+  autoPilotRunning = true;
+
+  try {
+    await ensureSocialSchema();
+    const brandKeys = targetBrand ? [targetBrand] : Object.keys(BRANDS);
+    const { rows: credsList } = await pool.query('SELECT * FROM social_brand_credentials WHERE brand = ANY($1)', [brandKeys]);
+
+    const publishedSummary = [];
+
+    for (const brandKey of brandKeys) {
+      const creds = credsList.find(c => c.brand === brandKey);
+      if (!creds) continue;
+
+      if (!forcePublishAll && !creds.autopilot_enabled) continue;
+
+      // Check if already posted within the last 20 hours (unless forcePublishAll is true)
+      if (!forcePublishAll && creds.last_posted_at) {
+        const hoursSinceLast = (Date.now() - new Date(creds.last_posted_at).getTime()) / (1000 * 60 * 60);
+        if (hoursSinceLast < 20) continue;
+      }
+
+      try {
+        const postObj = await generateAiSocialPost(brandKey, '', '', 'auto');
+        const activePlatforms = ['facebook'];
+        if (creds.instagram_account_id || creds.facebook_page_id) activePlatforms.push('instagram');
+        if (creds.linkedin_access_token) activePlatforms.push('linkedin');
+
+        const pubResults = await publishBrandPost(brandKey, postObj, activePlatforms);
+        publishedSummary.push({
+          brand: brandKey,
+          title: postObj.title,
+          category: postObj.category,
+          visual_style: postObj.visual_style_label,
+          image_url: postObj.image_url,
+          results: pubResults
+        });
+      } catch (brandErr) {
+        publishedSummary.push({
+          brand: brandKey,
+          error: brandErr.message
+        });
+      }
+    }
+
+    // Also scan & auto-reply to new comments and DMs across all brands
+    const engagementActions = await scanAndReplySocialEngagement(targetBrand).catch(() => []);
+
+    return {
+      ok: true,
+      published: publishedSummary,
+      engagement_replies: engagementActions
+    };
+  } finally {
+    autoPilotRunning = false;
   }
 }
 
@@ -633,5 +1336,9 @@ module.exports = {
   publishToInstagram,
   publishToLinkedIn,
   publishToTikTok,
-  generateAiCommentReply
+  generateAiCommentReply,
+  detectInstagramAccount,
+  publishBrandPost,
+  scanAndReplySocialEngagement,
+  runAutonomousSocialManagerTick
 };
