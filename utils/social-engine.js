@@ -554,7 +554,7 @@ RETURN STRICT JSON ONLY:
 async function detectInstagramAccount(pageId, pageAccessToken, returnDebug = false) {
   if (!pageId || !pageAccessToken) return returnDebug ? { igId: null, reason: 'missing_page_or_token' } : null;
   try {
-    const url = `https://graph.facebook.com/v21.0/${pageId}?fields=id,name,instagram_business_account{id,username,name},connected_instagram_account{id,username,name},instagram_accounts{id,username},page_backed_instagram_accounts{id,username},business{id,name,instagram_business_accounts{id,username},owned_instagram_accounts{id,username}}&access_token=${encodeURIComponent(pageAccessToken)}`;
+    const url = `https://graph.facebook.com/v21.0/${pageId}?fields=id,name,instagram_business_account{id,username,name},connected_instagram_account{id,username,name},instagram_accounts{id,username}&access_token=${encodeURIComponent(pageAccessToken)}`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -562,45 +562,35 @@ async function detectInstagramAccount(pageId, pageAccessToken, returnDebug = fal
       data?.instagram_business_account?.id ||
       data?.connected_instagram_account?.id ||
       data?.instagram_accounts?.data?.[0]?.id ||
-      data?.page_backed_instagram_accounts?.data?.[0]?.id ||
       null;
 
     let username =
       data?.instagram_business_account?.username ||
       data?.connected_instagram_account?.username ||
       data?.instagram_accounts?.data?.[0]?.username ||
-      data?.page_backed_instagram_accounts?.data?.[0]?.username ||
       null;
 
-    let edgeCheck = null;
-    if (!igId) {
-      try {
-        const edgeRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}/instagram_accounts?fields=id,username&access_token=${encodeURIComponent(pageAccessToken)}`);
-        edgeCheck = await edgeRes.json();
-        if (edgeCheck?.data?.[0]?.id) {
-          igId = edgeCheck.data[0].id;
-          username = edgeCheck.data[0].username || username;
-        }
-      } catch (_) {}
-    }
+    let tokenScopes = null;
+    try {
+      const appToken = '1405121158479894|5f44933c8f162c46d7c8cd2d1480835b';
+      const permRes = await fetch(`https://graph.facebook.com/v21.0/debug_token?input_token=${encodeURIComponent(pageAccessToken)}&access_token=${encodeURIComponent(appToken)}`);
+      const tokenDebug = await permRes.json();
+      tokenScopes = tokenDebug?.data?.scopes || null;
+    } catch (_) {}
+
+    const hasIgBasic = Array.isArray(tokenScopes) && tokenScopes.includes('instagram_basic');
 
     if (returnDebug) {
-      let tokenDebug = null;
-      try {
-        const appToken = '1405121158479894|5f44933c8f162c46d7c8cd2d1480835b';
-        const permRes = await fetch(`https://graph.facebook.com/v21.0/debug_token?input_token=${encodeURIComponent(pageAccessToken)}&access_token=${encodeURIComponent(appToken)}`);
-        tokenDebug = await permRes.json();
-      } catch (_) {}
       return {
-        igId: igId ? String(igId) : null,
+        igId: (igId && hasIgBasic) ? String(igId) : null,
         username,
-        raw: data,
-        edgeCheck,
-        tokenScopes: tokenDebug?.data?.scopes || null
+        hasIgBasic,
+        tokenScopes,
+        raw: data
       };
     }
 
-    return igId ? String(igId) : null;
+    return (igId && hasIgBasic) ? String(igId) : null;
   } catch (err) {
     return returnDebug ? { igId: null, error: err.message } : null;
   }

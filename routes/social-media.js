@@ -828,14 +828,19 @@ router.get('/sync-instagram', async (req, res) => {
           'UPDATE social_brand_credentials SET instagram_account_id = $1, instagram_access_token = COALESCE(instagram_access_token, facebook_access_token) WHERE brand = $2',
           [dbg.igId, c.brand]
         ).catch(() => {});
+      } else if (dbg && !dbg.hasIgBasic) {
+        await pool.query(
+          'UPDATE social_brand_credentials SET instagram_account_id = NULL WHERE brand = $1',
+          [c.brand]
+        ).catch(() => {});
       }
       report.push({
         brand: c.brand,
         facebook_page_id: c.facebook_page_id,
-        saved_ig_id: dbg?.igId || c.instagram_account_id || null,
+        saved_ig_id: dbg?.igId || null,
         ig_username: dbg?.username || null,
+        has_ig_basic: Boolean(dbg?.hasIgBasic),
         token_scopes: dbg?.tokenScopes || null,
-        edge_check: dbg?.edgeCheck || null,
         meta_response: dbg?.raw || null
       });
     }
