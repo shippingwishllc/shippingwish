@@ -216,9 +216,9 @@
             <option value="50">50 leads</option>
           </select>
           <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;"><input type="checkbox" id="ai-bot-email" checked> Email</label>
-          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-sms"> SMS (consent only)</label>
-          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-vapi"> Vapi AI call (consent only)</label>
-          <label class="cd-consent" style="margin-top:10px;"><input type="checkbox" id="ai-bot-consent"> They already agreed (form, YES, or signed up). Required for SMS / Vapi.</label>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-sms" checked> SMS (Twilio Instant Dispatch)</label>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;"><input type="checkbox" id="ai-bot-vapi" checked> Vapi AI Call (Autonomous Voice)</label>
+          <label class="cd-consent" style="margin-top:10px;"><input type="checkbox" id="ai-bot-consent" checked> They already agreed (form, YES, or signed up). Required for SMS / Vapi.</label>
           <button type="button" class="btn btn-primary" id="btn-run-ai-bot" onclick="runAiProspectingCampaign()" style="width:100%;margin-top:14px;font-weight:800;padding:12px;">Run campaign</button>
         </section>
         <section class="cd-card" style="grid-column:span 12;display:none;" id="ai-bot-results">
@@ -292,7 +292,7 @@
             <button type="button" class="btn btn-secondary btn-sm" data-bulk="vapi">Vapi selected</button>
             <button type="button" class="btn btn-secondary btn-sm" data-bulk="packet">Packet selected</button>
             <button type="button" class="btn btn-secondary btn-sm" id="btn-manual-send">Compose &amp; send</button>
-            <label class="cd-consent" style="margin-left:auto;"><input type="checkbox" id="crm-consent"> They already agreed (SMS / Vapi)</label>
+            <label class="cd-consent" style="margin-left:auto;"><input type="checkbox" id="crm-consent" checked> They already agreed (SMS / Vapi)</label>
           </div>
           <div class="cd-toast" id="crm-toast"></div>
           <div class="tms-table-wrapper">

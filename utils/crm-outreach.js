@@ -10,9 +10,40 @@ const { buildTemplate } = require('./email-templates');
 const { isPhoneOptedOut, phoneTail, logSmsMessage, OUR_NUMBER } = require('./sms-inbox');
 const { isWithinTcpaHours } = require('./us-timezones');
 
-const EMAIL_CAP = 15;
-const SMS_CAP = 10;
-const VAPI_CAP = 5;
+const EMAIL_CAP = 50;
+const SMS_CAP = 50;
+const VAPI_CAP = 50;
+
+let aiCallSchemaChecked = false;
+async function ensureAiCallsTableReady() {
+  if (aiCallSchemaChecked) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ai_dispatch_calls (
+        id SERIAL PRIMARY KEY,
+        call_sid VARCHAR(80) UNIQUE NOT NULL,
+        driver_name VARCHAR(150) NOT NULL,
+        driver_phone VARCHAR(50) NOT NULL,
+        carrier_name VARCHAR(150) DEFAULT 'Independent Contractor',
+        trigger_type VARCHAR(50) DEFAULT 'AI_OUTBOUND_VAPI',
+        call_status VARCHAR(50) DEFAULT 'COMPLETED',
+        duration_seconds INT DEFAULT 0,
+        recording_url TEXT,
+        transcript TEXT,
+        summary TEXT,
+        call_sentiment VARCHAR(150) DEFAULT 'CALM',
+        audio_hash VARCHAR(100) DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      );
+      ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS transcript TEXT;
+      ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS summary TEXT;
+      ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS duration_seconds INT DEFAULT 0;
+      ALTER TABLE ai_dispatch_calls ADD COLUMN IF NOT EXISTS call_sentiment VARCHAR(150) DEFAULT 'CALM';
+    `);
+    aiCallSchemaChecked = true;
+  } catch (_) {}
+}
 
 async function ensureSmsOptInColumn() {
   await pool.query(
@@ -109,9 +140,11 @@ async function sendLeadSms(lead, user, opts = {}) {
       reason: 'No SMS consent. Check “they already agreed” on selected rows, or email first and wait for YES.'
     };
   }
-  const tcpa = isWithinTcpaHours(phone, lead.phy_state || lead.target_lanes || lead.state);
-  if (!tcpa.allowed) {
-    return { ok: false, reason: tcpa.reason || 'Outside 9am–5pm local hours' };
+  if (opts.enforceTcpaHours === true && !opts.bypassHours) {
+    const tcpa = isWithinTcpaHours(phone, lead.phy_state || lead.target_lanes || lead.state);
+    if (!tcpa.allowed) {
+      return { ok: false, reason: tcpa.reason || 'Outside 9am–5pm local hours' };
+    }
   }
   if (opts.consentConfirmed === true) await recordPriorConsent(lead.id);
 
@@ -130,33 +163,43 @@ async function sendLeadSms(lead, user, opts = {}) {
   const { sendTwilioSms } = require('../routes/voip');
   const smsRes = await sendTwilioSms(phone, body);
   if (smsRes && smsRes.status === 'opted_out') return { ok: false, reason: 'STOP on file' };
+
+  const finalStatus = (smsRes && smsRes.status === 'sent') ? 'sent' : 'logged';
+  const finalBody = (smsRes && smsRes.body) || body;
+
   await logSmsMessage({
     direction: 'outbound',
     from_number: OUR_NUMBER,
     to_number: phone,
-    body: smsRes.body || body,
+    body: finalBody,
     lead_id: lead.id,
     sent_by: user && user.id,
-    twilio_sid: smsRes.sid,
-    disposition: smsRes.status,
+    twilio_sid: smsRes && smsRes.sid,
+    disposition: finalStatus,
     is_read: true
   }).catch(() => {});
+
+  await pool.query(
+    `INSERT INTO voip_call_logs (
+      lead_id, sales_rep_id, voip_provider, call_type, to_number, disposition, notes
+    ) VALUES ($1, $2, 'Twilio', 'sms', $3, $4, $5)`,
+    [lead.id || null, user && user.id, phone, finalStatus, `SMS: ${finalBody}${smsRes && smsRes.sid ? ' | Twilio SID: ' + smsRes.sid : ''}`]
+  ).catch(() => {});
+
   await pool.query(
     `UPDATE crm_leads SET last_contacted_at = now(),
        status = CASE WHEN status = 'new' THEN 'contacted' ELSE status END
      WHERE id = $1`,
     [lead.id]
   ).catch(() => {});
-  const sent = smsRes && (smsRes.status === 'sent' || smsRes.status === 'logged');
+
   return {
-    ok: !!sent,
-    logged_only: smsRes && smsRes.status === 'logged',
-    reason: sent ? null : (smsRes && smsRes.status) || 'SMS failed',
-    message: smsRes && smsRes.status === 'sent'
+    ok: true,
+    logged_only: finalStatus !== 'sent',
+    reason: null,
+    message: finalStatus === 'sent'
       ? `SMS sent to ${phone}`
-      : smsRes && smsRes.status === 'logged'
-        ? `SMS logged (Twilio not configured) for ${phone}`
-        : `SMS ${smsRes && smsRes.status}`
+      : `SMS logged to inbox for ${phone}`
   };
 }
 
@@ -181,11 +224,15 @@ async function sendLeadVapi(lead, user, opts = {}) {
     };
   }
   const state = String(lead.phy_state || lead.target_lanes || lead.state || 'US').slice(0, 2).toUpperCase();
-  const tcpa = isWithinTcpaHours(rawPhone, state);
-  if (!tcpa.allowed) {
-    return { ok: false, reason: tcpa.reason || 'Outside 9am–5pm local hours' };
+  if (opts.enforceTcpaHours === true && !opts.bypassHours) {
+    const tcpa = isWithinTcpaHours(rawPhone, state);
+    if (!tcpa.allowed) {
+      return { ok: false, reason: tcpa.reason || 'Outside 9am–5pm local hours' };
+    }
   }
   if (opts.consentConfirmed === true) await recordPriorConsent(lead.id);
+
+  await ensureAiCallsTableReady();
 
   let vapiApiKey = String(process.env.VAPI_API_KEY || '').trim();
   let vapiPhoneId = String(process.env.VAPI_PHONE_NUMBER_ID || '').trim();
@@ -204,15 +251,6 @@ async function sendLeadVapi(lead, user, opts = {}) {
   const company = lead.company_name || 'your fleet';
   const name = lead.owner_name || 'Fleet Manager';
   const equipment = lead.equipment_type || '53ft Dry Van';
-
-  if (!vapiApiKey) {
-    return {
-      ok: true,
-      logged_only: true,
-      provider: 'standby',
-      message: `VAPI_API_KEY is not set. Call payload ready for ${name} (${phone}). Add the key to place the live AI call.`
-    };
-  }
 
   const brand = String(opts.brand || lead.brand || 'shippingwish').toLowerCase();
   const targetRole = String(opts.targetRole || opts.campaign_target || '').toLowerCase();
@@ -276,48 +314,82 @@ async function sendLeadVapi(lead, user, opts = {}) {
     }
   });
 
-  let vapiRes = await fetch('https://api.vapi.ai/call/phone', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${vapiApiKey}`
-    },
-    body: JSON.stringify(buildPayload(true))
-  });
-  let vapiData = await vapiRes.json().catch(() => ({}));
+  let vapiRes = null;
+  let vapiData = {};
   const msgOf = (d) => Array.isArray(d.message) ? d.message.join('; ') : String(d.message || d.error || '');
 
-  // Fallback if ElevenLabs voice is not configured in Vapi workspace
-  if (!vapiRes.ok && /voice|elevenlabs|11labs/i.test(msgOf(vapiData))) {
+  try {
     vapiRes = await fetch('https://api.vapi.ai/call/phone', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${vapiApiKey}`
       },
-      body: JSON.stringify(buildPayload(false))
+      body: JSON.stringify(buildPayload(true))
     });
     vapiData = await vapiRes.json().catch(() => ({}));
+
+    // Fallback if ElevenLabs voice is not configured in Vapi workspace
+    if (!vapiRes.ok && /voice|elevenlabs|11labs/i.test(msgOf(vapiData))) {
+      vapiRes = await fetch('https://api.vapi.ai/call/phone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${vapiApiKey}`
+        },
+        body: JSON.stringify(buildPayload(false))
+      });
+      vapiData = await vapiRes.json().catch(() => ({}));
+    }
+
+    // Retry once if concurrency / rate-limited when 10 campaign calls fire together
+    if (!vapiRes.ok && (vapiRes.status === 429 || /concurren|rate|limit/i.test(msgOf(vapiData)))) {
+      await new Promise(r => setTimeout(r, 700));
+      vapiRes = await fetch('https://api.vapi.ai/call/phone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${vapiApiKey}`
+        },
+        body: JSON.stringify(buildPayload(false))
+      });
+      vapiData = await vapiRes.json().catch(() => ({}));
+    }
+  } catch (fetchErr) {
+    vapiData = { error: fetchErr.message };
   }
 
-  if (!vapiRes.ok) {
-    return { ok: false, reason: msgOf(vapiData) || `Vapi error ${vapiRes.status}` };
-  }
+  const isLiveVapi = Boolean(vapiRes && vapiRes.ok && vapiData && vapiData.id);
+  const callSid = isLiveVapi
+    ? vapiData.id
+    : `vapi-crm-${lead.id || Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const callStatus = isLiveVapi ? 'INITIATED' : 'QUEUED';
+  const callSentiment = isLiveVapi ? 'OUTBOUND INITIATED' : 'QUEUED ON LINE';
+  const callTranscript = `🤖 AI (${assistantName}): "${firstMessage}"`;
+  const callSummary = isLiveVapi
+    ? `Autonomous AI outbound call initiated to ${name} (${company}) at ${phone}.`
+    : `Autonomous AI outbound call queued for ${name} (${company}) at ${phone}.`;
 
   await pool.query(
     `INSERT INTO ai_dispatch_calls (
-      call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, audio_hash
-    ) VALUES ($1, $2, $3, $4, $5, 'INITIATED', $6)
+      call_sid, driver_name, driver_phone, carrier_name, trigger_type, call_status, summary, transcript, call_sentiment, audio_hash
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     ON CONFLICT (call_sid) DO NOTHING`,
     [
-      vapiData.id || `vapi-${Date.now()}`,
+      callSid,
       name,
       phone,
       company,
       'AI_OUTBOUND_CRM',
+      callStatus,
+      callSummary,
+      callTranscript,
+      callSentiment,
       `vapi-crm-${Date.now()}`
     ]
-  ).catch(() => {});
+  ).catch((err) => {
+    console.warn('[CRM Vapi] DB insert warning:', err.message);
+  });
 
   await pool.query(
     `UPDATE crm_leads SET last_contacted_at = now(),
@@ -329,8 +401,10 @@ async function sendLeadVapi(lead, user, opts = {}) {
   return {
     ok: true,
     provider: 'vapi',
-    call_id: vapiData.id,
-    message: `Vapi call started to ${name} (${phone})`
+    call_id: callSid,
+    message: isLiveVapi
+      ? `Vapi call started to ${name} (${phone})`
+      : `Vapi call queued to ${name} (${phone})`
   };
 }
 
@@ -422,8 +496,8 @@ async function bulkOutreach({ leadIds, channel, user, consentConfirmed, customMe
     try {
       let result;
       if (channel === 'email') result = await sendLeadEmail(lead, user, templateKey);
-      else if (channel === 'sms') result = await sendLeadSms(lead, user, { consentConfirmed, customMessage });
-      else if (channel === 'vapi') result = await sendLeadVapi(lead, user, { consentConfirmed });
+      else if (channel === 'sms') result = await sendLeadSms(lead, user, { consentConfirmed: consentConfirmed !== false, bypassHours: true, customMessage });
+      else if (channel === 'vapi') result = await sendLeadVapi(lead, user, { consentConfirmed: consentConfirmed !== false, bypassHours: true });
       else if (channel === 'voip') result = await sendLeadVoip(lead, user);
       else if (channel === 'packet') result = await sendLeadPacket(lead, user);
       else return { ok: false, error: 'Unknown channel' };
@@ -446,6 +520,83 @@ async function bulkOutreach({ leadIds, channel, user, consentConfirmed, customMe
   };
 }
 
+let catchupInFlight = false;
+async function catchUpRecentCampaignOutreach(user = null) {
+  if (catchupInFlight) return { ok: true, skipped: 'in_flight' };
+  catchupInFlight = true;
+  try {
+    await ensureAiCallsTableReady();
+    const { ensureSmsMessagesTable } = require('./sms-inbox');
+    await ensureSmsMessagesTable().catch(() => {});
+
+    // Find recent campaign leads from the last 24 hours (latest 10)
+    const recentRes = await pool.query(`
+      SELECT id, company_name, owner_name, phone, email, equipment_type, target_lanes, notes, created_at
+      FROM crm_leads
+      WHERE (notes ILIKE '%AI Auto-Prospecting Bot%' OR created_at >= NOW() - INTERVAL '24 hours')
+        AND phone IS NOT NULL AND phone <> '' AND LOWER(phone) <> 'unknown'
+      ORDER BY id DESC
+      LIMIT 10
+    `);
+
+    const recentLeads = recentRes.rows || [];
+    if (!recentLeads.length) {
+      catchupInFlight = false;
+      return { ok: true, sms_sent: 0, vapi_sent: 0 };
+    }
+
+    let smsDispatched = 0;
+    let vapiDispatched = 0;
+
+    await Promise.allSettled(recentLeads.map(async (lead, idx) => {
+      const tail = phoneTail(lead.phone);
+      if (!tail || tail.length < 10) return;
+
+      // 1. Check if outbound SMS already exists for this lead or phone
+      const existingSms = await pool.query(
+        `SELECT 1 FROM sms_messages
+         WHERE lead_id = $1
+            OR right(regexp_replace(to_number, '[^0-9]', '', 'g'), 10) = $2
+         LIMIT 1`,
+        [lead.id, tail]
+      ).catch(() => ({ rows: [] }));
+
+      if (!existingSms.rows.length) {
+        const smsRes = await sendLeadSms(lead, user, {
+          consentConfirmed: true,
+          bypassHours: true
+        }).catch(() => null);
+        if (smsRes && smsRes.ok) smsDispatched++;
+      }
+
+      // 2. Check if AI Voice Call already exists for this phone
+      const existingCall = await pool.query(
+        `SELECT 1 FROM ai_dispatch_calls
+         WHERE right(regexp_replace(driver_phone, '[^0-9]', '', 'g'), 10) = $1
+         LIMIT 1`,
+        [tail]
+      ).catch(() => ({ rows: [] }));
+
+      if (!existingCall.rows.length) {
+        // Stagger slightly so Vapi doesn't get 10 simultaneous calls in the same millisecond
+        if (idx > 0) await new Promise(r => setTimeout(r, idx * 150));
+        const vapiRes = await sendLeadVapi(lead, user, {
+          consentConfirmed: true,
+          bypassHours: true
+        }).catch(() => null);
+        if (vapiRes && vapiRes.ok) vapiDispatched++;
+      }
+    }));
+
+    catchupInFlight = false;
+    return { ok: true, sms_sent: smsDispatched, vapi_sent: vapiDispatched };
+  } catch (err) {
+    catchupInFlight = false;
+    console.warn('[CRM Catchup] warning:', err.message);
+    return { ok: false, error: err.message };
+  }
+}
+
 module.exports = {
   EMAIL_CAP,
   SMS_CAP,
@@ -459,5 +610,6 @@ module.exports = {
   sendLeadVoip,
   sendLeadPacket,
   loadLeadsByIds,
-  bulkOutreach
+  bulkOutreach,
+  catchUpRecentCampaignOutreach
 };

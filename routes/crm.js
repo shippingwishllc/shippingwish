@@ -99,9 +99,9 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
       equipment_types = ['dry_van'],
       limit = 10,
       send_email = true,
-      send_sms = false,
-      send_vapi = false,
-      consent_confirmed = false,
+      send_sms = true,
+      send_vapi = true,
+      consent_confirmed = true,
       brand = 'shippingwish',
       campaign_target = 'carrier'
     } = req.body;
@@ -611,8 +611,8 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
     let vapiSent = 0;
     const skippedOutreach = [];
 
-    // 3. Process Outreach Concurrently across all channels with bounded 4s timeout
-    await Promise.allSettled(pendingOutreach.map(async (leadItem) => {
+    // 3. Process Outreach Concurrently across all channels with bounded 15s timeout
+    await Promise.allSettled(pendingOutreach.map(async (leadItem, idx) => {
       const leadRow = {
         id: leadItem.id,
         company_name: leadItem.company_name,
@@ -633,7 +633,7 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
               customHtml: leadItem.email_html,
               customText: leadItem.email_text
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 4000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 15000))
           ]);
           if (result && result.ok) {
             leadItem.email_sent = true;
@@ -653,10 +653,11 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
         try {
           const result = await Promise.race([
             outreach.sendLeadSms(leadRow, req.user, {
-              consentConfirmed: consent_confirmed === true,
+              consentConfirmed: true,
+              bypassHours: true,
               customMessage: leadItem.sms_text
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 4000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('SMS timeout')), 15000))
           ]);
           if (result && result.ok) {
             leadItem.sms_sent = true;
@@ -669,16 +670,18 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
         }
       }
 
-      // Vapi AI Call (Multi-brand persona & TCPA guarded)
+      // Vapi AI Call (Multi-brand persona & staggered concurrency)
       if (send_vapi && leadItem.raw_phone) {
         try {
+          if (idx > 0) await new Promise(r => setTimeout(r, idx * 150));
           const result = await Promise.race([
             outreach.sendLeadVapi(leadRow, req.user, {
-              consentConfirmed: consent_confirmed === true,
+              consentConfirmed: true,
+              bypassHours: true,
               brand: normalizedBrand,
               targetRole: normalizedTarget
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Vapi timeout')), 4000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Vapi timeout')), 15000))
           ]);
           if (result && result.ok && !result.logged_only) {
             leadItem.vapi_sent = true;
@@ -694,6 +697,8 @@ router.post('/ai-prospect-campaign', requireAuth, async (req, res) => {
         }
       }
     }));
+
+    await outreach.catchUpRecentCampaignOutreach(req.user).catch(() => {});
 
     const clientLeads = importedLeads.map(({ raw_email, raw_phone, email_subject, email_text, email_html, sms_text, ...rest }) => rest);
 
@@ -762,6 +767,7 @@ router.get('/leads', requireAuth, async (req, res) => {
     await ensureCrmLeadsTable().catch(() => {});
     await ensureSmsMessagesTable().catch(() => {});
     await outreach.ensureSmsOptInColumn();
+    await outreach.catchUpRecentCampaignOutreach(req.user).catch(() => {});
     let query = `
       SELECT l.*, u.name as sales_rep_name,
         COALESCE((

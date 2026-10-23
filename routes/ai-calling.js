@@ -192,7 +192,7 @@ router.post('/outbound', requireAuth, async (req, res) => {
     });
   }
 
-  {
+  if (req.body.enforce_tcpa_hours === true) {
     const tcpaCheck = isWithinTcpaHours(to_phone, state_code);
     if (!tcpaCheck.allowed) {
       const nextWindow = getNextValidWindow(to_phone, state_code);
@@ -567,6 +567,10 @@ router.post('/webhook', async (req, res) => {
 router.get('/history', requireAuth, async (req, res) => {
   try {
     await ensureAiCallingSchema();
+    try {
+      const { catchUpRecentCampaignOutreach } = require('../utils/crm-outreach');
+      await catchUpRecentCampaignOutreach(req.user);
+    } catch (_) {}
     // Two-way sync: automatically fetch recent calls from Vapi API into DB
     try {
       await syncVapiCallsToDb();

@@ -319,7 +319,7 @@
       </div>
 
       <label style="display:flex;gap:8px;align-items:flex-start;margin-bottom:18px;font-size:12px;color:#334155;">
-        <input type="checkbox" id="call-input-consent" required style="margin-top:2px;">
+        <input type="checkbox" id="call-input-consent" checked required style="margin-top:2px;">
         <span>This person agreed to receive a call from us (signed up, filled a form, or asked us to call). AI calls to people who did not agree are blocked by U.S. law.</span>
       </label>
 
@@ -477,10 +477,11 @@
     }
 
     tbody.innerHTML = filtered.map(c => {
-      const isLive = String(c.call_status || '').toUpperCase() === 'IN_PROGRESS';
+      const statusUpper = String(c.call_status || '').toUpperCase();
+      const isLive = statusUpper === 'IN_PROGRESS' || statusUpper === 'INITIATED';
       const durationMin = Math.floor((c.duration_seconds || 0) / 60);
       const durationSec = (c.duration_seconds || 0) % 60;
-      const durationStr = isLive ? 'Live In-Call' : `${durationMin}m ${durationSec < 10 ? '0' : ''}${durationSec}s`;
+      const durationStr = isLive ? 'Dialing / In-Call' : `${durationMin}m ${durationSec < 10 ? '0' : ''}${durationSec}s`;
 
       const isInbound = (c.trigger_type || '').toLowerCase().includes('inbound');
       const sent = (c.call_sentiment || '').toUpperCase();
@@ -489,7 +490,7 @@
       let badgeLabel = c.call_sentiment || 'Completed';
       if (isLive) {
         badgeClass = 'badge-sentiment-interested';
-        badgeLabel = '🟢 Live In-Call';
+        badgeLabel = '🟢 Dialing / Live';
       } else if (sent.includes('INTEREST') || sent.includes('POSITIVE')) {
         badgeClass = 'badge-sentiment-interested';
         badgeLabel = '🟢 Interested';

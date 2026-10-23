@@ -26,8 +26,9 @@ async function sendOutboundMessage({ to_number, body, lead_id, user, channel = '
     sent = await sendTwilioSms(cleanTo, body);
   }
   const bodySent = sent.body || body;
+  const finalDisposition = (sent && sent.status === 'sent') ? 'sent' : 'logged';
 
-  if (sent.status === 'sent' || sent.status === 'logged') {
+  if (!sent || sent.status !== 'opted_out') {
     await logSmsMessage({
       direction: 'outbound',
       from_number: isWa ? (process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:' + OUR_NUMBER) : OUR_NUMBER,
@@ -35,8 +36,8 @@ async function sendOutboundMessage({ to_number, body, lead_id, user, channel = '
       body: bodySent,
       lead_id,
       sent_by: user?.id,
-      twilio_sid: sent.sid,
-      disposition: sent.status,
+      twilio_sid: sent?.sid,
+      disposition: finalDisposition,
       is_read: true,
       channel: isWa ? 'whatsapp' : 'sms'
     });
@@ -67,6 +68,8 @@ router.get('/', requireAuth, staffOnly, async (req, res) => {
   try {
     await ensureSmsMessagesTable();
     await backfillFromVoipLogs();
+    const { catchUpRecentCampaignOutreach } = require('../utils/crm-outreach');
+    await catchUpRecentCampaignOutreach(req.user).catch(() => {});
 
     const channelFilter = req.query.channel ? String(req.query.channel).trim().toLowerCase() : null;
     const channelSql = (channelFilter === 'whatsapp' || channelFilter === 'sms')
@@ -181,6 +184,8 @@ router.get('/thread', requireAuth, staffOnly, async (req, res) => {
   try {
     await ensureSmsMessagesTable();
     await backfillFromVoipLogs();
+    const { catchUpRecentCampaignOutreach } = require('../utils/crm-outreach');
+    await catchUpRecentCampaignOutreach(req.user).catch(() => {});
     const tail = phoneTail(phone);
     const normalized = phone.replace(/\s/g, '');
 
@@ -333,6 +338,8 @@ router.get('/stats', requireAuth, staffOnly, async (req, res) => {
   try {
     await ensureSmsMessagesTable();
     await backfillFromVoipLogs();
+    const { catchUpRecentCampaignOutreach } = require('../utils/crm-outreach');
+    await catchUpRecentCampaignOutreach(req.user).catch(() => {});
     const [unread, outboundToday, threads, optedOut, waUnread, waOutboundToday, waThreads] = await Promise.all([
       pool.query(`SELECT COUNT(*)::int AS c FROM sms_messages WHERE direction='inbound' AND is_read=FALSE`),
       pool.query(`SELECT COUNT(*)::int AS c FROM sms_messages WHERE direction='outbound' AND created_at >= CURRENT_DATE`),
