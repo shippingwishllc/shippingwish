@@ -2884,13 +2884,29 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
       }
       if (selectedCarrier.empty_zip) {
         const origInput = document.getElementById('search-origin');
-        const cityLabel = CLIENT_ZIP_DIRECTORY[selectedCarrier.empty_zip]
+        const cityLabel = (typeof CLIENT_ZIP_DIRECTORY !== 'undefined' && CLIENT_ZIP_DIRECTORY[selectedCarrier.empty_zip])
           ? `${CLIENT_ZIP_DIRECTORY[selectedCarrier.empty_zip]} ${selectedCarrier.empty_zip}`
           : selectedCarrier.empty_zip;
-        if (origInput && (!origInput.value || origInput.value === 'Rincon, GA')) {
+        if (origInput) {
           origInput.value = cityLabel;
           syncActiveTabField('origin', cityLabel);
-          handleOriginZipInput(cityLabel);
+          if (typeof handleOriginZipInput === 'function') handleOriginZipInput(cityLabel);
+        }
+      }
+      if (selectedCarrier.prefer_destination) {
+        const destInput = document.getElementById('search-destination');
+        if (destInput) {
+          destInput.value = selectedCarrier.prefer_destination;
+          syncActiveTabField('destination', selectedCarrier.prefer_destination);
+        }
+      }
+      if (selectedCarrier.available_date) {
+        const dateInput = document.getElementById('search-date');
+        const dateVal = String(selectedCarrier.available_date).slice(0, 10);
+        if (dateInput && dateVal) {
+          dateInput.value = dateVal;
+          syncActiveTabField('pickupDate', dateVal);
+          if (typeof updateDateUI === 'function') updateDateUI(dateVal);
         }
       }
       runActiveTabSearch();

@@ -238,7 +238,7 @@ router.post('/preview', ...staff, async (req, res) => {
     await ensureBoardSchema();
     const text = String(req.body.text || '').trim().slice(0, 600);
     if (!text) return res.status(400).json({ error: 'Type a carrier message to test.' });
-    let carrier = { id: 0, company_name: 'Test carrier', equipment: 'Dry Van', max_deadhead: 150 };
+    let carrier = { id: 0, company_name: 'Test carrier', equipment: t.equipment_type || t.driver_equipment || '53ft Dry Van', max_deadhead: 150 };
     if (req.body.carrier_id) {
       const { rows } = await pool.query('SELECT * FROM ai_dispatch_carriers WHERE id = $1', [req.body.carrier_id]);
       if (!rows[0]) return res.status(404).json({ error: 'Carrier not found.' });
@@ -276,12 +276,25 @@ router.get('/roster', ...staff, async (req, res) => {
     try {
       const trucksRes = await pool.query(`
         SELECT t.id AS truck_id, t.truck_number, t.vin, t.plate, t.status AS truck_status,
+               COALESCE(NULLIF(t.equipment_type, ''), NULLIF(u.equipment_category, ''), '53ft Dry Van') AS equipment_type,
                t.mileage, t.carrier_id,
                u.company_name, u.name AS owner_name, u.phone AS company_phone, u.mc_number, u.dot_number,
-               d.id AS driver_id, d.name AS driver_name, d.phone AS driver_phone
+               d.id AS driver_id, d.name AS driver_name, d.phone AS driver_phone,
+               d.equipment_type AS driver_equipment,
+               lplan.pickup_location AS lp_pickup_location,
+               lplan.delivery_preference AS lp_delivery_preference,
+               lplan.available_date AS lp_available_date
         FROM trucks t
         LEFT JOIN users u ON u.id = t.carrier_id
         LEFT JOIN drivers d ON d.assigned_truck_id = t.id AND d.deleted_at IS NULL
+        LEFT JOIN LATERAL (
+          SELECT lp.pickup_location, lp.delivery_preference, lp.available_date
+          FROM load_plans lp
+          WHERE (lp.truck_id = t.id OR (d.id IS NOT NULL AND lp.driver_id = d.id))
+            AND lp.status = 'scheduled'
+          ORDER BY lp.available_date ASC, lp.created_at DESC
+          LIMIT 1
+        ) lplan ON true
         ORDER BY t.truck_number ASC
       `);
       trucks = trucksRes.rows;
@@ -315,9 +328,9 @@ router.get('/roster', ...staff, async (req, res) => {
         driver_name: matchedTruck ? matchedTruck.driver_name : (c.contact_name || 'Driver'),
         driver_phone: matchedTruck ? (matchedTruck.driver_phone || c.phone) : c.phone,
         truck_number: c.truck_number || (matchedTruck ? matchedTruck.truck_number : '101'),
-        equipment: c.equipment || '26ft Box Truck',
-        empty_zip: c.empty_zip || c.last_location || 'Hopkinsville, KY',
-        prefer_destination: c.prefer_destination || '',
+        equipment: (matchedTruck && matchedTruck.equipment_type) || c.equipment || '53ft Dry Van',
+        empty_zip: (matchedTruck && matchedTruck.lp_pickup_location) || c.empty_zip || c.last_location || 'Dallas, TX',
+        prefer_destination: (matchedTruck && matchedTruck.lp_delivery_preference) || c.prefer_destination || '',
         mc_number: c.mc_number || (matchedTruck ? matchedTruck.mc_number : ''),
         dot_number: c.dot_number || (matchedTruck ? matchedTruck.dot_number : ''),
         min_rpm: parseFloat(c.min_rpm) || 2.00,
@@ -343,8 +356,8 @@ router.get('/roster', ...staff, async (req, res) => {
           driver_phone: t.driver_phone || t.company_phone || '',
           truck_number: t.truck_number || '101',
           equipment: 'Dry Van',
-          empty_zip: 'Dallas, TX',
-          prefer_destination: 'Anywhere',
+          empty_zip: t.lp_pickup_location || 'Dallas, TX',
+          prefer_destination: t.lp_delivery_preference || 'Anywhere',
           mc_number: t.mc_number || '',
           dot_number: t.dot_number || '',
           min_rpm: 2.00,

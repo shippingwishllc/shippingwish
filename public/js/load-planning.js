@@ -62,7 +62,7 @@ async function loadDriversAndTrucks() {
         const prev = dSelect.value;
         dSelect.innerHTML = '<option value="">Choose driver...</option>' + cachedDrivers.map(d => {
           const comp = d.carrier_company || d.carrier_name || '';
-          const eq = d.equipment_type || '53ft Dry Van';
+          const eq = normalizeEquipmentOption(d.equipment_type || '53ft Dry Van');
           const truckTag = d.truck_number ? `Truck #${d.truck_number}` : '';
           const meta = [comp, `🚛 ${eq}`, truckTag, d.phone].filter(Boolean).join(' • ');
           return `<option value="${d.id}">${escapeHtml(d.name)} — ${escapeHtml(meta)}</option>`;
@@ -79,7 +79,7 @@ async function loadDriversAndTrucks() {
         const prevT = tSelect.value;
         tSelect.innerHTML = '<option value="">Choose truck...</option>' + cachedTrucks.map(t => {
           const comp = t.carrier_company || t.carrier_name || '';
-          const eq = t.equipment_type || '53ft Dry Van';
+          const eq = normalizeEquipmentOption(t.equipment_type || '53ft Dry Van');
           return `<option value="${t.id}">Truck #${escapeHtml(t.truck_number || '101')} — ${escapeHtml(eq)}${comp ? ' (' + escapeHtml(comp) + ')' : ''}</option>`;
         }).join('');
         if (prevT) tSelect.value = prevT;
@@ -241,12 +241,18 @@ function renderPlans(plans) {
           <span class="badge ${badgeClass}">${escapeHtml((p.status || 'scheduled').toUpperCase())}</span>
         </td>
         <td>
-          <div style="display:flex;gap:6px;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <a href="/load-booking?carrier_id=${p.carrier_id || ''}&origin=${encodeURIComponent(p.pickup_location || '')}&destination=${encodeURIComponent(p.delivery_preference || '')}&equipment=${encodeURIComponent(eq)}&date=${encodeURIComponent((p.available_date || '').slice(0, 10))}" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;" title="Find Live Loads on LoadsNexus">
+              🔍 Find Loads
+            </a>
+            <a href="/ai-dispatch" class="btn btn-secondary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;" title="Open AI Dispatch Desk">
+              🤖 AI Dispatch
+            </a>
             ${p.status === 'scheduled' ? `
-              <button class="btn btn-primary btn-sm" onclick="updatePlanStatus(${p.id}, 'booked')">📌 Mark Booked</button>
+              <button class="btn btn-secondary btn-sm" onclick="updatePlanStatus(${p.id}, 'booked')">📌 Booked</button>
             ` : ''}
             ${p.status !== 'completed' ? `
-              <button class="btn btn-secondary btn-sm" onclick="updatePlanStatus(${p.id}, 'completed')">✅ Complete</button>
+              <button class="btn btn-secondary btn-sm" onclick="updatePlanStatus(${p.id}, 'completed')">✅ Done</button>
             ` : ''}
           </div>
         </td>

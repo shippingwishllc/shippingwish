@@ -25,13 +25,31 @@ const TIER_TRUCK_LIMITS = {
 };
 
 /**
- * Extract 5-digit US ZIP code from an address string or return original clean string
+ * Extract 5-digit US ZIP code or clean City, State string from an address/location string
  */
 function extractZipCode(text) {
   if (!text) return null;
   const str = String(text).trim();
   const zipMatch = str.match(/\b\d{5}\b/);
-  return zipMatch ? zipMatch[0] : (str.length <= 10 ? str : null);
+  return zipMatch ? zipMatch[0] : (str.length <= 64 ? str : str.slice(0, 64));
+}
+
+function normalizeEquipmentLabel(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '53ft Dry Van';
+  const low = s.toLowerCase();
+  if (low === 'dry_van' || low === 'dry van' || low === "53' dry van") return '53ft Dry Van';
+  if (low === 'reefer' || low === "53' reefer") return '53ft Reefer';
+  if (low === 'flatbed') return '48ft Flatbed';
+  if (low === 'step_deck' || low === 'step deck') return 'Step Deck';
+  if (low === 'box_truck' || low === 'box truck') return '26ft Box Truck';
+  if (low === 'sprinter' || low === 'cargo_van') return 'Sprinter Van';
+  if (low === 'power_only') return 'Power Only';
+  if (low === 'hotshot_30' || (low.includes('30') && low.includes('hotshot'))) return '30ft Hotshot';
+  if (low === 'hotshot_35' || (low.includes('35') && low.includes('hotshot'))) return '35ft Hotshot';
+  if (low === 'hotshot_40' || (low.includes('40') && low.includes('hotshot'))) return '40ft Hotshot';
+  if (low === 'hotshot') return '30ft Hotshot';
+  return s;
 }
 
 /**
@@ -270,7 +288,7 @@ async function ensureCarrierDefaultFleet(carrierId, info = {}) {
   const driverName = String(info.contact_name || info.name || company).trim();
   const phone = String(info.phone || '').trim() || null;
   const email = String(info.email || '').trim().toLowerCase() || null;
-  const equip = String(info.equipment || info.equipment_category || '53ft Dry Van').trim();
+  const equip = normalizeEquipmentLabel(info.equipment || info.equipment_category || '53ft Dry Van');
 
   try {
     // 1. Ensure at least one truck exists for this carrier
@@ -281,8 +299,11 @@ async function ensureCarrierDefaultFleet(carrierId, info = {}) {
     let truckId = null;
     if (tRes.rows.length > 0) {
       truckId = tRes.rows[0].id;
-      const curEq = tRes.rows[0].equipment_type || '';
-      if (equip && (!curEq || (curEq === '53ft Dry Van' && equip !== '53ft Dry Van' && equip !== "53' Dry Van"))) {
+      const curEq = normalizeEquipmentLabel(tRes.rows[0].equipment_type || '');
+      // If current equipment was generic dry van or empty, update to the carrier's specified equipment
+      const isCurGeneric = !curEq || curEq.toLowerCase().includes('dry_van') || curEq === '53ft Dry Van';
+      const isNewSpecific = equip && !equip.toLowerCase().includes('dry_van') && equip !== '53ft Dry Van';
+      if (isNewSpecific && isCurGeneric) {
         await pool.query(`UPDATE trucks SET equipment_type = $1 WHERE id = $2`, [equip, truckId]).catch(() => {});
       }
     } else {
@@ -303,11 +324,12 @@ async function ensureCarrierDefaultFleet(carrierId, info = {}) {
     if (dRes.rows.length > 0) {
       const dRow = dRes.rows[0];
       const nextTruckId = dRow.assigned_truck_id || truckId;
-      const curDrvEq = dRow.equipment_type || '';
-      const nextEq = (equip && (!curDrvEq || (curDrvEq === '53ft Dry Van' && equip !== '53ft Dry Van' && equip !== "53' Dry Van")))
-        ? equip
-        : (curDrvEq || equip);
-      if (nextTruckId !== dRow.assigned_truck_id || nextEq !== curDrvEq) {
+      const curDrvEq = normalizeEquipmentLabel(dRow.equipment_type || '');
+      const isDrvGeneric = !curDrvEq || curDrvEq.toLowerCase().includes('dry_van') || curDrvEq === '53ft Dry Van';
+      const isNewSpecific = equip && !equip.toLowerCase().includes('dry_van') && equip !== '53ft Dry Van';
+      const nextEq = (isNewSpecific && isDrvGeneric) ? equip : (curDrvEq || equip);
+
+      if (nextTruckId !== dRow.assigned_truck_id || nextEq !== dRow.equipment_type) {
         await pool.query(
           `UPDATE drivers SET assigned_truck_id = COALESCE(assigned_truck_id, $1), equipment_type = COALESCE($2, equipment_type) WHERE id = $3`,
           [nextTruckId, nextEq, dRow.id]

@@ -12,6 +12,7 @@ router.get('/', requireAuth, async (req, res) => {
       SELECT lp.*,
              d.name as driver_name,
              d.phone as driver_phone,
+             d.carrier_id,
              t.truck_number,
              COALESCE(NULLIF(t.equipment_type, ''), NULLIF(d.equipment_type, ''), NULLIF(cu.equipment_category, ''), '53ft Dry Van') AS equipment_type,
              COALESCE(cu.company_name, cu.name, 'Carrier Fleet') AS carrier_company,
@@ -61,10 +62,18 @@ router.post('/', requireAuth, async (req, res) => {
       }
     }
 
-    if (equipment_type && String(equipment_type).trim()) {
-      const cleanEq = String(equipment_type).trim();
-      await pool.query('UPDATE trucks SET equipment_type = $1 WHERE id = $2', [cleanEq, truck_id]).catch(() => {});
-      await pool.query('UPDATE drivers SET equipment_type = $1, assigned_truck_id = COALESCE(assigned_truck_id, $2) WHERE id = $3', [cleanEq, truck_id, driver_id]).catch(() => {});
+    const dInfo = await pool.query('SELECT name, phone, carrier_id FROM drivers WHERE id = $1', [driver_id]);
+    const tInfo = await pool.query('SELECT truck_number, carrier_id, equipment_type FROM trucks WHERE id = $1', [truck_id]);
+    const carrierId = (tInfo.rows[0] && tInfo.rows[0].carrier_id) || (dInfo.rows[0] && dInfo.rows[0].carrier_id) || req.user.id;
+    const cleanEq = (equipment_type && String(equipment_type).trim()) || (tInfo.rows[0] && tInfo.rows[0].equipment_type) || '53ft Dry Van';
+    const truckNumber = (tInfo.rows[0] && tInfo.rows[0].truck_number) || '101';
+    const driverName = (dInfo.rows[0] && dInfo.rows[0].name) || 'Driver';
+    const driverPhone = (dInfo.rows[0] && dInfo.rows[0].phone) || null;
+
+    if (cleanEq) {
+      await pool.query('UPDATE trucks SET equipment_type = $1, status = $2 WHERE id = $3', [cleanEq, 'active', truck_id]).catch(() => {});
+      await pool.query('UPDATE drivers SET equipment_type = $1, assigned_truck_id = COALESCE(assigned_truck_id, $2), status = $3 WHERE id = $4', [cleanEq, truck_id, 'available', driver_id]).catch(() => {});
+      await pool.query('UPDATE users SET equipment_category = $1 WHERE id = $2', [cleanEq, carrierId]).catch(() => {});
     }
 
     const result = await pool.query(
@@ -77,13 +86,47 @@ router.post('/', requireAuth, async (req, res) => {
 
     // Sync newly scheduled empty location & preference directly to AI Dispatch Brain
     try {
-      const tInfo = await pool.query('SELECT carrier_id, equipment_type FROM trucks WHERE id = $1', [truck_id]);
-      const carrierId = (tInfo.rows[0] && tInfo.rows[0].carrier_id) || req.user.id;
+      const uRes = await pool.query('SELECT company_name, name, phone, email, mc_number, dot_number FROM users WHERE id = $1', [carrierId]);
+      const carrierCompany = (uRes.rows[0] && (uRes.rows[0].company_name || uRes.rows[0].name)) || driverName;
+
+      // Update customer_carriers so equipment doesn't get reverted by legacy sync
+      if (carrierCompany) {
+        await pool.query('UPDATE customer_carriers SET equipment_type = $1 WHERE lower(company_name) = lower($2)', [cleanEq, carrierCompany]).catch(() => {});
+      }
+
       await syncTruckLocationToAiDispatch(carrierId, {
         empty_zip: pickup_location,
         prefer_destination: delivery_preference,
-        equipment: equipment_type || (tInfo.rows[0] ? tInfo.rows[0].equipment_type : null)
+        equipment: cleanEq,
+        status: 'active'
       });
+
+      // Ensure active record exists in ai_dispatch_carriers for 1-click AI Dispatch matching
+      await pool.query(
+        `INSERT INTO ai_dispatch_carriers (
+           company_name, truck_number, contact_name, phone, equipment,
+           empty_zip, prefer_destination, status, sms_consent, last_location, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', true, $6, now())
+         ON CONFLICT (company_name) DO UPDATE SET
+           truck_number = EXCLUDED.truck_number,
+           contact_name = COALESCE(EXCLUDED.contact_name, ai_dispatch_carriers.contact_name),
+           phone = COALESCE(EXCLUDED.phone, ai_dispatch_carriers.phone),
+           equipment = EXCLUDED.equipment,
+           empty_zip = EXCLUDED.empty_zip,
+           prefer_destination = EXCLUDED.prefer_destination,
+           status = 'active',
+           last_location = EXCLUDED.empty_zip,
+           updated_at = now()`,
+        [
+          carrierCompany,
+          truckNumber,
+          driverName,
+          driverPhone || (uRes.rows[0] && uRes.rows[0].phone) || null,
+          cleanEq,
+          pickup_location,
+          delivery_preference || null
+        ]
+      ).catch((e) => console.warn('[LoadPlanning] ai_dispatch_carriers upsert notice:', e.message));
     } catch (syncErr) {
       console.warn('[LoadPlanning] AI dispatch sync notice:', syncErr.message);
     }

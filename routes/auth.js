@@ -1198,13 +1198,26 @@ router.get('/carriers', requireAuth, requireRole('dispatcher', 'admin', 'super_a
         ORDER BY a.created_at DESC
         LIMIT 1
       ) adc ON true
+      LEFT JOIN LATERAL (
+        SELECT lp.available_date, lp.pickup_location, lp.delivery_preference,
+               COALESCE(NULLIF(t.equipment_type, ''), NULLIF(d.equipment_type, '')) AS lp_equipment
+        FROM load_plans lp
+        JOIN drivers d ON lp.driver_id = d.id
+        LEFT JOIN trucks t ON lp.truck_id = t.id
+        WHERE d.carrier_id = u.id AND lp.status = 'scheduled'
+        ORDER BY lp.available_date ASC, lp.created_at DESC
+        LIMIT 1
+      ) lplan ON true
     `;
     if (req.user.role === 'dispatcher') {
       query = `
         SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
                u.dispatch_fee_percent, u.equipment_category, u.billing_notes,
-               COALESCE(adc.equipment, u.equipment_category, '53ft Dry Van') AS equipment,
-               adc.empty_zip, adc.prefer_destination, adc.min_rpm, adc.truck_number
+               COALESCE(NULLIF(lplan.lp_equipment, ''), NULLIF(adc.equipment, ''), NULLIF(u.equipment_category, ''), '53ft Dry Van') AS equipment,
+               COALESCE(NULLIF(lplan.pickup_location, ''), adc.empty_zip) AS empty_zip,
+               COALESCE(NULLIF(lplan.delivery_preference, ''), adc.prefer_destination) AS prefer_destination,
+               lplan.available_date,
+               adc.min_rpm, adc.truck_number
         FROM users u
         LEFT JOIN dispatcher_carriers dc ON dc.carrier_id = u.id
         ${lateralAdc}
@@ -1215,8 +1228,11 @@ router.get('/carriers', requireAuth, requireRole('dispatcher', 'admin', 'super_a
       query = `
         SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
                u.dispatch_fee_percent, u.equipment_category, u.billing_notes,
-               COALESCE(adc.equipment, u.equipment_category, '53ft Dry Van') AS equipment,
-               adc.empty_zip, adc.prefer_destination, adc.min_rpm, adc.truck_number
+               COALESCE(NULLIF(lplan.lp_equipment, ''), NULLIF(adc.equipment, ''), NULLIF(u.equipment_category, ''), '53ft Dry Van') AS equipment,
+               COALESCE(NULLIF(lplan.pickup_location, ''), adc.empty_zip) AS empty_zip,
+               COALESCE(NULLIF(lplan.delivery_preference, ''), adc.prefer_destination) AS prefer_destination,
+               lplan.available_date,
+               adc.min_rpm, adc.truck_number
         FROM users u
         ${lateralAdc}
         WHERE u.role = 'carrier' AND u.deleted_at IS NULL
