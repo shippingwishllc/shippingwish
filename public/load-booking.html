@@ -1408,13 +1408,13 @@
               <option value="53ft Dry Van" selected>53ft Dry Van</option>
               <option value="53ft Reefer">53ft Reefer (Temp)</option>
               <option value="Flatbed / Step Deck">Flatbed / Step Deck (48ft–53ft)</option>
-              <option value="30ft Hotshot">🔥 30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
-              <option value="35ft Hotshot">🔥 35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
-              <option value="40ft Hotshot">🔥 40ft Hotshot (CDL ≤ 24,000 lbs)</option>
-              <option value="Hotshot">🔥 Hotshot (All 24ft–40ft + Open Deck LTL)</option>
+              <option value="Power Only">Power Only</option>
               <option value="Box Truck">26ft Box Truck (≤ 10,000 lbs)</option>
               <option value="Cargo Van / Sprinter">Cargo Van / Sprinter (≤ 4,000 lbs)</option>
-              <option value="Power Only">Power Only</option>
+              <option value="30ft Hotshot">30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
+              <option value="35ft Hotshot">35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
+              <option value="40ft Hotshot">40ft Hotshot (CDL ≤ 24,000 lbs)</option>
+              <option value="Hotshot">Hotshot (All 24ft–40ft + Open Deck LTL)</option>
             </select>
           </div>
 
@@ -1426,12 +1426,12 @@
             <div style="display:flex;gap:4px;">
               <select id="search-max-length" class="form-select" onchange="syncActiveTabField('maxLength', this.value); runActiveTabSearch();" style="font-weight:700;padding-left:8px;padding-right:20px;" title="Filter loads by maximum trailer length in feet">
                 <option value="">Any ft</option>
-                <option value="26">≤ 26 ft</option>
-                <option value="30">≤ 30 ft (Hotshot)</option>
-                <option value="35">≤ 35 ft (Hotshot)</option>
-                <option value="40">≤ 40 ft (Hotshot)</option>
-                <option value="48">≤ 48 ft</option>
                 <option value="53">≤ 53 ft</option>
+                <option value="48">≤ 48 ft</option>
+                <option value="26">≤ 26 ft</option>
+                <option value="40">≤ 40 ft (Hotshot)</option>
+                <option value="35">≤ 35 ft (Hotshot)</option>
+                <option value="30">≤ 30 ft (Hotshot)</option>
               </select>
               <select id="search-max-weight" class="form-select" onchange="syncActiveTabField('maxWeight', this.value); runActiveTabSearch();" style="font-weight:700;padding-left:8px;padding-right:20px;" title="Filter loads by maximum payload weight in lbs">
                 <option value="">Any lbs</option>
@@ -1852,14 +1852,14 @@
           <label class="form-label" for="new-carrier-equip" style="font-size:12px;font-weight:700;">Primary Equipment</label>
           <select id="new-carrier-equip" class="form-select">
             <option value="53ft Dry Van">53ft Dry Van</option>
-            <option value="53ft Reefer">53ft Reefer</option>
+            <option value="53ft Reefer">53ft Reefer (Temp)</option>
+            <option value="Flatbed / Step Deck">Flatbed / Step Deck</option>
+            <option value="Power Only">Power Only</option>
+            <option value="Box Truck">26ft Box Truck (≤ 10,000 lbs)</option>
+            <option value="Cargo Van / Sprinter">Cargo Van / Sprinter (≤ 4,000 lbs)</option>
             <option value="30ft Hotshot">30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
             <option value="35ft Hotshot">35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
             <option value="40ft Hotshot">40ft Hotshot (CDL ≤ 24,000 lbs)</option>
-            <option value="Flatbed / Step Deck">Flatbed / Step Deck</option>
-            <option value="Box Truck">26ft Box Truck (≤ 10,000 lbs)</option>
-            <option value="Cargo Van / Sprinter">Cargo Van / Sprinter</option>
-            <option value="Power Only">Power Only</option>
           </select>
         </div>
         <div class="form-group" style="margin:0;">
@@ -2020,6 +2020,9 @@
             <option value="Step Deck">Step Deck (SD)</option>
             <option value="Power Only">Power Only (PO)</option>
             <option value="26ft Box Truck">26ft Box Truck (SB)</option>
+            <option value="30ft Hotshot">30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
+            <option value="35ft Hotshot">35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
+            <option value="40ft Hotshot">40ft Hotshot (CDL ≤ 24,000 lbs)</option>
           </select>
         </div>
         <div>
