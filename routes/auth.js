@@ -1181,20 +1181,46 @@ router.delete('/users/:id', requireAuth, requireSuperAdmin, async (req, res) => 
 // List carriers — dispatchers see assigned carriers (or all if admin/super_admin)
 router.get('/carriers', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
   try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    try {
+      const { ensureCarriersSyncedToUsers } = require('../utils/carrier-sync');
+      await ensureCarriersSyncedToUsers();
+    } catch (_) {}
+
     let query, params;
+    const lateralAdc = `
+      LEFT JOIN LATERAL (
+        SELECT equipment, empty_zip, prefer_destination, min_rpm, truck_number
+        FROM ai_dispatch_carriers a
+        WHERE (u.mc_number IS NOT NULL AND u.mc_number <> '' AND a.mc_number = u.mc_number)
+           OR (u.phone IS NOT NULL AND u.phone <> '' AND a.phone = u.phone)
+           OR lower(a.company_name) = lower(COALESCE(u.company_name, u.name, ''))
+        ORDER BY a.created_at DESC
+        LIMIT 1
+      ) adc ON true
+    `;
     if (req.user.role === 'dispatcher') {
       query = `
         SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
-               u.dispatch_fee_percent, u.equipment_category, u.billing_notes
+               u.dispatch_fee_percent, u.equipment_category, u.billing_notes,
+               COALESCE(adc.equipment, u.equipment_category, '53ft Dry Van') AS equipment,
+               adc.empty_zip, adc.prefer_destination, adc.min_rpm, adc.truck_number
         FROM users u
         LEFT JOIN dispatcher_carriers dc ON dc.carrier_id = u.id
-        WHERE u.role = 'carrier' AND (dc.dispatcher_id = $1 OR dc.dispatcher_id IS NULL)
-        ORDER BY u.name`;
+        ${lateralAdc}
+        WHERE u.role = 'carrier' AND u.deleted_at IS NULL AND (dc.dispatcher_id = $1 OR dc.dispatcher_id IS NULL)
+        ORDER BY u.created_at DESC, u.name ASC`;
       params = [req.user.id];
     } else {
-      query = `SELECT id, name, company_name, phone, email, mc_number, dot_number,
-               dispatch_fee_percent, equipment_category, billing_notes
-               FROM users WHERE role = 'carrier' ORDER BY name`;
+      query = `
+        SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
+               u.dispatch_fee_percent, u.equipment_category, u.billing_notes,
+               COALESCE(adc.equipment, u.equipment_category, '53ft Dry Van') AS equipment,
+               adc.empty_zip, adc.prefer_destination, adc.min_rpm, adc.truck_number
+        FROM users u
+        ${lateralAdc}
+        WHERE u.role = 'carrier' AND u.deleted_at IS NULL
+        ORDER BY u.created_at DESC, u.name ASC`;
       params = [];
     }
     const result = await pool.query(query, params);

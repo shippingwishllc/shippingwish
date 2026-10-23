@@ -1404,20 +1404,54 @@
             <div class="field-header">
               <label class="form-label field-label" for="search-equipment">Equipment Type</label>
             </div>
-            <select id="search-equipment" class="form-select" onchange="syncActiveTabField('equipment', this.value)" style="font-weight:600;">
+            <select id="search-equipment" class="form-select" onchange="handleEquipmentChange(this.value)" style="font-weight:600;">
               <option value="53ft Dry Van" selected>53ft Dry Van</option>
               <option value="53ft Reefer">53ft Reefer (Temp)</option>
-              <option value="Flatbed / Step Deck">Flatbed / Step Deck</option>
+              <option value="Flatbed / Step Deck">Flatbed / Step Deck (48ft–53ft)</option>
+              <option value="30ft Hotshot">🔥 30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
+              <option value="35ft Hotshot">🔥 35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
+              <option value="40ft Hotshot">🔥 40ft Hotshot (CDL ≤ 24,000 lbs)</option>
+              <option value="Hotshot">🔥 Hotshot (All 24ft–40ft + Open Deck LTL)</option>
+              <option value="Box Truck">26ft Box Truck (≤ 10,000 lbs)</option>
+              <option value="Cargo Van / Sprinter">Cargo Van / Sprinter (≤ 4,000 lbs)</option>
               <option value="Power Only">Power Only</option>
-              <option value="Box Truck">Box Truck</option>
             </select>
           </div>
 
+          <!-- Trailer Length (ft) & Max Weight (lbs) Filter -->
+          <div class="routing-field-col" style="min-width:190px;">
+            <div class="field-header">
+              <label class="form-label field-label" for="search-max-length">Max Length (ft) / Weight</label>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <select id="search-max-length" class="form-select" onchange="syncActiveTabField('maxLength', this.value); runActiveTabSearch();" style="font-weight:700;padding-left:8px;padding-right:20px;" title="Filter loads by maximum trailer length in feet">
+                <option value="">Any ft</option>
+                <option value="26">≤ 26 ft</option>
+                <option value="30">≤ 30 ft (Hotshot)</option>
+                <option value="35">≤ 35 ft (Hotshot)</option>
+                <option value="40">≤ 40 ft (Hotshot)</option>
+                <option value="48">≤ 48 ft</option>
+                <option value="53">≤ 53 ft</option>
+              </select>
+              <select id="search-max-weight" class="form-select" onchange="syncActiveTabField('maxWeight', this.value); runActiveTabSearch();" style="font-weight:700;padding-left:8px;padding-right:20px;" title="Filter loads by maximum payload weight in lbs">
+                <option value="">Any lbs</option>
+                <option value="10000">≤ 10k lbs</option>
+                <option value="15000">≤ 15k lbs</option>
+                <option value="18000">≤ 18k lbs</option>
+                <option value="24000">≤ 24k lbs</option>
+                <option value="45000">≤ 45k lbs</option>
+              </select>
+            </div>
+          </div>
+
           <!-- Target Carrier Fleet / Active Carrier Authority -->
-          <div class="routing-field-col" id="carrier-select-group" style="min-width:210px;">
-            <div class="field-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="routing-field-col" id="carrier-select-group" style="min-width:220px;">
+            <div class="field-header" style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
               <label class="form-label field-label" for="search-carrier-id" id="carrier-select-label" style="margin:0;">Active Carrier</label>
-              <button type="button" id="btn-quick-add-carrier" onclick="openAddCarrierModal()" style="display:none;background:none;border:none;color:#2563eb;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;" title="Add another carrier to your roster">+ Add Carrier</button>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <button type="button" onclick="refreshCarriersRosterNow()" style="background:none;border:none;color:#059669;font-size:11.5px;font-weight:800;cursor:pointer;padding:0;" title="Instant sync newly added carriers">↻ Sync</button>
+                <button type="button" id="btn-quick-add-carrier" onclick="openAddCarrierModal()" style="background:none;border:none;color:#2563eb;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;" title="Add another carrier to your roster">+ Add Carrier</button>
+              </div>
             </div>
             <select id="search-carrier-id" class="form-select" onchange="handleCarrierChange(this.value)">
               <option value="">Select carrier authority...</option>
@@ -1819,10 +1853,13 @@
           <select id="new-carrier-equip" class="form-select">
             <option value="53ft Dry Van">53ft Dry Van</option>
             <option value="53ft Reefer">53ft Reefer</option>
-            <option value="Flatbed">Flatbed</option>
-            <option value="Step Deck">Step Deck</option>
+            <option value="30ft Hotshot">30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
+            <option value="35ft Hotshot">35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
+            <option value="40ft Hotshot">40ft Hotshot (CDL ≤ 24,000 lbs)</option>
+            <option value="Flatbed / Step Deck">Flatbed / Step Deck</option>
+            <option value="Box Truck">26ft Box Truck (≤ 10,000 lbs)</option>
+            <option value="Cargo Van / Sprinter">Cargo Van / Sprinter</option>
             <option value="Power Only">Power Only</option>
-            <option value="Box Truck">Box Truck</option>
           </select>
         </div>
         <div class="form-group" style="margin:0;">
@@ -2431,7 +2468,7 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
 
       if (isStaff) {
         if (carrierLabel) carrierLabel.textContent = 'Assign Carrier Client';
-        if (btnQuickAdd) btnQuickAdd.style.display = 'none';
+        if (btnQuickAdd) btnQuickAdd.style.display = 'inline-block';
         await loadCarriersDropdown();
       } else {
         if (carrierLabel) carrierLabel.textContent = 'Active Carrier Authority';
@@ -2687,24 +2724,38 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
     document.body.appendChild(s);
   }
 
-  // 2. Load Carriers for Staff Dropdown
+  // 2. Load Carriers for Staff Dropdown (0-Second Live Sync)
   async function loadCarriersDropdown() {
     try {
-      const res = await fetch('/api/carriers', { credentials: 'include' });
+      const res = await fetch('/api/carriers?t=' + Date.now(), { credentials: 'include', cache: 'no-store' });
       if (!res.ok) return;
       const data = await res.json();
       CARRIERS_LIST = data.carriers || [];
 
       const select1 = document.getElementById('search-carrier-id');
       const select2 = document.getElementById('modal-carrier-id');
-      const options = CARRIERS_LIST.map(c => 
-        `<option value="${c.id}">${escapeHtml(c.company_name || c.name || 'Carrier')} ${c.mc_number ? `(${escapeHtml(c.mc_number)})` : ''}</option>`
-      ).join('');
+      const prevVal1 = select1 ? select1.value : '';
+      const options = CARRIERS_LIST.map(c => {
+        const eqBadge = c.equipment ? ` — ${escapeHtml(c.equipment)}` : '';
+        return `<option value="${c.id}">${escapeHtml(c.company_name || c.name || 'Carrier')} ${c.mc_number ? `(${escapeHtml(c.mc_number)})` : ''}${eqBadge}</option>`;
+      }).join('');
 
-      if (select1) select1.innerHTML = '<option value="">Select carrier to dispatch...</option>' + options;
+      if (select1) {
+        select1.innerHTML = '<option value="">Select carrier to dispatch...</option>' + options + '<option value="__add_new__">➕ + Add New Carrier / Truck...</option>';
+        if (prevVal1) select1.value = prevVal1;
+      }
       if (select2) select2.innerHTML = '<option value="">Select carrier to receive load offer...</option>' + options;
     } catch (e) {
       console.warn('Could not load carriers:', e);
+    }
+  }
+
+  async function refreshCarriersRosterNow() {
+    const isStaff = CURRENT_USER && ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
+    if (isStaff) {
+      await loadCarriersDropdown();
+    } else {
+      await loadMyCarriersDropdown();
     }
   }
 
@@ -2714,7 +2765,7 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
 
   async function loadMyCarriersDropdown() {
     try {
-      const res = await fetch('/api/loadboard/my-carriers', { credentials: 'include' });
+      const res = await fetch('/api/loadboard/my-carriers?t=' + Date.now(), { credentials: 'include', cache: 'no-store' });
       if (!res.ok) return;
       const data = await res.json();
       MY_CARRIERS_LIST = data.carriers || [];
@@ -2724,8 +2775,9 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
 
       const options = MY_CARRIERS_LIST.map(c => {
         const mcLabel = c.mc_number ? ` (MC# ${escapeHtml(c.mc_number)})` : '';
+        const eqLabel = c.equipment_type ? ` — ${escapeHtml(c.equipment_type)}` : '';
         const primeLabel = c.is_primary ? ' [Primary]' : '';
-        return `<option value="${c.id}">🚛 ${escapeHtml(c.company_name)}${mcLabel}${primeLabel}</option>`;
+        return `<option value="${c.id}">🚛 ${escapeHtml(c.company_name)}${mcLabel}${eqLabel}${primeLabel}</option>`;
       }).join('');
 
       select1.innerHTML = options + '<option value="__add_new__">➕ + Add New Carrier / Truck...</option>';
@@ -2739,6 +2791,54 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
     }
   }
 
+  function mapCarrierEquipmentToFilter(rawEq) {
+    const eq = String(rawEq || '').toLowerCase();
+    if (eq.includes('hotshot') || eq.includes('hot shot')) {
+      if (eq.includes('30') || eq.includes('28') || eq.includes('26')) {
+        return { equipment: '30ft Hotshot', maxLength: '30', maxWeight: '15000' };
+      }
+      if (eq.includes('35') || eq.includes('36')) {
+        return { equipment: '35ft Hotshot', maxLength: '35', maxWeight: '18000' };
+      }
+      if (eq.includes('40')) {
+        return { equipment: '40ft Hotshot', maxLength: '40', maxWeight: '24000' };
+      }
+      return { equipment: '30ft Hotshot', maxLength: '30', maxWeight: '15000' };
+    }
+    if (eq.includes('box') || eq.includes('straight')) {
+      return { equipment: 'Box Truck', maxLength: '26', maxWeight: '10000' };
+    }
+    if (eq.includes('cargo') || eq.includes('sprinter')) {
+      return { equipment: 'Cargo Van / Sprinter', maxLength: '26', maxWeight: '10000' };
+    }
+    if (eq.includes('reefer') || eq.includes('temp')) {
+      return { equipment: '53ft Reefer', maxLength: '', maxWeight: '' };
+    }
+    if (eq.includes('flat') || eq.includes('step') || eq.includes('deck')) {
+      return { equipment: 'Flatbed / Step Deck', maxLength: '', maxWeight: '' };
+    }
+    if (eq.includes('power')) {
+      return { equipment: 'Power Only', maxLength: '', maxWeight: '' };
+    }
+    return { equipment: '53ft Dry Van', maxLength: '', maxWeight: '' };
+  }
+
+  function handleEquipmentChange(val) {
+    syncActiveTabField('equipment', val);
+    const mapped = mapCarrierEquipmentToFilter(val);
+    const lenSel = document.getElementById('search-max-length');
+    const wtSel = document.getElementById('search-max-weight');
+    if (lenSel) {
+      lenSel.value = mapped.maxLength;
+      syncActiveTabField('maxLength', mapped.maxLength);
+    }
+    if (wtSel) {
+      wtSel.value = mapped.maxWeight;
+      syncActiveTabField('maxWeight', mapped.maxWeight);
+    }
+    runActiveTabSearch();
+  }
+
   function handleCarrierChange(val) {
     if (val === '__add_new__') {
       openAddCarrierModal();
@@ -2749,13 +2849,49 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
       return;
     }
     const isStaff = CURRENT_USER && ['admin', 'super_admin', 'dispatcher', 'sales_rep'].includes(CURRENT_USER.role);
-    if (!isStaff) {
-      const found = MY_CARRIERS_LIST.find(c => String(c.id) === String(val));
-      if (found) {
-        SELECTED_ACTIVE_CARRIER = found;
-      }
+    let selectedCarrier = null;
+    if (isStaff) {
+      selectedCarrier = CARRIERS_LIST.find(c => String(c.id) === String(val));
+    } else {
+      selectedCarrier = MY_CARRIERS_LIST.find(c => String(c.id) === String(val));
+      if (selectedCarrier) SELECTED_ACTIVE_CARRIER = selectedCarrier;
     }
     syncActiveTabField('carrierId', val);
+
+    // Auto-apply carrier's equipment (e.g. 30ft Hotshot), trailer feet, max weight & empty_zip!
+    if (selectedCarrier) {
+      const rawEq = selectedCarrier.equipment || selectedCarrier.equipment_type || selectedCarrier.equipment_category || '';
+      if (rawEq) {
+        const mapped = mapCarrierEquipmentToFilter(rawEq);
+        const eqSel = document.getElementById('search-equipment');
+        const lenSel = document.getElementById('search-max-length');
+        const wtSel = document.getElementById('search-max-weight');
+        if (eqSel) {
+          eqSel.value = mapped.equipment;
+          syncActiveTabField('equipment', mapped.equipment);
+        }
+        if (lenSel) {
+          lenSel.value = mapped.maxLength;
+          syncActiveTabField('maxLength', mapped.maxLength);
+        }
+        if (wtSel) {
+          wtSel.value = mapped.maxWeight;
+          syncActiveTabField('maxWeight', mapped.maxWeight);
+        }
+      }
+      if (selectedCarrier.empty_zip) {
+        const origInput = document.getElementById('search-origin');
+        const cityLabel = CLIENT_ZIP_DIRECTORY[selectedCarrier.empty_zip]
+          ? `${CLIENT_ZIP_DIRECTORY[selectedCarrier.empty_zip]} ${selectedCarrier.empty_zip}`
+          : selectedCarrier.empty_zip;
+        if (origInput && (!origInput.value || origInput.value === 'Rincon, GA')) {
+          origInput.value = cityLabel;
+          syncActiveTabField('origin', cityLabel);
+          handleOriginZipInput(cityLabel);
+        }
+      }
+      runActiveTabSearch();
+    }
   }
 
   // ==========================================
@@ -2800,6 +2936,10 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
     document.getElementById('search-dest').value = tab.dest || '';
     document.getElementById('search-dhd').value = tab.dhd || '100';
     document.getElementById('search-equipment').value = tab.equipment || '53ft Dry Van';
+    const lenSel = document.getElementById('search-max-length');
+    const wtSel = document.getElementById('search-max-weight');
+    if (lenSel) lenSel.value = tab.maxLength || '';
+    if (wtSel) wtSel.value = tab.maxWeight || '';
     document.getElementById('search-min-rpm').value = tab.minRpm || '';
     document.getElementById('search-date').value = tab.pickupDate || getTodayString();
     updateDateUI(tab.pickupDate || getTodayString());
@@ -2845,6 +2985,10 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
     tab.dest = document.getElementById('search-dest').value.trim();
     tab.dhd = document.getElementById('search-dhd').value;
     tab.equipment = document.getElementById('search-equipment').value;
+    const lenSel = document.getElementById('search-max-length');
+    const wtSel = document.getElementById('search-max-weight');
+    tab.maxLength = lenSel ? lenSel.value : '';
+    tab.maxWeight = wtSel ? wtSel.value : '';
     tab.minRpm = document.getElementById('search-min-rpm').value;
     tab.pickupDate = document.getElementById('search-date').value || getTodayString();
 
@@ -2877,6 +3021,8 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
       dest: 'IL, IN, OH, MI',
       dhd: '50',
       equipment: '53ft Dry Van',
+      maxLength: '',
+      maxWeight: '',
       minRpm: '2.95',
       pickupDate: getOffsetDateString(1),
       results: [],
@@ -2913,6 +3059,8 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
     tab.dest = '';
     tab.dhd = '100';
     tab.equipment = '53ft Dry Van';
+    tab.maxLength = '';
+    tab.maxWeight = '';
     tab.minRpm = '';
     tab.carrierId = '';
     tab.pickupDate = getTodayString();
@@ -3564,6 +3712,8 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
         origin: tab.origin || '',
         destination: tab.dest || '',
         equipmentType: tab.equipment || '',
+        maxLength: tab.maxLength || '',
+        maxWeight: tab.maxWeight || '',
         minRpm: tab.minRpm || '0',
         dho: tab.dho || '150',
         dhd: tab.dhd || '100',
@@ -3607,6 +3757,8 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
           currentCity: tab.origin || '',
           desiredDestination: tab.dest || '',
           equipmentType: tab.equipment || '53ft Dry Van',
+          maxLength: tab.maxLength || '',
+          maxWeight: tab.maxWeight || '',
           targetRpm: tab.minRpm || '1.50',
           carrierId: tab.carrierId || undefined,
           dho: tab.dho || '150',
@@ -3889,7 +4041,7 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
           <!-- Equipment & Weight -->
           <td>
             <span class="badge badge-booked" style="font-size:11px;padding:3px 8px;">${escapeHtml(load.equipment_type || '53ft Dry Van')}</span>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${load.weight ? `${load.weight.toLocaleString()} lbs` : 'Full'} · ${escapeHtml(load.commodity || 'Freight')}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-weight:600;">${load.length_ft ? `<span style="color:#1d4ed8;">📏 ${load.length_ft} ft</span> · ` : ''}${load.weight ? `${load.weight.toLocaleString()}` : 'Full'} · ${escapeHtml(load.commodity || 'Freight')}</div>
           </td>
 
           <!-- Broker & MC# -->
@@ -4409,7 +4561,7 @@ ${p.contactName} | ${p.carrierCompany} (MC# ${p.carrierMc})`;
       closeAddCarrierModal();
 
       alert(`✓ Carrier "${payload.company_name}" (MC# ${payload.mc_number}) added to your dispatch roster!`);
-      await loadMyCarriersDropdown();
+      await refreshCarriersRosterNow();
 
       // If Inquire modal is currently active, re-select this new carrier
       const inquireModal = document.getElementById('inquireBrokerModal');

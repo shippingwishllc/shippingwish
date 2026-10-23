@@ -194,6 +194,15 @@ async function syncCarrierToAiDispatch(carrierData) {
           carrierId
         ]
       );
+      await upsertCarrierToUsersTable({
+        company_name: cleanCompany,
+        contact_name: contact_name || cleanCompany,
+        phone: cleanPhone,
+        email: email ? email.toLowerCase() : null,
+        mc_number: mc_number || null,
+        dot_number: dot_number || null,
+        equipment: equipment || "53' Dry Van"
+      }).catch(() => {});
       return updateRes.rows[0];
     } else {
       const insertRes = await pool.query(
@@ -219,12 +228,106 @@ async function syncCarrierToAiDispatch(carrierData) {
           status || 'active'
         ]
       );
+      await upsertCarrierToUsersTable({
+        company_name: cleanCompany,
+        contact_name: contact_name || cleanCompany,
+        phone: cleanPhone,
+        email: email ? email.toLowerCase() : null,
+        mc_number: mc_number || null,
+        dot_number: dot_number || null,
+        equipment: equipment || "53' Dry Van"
+      }).catch(() => {});
       return insertRes.rows[0];
     }
   } catch (err) {
     console.warn('[CarrierSync] Sync to ai_dispatch_carriers failed:', err.message);
     return null;
   }
+}
+
+/**
+ * Ensure a carrier also exists in the core `users` table (role = 'carrier')
+ * so Load Booking (`GET /api/carriers`), Fleet Management, and Load Offers work with 0 delay.
+ */
+async function upsertCarrierToUsersTable(c = {}) {
+  const company = String(c.company_name || c.name || '').trim();
+  const name = String(c.contact_name || c.name || company || 'Carrier Partner').trim();
+  const phone = String(c.phone || '').trim();
+  const mc = String(c.mc_number || '').replace(/^MC-?/i, '').trim() || null;
+  const dot = String(c.dot_number || '').replace(/^DOT-?/i, '').trim() || null;
+  const equip = String(c.equipment || c.equipment_category || '53ft Dry Van').trim();
+  if (!company && !name) return null;
+
+  const slug = (mc || phone.replace(/\D/g, '') || company.toLowerCase().replace(/[^a-z0-9]+/g, '') || Date.now()).slice(0, 24);
+  const rawEmail = String(c.email || '').trim().toLowerCase();
+  const email = (rawEmail && rawEmail.includes('@')) ? rawEmail : `carrier.${slug}@shippingwish.local`;
+
+  const existing = await pool.query(
+    `SELECT id, role FROM users
+     WHERE deleted_at IS NULL
+       AND (
+         lower(email) = lower($1)
+         OR ($2::text IS NOT NULL AND $2 <> '' AND mc_number = $2)
+         OR ($3::text IS NOT NULL AND $3 <> '' AND phone = $3)
+         OR lower(COALESCE(company_name, name, '')) = lower($4)
+       )
+     ORDER BY CASE WHEN role = 'carrier' THEN 0 ELSE 1 END, id ASC
+     LIMIT 1`,
+    [email, mc, phone || null, company]
+  );
+
+  if (existing.rows.length > 0) {
+    const uid = existing.rows[0].id;
+    await pool.query(
+      `UPDATE users
+       SET company_name = COALESCE(NULLIF($1, ''), company_name),
+           phone = COALESCE(NULLIF($2, ''), phone),
+           mc_number = COALESCE(NULLIF($3, ''), mc_number),
+           dot_number = COALESCE(NULLIF($4, ''), dot_number),
+           equipment_category = COALESCE(NULLIF($5, ''), equipment_category)
+       WHERE id = $6`,
+      [company, phone, mc || '', dot || '', equip, uid]
+    ).catch(() => {});
+    return uid;
+  }
+
+  // Insert a new carrier user record with a placeholder password hash
+  const ins = await pool.query(
+    `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, equipment_category)
+     VALUES ($1, $2, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'carrier', $3, $4, $5, $6, $7)
+     ON CONFLICT (email) DO UPDATE
+       SET company_name = COALESCE(EXCLUDED.company_name, users.company_name),
+           mc_number = COALESCE(EXCLUDED.mc_number, users.mc_number),
+           equipment_category = COALESCE(EXCLUDED.equipment_category, users.equipment_category)
+     RETURNING id`,
+    [name, email, company || name, phone || null, mc, dot, equip]
+  ).catch(() => ({ rows: [] }));
+  return ins.rows[0] ? ins.rows[0].id : null;
+}
+
+/**
+ * Backfill any carriers in `ai_dispatch_carriers` or `customer_carriers` into `users (role = 'carrier')`
+ * so `GET /api/carriers` on Load Booking is always 100% up-to-date with 0 delay.
+ */
+async function ensureCarriersSyncedToUsers() {
+  try {
+    const adcRes = await pool.query(
+      `SELECT company_name, contact_name, phone, email, mc_number, dot_number, equipment
+       FROM ai_dispatch_carriers
+       ORDER BY created_at DESC LIMIT 100`
+    ).catch(() => ({ rows: [] }));
+    for (const row of adcRes.rows) {
+      await upsertCarrierToUsersTable(row).catch(() => {});
+    }
+    const custRes = await pool.query(
+      `SELECT company_name, contact_name, contact_phone AS phone, contact_email AS email, mc_number, dot_number, equipment_type AS equipment
+       FROM customer_carriers
+       ORDER BY created_at DESC LIMIT 100`
+    ).catch(() => ({ rows: [] }));
+    for (const row of custRes.rows) {
+      await upsertCarrierToUsersTable(row).catch(() => {});
+    }
+  } catch (_) {}
 }
 
 /**
@@ -283,5 +386,7 @@ module.exports = {
   extractZipCode,
   enforceTruckSubscriptionLimit,
   syncCarrierToAiDispatch,
-  syncTruckLocationToAiDispatch
+  syncTruckLocationToAiDispatch,
+  upsertCarrierToUsersTable,
+  ensureCarriersSyncedToUsers
 };

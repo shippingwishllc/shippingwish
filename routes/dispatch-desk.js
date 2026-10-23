@@ -148,10 +148,18 @@ router.post('/carriers', ...staff, async (req, res) => {
       ]
     );
 
-    // Also auto-sync to trucks table for Load Planning & Fleet ERP
+    // Also auto-sync to users (role = 'carrier') and trucks table for Load Booking & Fleet ERP
     try {
-      const existingUser = await pool.query('SELECT id FROM users WHERE company_name ILIKE $1 OR name ILIKE $1 LIMIT 1', [company]);
-      const carrierUserId = existingUser.rows[0] ? existingUser.rows[0].id : null;
+      const { upsertCarrierToUsersTable } = require('../utils/carrier-sync');
+      const carrierUserId = await upsertCarrierToUsersTable({
+        company_name: company,
+        contact_name: String(req.body.contact_name || '').trim() || company,
+        phone,
+        email: String(req.body.email || '').trim() || null,
+        mc_number: prefs.mc_number,
+        dot_number: prefs.dot_number,
+        equipment: String(req.body.equipment || '').trim() || '53ft Dry Van'
+      });
       if (carrierUserId) {
         await pool.query(
           `INSERT INTO trucks (carrier_id, truck_number, status)
@@ -490,19 +498,23 @@ router.post('/match-truck', ...staff, async (req, res) => {
       }
     }
 
-    // 3. Equipment filtering
+    // 3. Equipment filtering (including 26ft/30ft/35ft/40ft Hotshot + Open-Deck LTL compatibility)
+    const isHotshotReq = /hot\s*shot/i.test(effectiveEquip || '');
+    const hotshotMaxFt = /30/.test(effectiveEquip || '') ? 30 : (/35/.test(effectiveEquip || '') ? 35 : (/24|26/.test(effectiveEquip || '') ? 26 : 40));
+    const hotshotMaxWt = hotshotMaxFt <= 30 ? 15000 : (hotshotMaxFt <= 35 ? 18000 : 24000);
+
     if (effectiveEquip && effectiveEquip !== 'all' && effectiveEquip !== 'any') {
       const eqLow = effectiveEquip.toLowerCase();
       if (eqLow.includes('box') || eqLow.includes('straight')) {
         sqlConditions.push(`(equipment_type ILIKE '%box%' OR (equipment_type ILIKE '%straight%' AND COALESCE(weight, 0) <= 10000))`);
       } else if (eqLow.includes('reefer') || eqLow.includes('refrig') || eqLow.includes('temp') || eqLow.includes('frozen')) {
         sqlConditions.push(`(equipment_type ILIKE '%reefer%' OR equipment_type ILIKE '%refrig%')`);
+      } else if (eqLow.includes('hotshot') || eqLow.includes('hot shot')) {
+        sqlConditions.push(`(equipment_type ILIKE '%hotshot%' OR equipment_type ILIKE '%hot shot%' OR equipment_type ILIKE '%flat%' OR equipment_type ILIKE '%step%' OR equipment_type ILIKE '%deck%')`);
       } else if (eqLow.includes('flat') || eqLow.includes('step') || eqLow.includes('deck')) {
-        sqlConditions.push(`(equipment_type ILIKE '%flat%' OR equipment_type ILIKE '%step%' OR equipment_type ILIKE '%deck%')`);
+        sqlConditions.push(`(equipment_type ILIKE '%flat%' OR equipment_type ILIKE '%step%' OR equipment_type ILIKE '%deck%' OR equipment_type ILIKE '%hotshot%')`);
       } else if (eqLow.includes('power') || eqLow.includes('tow')) {
         sqlConditions.push(`(equipment_type ILIKE '%power%' OR equipment_type ILIKE '%tow%')`);
-      } else if (eqLow.includes('hotshot') || eqLow.includes('hot shot')) {
-        sqlConditions.push(`equipment_type ILIKE '%hotshot%'`);
       } else {
         sqlConditions.push(`(equipment_type ILIKE '%van%' OR equipment_type ILIKE '%dry%' OR equipment_type ILIKE '%53%')`);
       }
@@ -545,6 +557,14 @@ router.post('/match-truck', ...staff, async (req, res) => {
       }
     }
 
+    // Prioritize explicit Hotshot or light open-deck loads when Hotshot is requested
+    if (isHotshotReq && filtered.length > 0) {
+      const strictHotshot = filtered.filter(l => /hot\s*shot/i.test(l.equipment_type || '') || (parseFloat(l.weight || 0) > 0 && parseFloat(l.weight || 0) <= hotshotMaxWt));
+      if (strictHotshot.length > 0) {
+        filtered = strictHotshot;
+      }
+    }
+
     const isBox = /box/i.test(effectiveEquip);
 
     const enriched = filtered.map((l, idx) => {
@@ -553,7 +573,8 @@ router.post('/match-truck', ...staff, async (req, res) => {
       const rate = Math.round(parseFloat(l.rate) || 0);
       const allInRpm = parseFloat((loaded + deadhead > 0 ? rate / (loaded + deadhead) : 2.25).toFixed(2));
       const loadedRpm = parseFloat((loaded > 0 ? rate / loaded : 2.50).toFixed(2));
-      const loadWeight = isBox ? Math.min(Math.round(parseFloat(l.weight || 6000)), 9500) : Math.round(parseFloat(l.weight || 40000));
+      const rawWt = Math.round(parseFloat(l.weight || (isHotshotReq ? 12500 : 40000)));
+      const loadWeight = isBox ? Math.min(rawWt, 9500) : (isHotshotReq ? Math.min(rawWt, hotshotMaxWt) : rawWt);
 
       let brokerEmail = l.broker_email || null;
       let brokerPhone = l.broker_phone || null;
