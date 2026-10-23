@@ -245,11 +245,92 @@ async function syncCarrierToAiDispatch(carrierData) {
   }
 }
 
+let fleetSchemaEnsured = false;
+async function ensureFleetTablesSchema() {
+  if (fleetSchemaEnsured) return;
+  try {
+    await pool.query(`ALTER TABLE trucks ADD COLUMN IF NOT EXISTS equipment_type TEXT DEFAULT '53ft Dry Van'`).catch(() => {});
+    await pool.query(`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS equipment_type TEXT`).catch(() => {});
+    await pool.query(`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS user_id INTEGER`).catch(() => {});
+    await pool.query(`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`).catch(() => {});
+    await pool.query(`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS deleted_by INTEGER`).catch(() => {});
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS equipment_category TEXT`).catch(() => {});
+    fleetSchemaEnsured = true;
+  } catch (_) {}
+}
+
+/**
+ * Ensure a carrier user has at least 1 Truck and 1 Driver in `trucks` and `drivers`
+ * with their equipment_type synced so Load Planning & Fleet Hub work immediately.
+ */
+async function ensureCarrierDefaultFleet(carrierId, info = {}) {
+  if (!carrierId) return;
+  await ensureFleetTablesSchema();
+  const company = String(info.company_name || info.name || 'Carrier Fleet').trim();
+  const driverName = String(info.contact_name || info.name || company).trim();
+  const phone = String(info.phone || '').trim() || null;
+  const email = String(info.email || '').trim().toLowerCase() || null;
+  const equip = String(info.equipment || info.equipment_category || '53ft Dry Van').trim();
+
+  try {
+    // 1. Ensure at least one truck exists for this carrier
+    const tRes = await pool.query(
+      `SELECT id, truck_number, equipment_type FROM trucks WHERE carrier_id = $1 ORDER BY id ASC LIMIT 1`,
+      [carrierId]
+    );
+    let truckId = null;
+    if (tRes.rows.length > 0) {
+      truckId = tRes.rows[0].id;
+      const curEq = tRes.rows[0].equipment_type || '';
+      if (equip && (!curEq || (curEq === '53ft Dry Van' && equip !== '53ft Dry Van' && equip !== "53' Dry Van"))) {
+        await pool.query(`UPDATE trucks SET equipment_type = $1 WHERE id = $2`, [equip, truckId]).catch(() => {});
+      }
+    } else {
+      const insT = await pool.query(
+        `INSERT INTO trucks (carrier_id, truck_number, equipment_type, status)
+         VALUES ($1, '101', $2, 'active')
+         RETURNING id`,
+        [carrierId, equip]
+      ).catch(() => ({ rows: [] }));
+      if (insT.rows[0]) truckId = insT.rows[0].id;
+    }
+
+    // 2. Ensure at least one active driver exists for this carrier
+    const dRes = await pool.query(
+      `SELECT id, assigned_truck_id, equipment_type FROM drivers WHERE carrier_id = $1 AND deleted_at IS NULL ORDER BY id ASC LIMIT 1`,
+      [carrierId]
+    );
+    if (dRes.rows.length > 0) {
+      const dRow = dRes.rows[0];
+      const nextTruckId = dRow.assigned_truck_id || truckId;
+      const curDrvEq = dRow.equipment_type || '';
+      const nextEq = (equip && (!curDrvEq || (curDrvEq === '53ft Dry Van' && equip !== '53ft Dry Van' && equip !== "53' Dry Van")))
+        ? equip
+        : (curDrvEq || equip);
+      if (nextTruckId !== dRow.assigned_truck_id || nextEq !== curDrvEq) {
+        await pool.query(
+          `UPDATE drivers SET assigned_truck_id = COALESCE(assigned_truck_id, $1), equipment_type = COALESCE($2, equipment_type) WHERE id = $3`,
+          [nextTruckId, nextEq, dRow.id]
+        ).catch(() => {});
+      }
+    } else {
+      await pool.query(
+        `INSERT INTO drivers (carrier_id, name, phone, email, assigned_truck_id, equipment_type, status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'available')`,
+        [carrierId, driverName, phone, email, truckId, equip]
+      ).catch(() => {});
+    }
+  } catch (err) {
+    console.warn('[CarrierSync] ensureCarrierDefaultFleet warning:', err.message);
+  }
+}
+
 /**
  * Ensure a carrier also exists in the core `users` table (role = 'carrier')
  * so Load Booking (`GET /api/carriers`), Fleet Management, and Load Offers work with 0 delay.
  */
 async function upsertCarrierToUsersTable(c = {}) {
+  await ensureFleetTablesSchema();
   const company = String(c.company_name || c.name || '').trim();
   const name = String(c.contact_name || c.name || company || 'Carrier Partner').trim();
   const phone = String(c.phone || '').trim();
@@ -288,6 +369,7 @@ async function upsertCarrierToUsersTable(c = {}) {
        WHERE id = $6`,
       [company, phone, mc || '', dot || '', equip, uid]
     ).catch(() => {});
+    await ensureCarrierDefaultFleet(uid, { company_name: company, contact_name: name, phone, email, equipment: equip });
     return uid;
   }
 
@@ -302,15 +384,20 @@ async function upsertCarrierToUsersTable(c = {}) {
      RETURNING id`,
     [name, email, company || name, phone || null, mc, dot, equip]
   ).catch(() => ({ rows: [] }));
-  return ins.rows[0] ? ins.rows[0].id : null;
+  const newUid = ins.rows[0] ? ins.rows[0].id : null;
+  if (newUid) {
+    await ensureCarrierDefaultFleet(newUid, { company_name: company, contact_name: name, phone, email, equipment: equip });
+  }
+  return newUid;
 }
 
 /**
  * Backfill any carriers in `ai_dispatch_carriers` or `customer_carriers` into `users (role = 'carrier')`
- * so `GET /api/carriers` on Load Booking is always 100% up-to-date with 0 delay.
+ * so `GET /api/carriers` on Load Booking, Fleet Hub, and Load Planning are always 100% up-to-date with 0 delay.
  */
 async function ensureCarriersSyncedToUsers() {
   try {
+    await ensureFleetTablesSchema();
     const adcRes = await pool.query(
       `SELECT company_name, contact_name, phone, email, mc_number, dot_number, equipment
        FROM ai_dispatch_carriers
@@ -326,6 +413,21 @@ async function ensureCarriersSyncedToUsers() {
     ).catch(() => ({ rows: [] }));
     for (const row of custRes.rows) {
       await upsertCarrierToUsersTable(row).catch(() => {});
+    }
+    const carrierUsers = await pool.query(
+      `SELECT id, name, company_name, phone, email, equipment_category
+       FROM users
+       WHERE role = 'carrier' AND deleted_at IS NULL
+       ORDER BY id DESC LIMIT 100`
+    ).catch(() => ({ rows: [] }));
+    for (const u of carrierUsers.rows) {
+      await ensureCarrierDefaultFleet(u.id, {
+        company_name: u.company_name || u.name,
+        contact_name: u.name,
+        phone: u.phone,
+        email: u.email,
+        equipment: u.equipment_category || '53ft Dry Van'
+      }).catch(() => {});
     }
   } catch (_) {}
 }
@@ -388,5 +490,7 @@ module.exports = {
   syncCarrierToAiDispatch,
   syncTruckLocationToAiDispatch,
   upsertCarrierToUsersTable,
-  ensureCarriersSyncedToUsers
+  ensureCarriersSyncedToUsers,
+  ensureFleetTablesSchema,
+  ensureCarrierDefaultFleet
 };

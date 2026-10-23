@@ -2,30 +2,35 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { ensureCarriersSyncedToUsers, syncTruckLocationToAiDispatch } = require('../utils/carrier-sync');
 
 // GET /api/load-planning - List future load availability plans
 router.get('/', requireAuth, async (req, res) => {
   try {
+    await ensureCarriersSyncedToUsers().catch(() => {});
     let query = `
-      SELECT lp.*, d.name as driver_name, d.phone as driver_phone, t.truck_number, u.name as planner_name
+      SELECT lp.*,
+             d.name as driver_name,
+             d.phone as driver_phone,
+             t.truck_number,
+             COALESCE(NULLIF(t.equipment_type, ''), NULLIF(d.equipment_type, ''), NULLIF(cu.equipment_category, ''), '53ft Dry Van') AS equipment_type,
+             COALESCE(cu.company_name, cu.name, 'Carrier Fleet') AS carrier_company,
+             u.name as planner_name
       FROM load_plans lp
       JOIN drivers d ON lp.driver_id = d.id
       JOIN trucks t ON lp.truck_id = t.id
+      LEFT JOIN users cu ON cu.id = d.carrier_id
       LEFT JOIN users u ON lp.created_by = u.id
     `;
     const params = [];
 
-    // If Dispatcher, filter by trucks assigned to them
-    if (req.user.role === 'dispatcher') {
-      query += ` JOIN dispatcher_trucks dt ON lp.truck_id = dt.truck_id WHERE dt.dispatcher_id = $1`;
-      params.push(req.user.id);
-    } else if (req.user.role === 'carrier' || req.user.role === 'carrier_admin') {
+    if (req.user.role === 'carrier' || req.user.role === 'carrier_admin') {
       query += ` WHERE d.carrier_id = $1`;
       params.push(req.user.id);
     } else if (req.user.role === 'driver') {
       query += ` WHERE d.user_id = $1`;
       params.push(req.user.id);
-    } else if (!['admin', 'super_admin'].includes(req.user.role)) {
+    } else if (!['dispatcher', 'admin', 'super_admin'].includes(req.user.role)) {
       return res.json({ load_plans: [] });
     }
 
@@ -42,7 +47,7 @@ router.get('/', requireAuth, async (req, res) => {
 // POST /api/load-planning - Create driver future availability plan
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const { driver_id, truck_id, available_date, pickup_location, delivery_preference, notes } = req.body;
+    const { driver_id, truck_id, equipment_type, available_date, pickup_location, delivery_preference, notes } = req.body;
 
     if (!driver_id || !truck_id || !available_date || !pickup_location) {
       return res.status(400).json({ error: 'Driver, Truck, Available Date, and Pickup Location are required' });
@@ -54,6 +59,12 @@ router.post('/', requireAuth, async (req, res) => {
       if (!d.rows.length || !t.rows.length) {
         return res.status(403).json({ error: 'That driver or truck is not on your fleet.' });
       }
+    }
+
+    if (equipment_type && String(equipment_type).trim()) {
+      const cleanEq = String(equipment_type).trim();
+      await pool.query('UPDATE trucks SET equipment_type = $1 WHERE id = $2', [cleanEq, truck_id]).catch(() => {});
+      await pool.query('UPDATE drivers SET equipment_type = $1, assigned_truck_id = COALESCE(assigned_truck_id, $2) WHERE id = $3', [cleanEq, truck_id, driver_id]).catch(() => {});
     }
 
     const result = await pool.query(
@@ -68,11 +79,10 @@ router.post('/', requireAuth, async (req, res) => {
     try {
       const tInfo = await pool.query('SELECT carrier_id, equipment_type FROM trucks WHERE id = $1', [truck_id]);
       const carrierId = (tInfo.rows[0] && tInfo.rows[0].carrier_id) || req.user.id;
-      const { syncTruckLocationToAiDispatch } = require('../utils/carrier-sync');
       await syncTruckLocationToAiDispatch(carrierId, {
         empty_zip: pickup_location,
         prefer_destination: delivery_preference,
-        equipment: tInfo.rows[0] ? tInfo.rows[0].equipment_type : null
+        equipment: equipment_type || (tInfo.rows[0] ? tInfo.rows[0].equipment_type : null)
       });
     } catch (syncErr) {
       console.warn('[LoadPlanning] AI dispatch sync notice:', syncErr.message);

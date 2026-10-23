@@ -1,7 +1,13 @@
 const express = require('express');
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { enforceTruckSubscriptionLimit, syncTruckLocationToAiDispatch } = require('../utils/carrier-sync');
+const {
+  enforceTruckSubscriptionLimit,
+  syncTruckLocationToAiDispatch,
+  ensureCarriersSyncedToUsers,
+  ensureFleetTablesSchema,
+  ensureCarrierDefaultFleet
+} = require('../utils/carrier-sync');
 
 const router = express.Router();
 
@@ -30,11 +36,13 @@ function getCarrierScope(req) {
 // List carriers
 router.get('/carriers', requireAuth, async (req, res) => {
   try {
+    await ensureCarriersSyncedToUsers().catch(() => {});
     let query, params = [];
+    const equipCol = `COALESCE(NULLIF(u.equipment_category, ''), (SELECT NULLIF(equipment_type, '') FROM trucks WHERE carrier_id = u.id ORDER BY id ASC LIMIT 1), '53ft Dry Van') AS equipment_category`;
     if (req.user.role === 'carrier') {
       query = `
         SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
-               u.dispatch_fee_percent, u.equipment_category, u.billing_notes, u.is_suspended, u.created_at,
+               u.dispatch_fee_percent, ${equipCol}, u.billing_notes, u.is_suspended, u.created_at,
                dc.dispatcher_id, disp.name AS dispatcher_name, disp.email AS dispatcher_email,
                (SELECT COUNT(*) FROM trucks WHERE carrier_id = u.id) AS truck_count,
                (SELECT COUNT(*) FROM drivers WHERE carrier_id = u.id AND deleted_at IS NULL) AS driver_count
@@ -46,7 +54,7 @@ router.get('/carriers', requireAuth, async (req, res) => {
     } else if (req.user.role === 'dispatcher') {
       query = `
         SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
-               u.dispatch_fee_percent, u.equipment_category, u.billing_notes, u.is_suspended, u.created_at,
+               u.dispatch_fee_percent, ${equipCol}, u.billing_notes, u.is_suspended, u.created_at,
                dc.dispatcher_id, disp.name AS dispatcher_name, disp.email AS dispatcher_email,
                (SELECT COUNT(*) FROM trucks WHERE carrier_id = u.id) AS truck_count,
                (SELECT COUNT(*) FROM drivers WHERE carrier_id = u.id AND deleted_at IS NULL) AS driver_count
@@ -59,7 +67,7 @@ router.get('/carriers', requireAuth, async (req, res) => {
     } else {
       query = `
         SELECT u.id, u.name, u.company_name, u.phone, u.email, u.mc_number, u.dot_number,
-               u.dispatch_fee_percent, u.equipment_category, u.billing_notes, u.is_suspended, u.created_at,
+               u.dispatch_fee_percent, ${equipCol}, u.billing_notes, u.is_suspended, u.created_at,
                dc.dispatcher_id, disp.name AS dispatcher_name, disp.email AS dispatcher_email,
                (SELECT COUNT(*) FROM trucks WHERE carrier_id = u.id) AS truck_count,
                (SELECT COUNT(*) FROM drivers WHERE carrier_id = u.id AND deleted_at IS NULL) AS driver_count
@@ -98,7 +106,7 @@ router.post('/carriers', requireAuth, async (req, res) => {
     return res.status(403).json({ error: 'Permission denied. Only staff can create carrier companies.' });
   }
 
-  const { company_name, owner_name, email, password, phone, mc_number, dot_number, dispatcher_id, dispatch_fee_percent } = req.body;
+  const { company_name, owner_name, email, password, phone, mc_number, dot_number, dispatcher_id, dispatch_fee_percent, equipment_category, equipment_type, equipment } = req.body;
 
   if (!company_name || !phone || !email || !password) {
     return res.status(400).json({ error: 'Company Name, Phone, Email, and Password are required.' });
@@ -106,8 +114,10 @@ router.post('/carriers', requireAuth, async (req, res) => {
 
   const bcrypt = require('bcryptjs');
   const safeEmail = email.trim().toLowerCase();
+  const equipVal = (equipment_category || equipment_type || equipment || '53ft Dry Van').trim();
 
   try {
+    await ensureFleetTablesSchema();
     const existing = await pool.query('SELECT id FROM users WHERE lower(email) = lower($1)', [safeEmail]);
     if (existing.rows.length) {
       return res.status(409).json({ error: 'A user account with this email already exists.' });
@@ -117,10 +127,10 @@ router.post('/carriers', requireAuth, async (req, res) => {
     const feeNum = parseFloat(dispatch_fee_percent) || 5.0;
 
     const userRes = await pool.query(
-      `INSERT INTO users (name, company_name, email, phone, mc_number, dot_number, role, password_hash, dispatch_fee_percent)
-       VALUES ($1, $2, $3, $4, $5, $6, 'carrier', $7, $8)
-       RETURNING id, name, company_name, email, phone, mc_number, dot_number, role, dispatch_fee_percent, created_at`,
-      [owner_name || company_name, company_name, safeEmail, phone, mc_number || null, dot_number || null, passwordHash, feeNum]
+      `INSERT INTO users (name, company_name, email, phone, mc_number, dot_number, role, password_hash, dispatch_fee_percent, equipment_category)
+       VALUES ($1, $2, $3, $4, $5, $6, 'carrier', $7, $8, $9)
+       RETURNING id, name, company_name, email, phone, mc_number, dot_number, role, dispatch_fee_percent, equipment_category, created_at`,
+      [owner_name || company_name, company_name, safeEmail, phone, mc_number || null, dot_number || null, passwordHash, feeNum, equipVal]
     );
     const carrier = userRes.rows[0];
 
@@ -136,11 +146,20 @@ router.post('/carriers', requireAuth, async (req, res) => {
 
     // Synchronize to ai_dispatch_carriers for AI Dispatch auto-matching
     await pool.query(
-      `INSERT INTO ai_dispatch_carriers (company_name, contact_name, phone, email, mc_number, dot_number, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, true)
-       ON CONFLICT (company_name) DO UPDATE SET phone = EXCLUDED.phone, email = EXCLUDED.email, is_active = true`,
-      [company_name, owner_name || company_name, phone, safeEmail, mc_number || null, dot_number || null]
+      `INSERT INTO ai_dispatch_carriers (company_name, contact_name, phone, email, mc_number, dot_number, equipment, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+       ON CONFLICT (company_name) DO UPDATE SET phone = EXCLUDED.phone, email = EXCLUDED.email, equipment = EXCLUDED.equipment, is_active = true`,
+      [company_name, owner_name || company_name, phone, safeEmail, mc_number || null, dot_number || null, equipVal]
     ).catch(() => {});
+
+    // Automatically create default Truck & Driver so Load Planning & Fleet Hub work immediately
+    await ensureCarrierDefaultFleet(carrier.id, {
+      company_name,
+      contact_name: owner_name || company_name,
+      phone,
+      email: safeEmail,
+      equipment: equipVal
+    }).catch(() => {});
 
     res.json({ ok: true, carrier });
   } catch (err) {
@@ -154,13 +173,15 @@ router.put('/carriers/:id', requireAuth, async (req, res) => {
   if (!['admin', 'super_admin'].includes(req.user.role)) {
     return res.status(403).json({ error: 'Permission denied.' });
   }
-  const { company_name, owner_name, email, password, phone, mc_number, dot_number, dispatcher_id, dispatch_fee_percent, is_suspended } = req.body;
+  const { company_name, owner_name, email, password, phone, mc_number, dot_number, dispatcher_id, dispatch_fee_percent, is_suspended, equipment_category, equipment_type, equipment } = req.body;
   const carrierId = req.params.id;
+  const equipVal = (equipment_category || equipment_type || equipment || '').trim() || null;
 
   try {
+    await ensureFleetTablesSchema();
     const bcrypt = require('bcryptjs');
     let hashUpdate = '';
-    let params = [owner_name || company_name, company_name, phone, mc_number || null, dot_number || null, parseFloat(dispatch_fee_percent) || 5.0, is_suspended === true || is_suspended === 'true', carrierId];
+    let params = [owner_name || company_name, company_name, phone, mc_number || null, dot_number || null, parseFloat(dispatch_fee_percent) || 5.0, is_suspended === true || is_suspended === 'true', equipVal, carrierId];
 
     if (password && password.length >= 4) {
       const hash = await bcrypt.hash(password, 10);
@@ -175,13 +196,37 @@ router.put('/carriers/:id', requireAuth, async (req, res) => {
 
     const result = await pool.query(
       `UPDATE users
-       SET name = $1, company_name = $2, phone = $3, mc_number = $4, dot_number = $5, dispatch_fee_percent = $6, is_suspended = $7 ${hashUpdate}
-       WHERE id = $8 AND role = 'carrier'
-       RETURNING id, name, company_name, email, phone, mc_number, dot_number, dispatch_fee_percent, is_suspended`,
+       SET name = $1, company_name = $2, phone = $3, mc_number = $4, dot_number = $5, dispatch_fee_percent = $6, is_suspended = $7,
+           equipment_category = COALESCE($8, equipment_category) ${hashUpdate}
+       WHERE id = $9 AND role = 'carrier'
+       RETURNING id, name, company_name, email, phone, mc_number, dot_number, dispatch_fee_percent, equipment_category, is_suspended`,
       params
     );
 
     if (!result.rows.length) return res.status(404).json({ error: 'Carrier not found.' });
+
+    if (equipVal) {
+      await pool.query(
+        `UPDATE trucks SET equipment_type = $1 WHERE carrier_id = $2`,
+        [equipVal, carrierId]
+      ).catch(() => {});
+      await pool.query(
+        `UPDATE drivers SET equipment_type = $1 WHERE carrier_id = $2 AND deleted_at IS NULL`,
+        [equipVal, carrierId]
+      ).catch(() => {});
+      await pool.query(
+        `UPDATE ai_dispatch_carriers SET equipment = $1 WHERE lower(company_name) = lower($2)`,
+        [equipVal, company_name]
+      ).catch(() => {});
+    }
+
+    await ensureCarrierDefaultFleet(carrierId, {
+      company_name,
+      contact_name: owner_name || company_name,
+      phone,
+      email: result.rows[0].email,
+      equipment: equipVal || result.rows[0].equipment_category || '53ft Dry Van'
+    }).catch(() => {});
 
     if (dispatcher_id !== undefined) {
       await pool.query('DELETE FROM dispatcher_carriers WHERE carrier_id = $1', [carrierId]);
@@ -216,19 +261,22 @@ router.delete('/carriers/:id', requireAuth, async (req, res) => {
 // List trucks
 router.get('/trucks', requireAuth, async (req, res) => {
   try {
+    await ensureCarriersSyncedToUsers().catch(() => {});
     let query = `
-      SELECT t.*, u.name AS carrier_name, u.company_name AS carrier_company,
+      SELECT t.*,
+             COALESCE(NULLIF(t.equipment_type, ''), NULLIF(u.equipment_category, ''), '53ft Dry Van') AS equipment_type,
+             u.name AS carrier_name, u.company_name AS carrier_company,
              d.name AS current_driver_name
       FROM trucks t
       JOIN users u ON u.id = t.carrier_id
-      LEFT JOIN drivers d ON d.assigned_truck_id = t.id`;
+      LEFT JOIN drivers d ON d.assigned_truck_id = t.id AND d.deleted_at IS NULL`;
     let params = [];
     const carrierId = getCarrierScope(req);
     if (carrierId) {
       query += ` WHERE t.carrier_id = $1`;
       params.push(carrierId);
     }
-    query += ` ORDER BY t.truck_number ASC`;
+    query += ` ORDER BY u.company_name ASC NULLS LAST, t.truck_number ASC`;
     const result = await pool.query(query, params);
     res.json({ trucks: result.rows });
   } catch (err) {
@@ -239,7 +287,7 @@ router.get('/trucks', requireAuth, async (req, res) => {
 
 // Create truck
 router.post('/trucks', requireAuth, async (req, res) => {
-  const { truck_number, vin, plate, insurance_expiry, registration_expiry, inspection_expiry, mileage } = req.body;
+  const { truck_number, vin, plate, insurance_expiry, registration_expiry, inspection_expiry, mileage, equipment_type, equipment } = req.body;
   const carrier_id = req.user.role === 'carrier' ? req.user.id : req.body.carrier_id;
 
   if (!truck_number || !carrier_id) {
@@ -259,17 +307,26 @@ router.post('/trucks', requireAuth, async (req, res) => {
   }
 
   try {
+    await ensureFleetTablesSchema();
+    const uRow = await pool.query(`SELECT equipment_category FROM users WHERE id = $1`, [carrier_id]).catch(() => ({ rows: [] }));
+    const equipVal = (equipment_type || equipment || uRow.rows[0]?.equipment_category || '53ft Dry Van').trim();
+
     const result = await pool.query(
-      `INSERT INTO trucks (carrier_id, truck_number, vin, plate, insurance_expiry, registration_expiry, inspection_expiry, mileage)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [carrier_id, truck_number, vin || null, plate || null, insurance_expiry || null, registration_expiry || null, inspection_expiry || null, mileage || 0]
+      `INSERT INTO trucks (carrier_id, truck_number, equipment_type, vin, plate, insurance_expiry, registration_expiry, inspection_expiry, mileage)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [carrier_id, truck_number, equipVal, vin || null, plate || null, insurance_expiry || null, registration_expiry || null, inspection_expiry || null, mileage || 0]
     );
 
+    if (equipVal) {
+      await pool.query(`UPDATE users SET equipment_category = $1 WHERE id = $2`, [equipVal, carrier_id]).catch(() => {});
+      await pool.query(`UPDATE drivers SET equipment_type = COALESCE(NULLIF(equipment_type, ''), $1), assigned_truck_id = COALESCE(assigned_truck_id, $2) WHERE carrier_id = $3 AND deleted_at IS NULL`, [equipVal, result.rows[0].id, carrier_id]).catch(() => {});
+    }
+
     // 2. Synchronize initial empty location & equipment to AI Dispatch Brain
-    if (req.body.empty_zip || req.body.location || req.body.equipment_type || req.body.prefer_destination) {
+    if (req.body.empty_zip || req.body.location || equipVal || req.body.prefer_destination) {
       await syncTruckLocationToAiDispatch(carrier_id, {
         empty_zip: req.body.empty_zip || req.body.location,
-        equipment: req.body.equipment_type,
+        equipment: equipVal,
         prefer_destination: req.body.prefer_destination
       }).catch(() => {});
     }
@@ -283,22 +340,30 @@ router.post('/trucks', requireAuth, async (req, res) => {
 
 // Update truck
 router.put('/trucks/:id', requireAuth, async (req, res) => {
-  const { truck_number, vin, plate, insurance_expiry, registration_expiry, inspection_expiry, mileage, status } = req.body;
+  const { truck_number, vin, plate, insurance_expiry, registration_expiry, inspection_expiry, mileage, status, equipment_type, equipment } = req.body;
   try {
+    await ensureFleetTablesSchema();
     const gate = await assertOwnedFleetRow(req, 'trucks', req.params.id);
     if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
+    const equipVal = (equipment_type || equipment || '').trim() || null;
     const result = await pool.query(
       `UPDATE trucks
-       SET truck_number = $1, vin = $2, plate = $3, insurance_expiry = $4, registration_expiry = $5, inspection_expiry = $6, mileage = $7, status = $8
-       WHERE id = $9 RETURNING *`,
-      [truck_number, vin || null, plate || null, insurance_expiry || null, registration_expiry || null, inspection_expiry || null, mileage || 0, status || 'active', req.params.id]
+       SET truck_number = $1, vin = $2, plate = $3, insurance_expiry = $4, registration_expiry = $5, inspection_expiry = $6, mileage = $7, status = $8,
+           equipment_type = COALESCE($9, equipment_type)
+       WHERE id = $10 RETURNING *`,
+      [truck_number, vin || null, plate || null, insurance_expiry || null, registration_expiry || null, inspection_expiry || null, mileage || 0, status || 'active', equipVal, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Truck not found.' });
 
-    if (req.body.empty_zip || req.body.location || req.body.equipment_type || req.body.prefer_destination) {
+    if (equipVal) {
+      await pool.query(`UPDATE users SET equipment_category = $1 WHERE id = $2`, [equipVal, result.rows[0].carrier_id]).catch(() => {});
+      await pool.query(`UPDATE drivers SET equipment_type = $1 WHERE assigned_truck_id = $2`, [equipVal, result.rows[0].id]).catch(() => {});
+    }
+
+    if (req.body.empty_zip || req.body.location || equipVal || req.body.prefer_destination) {
       await syncTruckLocationToAiDispatch(result.rows[0].carrier_id, {
         empty_zip: req.body.empty_zip || req.body.location,
-        equipment: req.body.equipment_type,
+        equipment: equipVal || result.rows[0].equipment_type,
         prefer_destination: req.body.prefer_destination
       }).catch(() => {});
     }
@@ -406,8 +471,11 @@ router.delete('/trailers/:id', requireAuth, async (req, res) => {
 // List drivers
 router.get('/drivers', requireAuth, async (req, res) => {
   try {
+    await ensureCarriersSyncedToUsers().catch(() => {});
     let query = `
-      SELECT d.*, u.name AS carrier_name, u.company_name AS carrier_company,
+      SELECT d.*,
+             COALESCE(NULLIF(d.equipment_type, ''), NULLIF(t.equipment_type, ''), NULLIF(u.equipment_category, ''), '53ft Dry Van') AS equipment_type,
+             u.name AS carrier_name, u.company_name AS carrier_company,
              t.truck_number, tr.trailer_number
       FROM drivers d
       JOIN users u ON u.id = d.carrier_id
@@ -421,7 +489,7 @@ router.get('/drivers', requireAuth, async (req, res) => {
       params.push(carrierId);
     }
     query += ` WHERE ${where}`;
-    query += ` ORDER BY d.name ASC`;
+    query += ` ORDER BY u.company_name ASC NULLS LAST, d.name ASC`;
     const result = await pool.query(query, params);
     res.json({ drivers: result.rows });
   } catch (err) {
@@ -431,7 +499,7 @@ router.get('/drivers', requireAuth, async (req, res) => {
 
 // Create driver
 router.post('/drivers', requireAuth, async (req, res) => {
-  const { name, phone, email, password, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status } = req.body;
+  const { name, phone, email, password, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status, equipment_type, equipment } = req.body;
   const carrier_id = req.user.role === 'carrier' ? req.user.id : req.body.carrier_id;
 
   if (!name || !carrier_id) {
@@ -439,6 +507,7 @@ router.post('/drivers', requireAuth, async (req, res) => {
   }
 
   try {
+    await ensureFleetTablesSchema();
     let userId = null;
     const safeEmail = email ? String(email).trim().toLowerCase() : null;
 
@@ -464,14 +533,33 @@ router.post('/drivers', requireAuth, async (req, res) => {
       }
     }
 
-    await pool.query(
-      `ALTER TABLE drivers ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL`
-    ).catch(() => {});
+    let finalTruckId = assigned_truck_id || null;
+    const cInfo = await pool.query('SELECT company_name, name, equipment_category FROM users WHERE id = $1', [carrier_id]).catch(() => ({ rows: [] }));
+    const equipVal = (equipment_type || equipment || cInfo.rows[0]?.equipment_category || '53ft Dry Van').trim();
+
+    if (!finalTruckId) {
+      // Ensure carrier has at least one truck and assign it
+      const tRow = await pool.query('SELECT id FROM trucks WHERE carrier_id = $1 ORDER BY id ASC LIMIT 1', [carrier_id]).catch(() => ({ rows: [] }));
+      if (tRow.rows.length > 0) {
+        finalTruckId = tRow.rows[0].id;
+      } else {
+        const insT = await pool.query(
+          `INSERT INTO trucks (carrier_id, truck_number, equipment_type, status) VALUES ($1, '101', $2, 'active') RETURNING id`,
+          [carrier_id, equipVal]
+        ).catch(() => ({ rows: [] }));
+        if (insT.rows[0]) finalTruckId = insT.rows[0].id;
+      }
+    }
+
+    if (finalTruckId && (equipment_type || equipment)) {
+      await pool.query(`UPDATE trucks SET equipment_type = $1 WHERE id = $2`, [equipVal, finalTruckId]).catch(() => {});
+      await pool.query(`UPDATE users SET equipment_category = $1 WHERE id = $2`, [equipVal, carrier_id]).catch(() => {});
+    }
 
     const result = await pool.query(
-      `INSERT INTO drivers (carrier_id, name, phone, email, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status, user_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-      [carrier_id, name, phone || null, safeEmail || null, license_number || null, cdl_expiry || null, medical_expiry || null, assigned_truck_id || null, assigned_trailer_id || null, status || 'available', userId]
+      `INSERT INTO drivers (carrier_id, name, phone, email, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status, user_id, equipment_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+      [carrier_id, name, phone || null, safeEmail || null, license_number || null, cdl_expiry || null, medical_expiry || null, finalTruckId, assigned_trailer_id || null, status || 'available', userId, equipVal]
     );
     res.json({ ok: true, driver: result.rows[0], user_created: !!userId });
   } catch (err) {
@@ -482,13 +570,15 @@ router.post('/drivers', requireAuth, async (req, res) => {
 
 // Update driver
 router.put('/drivers/:id', requireAuth, async (req, res) => {
-  const { name, phone, email, password, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status } = req.body;
+  const { name, phone, email, password, license_number, cdl_expiry, medical_expiry, assigned_truck_id, assigned_trailer_id, status, equipment_type, equipment } = req.body;
   try {
+    await ensureFleetTablesSchema();
     const gate = await assertOwnedFleetRow(req, 'drivers', req.params.id);
     if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
 
     let userId = null;
     const safeEmail = email ? String(email).trim().toLowerCase() : null;
+    const equipVal = (equipment_type || equipment || '').trim() || null;
 
     if (password && password.length >= 4) {
       const bcrypt = require('bcryptjs');
@@ -515,10 +605,17 @@ router.put('/drivers/:id', requireAuth, async (req, res) => {
       `UPDATE drivers
        SET name = $1, phone = $2, email = $3, license_number = $4, cdl_expiry = $5, medical_expiry = $6,
            assigned_truck_id = $7, assigned_trailer_id = $8, status = $9,
-           user_id = COALESCE($10, user_id)
-       WHERE id = $11 RETURNING *`,
-      [name, phone || null, safeEmail || null, license_number || null, cdl_expiry || null, medical_expiry || null, assigned_truck_id || null, assigned_trailer_id || null, status || 'available', userId, req.params.id]
+           user_id = COALESCE($10, user_id),
+           equipment_type = COALESCE($11, equipment_type)
+       WHERE id = $12 RETURNING *`,
+      [name, phone || null, safeEmail || null, license_number || null, cdl_expiry || null, medical_expiry || null, assigned_truck_id || null, assigned_trailer_id || null, status || 'available', userId, equipVal, req.params.id]
     );
+    if (equipVal && result.rows[0]) {
+      if (result.rows[0].assigned_truck_id) {
+        await pool.query(`UPDATE trucks SET equipment_type = $1 WHERE id = $2`, [equipVal, result.rows[0].assigned_truck_id]).catch(() => {});
+      }
+      await pool.query(`UPDATE users SET equipment_category = $1 WHERE id = $2`, [equipVal, result.rows[0].carrier_id]).catch(() => {});
+    }
     res.json({ ok: true, driver: result.rows[0] });
   } catch (err) {
     console.error('Update driver error:', err);

@@ -7,7 +7,7 @@
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="stylesheet" href="/css/design-system.css?v=37">
+  <link rel="stylesheet" href="/css/design-system.css?v=38">
   <style>
     .desk-tab-content {
       min-height: 420px;
@@ -120,7 +120,7 @@
             <div class="stat-kpi-icon">👤</div>
           </div>
           <div class="stat-kpi-val" id="kpi-drivers-count">0</div>
-          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Registered CDL drivers</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Registered CDL &amp; Hotshot drivers</div>
         </div>
 
         <div class="stat-kpi-card" id="kpi-card-trucks" style="cursor:pointer;" onclick="switchFleetTab('trucks')">
@@ -129,7 +129,7 @@
             <div class="stat-kpi-icon">🚛</div>
           </div>
           <div class="stat-kpi-val" id="kpi-trucks-count">0</div>
-          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Active semi-truck power units</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Active semi-truck &amp; hotshot units</div>
         </div>
 
         <div class="stat-kpi-card" id="kpi-card-trailers" style="cursor:pointer;" onclick="switchFleetTab('trailers')">
@@ -138,7 +138,7 @@
             <div class="stat-kpi-icon">📦</div>
           </div>
           <div class="stat-kpi-val" id="kpi-trailers-count">0</div>
-          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Dry Vans, Reefers, Flatbeds</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:8px;">Hotshots, Dry Vans, Reefers, Flatbeds</div>
         </div>
       </div>
 
@@ -160,7 +160,7 @@
             </select>
             <div class="search-input-group" style="min-width:220px;">
               <span class="search-icon">🔍</span>
-              <input type="text" id="fleet-search-input" placeholder="Search..." oninput="onFleetSearch(this.value)">
+              <input type="text" id="fleet-search-input" placeholder="Search company, driver, hotshot, truck..." oninput="onFleetSearch(this.value)">
             </div>
           </div>
         </div>
@@ -175,7 +175,7 @@
                   <th>MC / DOT #</th>
                   <th>Phone / Portal Login</th>
                   <th>Assigned Dispatcher</th>
-                  <th>Fleet Size</th>
+                  <th>Fleet &amp; Equipment</th>
                   <th>Commission</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -199,7 +199,7 @@
                   <th>Phone / App Login</th>
                   <th>CDL # &amp; Expiry</th>
                   <th>Medical Card</th>
-                  <th>Assigned Truck</th>
+                  <th>Assigned Truck &amp; Equipment</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -219,8 +219,8 @@
                 <tr>
                   <th>Truck #</th>
                   <th>Carrier</th>
-                  <th>VIN</th>
-                  <th>Plate</th>
+                  <th>Equipment Type</th>
+                  <th>VIN &amp; Plate</th>
                   <th>Annual Inspection</th>
                   <th>Insurance Expiry</th>
                   <th>Mileage</th>
@@ -300,11 +300,30 @@
             <input type="password" class="form-input" id="carrier-password" name="password" required placeholder="••••••••">
           </div>
           <div class="form-group">
-            <label class="form-label" for="carrier-dispatcher-select">Assign to Dispatcher <span style="font-weight:400;font-size:11px;color:var(--text-muted);">(Optional)</span></label>
-            <select class="form-select" id="carrier-dispatcher-select" name="dispatcher_id">
-              <option value="">🛡️ Direct Admin Operations (No Dispatcher Required)</option>
+            <label class="form-label required" for="carrier-equipment">Primary Truck Equipment &amp; Size</label>
+            <select class="form-select" id="carrier-equipment" name="equipment_category">
+              <option value="30ft Hotshot">🔥 30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
+              <option value="35ft Hotshot">🔥 35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
+              <option value="40ft Hotshot">🔥 40ft Hotshot (CDL ≤ 24,000 lbs)</option>
+              <option value="53ft Dry Van" selected>🚛 53ft Dry Van</option>
+              <option value="53ft Reefer">❄️ 53ft Reefer (Temp Controlled)</option>
+              <option value="48ft Flatbed">🪵 48ft Flatbed</option>
+              <option value="53ft Flatbed">🪵 53ft Flatbed</option>
+              <option value="Step Deck">📐 Step Deck / Conestoga</option>
+              <option value="26ft Box Truck">📦 26ft Box Truck (≤ 10,000 lbs)</option>
+              <option value="Sprinter Van">🚐 Cargo Van / Sprinter (≤ 4,000 lbs)</option>
+              <option value="Power Only">⚡ Power Only</option>
+              <option value="RGN / Lowboy">🏗️ RGN / Lowboy Heavy Haul</option>
+              <option value="Auto Hauler">🚗 Auto Hauler</option>
             </select>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="carrier-dispatcher-select">Assign to Dispatcher <span style="font-weight:400;font-size:11px;color:var(--text-muted);">(Optional)</span></label>
+          <select class="form-select" id="carrier-dispatcher-select" name="dispatcher_id">
+            <option value="">🛡️ Direct Admin Operations (No Dispatcher Required)</option>
+          </select>
         </div>
 
         <div class="form-row">
@@ -370,11 +389,30 @@
             <input type="password" class="form-input" id="edit-carrier-password" name="password" placeholder="Leave blank to keep unchanged">
           </div>
           <div class="form-group">
-            <label class="form-label" for="edit-carrier-dispatcher-select">Assign to Dispatcher <span style="font-weight:400;font-size:11px;color:var(--text-muted);">(Optional)</span></label>
-            <select class="form-select" id="edit-carrier-dispatcher-select" name="dispatcher_id">
-              <option value="">🛡️ Direct Admin Operations (No Dispatcher Required)</option>
+            <label class="form-label required" for="edit-carrier-equipment">Primary Truck Equipment &amp; Size</label>
+            <select class="form-select" id="edit-carrier-equipment" name="equipment_category">
+              <option value="30ft Hotshot">🔥 30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
+              <option value="35ft Hotshot">🔥 35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
+              <option value="40ft Hotshot">🔥 40ft Hotshot (CDL ≤ 24,000 lbs)</option>
+              <option value="53ft Dry Van">🚛 53ft Dry Van</option>
+              <option value="53ft Reefer">❄️ 53ft Reefer (Temp Controlled)</option>
+              <option value="48ft Flatbed">🪵 48ft Flatbed</option>
+              <option value="53ft Flatbed">🪵 53ft Flatbed</option>
+              <option value="Step Deck">📐 Step Deck / Conestoga</option>
+              <option value="26ft Box Truck">📦 26ft Box Truck (≤ 10,000 lbs)</option>
+              <option value="Sprinter Van">🚐 Cargo Van / Sprinter (≤ 4,000 lbs)</option>
+              <option value="Power Only">⚡ Power Only</option>
+              <option value="RGN / Lowboy">🏗️ RGN / Lowboy Heavy Haul</option>
+              <option value="Auto Hauler">🚗 Auto Hauler</option>
             </select>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="edit-carrier-dispatcher-select">Assign to Dispatcher <span style="font-weight:400;font-size:11px;color:var(--text-muted);">(Optional)</span></label>
+          <select class="form-select" id="edit-carrier-dispatcher-select" name="dispatcher_id">
+            <option value="">🛡️ Direct Admin Operations (No Dispatcher Required)</option>
+          </select>
         </div>
 
         <div class="form-row">
@@ -413,7 +451,7 @@
       <form id="new-driver-form">
         <div class="form-group" id="driver-carrier-field">
           <label class="form-label required" for="driver-carrier-select">Carrier Company</label>
-          <select class="form-select" name="carrier_id" id="driver-carrier-select" required></select>
+          <select class="form-select" name="carrier_id" id="driver-carrier-select" required onchange="onDriverCarrierSelectChange(this.value)"></select>
         </div>
 
         <div class="form-row">
@@ -442,18 +480,36 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="driver-license">License / CDL #</label>
-            <input type="text" class="form-input" id="driver-license" name="license_number" placeholder="DL-98765432">
-          </div>
-          <div class="form-group">
             <label class="form-label" for="driver-truck-select">Assign Power Unit (Truck)</label>
             <select class="form-select" id="driver-truck-select" name="assigned_truck_id">
-              <option value="">-- No Truck Assigned --</option>
+              <option value="">-- Auto-Assign Carrier Truck --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label required" for="driver-equipment-type">Truck Equipment &amp; Size</label>
+            <select class="form-select" id="driver-equipment-type" name="equipment_type">
+              <option value="30ft Hotshot">🔥 30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
+              <option value="35ft Hotshot">🔥 35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
+              <option value="40ft Hotshot">🔥 40ft Hotshot (CDL ≤ 24,000 lbs)</option>
+              <option value="53ft Dry Van" selected>🚛 53ft Dry Van</option>
+              <option value="53ft Reefer">❄️ 53ft Reefer (Temp Controlled)</option>
+              <option value="48ft Flatbed">🪵 48ft Flatbed</option>
+              <option value="53ft Flatbed">🪵 53ft Flatbed</option>
+              <option value="Step Deck">📐 Step Deck / Conestoga</option>
+              <option value="26ft Box Truck">📦 26ft Box Truck (≤ 10,000 lbs)</option>
+              <option value="Sprinter Van">🚐 Cargo Van / Sprinter (≤ 4,000 lbs)</option>
+              <option value="Power Only">⚡ Power Only</option>
+              <option value="RGN / Lowboy">🏗️ RGN / Lowboy Heavy Haul</option>
+              <option value="Auto Hauler">🚗 Auto Hauler</option>
             </select>
           </div>
         </div>
 
         <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="driver-license">License / CDL #</label>
+            <input type="text" class="form-input" id="driver-license" name="license_number" placeholder="DL-98765432">
+          </div>
           <div class="form-group">
             <label class="form-label" for="driver-cdl-exp">CDL Expiry Date</label>
             <input type="date" class="form-input" id="driver-cdl-exp" name="cdl_expiry">
@@ -462,14 +518,15 @@
             <label class="form-label" for="driver-med-exp">Medical Card Expiry</label>
             <input type="date" class="form-input" id="driver-med-exp" name="medical_expiry">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="driver-status">Current Status</label>
-            <select class="form-select" id="driver-status" name="status">
-              <option value="available">Available</option>
-              <option value="on_load">On Load</option>
-              <option value="off_duty">Off Duty / Rest</option>
-            </select>
-          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="driver-status">Current Status</label>
+          <select class="form-select" id="driver-status" name="status">
+            <option value="available">Available</option>
+            <option value="on_load">On Load</option>
+            <option value="off_duty">Off Duty / Rest</option>
+          </select>
         </div>
 
         <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
@@ -516,18 +573,36 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="edit-driver-license">License / CDL #</label>
-            <input type="text" class="form-input" id="edit-driver-license" name="license_number">
-          </div>
-          <div class="form-group">
             <label class="form-label" for="edit-driver-truck-select">Assign Truck</label>
             <select class="form-select" id="edit-driver-truck-select" name="assigned_truck_id">
               <option value="">-- No Truck Assigned --</option>
             </select>
           </div>
+          <div class="form-group">
+            <label class="form-label required" for="edit-driver-equipment-type">Truck Equipment &amp; Size</label>
+            <select class="form-select" id="edit-driver-equipment-type" name="equipment_type">
+              <option value="30ft Hotshot">🔥 30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
+              <option value="35ft Hotshot">🔥 35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
+              <option value="40ft Hotshot">🔥 40ft Hotshot (CDL ≤ 24,000 lbs)</option>
+              <option value="53ft Dry Van">🚛 53ft Dry Van</option>
+              <option value="53ft Reefer">❄️ 53ft Reefer (Temp Controlled)</option>
+              <option value="48ft Flatbed">🪵 48ft Flatbed</option>
+              <option value="53ft Flatbed">🪵 53ft Flatbed</option>
+              <option value="Step Deck">📐 Step Deck / Conestoga</option>
+              <option value="26ft Box Truck">📦 26ft Box Truck (≤ 10,000 lbs)</option>
+              <option value="Sprinter Van">🚐 Cargo Van / Sprinter (≤ 4,000 lbs)</option>
+              <option value="Power Only">⚡ Power Only</option>
+              <option value="RGN / Lowboy">🏗️ RGN / Lowboy Heavy Haul</option>
+              <option value="Auto Hauler">🚗 Auto Hauler</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="edit-driver-license">License / CDL #</label>
+            <input type="text" class="form-input" id="edit-driver-license" name="license_number">
+          </div>
           <div class="form-group">
             <label class="form-label" for="edit-driver-cdl-exp">CDL Expiry Date</label>
             <input type="date" class="form-input" id="edit-driver-cdl-exp" name="cdl_expiry">
@@ -536,14 +611,15 @@
             <label class="form-label" for="edit-driver-med-exp">Medical Card Expiry</label>
             <input type="date" class="form-input" id="edit-driver-med-exp" name="medical_expiry">
           </div>
-          <div class="form-group">
-            <label class="form-label" for="edit-driver-status">Status</label>
-            <select class="form-select" id="edit-driver-status" name="status">
-              <option value="available">Available</option>
-              <option value="on_load">On Load</option>
-              <option value="off_duty">Off Duty / Rest</option>
-            </select>
-          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="edit-driver-status">Status</label>
+          <select class="form-select" id="edit-driver-status" name="status">
+            <option value="available">Available</option>
+            <option value="on_load">On Load</option>
+            <option value="off_duty">Off Duty / Rest</option>
+          </select>
         </div>
 
         <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
@@ -567,32 +643,50 @@
       <form id="new-truck-form">
         <div class="form-group" id="truck-carrier-field">
           <label class="form-label required" for="truck-carrier-select">Carrier Company</label>
-          <select class="form-select" name="carrier_id" id="truck-carrier-select" required></select>
+          <select class="form-select" name="carrier_id" id="truck-carrier-select" required onchange="onTruckCarrierSelectChange(this.value)"></select>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label class="form-label required" for="truck-num">Truck Number</label>
-            <input type="text" class="form-input" id="truck-num" name="truck_number" required placeholder="e.g. Truck 1042">
+            <input type="text" class="form-input" id="truck-num" name="truck_number" required placeholder="e.g. 101 or 1042">
           </div>
+          <div class="form-group">
+            <label class="form-label required" for="truck-equipment-type">Truck Equipment &amp; Size</label>
+            <select class="form-select" id="truck-equipment-type" name="equipment_type" required>
+              <option value="30ft Hotshot">🔥 30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
+              <option value="35ft Hotshot">🔥 35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
+              <option value="40ft Hotshot">🔥 40ft Hotshot (CDL ≤ 24,000 lbs)</option>
+              <option value="53ft Dry Van" selected>🚛 53ft Dry Van</option>
+              <option value="53ft Reefer">❄️ 53ft Reefer (Temp Controlled)</option>
+              <option value="48ft Flatbed">🪵 48ft Flatbed</option>
+              <option value="53ft Flatbed">🪵 53ft Flatbed</option>
+              <option value="Step Deck">📐 Step Deck / Conestoga</option>
+              <option value="26ft Box Truck">📦 26ft Box Truck (≤ 10,000 lbs)</option>
+              <option value="Sprinter Van">🚐 Cargo Van / Sprinter (≤ 4,000 lbs)</option>
+              <option value="Power Only">⚡ Power Only</option>
+              <option value="RGN / Lowboy">🏗️ RGN / Lowboy Heavy Haul</option>
+              <option value="Auto Hauler">🚗 Auto Hauler</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
           <div class="form-group">
             <label class="form-label" for="truck-vin">VIN Number</label>
             <input type="text" class="form-input" id="truck-vin" name="vin" placeholder="1XPD499X...">
           </div>
-        </div>
-
-        <div class="form-row">
           <div class="form-group">
             <label class="form-label" for="truck-plate">License Plate</label>
             <input type="text" class="form-input" id="truck-plate" name="plate" placeholder="TX-9981">
           </div>
+        </div>
+
+        <div class="form-row">
           <div class="form-group">
             <label class="form-label" for="truck-mileage">Odometer Mileage</label>
             <input type="number" class="form-input" id="truck-mileage" name="mileage" placeholder="245000">
           </div>
-        </div>
-
-        <div class="form-row">
           <div class="form-group">
             <label class="form-label" for="truck-insp-exp">Inspection Expiry</label>
             <input type="date" class="form-input" id="truck-insp-exp" name="inspection_expiry">
@@ -606,6 +700,77 @@
         <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
           <button type="button" onclick="closeModal('new-truck-modal')" class="btn btn-secondary">Cancel</button>
           <button type="submit" class="btn btn-primary">Add Truck →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EDIT TRUCK MODAL ================= -->
+<div class="modal-backdrop" id="edit-truck-modal">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2>Edit Power Unit (Truck)</h2>
+      <button onclick="closeModal('edit-truck-modal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="edit-truck-form">
+        <input type="hidden" id="edit-truck-id" name="id">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label required" for="edit-truck-num">Truck Number</label>
+            <input type="text" class="form-input" id="edit-truck-num" name="truck_number" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label required" for="edit-truck-equipment-type">Truck Equipment &amp; Size</label>
+            <select class="form-select" id="edit-truck-equipment-type" name="equipment_type" required>
+              <option value="30ft Hotshot">🔥 30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
+              <option value="35ft Hotshot">🔥 35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
+              <option value="40ft Hotshot">🔥 40ft Hotshot (CDL ≤ 24,000 lbs)</option>
+              <option value="53ft Dry Van">🚛 53ft Dry Van</option>
+              <option value="53ft Reefer">❄️ 53ft Reefer (Temp Controlled)</option>
+              <option value="48ft Flatbed">🪵 48ft Flatbed</option>
+              <option value="53ft Flatbed">🪵 53ft Flatbed</option>
+              <option value="Step Deck">📐 Step Deck / Conestoga</option>
+              <option value="26ft Box Truck">📦 26ft Box Truck (≤ 10,000 lbs)</option>
+              <option value="Sprinter Van">🚐 Cargo Van / Sprinter (≤ 4,000 lbs)</option>
+              <option value="Power Only">⚡ Power Only</option>
+              <option value="RGN / Lowboy">🏗️ RGN / Lowboy Heavy Haul</option>
+              <option value="Auto Hauler">🚗 Auto Hauler</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="edit-truck-vin">VIN Number</label>
+            <input type="text" class="form-input" id="edit-truck-vin" name="vin">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-truck-plate">License Plate</label>
+            <input type="text" class="form-input" id="edit-truck-plate" name="plate">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="edit-truck-mileage">Odometer Mileage</label>
+            <input type="number" class="form-input" id="edit-truck-mileage" name="mileage">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-truck-insp-exp">Inspection Expiry</label>
+            <input type="date" class="form-input" id="edit-truck-insp-exp" name="inspection_expiry">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-truck-ins-exp">Insurance Expiry</label>
+            <input type="date" class="form-input" id="edit-truck-ins-exp" name="insurance_expiry">
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:24px;">
+          <button type="button" onclick="closeModal('edit-truck-modal')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Truck Changes →</button>
         </div>
       </form>
     </div>
@@ -633,13 +798,19 @@
             <input type="text" class="form-input" id="trailer-num" name="trailer_number" required placeholder="e.g. TR-502">
           </div>
           <div class="form-group">
-            <label class="form-label" for="trailer-type">Equipment Type</label>
+            <label class="form-label" for="trailer-type">Equipment Type &amp; Length</label>
             <select class="form-select" id="trailer-type" name="type">
-              <option value="Dry Van 53ft">Dry Van 53ft</option>
-              <option value="Reefer 53ft">Reefer 53ft</option>
-              <option value="Flatbed 48ft">Flatbed 48ft</option>
-              <option value="Step Deck">Step Deck</option>
-              <option value="Power Only">Power Only</option>
+              <option value="30ft Hotshot">🔥 30ft Hotshot Gooseneck</option>
+              <option value="35ft Hotshot">🔥 35ft Hotshot Gooseneck</option>
+              <option value="40ft Hotshot">🔥 40ft Hotshot Gooseneck</option>
+              <option value="Dry Van 53ft" selected>🚛 Dry Van 53ft</option>
+              <option value="Reefer 53ft">❄️ Reefer 53ft</option>
+              <option value="Flatbed 48ft">🪵 Flatbed 48ft</option>
+              <option value="Flatbed 53ft">🪵 Flatbed 53ft</option>
+              <option value="Step Deck">📐 Step Deck</option>
+              <option value="RGN / Lowboy">🏗️ RGN / Lowboy</option>
+              <option value="Auto Hauler">🚗 Auto Hauler</option>
+              <option value="Power Only">⚡ Power Only</option>
             </select>
           </div>
         </div>
@@ -676,6 +847,24 @@
   let selectedCarrierId = '';
   let searchQuery = '';
 
+  function normalizeEquipmentOption(rawEq) {
+    const s = String(rawEq || '').toLowerCase();
+    if (s.includes('30') && s.includes('hotshot')) return '30ft Hotshot';
+    if (s.includes('35') && s.includes('hotshot')) return '35ft Hotshot';
+    if (s.includes('40') && s.includes('hotshot')) return '40ft Hotshot';
+    if (s.includes('hotshot')) return '30ft Hotshot';
+    if (s.includes('reefer')) return '53ft Reefer';
+    if (s.includes('48') && s.includes('flatbed')) return '48ft Flatbed';
+    if (s.includes('flatbed')) return '53ft Flatbed';
+    if (s.includes('step')) return 'Step Deck';
+    if (s.includes('box')) return '26ft Box Truck';
+    if (s.includes('sprinter') || s.includes('cargo')) return 'Sprinter Van';
+    if (s.includes('power')) return 'Power Only';
+    if (s.includes('rgn') || s.includes('lowboy')) return 'RGN / Lowboy';
+    if (s.includes('auto') || s.includes('car')) return 'Auto Hauler';
+    return '53ft Dry Van';
+  }
+
   document.addEventListener('DOMContentLoaded', async () => {
     await checkAuth();
     await loadDispatchers();
@@ -696,11 +885,9 @@
       if (!currentUser) { window.location.href = '/login'; return; }
 
       if (currentUser.role === 'carrier') {
-        // Carriers only see their own fleet, hide add carrier button
         const addCarrierBtn = document.getElementById('btn-add-carrier-top');
         if (addCarrierBtn) addCarrierBtn.style.display = 'none';
         document.querySelectorAll('#driver-carrier-field, #truck-carrier-field, #trailer-carrier-field').forEach(el => el.style.display = 'none');
-        // Default carrier view to drivers
         switchFleetTab('drivers');
       }
     } catch (e) {
@@ -789,15 +976,38 @@
     const trailerSelect = document.getElementById('trailer-carrier-select');
 
     const optsWithAll = '<option value="">All Carrier Companies</option>' +
-      allCarriers.map(c => `<option value="${c.id}">${escapeHtml(c.company_name || c.name)}</option>`).join('');
+      allCarriers.map(c => `<option value="${c.id}">${escapeHtml(c.company_name || c.name)} (${escapeHtml(c.equipment_category || '53ft Dry Van')})</option>`).join('');
     const optsRequired = '<option value="">-- Choose Carrier Company --</option>' +
-      allCarriers.map(c => `<option value="${c.id}">${escapeHtml(c.company_name || c.name)}</option>`).join('');
+      allCarriers.map(c => `<option value="${c.id}">${escapeHtml(c.company_name || c.name)} — ${escapeHtml(c.equipment_category || '53ft Dry Van')}</option>`).join('');
 
     if (filterSelect) filterSelect.innerHTML = optsWithAll;
     if (driverSelect) driverSelect.innerHTML = optsRequired;
     if (truckSelect) truckSelect.innerHTML = optsRequired;
     if (trailerSelect) trailerSelect.innerHTML = optsRequired;
   }
+
+  function onTruckCarrierSelectChange(carrierId) {
+    const carrier = allCarriers.find(c => String(c.id) === String(carrierId));
+    if (carrier && carrier.equipment_category) {
+      const eqSel = document.getElementById('truck-equipment-type');
+      if (eqSel) eqSel.value = normalizeEquipmentOption(carrier.equipment_category);
+    }
+  }
+  window.onTruckCarrierSelectChange = onTruckCarrierSelectChange;
+
+  function onDriverCarrierSelectChange(carrierId) {
+    const carrier = allCarriers.find(c => String(c.id) === String(carrierId));
+    if (carrier && carrier.equipment_category) {
+      const eqSel = document.getElementById('driver-equipment-type');
+      if (eqSel) eqSel.value = normalizeEquipmentOption(carrier.equipment_category);
+    }
+    const carrierTruck = allTrucks.find(t => String(t.carrier_id) === String(carrierId));
+    const tSel = document.getElementById('driver-truck-select');
+    if (tSel && carrierTruck) {
+      tSel.value = String(carrierTruck.id);
+    }
+  }
+  window.onDriverCarrierSelectChange = onDriverCarrierSelectChange;
 
   function renderCarriersTable() {
     const tbody = document.getElementById('carriers-table-body');
@@ -815,6 +1025,7 @@
         (c.phone || '').toLowerCase().includes(searchQuery) ||
         (c.mc_number || '').toLowerCase().includes(searchQuery) ||
         (c.dot_number || '').toLowerCase().includes(searchQuery) ||
+        (c.equipment_category || '').toLowerCase().includes(searchQuery) ||
         (c.dispatcher_name || '').toLowerCase().includes(searchQuery)
       );
     }
@@ -832,6 +1043,7 @@
         : `<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;font-weight:700;">🛡️ Direct Admin Operations</span>`;
       const fee = c.dispatch_fee_percent ? `${c.dispatch_fee_percent}%` : '5.0%';
       const mcDot = [c.mc_number ? 'MC: ' + c.mc_number : '', c.dot_number ? 'DOT: ' + c.dot_number : ''].filter(Boolean).join('<br>') || 'N/A';
+      const equip = c.equipment_category || '53ft Dry Van';
 
       return `
         <tr>
@@ -846,8 +1058,11 @@
           </td>
           <td>${dispBadge}</td>
           <td>
-            <span class="badge badge-amber">🚛 ${c.truck_count || 0} Trucks</span>
-            <span class="badge badge-paid">👤 ${c.driver_count || 0} Drivers</span>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span class="badge badge-paid">🔥 ${escapeHtml(equip)}</span>
+              <span class="badge badge-amber">🚛 ${c.truck_count || 0} Trucks</span>
+              <span class="badge badge-booked">👤 ${c.driver_count || 0} Drivers</span>
+            </div>
           </td>
           <td><strong style="color:var(--brand-primary);">${fee}</strong></td>
           <td>
@@ -856,6 +1071,7 @@
           <td>
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               <span class="quick-add-link" onclick="openAddDriverForCarrier(${c.id})">+ Add Driver</span>
+              <span class="quick-add-link" onclick="openAddTruckForCarrier(${c.id})">+ Add Truck</span>
               <button class="btn btn-secondary btn-sm" onclick="openEditCarrierModal(${c.id})">Edit</button>
               <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteCarrier(${c.id})">Deactivate</button>
             </div>
@@ -897,6 +1113,7 @@
         (d.phone || '').toLowerCase().includes(searchQuery) ||
         (d.email || '').toLowerCase().includes(searchQuery) ||
         (d.truck_number || '').toLowerCase().includes(searchQuery) ||
+        (d.equipment_type || '').toLowerCase().includes(searchQuery) ||
         (d.license_number || '').toLowerCase().includes(searchQuery)
       );
     }
@@ -921,7 +1138,12 @@
         </td>
         <td>${escapeHtml(d.license_number || 'N/A')}<br><span style="font-size:10px;color:var(--text-muted);">${(d.cdl_expiry || '').split('T')[0] || ''}</span></td>
         <td>${(d.medical_expiry || '').split('T')[0] || 'N/A'}</td>
-        <td><span class="badge badge-amber">${d.truck_number ? 'Truck #' + escapeHtml(d.truck_number) : 'Unassigned'}</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span class="badge badge-amber">${d.truck_number ? '🚛 Truck #' + escapeHtml(d.truck_number) : 'Unassigned'}</span>
+            <span class="badge badge-paid">🔥 ${escapeHtml(d.equipment_type || '53ft Dry Van')}</span>
+          </div>
+        </td>
         <td><span class="badge ${d.status === 'available' ? 'badge-paid' : 'badge-booked'}">${escapeHtml(d.status || 'available')}</span></td>
         <td>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -951,8 +1173,8 @@
   }
 
   function populateTruckSelects() {
-    const opts = '<option value="">-- No Truck Assigned --</option>' +
-      allTrucks.map(t => `<option value="${t.id}">Truck #${escapeHtml(t.truck_number)} (${escapeHtml(t.carrier_company || 'Carrier')})</option>`).join('');
+    const opts = '<option value="">-- Auto-Assign Carrier Truck --</option>' +
+      allTrucks.map(t => `<option value="${t.id}">Truck #${escapeHtml(t.truck_number)} — ${escapeHtml(t.equipment_type || '53ft Dry Van')} (${escapeHtml(t.carrier_company || 'Carrier')})</option>`).join('');
     const sel1 = document.getElementById('driver-truck-select');
     const sel2 = document.getElementById('edit-driver-truck-select');
     if (sel1) sel1.innerHTML = opts;
@@ -971,6 +1193,7 @@
       filtered = filtered.filter(t =>
         (t.truck_number || '').toLowerCase().includes(searchQuery) ||
         (t.carrier_company || '').toLowerCase().includes(searchQuery) ||
+        (t.equipment_type || '').toLowerCase().includes(searchQuery) ||
         (t.vin || '').toLowerCase().includes(searchQuery) ||
         (t.plate || '').toLowerCase().includes(searchQuery)
       );
@@ -983,15 +1206,21 @@
 
     tbody.innerHTML = filtered.map(t => `
       <tr>
-        <td><strong style="color:var(--text-primary);">Truck #${escapeHtml(t.truck_number)}</strong></td>
+        <td><strong style="color:var(--text-primary);">🚛 Truck #${escapeHtml(t.truck_number)}</strong></td>
         <td><span class="badge badge-carrier">${escapeHtml(t.carrier_company || t.carrier_name || 'Fleet Client')}</span></td>
-        <td style="font-family:monospace;font-size:12px;">${escapeHtml(t.vin || 'N/A')}</td>
-        <td>${escapeHtml(t.plate || 'N/A')}</td>
+        <td><span class="badge badge-paid">🔥 ${escapeHtml(t.equipment_type || '53ft Dry Van')}</span></td>
+        <td style="font-family:monospace;font-size:12px;">
+          ${escapeHtml(t.vin || 'N/A')}
+          ${t.plate ? `<br><span style="color:var(--text-muted);">Plate: ${escapeHtml(t.plate)}</span>` : ''}
+        </td>
         <td>${(t.inspection_expiry || '').split('T')[0] || 'N/A'}</td>
         <td>${(t.insurance_expiry || '').split('T')[0] || 'N/A'}</td>
         <td>${t.mileage ? Number(t.mileage).toLocaleString() + ' mi' : 'N/A'}</td>
         <td>
-          <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteTruck(${t.id})">Delete</button>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button class="btn btn-secondary btn-sm" onclick="openEditTruckModal(${t.id})">Edit</button>
+            <button class="btn btn-light btn-sm" style="color:var(--color-red-500);" onclick="deleteTruck(${t.id})">Delete</button>
+          </div>
         </td>
       </tr>
     `).join('');
@@ -1051,10 +1280,23 @@
   // ================= QUICK ACTIONS =================
   function openAddDriverForCarrier(carrierId) {
     const sel = document.getElementById('driver-carrier-select');
-    if (sel) sel.value = String(carrierId);
+    if (sel) {
+      sel.value = String(carrierId);
+      onDriverCarrierSelectChange(carrierId);
+    }
     openModal('new-driver-modal');
   }
   window.openAddDriverForCarrier = openAddDriverForCarrier;
+
+  function openAddTruckForCarrier(carrierId) {
+    const sel = document.getElementById('truck-carrier-select');
+    if (sel) {
+      sel.value = String(carrierId);
+      onTruckCarrierSelectChange(carrierId);
+    }
+    openModal('new-truck-modal');
+  }
+  window.openAddTruckForCarrier = openAddTruckForCarrier;
 
   function openEditCarrierModal(carrierId) {
     const carrier = allCarriers.find(c => Number(c.id) === Number(carrierId));
@@ -1069,6 +1311,8 @@
     document.getElementById('edit-carrier-dot').value = carrier.dot_number || '';
     document.getElementById('edit-carrier-fee').value = carrier.dispatch_fee_percent || '5.0';
     document.getElementById('edit-carrier-dispatcher-select').value = carrier.dispatcher_id || '';
+    const eqSel = document.getElementById('edit-carrier-equipment');
+    if (eqSel) eqSel.value = normalizeEquipmentOption(carrier.equipment_category || '53ft Dry Van');
     openModal('edit-carrier-modal');
   }
   window.openEditCarrierModal = openEditCarrierModal;
@@ -1086,9 +1330,27 @@
     document.getElementById('edit-driver-cdl-exp').value = (driver.cdl_expiry || '').split('T')[0] || '';
     document.getElementById('edit-driver-med-exp').value = (driver.medical_expiry || '').split('T')[0] || '';
     document.getElementById('edit-driver-status').value = driver.status || 'available';
+    const eqSel = document.getElementById('edit-driver-equipment-type');
+    if (eqSel) eqSel.value = normalizeEquipmentOption(driver.equipment_type || '53ft Dry Van');
     openModal('edit-driver-modal');
   }
   window.openEditDriverModal = openEditDriverModal;
+
+  function openEditTruckModal(truckId) {
+    const truck = allTrucks.find(t => Number(t.id) === Number(truckId));
+    if (!truck) return;
+    document.getElementById('edit-truck-id').value = truck.id;
+    document.getElementById('edit-truck-num').value = truck.truck_number || '';
+    document.getElementById('edit-truck-vin').value = truck.vin || '';
+    document.getElementById('edit-truck-plate').value = truck.plate || '';
+    document.getElementById('edit-truck-mileage').value = truck.mileage || '';
+    document.getElementById('edit-truck-insp-exp').value = (truck.inspection_expiry || '').split('T')[0] || '';
+    document.getElementById('edit-truck-ins-exp').value = (truck.insurance_expiry || '').split('T')[0] || '';
+    const eqSel = document.getElementById('edit-truck-equipment-type');
+    if (eqSel) eqSel.value = normalizeEquipmentOption(truck.equipment_type || '53ft Dry Van');
+    openModal('edit-truck-modal');
+  }
+  window.openEditTruckModal = openEditTruckModal;
 
   // ================= FORM SUBMISSIONS =================
 
@@ -1107,8 +1369,8 @@
       if (res.ok) {
         e.target.reset();
         closeModal('new-carrier-modal');
-        if (window.swToast) window.swToast('Carrier company registered successfully!', 'success');
-        await loadCarriers();
+        if (window.swToast) window.swToast('Carrier company, default truck & driver registered!', 'success');
+        await Promise.all([loadCarriers(), loadDrivers(), loadTrucks()]);
       } else {
         if (window.swAlert) await window.swAlert({ title: 'Error', message: result.error || 'Failed to create carrier company', icon: 'error' });
         else alert(result.error || 'Failed to create carrier');
@@ -1133,8 +1395,8 @@
       const result = await res.json().catch(() => ({}));
       if (res.ok) {
         closeModal('edit-carrier-modal');
-        if (window.swToast) window.swToast('Carrier company updated!', 'success');
-        await loadCarriers();
+        if (window.swToast) window.swToast('Carrier company & equipment updated!', 'success');
+        await Promise.all([loadCarriers(), loadDrivers(), loadTrucks()]);
       } else {
         if (window.swAlert) await window.swAlert({ title: 'Error', message: result.error || 'Failed to update carrier', icon: 'error' });
       }
@@ -1160,8 +1422,7 @@
         closeModal('new-driver-modal');
         const msg = result.user_created ? 'Driver added & phone app login created!' : 'Driver added successfully';
         if (window.swToast) window.swToast(msg, 'success');
-        await loadDrivers();
-        await loadCarriers(); // Updates driver counts
+        await Promise.all([loadDrivers(), loadTrucks(), loadCarriers()]);
       } else {
         if (window.swAlert) await window.swAlert({ title: 'Error', message: result.error || 'Failed to add driver', icon: 'error' });
       }
@@ -1185,8 +1446,8 @@
       const result = await res.json().catch(() => ({}));
       if (res.ok) {
         closeModal('edit-driver-modal');
-        if (window.swToast) window.swToast('Driver details updated!', 'success');
-        await loadDrivers();
+        if (window.swToast) window.swToast('Driver details & equipment updated!', 'success');
+        await Promise.all([loadDrivers(), loadTrucks(), loadCarriers()]);
       } else {
         if (window.swAlert) await window.swAlert({ title: 'Error', message: result.error || 'Failed to update driver', icon: 'error' });
       }
@@ -1207,12 +1468,32 @@
     if (res.ok) {
       e.target.reset();
       closeModal('new-truck-modal');
-      if (window.swToast) window.swToast('Truck added successfully', 'success');
-      await loadTrucks();
-      await loadCarriers(); // Updates truck counts
+      if (window.swToast) window.swToast('Truck & equipment added successfully', 'success');
+      await Promise.all([loadTrucks(), loadDrivers(), loadCarriers()]);
     } else {
       const err = await res.json().catch(() => ({}));
       if (window.swAlert) await window.swAlert({ title: 'Error', message: err.error || 'Could not add truck', icon: 'error' });
+    }
+  });
+
+  // 5b. Edit Truck
+  document.getElementById('edit-truck-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('edit-truck-id').value;
+    const data = Object.fromEntries(new FormData(e.target));
+    const res = await fetch(`/api/fleet/trucks/${id}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (res.ok) {
+      closeModal('edit-truck-modal');
+      if (window.swToast) window.swToast('Truck & equipment updated!', 'success');
+      await Promise.all([loadTrucks(), loadDrivers(), loadCarriers()]);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      if (window.swAlert) await window.swAlert({ title: 'Error', message: err.error || 'Could not update truck', icon: 'error' });
     }
   });
 
@@ -1406,6 +1687,6 @@
   }
 </script>
 
-<script src="/js/app-shell.js?v=37"></script>
+<script src="/js/app-shell.js?v=38"></script>
 </body>
 </html>
