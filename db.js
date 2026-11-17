@@ -33,6 +33,20 @@ function findConnectionString() {
 
 const rawConnStr = findConnectionString();
 
+// SSL for hosted Postgres. Certificate validation is ON by default.
+//   DB_SSL_MODE=disable              -> no SSL (local/dev only)
+//   DB_SSL_CA=<PEM text>             -> validate against a custom CA (use \n for newlines)
+//   DB_SSL_REJECT_UNAUTHORIZED=false -> explicit, logged opt-out (temporary workaround only)
+function buildSslConfig() {
+  if ((process.env.DB_SSL_MODE || '').toLowerCase() === 'disable') return false;
+  if (process.env.DB_SSL_REJECT_UNAUTHORIZED === 'false') {
+    console.warn('[DB] SSL certificate validation is DISABLED via DB_SSL_REJECT_UNAUTHORIZED=false');
+    return { rejectUnauthorized: false };
+  }
+  const ca = process.env.DB_SSL_CA ? process.env.DB_SSL_CA.replace(/\\n/g, '\n') : undefined;
+  return ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: true };
+}
+
 let pool;
 if (global._pgPool) {
   pool = global._pgPool;
@@ -43,7 +57,7 @@ if (global._pgPool) {
 
     pool = new Pool({
       connectionString: cleanConnStr,
-      ssl: isLocal ? false : { rejectUnauthorized: false },
+      ssl: isLocal ? false : buildSslConfig(),
       max: 10,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 3000
