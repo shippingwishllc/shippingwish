@@ -239,7 +239,7 @@ async function handleSendOutreach(req, res) {
       try {
         const { sendTwilioSms } = require('./voip');
         const { logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
-        const smsBody = `Hi ${ownerName || lead.owner_name || 'there'}, Shipping Wish LLC sent load details to ${toAddress}. Check your email or reply YES to connect.`;
+        const smsBody = `Hi ${lead.owner_name || 'there'}, Shipping Wish LLC sent load details to ${toAddress}. Check your email or reply YES to connect.`;
         const sent = await sendTwilioSms(lead.phone, smsBody);
         await logSmsMessage({
           direction: 'outbound',

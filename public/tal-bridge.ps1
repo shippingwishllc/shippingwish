@@ -56,6 +56,7 @@ while ($true) {
                     try {
                         $webClient = New-Object System.Net.WebClient
                         $webClient.Headers.Add("Content-Type", "application/json; charset=utf-8")
+                        if ($env:SW_BRIDGE_KEY) { $webClient.Headers.Add("x-bridge-key", $env:SW_BRIDGE_KEY) }
                         $responseJson = $webClient.UploadString($apiUrl, "POST", $body)
                         $response = $responseJson | ConvertFrom-Json
 

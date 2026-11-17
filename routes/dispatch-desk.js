@@ -25,6 +25,21 @@ const router = express.Router();
 const staff = [requireAuth, requireRole('admin', 'super_admin', 'dispatcher')];
 const driverOrStaff = [requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'driver', 'carrier')];
 
+// TAL One bridge (PowerShell script / Chrome extension) authenticates with a shared key
+// sent in the x-bridge-key header (env DAT_BRIDGE_KEY). Otherwise a staff session is required.
+function bridgeOrStaff(req, res, next) {
+  const nodeCrypto = require('crypto');
+  const key = String(process.env.DAT_BRIDGE_KEY || '');
+  const provided = String(req.headers['x-bridge-key'] || '');
+  if (key && provided.length === key.length && nodeCrypto.timingSafeEqual(Buffer.from(provided), Buffer.from(key))) {
+    return next();
+  }
+  return requireAuth(req, res, (err) => {
+    if (err) return next(err);
+    return requireRole('admin', 'super_admin', 'dispatcher')(req, res, next);
+  });
+}
+
 function maskKey(value) {
   const text = String(value || '');
   if (!text) return '';
@@ -238,7 +253,7 @@ router.post('/preview', ...staff, async (req, res) => {
     await ensureBoardSchema();
     const text = String(req.body.text || '').trim().slice(0, 600);
     if (!text) return res.status(400).json({ error: 'Type a carrier message to test.' });
-    let carrier = { id: 0, company_name: 'Test carrier', equipment: t.equipment_type || t.driver_equipment || '53ft Dry Van', max_deadhead: 150 };
+    let carrier = { id: 0, company_name: 'Test carrier', equipment: req.body.equipment_type || req.body.driver_equipment || '53ft Dry Van', max_deadhead: 150 };
     if (req.body.carrier_id) {
       const { rows } = await pool.query('SELECT * FROM ai_dispatch_carriers WHERE id = $1', [req.body.carrier_id]);
       if (!rows[0]) return res.status(404).json({ error: 'Carrier not found.' });
@@ -1102,7 +1117,7 @@ router.post('/dat-cloud/sync-now', ...staff, async (req, res) => {
  * POST /api/dispatch/sync-dat-bulk (and /api/dispatch-desk/sync-dat-bulk)
  * Autonomous Bulk Ingestion & Live Sync from DAT One / Extension
  */
-router.post('/sync-dat-bulk', optionalAuth, async (req, res) => {
+router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
   try {
     await ensureBoardSchema();
     const rawInput = String(req.body.rawText || req.body.text || '').trim();
@@ -1123,6 +1138,7 @@ router.post('/sync-dat-bulk', optionalAuth, async (req, res) => {
       }
     }
 
+    let loadsToProcess = [];
     if (Array.isArray(req.body.loads) && req.body.loads.length > 0) {
       loadsToProcess = req.body.loads;
     } else if (rawInput) {

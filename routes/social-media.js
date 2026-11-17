@@ -9,6 +9,27 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
+const nodeCrypto = require('crypto');
+const { requireAuth, requireRole } = require('../middleware/auth');
+
+// Everything under /api/social needs an admin session, except:
+//  - OAuth callbacks, the Meta webhook and public image/link endpoints (called by third parties / visitors)
+//  - /cron/tick, which needs "Authorization: Bearer <CRON_SECRET>" (Vercel Cron sends this automatically)
+const SOCIAL_PUBLIC = [/^\/public-links\/?$/, /^\/image\/[^/]+\/?$/, /^\/callback\/(linkedin|tiktok|meta)\/?$/, /^\/webhook\/meta\/?$/];
+router.use((req, res, next) => {
+  if (SOCIAL_PUBLIC.some((re) => re.test(req.path))) return next();
+  if (req.path === '/cron/tick') {
+    const secret = String(process.env.CRON_SECRET || '');
+    const got = String(req.headers.authorization || '');
+    const want = `Bearer ${secret}`;
+    if (secret && got.length === want.length && nodeCrypto.timingSafeEqual(Buffer.from(got), Buffer.from(want))) return next();
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  return requireAuth(req, res, (err) => {
+    if (err) return next(err);
+    return requireRole('admin', 'super_admin')(req, res, next);
+  });
+});
 const {
   BRANDS,
   ensureSocialSchema,

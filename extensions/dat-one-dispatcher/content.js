@@ -92,7 +92,7 @@ function injectDispatchButtons() {
       const panel = header.closest('[data-testid="load-details"], [class*="detail"], .drawer') || document.body;
       const textToParse = panel.innerText;
 
-      const { apiUrl = 'https://shippingwish.com' } = await chrome.storage.local.get('apiUrl');
+      const { apiUrl = 'https://shippingwish.com', bridgeKey = '' } = await chrome.storage.local.get(['apiUrl', 'bridgeKey']);
 
       try {
         const res = await fetch(`${apiUrl}/api/dispatch-desk/parse-dat-loads`, {
@@ -228,7 +228,7 @@ async function syncAllVisibleLoads(isSilent = false) {
   try {
     const res = await fetch(`${apiUrl}/api/dispatch-desk/sync-dat-bulk`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(bridgeKey ? { 'x-bridge-key': bridgeKey } : {}) },
       body: JSON.stringify({ rawText: textPayload })
     });
     const data = await res.json();
