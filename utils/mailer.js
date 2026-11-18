@@ -150,6 +150,7 @@ async function sendBrandedEmail({
 
   const fromEmail = (String(from).match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i) || [null])[0];
   const bodyHtmlToLog = html || null;
+  const bodyTextToLog = text || (html ? String(html).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : null);
   try {
     await pool.query(
       `INSERT INTO email_logs (lead_id, recipient_email, subject, email_type, status, resend_id, sent_by, template_key, from_email, body_text, body_html)

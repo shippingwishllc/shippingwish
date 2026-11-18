@@ -212,6 +212,7 @@ while ($true) {
                     try {
                         $webClient = New-Object System.Net.WebClient
                         $webClient.Headers.Add("Content-Type", "application/json; charset=utf-8")
+                        if ($env:SW_BRIDGE_KEY) { $webClient.Headers.Add("x-bridge-key", $env:SW_BRIDGE_KEY) }
                         $responseJson = $webClient.UploadString($apiUrl, "POST", $body)
                         $response = $responseJson | ConvertFrom-Json
 
@@ -294,7 +295,7 @@ while ($true) {
 
                                     $postBody = @{ rawText = $textToPush } | ConvertTo-Json
                                     $apiRes = Invoke-RestMethod -Uri "https://www.shippingwish.com/api/dispatch/sync-dat-bulk" -Method Post -Body $postBody -ContentType "application/json" -TimeoutSec 15
-
+                                    -Headers @{ "x-bridge-key" = $env:SW_BRIDGE_KEY }
                                     if ($apiRes.ok) {
                                         Write-Host "[$timestamp] ✅ ZERO-CLICK SYNC SUCCESS! Processed $($apiRes.total_received) loads:" -ForegroundColor Green
                                         Write-Host "              • +$($apiRes.inserted_count) new loads live on LoadsNexus" -ForegroundColor Green

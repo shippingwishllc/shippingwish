@@ -541,13 +541,9 @@ router.all('/twilio-inbound', async (req, res) => {
 });
 
 // GET /api/voip/test-whatsapp — diagnostic trigger
-router.get('/test-whatsapp', async (req, res) => {
-  const secret = String(req.query.secret || '').trim();
-  const allowed = (secret === 'sw_test_wa_2026') || (process.env.SUPER_ADMIN_PASSWORD && secret === process.env.SUPER_ADMIN_PASSWORD);
-  if (!allowed) {
-    return res.status(403).json({ error: 'Unauthorized test trigger' });
-  }
-  const to = req.query.to || '+923336122008';
+router.get('/test-whatsapp', requireAuth, requireRole('super_admin'), async (req, res) => {
+  const to = String(req.query.to || '').trim();
+  if (!to) return res.status(400).json({ error: 'Provide ?to=+E164 number.' });
   const msg = req.query.msg || `🚛 SHIPPING WISH DISPATCH | LIVE TEST\nHello! This is an official live WhatsApp verification test from Shipping Wish LLC (+16094696004). Please reply to confirm receipt.`;
   const sent = await sendTwilioWhatsApp(to, msg);
   res.json({

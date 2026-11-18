@@ -840,7 +840,12 @@ async function seedAdminUsers() {
 
     // Auto-ensure configured ADMIN_EMAILS exist as admin accounts
     const adminEmails = [process.env.ADMIN_EMAIL_1, process.env.ADMIN_EMAIL_2].filter(Boolean);
-    const initialAdminPass = process.env.SUPER_ADMIN_PASSWORD || 'ShippingWish2026!';
+    // No hardcoded fallback: bootstrap password must come from the environment.
+    const initialAdminPass = process.env.ADMIN_BOOTSTRAP_PASSWORD || process.env.SUPER_ADMIN_PASSWORD;
+    if (adminEmails.length && !initialAdminPass) {
+      console.warn('[SEED] ADMIN_EMAIL_1/2 are set but no ADMIN_BOOTSTRAP_PASSWORD or SUPER_ADMIN_PASSWORD; skipping admin auto-seed.');
+      return;
+    }
     for (const rawEmail of adminEmails) {
       const email = String(rawEmail).trim().toLowerCase();
       if (!email) continue;
@@ -874,28 +879,11 @@ function runTrashAutoPurge() {
     .catch((err) => console.warn('[TRASH] startup purge skipped:', err.message));
 }
 
-async function cleanFakeLoads() {
-  try {
-    const res = await pool.query(`
-      DELETE FROM loads 
-      WHERE load_number LIKE 'SW-AI-%' 
-         OR broker_name ILIKE '%LoadNexus Direct%' 
-         OR broker_contact ILIKE '%LoadNexus Direct%'
-    `);
-    if (res.rowCount > 0) {
-      console.log(`[LOADBOARD] Purged ${res.rowCount} fake SW-AI loads on startup.`);
-    }
-  } catch (err) {
-    console.warn('[LOADBOARD] cleanup note:', err.message);
-  }
-}
-
 if (require.main === module) {
   ensureGrowthSchema()
     .then(backfillCarrierTrials)
     .then(seedAdminUsers)
     .then(runTrashAutoPurge)
-    .then(cleanFakeLoads)
     .catch((err) => console.warn('[STARTUP] Initialization note:', err.message))
     .then(() => {
       app.listen(PORT, () => {

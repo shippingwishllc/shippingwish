@@ -951,6 +951,7 @@ async function handleTrialSignupCheckoutRequest(req, res) {
       return res.status(400).json({ error: 'Phone number is required.' });
     }
     const mc = String(mc_number || mcNumber || '').trim();
+    const dot = String(dot_number || dotNumber || '').trim();
     const isBrokerSignup = req.body.role === 'broker' || plan_key === 'free_broker';
     if (isBrokerSignup) {
       await pool.query("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'broker'").catch(() => {});
