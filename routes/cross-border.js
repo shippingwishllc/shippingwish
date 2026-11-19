@@ -463,7 +463,7 @@ router.get('/manifests/:id', requireAuth, async (req, res) => {
 // GET /api/cross-border/manifests/:id/packet-pdf
 // Vector PDF CBP Form 7512 / ACE e-Manifest Customs Clearance Packet
 // -------------------------------------------------------------
-router.get('/manifests/:id/packet-pdf', optionalAuth, async (req, res) => {
+router.get('/manifests/:id/packet-pdf', requireAuth, async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;

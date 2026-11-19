@@ -57,7 +57,7 @@ async function getLoadContractData(loadId) {
 }
 
 // GET /api/loads/:id/ratecon/preview — Contract data preview
-router.get('/:id/ratecon/preview', optionalAuth, async (req, res) => {
+router.get('/:id/ratecon/preview', requireAuth, async (req, res) => {
   await ensureTable();
   const loadId = parseInt(req.params.id, 10);
   if (isNaN(loadId)) return res.status(400).json({ error: 'Invalid load ID.' });
@@ -131,7 +131,7 @@ router.get('/:id/ratecon/preview', optionalAuth, async (req, res) => {
 });
 
 // GET /api/loads/:id/ratecon/pdf — Official Vector PDF Generator
-router.get('/:id/ratecon/pdf', optionalAuth, async (req, res) => {
+router.get('/:id/ratecon/pdf', requireAuth, async (req, res) => {
   await ensureTable();
   const loadId = parseInt(req.params.id, 10);
   if (isNaN(loadId)) return res.status(400).json({ error: 'Invalid load ID.' });

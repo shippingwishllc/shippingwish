@@ -586,7 +586,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 // GET /api/carrier-credentialing/:id/packet-pdf
 // Generates official PDFKit Vector Carrier Dossier & Agreement
 // -------------------------------------------------------------
-router.get('/:id/packet-pdf', optionalAuth, async (req, res) => {
+router.get('/:id/packet-pdf', requireAuth, async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;

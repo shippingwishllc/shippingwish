@@ -829,7 +829,7 @@ router.get('/transactions/:id', requireAuth, async (req, res) => {
 // GET /api/edi-gateway/transactions/:id/download
 // Download raw .edi document file (supports optional auth / direct link)
 // -------------------------------------------------------------
-router.get('/transactions/:id/download', optionalAuth, async (req, res) => {
+router.get('/transactions/:id/download', requireAuth, async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;

@@ -711,7 +711,7 @@ router.get('/shipments/:id', requireAuth, async (req, res) => {
 // GET /api/drayage-intermodal/shipments/:id/eir-pdf
 // Streams Vector PDF Equipment Interchange Receipt & Demurrage Shield Packet
 // -------------------------------------------------------------
-router.get('/shipments/:id/eir-pdf', optionalAuth, async (req, res) => {
+router.get('/shipments/:id/eir-pdf', requireAuth, async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;
