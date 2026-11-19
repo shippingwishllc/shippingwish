@@ -578,12 +578,94 @@ router.post('/stripe-webhook', express.raw({ type: 'application/json' }), async 
     res.status(400).send(`Webhook Error: ${err.message}`);
   }
 });
+// ---- Custom invoice helpers (used by POST /create-custom) ----
+function escapeHtml(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function formatUsd(n) {
+  return Number(n || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+}
+function generateInvoiceHtml(d) {
+  const e = escapeHtml;
+  const paid = String(d.status).toLowerCase() === 'paid';
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invoice ${e(d.invoiceNumber)} | Shipping Wish LLC</title>
+<style>
+body{font-family:Inter,Arial,sans-serif;background:#f4f7fb;color:#0f172a;margin:0;padding:24px}
+.card{max-width:760px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 12px rgba(15,23,42,.08)}
+h1{margin:0 0 4px;font-size:22px}.muted{color:#64748b;font-size:13px}
+.row{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:20px 0}
+table{width:100%;border-collapse:collapse;margin-top:16px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e2e8f0;font-size:14px}
+.total{font-size:20px;font-weight:700;text-align:right;margin-top:16px}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;background:${paid ? '#dcfce7' : '#fef3c7'};color:${paid ? '#166534' : '#92400e'}}
+</style></head><body><div class="card">
+<h1>Shipping Wish LLC</h1>
+<div class="muted">19266 Coastal Hwy, Rehoboth Beach, DE 19971 &middot; info@shippingwish.com &middot; +1 (917) 737-0021</div>
+<div class="row"><div><strong>INVOICE</strong><br>#${e(d.invoiceNumber)}<br><span class="badge">${paid ? 'PAID' : 'PAYMENT DUE'}</span></div>
+<div class="muted">Issued: ${e(d.issueDate)}<br>Due: ${e(d.dueDate)}</div></div>
+<div><strong>Billed to</strong><br>${e(d.clientName)}${d.clientAddress ? '<br>' + e(d.clientAddress) : ''}${d.clientEmail ? '<br>' + e(d.clientEmail) : ''}${d.clientPhone ? '<br>' + e(d.clientPhone) : ''}</div>
+<table><thead><tr><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
+<tbody><tr><td>${e(d.description || 'Services')}</td><td style="text-align:right">${formatUsd(d.amount)}</td></tr></tbody></table>
+<div class="total">Total: ${formatUsd(d.amount)}</div>
+${d.memo ? '<p class="muted"><strong>Memo:</strong> ' + e(d.memo) + '</p>' : ''}
+</div></body></html>`;
+}
+function generateInvoicePdf(d) {
+  return new Promise((resolve, reject) => {
+    try {
+      const PDFDocument = require('pdfkit');
+      const fname = `Invoice_${d.invoiceNumber}.pdf`;
+      const fpath = path.join(PUBLIC_INVOICE_DIR, fname);
+      const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
+      const stream = fs.createWriteStream(fpath);
+      stream.on('finish', () => resolve(fname));
+      stream.on('error', reject);
+      doc.pipe(stream);
+      const paid = String(d.status).toLowerCase() === 'paid';
+      doc.rect(0, 0, 612, 96).fill('#0f172a');
+      doc.fillColor('#f59e0b').font('Helvetica-Bold').fontSize(20).text('SHIPPING WISH LLC', 40, 28);
+      doc.fillColor('#cbd5e1').font('Helvetica').fontSize(9)
+        .text('19266 Coastal Hwy, Rehoboth Beach, DE 19971 | info@shippingwish.com | +1 (917) 737-0021', 40, 56);
+      doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(16).text('INVOICE', 40, 120);
+      doc.font('Helvetica').fontSize(10).fillColor('#475569')
+        .text(`Invoice #: ${d.invoiceNumber}`, 380, 120, { width: 192, align: 'right' })
+        .text(`Issued: ${d.issueDate}   Due: ${d.dueDate}`, 380, 134, { width: 192, align: 'right' })
+        .text(paid ? 'Status: PAID' : 'Status: PAYMENT DUE', 380, 148, { width: 192, align: 'right' });
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#94a3b8').text('BILLED TO', 40, 180);
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('#0f172a').text(String(d.clientName), 40, 194);
+      doc.font('Helvetica').fontSize(9).fillColor('#475569');
+      let y = 210;
+      for (const line of [d.clientAddress, d.clientEmail, d.clientPhone]) {
+        if (line) { doc.text(String(line), 40, y); y += 12; }
+      }
+      y = Math.max(y + 20, 260);
+      doc.moveTo(40, y).lineTo(572, y).strokeColor('#e2e8f0').stroke();
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#94a3b8').text('DESCRIPTION', 40, y + 10).text('AMOUNT', 440, y + 10, { width: 132, align: 'right' });
+      doc.font('Helvetica').fontSize(11).fillColor('#0f172a')
+        .text(String(d.description || 'Services'), 40, y + 30, { width: 380 })
+        .text(formatUsd(d.amount), 440, y + 30, { width: 132, align: 'right' });
+      doc.font('Helvetica-Bold').fontSize(14).text(`Total: ${formatUsd(d.amount)}`, 340, y + 90, { width: 232, align: 'right' });
+      if (d.memo) doc.font('Helvetica').fontSize(9).fillColor('#475569').text(`Memo: ${d.memo}`, 40, y + 130, { width: 532 });
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 // Custom Invoice Generation Endpoint for Admins & Dispatchers
 router.post('/create-custom', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
   const { clientName, clientEmail, clientPhone, clientAddress, description, amount, status, memo, dueDate } = req.body;
 
   if (!clientName || !amount) {
     return res.status(400).json({ error: 'Client Name and Amount are required.' });
+  }
+  const amt = parseFloat(amount);
+  if (!Number.isFinite(amt) || amt <= 0 || amt > 10000000) {
+    return res.status(400).json({ error: 'Amount must be a positive number.' });
   }
 
   const invoiceNumber = `SW-${Math.floor(100000 + Math.random() * 900000)}`;

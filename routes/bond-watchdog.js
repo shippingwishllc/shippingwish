@@ -651,7 +651,7 @@ router.get('/claims/:id', requireAuth, async (req, res) => {
 // GET /api/bond-watchdog/claims/:id/packet-pdf
 // Generates formal Vector PDF Legal Notice of Claim & Demand
 // -------------------------------------------------------------
-router.get('/claims/:id/packet-pdf', optionalAuth, async (req, res) => {
+router.get('/claims/:id/packet-pdf', requireAuth, async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;

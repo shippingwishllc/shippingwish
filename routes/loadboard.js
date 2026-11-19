@@ -941,7 +941,7 @@ router.get('/search', optionalAuth, async (req, res) => {
 });
 
 // 2. AI Load Matcher (OpenAI / Smart Algorithm with Date, Hotshot Length ft & Weight lbs Filtering)
-router.post('/ai-match', optionalAuth, async (req, res) => {
+router.post('/ai-match', requireAuth, async (req, res) => {
   const { carrierId, currentCity, desiredDestination, equipmentType, targetRpm, dho, dhd, pickupDate, maxLength, maxWeight } = req.body;
   try {
     const cleanOrigin = String(currentCity || '').replace(/,\s*US(?:A)?$/i, '').trim();
@@ -2110,7 +2110,7 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
 });
 
 // GET /api/loadboard/broker/my-loads — Broker's active posted loads
-router.get('/broker/my-loads', optionalAuth, async (req, res) => {
+router.get('/broker/my-loads', requireAuth, async (req, res) => {
   try {
     await pool.query(`
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_name TEXT;
@@ -2349,7 +2349,7 @@ async function dispatchLaneAlerts(load) {
 }
 
 // GET /api/loadboard/lane-alerts — Retrieve active alerts
-router.get('/lane-alerts', optionalAuth, async (req, res) => {
+router.get('/lane-alerts', requireAuth, async (req, res) => {
   await ensureCarrierLaneAlertsTable();
   try {
     const userId = req.user ? req.user.id : null;
@@ -2370,7 +2370,7 @@ router.get('/lane-alerts', optionalAuth, async (req, res) => {
 });
 
 // POST /api/loadboard/lane-alerts — Create new persistent carrier lane alert
-router.post('/lane-alerts', optionalAuth, async (req, res) => {
+router.post('/lane-alerts', requireAuth, async (req, res) => {
   await ensureCarrierLaneAlertsTable();
   const { origin, destination, equipment, minRpm, contactPhone, contactEmail, notifySms, notifyEmail } = req.body;
   
@@ -2603,7 +2603,7 @@ router.get('/superadmin/audit-feed', requireAuth, requireRole('super_admin', 'ad
 });
 
 // GET /api/loadboard/loads/:id/ratecon-pdf — Instant Vector Rate Confirmation PDF
-router.get('/loads/:id/ratecon-pdf', optionalAuth, async (req, res) => {
+router.get('/loads/:id/ratecon-pdf', requireAuth, async (req, res) => {
   try {
     const rawId = req.params.id;
     const cleanId = String(rawId || '').trim();
@@ -2706,14 +2706,14 @@ router.get('/loads/:id/ratecon-pdf', optionalAuth, async (req, res) => {
 });
 
 // GET /api/loadboard/ratecon-pdf — Alias endpoint with query params
-router.get('/ratecon-pdf', optionalAuth, (req, res) => {
+router.get('/ratecon-pdf', requireAuth, (req, res) => {
   const loadId = req.query.id || req.query.load_id || 'SW-2601';
   req.params = { id: loadId };
   router.handle({ ...req, url: `/loads/${loadId}/ratecon-pdf` }, res);
 });
 
 // POST /api/loadboard/loads/:id/cover — Mark a load as COVERED (Auto-fades out of active exchange)
-router.post('/loads/:id/cover', optionalAuth, async (req, res) => {
+router.post('/loads/:id/cover', requireAuth, requireRole('broker', 'admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
   const loadId = req.params.id;
   try {
     // If it exists in PostgreSQL database, update its status
@@ -2743,7 +2743,7 @@ router.post('/loads/:id/cover', optionalAuth, async (req, res) => {
 });
 
 // POST /api/loadboard/loads/:id/assign-carrier — Assign Carrier, Driver & Equipment to Load
-router.post('/loads/:id/assign-carrier', optionalAuth, async (req, res) => {
+router.post('/loads/:id/assign-carrier', requireAuth, requireRole('broker', 'admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
   const loadId = req.params.id;
   const {
     carrier_name, carrier_mc, driver_name, driver_phone,
@@ -2824,7 +2824,7 @@ router.post('/loads/:id/assign-carrier', optionalAuth, async (req, res) => {
 });
 
 // POST /api/loadboard/loads/:id/inquiry-reply — 1-Click RateCon & Details Reply from Broker
-router.post('/loads/:id/inquiry-reply', optionalAuth, async (req, res) => {
+router.post('/loads/:id/inquiry-reply', requireAuth, async (req, res) => {
   const loadId = req.params.id;
   const { to_email, subject, message, rate, pickup, delivery, broker_name, broker_phone } = req.body;
 
@@ -2889,7 +2889,7 @@ ${escapeHtml(message || 'Please review the load details above. Reply to this ema
 });
 
 // POST /api/loadboard/ai-ingest — Ingest raw broker sheets/emails using OpenAI or heuristic parser
-router.post('/ai-ingest', optionalAuth, async (req, res) => {
+router.post('/ai-ingest', requireAuth, requireRole('broker', 'admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
   const { rawText, brokerName, brokerMc, brokerPhone, brokerEmail } = req.body;
   if (!rawText || !rawText.trim()) {
     return res.status(400).json({ error: 'Raw freight text is required to parse.' });
@@ -2947,7 +2947,7 @@ router.get('/ai-stats', async (req, res) => {
 });
 
 // POST /api/loadboard/ai-carrier-copilot — AI Broker Negotiation & Profitability Assistant for Carriers
-router.post('/ai-carrier-copilot', optionalAuth, async (req, res) => {
+router.post('/ai-carrier-copilot', requireAuth, async (req, res) => {
   try {
     const { load_id, load: loadParam, carrier } = req.body;
     let loadData = loadParam;

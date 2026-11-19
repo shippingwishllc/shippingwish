@@ -511,7 +511,7 @@ router.get('/proposals/:id', requireAuth, async (req, res) => {
 // GET /api/rate-matrix/proposals/:id/proposal-pdf
 // Vector PDF Enterprise Contract Proposal & SLA Agreement
 // -------------------------------------------------------------
-router.get('/proposals/:id/proposal-pdf', optionalAuth, async (req, res) => {
+router.get('/proposals/:id/proposal-pdf', requireAuth, async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;
