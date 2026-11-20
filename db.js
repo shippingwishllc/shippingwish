@@ -58,9 +58,14 @@ if (global._pgPool) {
     pool = new Pool({
       connectionString: cleanConnStr,
       ssl: isLocal ? false : buildSslConfig(),
-      max: 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 3000
+      // Serverless-friendly pool: few connections per instance, short idle time,
+      // and query timeouts that fail fast instead of hanging until Vercel kills the request at 60s.
+      max: Number(process.env.DB_POOL_MAX) || 5,
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 5000,
+      keepAlive: true,
+      statement_timeout: Number(process.env.DB_STATEMENT_TIMEOUT_MS) || 25000,
+      query_timeout: Number(process.env.DB_STATEMENT_TIMEOUT_MS) || 25000
     });
   } else {
     pool = new Pool({
@@ -77,7 +82,8 @@ if (global._pgPool) {
 }
 
 pool.on('error', (err) => {
-  console.error('Unexpected Postgres error:', err);
+  // Neon closes idle pooled connections; pg drops the dead client and opens a new one on demand.
+  console.error('Unexpected Postgres error:', err && err.message ? err.message : err);
 });
 
 module.exports = pool;
