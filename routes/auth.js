@@ -802,7 +802,7 @@ router.post('/auth/2fa/verify', rateLimit(10, 60000), async (req, res) => {
     const token = signToken(user, sessionInfo.sessionId);
     setAuthCookie(res, token);
 
-    const targetRedirect = (row.role === 'admin') ? '/admin-dashboard' : ((row.role === 'dispatcher') ? '/dispatcher-dashboard' : ((row.role === 'sales_rep') ? '/sales-dashboard' : '/superadmin'));
+    const targetRedirect = (row.role === 'admin') ? '/admin-dashboard' : ((row.role === 'dispatcher') ? '/dispatcher-dashboard' : ((row.role === 'sales_rep') ? '/sales-dashboard' : '/superadmin-command'));
 
     return res.json({
       ok: true,

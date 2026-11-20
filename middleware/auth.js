@@ -89,14 +89,23 @@ async function optionalAuth(req, res, next) {
   next();
 }
 
-// Helper used in auth.js route to set the session cookie
-function setAuthCookie(res, token) {
+// Helper used in auth.js route to set the session cookie (scoped across apex & www subdomains!)
+function setAuthCookie(res, token, req = null) {
   const isSecure = process.env.NODE_ENV === 'production' || (process.env.APP_URL && process.env.APP_URL.startsWith('https://'));
+  const host = String((req && (req.headers['x-forwarded-host'] || req.headers.host)) || (res.req && (res.req.headers['x-forwarded-host'] || res.req.headers.host)) || '')
+    .split(',')[0].trim().split(':')[0].toLowerCase();
+  let domain;
+  if (host.endsWith('shippingwish.com')) domain = '.shippingwish.com';
+  else if (host.endsWith('loadsnexus.com')) domain = '.loadsnexus.com';
+  else if (host.endsWith('buywishonline.com')) domain = '.buywishonline.com';
+  else if (host.endsWith('nyclimowish.com')) domain = '.nyclimowish.com';
+
   res.cookie('sw_token', token, {
     httpOnly: true,
     secure: isSecure,
     sameSite: 'lax',
     path: '/',
+    ...(domain ? { domain } : {}),
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
 }

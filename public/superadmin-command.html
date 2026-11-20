@@ -79,7 +79,7 @@
     .sa-sso-pill { font-size: 9.5px; background: rgba(255,255,255,0.2); padding: 1px 6px; border-radius: 999px; margin-left: 2px; }
   </style>
 </head>
-<body class="app-body">
+<body class="app-body" style="visibility:hidden;">
 <div class="app-shell">
   <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
   <script src="/js/app-shell-boot.js"></script>
@@ -372,11 +372,12 @@
     try {
       const me = await apiGet('/api/me');
       if (!me?.user || me.user.role !== 'super_admin') {
-        window.location.href = '/dispatcher-dashboard';
+        window.location.replace('/dispatcher-dashboard');
         return;
       }
+      document.body.style.visibility = 'visible';
     } catch (_) {
-      window.location.href = '/login?redirect=/superadmin-command';
+      window.location.replace('/admin');
       return;
     }
 
