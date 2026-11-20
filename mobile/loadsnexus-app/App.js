@@ -62,19 +62,27 @@ export default function LoadsNexusApp() {
   const [isLightMode, setIsLightMode] = useState(false);
   const anim = useExecutiveAnimations(`${exchangeMode}-${carrierTab}-${brokerTab}`);
 
-  // Auth & Profile state
+  // Auth & Profile state (100% Real ERP/LoadsNexus Auth — Zero Hardcoded Demo User)
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
   const [user, setUser] = useState({
-    name: 'Premier Logistics LLC',
-    mc_number: 'MC-148295',
-    dot_number: 'DOT-3489102',
-    phone: '+1 (917) 737-0021'
+    name: 'Guest Viewer',
+    company_name: 'Sign In to Book / Post Loads',
+    mc_number: '',
+    dot_number: '',
+    phone: '',
+    email: '',
+    role: 'guest'
   });
 
-  // Carrier Search state
+  // Carrier Search state (100% Live DB)
   const [originState, setOriginState] = useState('');
   const [destState, setDestState] = useState('');
   const [equipmentFilter, setEquipmentFilter] = useState('All');
-  const [loads, setLoads] = useState(getMockLoads());
+  const [loads, setLoads] = useState([]);
   const [searching, setSearching] = useState(false);
 
   // Selected Load Modal & 1-Click Bid/Book
@@ -83,18 +91,18 @@ export default function LoadsNexusApp() {
   const [inquireNotes, setInquireNotes] = useState('');
   const [inquirySending, setInquirySending] = useState(false);
 
-  // Carrier Post Truck state
+  // Carrier Post Truck state (100% Live DB)
   const [postEquipment, setPostEquipment] = useState('Reefer');
   const [postOriginCity, setPostOriginCity] = useState('');
   const [postOriginState, setPostOriginState] = useState('');
   const [postDestState, setPostDestState] = useState('Anywhere');
-  const [postDate, setPostDate] = useState('Today / Immediate');
+  const [postDate, setPostDate] = useState(new Date().toISOString().slice(0, 10));
   const [postWeight, setPostWeight] = useState('45000');
   const [postingTruck, setPostingTruck] = useState(false);
-  const [myTrucks, setMyTrucks] = useState(getMockTrucks());
+  const [myTrucks, setMyTrucks] = useState([]);
 
-  // Broker Scores & Bond Watchdog
-  const [brokerScores, setBrokerScores] = useState(getMockBrokerScores());
+  // Broker Scores & Bond Watchdog (100% Live DB)
+  const [brokerScores, setBrokerScores] = useState([]);
   const [scoreSearch, setScoreSearch] = useState('');
 
   // Broker Post Spot Load state
@@ -110,28 +118,60 @@ export default function LoadsNexusApp() {
   const [antiFraudCertified, setAntiFraudCertified] = useState(true);
   const [postingLoad, setPostingLoad] = useState(false);
 
-  // Broker Search Trucks & Vetting state
+  // Broker Search Trucks & Vetting state (100% Live DB / FMCSA)
   const [truckStateFilter, setTruckStateFilter] = useState('');
-  const [brokeredLoads, setBrokeredLoads] = useState(getMockBrokeredLoads());
-  const [searchMc, setSearchMc] = useState('148295');
-  const [vettedCarrier, setVettedCarrier] = useState({
-    mc_number: '148295',
-    dot_number: '3489102',
-    legal_name: 'Apex Transport Solutions LLC',
-    fmcsa_status: 'AUTHORIZED FOR PROPERTY',
-    safety_rating: 'SATISFACTORY',
-    operating_authority: 'ACTIVE (Common & Contract Carrier)',
-    insurance_cargo: '$100,000 (Great American Insurance)',
-    insurance_liability: '$1,000,000 (Progressive Commercial)',
-    unauthorized_broker_flag: 'CLEAR (0 Double-Brokering Flags)',
-    verified_date: 'Live FMCSA SAFER API Verified'
-  });
+  const [brokeredLoads, setBrokeredLoads] = useState([]);
+  const [searchMc, setSearchMc] = useState('');
+  const [vettedCarrier, setVettedCarrier] = useState(null);
 
   useEffect(() => {
     handleSearchLoads();
     fetchMyTrucks();
     fetchBrokerScores();
   }, []);
+
+  const handleSignIn = async () => {
+    if (!loginEmail.trim() || !loginPassword.trim()) {
+      Alert.alert('Credentials Required', 'Enter your Loads Nexus / Shipping Wish email and password.');
+      return;
+    }
+    setAuthLoading(true);
+    const res = await api.login(loginEmail.trim(), loginPassword);
+    setAuthLoading(false);
+    if (res.ok && res.data && res.data.user) {
+      const u = res.data.user;
+      setUser({
+        ...u,
+        name: u.company_name || u.name || 'Verified Account',
+        mc_number: u.mc_number || '',
+        dot_number: u.dot_number || ''
+      });
+      setIsLoggedIn(true);
+      setShowLoginModal(false);
+      setLoginPassword('');
+      fetchMyTrucks();
+      fetchBrokerMyLoads();
+      handleSearchLoads();
+      Alert.alert('Signed In Live', `Connected as ${u.company_name || u.name} (${u.role}).`);
+    } else {
+      Alert.alert('Sign In Failed', res.error || 'Invalid email or password.');
+    }
+  };
+
+  const handleSignOut = () => {
+    api.logout();
+    setIsLoggedIn(false);
+    setBrokeredLoads([]);
+    setUser({
+      name: 'Guest Viewer',
+      company_name: 'Sign In to Book / Post Loads',
+      mc_number: '',
+      dot_number: '',
+      phone: '',
+      email: '',
+      role: 'guest'
+    });
+  };
 
   const handleSearchLoads = async () => {
     setSearching(true);
@@ -140,95 +180,166 @@ export default function LoadsNexusApp() {
     if (destState.trim()) filters.destination = destState.trim();
     if (equipmentFilter !== 'All') filters.equipmentType = equipmentFilter;
 
-    const res = await api.searchLoads(filters).catch(() => ({ ok: false }));
+    const res = await api.searchLoads(filters).catch(() => ({ ok: false, error: 'Network error' }));
     setSearching(false);
 
     if (res.ok && res.data) {
-      const items = res.data.loads || res.data || [];
-      if (Array.isArray(items) && items.length > 0) {
-        setLoads(items);
-        return;
-      }
+      const items = res.data.loads || (Array.isArray(res.data) ? res.data : []);
+      const normalized = items.map((l) => ({
+        ...l,
+        origin: l.origin || l.pickup_location || 'Origin TBD',
+        destination: l.destination || l.delivery_location || 'Destination TBD',
+        equipment_type: l.equipment_type || l.equipment || '53ft Dry Van',
+        rate: Number(l.rate || 0),
+        miles: Number(l.miles || 0),
+        broker_name: l.broker_name || 'Verified Direct Broker',
+        age: l.posted_age || l.age || 'Live'
+      }));
+      setLoads(normalized);
+    } else {
+      setLoads([]);
     }
-    const mock = getMockLoads().filter(l => {
-      const matchOrig = !originState.trim() || l.origin.toUpperCase().includes(originState.trim().toUpperCase());
-      const matchDest = !destState.trim() || l.destination.toUpperCase().includes(destState.trim().toUpperCase());
-      const matchEq = equipmentFilter === 'All' || l.equipment_type.toLowerCase().includes(equipmentFilter.toLowerCase());
-      return matchOrig && matchDest && matchEq;
-    });
-    setLoads(mock.length > 0 ? mock : getMockLoads());
   };
 
   const handleInquireBroker = async (bookImmediately = false) => {
     if (!selectedLoad) return;
+    if (!isLoggedIn || !api.getAuthToken()) {
+      setSelectedLoad(null);
+      setShowLoginModal(true);
+      Alert.alert('Sign In Required', 'Please sign in with your verified Carrier / Dispatcher account to book or bid on live loads.');
+      return;
+    }
+
     setInquirySending(true);
-    const finalRate = inquireRate || selectedLoad.rate;
-    await api.inquireBroker(
-      selectedLoad.id,
-      finalRate,
-      inquireNotes || 'Verified Carrier Ready to Dispatch Immediately with ELD Tracking.',
-      { mc_number: user.mc_number, company_name: user.name }
-    ).catch(() => {});
+    const finalRate = Number(inquireRate || selectedLoad.rate || 0);
+    const numericId = Number(selectedLoad.db_id || selectedLoad.id);
+    let res = { ok: false, error: 'Could not submit request.' };
+
+    if (Number.isInteger(numericId) && numericId > 0) {
+      res = await api.submitLoadBid({
+        load_id: numericId,
+        bid_type: bookImmediately ? 'book_now' : 'counter_offer',
+        offered_rate: finalRate,
+        driver_name: user.name || '',
+        notes: inquireNotes || 'Verified Carrier Ready to Dispatch via Loads Nexus Mobile.'
+      });
+    } else if (selectedLoad.broker_email) {
+      res = await api.inquireBroker({
+        brokerName: selectedLoad.broker_name,
+        brokerEmail: selectedLoad.broker_email,
+        brokerMc: selectedLoad.broker_mc || '',
+        pickupLocation: selectedLoad.origin,
+        deliveryLocation: selectedLoad.destination,
+        equipmentType: selectedLoad.equipment_type,
+        miles: selectedLoad.miles,
+        rate: finalRate,
+        carrierCompany: user.company_name || user.name,
+        carrierMc: user.mc_number,
+        carrierDot: user.dot_number,
+        contactName: user.name,
+        contactPhone: user.phone,
+        contactEmail: user.email,
+        notes: inquireNotes || 'Verified Carrier Ready to Dispatch via Loads Nexus Mobile.'
+      });
+    } else {
+      res = { ok: false, error: 'This external feed load requires calling the broker directly or booking a verified Loads Nexus load.' };
+    }
     setInquirySending(false);
+
+    if (!res.ok) {
+      Alert.alert('Booking / Bid Failed', res.error || 'Server rejected the request.');
+      return;
+    }
 
     if (bookImmediately) {
       Alert.alert(
-        '⚡ INSTANT BOOK-IT-NOW CONFIRMED!',
-        `Load (${selectedLoad.origin} ➔ ${selectedLoad.destination}) locked at $${Number(finalRate).toLocaleString()}.\n\nDigital Rate Confirmation sent to ${user.name} (${user.mc_number}).`
+        '⚡ INSTANT BOOK REQUEST SENT!',
+        `Load (${selectedLoad.origin} ➔ ${selectedLoad.destination}) book request submitted at $${finalRate.toLocaleString()} and synced live to Loads Nexus ERP.`
       );
     } else {
       Alert.alert(
-        'Bid & RateCon Request Sent',
-        `Your offer of $${Number(finalRate).toLocaleString()} was transmitted to ${selectedLoad.broker_name}.`
+        'Counter-Offer Bid Submitted',
+        `Your live bid of $${finalRate.toLocaleString()} was saved and sent to ${selectedLoad.broker_name}.`
       );
     }
     setSelectedLoad(null);
   };
 
   const handlePostTruck = async () => {
-    if (!postOriginCity || !postOriginState) {
-      Alert.alert('Required', 'Please enter your truck current city and state.');
+    if (!isLoggedIn || !api.getAuthToken()) {
+      setShowLoginModal(true);
+      Alert.alert('Sign In Required', 'Please sign in to broadcast available truck capacity to verified brokers.');
+      return;
+    }
+    if (!postOriginCity.trim() || !postOriginState.trim()) {
+      Alert.alert('Required', 'Please enter your truck current city and 2-letter state (e.g. Dallas, TX).');
       return;
     }
     setPostingTruck(true);
-    const payload = {
-      id: Date.now(),
-      equipment_type: `${postEquipment} 53ft`,
-      origin_city: postOriginCity.trim(),
-      origin_state: postOriginState.trim().toUpperCase(),
-      destination_preference: postDestState.trim() || 'Anywhere',
-      available_date: postDate,
-      max_weight: parseInt(postWeight, 10) || 45000,
-      contact_phone: user.phone
-    };
-    await api.postTruckCapacity(payload).catch(() => {});
+    const res = await api.postTruckCapacity({
+      equipmentType: `${postEquipment} 53ft`,
+      originCity: postOriginCity.trim(),
+      originState: postOriginState.trim().toUpperCase(),
+      destPreference: postDestState.trim() || 'Anywhere',
+      availableDate: postDate || new Date().toISOString().slice(0, 10),
+      maxWeight: parseInt(postWeight, 10) || 45000,
+      contactPhone: user.phone || ''
+    });
     setPostingTruck(false);
-    setMyTrucks(prev => [payload, ...prev]);
+
+    if (!res.ok) {
+      Alert.alert('Post Truck Failed', res.error || 'Could not publish truck capacity.');
+      return;
+    }
+
     setPostOriginCity('');
     setPostOriginState('');
+    await fetchMyTrucks();
     setCarrierTab('my_trucks');
-    Alert.alert('Truck Broadcast Live', `Your ${payload.equipment_type} in ${payload.origin_city}, ${payload.origin_state} is now visible to all verified brokers.`);
+    Alert.alert('Truck Broadcast Live!', `Your ${postEquipment} 53ft is now live on LoadsNexus.com for all verified brokers.`);
   };
 
   const fetchMyTrucks = async () => {
     const res = await api.getTruckPosts().catch(() => ({ ok: false }));
     if (res.ok && res.data) {
-      const posts = res.data.posts || res.data || [];
-      if (Array.isArray(posts) && posts.length > 0) setMyTrucks(posts);
+      const posts = res.data.truck_posts || res.data.posts || (Array.isArray(res.data) ? res.data : []);
+      setMyTrucks(Array.isArray(posts) ? posts : []);
     }
   };
 
   const fetchBrokerScores = async () => {
     const res = await api.getBrokerScores().catch(() => ({ ok: false }));
     if (res.ok && res.data) {
-      const list = res.data.brokers || res.data || [];
-      if (Array.isArray(list) && list.length > 0) setBrokerScores(list);
+      const list = res.data.brokers || (Array.isArray(res.data) ? res.data : []);
+      setBrokerScores(Array.isArray(list) ? list : []);
+    }
+  };
+
+  const fetchBrokerMyLoads = async () => {
+    if (!api.getAuthToken()) return;
+    const res = await api.getBrokerMyLoads().catch(() => ({ ok: false }));
+    if (res.ok && res.data && Array.isArray(res.data.loads)) {
+      setBrokeredLoads(res.data.loads.map((l) => ({
+        ...l,
+        origin: l.pickup_location || l.origin || 'Origin',
+        destination: l.delivery_location || l.destination || 'Destination',
+        carrier_name: l.carrier_name || 'Awaiting Carrier',
+        mc: l.carrier_mc || l.broker_mc || 'Pending',
+        driver: l.driver_name || 'Unassigned',
+        location: l.tracking_notes || 'Synced with Loads Nexus Live Tracking',
+        eta: l.delivery_date || 'Scheduled'
+      })));
     }
   };
 
   const handlePostBrokerLoad = async () => {
-    if (!bOriginCity || !bOriginState || !bDestCity || !bDestState || !bRate) {
-      Alert.alert('Required Fields', 'Please enter Origin, Destination, and Rate.');
+    if (!isLoggedIn || !api.getAuthToken()) {
+      setShowLoginModal(true);
+      Alert.alert('Broker Sign In Required', 'Please sign in with your verified Broker or Dispatcher account to publish live freight.');
+      return;
+    }
+    if (!bOriginCity.trim() || !bOriginState.trim() || !bDestCity.trim() || !bDestState.trim() || !bRate.trim()) {
+      Alert.alert('Required Fields', 'Please enter Origin City/State, Destination City/State, and Rate.');
       return;
     }
     if (!antiFraudCertified) {
@@ -236,33 +347,24 @@ export default function LoadsNexusApp() {
       return;
     }
     setPostingLoad(true);
-    const newSpotLoad = {
-      id: Date.now(),
-      origin: `${bOriginCity.trim()}, ${bOriginState.trim().toUpperCase()}`,
-      destination: `${bDestCity.trim()}, ${bDestState.trim().toUpperCase()}`,
-      equipment_type: `${bEquipment} 53ft`,
-      rate: parseFloat(bRate) || 3200,
-      miles: parseInt(bMiles, 10) || 680,
-      weight: bWeight || '42,000',
+    const origin = `${bOriginCity.trim()}, ${bOriginState.trim().toUpperCase()}`;
+    const destination = `${bDestCity.trim()}, ${bDestState.trim().toUpperCase()}`;
+    const res = await api.postBrokerLoad({
+      origin,
+      destination,
+      equipment: bEquipment,
+      rate: parseFloat(bRate),
+      miles: parseInt(bMiles, 10) || 500,
       commodity: bCommodity.trim() || 'General Spot Freight',
-      broker_name: 'LoadsNexus Verified Direct Broker',
-      age: 'Just now'
-    };
-    await api.postBrokerLoad({
-      origin_city: bOriginCity.trim(),
-      origin_state: bOriginState.trim().toUpperCase(),
-      destination_city: bDestCity.trim(),
-      destination_state: bDestState.trim().toUpperCase(),
-      equipment_type: bEquipment,
-      rate: newSpotLoad.rate,
-      miles: newSpotLoad.miles,
-      commodity: newSpotLoad.commodity,
-      weight: parseInt(bWeight, 10) || 42000,
-      anti_double_brokering_certified: true
-    }).catch(() => {});
+      weight: parseInt(bWeight, 10) || 42000
+    });
     setPostingLoad(false);
 
-    setLoads(prev => [newSpotLoad, ...prev]);
+    if (!res.ok) {
+      Alert.alert('Publish Load Failed', res.error || 'Could not publish load to Loads Nexus.');
+      return;
+    }
+
     setBOriginCity('');
     setBOriginState('');
     setBDestCity('');
@@ -270,9 +372,10 @@ export default function LoadsNexusApp() {
     setBRate('');
     setBMiles('');
     setBCommodity('');
+    await Promise.all([handleSearchLoads(), fetchBrokerMyLoads()]);
     Alert.alert(
-      'Spot Load Broadcasted!',
-      `${newSpotLoad.origin} ➔ ${newSpotLoad.destination} ($${newSpotLoad.rate}) is now live on the 50-state Carrier Loadboard with Direct Broker Verification.`
+      'Spot Load Published Live!',
+      `${origin} ➔ ${destination} ($${Number(bRate).toLocaleString()}) is now live on LoadsNexus.com & Mobile App!`
     );
   };
 
@@ -330,12 +433,15 @@ export default function LoadsNexusApp() {
         brandKey="loadsnexus"
         isLightMode={isLightMode}
         userLabel={user.name}
-        companyLabel={`${user.mc_number} • ${user.dot_number}`}
-        verifiedLabel="✓ $75K BOND"
-        rightStatusLabel="50-STATE LIVE"
-        rightStatusSub="Refresh Board ↻"
+        companyLabel={isLoggedIn ? `${user.mc_number || user.role} • ${user.dot_number || user.email}` : 'Tap Menu or Sign In to Book / Post'}
+        verifiedLabel={isLoggedIn ? '✓ VERIFIED' : 'SIGN IN'}
+        rightStatusLabel={isLoggedIn ? '50-STATE LIVE' : '🔐 SIGN IN'}
+        rightStatusSub={isLoggedIn ? 'Refresh Board ↻' : 'Account Access'}
         onOpenMenu={() => setMenuVisible(true)}
-        onRightPress={() => anim.runWithLoader('Refreshing 50-State Spot Load Exchange...', handleSearchLoads)}
+        onRightPress={() => {
+          if (!isLoggedIn) setShowLoginModal(true);
+          else anim.runWithLoader('Refreshing 50-State Spot Load Exchange...', () => Promise.all([handleSearchLoads(), fetchMyTrucks(), fetchBrokerScores(), fetchBrokerMyLoads()]));
+        }}
       />
 
       {/* Top Mode Switcher: Carrier Loadboard vs Broker & Shipper Exchange */}
@@ -790,7 +896,23 @@ export default function LoadsNexusApp() {
                 <Text style={styles.tabBannerSub}>Live ELD GPS telemetry and delivery milestones for tendered loads.</Text>
               </View>
 
-              {brokeredLoads.map(l => (
+              {brokeredLoads.length === 0 ? (
+                <View style={styles.formCard}>
+                  <Text style={styles.laneText}>
+                    {isLoggedIn ? 'No active brokered loads yet' : 'Sign in as a Verified Broker or Dispatcher'}
+                  </Text>
+                  <Text style={[styles.ageText, { marginTop: 6 }]}>
+                    {isLoggedIn
+                      ? 'Loads you publish from the Post Load tab or web LoadsNexus desk will appear here live.'
+                      : 'Sign in with your LoadsNexus account to view and manage your live posted loads.'}
+                  </Text>
+                  {!isLoggedIn && (
+                    <TouchableOpacity style={styles.submitPostBtn} onPress={() => setShowLoginModal(true)}>
+                      <Text style={styles.submitPostBtnText}>🔐 SIGN IN TO VIEW ACTIVE FREIGHT</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : brokeredLoads.map(l => (
                 <View key={l.id} style={styles.loadCard}>
                   <View style={styles.cardHeader}>
                     <View>
@@ -798,7 +920,7 @@ export default function LoadsNexusApp() {
                       <Text style={styles.laneText}>{l.origin} ➔ {l.destination}</Text>
                     </View>
                     <View style={styles.shieldTag}>
-                      <Text style={styles.shieldText}>{l.status.replace('_', ' ').toUpperCase()}</Text>
+                      <Text style={styles.shieldText}>{String(l.status || 'OPEN').replace('_', ' ').toUpperCase()}</Text>
                     </View>
                   </View>
                   <Text style={{ color: COLORS.textPrimary, fontSize: 13, fontWeight: '700', marginTop: 6 }}>
@@ -841,8 +963,16 @@ export default function LoadsNexusApp() {
                       <Text style={styles.laneText}>{vettedCarrier.legal_name}</Text>
                       <Text style={styles.ageText}>MC #{vettedCarrier.mc_number} • DOT #{vettedCarrier.dot_number}</Text>
                     </View>
-                    <View style={styles.shieldTag}>
-                      <Text style={styles.shieldText}>APPROVED</Text>
+                    <View style={[
+                      styles.shieldTag,
+                      String(vettedCarrier.fmcsa_status || '').includes('REJECT') && { backgroundColor: 'rgba(239,68,68,0.18)', borderColor: 'rgba(239,68,68,0.45)' }
+                    ]}>
+                      <Text style={[
+                        styles.shieldText,
+                        String(vettedCarrier.fmcsa_status || '').includes('REJECT') && { color: COLORS.danger }
+                      ]}>
+                        {String(vettedCarrier.fmcsa_status || 'CHECK').replace(/_/g, ' ')}
+                      </Text>
                     </View>
                   </View>
 
@@ -895,10 +1025,16 @@ export default function LoadsNexusApp() {
         isLightMode={isLightMode}
         onToggleLightMode={setIsLightMode}
         userTitle={user.name}
-        userSubtitle={`${user.mc_number} • ${user.dot_number} • Direct Exchange Authority`}
-        badgeText="A+ VERIFIED"
-        onReplayIntro={anim.replayIntro}
+        userSubtitle={isLoggedIn ? `${user.email || ''} • ${user.mc_number || user.role}` : 'Sign in for full booking & freight posting'}
+        badgeText={isLoggedIn ? 'VERIFIED' : 'GUEST'}
+        onSignOut={isLoggedIn ? handleSignOut : undefined}
         menuItems={[
+          ...(!isLoggedIn ? [{
+            icon: '🔐',
+            title: 'Sign In to Loads Nexus / ERP Account',
+            subtitle: 'Unlock Instant Book-It-Now, Truck Posting & Broker Freight Desk',
+            onPress: () => setShowLoginModal(true)
+          }] : []),
           {
             icon: '🔍',
             title: '50-State Carrier Spot Loadboard',
@@ -998,136 +1134,53 @@ export default function LoadsNexusApp() {
           </View>
         </View>
       </Modal>
+      {/* Real Loads Nexus / Shipping Wish Sign-In Modal */}
+      <Modal visible={showLoginModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.tabBannerTitle}>Sign In to Loads Nexus</Text>
+              <TouchableOpacity onPress={() => setShowLoginModal(false)}>
+                <Ionicons name="close" size={22} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.ageText, { marginTop: 6, marginBottom: 12 }]}>
+              Sign in with your verified Carrier, Broker, or Dispatcher account to book loads, post trucks, and publish spot freight live.
+            </Text>
+
+            <Text style={styles.fieldLabel}>WORK EMAIL</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="name@company.com"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={loginEmail}
+              onChangeText={setLoginEmail}
+            />
+
+            <Text style={styles.fieldLabel}>PASSWORD</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="••••••••"
+              placeholderTextColor={COLORS.textMuted}
+              secureTextEntry
+              value={loginPassword}
+              onChangeText={setLoginPassword}
+            />
+
+            <TouchableOpacity
+              style={[styles.submitPostBtn, { backgroundColor: COLORS.accent }]}
+              onPress={handleSignIn}
+              disabled={authLoading}
+            >
+              {authLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitPostBtnText}>🔐 SIGN IN LIVE</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
-}
-
-function getMockLoads() {
-  return [
-    {
-      id: 1,
-      origin: 'Dallas, TX',
-      destination: 'Atlanta, GA',
-      equipment_type: 'Reefer 53ft',
-      rate: 3450,
-      miles: 780,
-      weight: '42,500',
-      commodity: 'Fresh Produce (36°F)',
-      broker_name: 'C.H. Robinson (Verified)',
-      age: '3m ago'
-    },
-    {
-      id: 2,
-      origin: 'Chicago, IL',
-      destination: 'Charlotte, NC',
-      equipment_type: 'Dry Van 53ft',
-      rate: 2950,
-      miles: 755,
-      weight: '38,000',
-      commodity: 'Consumer Electronics',
-      broker_name: 'Total Quality Logistics (TQL)',
-      age: '7m ago'
-    },
-    {
-      id: 3,
-      origin: 'Houston, TX',
-      destination: 'Phoenix, AZ',
-      equipment_type: 'Flatbed 48ft',
-      rate: 4100,
-      miles: 1175,
-      weight: '46,000',
-      commodity: 'Structural Steel Coils',
-      broker_name: 'Echo Global Logistics',
-      age: '11m ago'
-    },
-    {
-      id: 4,
-      origin: 'Savannah, GA',
-      destination: 'Memphis, TN',
-      equipment_type: 'Power Only',
-      rate: 2250,
-      miles: 590,
-      weight: '34,000',
-      commodity: 'Port Container Drop & Hook',
-      broker_name: 'Arrive Logistics',
-      age: '15m ago'
-    },
-    {
-      id: 5,
-      origin: 'Newark, NJ',
-      destination: 'Columbus, OH',
-      equipment_type: 'Box Truck 26ft',
-      rate: 1850,
-      miles: 525,
-      weight: '9,500',
-      commodity: 'Expedited Medical Supplies',
-      broker_name: 'RXO Capacity Solutions',
-      age: '19m ago'
-    }
-  ];
-}
-
-function getMockTrucks() {
-  return [
-    {
-      id: 601,
-      equipment_type: 'Reefer 53ft',
-      origin_city: 'Dallas',
-      origin_state: 'TX',
-      destination_preference: 'Southeast / GA / FL',
-      available_date: 'Today / Immediate',
-      max_weight: 45000,
-      contact_phone: '+19177370021'
-    },
-    {
-      id: 602,
-      equipment_type: 'Dry Van 53ft',
-      origin_city: 'Chicago',
-      origin_state: 'IL',
-      destination_preference: 'East Coast / PA / NJ',
-      available_date: 'Tomorrow 06:00 AM',
-      max_weight: 44000,
-      contact_phone: '+19177370021'
-    }
-  ];
-}
-
-function getMockBrokerScores() {
-  return [
-    { broker_name: 'C.H. Robinson Worldwide', mc_number: '128490', dot_number: '221904', credit_rating: 'A+', days_to_pay: 18, bond_status: '$75,000 ACTIVE', fraud_risk: 'LOW' },
-    { broker_name: 'Total Quality Logistics (TQL)', mc_number: '322572', dot_number: '910421', credit_rating: 'A+', days_to_pay: 21, bond_status: '$75,000 ACTIVE', fraud_risk: 'LOW' },
-    { broker_name: 'Echo Global Logistics', mc_number: '516391', dot_number: '1349012', credit_rating: 'A', days_to_pay: 24, bond_status: '$75,000 ACTIVE', fraud_risk: 'LOW' },
-    { broker_name: 'Arrive Logistics', mc_number: '874019', dot_number: '2519820', credit_rating: 'A+', days_to_pay: 20, bond_status: '$75,000 ACTIVE', fraud_risk: 'LOW' }
-  ];
-}
-
-function getMockBrokeredLoads() {
-  return [
-    {
-      id: 801,
-      load_number: 'LN-7721',
-      status: 'in_transit',
-      origin: 'Atlanta, GA',
-      destination: 'Dallas, TX',
-      carrier_name: 'Apex Transport Solutions LLC',
-      mc: 'MC-148295',
-      driver: 'Marcus Vance',
-      location: 'I-20 Westbound near Shreveport, LA (64 MPH)',
-      eta: 'Tomorrow 09:00 AM'
-    },
-    {
-      id: 802,
-      load_number: 'LN-7724',
-      status: 'loaded',
-      origin: 'Chicago, IL',
-      destination: 'Charlotte, NC',
-      carrier_name: 'Midwest Star Freight Inc',
-      mc: 'MC-391042',
-      driver: 'David Reynolds',
-      location: 'I-65 Southbound near Indianapolis, IN (62 MPH)',
-      eta: 'Tomorrow 02:30 PM'
-    }
-  ];
 }
 
 const styles = StyleSheet.create({

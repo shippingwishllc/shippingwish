@@ -158,6 +158,23 @@ class MobileApiClient {
     return this.request(endpoint, { method: 'GET' });
   }
 
+  async createLoad(payload) {
+    return this.request('/api/loads', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  async getDocuments(filters = {}) {
+    const query = new URLSearchParams(filters).toString();
+    const endpoint = query ? `/api/documents?${query}` : '/api/documents';
+    return this.request(endpoint, { method: 'GET' });
+  }
+
+  async getMyCarriers() {
+    return this.request('/api/loadboard/my-carriers', { method: 'GET' });
+  }
+
   async updateLoadStatus(loadId, status, notes = '') {
     return this.request(`/api/loads/${loadId}/status`, {
       method: 'PATCH',
@@ -215,22 +232,31 @@ class MobileApiClient {
     return this.request(endpoint, { method: 'GET' });
   }
 
-  async inquireBroker(loadId, rateOffer, message, carrierInfo = {}) {
+  async inquireBroker(payload) {
     return this.request('/api/loadboard/inquire-broker', {
       method: 'POST',
-      body: {
-        load_id: loadId,
-        rate_offer: rateOffer,
-        message,
-        carrier_info: carrierInfo
-      }
+      body: payload
     });
   }
 
   async postTruckCapacity(truckData) {
     return this.request('/api/loadboard/truck-posts', {
       method: 'POST',
-      body: truckData
+      body: {
+        carrierName: truckData.carrierName || truckData.carrier_name,
+        mcNumber: truckData.mcNumber || truckData.mc_number,
+        dotNumber: truckData.dotNumber || truckData.dot_number,
+        equipmentType: truckData.equipmentType || truckData.equipment_type,
+        originCity: truckData.originCity || truckData.origin_city,
+        originState: truckData.originState || truckData.origin_state,
+        destPreference: truckData.destPreference || truckData.destination_preference || 'Anywhere / Lower 48',
+        availableDate: truckData.availableDate || truckData.available_date,
+        maxWeight: truckData.maxWeight || truckData.max_weight || 45000,
+        lengthFt: truckData.lengthFt || truckData.length_ft || 53,
+        contactPhone: truckData.contactPhone || truckData.contact_phone,
+        contactEmail: truckData.contactEmail || truckData.contact_email,
+        notes: truckData.notes || ''
+      }
     });
   }
 
@@ -247,10 +273,30 @@ class MobileApiClient {
   }
 
   async postBrokerLoad(loadData) {
+    const origin = loadData.origin || [loadData.origin_city, loadData.origin_state].filter(Boolean).join(', ');
+    const destination = loadData.destination || [loadData.destination_city, loadData.destination_state].filter(Boolean).join(', ');
     return this.request('/api/loadboard/broker/post-load', {
       method: 'POST',
-      body: loadData
+      body: {
+        origin,
+        destination,
+        equipment: loadData.equipment || loadData.equipment_type,
+        rate: Number(loadData.rate),
+        miles: Number(loadData.miles || 0),
+        weight: Number(loadData.weight || 42000),
+        commodity: loadData.commodity || 'General Freight',
+        pickupDate: loadData.pickupDate || loadData.pickup_date || new Date().toISOString().slice(0, 10),
+        brokerMc: loadData.brokerMc || loadData.broker_mc,
+        brokerName: loadData.brokerName || loadData.broker_name,
+        contactPhone: loadData.contactPhone || loadData.contact_phone,
+        contactEmail: loadData.contactEmail || loadData.contact_email,
+        notes: loadData.notes || ''
+      }
     });
+  }
+
+  async getBrokerMyLoads() {
+    return this.request('/api/loadboard/broker/my-loads', { method: 'GET' });
   }
 
   async getBrokerScores() {

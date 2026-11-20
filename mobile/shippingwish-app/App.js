@@ -101,166 +101,6 @@ const SUBSCRIPTION_PLANS = [
   }
 ];
 
-const INITIAL_QUEUE_LOADS = [
-  {
-    id: 101,
-    load_number: 'SW-8942',
-    status: 'in_transit',
-    shipper_name: 'Sysco Midwest Cold Storage',
-    origin: 'Dallas, TX',
-    origin_address: '2200 Distribution Way, Dallas, TX 75201',
-    receiver_name: 'Kroger Distribution Center',
-    destination: 'Atlanta, GA',
-    destination_address: '450 Logistics Pkwy, Atlanta, GA 30301',
-    rate: 3450,
-    miles: 780,
-    empty_miles: 42,
-    equipment_type: 'Reefer (53ft)',
-    commodity: 'Fresh Produce (Maintain 36°F)',
-    pickup_date: 'Today 08:00 AM',
-    delivery_date: 'Tomorrow 04:00 PM',
-    driver_name: 'Marcus Vance',
-    dispatcher_phone: '+19177370021',
-    shipper_phone: '+12145558821',
-    receiver_phone: '+14045559012'
-  },
-  {
-    id: 102,
-    load_number: 'SW-8943',
-    status: 'assigned',
-    shipper_name: 'Coca-Cola Bottling Consolidated',
-    origin: 'Atlanta, GA',
-    origin_address: '1 Coca Cola Plz NW, Atlanta, GA 30313',
-    receiver_name: 'Harris Teeter Distribution Hub',
-    destination: 'Charlotte, NC',
-    destination_address: '701 Crestdale Rd, Matthews, NC 28105',
-    rate: 1650,
-    miles: 245,
-    empty_miles: 18,
-    equipment_type: 'Reefer (53ft)',
-    commodity: 'Chilled Beverages',
-    pickup_date: 'Next Load • 10:00 AM',
-    delivery_date: 'Same Day • 05:00 PM',
-    driver_name: 'Marcus Vance',
-    dispatcher_phone: '+19177370021',
-    shipper_phone: '+14045553310',
-    receiver_phone: '+17045558190'
-  },
-  {
-    id: 103,
-    load_number: 'SW-8946',
-    status: 'assigned',
-    shipper_name: 'Tyson Foods Cold Terminal',
-    origin: 'Charlotte, NC',
-    origin_address: '5400 Statesville Rd, Charlotte, NC 28269',
-    receiver_name: 'Northeast Grocery Hub',
-    destination: 'Allentown, PA',
-    destination_address: '7150 Ambassador Dr, Allentown, PA 18106',
-    rate: 2850,
-    miles: 540,
-    empty_miles: 24,
-    equipment_type: 'Reefer (53ft)',
-    commodity: 'Frozen Poultry (0°F)',
-    pickup_date: 'Upcoming • 07:00 AM',
-    delivery_date: 'Next Day • 02:00 PM',
-    driver_name: 'Marcus Vance',
-    dispatcher_phone: '+19177370021',
-    shipper_phone: '+17045559911',
-    receiver_phone: '+16105554412'
-  }
-];
-
-const INITIAL_COMPLETED_HISTORY = [
-  {
-    id: 901,
-    load_number: 'SW-8940',
-    completed_at: '2026-11-15',
-    days_ago: 1,
-    origin: 'Kansas City, MO',
-    destination: 'Dallas, TX',
-    shipper_name: 'Cargill Heartland Facility',
-    receiver_name: 'US Foods Dallas Terminal',
-    equipment_type: 'Reefer (53ft)',
-    loaded_miles: 495,
-    empty_miles: 35,
-    rate: 2100,
-    fuel_gallons: 81.5,
-    fuel_cost: 300.08,
-    loaded_status: 'Loaded & Delivered',
-    unloaded_status: 'Empty at Receiver Dock'
-  },
-  {
-    id: 902,
-    load_number: 'SW-8937',
-    completed_at: '2026-11-12',
-    days_ago: 4,
-    origin: 'Chicago, IL',
-    destination: 'Kansas City, MO',
-    shipper_name: 'Kraft Heinz Midwest Hub',
-    receiver_name: 'Associated Wholesale Grocers',
-    equipment_type: 'Reefer (53ft)',
-    loaded_miles: 510,
-    empty_miles: 28,
-    rate: 2280,
-    fuel_gallons: 82.8,
-    fuel_cost: 304.61,
-    loaded_status: 'Loaded & Delivered',
-    unloaded_status: 'Empty at Receiver Dock'
-  },
-  {
-    id: 903,
-    load_number: 'SW-8933',
-    completed_at: '2026-11-06',
-    days_ago: 10,
-    origin: 'Atlanta, GA',
-    destination: 'Chicago, IL',
-    shipper_name: 'Georgia-Pacific Distribution',
-    receiver_name: 'Midwest Logistics Terminal',
-    equipment_type: 'Reefer (53ft)',
-    loaded_miles: 716,
-    empty_miles: 64,
-    rate: 3120,
-    fuel_gallons: 120.0,
-    fuel_cost: 441.60,
-    loaded_status: 'Loaded & Delivered',
-    unloaded_status: 'Empty at Receiver Dock'
-  },
-  {
-    id: 904,
-    load_number: 'SW-8928',
-    completed_at: '2026-10-26',
-    days_ago: 21,
-    origin: 'Savannah, GA',
-    destination: 'Atlanta, GA',
-    shipper_name: 'Port of Savannah Cold Chain',
-    receiver_name: 'Publix Regional Depot',
-    equipment_type: 'Reefer (53ft)',
-    loaded_miles: 248,
-    empty_miles: 52,
-    rate: 1350,
-    fuel_gallons: 46.2,
-    fuel_cost: 169.85,
-    loaded_status: 'Loaded & Delivered',
-    unloaded_status: 'Empty at Receiver Dock'
-  }
-];
-
-const INITIAL_OFFERS = [
-  {
-    id: 501,
-    load_number: 'DAT-9914',
-    pickup_location: 'Atlanta, GA',
-    delivery_location: 'Charlotte, NC',
-    rate: 1650,
-    loaded_miles: 245,
-    deadhead_miles: 18,
-    pickup_date: 'Tomorrow 10:00 AM',
-    broker_name: 'C.H. Robinson Worldwide',
-    broker_contact: 'MC-128490 • DTP 19d',
-    note: 'AI Match 98%: Reloads 18 mi from your Kroger Atlanta receiver ($6.73/mi)'
-  }
-];
-
 export default function ShippingWishApp() {
   // DEFAULT LIGHT WEBSITE THEME (True by default!)
   const [isLightMode, setIsLightMode] = useState(true);
@@ -275,24 +115,24 @@ export default function ShippingWishApp() {
   const [tmsTab, setTmsTab] = useState('dispatches');
   const [menuVisible, setMenuVisible] = useState(false);
 
-  // End-to-End Authentication, Trial & Subscription State
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  // End-to-End Real Authentication, Trial & Subscription State (Zero Fake Demo Auto-Login)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'signup'
   const [user, setUser] = useState({
-    name: 'Marcus Vance',
-    company_name: 'Apex Transport LLC',
-    email: 'driver@shippingwish.com',
-    phone: '+1 (214) 555-4920',
-    mc_number: 'MC-148295',
-    dot_number: 'DOT-3489102',
-    role: 'driver',
-    truck: '104',
-    trailer: '5309 (Reefer)'
+    id: null,
+    name: '',
+    company_name: '',
+    email: '',
+    phone: '',
+    mc_number: '',
+    dot_number: '',
+    role: 'carrier',
+    truck: ''
   });
 
-  const [subStatus, setSubStatus] = useState('trial_active'); // 'trial_active' | 'active_paid' | 'expired'
+  const [subStatus, setSubStatus] = useState('active_paid'); // 'trial_active' | 'active_paid' | 'expired'
   const [trialDaysTotal, setTrialDaysTotal] = useState(7);
-  const [trialDaysLeft, setTrialDaysLeft] = useState(7);
+  const [trialDaysLeft, setTrialDaysLeft] = useState(0);
   const [selectedPlanKey, setSelectedPlanKey] = useState('solo_weekly');
 
   // Login & Signup Form Inputs
@@ -313,9 +153,9 @@ export default function ShippingWishApp() {
 
   const anim = useExecutiveAnimations(`${appMode}-${driverTab}-${tmsTab}-${isAuthenticated}-${subStatus}`);
 
-  // Active Load Queue & Completed History State
-  const [loadsQueue, setLoadsQueue] = useState(INITIAL_QUEUE_LOADS);
-  const [completedHistory, setCompletedHistory] = useState(INITIAL_COMPLETED_HISTORY);
+  // 100% Live Database Active Load Queue & Completed History State (Zero Mock Data)
+  const [loadsQueue, setLoadsQueue] = useState([]);
+  const [completedHistory, setCompletedHistory] = useState([]);
   const activeLoad = loadsQueue.length > 0 ? loadsQueue[0] : null;
   const upcomingLoads = loadsQueue.length > 1 ? loadsQueue.slice(1) : [];
 
@@ -327,32 +167,32 @@ export default function ShippingWishApp() {
   const [selectedReportLoadNum, setSelectedReportLoadNum] = useState(null);
   const [showPdfPreviewModal, setShowPdfPreviewModal] = useState(false);
 
-  const [pendingOffers, setPendingOffers] = useState(INITIAL_OFFERS);
+  const [pendingOffers, setPendingOffers] = useState([]);
   const [actingOfferId, setActingOfferId] = useState(null);
   const [loadingLoads, setLoadingLoads] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Automatic Live ELD & GPS Telemetry State
   const [autoGpsEnabled, setAutoGpsEnabled] = useState(true);
-  const [gpsStatus, setGpsStatus] = useState('Auto-Synced • 32.7751, -96.7986 (I-20 E)');
-  const [lastGpsTime, setLastGpsTime] = useState('Just now');
-  const [dutyStatus, setDutyStatus] = useState('DRIVING');
-  const [hosClocks] = useState({
-    drivingLeft: '07:42',
-    shiftLeft: '10:15',
-    cycleLeft: '48:30',
-    breakLeft: '04:12'
+  const [gpsStatus, setGpsStatus] = useState('Waiting for live GPS lock...');
+  const [lastGpsTime, setLastGpsTime] = useState('Not synced yet');
+  const [dutyStatus, setDutyStatus] = useState('OFF_DUTY');
+  const [hosClocks, setHosClocks] = useState({
+    drivingLeft: '11:00',
+    shiftLeft: '14:00',
+    cycleLeft: '70:00',
+    breakLeft: '08:00'
   });
   const [detentionActive, setDetentionActive] = useState(false);
   const [detentionStart, setDetentionStart] = useState(null);
 
-  // Camera & Document Vault state
+  // Camera & Document Vault state (100% Live DB)
   const [capturedImage, setCapturedImage] = useState(null);
-  const [docType, setDocType] = useState('bol');
+  const [docType, setDocType] = useState('pod');
   const [uploadingDoc, setUploadingDoc] = useState(false);
-  const [documents, setDocuments] = useState(getMockDocuments());
+  const [documents, setDocuments] = useState([]);
 
-  // Pre-Trip DVIR & IFTA state
+  // Pre-Trip DVIR & IFTA state (100% Live DB)
   const [preTripChecks, setPreTripChecks] = useState({
     tires: true,
     brakes: true,
@@ -362,31 +202,28 @@ export default function ShippingWishApp() {
     securement: true
   });
   const [iftaStateCode, setIftaStateCode] = useState('TX');
-  const [iftaMiles, setIftaMiles] = useState('340');
-  const [iftaGallons, setIftaGallons] = useState('54.5');
-  const [iftaSummary, setIftaSummary] = useState([
-    { state: 'TX', miles: 1420, gallons: 218.4, taxRate: '$0.20', netTax: '+$4.30' },
-    { state: 'LA', miles: 680, gallons: 92.0, taxRate: '$0.20', netTax: '-$2.80' },
-    { state: 'MS', miles: 510, gallons: 85.0, taxRate: '$0.18', netTax: '+$1.90' },
-    { state: 'AL', miles: 640, gallons: 98.2, taxRate: '$0.29', netTax: '-$5.10' },
-    { state: 'GA', miles: 890, gallons: 142.0, taxRate: '$0.32', netTax: '+$6.40' }
-  ]);
+  const [iftaMiles, setIftaMiles] = useState('');
+  const [iftaGallons, setIftaGallons] = useState('');
+  const [iftaSummary, setIftaSummary] = useState([]);
 
-  // TMS Modals & Invoices
+  // TMS Modals & Invoices (100% Live DB)
   const [selectedLoad, setSelectedLoad] = useState(null);
   const [showNewLoadModal, setShowNewLoadModal] = useState(false);
   const [newLoadOrigin, setNewLoadOrigin] = useState('');
   const [newLoadDest, setNewLoadDest] = useState('');
   const [newLoadRate, setNewLoadRate] = useState('');
   const [newLoadMiles, setNewLoadMiles] = useState('');
-  const [newLoadDriver, setNewLoadDriver] = useState('Marcus Vance');
-  const [invoices, setInvoices] = useState(getMockInvoices());
-  const [fleetDrivers, setFleetDrivers] = useState(getMockFleetDrivers());
+  const [newLoadDriver, setNewLoadDriver] = useState('');
+  const [invoices, setInvoices] = useState([]);
+  const [fleetDrivers, setFleetDrivers] = useState([]);
+  const [myCarriers, setMyCarriers] = useState([]);
 
   useEffect(() => {
     api.setBaseUrl(serverUrl);
-    refreshAllData();
-  }, [serverUrl]);
+    if (isAuthenticated && api.getAuthToken()) {
+      refreshAllData();
+    }
+  }, [serverUrl, isAuthenticated]);
 
   // Automatic Background/Foreground GPS Telemetry Loop (Every 30 seconds)
   useEffect(() => {
@@ -440,35 +277,136 @@ export default function ShippingWishApp() {
   }, [filteredHistory]);
 
   const refreshAllData = async () => {
+    if (!api.getAuthToken()) return;
     setLoadingLoads(true);
     try {
-      const [loadsRes, offersRes, invRes, fleetRes] = await Promise.all([
+      const currentQ = `${new Date().getFullYear()}-Q${Math.floor(new Date().getMonth() / 3) + 1}`;
+      const [loadsRes, offersRes, docsRes, invRes, fleetRes, iftaRes, carriersRes] = await Promise.all([
         api.getLoads().catch(() => ({ ok: false })),
         api.getDriverOffers().catch(() => ({ ok: false })),
+        api.getDocuments().catch(() => ({ ok: false })),
         api.getInvoices().catch(() => ({ ok: false })),
-        api.getLiveFleet().catch(() => ({ ok: false }))
+        api.getLiveFleet().catch(() => ({ ok: false })),
+        api.getIftaQuarterlySummary(currentQ).catch(() => ({ ok: false })),
+        api.getMyCarriers().catch(() => ({ ok: false }))
       ]);
 
       if (loadsRes.ok && loadsRes.data) {
-        const list = loadsRes.data.loads || loadsRes.data || [];
-        if (Array.isArray(list) && list.length > 0) {
-          const activeList = list.filter(l => l.status !== 'delivered');
-          if (activeList.length > 0) setLoadsQueue(activeList);
-        }
+        const list = Array.isArray(loadsRes.data.loads) ? loadsRes.data.loads : (Array.isArray(loadsRes.data) ? loadsRes.data : []);
+        const normalized = list.map((l) => ({
+          ...l,
+          origin: l.origin || l.pickup_location || 'Origin TBD',
+          origin_address: l.origin_address || l.pickup_location || '',
+          destination: l.destination || l.delivery_location || 'Destination TBD',
+          destination_address: l.destination_address || l.delivery_location || '',
+          shipper_name: l.shipper_name || l.pickup_company || l.broker_name || 'Verified Shipper',
+          receiver_name: l.receiver_name || l.delivery_company || 'Verified Receiver',
+          rate: Number(l.rate || 0),
+          miles: Number(l.miles || 0),
+          empty_miles: Number(l.empty_miles || l.deadhead_miles || 0),
+          dispatcher_phone: l.dispatcher_phone || '+19177370021'
+        }));
+
+        const completedStatuses = ['delivered', 'pod_uploaded', 'invoiced', 'paid'];
+        const activeList = normalized.filter((l) => !completedStatuses.includes(String(l.status || '').toLowerCase()) && l.status !== 'cancelled');
+        const deliveredList = normalized
+          .filter((l) => completedStatuses.includes(String(l.status || '').toLowerCase()))
+          .map((l) => {
+            const loadedMi = Number(l.miles || 0);
+            const emptyMi = Number(l.empty_miles || 0);
+            const totalMi = loadedMi + emptyMi;
+            const gallonsEst = Number((totalMi / 6.5).toFixed(1));
+            const fuelEst = Number((gallonsEst * 3.68).toFixed(2));
+            const dt = l.delivery_date || l.updated_at || l.created_at || new Date().toISOString();
+            const daysAgo = Math.max(0, Math.floor((Date.now() - new Date(dt).getTime()) / 86400000));
+            return {
+              id: l.id,
+              load_number: l.load_number || `SW-${l.id}`,
+              completed_at: String(dt).slice(0, 10),
+              days_ago: Number.isFinite(daysAgo) ? daysAgo : 0,
+              origin: l.origin,
+              destination: l.destination,
+              shipper_name: l.shipper_name,
+              receiver_name: l.receiver_name,
+              equipment_type: l.equipment_type || '53ft Dry Van',
+              loaded_miles: loadedMi,
+              empty_miles: emptyMi,
+              rate: Number(l.rate || 0),
+              fuel_gallons: gallonsEst,
+              fuel_cost: fuelEst,
+              loaded_status: 'Loaded & Delivered',
+              unloaded_status: l.status === 'paid' ? 'Paid' : l.status === 'invoiced' ? 'Invoiced' : 'Delivered'
+            };
+          });
+
+        setLoadsQueue(activeList);
+        setCompletedHistory(deliveredList);
+
+        const pendingApprovalLoads = normalized
+          .filter((l) => l.status === 'pending_carrier_approval')
+          .map((l) => ({
+            id: l.id,
+            load_number: l.load_number || `SW-${l.id}`,
+            pickup_location: l.origin,
+            delivery_location: l.destination,
+            rate: Number(l.rate || 0),
+            loaded_miles: Number(l.miles || 0),
+            deadhead_miles: Number(l.empty_miles || 0),
+            pickup_date: l.pickup_date || 'Scheduled',
+            broker_name: l.broker_name || 'Verified Broker',
+            broker_contact: l.broker_mc || l.broker_contact || '',
+            note: l.notes || 'Pending Carrier Approval'
+          }));
+
+        const rawOffers = (offersRes.ok && offersRes.data && Array.isArray(offersRes.data.offers)) ? offersRes.data.offers : [];
+        const mergedOffers = [...rawOffers, ...pendingApprovalLoads.filter((p) => !rawOffers.some((o) => String(o.id) === String(p.id)))];
+        setPendingOffers(mergedOffers);
+      } else if (offersRes.ok && offersRes.data) {
+        setPendingOffers(Array.isArray(offersRes.data.offers) ? offersRes.data.offers : []);
       }
-      if (offersRes.ok && offersRes.data) {
-        const raw = offersRes.data.offers || [];
-        if (raw.length > 0) setPendingOffers(raw);
+
+      if (docsRes.ok && docsRes.data) {
+        const dList = Array.isArray(docsRes.data.documents) ? docsRes.data.documents : [];
+        setDocuments(dList.map((d) => ({
+          id: d.id,
+          title: d.original_name || d.filename || `${String(d.category || 'DOC').toUpperCase()} File`,
+          type: String(d.category || 'DOC').toUpperCase(),
+          load_number: d.load_number || (d.load_id ? `Load #${d.load_id}` : 'Fleet'),
+          uploaded_at: d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString() : 'Uploaded',
+          file_size: d.file_size ? `${(Number(d.file_size) / 1024).toFixed(0)} KB` : 'Cloud'
+        })));
       }
+
       if (invRes.ok && invRes.data) {
-        const invList = invRes.data.invoices || invRes.data || [];
-        if (Array.isArray(invList) && invList.length > 0) setInvoices(invList);
+        const invList = Array.isArray(invRes.data.invoices) ? invRes.data.invoices : (Array.isArray(invRes.data) ? invRes.data : []);
+        setInvoices(invList);
       }
+
       if (fleetRes.ok && fleetRes.data) {
         const fl = fleetRes.data.drivers || fleetRes.data.fleet || [];
-        if (Array.isArray(fl) && fl.length > 0) setFleetDrivers(fl);
+        if (Array.isArray(fl)) setFleetDrivers(fl);
       }
-    } catch (e) {}
+
+      if (iftaRes.ok && iftaRes.data) {
+        const rows = iftaRes.data.jurisdictions || iftaRes.data.summary || iftaRes.data.breakdown || [];
+        if (Array.isArray(rows)) {
+          setIftaSummary(rows.map((r) => ({
+            state: r.state || r.jurisdiction || 'US',
+            miles: Number(r.miles || r.total_miles || 0),
+            gallons: Number(r.gallons || r.tax_paid_gallons || 0),
+            taxRate: r.tax_rate != null ? `$${Number(r.tax_rate).toFixed(2)}` : 'Live',
+            netTax: r.net_tax != null ? `${Number(r.net_tax) >= 0 ? '+' : '-'}$${Math.abs(Number(r.net_tax)).toFixed(2)}` : '$0.00'
+          })));
+        }
+      }
+
+      if (carriersRes.ok && carriersRes.data) {
+        const cList = carriersRes.data.carriers || carriersRes.data || [];
+        if (Array.isArray(cList)) setMyCarriers(cList);
+      }
+    } catch (e) {
+      console.warn('[ShippingWish Sync]:', e.message);
+    }
     setLoadingLoads(false);
   };
 
@@ -553,7 +491,7 @@ export default function ShippingWishApp() {
         `We sent a 6-digit verification code to ${regEmail.trim()}. Enter it to activate your ${trialDaysTotal}-Day Free Trial!`
       );
     } else {
-      activateClientTrialAccount();
+      Alert.alert('Registration Failed', res.error || 'Could not send verification code. Please check your details and try again.');
     }
   };
 
@@ -571,66 +509,63 @@ export default function ShippingWishApp() {
       setUser({
         ...u,
         company_name: u.company_name || regCompany.trim() || `${regName.trim()} Trucking`,
-        truck: '104'
+        truck: u.truck || ''
       });
       setSubStatus('trial_active');
       setTrialDaysLeft(trialDaysTotal);
       setIsAuthenticated(true);
       setRegStep('form');
+      setShowAuthModal(false);
+      refreshAllData();
       Alert.alert(
         `🎉 ${trialDaysTotal}-Day Free Trial Activated!`,
-        `Welcome ${u.name}! Your ${trialDaysTotal}-day free trial on the ${getPlanByKey(selectedPlanKey).name} plan is now active.`
+        `Welcome ${u.name}! Your ${trialDaysTotal}-day free trial on the ${getPlanByKey(selectedPlanKey).name} plan is now live.`
       );
     } else {
-      activateClientTrialAccount();
+      Alert.alert('Verification Failed', res.error || 'Invalid or expired 6-digit verification code.');
     }
   };
 
-  const activateClientTrialAccount = () => {
-    const newClient = {
-      name: regName.trim() || 'Marcus Vance',
-      company_name: regCompany.trim() || `${regName.trim() || 'Apex'} Transport LLC`,
-      email: regEmail.trim() || 'client@shippingwish.com',
-      phone: regPhone.trim() || '+1 (917) 737-0021',
-      mc_number: regMc.trim() || 'MC-148295',
-      dot_number: regDot.trim() || 'DOT-3489102',
-      role: 'carrier',
-      truck: '104'
-    };
-    setUser(newClient);
-    setSubStatus('trial_active');
-    setTrialDaysLeft(trialDaysTotal);
-    setIsAuthenticated(true);
-    setRegStep('form');
-    setShowAuthModal(false);
-    Alert.alert(
-      `🎉 ${trialDaysTotal}-Day Free Trial Activated!`,
-      `Account created for ${newClient.name} (${newClient.company_name}).\n\nSelected Plan: ${getPlanByKey(selectedPlanKey).name} (${getPlanByKey(selectedPlanKey).priceLabel} after ${trialDaysTotal}-day trial).`
-    );
+  const handleVerifySubscriptionStatus = async () => {
+    setAuthLoading(true);
+    const res = await api.getMe();
+    setAuthLoading(false);
+    if (res.ok && res.data && res.data.user) {
+      if (res.data.access && !res.data.access.allowed) {
+        Alert.alert('Payment Still Pending', 'Stripe has not confirmed your active subscription yet. Complete checkout or try again in a few seconds.');
+      } else {
+        setSubStatus('active_paid');
+        refreshAllData();
+        Alert.alert('✅ Subscription Active!', 'Your Shipping Wish account is verified and active.');
+      }
+    } else {
+      Alert.alert('Status Check Failed', res.error || 'Could not verify subscription status.');
+    }
   };
 
   const handlePaySubscription = async () => {
     setAuthLoading(true);
     const res = await api.startSubscriptionCheckout({
       plan_key: selectedPlanKey,
-      email: user.email || 'client@shippingwish.com',
-      name: user.name || 'Marcus Vance',
-      company: user.company_name || 'Apex Transport LLC',
-      phone: user.phone || '+19177370021',
-      mc_number: user.mc_number || 'MC-148295',
-      usdot: user.dot_number || 'DOT-3489102',
+      email: user.email,
+      name: user.name,
+      company: user.company_name,
+      phone: user.phone,
+      mc_number: user.mc_number,
+      usdot: user.dot_number,
       trucks: selectedPlanKey === 'solo_weekly' ? '1' : selectedPlanKey === 'fleet_weekly' ? '2-5' : '6+'
     });
     setAuthLoading(false);
 
     if (res.ok && res.data && res.data.url && !res.data.simulated) {
       Linking.openURL(res.data.url).catch(() => {});
+      Alert.alert(
+        'Stripe Checkout Opened',
+        'Complete your secure weekly subscription payment in the browser, then tap "Verify Payment Status" to unlock your console.'
+      );
+    } else {
+      Alert.alert('Checkout Unavailable', res.error || 'Could not create Stripe checkout session. Please contact +1 (917) 737-0021.');
     }
-    setSubStatus('active_paid');
-    Alert.alert(
-      '✅ Subscription Activated!',
-      `Thank you! Your ${getPlanByKey(selectedPlanKey).name} subscription is now ACTIVE.`
-    );
   };
 
   const openNavigation = (address) => {
@@ -652,91 +587,73 @@ export default function ShippingWishApp() {
   const pingLocation = async (silent = false) => {
     if (!silent) setGpsStatus('Acquiring satellite lock...');
     try {
-      await Location.requestForegroundPermissionsAsync();
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== 'granted') {
+        setGpsStatus('GPS permission required');
+        if (!silent) Alert.alert('Location Permission', 'Please enable GPS permission to broadcast live truck location.');
+        return;
+      }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const lat = loc.coords.latitude.toFixed(4);
       const lng = loc.coords.longitude.toFixed(4);
-      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      setGpsStatus(`Auto-GPS: ${lat}, ${lng} • Synced`);
-      setLastGpsTime(nowStr);
-      await api.sendGpsPing(loc.coords.latitude, loc.coords.longitude, loc.coords.speed || 64, loc.coords.heading || 90, activeLoad?.id);
-      if (!silent) {
-        Alert.alert('GPS Telemetry Synced', `Live truck coordinates (${lat}, ${lng}) transmitted to Dispatch & Broker.`);
+      const res = await api.sendGpsPing(loc.coords.latitude, loc.coords.longitude, loc.coords.speed || 0, loc.coords.heading || 0, activeLoad?.id || null);
+      if (res.ok) {
+        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setGpsStatus(`Live GPS: ${lat}, ${lng} • Synced`);
+        setLastGpsTime(nowStr);
+        if (!silent) {
+          Alert.alert('GPS Telemetry Synced', `Live truck coordinates (${lat}, ${lng}) transmitted to Dispatch & Broker.`);
+        }
+      } else {
+        setGpsStatus(`GPS sync error (${res.status || 'network'})`);
+        if (!silent) Alert.alert('GPS Sync Error', res.error || 'Could not reach Shipping Wish server.');
       }
     } catch (err) {
-      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      setGpsStatus('Auto-GPS: 32.7751, -96.7986 • Synced');
-      setLastGpsTime(nowStr);
+      setGpsStatus('GPS unavailable on device');
       if (!silent) {
-        Alert.alert('GPS Telemetry Synced', 'Live location transmitted to Shipping Wish Dispatch Desk.');
+        Alert.alert('GPS Unavailable', err.message || 'Could not read device GPS coordinates.');
       }
     }
   };
 
-  // Status Milestone Update (When "delivered" -> Removes from Active Route, Advances Next Load & Adds to History!)
+  // Status Milestone Update (100% Live DB Sync)
   const updateStatus = async (newStatus) => {
     if (!activeLoad) return;
     pingLocation(true);
-    await api.updateLoadStatus(activeLoad.id, newStatus, 'Updated from Shipping Wish Mobile App').catch(() => {});
+    const res = await api.updateLoadStatus(activeLoad.id, newStatus, 'Updated from Shipping Wish Mobile App');
+    if (!res.ok) {
+      Alert.alert('Status Update Failed', res.error || 'Could not save load status to server.');
+      return;
+    }
 
+    await refreshAllData();
     if (newStatus === 'delivered') {
-      const loadedMi = Number(activeLoad.miles || 780);
-      const emptyMi = Number(activeLoad.empty_miles || 42);
-      const totalMi = loadedMi + emptyMi;
-      const gallonsEst = Number((totalMi / 6.5).toFixed(1));
-      const fuelEst = Number((gallonsEst * 3.68).toFixed(2));
-
-      const completedRecord = {
-        id: Date.now(),
-        load_number: activeLoad.load_number,
-        completed_at: new Date().toISOString().slice(0, 10),
-        days_ago: 0,
-        origin: activeLoad.origin,
-        destination: activeLoad.destination,
-        shipper_name: activeLoad.shipper_name || 'Verified Shipper',
-        receiver_name: activeLoad.receiver_name || 'Verified Receiver',
-        equipment_type: activeLoad.equipment_type || 'Reefer (53ft)',
-        loaded_miles: loadedMi,
-        empty_miles: emptyMi,
-        rate: Number(activeLoad.rate || 3450),
-        fuel_gallons: gallonsEst,
-        fuel_cost: fuelEst,
-        loaded_status: 'Loaded & Delivered',
-        unloaded_status: 'Empty at Receiver Dock'
-      };
-
-      setCompletedHistory(prev => [completedRecord, ...prev]);
-      const remainingQueue = loadsQueue.slice(1);
-      setLoadsQueue(remainingQueue);
       setShowActiveLoadSheet(false);
-
-      const nextLoad = remainingQueue[0];
       Alert.alert(
-        '✅ Load Delivered & Logged to History!',
-        nextLoad
-          ? `Load #${completedRecord.load_number} ($${completedRecord.rate.toLocaleString()}) has been moved to your Completed History & PDF Ledger.\n\n🚛 Next Active Load Now Loaded:\n#${nextLoad.load_number} (${nextLoad.origin} ➔ ${nextLoad.destination})`
-          : `Load #${completedRecord.load_number} ($${completedRecord.rate.toLocaleString()}) has been completed and moved to your History & PDF Ledger!`,
+        '✅ Load Delivered & Synced!',
+        `Load #${activeLoad.load_number} has been saved as Delivered in Shipping Wish ERP & moved to your History Ledger.`,
         [
           {
             text: '💸 Send Factoring Packet',
-            onPress: () => {
-              api.sendFactoringPacket({ loadId: activeLoad.id, recipientType: 'factoring' }).catch(() => {});
-              Linking.openURL(api.getFactoringPacketPdfUrl(activeLoad.id)).catch(() => {});
+            onPress: async () => {
+              const pRes = await api.sendFactoringPacket({ loadId: activeLoad.id, recipientType: 'factoring' });
+              if (!pRes.ok) {
+                Alert.alert('Factoring Packet Error', pRes.error || 'Could not email factoring packet.');
+              } else {
+                Linking.openURL(api.getFactoringPacketPdfUrl(activeLoad.id)).catch(() => {});
+              }
             }
           },
           { text: 'View History & PDF', onPress: () => setDriverTab('history') },
-          { text: 'Next Load' }
+          { text: 'OK' }
         ]
       );
       return;
     }
 
-    setLoadsQueue(prev =>
-      prev.map((l, idx) => (idx === 0 ? { ...l, status: newStatus } : l))
-    );
     Alert.alert(
       'Milestone & GPS Broadcasted',
-      `Load #${activeLoad.load_number} status updated to ${newStatus.replace('_', ' ').toUpperCase()}.`
+      `Load #${activeLoad.load_number} status saved as ${newStatus.replace('_', ' ').toUpperCase()}.`
     );
   };
 
@@ -762,61 +679,66 @@ export default function ShippingWishApp() {
 
   const handleOfferResponse = async (offer, action) => {
     setActingOfferId(offer.id);
-    await Promise.all([
-      api.submitCarrierLoadDecision(offer.id, action === 'book' ? 'approve' : 'decline', 'Responded from Shipping Wish Mobile App').catch(() => {}),
-      api.respondToOffer(offer.id, action).catch(() => {})
-    ]);
+    const decisionRes = await api.submitCarrierLoadDecision(
+      offer.id,
+      action === 'book' ? 'approve' : 'decline',
+      'Responded from Shipping Wish Mobile App'
+    );
+    const offerRes = decisionRes.ok
+      ? decisionRes
+      : await api.respondToOffer(offer.id, action);
     setActingOfferId(null);
-    setPendingOffers(prev => prev.filter(o => o.id !== offer.id));
 
+    if (!offerRes.ok) {
+      Alert.alert('Action Failed', offerRes.error || 'Could not update load offer on server.');
+      return;
+    }
+
+    await refreshAllData();
     if (action === 'book') {
-      const bookedLoad = {
-        id: offer.id,
-        load_number: offer.load_number || `SW-${offer.id}`,
-        status: 'assigned',
-        shipper_name: offer.broker_name || 'Verified Shipper',
-        origin: offer.pickup_location,
-        origin_address: offer.pickup_location,
-        receiver_name: 'Regional Distribution Facility',
-        destination: offer.delivery_location,
-        destination_address: offer.delivery_location,
-        rate: offer.rate || 1650,
-        miles: offer.loaded_miles || 245,
-        empty_miles: offer.deadhead_miles || 18,
-        equipment_type: 'Reefer (53ft)',
-        commodity: 'Priority Freight',
-        pickup_date: offer.pickup_date || 'Tomorrow',
-        delivery_date: 'Scheduled',
-        driver_name: user.name
-      };
-      setLoadsQueue(prev => [...prev, bookedLoad]);
       Alert.alert(
-        '⚡ LOAD LOCKED & QUEUED!',
-        `Load #${bookedLoad.load_number} (${offer.pickup_location} ➔ ${offer.delivery_location}) locked at $${Number(offer.rate || 1650).toLocaleString()} and added to your active dispatch queue!`
+        '⚡ LOAD APPROVED & SYNCED!',
+        `Load #${offer.load_number || offer.id} (${offer.pickup_location} ➔ ${offer.delivery_location}) approved and synced with Shipping Wish ERP.`
       );
     } else {
-      Alert.alert('Offer Passed', 'AI Dispatch Engine is scanning for your next reload.');
+      Alert.alert('Offer Declined', 'Offer declined and synced with your dispatcher.');
     }
   };
 
   const handleSwitchDuty = async (nextDuty) => {
+    const res = await api.switchDutyStatus(nextDuty, { driver_id: user.id || 1, truck: user.truck || '' });
+    if (!res.ok) {
+      Alert.alert('ELD Update Failed', res.error || 'Could not update FMCSA duty status.');
+      return;
+    }
     setDutyStatus(nextDuty);
     pingLocation(true);
-    await api.switchDutyStatus(nextDuty, { driver_id: user.id || 1, truck: '104' });
     Alert.alert('ELD Duty Status Updated', `FMCSA Electronic Logbook switched to ${nextDuty.replace('_', ' ')}.`);
   };
 
   const handleToggleDetention = async () => {
+    if (!activeLoad) {
+      Alert.alert('No Active Load', 'Detention timer requires an active assigned load.');
+      return;
+    }
     if (!detentionActive) {
+      const res = await api.checkinDetention(activeLoad.id, 'shipper');
+      if (!res.ok) {
+        Alert.alert('Detention Check-In Failed', res.error || 'Could not start detention clock on server.');
+        return;
+      }
       setDetentionActive(true);
       setDetentionStart(new Date().toLocaleTimeString());
       pingLocation(true);
-      await api.checkinDetention(activeLoad?.id || 101, 'shipper');
       Alert.alert('Detention Clock Started', 'GPS dwell timer started at facility. $75/hr detention billing activates after 2 hours free time.');
     } else {
+      const res = await api.checkoutDetention(activeLoad.id, 'shipper', {});
+      if (!res.ok) {
+        Alert.alert('Detention Checkout Failed', res.error || 'Could not close detention clock on server.');
+        return;
+      }
       setDetentionActive(false);
-      await api.checkoutDetention(activeLoad?.id || 101, 'shipper', { detention_hours: 1.5 });
-      Alert.alert('Detention Logged', 'Facility checkout recorded and attached to load accessorial ledger.');
+      Alert.alert('Detention Logged', 'Facility checkout recorded and saved to load accessorial ledger.');
     }
   };
 
@@ -849,80 +771,84 @@ export default function ShippingWishApp() {
   };
 
   const uploadScannedDoc = async () => {
+    if (!capturedImage) {
+      Alert.alert('No Photo Selected', 'Please capture or choose a document photo first.');
+      return;
+    }
     setUploadingDoc(true);
-    if (capturedImage && activeLoad) {
-      if (capturedImage.startsWith('data:')) {
-        await api.uploadDocumentBase64({
-          loadId: activeLoad.id,
-          category: docType,
-          originalName: `${docType}_${activeLoad.load_number || Date.now()}.jpg`,
-          mimeType: 'image/jpeg',
-          base64Data: capturedImage
-        }).catch(() => {});
-      } else {
-        await api.uploadDocument(activeLoad.id, docType, capturedImage, `${docType}_${Date.now()}.jpg`).catch(() => {});
-      }
+    let res;
+    if (capturedImage.startsWith('data:')) {
+      res = await api.uploadDocumentBase64({
+        loadId: activeLoad?.id || null,
+        category: docType,
+        originalName: `${docType}_${activeLoad?.load_number || Date.now()}.jpg`,
+        mimeType: 'image/jpeg',
+        base64Data: capturedImage
+      });
+    } else {
+      res = await api.uploadDocument(activeLoad?.id || '', docType, capturedImage, `${docType}_${Date.now()}.jpg`);
     }
     setUploadingDoc(false);
-    const newDoc = {
-      id: Date.now(),
-      title: `Signed ${docType.toUpperCase()} Document`,
-      type: docType.toUpperCase(),
-      load_number: activeLoad?.load_number || 'SW-8942',
-      uploaded_at: 'Just now',
-      file_size: '1.6 MB'
-    };
-    setDocuments(prev => [newDoc, ...prev]);
+
+    if (!res.ok) {
+      Alert.alert('Upload Failed', res.error || 'Could not upload document to Shipping Wish Cloud Vault.');
+      return;
+    }
+
     setCapturedImage(null);
-    Alert.alert('Uploaded to TMS Vault', `${newDoc.title} for Load #${newDoc.load_number} is now available to Dispatch & Invoicing.`);
+    await refreshAllData();
+    Alert.alert(
+      'Uploaded to Cloud Vault',
+      `${docType.toUpperCase()} document saved permanently to Vercel Cloud & Shipping Wish ERP${activeLoad ? ` for Load #${activeLoad.load_number}` : ''}.`
+    );
   };
 
   const handleLogIfta = async () => {
-    if (!iftaStateCode || !iftaMiles) return;
-    await api.logIftaTripMiles({ state: iftaStateCode.toUpperCase(), miles: Number(iftaMiles), gallons: Number(iftaGallons || 0) });
-    setIftaSummary(prev => [
-      {
-        state: iftaStateCode.toUpperCase(),
-        miles: Number(iftaMiles),
-        gallons: Number(iftaGallons || 0),
-        taxRate: '$0.24',
-        netTax: '+$3.10'
-      },
-      ...prev
-    ]);
-    Alert.alert('IFTA Trip Logged', `Added ${iftaMiles} mi & ${iftaGallons || 0} gal in ${iftaStateCode.toUpperCase()} to quarterly IFTA ledger.`);
+    if (!iftaStateCode.trim() || !iftaMiles.trim()) {
+      Alert.alert('Missing Fields', 'Please enter State Code (e.g. TX) and Miles Driven.');
+      return;
+    }
+    const res = await api.logIftaTripMiles({
+      state: iftaStateCode.trim().toUpperCase(),
+      miles: Number(iftaMiles),
+      gallons: Number(iftaGallons || 0)
+    });
+    if (!res.ok) {
+      Alert.alert('IFTA Log Failed', res.error || 'Could not save IFTA mileage to server.');
+      return;
+    }
+    setIftaMiles('');
+    setIftaGallons('');
+    await refreshAllData();
+    Alert.alert('IFTA Trip Saved', `Logged ${iftaMiles} mi & ${iftaGallons || 0} gal in ${iftaStateCode.trim().toUpperCase()} to your live quarterly IFTA ledger.`);
   };
 
-  const handleCreateDispatchLoad = () => {
-    if (!newLoadOrigin || !newLoadDest || !newLoadRate) {
+  const handleCreateDispatchLoad = async () => {
+    if (!newLoadOrigin.trim() || !newLoadDest.trim() || !newLoadRate.trim()) {
       Alert.alert('Missing Details', 'Please enter Origin, Destination, and Rate.');
       return;
     }
-    const created = {
-      id: Date.now(),
-      load_number: `SW-${Math.floor(9000 + Math.random() * 900)}`,
-      status: 'assigned',
-      shipper_name: 'Direct Shipper Facility',
-      origin: newLoadOrigin.trim(),
-      origin_address: newLoadOrigin.trim(),
-      receiver_name: 'Regional Consignee',
-      destination: newLoadDest.trim(),
-      destination_address: newLoadDest.trim(),
-      rate: Number(newLoadRate) || 3200,
-      miles: Number(newLoadMiles) || 650,
-      empty_miles: 30,
-      equipment_type: 'Reefer 53ft',
-      driver_name: newLoadDriver || 'Marcus Vance',
-      pickup_date: 'Scheduled',
-      delivery_date: 'Scheduled'
-    };
-    setLoadsQueue(prev => [...prev, created]);
+    const targetCarrierId = myCarriers[0]?.id || user?.id;
+    const res = await api.createLoad({
+      carrierId: targetCarrierId,
+      pickupLocation: newLoadOrigin.trim(),
+      deliveryLocation: newLoadDest.trim(),
+      rate: Number(newLoadRate),
+      miles: Number(newLoadMiles || 0),
+      equipmentType: '53ft Dry Van',
+      dispatcherNotes: newLoadDriver ? `Assigned Driver: ${newLoadDriver.trim()}` : 'Created via Shipping Wish Mobile TMS'
+    });
+    if (!res.ok) {
+      Alert.alert('Create Load Failed', res.error || 'Only dispatchers/admins can create loads directly, or check required fields.');
+      return;
+    }
     setShowNewLoadModal(false);
     setNewLoadOrigin('');
     setNewLoadDest('');
     setNewLoadRate('');
     setNewLoadMiles('');
-    Alert.alert('Load Dispatched', `Load #${created.load_number} added to ${created.driver_name}'s dispatch queue.`);
+    await refreshAllData();
+    Alert.alert('Load Dispatched Live!', `Load #${res.data?.load?.load_number || ''} saved to Shipping Wish ERP and synced across web & mobile.`);
   };
 
   // 1. FULL-SCREEN OPENING LAUNCH ANIMATION
@@ -1008,50 +934,9 @@ export default function ShippingWishApp() {
                   {authLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>SIGN IN TO CONSOLE ›</Text>}
                 </TouchableOpacity>
 
-                <View style={[styles.quickDemoBox, { borderTopColor: T.border }]}>
-                  <Text style={[styles.quickDemoHeader, { color: T.amber }]}>QUICK DEMO CLIENT ACCOUNTS (1-TAP):</Text>
-                  <TouchableOpacity
-                    style={styles.demoBtnActive}
-                    onPress={() => {
-                      setUser({
-                        name: 'Marcus Vance',
-                        company_name: 'Apex Transport LLC',
-                        email: 'marcus@apextransport.com',
-                        mc_number: 'MC-148295',
-                        role: 'driver',
-                        truck: '104'
-                      });
-                      setSubStatus('trial_active');
-                      setTrialDaysLeft(7);
-                      setIsAuthenticated(true);
-                    }}
-                  >
-                    <Text style={[styles.demoBtnText, { color: '#047857' }]}>
-                      ✓ Login as Active Trial Client (Marcus Vance • MV)
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.demoBtnExpired}
-                    onPress={() => {
-                      setUser({
-                        name: 'David Reynolds',
-                        company_name: 'Midwest Star Freight LLC',
-                        email: 'david@midweststar.com',
-                        mc_number: 'MC-391042',
-                        role: 'carrier',
-                        truck: '108'
-                      });
-                      setSubStatus('expired');
-                      setTrialDaysLeft(0);
-                      setIsAuthenticated(true);
-                    }}
-                  >
-                    <Text style={[styles.demoBtnText, { color: '#B91C1C' }]}>
-                      🔒 Test Expired Trial Client (See Payment Lock Screen)
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <Text style={{ textAlign: 'center', color: T.textMuted, fontSize: 11, marginTop: 14 }}>
+                  100% Live Cloud Sync with shippingwish.com ERP & Carrier Portal
+                </Text>
               </View>
             </View>
           ) : (
@@ -1263,8 +1148,19 @@ export default function ShippingWishApp() {
               </TouchableOpacity>
 
               <TouchableOpacity
+                style={[styles.primaryButton, { backgroundColor: T.blue, marginTop: 10 }]}
+                onPress={handleVerifySubscriptionStatus}
+                disabled={authLoading}
+              >
+                <Text style={styles.buttonText}>↻ VERIFY PAYMENT & UNLOCK ACCOUNT</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={[styles.primaryButton, { backgroundColor: '#475569', marginTop: 10 }]}
-                onPress={() => setIsAuthenticated(false)}
+                onPress={() => {
+                  api.logout();
+                  setIsAuthenticated(false);
+                }}
               >
                 <Text style={styles.buttonText}>← BACK TO SIGN IN / SWITCH ACCOUNT</Text>
               </TouchableOpacity>
@@ -1285,15 +1181,15 @@ export default function ShippingWishApp() {
     <SafeAreaView style={[styles.container, { backgroundColor: T.bg }]}>
       <ExpoStatusBar style={isLightMode ? 'dark' : 'light'} />
 
-      {/* Top Executive Header: Customer Initials ("MV") + Prominent Customer & Company Name */}
+      {/* Top Executive Header: Customer Initials + Prominent Customer & Company Name */}
       <ExecutiveTopBar
         brandKey="shippingwish"
         isLightMode={isLightMode}
-        userLabel={user?.name || 'Marcus Vance'}
-        companyLabel={`${user?.company_name || 'Apex Transport LLC'} • Unit #${user?.truck || '104'}`}
+        userLabel={user?.name || 'Carrier Account'}
+        companyLabel={`${user?.company_name || 'Shipping Wish Client'}${user?.truck ? ` • Unit #${user.truck}` : ''}`}
         verifiedLabel={statusChipLabel}
         rightStatusLabel="● DESK ACTIVE"
-        rightStatusSub="Auto-GPS On"
+        rightStatusSub="Sync Live ↻"
         onOpenMenu={() => setMenuVisible(true)}
         onRightPress={() => anim.runWithLoader('Syncing with 24/7 Operations Desk...', refreshAllData)}
       />
@@ -2337,46 +2233,6 @@ function getCheckLabel(key) {
     case 'securement': return 'Load Bars, Straps & Trailer Door Seal';
     default: return key;
   }
-}
-
-function getMockFleetDrivers() {
-  return [
-    {
-      id: 1,
-      name: 'Marcus Vance',
-      truck: '104',
-      phone: '+12145554920',
-      speed: 64,
-      location: 'I-20 Eastbound near Shreveport, LA',
-      lastPing: 'Just now (30s Auto)',
-      activeRoute: 'Dallas, TX ➔ Atlanta, GA (Load #SW-8942)'
-    },
-    {
-      id: 2,
-      name: 'David Reynolds',
-      truck: '108',
-      phone: '+13125558812',
-      speed: 58,
-      location: 'I-80 Eastbound near Toledo, OH',
-      lastPing: '15s ago (30s Auto)',
-      activeRoute: 'Chicago, IL ➔ Allentown, PA (Load #SW-8943)'
-    }
-  ];
-}
-
-function getMockDocuments() {
-  return [
-    { id: 1, title: 'Signed Proof of Delivery (POD)', type: 'POD', load_number: 'SW-8940', uploaded_at: 'Yesterday', file_size: '2.4 MB' },
-    { id: 2, title: 'Signed Broker Rate Confirmation', type: 'RATECON', load_number: 'SW-8942', uploaded_at: 'Today 07:45 AM', file_size: '410 KB' },
-    { id: 3, title: 'Shipper Bill of Lading (BOL)', type: 'BOL', load_number: 'SW-8942', uploaded_at: 'Today 08:30 AM', file_size: '1.8 MB' }
-  ];
-}
-
-function getMockInvoices() {
-  return [
-    { id: 1, invoice_number: '2026-089', broker_name: 'C.H. Robinson Worldwide', amount: '3,450.00', status: 'pending' },
-    { id: 2, invoice_number: '2026-088', broker_name: 'Total Quality Logistics (TQL)', amount: '2,850.00', status: 'paid' }
-  ];
 }
 
 const styles = StyleSheet.create({

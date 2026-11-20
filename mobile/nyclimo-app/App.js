@@ -45,60 +45,16 @@ const LIMO_COLORS = {
   danger: '#EF4444'
 };
 
-const DEFAULT_FLEET = [
-  {
-    id: 1,
-    name: 'Executive Luxury Sedan',
-    models: 'Mercedes-Benz S-Class • BMW 7 Series • Cadillac CT6',
-    passengers: 3,
-    luggage: 3,
-    base_rate: 95,
-    per_mile: 4.25,
-    hourly_rate: 95,
-    badge: 'MOST POPULAR',
-    image_url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80',
-    features: ['TLC-Licensed Executive Chauffeur', 'Complimentary Fiji Water & Wi-Fi', '60-Min Free Airport Arrival Wait']
-  },
-  {
-    id: 2,
-    name: 'Premier Full-Size Luxury SUV',
-    models: 'Cadillac Escalade ESV • Chevrolet Suburban High Country',
-    passengers: 6,
-    luggage: 6,
-    base_rate: 135,
-    per_mile: 5.50,
-    hourly_rate: 125,
-    badge: 'VIP GROUP & AIRPORT',
-    image_url: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
-    features: ['Captain Leather Seating for 6 Pax', 'Full-Size Ski & 6 Suitcase Capacity', 'Real-Time FAA Flight Tracking']
-  },
-  {
-    id: 3,
-    name: 'First-Class Maybach Chauffeur',
-    models: 'Mercedes-Maybach S580 • Rolls-Royce Ghost',
-    passengers: 3,
-    luggage: 3,
-    base_rate: 220,
-    per_mile: 7.50,
-    hourly_rate: 195,
-    badge: 'ULTRA LUXURY',
-    image_url: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80',
-    features: ['Reclining Executive Rear Lounge', 'Champagne Chiller & Privacy Shades', 'White-Glove Diplomatic Chauffeur']
-  },
-  {
-    id: 4,
-    name: 'Executive Mercedes Sprinter Jet-Van',
-    models: 'Mercedes-Benz Sprinter Executive 14-Passenger',
-    passengers: 14,
-    luggage: 14,
-    base_rate: 245,
-    per_mile: 6.75,
-    hourly_rate: 175,
-    badge: 'CORPORATE ROADSHOW',
-    image_url: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80',
-    features: ['Stand-Up 6ft 4in Cabin Height', '110V & USB-C Outlets at Every Seat', 'Ideal for Corporate & FBO Transfers']
-  }
-];
+const VEHICLE_IMAGES = {
+  sedan: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80',
+  suv: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
+  maybach: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80',
+  sprinter: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80'
+};
+
+function getTomorrowIso() {
+  return new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+}
 
 const NYC_PRESETS = [
   { label: '✈️ JFK Airport T4', address: 'John F. Kennedy International Airport (JFK), Queens, NY 11430' },
@@ -109,17 +65,18 @@ const NYC_PRESETS = [
   { label: '🏛️ Wall Street NYC', address: '11 Wall St, New York, NY 10005' }
 ];
 
-async function callLimoApi(path, options = {}) {
+async function callLimoApi(path, options = {}, token = '') {
   const res = await fetch(LIMO_API + path, {
     ...options,
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {})
     }
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
   return data;
 }
 
@@ -128,19 +85,19 @@ export default function NYCLimoWishApp() {
   const [tab, setTab] = useState('book');
   const [menuVisible, setMenuVisible] = useState(false);
   const [isLightMode, setIsLightMode] = useState(false);
+  const [serviceType, setServiceType] = useState('point_to_point'); // 'point_to_point' | 'hourly'
   const anim = useExecutiveAnimations(`${tab}-${serviceType}`);
 
-  // Booking form state
-  const [serviceType, setServiceType] = useState('point_to_point'); // 'point_to_point' | 'hourly'
+  // Booking form state (Dynamic Future Date = Tomorrow)
   const [pickup, setPickup] = useState('John F. Kennedy International Airport (JFK), Queens, NY 11430');
   const [dropoff, setDropoff] = useState('The Plaza Hotel, 768 5th Ave, New York, NY 10019');
-  const [pickupDate, setPickupDate] = useState('2026-11-20');
+  const [pickupDate, setPickupDate] = useState(getTomorrowIso());
   const [pickupTime, setPickupTime] = useState('14:30');
   const [hours, setHours] = useState('4');
   const [passengers, setPassengers] = useState('2');
   const [luggage, setLuggage] = useState('2');
   const [childSeats, setChildSeats] = useState('0');
-  const [flightNumber, setFlightNumber] = useState('AA 104');
+  const [flightNumber, setFlightNumber] = useState('');
   const [meetAndGreet, setMeetAndGreet] = useState(true);
 
   // Passenger contact
@@ -150,70 +107,31 @@ export default function NYCLimoWishApp() {
   const [phone, setPhone] = useState('');
   const [tripNotes, setTripNotes] = useState('');
 
-  // Fleet & Quote state
-  const [vehicles, setVehicles] = useState(DEFAULT_FLEET);
-  const [selectedVehicleId, setSelectedVehicleId] = useState(1);
+  // 100% Live Fleet & Quote state (Zero Hardcoded Mock Data)
+  const [vehicles, setVehicles] = useState([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [quotes, setQuotes] = useState([]);
-  const [routeDistance, setRouteDistance] = useState({ miles: 18.4, durationMins: 46 });
+  const [quoteError, setQuoteError] = useState('');
+  const [routeDistance, setRouteDistance] = useState({ miles: 0, durationMins: 0 });
   const [quoting, setQuoting] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [payingStripe, setPayingStripe] = useState(false);
 
-  // Track Ride state
-  const [trackNumber, setTrackNumber] = useState('NLW-VIP-8942');
-  const [trackedRide, setTrackedRide] = useState({
-    booking_number: 'NLW-VIP-8942',
-    status: 'en_route',
-    service_type: 'point_to_point',
-    pickup_address: 'John F. Kennedy International Airport (JFK), Terminal 4, Queens, NY',
-    dropoff_address: 'The Plaza Hotel, 768 5th Ave, New York, NY 10019',
-    pickup_date: '2026-11-20',
-    pickup_time: '14:30',
-    total_price: '243.50',
-    payment_status: 'paid',
-    flight_number: 'AA 104',
-    meet_and_greet: true,
-    vehicle_name: 'Executive Luxury Sedan (Mercedes-Benz S580)',
-    operator_name: 'Manhattan Executive Base TLC #B02941'
-  });
+  // 100% Live Track Ride state (Zero Fake Pre-filled Ride)
+  const [trackNumber, setTrackNumber] = useState('');
+  const [trackedRide, setTrackedRide] = useState(null);
 
-  // Chauffeur Console state
-  const [chauffeurTrips, setChauffeurTrips] = useState([
-    {
-      id: 901,
-      booking_number: 'NLW-VIP-8942',
-      status: 'en_route',
-      passenger_first_name: 'Alexander',
-      passenger_last_name: 'Sterling',
-      passenger_phone: '+19177370021',
-      pickup_address: 'JFK International Airport, Terminal 4 Arrivals, Queens, NY',
-      dropoff_address: 'The Plaza Hotel, 768 5th Ave, New York, NY 10019',
-      pickup_date: 'Today',
-      pickup_time: '14:30',
-      flight_number: 'AA 104 (On Time)',
-      vehicle_name: 'Mercedes-Benz S-Class (#TLC-8841)',
-      total_price: '243.50'
-    },
-    {
-      id: 902,
-      booking_number: 'NLW-VIP-8949',
-      status: 'confirmed',
-      passenger_first_name: 'Victoria',
-      passenger_last_name: 'Kensington',
-      passenger_phone: '+12125550192',
-      pickup_address: 'Four Seasons Hotel, 57 E 57th St, New York, NY',
-      dropoff_address: 'Teterboro Private Jet FBO (TEB), NJ',
-      pickup_date: 'Today',
-      pickup_time: '18:00',
-      flight_number: 'NetJets N450QS',
-      vehicle_name: 'Cadillac Escalade ESV (#TLC-9210)',
-      total_price: '315.00'
-    }
-  ]);
-
-  // VIP Account & ERP state
+  // 100% Live Chauffeur & Passenger Account state
+  const [limoToken, setLimoToken] = useState('');
   const [vipUser, setVipUser] = useState(null);
+  const [passengerBookings, setPassengerBookings] = useState([]);
+  const [chauffeurTrips, setChauffeurTrips] = useState([]);
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [authName, setAuthName] = useState('');
+  const [authPhone, setAuthPhone] = useState('');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
     fetchFleet();
@@ -224,19 +142,29 @@ export default function NYCLimoWishApp() {
     try {
       const data = await callLimoApi('/api/nyclimo/vehicles');
       if (Array.isArray(data.vehicles) && data.vehicles.length > 0) {
-        setVehicles(
-          data.vehicles.map((v, i) => ({
-            ...DEFAULT_FLEET[i % DEFAULT_FLEET.length],
+        const mapped = data.vehicles.map((v) => {
+          const nm = String(v.name || '').toLowerCase();
+          const fallbackImg = nm.includes('sprinter') ? VEHICLE_IMAGES.sprinter
+            : nm.includes('maybach') || nm.includes('rolls') ? VEHICLE_IMAGES.maybach
+            : nm.includes('suv') || nm.includes('escalade') ? VEHICLE_IMAGES.suv
+            : VEHICLE_IMAGES.sedan;
+          return {
             ...v,
-            image_url: v.image_url || DEFAULT_FLEET[i % DEFAULT_FLEET.length].image_url
-          }))
-        );
+            image_url: v.image_url || fallbackImg,
+            features: Array.isArray(v.features) ? v.features : ['NYC TLC Licensed Chauffeur', 'Real-Time Flight Tracking', 'Complimentary Water & Wi-Fi']
+          };
+        });
+        setVehicles(mapped);
+        setSelectedVehicleId((prev) => prev || mapped[0].id);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[NYC Limo Fleet]:', e.message);
+    }
   };
 
   const calculateQuotes = async () => {
     setQuoting(true);
+    setQuoteError('');
     try {
       const data = await callLimoApi('/api/nyclimo/quote', {
         method: 'POST',
@@ -250,51 +178,35 @@ export default function NYCLimoWishApp() {
         })
       });
       if (data.distance) setRouteDistance(data.distance);
-      if (Array.isArray(data.quotes) && data.quotes.length > 0) {
+      if (Array.isArray(data.quotes)) {
         setQuotes(data.quotes);
-        setQuoting(false);
-        return;
+        if (data.quotes.length > 0 && !selectedVehicleId) {
+          setSelectedVehicleId(data.quotes[0].vehicleId);
+        }
       }
-    } catch (e) {}
-
-    // Local exact pricing calculation
-    const estMiles = serviceType === 'hourly' ? 0 : 18.4;
-    const computed = vehicles.map(v => {
-      const base = serviceType === 'hourly'
-        ? (Number(v.hourly_rate || 95) * (Number(hours) || 4))
-        : (Number(v.base_rate || 95) + estMiles * Number(v.per_mile || 4.25));
-      const tolls = 21.50;
-      const gratuity = Number((base * 0.20).toFixed(2));
-      const meetFee = meetAndGreet ? 35 : 0;
-      const seatFee = (Number(childSeats) || 0) * 20;
-      const total = Number((base + tolls + gratuity + meetFee + seatFee).toFixed(2));
-      return {
-        vehicleId: v.id,
-        name: v.name,
-        models: v.models,
-        passengers: v.passengers,
-        luggage: v.luggage,
-        subtotal: base.toFixed(2),
-        tolls: tolls.toFixed(2),
-        gratuity: gratuity.toFixed(2),
-        meetAndGreetFee: meetFee.toFixed(2),
-        total: total.toFixed(2)
-      };
-    });
-    setQuotes(computed);
-    setQuoting(false);
+    } catch (e) {
+      setQuoteError(e.message || 'Could not calculate live quote. Verify pickup/drop-off address.');
+      setQuotes([]);
+    } finally {
+      setQuoting(false);
+    }
   };
 
   const selectedQuote = quotes.find(q => q.vehicleId === selectedVehicleId) || quotes[0] || {
-    total: '243.50',
-    subtotal: '172.00',
-    tolls: '21.50',
-    gratuity: '35.00'
+    total: '0.00',
+    subtotal: '0.00',
+    tolls: '0.00',
+    gratuity: '0.00'
   };
 
   const handleCreateBooking = async () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()) {
       Alert.alert('Passenger Details Required', 'Please enter Passenger First Name, Last Name, Email, and Mobile Phone.');
+      return;
+    }
+    const vehId = selectedVehicleId || vehicles[0]?.id;
+    if (!vehId) {
+      Alert.alert('Fleet Loading', 'Please wait for live vehicle classes to load or tap Refresh.');
       return;
     }
     setBookingLoading(true);
@@ -308,7 +220,7 @@ export default function NYCLimoWishApp() {
           pickupDate,
           pickupTime,
           durationHours: Number(hours) || 4,
-          vehicleId: selectedVehicleId,
+          vehicleId: vehId,
           passengers: Number(passengers) || 2,
           luggage: Number(luggage) || 2,
           childSeats: Number(childSeats) || 0,
@@ -321,100 +233,139 @@ export default function NYCLimoWishApp() {
           tripNotes: tripNotes.trim(),
           source: 'mobile_app'
         })
-      });
+      }, limoToken);
+
       setBookingLoading(false);
       if (data.booking) {
         setTrackNumber(data.booking.booking_number);
         setTrackedRide({
           ...data.booking,
-          pickup_address: pickup,
-          dropoff_address: dropoff,
-          vehicle_name: vehicles.find(v => v.id === selectedVehicleId)?.name || 'Executive Luxury Sedan'
+          pickup_address: data.booking.pickup_address || pickup,
+          dropoff_address: data.booking.dropoff_address || dropoff,
+          vehicle_name: vehicles.find(v => v.id === vehId)?.name || 'Executive Vehicle'
         });
         setTab('track');
         Alert.alert(
-          '🚖 Chauffeur Reservation Received!',
-          `Booking #${data.booking.booking_number} ($${data.booking.total_price || selectedQuote.total}) has been dispatched to our NYC TLC Operator Desk.`
+          '🚖 Live Chauffeur Request Created!',
+          `Booking #${data.booking.booking_number} ($${data.booking.total_price || selectedQuote.total}) has been saved to NYC Limo Wish ERP and dispatched to our licensed TLC operator network.`
         );
         return;
       }
-    } catch (e) {}
-    setBookingLoading(false);
+      Alert.alert('Booking Error', 'Could not confirm booking response from server.');
+    } catch (e) {
+      setBookingLoading(false);
+      Alert.alert('Booking Rejected', e.message || 'Please check pickup date (must be a future date), 24h time (HH:MM), and addresses.');
+    }
+  };
 
-    const newNum = `NLW-VIP-${Math.floor(1000 + Math.random() * 9000)}`;
-    const selectedVeh = vehicles.find(v => v.id === selectedVehicleId) || vehicles[0];
-    const localBooking = {
-      booking_number: newNum,
-      status: 'operator_accepted',
-      service_type: serviceType,
-      pickup_address: pickup,
-      dropoff_address: dropoff,
-      pickup_date: pickupDate,
-      pickup_time: pickupTime,
-      total_price: selectedQuote.total,
-      payment_status: 'pending',
-      flight_number: flightNumber,
-      meet_and_greet: meetAndGreet,
-      vehicle_name: selectedVeh.name,
-      operator_name: 'NYC Limo Wish Executive Base'
-    };
-    setTrackNumber(newNum);
-    setTrackedRide(localBooking);
-    setChauffeurTrips(prev => [
-      {
-        id: Date.now(),
-        booking_number: newNum,
-        status: 'confirmed',
-        passenger_first_name: firstName.trim(),
-        passenger_last_name: lastName.trim(),
-        passenger_phone: phone.trim(),
-        pickup_address: pickup,
-        dropoff_address: dropoff,
-        pickup_date: pickupDate,
-        pickup_time: pickupTime,
-        flight_number: flightNumber || 'N/A',
-        vehicle_name: selectedVeh.name,
-        total_price: selectedQuote.total
-      },
-      ...prev
-    ]);
-    setTab('track');
-    Alert.alert(
-      '🚖 Chauffeur Reservation Confirmed!',
-      `Booking #${newNum} for ${selectedVeh.name} ($${selectedQuote.total}) is confirmed for ${pickupDate} at ${pickupTime}.`
-    );
+  const handlePayBookingStripe = async (bookingId) => {
+    if (!bookingId) return;
+    setPayingStripe(true);
+    try {
+      const data = await callLimoApi(`/api/nyclimo/bookings/${bookingId}/checkout`, { method: 'POST' }, limoToken);
+      setPayingStripe(false);
+      if (data.url) {
+        Linking.openURL(data.url).catch(() => {});
+        Alert.alert('Stripe Checkout Opened', 'Complete your payment in Stripe to lock your chauffeur dispatch.');
+      } else {
+        Alert.alert('Payment Notice', 'Stripe checkout link was not returned.');
+      }
+    } catch (e) {
+      setPayingStripe(false);
+      Alert.alert('Payment Not Ready', e.message || 'Operator must accept the booking before Stripe payment is enabled.');
+    }
   };
 
   const handleLookupTrack = async (numOverride) => {
     const ref = String(numOverride || trackNumber || '').trim().toUpperCase();
-    if (!ref) return;
+    if (!ref) {
+      Alert.alert('Booking Reference Required', 'Enter your NYC Limo Wish booking number (e.g. NLW-...).');
+      return;
+    }
     try {
-      const data = await callLimoApi('/api/nyclimo/track/' + encodeURIComponent(ref));
+      const data = await callLimoApi('/api/nyclimo/track/' + encodeURIComponent(ref), {}, limoToken);
       if (data.booking) {
         setTrackedRide(data.booking);
         return;
       }
+      setTrackedRide(null);
+      Alert.alert('Booking Not Found', `No live reservation found matching ${ref}.`);
+    } catch (e) {
+      setTrackedRide(null);
+      Alert.alert('Booking Not Found', e.message || `No live reservation found matching ${ref}.`);
+    }
+  };
+
+  const fetchAccountData = async (tok, userObj) => {
+    if (!tok) return;
+    try {
+      const mine = await callLimoApi('/api/nyclimo/passenger/bookings', {}, tok).catch(() => ({ bookings: [] }));
+      setPassengerBookings(Array.isArray(mine.bookings) ? mine.bookings : []);
+      if (userObj && ['driver', 'admin', 'super_admin', 'dispatcher'].includes(userObj.role)) {
+        const trips = await callLimoApi('/api/nyclimo/driver/trips', {}, tok).catch(() => ({ trips: [] }));
+        setChauffeurTrips(Array.isArray(trips.trips) ? trips.trips : (Array.isArray(trips.bookings) ? trips.bookings : []));
+      } else {
+        setChauffeurTrips([]);
+      }
     } catch (e) {}
-    Alert.alert('Live Tracker Synced', `Showing real-time TLC Chauffeur status for ${ref}.`);
+  };
+
+  const handleLimoAuth = async () => {
+    if (!authEmail.trim() || !authPassword) {
+      Alert.alert('Credentials Required', 'Please enter your email and password.');
+      return;
+    }
+    if (authMode === 'signup' && !authName.trim()) {
+      Alert.alert('Name Required', 'Please enter your full name to create an account.');
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const path = authMode === 'signup' ? '/api/nyclimo/signup' : '/api/nyclimo/login';
+      const body = authMode === 'signup'
+        ? { name: authName.trim(), email: authEmail.trim(), password: authPassword, phone: authPhone.trim() }
+        : { email: authEmail.trim(), password: authPassword };
+      const data = await callLimoApi(path, { method: 'POST', body: JSON.stringify(body) });
+      setLimoToken(data.token);
+      setVipUser(data.user);
+      setAuthPassword('');
+      await fetchAccountData(data.token, data.user);
+      Alert.alert('Signed In Live', `Welcome ${data.user.name}! Connected to NYC Limo Wish Cloud.`);
+    } catch (e) {
+      Alert.alert(authMode === 'signup' ? 'Sign Up Failed' : 'Sign In Failed', e.message || 'Invalid credentials.');
+    }
+    setAuthLoading(false);
   };
 
   const handleUpdateChauffeurStatus = async (trip, nextStatus) => {
-    setChauffeurTrips(prev => prev.map(t => (t.id === trip.id ? { ...t, status: nextStatus } : t)));
-    if (trackedRide.booking_number === trip.booking_number) {
-      setTrackedRide(prev => ({ ...prev, status: nextStatus }));
+    if (!limoToken) {
+      Alert.alert('Chauffeur Sign-In Required', 'Sign in with a verified Chauffeur or Admin account in the VIP tab first.');
+      setTab('vip');
+      return;
     }
     try {
-      const loc = await Location.getCurrentPositionAsync({});
+      let coords = {};
+      try {
+        const perm = await Location.requestForegroundPermissionsAsync();
+        if (perm.status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({});
+          coords = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+        }
+      } catch (_) {}
+
       await callLimoApi(`/api/nyclimo/driver/trips/${trip.id}/status`, {
         method: 'POST',
-        body: JSON.stringify({
-          status: nextStatus,
-          lat: loc.coords.latitude,
-          lng: loc.coords.longitude
-        })
-      });
-    } catch (e) {}
-    Alert.alert('Chauffeur Status Updated', `Trip #${trip.booking_number} updated to ${nextStatus.replace('_', ' ').toUpperCase()}. Passenger notified via SMS & Email.`);
+        body: JSON.stringify({ status: nextStatus, ...coords })
+      }, limoToken);
+
+      setChauffeurTrips(prev => prev.map(t => (t.id === trip.id ? { ...t, status: nextStatus } : t)));
+      if (trackedRide && trackedRide.booking_number === trip.booking_number) {
+        setTrackedRide(prev => ({ ...prev, status: nextStatus }));
+      }
+      Alert.alert('Chauffeur Status Saved', `Trip #${trip.booking_number} updated to ${nextStatus.replace('_', ' ').toUpperCase()} in NYC Limo ERP.`);
+    } catch (e) {
+      Alert.alert('Status Update Failed', e.message || 'Could not update trip status on server.');
+    }
   };
 
   const openMaps = (address) => {
@@ -439,13 +390,13 @@ export default function NYCLimoWishApp() {
       <ExecutiveTopBar
         brandKey="nyclimo"
         isLightMode={isLightMode}
-        userLabel={vipUser ? vipUser.name : 'Alexander Sterling'}
-        companyLabel="Manhattan Executive Base • TLC #B02941"
+        userLabel={vipUser ? vipUser.name : 'VIP Guest'}
+        companyLabel={vipUser ? `${vipUser.email} • ${(vipUser.role || 'member').toUpperCase()}` : 'NYC TLC Executive Chauffeur Network'}
         verifiedLabel="👑 VIP"
         rightStatusLabel="24/7 VIP DESK"
         rightStatusSub="JFK · LGA · EWR"
         onOpenMenu={() => setMenuVisible(true)}
-        onRightPress={() => anim.runWithLoader('Calculating Live Tri-State Chauffeur Fleet Quotes...', calculateQuotes)}
+        onRightPress={() => anim.runWithLoader('Calculating Live Tri-State Chauffeur Fleet Quotes...', () => Promise.all([fetchFleet(), calculateQuotes()]))}
       />
 
       <Animated.View style={{ flex: 1, opacity: anim.tabFade, transform: [{ translateY: anim.tabSlide }] }}>
@@ -765,6 +716,22 @@ export default function NYCLimoWishApp() {
                 );
               })}
 
+              {trackedRide.status === 'operator_accepted' && trackedRide.payment_status !== 'paid' && trackedRide.id ? (
+                <TouchableOpacity
+                  style={[styles.goldPrimaryBtn, { marginTop: 14, backgroundColor: LIMO_COLORS.success }]}
+                  onPress={() => handlePayBookingStripe(trackedRide.id)}
+                  disabled={payingStripe}
+                >
+                  {payingStripe ? (
+                    <ActivityIndicator color="#000" />
+                  ) : (
+                    <Text style={styles.goldPrimaryBtnText}>
+                      💳 PAY ${trackedRide.total_price} SECURELY WITH STRIPE
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              ) : null}
+
               <View style={[styles.twoColRow, { marginTop: 14 }]}>
                 <TouchableOpacity style={[styles.outlineGoldBtn, { flex: 1 }]} onPress={() => Linking.openURL('tel:+19177370021')}>
                   <Text style={styles.outlineGoldBtnText}>📞 CALL CHAUFFEUR DESK</Text>
@@ -789,7 +756,23 @@ export default function NYCLimoWishApp() {
           <Text style={styles.pageTitle}>Chauffeur Dispatch Console</Text>
           <Text style={styles.pageSub}>Active assigned VIP trips, 1-tap status updates, and GPS telemetry.</Text>
 
-          {chauffeurTrips.map(trip => (
+          {chauffeurTrips.length === 0 ? (
+            <View style={[styles.card, { marginTop: 12 }]}>
+              <Text style={styles.vehicleName}>
+                {limoToken ? 'No Active Chauffeur Trips Assigned' : 'Chauffeur Sign-In Required'}
+              </Text>
+              <Text style={[styles.pageSub, { marginTop: 6 }]}>
+                {limoToken
+                  ? 'Assigned trips from NYC Limo Wish ERP will appear here in real time.'
+                  : 'Sign in with your verified TLC Chauffeur or Admin account in the VIP Lounge tab to receive live dispatches.'}
+              </Text>
+              {!limoToken && (
+                <TouchableOpacity style={styles.goldPrimaryBtn} onPress={() => setTab('vip')}>
+                  <Text style={styles.goldPrimaryBtnText}>🔐 SIGN IN TO CHAUFFEUR DESK</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : chauffeurTrips.map(trip => (
             <View key={trip.id} style={[styles.card, { marginBottom: 14 }]}>
               <View style={styles.vehicleSelectTop}>
                 <View>
@@ -848,41 +831,104 @@ export default function NYCLimoWishApp() {
           <Text style={styles.pageTitle}>VIP Passenger Lounge & Fleet ERP</Text>
           <Text style={styles.pageSub}>Corporate billing accounts, chauffeur partner onboarding, and dispatch stats.</Text>
 
-          {/* ERP KPI Row */}
+          {/* Real Live KPI Row */}
           <View style={[styles.twoColRow, { marginTop: 12 }]}>
             <View style={[styles.card, { flex: 1, alignItems: 'center' }]}>
-              <Text style={styles.fieldLabel}>ACTIVE NYC CHAUFFEURS</Text>
-              <Text style={[styles.quoteTotal, { fontSize: 22, marginTop: 4 }]}>42 Units</Text>
+              <Text style={styles.fieldLabel}>LIVE FLEET CLASSES</Text>
+              <Text style={[styles.quoteTotal, { fontSize: 22, marginTop: 4 }]}>{vehicles.length}</Text>
             </View>
             <View style={[styles.card, { flex: 1, alignItems: 'center' }]}>
-              <Text style={styles.fieldLabel}>ON-TIME AIRPORT SLA</Text>
-              <Text style={[styles.quoteTotal, { fontSize: 22, marginTop: 4, color: LIMO_COLORS.success }]}>99.8%</Text>
+              <Text style={styles.fieldLabel}>MY BOOKINGS</Text>
+              <Text style={[styles.quoteTotal, { fontSize: 22, marginTop: 4, color: LIMO_COLORS.success }]}>{passengerBookings.length}</Text>
             </View>
           </View>
 
           <View style={[styles.card, { marginTop: 14 }]}>
-            <Text style={styles.sectionLabel}>VIP CORPORATE & PASSENGER SIGN IN</Text>
+            <Text style={styles.sectionLabel}>VIP PASSENGER & CHAUFFEUR ACCOUNT (100% LIVE)</Text>
             {vipUser ? (
               <View style={{ marginTop: 8 }}>
                 <Text style={styles.vehicleName}>{vipUser.name}</Text>
-                <Text style={styles.vehicleModels}>{vipUser.email} • Corporate Priority Tier</Text>
-                <TouchableOpacity style={[styles.outlineGoldBtn, { marginTop: 12 }]} onPress={() => setVipUser(null)}>
+                <Text style={styles.vehicleModels}>{vipUser.email} • Role: {(vipUser.role || 'customer').toUpperCase()}</Text>
+                {passengerBookings.length > 0 && (
+                  <View style={{ marginTop: 12 }}>
+                    <Text style={styles.fieldLabel}>YOUR LIVE RESERVATIONS</Text>
+                    {passengerBookings.slice(0, 5).map((b) => (
+                      <TouchableOpacity
+                        key={b.id || b.booking_number}
+                        style={[styles.routeSummaryBox, { marginTop: 8 }]}
+                        onPress={() => {
+                          setTrackNumber(b.booking_number);
+                          setTrackedRide(b);
+                          setTab('track');
+                        }}
+                      >
+                        <Text style={styles.routeLine}>#{b.booking_number} • ${b.total_price} ({String(b.status || '').replace('_', ' ').toUpperCase()})</Text>
+                        <Text style={[styles.vehicleCap, { marginTop: 4 }]}>{b.pickup_date} {b.pickup_time}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+                <TouchableOpacity
+                  style={[styles.outlineGoldBtn, { marginTop: 12 }]}
+                  onPress={() => {
+                    setLimoToken('');
+                    setVipUser(null);
+                    setPassengerBookings([]);
+                    setChauffeurTrips([]);
+                  }}
+                >
                   <Text style={styles.outlineGoldBtnText}>SIGN OUT</Text>
                 </TouchableOpacity>
               </View>
             ) : (
-              <View style={{ marginTop: 6 }}>
+              <View style={{ marginTop: 8 }}>
+                <View style={[styles.serviceModeRow, { marginBottom: 10 }]}>
+                  <TouchableOpacity
+                    style={[styles.serviceModeBtn, authMode === 'login' && styles.serviceModeBtnActive]}
+                    onPress={() => setAuthMode('login')}
+                  >
+                    <Text style={[styles.serviceModeText, authMode === 'login' && styles.serviceModeTextActive]}>Sign In</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.serviceModeBtn, authMode === 'signup' && styles.serviceModeBtnActive]}
+                    onPress={() => setAuthMode('signup')}
+                  >
+                    <Text style={[styles.serviceModeText, authMode === 'signup' && styles.serviceModeTextActive]}>Create Account</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {authMode === 'signup' && (
+                  <>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Full Name *"
+                      placeholderTextColor={LIMO_COLORS.muted}
+                      value={authName}
+                      onChangeText={setAuthName}
+                    />
+                    <TextInput
+                      style={[styles.input, { marginTop: 8 }]}
+                      placeholder="Mobile Phone"
+                      placeholderTextColor={LIMO_COLORS.muted}
+                      keyboardType="phone-pad"
+                      value={authPhone}
+                      onChangeText={setAuthPhone}
+                    />
+                  </>
+                )}
+
                 <TextInput
-                  style={styles.input}
-                  placeholder="Email (e.g. executive@nyclimowish.com)"
+                  style={[styles.input, authMode === 'signup' && { marginTop: 8 }]}
+                  placeholder="Email (e.g. passenger@domain.com)"
                   placeholderTextColor={LIMO_COLORS.muted}
                   autoCapitalize="none"
+                  keyboardType="email-address"
                   value={authEmail}
                   onChangeText={setAuthEmail}
                 />
                 <TextInput
                   style={[styles.input, { marginTop: 8 }]}
-                  placeholder="Password"
+                  placeholder="Password (min 8 chars for signup)"
                   placeholderTextColor={LIMO_COLORS.muted}
                   secureTextEntry
                   value={authPassword}
@@ -890,9 +936,16 @@ export default function NYCLimoWishApp() {
                 />
                 <TouchableOpacity
                   style={styles.goldPrimaryBtn}
-                  onPress={() => setVipUser({ name: authEmail ? authEmail.split('@')[0] : 'VIP Executive Client', email: authEmail || 'vip@nyclimowish.com' })}
+                  onPress={handleLimoAuth}
+                  disabled={authLoading}
                 >
-                  <Text style={styles.goldPrimaryBtnText}>SIGN IN TO VIP LOUNGE</Text>
+                  {authLoading ? (
+                    <ActivityIndicator color="#000" />
+                  ) : (
+                    <Text style={styles.goldPrimaryBtnText}>
+                      {authMode === 'signup' ? 'CREATE LIVE VIP ACCOUNT' : 'SIGN IN TO VIP / CHAUFFEUR DESK'}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
             )}

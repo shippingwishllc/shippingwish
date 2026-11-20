@@ -32,114 +32,6 @@ import {
 
 const API = 'https://www.buywishonline.com';
 
-const CURATED_FALLBACK_PRODUCTS = [
-  {
-    id: 'bwo-101',
-    handle: 'smart-mag-power-station-3-in-1',
-    title: '3-in-1 Foldable MagSafe Wireless Charging Station',
-    category: 'Tech',
-    retail_price: 58.00,
-    compare_price: 89.00,
-    rating: 4.9,
-    reviews: 312,
-    badge: 'BEST SELLER',
-    delivery: 'Express Tracked: 4–7 Days (USA · CA · UK)',
-    image_url: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=800&q=80',
-    description: 'Aircraft-grade aluminum 15W fast wireless charging stand for iPhone, Apple Watch, and AirPods with travel-ready magnetic fold.',
-    features: ['15W Qi2 & MagSafe Certified Fast Charge', 'Folds flat to 16mm for carry-on luggage', 'Over-voltage & temperature control shield']
-  },
-  {
-    id: 'bwo-102',
-    handle: 'nordic-aroma-flame-humidifier',
-    title: 'Nordic Ultrasonic Flame Diffuser & Air Humidifier',
-    category: 'Home',
-    retail_price: 44.00,
-    compare_price: 68.00,
-    rating: 4.8,
-    reviews: 219,
-    badge: 'TRENDING',
-    delivery: 'Express Tracked: 4–7 Days (USA · CA · UK)',
-    image_url: 'https://images.unsplash.com/photo-1602928321679-560bb453f190?auto=format&fit=crop&w=800&q=80',
-    description: 'Whisper-quiet essential oil diffuser with realistic warm amber mist flame ambiance and auto waterless shut-off.',
-    features: ['Ultra-quiet 24dB bedroom operation', 'Dual amber & cool blue mist modes', 'Auto safety shut-off sensor']
-  },
-  {
-    id: 'bwo-103',
-    handle: 'pro-percussion-deep-tissue-massager',
-    title: 'Carbon Pro Deep Tissue Percussion Massage Gun',
-    category: 'Fitness',
-    retail_price: 79.00,
-    compare_price: 129.00,
-    rating: 4.9,
-    reviews: 418,
-    badge: 'TOP RATED',
-    delivery: 'Express Tracked: 4–7 Days (USA · CA · UK)',
-    image_url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80',
-    description: 'Brushless high-torque percussion therapy gun with 6 interchangeable heads and 30 speed levels for athletic recovery.',
-    features: ['3200 RPM high-torque brushless motor', '6 Hour rechargeable lithium battery', 'Includes luxury travel carry case']
-  },
-  {
-    id: 'bwo-104',
-    handle: 'led-red-light-sculpt-wand',
-    title: '7-in-1 Microcurrent & Red Light Facial Sculpting Wand',
-    category: 'Beauty',
-    retail_price: 64.00,
-    compare_price: 98.00,
-    rating: 4.8,
-    reviews: 187,
-    badge: 'EDITOR PICK',
-    delivery: 'Express Tracked: 4–7 Days (USA · CA · UK)',
-    image_url: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80',
-    description: 'Spa-grade 630nm red light therapy, sonic vibration, and therapeutic warmth for radiant, lifted skin.',
-    features: ['630nm clinical red light wavelength', '90° rotating ergonomic massage head', 'USB-C fast recharge']
-  },
-  {
-    id: 'bwo-105',
-    handle: 'barista-portable-espresso-maker',
-    title: '20-Bar Portable Electric Espresso Maker',
-    category: 'Kitchen',
-    retail_price: 86.00,
-    compare_price: 125.00,
-    rating: 4.9,
-    reviews: 276,
-    badge: 'HOT DEAL',
-    delivery: 'Express Tracked: 4–7 Days (USA · CA · UK)',
-    image_url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80',
-    description: 'Self-heating 20-bar pressure espresso extractor compatible with Nespresso pods and ground coffee anywhere.',
-    features: ['Heats water to 96°C in 180 seconds', '20-Bar rich crema extraction', 'Fits standard car cup holders']
-  },
-  {
-    id: 'bwo-106',
-    handle: 'smart-gps-pet-collar-tracker',
-    title: 'Waterproof Smart Pet Activity & Location Collar Tag',
-    category: 'Pets',
-    retail_price: 39.00,
-    compare_price: 59.00,
-    rating: 4.7,
-    reviews: 142,
-    badge: 'NEW ARRIVAL',
-    delivery: 'Express Tracked: 4–7 Days (USA · CA · UK)',
-    image_url: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=800&q=80',
-    description: 'Lightweight IP68 waterproof smart collar tracker with Apple Find My & Android compatibility and zero monthly fees.',
-    features: ['No monthly subscription required', 'IP68 waterproof & dustproof', '12-month replaceable battery']
-  },
-  {
-    id: 'bwo-107',
-    handle: 'compression-packing-cubes-6pc',
-    title: '6-Piece Ultra-Light Compression Travel Organizer Set',
-    category: 'Travel',
-    retail_price: 48.00,
-    compare_price: 74.00,
-    rating: 4.9,
-    reviews: 504,
-    badge: 'TRAVEL ESSENTIAL',
-    delivery: 'Express Tracked: 4–7 Days (USA · CA · UK)',
-    image_url: 'https://images.unsplash.com/photo-1553531384-cc64ac80f931?auto=format&fit=crop&w=800&q=80',
-    description: 'Save up to 60% luggage space with dual-zipper ripstop nylon compression cubes for effortless packing.',
-    features: ['Saves 60% carry-on suitcase space', 'Water-resistant ripstop nylon', 'Includes laundry & shoe bags']
-  }
-];
-
 async function callBuyWishApi(path, options = {}, token = '') {
   const res = await fetch(API + path, {
     ...options,
@@ -151,7 +43,7 @@ async function callBuyWishApi(path, options = {}, token = '') {
     }
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
   return data;
 }
 
@@ -160,25 +52,24 @@ export default function BuyWishOnlineApp() {
   const [screen, setScreen] = useState('shop');
   const [menuVisible, setMenuVisible] = useState(false);
   const [isLightMode, setIsLightMode] = useState(true);
+  const [category, setCategory] = useState('all');
   const anim = useExecutiveAnimations(`${screen}-${category}`);
 
-  // Catalog state
-  const [products, setProducts] = useState(CURATED_FALLBACK_PRODUCTS);
-  const [category, setCategory] = useState('all');
+  // 100% Live Zendrop / PostgreSQL Catalog State (Zero Mock Products)
+  const [products, setProducts] = useState([]);
+  const [catalogError, setCatalogError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('trending'); // 'trending' | 'price_asc' | 'price_desc'
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [detailQty, setDetailQty] = useState(1);
 
-  // Cart & Checkout state
-  const [cart, setCart] = useState([
-    { ...CURATED_FALLBACK_PRODUCTS[0], qty: 1 }
-  ]);
-  const [wishlist, setWishlist] = useState([CURATED_FALLBACK_PRODUCTS[2]]);
+  // Cart & Checkout state (Starts clean & empty — Zero Fake Pre-filled Items)
+  const [cart, setCart] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
   const [promoCode, setPromoCode] = useState('');
   const [discountPct, setDiscountPct] = useState(0);
-  const [shipCountry, setShipCountry] = useState('USA');
+  const [shipCountry, setShipCountry] = useState('US'); // Exact ISO codes: 'US' | 'CA' | 'GB'
   const [shipName, setShipName] = useState('');
   const [shipEmail, setShipEmail] = useState('');
   const [shipPhone, setShipPhone] = useState('');
@@ -188,32 +79,15 @@ export default function BuyWishOnlineApp() {
   const [shipPostal, setShipPostal] = useState('');
   const [checkingOut, setCheckingOut] = useState(false);
 
-  // Order Tracking state
-  const [trackNo, setTrackNo] = useState('BWO-8A280115652B');
-  const [trackResult, setTrackResult] = useState({
-    order_number: 'BWO-8A280115652B',
-    payment_status: 'paid',
-    fulfillment_status: 'processing',
-    total_amount: '58.00',
-    currency: 'USD',
-    supplier: 'Zendrop Direct Fulfillment',
-    shipping_country: 'USA',
-    created_at: 'Verified Live Order'
-  });
+  // 100% Live Order Tracking state (Zero Fake Pre-filled Order)
+  const [trackNo, setTrackNo] = useState('');
+  const [trackResult, setTrackResult] = useState(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
-  // Customer Account state
+  // 100% Real Customer Account state
   const [token, setToken] = useState('');
   const [customer, setCustomer] = useState(null);
-  const [orders, setOrders] = useState([
-    {
-      order_number: 'BWO-8A280115652B',
-      payment_status: 'paid',
-      fulfillment_status: 'processing',
-      total_amount: '58.00',
-      currency: 'USD'
-    }
-  ]);
+  const [orders, setOrders] = useState([]);
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authName, setAuthName] = useState('');
@@ -223,22 +97,14 @@ export default function BuyWishOnlineApp() {
 
   const loadProducts = async (nextCategory = category) => {
     setLoading(true);
+    setCatalogError('');
     try {
       const query = nextCategory === 'all' ? '' : `&category=${encodeURIComponent(nextCategory)}`;
       const data = await callBuyWishApi(`/api/buywish/products?limit=48${query}`);
-      if (Array.isArray(data.products) && data.products.length > 0) {
-        setProducts(data.products);
-      } else {
-        const filtered = nextCategory === 'all'
-          ? CURATED_FALLBACK_PRODUCTS
-          : CURATED_FALLBACK_PRODUCTS.filter(p => p.category.toLowerCase() === nextCategory.toLowerCase());
-        setProducts(filtered.length > 0 ? filtered : CURATED_FALLBACK_PRODUCTS);
-      }
+      setProducts(Array.isArray(data.products) ? data.products : []);
     } catch (err) {
-      const filtered = nextCategory === 'all'
-        ? CURATED_FALLBACK_PRODUCTS
-        : CURATED_FALLBACK_PRODUCTS.filter(p => p.category.toLowerCase() === nextCategory.toLowerCase());
-      setProducts(filtered.length > 0 ? filtered : CURATED_FALLBACK_PRODUCTS);
+      setCatalogError(err.message || 'Could not load live catalog from buywishonline.com.');
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -314,100 +180,97 @@ export default function BuyWishOnlineApp() {
     }
   };
 
-  const handleCheckout = async (useStripeRedirect = true) => {
+  const handleCheckout = async () => {
     if (cart.length === 0) {
-      Alert.alert('Empty Bag', 'Add at least one product to checkout.');
+      Alert.alert('Empty Bag', 'Add at least one live product to checkout.');
       return;
     }
     if (!shipName.trim() || !shipEmail.trim() || !shipAddress.trim() || !shipCity.trim() || !shipPostal.trim()) {
       Alert.alert('Shipping Details Required', 'Please fill in your name, email, street address, city, and postal code.');
       return;
     }
+    if ((shipCountry === 'US' || shipCountry === 'CA') && shipState.trim().length < 2) {
+      Alert.alert('State / Province Required', 'Please enter your 2-letter state or province (e.g. NY, CA, ON).');
+      return;
+    }
     setCheckingOut(true);
     try {
-      if (useStripeRedirect) {
-        const res = await callBuyWishApi('/api/buywish/checkout', {
-          method: 'POST',
-          body: JSON.stringify({
-            customer_name: shipName.trim(),
-            customer_email: shipEmail.trim(),
-            customer_phone: shipPhone.trim(),
-            shipping_address: shipAddress.trim(),
-            shipping_city: shipCity.trim(),
-            shipping_state: shipState.trim(),
-            shipping_postal: shipPostal.trim(),
-            shipping_country: shipCountry,
-            items: cart.map(i => ({
-              id: i.id,
-              zendrop_id: i.zendrop_id || i.id,
-              title: i.title,
-              price: Number(i.retail_price),
-              quantity: i.qty
-            }))
-          })
-        });
-        if (res.url) {
-          Linking.openURL(res.url);
-          setCheckingOut(false);
-          return;
-        }
-      }
-    } catch (e) {}
-    setCheckingOut(false);
+      const currency = shipCountry === 'CA' ? 'CAD' : shipCountry === 'GB' ? 'GBP' : 'USD';
+      const res = await callBuyWishApi('/api/buywish/checkout', {
+        method: 'POST',
+        body: JSON.stringify({
+          currency,
+          customer: {
+            name: shipName.trim(),
+            email: shipEmail.trim(),
+            phone: shipPhone.trim(),
+            address: shipAddress.trim(),
+            city: shipCity.trim(),
+            state: shipState.trim(),
+            postal: shipPostal.trim(),
+            country: shipCountry
+          },
+          items: cart.map(i => ({
+            product_id: Number(i.id),
+            quantity: Number(i.qty || 1)
+          }))
+        })
+      }, token);
 
-    const newOrderNum = `BWO-${Math.random().toString(16).slice(2, 10).toUpperCase()}`;
-    const createdOrder = {
-      order_number: newOrderNum,
-      payment_status: 'paid',
-      fulfillment_status: 'processing',
-      total_amount: cartTotals.total.toFixed(2),
-      currency: 'USD',
-      supplier: 'Zendrop Direct Auto-Fulfillment',
-      shipping_country: shipCountry
-    };
-    setOrders(prev => [createdOrder, ...prev]);
-    setTrackNo(newOrderNum);
-    setTrackResult(createdOrder);
-    setCart([]);
-    setScreen('track');
-    Alert.alert(
-      '🎉 Order Confirmed!',
-      `Order #${newOrderNum} ($${cartTotals.total.toFixed(2)}) has been placed and queued for express fulfillment to ${shipCity}, ${shipCountry}.`
-    );
+      setCheckingOut(false);
+      if (res.url) {
+        if (res.order_number) {
+          setTrackNo(res.order_number);
+          setTrackResult({
+            order_number: res.order_number,
+            payment_status: 'pending',
+            fulfillment_status: 'awaiting_payment',
+            total_amount: cartTotals.total.toFixed(2),
+            currency,
+            shipping_country: shipCountry
+          });
+        }
+        setCart([]);
+        setScreen('track');
+        Linking.openURL(res.url).catch(() => {});
+        Alert.alert(
+          'Stripe Secure Checkout Opened',
+          `Order #${res.order_number || ''} created in BuyWishOnline! Complete payment in Stripe to trigger automatic Zendrop express fulfillment.`
+        );
+        return;
+      }
+      Alert.alert('Checkout Error', 'Stripe checkout URL was not returned. Please try again.');
+    } catch (err) {
+      setCheckingOut(false);
+      Alert.alert('Checkout Failed', err.message || 'Could not start Stripe checkout. Please check your address details.');
+    }
   };
 
   const handleTrackLookup = async (customOrderNo) => {
     const queryNo = String(customOrderNo || trackNo || '').trim().toUpperCase();
-    if (!queryNo) return;
+    if (!queryNo) {
+      Alert.alert('Order Number Required', 'Enter your BWO- order number to track.');
+      return;
+    }
     setTrackingLoading(true);
     try {
       const data = await callBuyWishApi('/api/buywish/orders/track/' + encodeURIComponent(queryNo));
+      setTrackingLoading(false);
       if (data.order) {
         setTrackResult(data.order);
-        setTrackingLoading(false);
-        return;
+      } else {
+        setTrackResult(null);
+        Alert.alert('Order Not Found', `No BuyWishOnline order found matching ${queryNo}.`);
       }
-    } catch (err) {}
-    setTrackingLoading(false);
-
-    const localMatch = orders.find(o => o.order_number.toUpperCase() === queryNo);
-    if (localMatch) {
-      setTrackResult(localMatch);
-    } else {
-      setTrackResult({
-        order_number: queryNo,
-        payment_status: 'paid',
-        fulfillment_status: 'in_transit',
-        supplier_tracking_number: 'ZD-US-940011189922',
-        total_amount: '58.00',
-        currency: 'USD',
-        shipping_country: 'USA'
-      });
+    } catch (err) {
+      setTrackingLoading(false);
+      setTrackResult(null);
+      Alert.alert('Order Not Found', err.message || `No live order found for ${queryNo}.`);
     }
   };
 
   const handleLogin = async () => {
-    if (!authEmail || !authPassword) {
+    if (!authEmail.trim() || !authPassword) {
       Alert.alert('Required', 'Please enter your email and password.');
       return;
     }
@@ -419,16 +282,17 @@ export default function BuyWishOnlineApp() {
       });
       setToken(data.token);
       setCustomer(data.customer);
+      setAuthPassword('');
       const mine = await callBuyWishApi('/api/buywish/account/orders', {}, data.token).catch(() => ({ orders: [] }));
-      if (Array.isArray(mine.orders) && mine.orders.length > 0) setOrders(mine.orders);
+      setOrders(Array.isArray(mine.orders) ? mine.orders : []);
     } catch (err) {
-      setCustomer({ name: authName || authEmail.split('@')[0], email: authEmail.trim() });
+      Alert.alert('Sign In Failed', err.message || 'Invalid email or password.');
     }
     setAuthLoading(false);
   };
 
   const handleRegister = async () => {
-    if (!authName || !authEmail || !authPassword) {
+    if (!authName.trim() || !authEmail.trim() || !authPassword) {
       Alert.alert('Required', 'Please enter your name, email, and password.');
       return;
     }
@@ -440,8 +304,11 @@ export default function BuyWishOnlineApp() {
       });
       setToken(data.token);
       setCustomer(data.customer);
+      setAuthPassword('');
+      setOrders([]);
+      Alert.alert('Account Created', `Welcome ${data.customer?.name || authName.trim()}! Your BuyWishOnline account is live.`);
     } catch (err) {
-      setCustomer({ name: authName.trim(), email: authEmail.trim() });
+      Alert.alert('Registration Failed', err.message || 'Could not create customer account.');
     }
     setAuthLoading(false);
   };
@@ -702,13 +569,17 @@ export default function BuyWishOnlineApp() {
               {/* Shipping Address Form */}
               <Text style={[styles.sectionHeading, { marginTop: 20 }]}>Express Shipping Destination</Text>
               <View style={styles.countryRow}>
-                {['USA', 'Canada', 'UK'].map(c => (
+                {[
+                  { code: 'US', label: 'USA (USD)' },
+                  { code: 'CA', label: 'Canada (CAD)' },
+                  { code: 'GB', label: 'UK (GBP)' }
+                ].map(c => (
                   <TouchableOpacity
-                    key={c}
-                    style={[styles.countryChip, shipCountry === c && styles.countryChipOn]}
-                    onPress={() => setShipCountry(c)}
+                    key={c.code}
+                    style={[styles.countryChip, shipCountry === c.code && styles.countryChipOn]}
+                    onPress={() => setShipCountry(c.code)}
                   >
-                    <Text style={[styles.countryChipText, shipCountry === c && { color: '#fff' }]}>{c}</Text>
+                    <Text style={[styles.countryChipText, shipCountry === c.code && { color: '#fff' }]}>{c.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -719,24 +590,20 @@ export default function BuyWishOnlineApp() {
               <TextInput style={styles.input} placeholder="Street Address *" placeholderTextColor="#8C8277" value={shipAddress} onChangeText={setShipAddress} />
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TextInput style={[styles.input, { flex: 1.5 }]} placeholder="City *" placeholderTextColor="#8C8277" value={shipCity} onChangeText={setShipCity} />
-                <TextInput style={[styles.input, { flex: 1 }]} placeholder="State/Prov" placeholderTextColor="#8C8277" value={shipState} onChangeText={setShipState} />
+                <TextInput style={[styles.input, { flex: 1 }]} placeholder="State/Prov *" placeholderTextColor="#8C8277" value={shipState} onChangeText={setShipState} />
                 <TextInput style={[styles.input, { flex: 1 }]} placeholder="Postal/Zip *" placeholderTextColor="#8C8277" value={shipPostal} onChangeText={setShipPostal} />
               </View>
 
-              <TouchableOpacity style={styles.button} onPress={() => handleCheckout(false)} disabled={checkingOut}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={handleCheckout}
+                disabled={checkingOut}
+              >
                 {checkingOut ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.buttonText}>COMPLETE ORDER • ${cartTotals.total.toFixed(2)}</Text>
+                  <Text style={styles.buttonText}>💳 CHECKOUT WITH STRIPE • ${cartTotals.total.toFixed(2)}</Text>
                 )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: '#C4A574', marginTop: 10 }]}
-                onPress={() => handleCheckout(true)}
-                disabled={checkingOut}
-              >
-                <Text style={[styles.buttonText, { color: '#14120F' }]}>💳 PAY WITH STRIPE WEB CHECKOUT</Text>
               </TouchableOpacity>
             </>
           )}
@@ -788,24 +655,12 @@ export default function BuyWishOnlineApp() {
 
           <TextInput
             style={styles.input}
-            placeholder="Order Number (e.g. BWO-8A280115652B)"
+            placeholder="Enter your live Order Number (e.g. BWO-...)"
             placeholderTextColor="#8C8277"
             autoCapitalize="characters"
             value={trackNo}
             onChangeText={setTrackNo}
           />
-
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
-            <TouchableOpacity
-              style={styles.countryChip}
-              onPress={() => {
-                setTrackNo('BWO-8A280115652B');
-                handleTrackLookup('BWO-8A280115652B');
-              }}
-            >
-              <Text style={styles.countryChipText}>Sample: BWO-8A280115652B</Text>
-            </TouchableOpacity>
-          </View>
 
           <TouchableOpacity style={styles.button} onPress={() => handleTrackLookup()} disabled={trackingLoading}>
             {trackingLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>TRACK PACKAGE</Text>}
@@ -973,7 +828,7 @@ export default function BuyWishOnlineApp() {
           {
             icon: '📦',
             title: 'Live Package & Order Tracker',
-            subtitle: 'Track real order BWO-8A280115652B or any customer order',
+            subtitle: 'Track any live BuyWishOnline customer order & Zendrop shipment',
             onPress: () => setScreen('track')
           },
           {
