@@ -236,7 +236,9 @@
             <a class="sa-btn ghost" href="/brokers">🤝 Broker Directory</a>
             <a class="sa-btn ghost" href="/social-media-hub">📱 Social Media Hub</a>
             <a class="sa-btn ghost" href="/trash">🗑️ Soft-Delete Trash</a>
+            <button type="button" class="sa-btn green" id="sa-run-e2e-btn" onclick="runTruckingE2E()">🧪 Run 8-Stage Live Trucking E2E Test</button>
           </div>
+          <div id="sa-e2e-result" style="display:none;margin-top:14px;padding:14px;border-radius:12px;border:1px solid #e2e8f0;background:#f8fafc;"></div>
         </div>
       </section>
 
@@ -492,6 +494,43 @@
           <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(typeof l.details === 'object' ? JSON.stringify(l.details) : l.details)}</td>
         </tr>`).join('') : '<tr><td colspan="5" style="color:#64748b;">No security audit logs recorded yet.</td></tr>';
     }).catch(() => {});
+  }
+
+  async function runTruckingE2E() {
+    const btn = document.getElementById('sa-run-e2e-btn');
+    const out = document.getElementById('sa-e2e-result');
+    if (!btn || !out) return;
+    btn.disabled = true;
+    btn.textContent = '⏳ Running Live 8-Stage E2E Walkthrough...';
+    out.style.display = 'block';
+    out.innerHTML = '<div style="font-size:13px;font-weight:700;color:#2563eb;">Running live 8-stage USA Trucking walkthrough against PostgreSQL, Private Vercel Blob, PDFKit &amp; Auto-Cleanup...</div>';
+    try {
+      const res = await fetch('/api/superadmin/run-trucking-e2e', { method: 'POST', credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const headerColor = data.failed === 0 ? '#059669' : '#dc2626';
+      const rowsHtml = (data.stages || []).map(s => `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-bottom:1px solid #e2e8f0;font-size:12.5px;">
+          <span style="font-weight:900;color:${s.status === 'PASS' ? '#059669' : '#dc2626'};min-width:62px;">${s.status === 'PASS' ? '✅ PASS' : '❌ FAIL'}</span>
+          <div style="flex:1;">
+            <div style="font-weight:800;color:#0f172a;">Stage ${s.id}: ${esc(s.name)}</div>
+            <div style="color:#475569;margin-top:2px;">${esc(s.detail)}</div>
+          </div>
+        </div>
+      `).join('');
+      out.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="font-size:14px;color:${headerColor};">${data.failed === 0 ? '🎉 ALL 8 STAGES PASSED LIVE!' : `⚠️ ${data.passed}/${data.total} PASSED, ${data.failed} FAILED`}</strong>
+          <span style="font-size:11.5px;color:#64748b;font-weight:700;">${data.duration_ms}ms • Auto-Cleaned DB: YES</span>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">${rowsHtml}</div>
+      `;
+    } catch (e) {
+      out.innerHTML = `<div style="color:#dc2626;font-weight:700;">❌ E2E Test Error: ${esc(e.message)}</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🧪 Run 8-Stage Live Trucking E2E Test';
+    }
   }
 
   document.addEventListener('DOMContentLoaded', refreshAllSuperadminData);

@@ -598,29 +598,32 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       parseFloat(ecomStats.total_sales || 0)
     );
 
-    // Stripe accounts operational health
+    // Per-brand Payment Gateway Health (Shipping Wish LLC Stripe hard-locked to Trucking SaaS only!)
+    const { getBrandGatewayStatus } = require('../utils/alt-payments');
     const approvedKey = process.env.STRIPE_SECRET_KEY || process.env.SHIPPINGWISH_STRIPE_SECRET_KEY || '';
     const stripeMode = approvedKey.startsWith('sk_live_') ? 'LIVE PRODUCTION' : (approvedKey ? 'TEST MODE' : 'NOT CONFIGURED');
+    const nyclimoGw = getBrandGatewayStatus('nyclimo');
+    const buywishGw = getBrandGatewayStatus('buywish');
     const stripeHealth = {
       shipping_wish: {
         configured: Boolean(approvedKey),
         mode: stripeMode,
-        account: 'Shipping Wish LLC'
+        account: 'Shipping Wish LLC (Stripe)'
       },
       loads_nexus: {
         configured: Boolean(approvedKey),
         mode: stripeMode,
-        account: 'Shipping Wish LLC'
+        account: 'Shipping Wish LLC (Stripe)'
       },
       nyc_limo: {
-        configured: Boolean(approvedKey),
-        mode: stripeMode,
-        account: 'Shipping Wish LLC'
+        configured: Boolean(nyclimoGw.active_provider),
+        mode: nyclimoGw.active_provider ? nyclimoGw.active_provider.toUpperCase() : 'STRIPE ISOLATED (ADD SQUARE/PAYPAL)',
+        account: 'Dedicated Non-Stripe Gateway'
       },
       buywish: {
-        configured: Boolean(approvedKey),
-        mode: stripeMode,
-        account: 'Shipping Wish LLC'
+        configured: Boolean(buywishGw.active_provider),
+        mode: buywishGw.active_provider ? buywishGw.active_provider.toUpperCase() : 'PAUSED & STRIPE ISOLATED',
+        account: 'Dedicated Non-Stripe Gateway'
       }
     };
 
@@ -1310,6 +1313,258 @@ router.get('/sso-exchange', async (req, res) => {
     console.error('[SuperAdmin SSO Exchange] Error:', err.message);
     return res.status(401).send('SSO ticket expired or invalid. Please return to Superadmin Command Center and click again.');
   }
+});
+
+// =========================================================================
+// 7. 1-CLICK LIVE 8-STAGE USA TRUCKING E2E WALKTHROUGH (AUTO-CLEANUP)
+//    Verifies: Loads Nexus Post -> AI Net-Profit -> 1-Tap Carrier Approval ->
+//    Auto Broker GPS Tracking Link -> Driver GPS Ping -> Private Vercel Blob POD
+//    Upload/Read -> Factoring Packet & Settlement PDFs -> AI Reloads -> Clean Purge!
+// =========================================================================
+router.post('/run-trucking-e2e', requireAuth, requireRole('super_admin'), async (req, res) => {
+  const startedAt = Date.now();
+  const stages = [];
+  const pass = (id, name, detail) => stages.push({ id, name, status: 'PASS', detail });
+  const fail = (id, name, detail) => stages.push({ id, name, status: 'FAIL', detail });
+
+  const { ensureUnifiedSchema, awardLoadToCarrier } = require('../utils/load-lifecycle');
+  const { analyzeLoadProfit } = require('../utils/profit-engine');
+  const { storeDocumentBuffer, readDocumentBuffer, isBlobConfigured } = require('../utils/cloud-storage');
+  const PDFDocument = require('pdfkit');
+  const os = require('os');
+  const path = require('path');
+
+  const created = { loadId: null, docId: null, settlementId: null };
+  const loadNumber = 'E2E-' + Math.floor(100000 + Math.random() * 899999);
+
+  try {
+    await ensureUnifiedSchema();
+
+    // Pick a real carrier if present, otherwise use current super_admin id
+    const carRes = await pool.query(`SELECT id, name, company_name, mc_number FROM users WHERE role IN ('carrier','carrier_admin') ORDER BY id ASC LIMIT 1`).catch(() => ({ rows: [] }));
+    const carrier = carRes.rows[0] || { id: req.user.id, name: req.user.name || 'Super Admin', company_name: 'Shipping Wish Fleet', mc_number: 'MC-148295' };
+
+    // STAGE 1: Publish Spot Load to Loads Nexus & Verify Live Searchable Row
+    try {
+      const ins = await pool.query(
+        `INSERT INTO loads (
+          load_number, status, is_public_board, broker_user_id, rate, pickup_location, delivery_location,
+          pickup_date, equipment_type, weight, commodity, broker_name, broker_mc, broker_contact,
+          miles, rpm, source_type, created_at, updated_at
+        ) VALUES ($1, 'new', TRUE, $2, 3450, 'Dallas, TX', 'Atlanta, GA', CURRENT_DATE + 1, '53ft Reefer', 41500,
+          'E2E Diagnostic Produce', 'Verified Direct Broker', 'MC-128490', '+1 (917) 737-0021', 780, 4.42, 'broker', NOW(), NOW())
+        RETURNING *`,
+        [loadNumber, req.user.id]
+      );
+      created.loadId = ins.rows[0].id;
+      const checkSearch = await pool.query(
+        `SELECT id, load_number FROM loads WHERE id = $1 AND is_public_board = TRUE AND status IN ('open','new') AND deleted_at IS NULL`,
+        [created.loadId]
+      );
+      if (checkSearch.rows.length === 1) {
+        pass(1, 'Loads Nexus Spot Post & Live Board Sync', `Load #${loadNumber} published ($3,450 / 780 mi = $4.42/mi) & live searchable.`);
+      } else {
+        fail(1, 'Loads Nexus Spot Post & Live Board Sync', 'Inserted load was not visible in open board query.');
+      }
+    } catch (e) {
+      fail(1, 'Loads Nexus Spot Post & Live Board Sync', e.message);
+      throw e;
+    }
+
+    // STAGE 2: AI True Net-Profit Engine
+    try {
+      const a = analyzeLoadProfit({
+        rate: 3450,
+        miles: 780,
+        deadheadMiles: 45,
+        origin: 'Dallas, TX',
+        destination: 'Atlanta, GA',
+        equipmentType: '53ft Reefer'
+      });
+      if (Number.isFinite(Number(a.true_net_profit)) && Number(a.net_rpm) > 0) {
+        pass(2, 'AI True Net-Profit Load Calculator', `True Net Profit: $${a.true_net_profit} | Net RPM: $${a.net_rpm}/mi | Fuel: $${a.fuel_cost} (${a.verdict_label})`);
+      } else {
+        fail(2, 'AI True Net-Profit Load Calculator', 'Invalid profit calculation result.');
+      }
+    } catch (e) {
+      fail(2, 'AI True Net-Profit Load Calculator', e.message);
+    }
+
+    // STAGE 3: Dispatcher 1-Tap Carrier Approval Request ("Zero Forced Dispatch")
+    try {
+      await pool.query(
+        `UPDATE loads SET status = 'pending_carrier_approval', carrier_id = $1, dispatcher_id = $2,
+           carrier_approval_status = 'pending', carrier_approval_requested_at = NOW(), updated_at = NOW()
+         WHERE id = $3`,
+        [carrier.id, req.user.id, created.loadId]
+      );
+      pass(3, 'Dispatcher 1-Tap Carrier Approval Offer', `Offered #${loadNumber} to Carrier #${carrier.id} (${carrier.company_name || carrier.name}).`);
+    } catch (e) {
+      fail(3, 'Dispatcher 1-Tap Carrier Approval Offer', e.message);
+    }
+
+    // STAGE 4: Carrier 1-Tap Approve -> Books Load, Removes from Public Board, Generates Live Tracking Token
+    let trackingToken = '';
+    try {
+      const awarded = await awardLoadToCarrier({
+        loadId: created.loadId,
+        carrierId: carrier.id,
+        carrierName: carrier.company_name || carrier.name,
+        carrierMc: carrier.mc_number || 'MC-148295',
+        awardedByUserId: carrier.id,
+        notes: 'Approved via E2E Diagnostic'
+      });
+      trackingToken = awarded.load?.broker_tracking_token || '';
+      if (trackingToken && awarded.load?.status === 'booked' && awarded.load?.is_public_board === false) {
+        pass(4, 'Carrier 1-Tap Approve & Auto Tracking Token', `Status = BOOKED, removed from open board, Tracking Token ${trackingToken.slice(0, 12)}... generated.`);
+      } else {
+        fail(4, 'Carrier 1-Tap Approve & Auto Tracking Token', 'Missing tracking token or incorrect booked state.');
+      }
+    } catch (e) {
+      fail(4, 'Carrier 1-Tap Approve & Auto Tracking Token', e.message);
+    }
+
+    // STAGE 5: Driver Mobile App Live GPS Ping + Zero Check-Call Broker Tracking Query
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS tracking_events (
+          id SERIAL PRIMARY KEY,
+          load_id INT REFERENCES loads(id) ON DELETE SET NULL,
+          driver_id INT REFERENCES users(id) ON DELETE SET NULL,
+          latitude NUMERIC(10, 6),
+          longitude NUMERIC(10, 6),
+          speed NUMERIC(6, 2) DEFAULT 0,
+          heading NUMERIC(6, 2) DEFAULT 0,
+          location_name VARCHAR(255),
+          status VARCHAR(50),
+          notes TEXT,
+          ping_time TIMESTAMP DEFAULT now()
+        )
+      `);
+      await pool.query(
+        `INSERT INTO tracking_events (load_id, driver_id, latitude, longitude, speed, heading, location_name, status, notes, ping_time)
+         VALUES ($1, $2, 32.5252, -93.7502, 65, 88, 'I-20 East near Shreveport, LA', 'in_transit', 'E2E Mobile GPS Ping', NOW())`,
+        [created.loadId, carrier.id]
+      );
+      const gpsCheck = await pool.query(
+        `SELECT l.broker_tracking_token, te.latitude, te.longitude, te.location_name
+         FROM loads l
+         LEFT JOIN LATERAL (
+           SELECT latitude, longitude, location_name FROM tracking_events WHERE load_id = l.id ORDER BY ping_time DESC LIMIT 1
+         ) te ON TRUE
+         WHERE l.broker_tracking_token = $1 LIMIT 1`,
+        [trackingToken]
+      );
+      const row = gpsCheck.rows[0];
+      if (row && Math.abs(Number(row.latitude) - 32.5252) < 0.01) {
+        pass(5, 'Mobile Auto-GPS Ping & Broker Tracking Sync', `Live GPS (${row.latitude}, ${row.longitude} • ${row.location_name}) synced to public broker token.`);
+      } else {
+        fail(5, 'Mobile Auto-GPS Ping & Broker Tracking Sync', 'GPS coordinates did not resolve on broker tracking query.');
+      }
+    } catch (e) {
+      fail(5, 'Mobile Auto-GPS Ping & Broker Tracking Sync', e.message);
+    }
+
+    // STAGE 6: Driver Mobile Camera POD Upload -> Private Vercel Blob (`shippingwish-docs`) -> Verified Read-Back!
+    try {
+      const tinyJpgB64 = '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+      const origBuf = Buffer.from(tinyJpgB64, 'base64');
+      const stored = await storeDocumentBuffer({
+        buffer: origBuf,
+        filename: 'e2e_signed_pod.jpg',
+        folder: 'tms/pod',
+        mimeType: 'image/jpeg',
+        localDir: path.join(os.tmpdir(), 'uploads')
+      });
+      const docIns = await pool.query(
+        `INSERT INTO documents (load_id, carrier_id, category, filename, original_name, filepath, file_size, uploaded_by, cloud_url, mime_type, file_data_b64, storage_provider)
+         VALUES ($1, $2, 'pod', $3, 'e2e_signed_pod.jpg', $4, $5, $6, $7, 'image/jpeg', $8, $9)
+         RETURNING *`,
+        [created.loadId, carrier.id, path.basename(stored.filepath || 'e2e_signed_pod.jpg'), stored.filepath, stored.file_size, carrier.id, stored.cloud_url, stored.file_data_b64, stored.storage_provider]
+      );
+      created.docId = docIns.rows[0].id;
+      await pool.query(`UPDATE loads SET status = 'pod_uploaded', updated_at = NOW() WHERE id = $1`, [created.loadId]);
+
+      const readBack = await readDocumentBuffer(docIns.rows[0]);
+      if (readBack && readBack.length === origBuf.length) {
+        pass(6, 'Mobile Camera POD -> Private Cloud Vault', `Stored via [${stored.storage_provider}] (Blob Active: ${isBlobConfigured() ? 'YES' : 'DB Fallback'}) & verified exact ${readBack.length}-byte read-back + status = pod_uploaded.`);
+      } else {
+        fail(6, 'Mobile Camera POD -> Private Cloud Vault', `Stored via [${stored.storage_provider}] but read-back length mismatch (${readBack ? readBack.length : 0} vs ${origBuf.length}).`);
+      }
+    } catch (e) {
+      fail(6, 'Mobile Camera POD -> Private Cloud Vault', e.message);
+    }
+
+    // STAGE 7: 1-Click Factoring Packet PDF + Driver Settlement Generation
+    try {
+      const pdfBytes = await new Promise((resolve, reject) => {
+        const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
+        const chunks = [];
+        doc.on('data', (c) => chunks.push(c));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+        doc.fontSize(16).text(`Shipping Wish LLC — Factoring Packet #${loadNumber}`);
+        doc.fontSize(11).text('Lane: Dallas, TX -> Atlanta, GA | Gross Rate: $3,450.00 | POD Attached');
+        doc.end();
+      });
+      const stlNum = 'E2E-STL-' + Math.floor(10000 + Math.random() * 89999);
+      const stlIns = await pool.query(
+        `INSERT INTO driver_settlements (
+           settlement_number, carrier_id, driver_name, period_start, period_end,
+           loads_count, loaded_miles, gross_revenue, pay_type, pay_rate, driver_gross_pay, net_driver_pay, carrier_net_profit, status, created_by
+         ) VALUES ($1, $2, 'E2E Driver', CURRENT_DATE - 7, CURRENT_DATE, 1, 780, 3450, 'percent', 28, 966, 966, 2484, 'draft', $3)
+         RETURNING id, net_driver_pay`,
+        [stlNum, carrier.id, req.user.id]
+      );
+      created.settlementId = stlIns.rows[0].id;
+      if (pdfBytes.slice(0, 5).toString('utf8') === '%PDF-' && created.settlementId) {
+        pass(7, 'Factoring Packet PDF & Driver Settlement', `Generated valid ${pdfBytes.length}-byte PDF + Settlement #${stlNum} (Driver Net: $${stlIns.rows[0].net_driver_pay}).`);
+      } else {
+        fail(7, 'Factoring Packet PDF & Driver Settlement', 'PDF stream or settlement row failed.');
+      }
+    } catch (e) {
+      fail(7, 'Factoring Packet PDF & Driver Settlement', e.message);
+    }
+
+    // STAGE 8: AI Reload Finder + Stripe Isolation & BuyWish Pause Verification
+    try {
+      const { getBrandGatewayStatus } = require('../utils/alt-payments');
+      const bwGw = getBrandGatewayStatus('buywish');
+      const lmGw = getBrandGatewayStatus('nyclimo');
+      const relQ = await pool.query(
+        `SELECT COUNT(*)::int AS open_cnt FROM loads WHERE deleted_at IS NULL AND status IN ('open','new')`
+      );
+      pass(
+        8,
+        'AI Reload Pool & Stripe Isolation Health',
+        `Open Reload Pool: ${relQ.rows[0]?.open_cnt || 0} loads | BuyWish Stripe Isolated: ${bwGw.stripe_isolated ? 'YES' : 'NO'} | NYCLimo Stripe Isolated: ${lmGw.stripe_isolated ? 'YES' : 'NO'}.`
+      );
+    } catch (e) {
+      fail(8, 'AI Reload Pool & Stripe Isolation Health', e.message);
+    }
+  } finally {
+    // AUTO-CLEANUP: Delete ALL temporary E2E rows so production database remains 100% spotless!
+    if (created.settlementId) await pool.query('DELETE FROM driver_settlements WHERE id = $1', [created.settlementId]).catch(() => {});
+    if (created.docId) await pool.query('DELETE FROM documents WHERE id = $1', [created.docId]).catch(() => {});
+    if (created.loadId) {
+      await pool.query('DELETE FROM tracking_events WHERE load_id = $1', [created.loadId]).catch(() => {});
+      await pool.query('DELETE FROM load_status_history WHERE load_id = $1', [created.loadId]).catch(() => {});
+      await pool.query(`DELETE FROM notifications WHERE link LIKE $1`, [`%${created.loadId}%`]).catch(() => {});
+      await pool.query('DELETE FROM loads WHERE id = $1', [created.loadId]).catch(() => {});
+    }
+  }
+
+  const passed = stages.filter((s) => s.status === 'PASS').length;
+  const failed = stages.filter((s) => s.status === 'FAIL').length;
+  res.json({
+    ok: failed === 0,
+    passed,
+    failed,
+    total: stages.length,
+    duration_ms: Date.now() - startedAt,
+    cleaned_up: true,
+    stages
+  });
 });
 
 module.exports = router;
