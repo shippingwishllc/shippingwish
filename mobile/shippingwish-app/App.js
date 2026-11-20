@@ -219,6 +219,7 @@ export default function ShippingWishApp() {
   const [myCarriers, setMyCarriers] = useState([]);
 
   useEffect(() => {
+    api.setBrand('shippingwish');
     api.setBaseUrl(serverUrl);
     if (isAuthenticated && api.getAuthToken()) {
       refreshAllData();

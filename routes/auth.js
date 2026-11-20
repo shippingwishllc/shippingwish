@@ -4,22 +4,57 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
 const { requireAuth, requireRole, requireSuperAdmin, optionalAuth, extractToken, JWT_SECRET, setAuthCookie, clearAuthCookie } = require('../middleware/auth');
-const { sendBrandedEmail } = require('../utils/mailer');
+const { sendBrandedEmail, getLoadsNexusSender } = require('../utils/mailer');
 const { COMPANY, APP_URL, escapeHtml, buildTemplate } = require('../utils/email-templates');
 const { getCarrierAccess, TRIAL_DAYS, isCarrierRole } = require('../middleware/subscription');
 const { verifyTotp, generateBase32Secret, getOtpAuthUrl } = require('../utils/totp');
 
 const router = express.Router();
 
-// Clean, Google-Style Branded Light Transactional Verification Code Email
-// Zero emojis, clean white card + Shipping Wish blue header, plain 6-digit code for iOS/Gmail "Copy code" auto-detection,
-// and CAN-SPAM / Yahoo / Gmail primary-inbox compliant footer.
-function buildVerificationCodeEmail({ recipientName, recipientEmail, otp, purpose = 'access your Shipping Wish Account', heading = 'Shipping Wish Verification Code', clientIp = '' }) {
-  const safeName = escapeHtml(recipientName || 'Shipping Wish User');
+// Detect whether the auth request originated from Loads Nexus (loadsnexus.com / LoadsNexus mobile app)
+// or Shipping Wish (shippingwish.com / ShippingWish mobile app) so branding + sender match 100%!
+function detectEmailBrand(req) {
+  const explicit = String((req && (req.headers['x-brand'] || req.body?.brand || req.query?.brand)) || '').toLowerCase();
+  const host = String((req && (req.headers['x-forwarded-host'] || req.headers.host)) || '').toLowerCase();
+  const origin = String((req && (req.headers.origin || req.headers.referer)) || '').toLowerCase();
+  const isLoadsNexus = explicit.includes('loadsnexus') || host.includes('loadsnexus.com') || origin.includes('loadsnexus.com');
+
+  if (isLoadsNexus) {
+    return {
+      key: 'loadsnexus',
+      name: 'Loads Nexus',
+      logoHtml: '<span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#0f172a;">Loads<span style="color:#059669;">Nexus</span></span>',
+      accentBg: '#059669',
+      linkColor: '#059669',
+      from: getLoadsNexusSender('auth'),
+      replyTo: 'support@loadsnexus.com',
+      teamName: 'The Loads Nexus Accounts Team',
+      footer: 'Loads Nexus (loadsnexus.com) &middot; Operated by Shipping Wish LLC &middot; +1 (917) 737-0021'
+    };
+  }
+
+  return {
+    key: 'shippingwish',
+    name: 'Shipping Wish',
+    logoHtml: '<span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#0f172a;">Shipping<span style="color:#d97706;">Wish</span></span>',
+    accentBg: '#2563eb',
+    linkColor: '#2563eb',
+    from: NOREPLY_FROM,
+    replyTo: COMPANY.operationsEmail || 'dispatch@shippingwish.com',
+    teamName: 'The Shipping Wish Accounts Team',
+    footer: 'Shipping Wish LLC &middot; 19266 Coastal Hwy, Rehoboth, DE 19971 &middot; +1 (917) 737-0021'
+  };
+}
+
+// Clean, Google-Style Branded Light Transactional Verification Code Email (100% Brand-Isolated: Shipping Wish vs Loads Nexus)
+// Zero emojis, clean white card + brand header, plain 6-digit code for iOS/Gmail/Yahoo "Copy code" auto-detection.
+function buildVerificationCodeEmail({ req, recipientName, recipientEmail, otp, purposeAction = 'access', clientIp = '' }) {
+  const brand = detectEmailBrand(req);
+  const safeName = escapeHtml(recipientName || `${brand.name} User`);
   const safeEmail = escapeHtml(recipientEmail || '');
   const safeCode = escapeHtml(String(otp || '').trim());
-  const safePurpose = escapeHtml(purpose);
-  const safeHeading = escapeHtml(heading);
+  const safePurpose = escapeHtml(`${purposeAction} your ${brand.name} Account`);
+  const heading = `${brand.name} Verification Code`;
   const ipLine = clientIp ? `<p style="margin:14px 0 0;color:#64748b;font-size:12px;">Request IP: ${escapeHtml(clientIp)}</p>` : '';
 
   const html = `<!DOCTYPE html>
@@ -29,19 +64,19 @@ function buildVerificationCodeEmail({ recipientName, recipientEmail, otp, purpos
   <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
     <tr>
       <td style="padding:18px 24px 14px;background:#ffffff;border-bottom:1px solid #f1f5f9;">
-        <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#0f172a;">Shipping<span style="color:#d97706;">Wish</span></span>
+        ${brand.logoHtml}
       </td>
     </tr>
     <tr>
-      <td style="padding:22px 24px;background:#2563eb;color:#ffffff;">
-        <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0;">${safeHeading}</div>
+      <td style="padding:22px 24px;background:${brand.accentBg};color:#ffffff;">
+        <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0;">${heading}</div>
       </td>
     </tr>
     <tr>
       <td style="padding:26px 24px 24px;font-size:14px;line-height:1.6;color:#1e293b;">
         <p style="margin:0 0 14px;">Dear ${safeName},</p>
         <p style="margin:0 0 18px;">
-          We received a request to ${safePurpose}${safeEmail ? ` (<a href="mailto:${safeEmail}" style="color:#2563eb;text-decoration:none;">${safeEmail}</a>)` : ''}. Your Shipping Wish verification code is:
+          We received a request to ${safePurpose}${safeEmail ? ` (<a href="mailto:${safeEmail}" style="color:${brand.linkColor};text-decoration:none;">${safeEmail}</a>)` : ''}. Your ${brand.name} verification code is:
         </p>
         <div style="margin:20px 0 22px;padding:16px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;text-align:center;">
           <span style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:32px;font-weight:800;letter-spacing:4px;color:#0f172a;">${safeCode}</span>
@@ -58,8 +93,8 @@ function buildVerificationCodeEmail({ recipientName, recipientEmail, otp, purpos
     <tr>
       <td style="padding:16px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11.5px;color:#64748b;line-height:1.5;">
         Sincerely,<br>
-        <strong>The Shipping Wish Accounts Team</strong><br>
-        Shipping Wish LLC &middot; 19266 Coastal Hwy, Rehoboth, DE 19971 &middot; +1 (917) 737-0021
+        <strong>${brand.teamName}</strong><br>
+        ${brand.footer}
       </td>
     </tr>
   </table>
@@ -67,21 +102,20 @@ function buildVerificationCodeEmail({ recipientName, recipientEmail, otp, purpos
 </html>`;
 
   const text = [
-    `Dear ${recipientName || 'Shipping Wish User'},`,
+    `Dear ${recipientName || `${brand.name} User`},`,
     '',
-    `We received a request to ${purpose}${recipientEmail ? ` (${recipientEmail})` : ''}.`,
-    `Your Shipping Wish verification code is: ${otp}`,
+    `We received a request to ${purposeAction} your ${brand.name} Account${recipientEmail ? ` (${recipientEmail})` : ''}.`,
+    `Your ${brand.name} verification code is: ${otp}`,
     '',
     'This code expires in 10 minutes. Do not share this code with anyone.',
     clientIp ? `Request IP: ${clientIp}` : '',
     'If you did not request this code, please secure your password immediately.',
     '',
     'Sincerely,',
-    'The Shipping Wish Accounts Team',
-    'Shipping Wish LLC - 19266 Coastal Hwy, Rehoboth, DE 19971'
+    brand.teamName
   ].filter(Boolean).join('\n');
 
-  return { html, text };
+  return { html, text, subject: heading, from: brand.from, replyTo: brand.replyTo, brand };
 }
 
 // Simple in-memory rate limiter for auth endpoints
@@ -343,21 +377,22 @@ router.post('/signup/send-otp', rateLimit(5, 60000), async (req, res) => {
     );
 
     const signupMail = buildVerificationCodeEmail({
+      req,
       recipientName: name || emailNorm,
       recipientEmail: emailNorm,
       otp,
-      purpose: `verify your email and activate your ${TRIAL_DAYS}-day Shipping Wish trial`,
-      heading: 'Shipping Wish Verification Code'
+      purposeAction: 'verify your email and activate'
     });
     await sendBrandedEmail({
       to: emailNorm,
-      subject: 'Shipping Wish Verification Code',
+      subject: signupMail.subject,
       html: signupMail.html,
       text: signupMail.text,
       emailType: 'signup_otp',
       templateKey: 'signup_otp',
       transactional: true,
-      from: NOREPLY_FROM
+      from: signupMail.from,
+      replyTo: signupMail.replyTo
     });
 
     res.json({ ok: true, message: 'Verification code sent.', expiresInMinutes: 10 });
@@ -529,17 +564,18 @@ router.post(['/auth/forgot-password/send-otp', '/forgot-password/send-otp'], rat
     );
 
     const resetMail = buildVerificationCodeEmail({
+      req,
       recipientName: user.name || user.email,
       recipientEmail: emailNorm,
       otp,
-      purpose: 'reset the password for your Shipping Wish Account',
-      heading: 'Shipping Wish Verification Code'
+      purposeAction: 'reset the password for'
     });
 
     await sendBrandedEmail({
       to: emailNorm,
-      from: NOREPLY_FROM,
-      subject: 'Shipping Wish Verification Code',
+      from: resetMail.from,
+      replyTo: resetMail.replyTo,
+      subject: resetMail.subject,
       html: resetMail.html,
       text: resetMail.text,
       emailType: 'password_reset_otp',
@@ -660,17 +696,18 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
 
       try {
         const twoFaMail = buildVerificationCodeEmail({
+          req,
           recipientName: user.name || user.email,
           recipientEmail: user.email,
           otp,
-          purpose: 'sign in to your Shipping Wish Account',
-          heading: 'Shipping Wish Verification Code',
+          purposeAction: 'sign in to',
           clientIp
         });
         await sendBrandedEmail({
           to: user.email,
-          from: NOREPLY_FROM,
-          subject: 'Shipping Wish Verification Code',
+          from: twoFaMail.from,
+          replyTo: twoFaMail.replyTo,
+          subject: twoFaMail.subject,
           html: twoFaMail.html,
           text: twoFaMail.text,
           emailType: 'admin_2fa_otp',
@@ -745,31 +782,33 @@ router.post('/login', rateLimit(20, 60000), async (req, res) => {
     try {
       const userAgent = req.headers['user-agent'] || 'Web Browser';
       const loginTime = new Date().toUTCString();
+      const loginBrand = detectEmailBrand(req);
       sendBrandedEmail({
         to: user.email,
-        from: NOREPLY_FROM,
-        subject: `Security Alert: New Sign-in to your LoadsNexus Account`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
-            <div style="background: #0f172a; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
-              <span style="color: #3b82f6; font-weight: 800; font-size: 18px; letter-spacing: 0.05em;">LOADSNEXUS™ / SHIPPING WISH</span>
-            </div>
-            <h2 style="color: #0f172a; margin-top: 0; font-size: 18px;">🔐 New Sign-in Detected</h2>
-            <p style="color: #475569; font-size: 14px; line-height: 1.5;">
-              Hello <strong>${escapeHtml(user.name || user.email)}</strong>,<br>
-              A new sign-in to your LoadsNexus account was detected:
-            </p>
-            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin: 16px 0; font-size: 13px; color: #334155; line-height: 1.6;">
-              <strong>Time:</strong> ${loginTime}<br>
-              <strong>IP Address:</strong> ${escapeHtml(clientIp)}<br>
-              <strong>Device / Browser:</strong> ${escapeHtml(userAgent)}
-            </div>
-            <p style="color: #64748b; font-size: 12px; line-height: 1.5;">
-              If this was you, no action is needed. If you did not authorize this login, please reset your password immediately.
-            </p>
-          </div>
-        `,
-        text: `Security Alert: New sign-in detected on your account at ${loginTime} from IP ${clientIp}.`,
+        from: loginBrand.from,
+        replyTo: loginBrand.replyTo,
+        subject: `New sign-in to your ${loginBrand.name} Account`,
+        html: `<!DOCTYPE html>
+<html lang="en">
+<body style="margin:0;padding:24px 12px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#0f172a;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+    <tr><td style="padding:18px 24px 14px;border-bottom:1px solid #f1f5f9;">${loginBrand.logoHtml}</td></tr>
+    <tr><td style="padding:20px 24px;background:${loginBrand.accentBg};color:#ffffff;font-size:20px;font-weight:700;">New Sign-in Detected</td></tr>
+    <tr><td style="padding:24px;font-size:14px;line-height:1.6;color:#1e293b;">
+      <p style="margin:0 0 12px;">Dear ${escapeHtml(user.name || user.email)},</p>
+      <p style="margin:0 0 16px;">A new sign-in to your ${loginBrand.name} account was detected:</p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin:0 0 16px;font-size:13px;color:#334155;">
+        <strong>Time:</strong> ${loginTime}<br>
+        <strong>IP Address:</strong> ${escapeHtml(clientIp)}<br>
+        <strong>Device / Browser:</strong> ${escapeHtml(userAgent)}
+      </div>
+      <p style="margin:0;color:#475569;font-size:12.5px;">If this was you, no action is needed. If you did not authorize this sign-in, please reset your password immediately.</p>
+    </td></tr>
+    <tr><td style="padding:14px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11.5px;color:#64748b;">Sincerely,<br><strong>${loginBrand.teamName}</strong><br>${loginBrand.footer}</td></tr>
+  </table>
+</body>
+</html>`,
+        text: `New sign-in detected on your ${loginBrand.name} account at ${loginTime} from IP ${clientIp}.`,
         emailType: 'login_alert',
         templateKey: 'login_alert',
         transactional: true
@@ -898,18 +937,19 @@ router.post('/auth/2fa/resend', rateLimit(3, 60000), async (req, res) => {
     const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').split(',')[0].trim();
 
     const resendMail = buildVerificationCodeEmail({
+      req,
       recipientName: row.name || row.email,
       recipientEmail: row.email,
       otp,
-      purpose: 'sign in to your Shipping Wish Account',
-      heading: 'Shipping Wish Verification Code',
+      purposeAction: 'sign in to',
       clientIp
     });
 
     await sendBrandedEmail({
       to: row.email,
-      from: NOREPLY_FROM,
-      subject: 'Shipping Wish Verification Code',
+      from: resendMail.from,
+      replyTo: resendMail.replyTo,
+      subject: resendMail.subject,
       html: resendMail.html,
       text: resendMail.text,
       emailType: 'admin_2fa_otp',

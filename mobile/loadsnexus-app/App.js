@@ -125,6 +125,7 @@ export default function LoadsNexusApp() {
   const [vettedCarrier, setVettedCarrier] = useState(null);
 
   useEffect(() => {
+    api.setBrand('loadsnexus');
     handleSearchLoads();
     fetchMyTrucks();
     fetchBrokerScores();

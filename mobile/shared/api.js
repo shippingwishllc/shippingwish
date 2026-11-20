@@ -8,6 +8,13 @@ class MobileApiClient {
     this.token = null;
     this.user = null;
     this.customBaseUrl = null;
+    this.brand = 'shippingwish';
+  }
+
+  setBrand(brandKey) {
+    if (brandKey && String(brandKey).trim()) {
+      this.brand = String(brandKey).trim().toLowerCase();
+    }
   }
 
   setBaseUrl(url) {
@@ -42,6 +49,7 @@ class MobileApiClient {
 
     const headers = {
       'Accept': 'application/json',
+      'X-Brand': this.brand || 'shippingwish',
       ...(options.headers || {})
     };
 
