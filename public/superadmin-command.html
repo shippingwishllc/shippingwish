@@ -79,7 +79,7 @@
     .sa-sso-pill { font-size: 9.5px; background: rgba(255,255,255,0.2); padding: 1px 6px; border-radius: 999px; margin-left: 2px; }
   </style>
 </head>
-<body class="app-body" style="visibility:hidden;">
+<body class="app-body">
 <div class="app-shell">
   <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
   <script src="/js/app-shell-boot.js"></script>
@@ -375,7 +375,8 @@
         window.location.replace('/dispatcher-dashboard');
         return;
       }
-      document.body.style.visibility = 'visible';
+      const wrap = document.querySelector('.sa-wrap');
+      if (wrap) wrap.style.opacity = '1';
     } catch (_) {
       window.location.replace('/admin');
       return;

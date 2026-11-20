@@ -1453,6 +1453,24 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--color-gray-50);
 }
 
+/* Smooth native MPA cross-document transitions (eliminates harsh white flash on sidebar navigation) */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.12s;
+  animation-timing-function: ease-out;
+}
+
+@media (min-width: 1025px) {
+  html:has(body.app-body),
+  body.app-body,
+  body:has(.app-shell) {
+    background: linear-gradient(90deg, #0f172a 0 248px, #f8fafc 248px 100%) !important;
+  }
+}
+
 html, body.app-body {
   margin: 0;
   padding: 0;
