@@ -163,9 +163,9 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         count(*) as count,
         sum(amount_cents) as total_cents
       FROM billing_subscriptions
-      WHERE plan_key NOT LIKE 'loadboard_%'
-        AND stripe_subscription_id NOT IN ('sub_live_sw_01', 'sub_live_sw_02', 'sub_live_ln_01')
-        AND status NOT IN ('canceled')
+      WHERE COALESCE(plan_key, '') NOT LIKE 'loadboard_%'
+        AND COALESCE(stripe_subscription_id, '') NOT IN ('sub_live_sw_01', 'sub_live_sw_02', 'sub_live_ln_01')
+        AND COALESCE(status, '') NOT IN ('canceled')
       GROUP BY status, plan_key, amount_cents, interval
     `).catch(() => ({ rows: [] }));
 
@@ -178,25 +178,35 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       const amt = parseInt(r.amount_cents || 0, 10);
       if (r.status === 'active' || r.status === 'trialing') {
         swActiveSubsCount += cnt;
-        // Convert weekly to monthly (weekly * 4.33)
-        swWeeklyMrrCents += (amt * cnt * 4.33);
-      } else if (r.status === 'past_due' || r.status === 'incomplete') {
+        const mult = String(r.interval || 'week').toLowerCase() === 'month' ? 1 : 4.33;
+        swWeeklyMrrCents += (amt * cnt * mult);
+      } else if (r.status === 'past_due' || r.status === 'incomplete' || r.status === 'unpaid') {
         swPastDueSubsCount += cnt;
       }
     });
 
-    // Invoices Paid / Revenue
+    // Invoices Paid / Pending / Unpaid / Overdue Revenue
     const invQuery = await pool.query(`
       SELECT 
         count(*) as total_invoices,
         count(*) FILTER (WHERE status = 'paid') as paid_count,
-        count(*) FILTER (WHERE status = 'pending' OR status = 'sent') as pending_count,
+        count(*) FILTER (WHERE status IN ('unpaid', 'pending', 'sent', 'overdue')) as pending_count,
         coalesce(sum(amount) FILTER (WHERE status = 'paid'), 0) as paid_amount,
-        coalesce(sum(amount) FILTER (WHERE status = 'pending' OR status = 'sent'), 0) as pending_amount
+        coalesce(sum(amount) FILTER (WHERE status IN ('unpaid', 'pending', 'sent', 'overdue')), 0) as pending_amount
       FROM invoices
     `).catch(() => ({ rows: [{ total_invoices: 0, paid_count: 0, pending_count: 0, paid_amount: 0, pending_amount: 0 }] }));
 
     const invoiceStats = invQuery.rows[0];
+
+    // Exact Total Registered Carriers Count (never capped by LIMIT 25!)
+    const totalCarriersRes = await pool.query(`
+      SELECT count(*)::int AS total_carriers
+      FROM users
+      WHERE role IN ('carrier', 'carrier_admin')
+        AND deleted_at IS NULL
+        AND email NOT IN ('ops@apexfreight.com', 'elena@ironcladhauling.com', 'demo@shippingwish.com')
+    `).catch(() => ({ rows: [{ total_carriers: 0 }] }));
+    const totalCarriersCount = totalCarriersRes.rows[0]?.total_carriers || 0;
 
     // Onboarded Carriers List (Users with role carrier)
     const carriersQuery = await pool.query(`
@@ -430,9 +440,9 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         count(*) as count,
         sum(amount_cents) as total_cents
       FROM billing_subscriptions
-      WHERE plan_key LIKE 'loadboard_%'
-        AND stripe_subscription_id NOT IN ('sub_live_sw_01', 'sub_live_sw_02', 'sub_live_ln_01')
-        AND status NOT IN ('canceled')
+      WHERE COALESCE(plan_key, '') LIKE 'loadboard_%'
+        AND COALESCE(stripe_subscription_id, '') NOT IN ('sub_live_sw_01', 'sub_live_sw_02', 'sub_live_ln_01')
+        AND COALESCE(status, '') NOT IN ('canceled')
       GROUP BY plan_key, status, amount_cents
     `).catch(() => ({ rows: [] }));
 
@@ -452,23 +462,27 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       }
     });
 
-    // Registered Brokers
+    // Registered Broker Accounts + Monitored Brokers Directory
     const brokersQuery = await pool.query(`
-      SELECT count(*) as total_brokers FROM users WHERE role = 'broker' AND deleted_at IS NULL
-    `).catch(() => ({ rows: [{ total_brokers: 0 }] }));
+      SELECT
+        (SELECT count(*)::int FROM users WHERE role = 'broker' AND deleted_at IS NULL) AS broker_accounts,
+        (SELECT count(*)::int FROM brokers) AS monitored_brokers
+    `).catch(() => ({ rows: [{ broker_accounts: 0, monitored_brokers: 0 }] }));
+    const brokerAccountsCount = brokersQuery.rows[0]?.broker_accounts || 0;
+    const monitoredBrokersCount = brokersQuery.rows[0]?.monitored_brokers || 0;
 
-    // Loads Metrics (only real loads, excluding synthetic dat_sync rows)
+    // Loads Metrics (Includes all live open & synced marketplace loads + booked/covered loads!)
     const loadsStatsQuery = await pool.query(`
       SELECT 
         count(*) as total_loads,
-        count(*) FILTER (WHERE status::text = 'new') as available_loads,
-        count(*) FILTER (WHERE status::text IN ('booked', 'covered', 'delivered', 'in_transit', 'dispatched', 'paid')) as covered_loads,
-        coalesce(sum(rate) FILTER (WHERE rate > 0 AND status::text = 'new'), 0) as open_freight_valuation,
-        coalesce(sum(rate) FILTER (WHERE rate > 0 AND status::text IN ('booked', 'covered', 'delivered', 'in_transit', 'dispatched', 'paid')), 0) as booked_freight_valuation,
-        coalesce(sum(rate) FILTER (WHERE rate > 0), 0) as total_freight_valuation
+        count(*) FILTER (WHERE status::text IN ('new', 'open')) as available_loads,
+        count(*) FILTER (WHERE status::text IN ('booked', 'ratecon_signed', 'covered', 'dispatched', 'at_pickup', 'loaded', 'in_transit', 'at_delivery', 'delivered', 'pod_uploaded', 'invoiced', 'paid')) as covered_loads,
+        coalesce(sum(rate) FILTER (WHERE rate > 0 AND status::text IN ('new', 'open')), 0) as open_freight_valuation,
+        coalesce(sum(rate) FILTER (WHERE rate > 0 AND status::text IN ('booked', 'ratecon_signed', 'covered', 'dispatched', 'at_pickup', 'loaded', 'in_transit', 'at_delivery', 'delivered', 'pod_uploaded', 'invoiced', 'paid')), 0) as booked_freight_valuation,
+        coalesce(sum(rate) FILTER (WHERE rate > 0 AND status::text NOT IN ('cancelled', 'expired')), 0) as total_freight_valuation
       FROM loads
-      WHERE load_number NOT IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
-        AND COALESCE(source_type, '') <> 'dat_sync'
+      WHERE deleted_at IS NULL
+        AND load_number NOT IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
     `).catch(() => ({ rows: [{ total_loads: 0, available_loads: 0, covered_loads: 0, open_freight_valuation: 0, booked_freight_valuation: 0, total_freight_valuation: 0 }] }));
 
     const loadStats = loadsStatsQuery.rows[0];
@@ -488,30 +502,31 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         delivery_date,
         broker_name
       FROM loads
-      WHERE load_number NOT IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
-        AND COALESCE(source_type, '') <> 'dat_sync'
+      WHERE deleted_at IS NULL
+        AND load_number NOT IN ('LN-4011', 'LN-4012', 'LN-4013', 'LN-4014', 'LN-4015', 'LN-4016')
       ORDER BY id DESC
       LIMIT 20
     `).catch(() => ({ rows: [] }));
 
     // ---------------------------------------------------------
-    // C. NYC LIMO WISH (nyclimowish.com)
+    // C. NYC LIMO WISH (nyclimowish.com) — Fixed FILTER (WHERE ...) SQL syntax!
     // ---------------------------------------------------------
     const limoStatsQuery = await pool.query(`
       SELECT 
-        count(*) FILTER (WHERE status != 'cancelled' AND payment_status != 'demo' AND booking_number NOT IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084') AND COALESCE(passenger_email, '') NOT IN ('vip@nyclimowish.com', 'admin@nyclimowish.com') AND COALESCE(passenger_first_name, '') NOT IN ('James', 'Alexander', 'Sophia', 'Marcus') AND total_price != 985) as total_bookings,
+        count(*) FILTER (WHERE COALESCE(status, '') != 'cancelled') as total_bookings,
         count(*) FILTER (WHERE status = 'pending') as pending_count,
-        count(*) FILTER (WHERE status = 'confirmed') as confirmed_count,
+        count(*) FILTER (WHERE status IN ('confirmed', 'assigned', 'en_route', 'in_progress')) as confirmed_count,
         count(*) FILTER (WHERE status = 'completed') as completed_count,
         count(*) FILTER (WHERE status = 'cancelled') as cancelled_count,
-        coalesce(sum(total_price) FILTER ((payment_status = 'paid' OR status = 'completed') AND payment_status != 'demo' AND booking_number NOT IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084') AND COALESCE(passenger_email, '') NOT IN ('vip@nyclimowish.com', 'admin@nyclimowish.com') AND total_price != 985), 0) as total_revenue
+        coalesce(sum(total_price) FILTER (WHERE payment_status = 'paid' OR status = 'completed'), 0) as total_revenue
       FROM limo_bookings
       WHERE COALESCE(payment_status, '') != 'demo'
-        AND booking_number NOT IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084')
+        AND COALESCE(booking_number, '') NOT IN ('NLW-2026-081', 'NLW-2026-082', 'NLW-2026-083', 'NLW-2026-084')
         AND COALESCE(passenger_email, '') NOT IN ('vip@nyclimowish.com', 'admin@nyclimowish.com')
-        AND COALESCE(passenger_first_name, '') NOT IN ('James', 'Alexander', 'Sophia', 'Marcus')
-        AND total_price != 985
-    `).catch(() => ({ rows: [{ total_bookings: 0, pending_count: 0, confirmed_count: 0, completed_count: 0, cancelled_count: 0, total_revenue: 0 }] }));
+    `).catch((e) => {
+      console.warn('[SUPERADMIN LIMO STATS WARN]:', e.message);
+      return { rows: [{ total_bookings: 0, pending_count: 0, confirmed_count: 0, completed_count: 0, cancelled_count: 0, total_revenue: 0 }] };
+    });
 
     const limoStats = limoStatsQuery.rows[0];
 
@@ -567,6 +582,11 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
       ORDER BY trend_score DESC 
       LIMIT 10
     `).catch(() => ({ rows: [] }));
+
+    const liveProductsCountRes = await pool.query(`
+      SELECT count(*)::int AS live_products FROM ecommerce_products WHERE is_active = true
+    `).catch(() => ({ rows: [{ live_products: 0 }] }));
+    const liveEcomProductsCount = liveProductsCountRes.rows[0]?.live_products || 0;
 
     // ---------------------------------------------------------
     // COMBINED EXECUTIVE TOTALS (100% Real Verified Revenue)
@@ -649,6 +669,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         mrr_dollars: Math.round(swWeeklyMrrCents / 100),
         total_invoices_paid_dollars: parseFloat(invoiceStats.paid_amount || 0),
         total_invoices_pending_dollars: parseFloat(invoiceStats.pending_amount || 0),
+        total_carriers_count: totalCarriersCount,
         onboarded_carriers: carriersQuery.rows,
         fleet_trucks: combinedTrucks,
         trucks_breakdown: {
@@ -666,7 +687,9 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         active_subscribers: lnActiveSubsCount,
         mrr_dollars: Math.round(lnMrrCents / 100),
         tiers: lnTiers,
-        total_brokers: parseInt(brokersQuery.rows[0].total_brokers, 10),
+        total_brokers: Math.max(monitoredBrokersCount, brokerAccountsCount),
+        monitored_brokers: monitoredBrokersCount,
+        broker_accounts: brokerAccountsCount,
         total_loads: parseInt(loadStats.total_loads, 10),
         available_loads: parseInt(loadStats.available_loads, 10),
         covered_loads: parseInt(loadStats.covered_loads, 10),
@@ -683,6 +706,7 @@ router.get('/overview', requireAuth, requireSuperAdmin, async (req, res) => {
         recent_bookings: recentLimoBookings.rows
       },
       buywish_online: {
+        live_products: liveEcomProductsCount,
         total_orders: parseInt(ecomStats.total_orders, 10),
         abandoned_checkouts: parseInt(ecomStats.abandoned_checkouts_count || 0, 10),
         processing: parseInt(ecomStats.processing_count, 10),
