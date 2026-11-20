@@ -51,6 +51,32 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 } // 15MB max file size
 });
 
+async function notifyPodReadyForFactoring(loadId, uploadedByUserId) {
+  if (!loadId) return;
+  try {
+    const lr = await pool.query(
+      `SELECT id, load_number, carrier_id, dispatcher_id, rate, pickup_location, delivery_location FROM loads WHERE id = $1`,
+      [loadId]
+    );
+    if (!lr.rows.length) return;
+    const load = lr.rows[0];
+    const { createNotification } = require('../utils/notifications');
+    const { sendPushToUsers } = require('./mobile-push');
+    const recipients = [load.dispatcher_id, load.carrier_id].filter((id) => id && Number(id) !== Number(uploadedByUserId));
+    const uniqueRecipients = [...new Set(recipients)];
+    const title = `✅ Signed POD Uploaded — #${load.load_number || load.id}`;
+    const body = `POD saved permanently to Cloud Vault for ${load.pickup_location} → ${load.delivery_location} ($${Number(load.rate || 0).toLocaleString()}). 1-Click Factoring Packet & Invoice ready!`;
+    for (const uid of uniqueRecipients) {
+      createNotification(uid, title, body, 'success', `/load-detail.html?id=${load.id}`).catch(() => {});
+    }
+    if (uniqueRecipients.length > 0) {
+      sendPushToUsers(uniqueRecipients, { title, body, data: { load_id: load.id, type: 'pod_uploaded' } }).catch(() => {});
+    }
+  } catch (e) {
+    console.warn('[Documents POD Notify]:', e.message);
+  }
+}
+
 // Upload document (linked to loadId or carrierId) — Permanent Cloud/DB Storage (Never vanishes on Vercel!)
 router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
   await ensureUnifiedSchema();
@@ -117,13 +143,14 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
       ]
     );
 
-    // If category is POD, advance load lifecycle automatically
+    // If category is POD, advance load lifecycle automatically + notify Dispatcher & Carrier for 1-Click Factoring
     if (loadId && cat === 'pod') {
       await pool.query(`UPDATE loads SET status = 'pod_uploaded', updated_at = now() WHERE id = $1`, [loadId]);
       await pool.query(
         `INSERT INTO load_status_history (load_id, status, changed_by, notes) VALUES ($1, 'pod_uploaded', $2, 'POD document uploaded to permanent cloud vault')`,
         [loadId, req.user.id]
       );
+      notifyPodReadyForFactoring(loadId, req.user.id).catch(() => {});
     }
 
     res.json({ ok: true, document: result.rows[0] });
@@ -195,6 +222,7 @@ router.post('/upload-base64', requireAuth, async (req, res) => {
         `INSERT INTO load_status_history (load_id, status, changed_by, notes) VALUES ($1, 'pod_uploaded', $2, 'Mobile POD scan uploaded to permanent vault')`,
         [loadId, req.user.id]
       );
+      notifyPodReadyForFactoring(loadId, req.user.id).catch(() => {});
     }
 
     res.json({ ok: true, document: result.rows[0] });

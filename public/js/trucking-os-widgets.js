@@ -446,6 +446,63 @@
     } catch (_) {}
   }
 
+  // 6. 1-Click Live GPS Broker Tracking Magic Link Modal (Zero Check-Calls!)
+  async function openBrokerTrackLinkModal() {
+    openModal('📍 1-Click Live Broker GPS Tracking Link', `<p>Loading your active loads...</p>`);
+    try {
+      const data = await apiJson('/api/loads');
+      const loads = (data.loads || data || []).filter(l => !['cancelled'].includes(String(l.status || '').toLowerCase())).slice(0, 30);
+      if (!loads.length) {
+        document.getElementById('sw-os-modal-body').innerHTML = `<p>No active loads found yet. Book or create a load first to generate a live broker tracking link.</p>`;
+        return;
+      }
+      document.getElementById('sw-os-modal-body').innerHTML = `
+        <p style="font-size:13px;color:#475569;margin-top:0;">Generate a secure live GPS tracking link connected to your Driver Mobile App (30s auto-GPS) and email or copy it to the broker in 1 click.</p>
+        <div class="sw-os-grid">
+          <div class="sw-os-field">
+            <label>Select Load</label>
+            <select id="swbt-load">${loads.map(l => `<option value="${l.id}">#${esc(l.load_number || l.id)} — ${esc(l.pickup_location || '')} → ${esc(l.delivery_location || '')} (${esc(l.status)})</option>`).join('')}</select>
+          </div>
+          <div class="sw-os-field">
+            <label>Broker Email (Optional — auto-detected if on load)</label>
+            <input id="swbt-email" type="email" placeholder="dispatch@broker.com">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="sw-os-btn emerald" id="swbt-send">📧 Generate &amp; Email Broker Link</button>
+          <button class="sw-os-btn" id="swbt-copy">🔗 Generate Copyable Link Only</button>
+        </div>
+        <div id="swbt-out" class="sw-os-result" style="display:none;"></div>
+      `;
+      const run = async (sendEmail) => {
+        const out = document.getElementById('swbt-out');
+        out.style.display = 'block';
+        out.innerHTML = 'Generating secure live GPS tracking link...';
+        try {
+          const loadId = document.getElementById('swbt-load').value;
+          const brokerEmail = document.getElementById('swbt-email').value.trim();
+          const r = await apiJson(`/api/broker-tracking/send-link/${encodeURIComponent(loadId)}`, {
+            method: 'POST',
+            body: JSON.stringify({ brokerEmail, sendEmail })
+          });
+          out.innerHTML = `
+            <strong style="color:#059669;">✅ ${esc(r.message)}</strong>
+            <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input readonly value="${esc(r.tracking_url)}" style="flex:1;min-width:240px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;">
+              <a class="sw-os-btn" target="_blank" href="${esc(r.tracking_url)}">Open Map ↗</a>
+            </div>
+          `;
+        } catch (e) {
+          out.innerHTML = `<span style="color:#dc2626">${esc(e.message)}</span>`;
+        }
+      };
+      document.getElementById('swbt-send').onclick = () => run(true);
+      document.getElementById('swbt-copy').onclick = () => run(false);
+    } catch (e) {
+      document.getElementById('sw-os-modal-body').innerHTML = `<p style="color:#dc2626">${esc(e.message)}</p>`;
+    }
+  }
+
   function init() {
     // Only render on Dispatch, Carrier Dashboard, and Load Board — and ALWAYS inside .app-content (never across sidebar!)
     var p = (window.location.pathname || '').toLowerCase();
@@ -467,6 +524,7 @@
         <button class="sw-os-btn" id="sw-os-profit-btn">💰 AI Net-Profit Calc</button>
         <button class="sw-os-btn" style="background:#7c3aed;" id="sw-os-reload-btn">⚡ AI Reload Finder</button>
         <button class="sw-os-btn emerald" id="sw-os-approval-btn">📲 Send Carrier Approval</button>
+        <button class="sw-os-btn" style="background:#0284c7;" id="sw-os-track-btn">📍 Broker Track Link</button>
         <button class="sw-os-btn emerald" id="sw-os-packet-btn">💸 1-Click Factoring Packet</button>
         <button class="sw-os-btn amber" id="sw-os-stl-btn">📊 Settlements &amp; Truck P&amp;L</button>
         <a class="sw-os-btn ghost" target="_blank" href="/api/loads/history-report/pdf?period=30_days">📄 30-Day History PDF</a>
@@ -478,6 +536,7 @@
     document.getElementById('sw-os-profit-btn').onclick = openProfitModal;
     document.getElementById('sw-os-reload-btn').onclick = openReloadFinderModal;
     document.getElementById('sw-os-approval-btn').onclick = openSendApprovalModal;
+    document.getElementById('sw-os-track-btn').onclick = openBrokerTrackLinkModal;
     document.getElementById('sw-os-packet-btn').onclick = openFactoringPacketModal;
     document.getElementById('sw-os-stl-btn').onclick = openSettlementsModal;
     renderPendingCarrierApprovals(bar);

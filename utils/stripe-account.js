@@ -1,16 +1,17 @@
-// Per-brand Stripe account isolation.
-// Shipping Wish & Loads Nexus share the primary Shipping Wish LLC Trucking SaaS Stripe account.
-// BuyWishOnline (E-Commerce) and NYC Limo Wish (Chauffeur) should use their own dedicated
-// Stripe sub-accounts (BUYWISH_STRIPE_SECRET_KEY / NYCLIMO_STRIPE_SECRET_KEY) to prevent
-// MCC/descriptor mismatch or dropshipping disputes from affecting Shipping Wish LLC.
+// STRICT Per-Brand Stripe Account Hard-Lock.
+// Shipping Wish LLC (acct_1TUR7pHmcOqr16cJ) is ONLY permitted for Shipping Wish & Loads Nexus (USA Trucking SaaS).
+// BuyWishOnline (E-Commerce) and NYC Limo Wish (Chauffeur) are STRICTLY FORBIDDEN from falling back to
+// Shipping Wish LLC's STRIPE_SECRET_KEY to protect the manually reinstated Shipping Wish LLC Stripe account.
 
 function approvedSecret(brand = 'shippingwish') {
   const b = String(brand || 'shippingwish').toLowerCase();
   if (b === 'buywish') {
-    return process.env.BUYWISH_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || process.env.SHIPPINGWISH_STRIPE_SECRET_KEY || '';
+    // Hard-locked: NEVER falls back to Shipping Wish LLC Stripe key!
+    return process.env.BUYWISH_STRIPE_SECRET_KEY || '';
   }
   if (b === 'nyclimo') {
-    return process.env.NYCLIMO_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || process.env.SHIPPINGWISH_STRIPE_SECRET_KEY || '';
+    // Hard-locked: NEVER falls back to Shipping Wish LLC Stripe key!
+    return process.env.NYCLIMO_STRIPE_SECRET_KEY || '';
   }
   return process.env.STRIPE_SECRET_KEY || process.env.SHIPPINGWISH_STRIPE_SECRET_KEY || '';
 }
@@ -25,10 +26,10 @@ function hasDedicatedStripeKey(brand = 'shippingwish') {
 function approvedWebhookSecret(brand = 'shippingwish') {
   const b = String(brand || 'shippingwish').toLowerCase();
   if (b === 'buywish') {
-    return process.env.BUYWISH_STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET || '';
+    return process.env.BUYWISH_STRIPE_WEBHOOK_SECRET || '';
   }
   if (b === 'nyclimo') {
-    return process.env.NYCLIMO_STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET || '';
+    return process.env.NYCLIMO_STRIPE_WEBHOOK_SECRET || '';
   }
   return process.env.STRIPE_WEBHOOK_SECRET || process.env.SHIPPINGWISH_STRIPE_WEBHOOK_SECRET || '';
 }

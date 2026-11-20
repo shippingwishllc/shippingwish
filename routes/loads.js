@@ -633,11 +633,42 @@ router.post('/:id/carrier-decision', requireAuth, async (req, res) => {
         createNotification(
           load.dispatcher_id,
           `✅ Carrier APPROVED Load #${load.load_number}`,
-          `Carrier approved ${load.pickup_location} -> ${load.delivery_location} ($${Number(load.rate || 0).toLocaleString()}). Ready to finalize RateCon & dispatch!`,
+          `Carrier approved ${load.pickup_location} -> ${load.delivery_location} ($${Number(load.rate || 0).toLocaleString()}). Live broker tracking link generated!`,
           'success',
           `/load-detail.html?id=${load.id}`
         ).catch(() => {});
+        const { sendPushToUsers } = require('./mobile-push');
+        sendPushToUsers(load.dispatcher_id, {
+          title: `✅ Carrier Approved #${load.load_number}`,
+          body: `${load.pickup_location} → ${load.delivery_location} ($${Number(load.rate || 0).toLocaleString()}) is BOOKED!`,
+          data: { load_id: load.id, type: 'carrier_approved' }
+        }).catch(() => {});
       }
+
+      // Auto-send Live GPS Broker Tracking Magic Link if a real broker email exists on the load
+      try {
+        const contactStr = String(load.broker_contact || '').trim();
+        const emailMatch = contactStr.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+        if (emailMatch && awarded.tracking_url && !emailMatch[0].includes('locked@')) {
+          const { sendBrandedEmail } = require('../utils/mailer');
+          sendBrandedEmail({
+            to: emailMatch[0],
+            subject: `Carrier Confirmed & Live Tracking — Load #${load.load_number} (${load.pickup_location} → ${load.delivery_location})`,
+            html: `
+              <div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:0 auto;color:#0f172a;">
+                <div style="background:#0b1528;color:#fff;padding:18px 22px;border-radius:12px 12px 0 0;">
+                  <h2 style="margin:0;font-size:17px;">✅ Carrier Approved & Booked — Load #${load.load_number}</h2>
+                </div>
+                <div style="padding:20px 22px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;background:#fff;">
+                  <p>Our verified motor carrier has officially approved <strong>${load.pickup_location} → ${load.delivery_location}</strong> ($${Number(load.rate || 0).toLocaleString()}).</p>
+                  <p style="font-size:13px;color:#475569;">Track live GPS location and delivery milestones in real time (zero check-calls needed):</p>
+                  <a href="${awarded.tracking_url}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:8px;margin-top:6px;">📍 Open Live GPS Tracking Link ↗</a>
+                </div>
+              </div>
+            `
+          }).catch(() => {});
+        }
+      } catch (_) {}
 
       return res.json({
         ok: true,

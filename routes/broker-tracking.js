@@ -84,8 +84,141 @@ async function getOfferByToken(token) {
   `;
 
   const { rows } = await pool.query(query, [token]);
-  return rows[0] || null;
+  if (rows[0]) return rows[0];
+
+  // Fallback: Look up unified TMS loads.broker_tracking_token directly + latest real Mobile App GPS ping!
+  try {
+    const loadRes = await pool.query(`
+      SELECT
+        NULL::int AS offer_id,
+        l.id AS load_id,
+        l.load_number,
+        l.carrier_id,
+        l.status AS offer_status,
+        l.broker_tracking_token AS tracking_token,
+        COALESCE(l.status, 'booked') AS tracking_status,
+        te.latitude AS last_known_lat,
+        te.longitude AS last_known_lng,
+        te.location_name AS last_known_city,
+        '' AS last_known_state,
+        te.ping_time AS last_gps_at,
+        l.broker_contact AS broker_email,
+        l.pickup_location,
+        l.delivery_location,
+        l.pickup_date,
+        l.delivery_date,
+        l.equipment_type,
+        l.weight,
+        l.rate,
+        l.commodity,
+        COALESCE(l.carrier_name, u.company_name, u.name, 'Shipping Wish Carrier') AS carrier_name,
+        COALESCE(l.carrier_mc, u.mc_number, '') AS mc_number,
+        COALESCE(u.dot_number, '') AS dot_number,
+        COALESCE(u.phone, '') AS carrier_phone,
+        COALESCE(l.driver_name, 'Assigned CDL Driver') AS driver_name
+      FROM loads l
+      LEFT JOIN users u ON u.id = l.carrier_id
+      LEFT JOIN LATERAL (
+        SELECT latitude, longitude, location_name, ping_time
+        FROM tracking_events
+        WHERE load_id = l.id
+        ORDER BY ping_time DESC
+        LIMIT 1
+      ) te ON TRUE
+      WHERE l.broker_tracking_token = $1 AND l.deleted_at IS NULL
+      LIMIT 1
+    `, [token]);
+
+    if (loadRes.rows[0]) {
+      const row = loadRes.rows[0];
+      const hist = await pool.query(
+        `SELECT status, notes, created_at FROM load_status_history WHERE load_id = $1 ORDER BY created_at DESC LIMIT 20`,
+        [row.load_id]
+      ).catch(() => ({ rows: [] }));
+      row.check_calls_log = hist.rows.map((h) => ({
+        timestamp: h.created_at,
+        status: h.status,
+        note: h.notes || `Status updated to ${h.status}`
+      }));
+      return row;
+    }
+  } catch (e) {
+    console.warn('[Broker Tracking] Unified load lookup notice:', e.message);
+  }
+  return null;
 }
+
+/**
+ * POST /api/broker-tracking/send-link/:loadId
+ * 1-Click Generate & Email Live GPS Broker Tracking Magic Link (Zero Check-Calls!)
+ */
+router.post('/send-link/:loadId', requireAuth, async (req, res) => {
+  try {
+    const loadId = parseInt(req.params.loadId, 10);
+    if (isNaN(loadId)) return res.status(400).json({ error: 'Valid loadId is required.' });
+
+    const { ensureUnifiedSchema, userCanAccessLoad } = require('../utils/load-lifecycle');
+    await ensureUnifiedSchema();
+
+    const loadRes = await pool.query('SELECT * FROM loads WHERE id = $1 AND deleted_at IS NULL', [loadId]);
+    if (!loadRes.rows.length) return res.status(404).json({ error: 'Load not found.' });
+    const load = loadRes.rows[0];
+
+    const allowed = await userCanAccessLoad(req, load);
+    if (!allowed) return res.status(403).json({ error: 'You do not have access to this load.' });
+
+    let token = load.broker_tracking_token;
+    if (!token) {
+      token = generateTrackingToken();
+      await pool.query('UPDATE loads SET broker_tracking_token = $1, updated_at = NOW() WHERE id = $2', [token, loadId]);
+    }
+
+    const baseUrl = (process.env.APP_URL || 'https://www.shippingwish.com').replace(/\/$/, '');
+    const trackingUrl = `${baseUrl}/track-load.html?token=${encodeURIComponent(token)}`;
+
+    const rawContact = String(req.body?.brokerEmail || load.broker_contact || '').trim();
+    const emailMatch = rawContact.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    const targetEmail = emailMatch ? emailMatch[0] : null;
+    let emailed = false;
+
+    if (targetEmail && req.body?.sendEmail !== false) {
+      await sendBrandedEmail({
+        to: targetEmail,
+        subject: `Live GPS Tracking Link — Load #${load.load_number} (${load.pickup_location} → ${load.delivery_location})`,
+        html: `
+          <div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:0 auto;color:#0f172a;">
+            <div style="background:#0b1528;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;">
+              <h2 style="margin:0;font-size:18px;">📍 Live Freight GPS Tracking — Load #${load.load_number}</h2>
+              <p style="margin:6px 0 0;color:#94a3b8;font-size:13px;">Shipping Wish LLC • Zero Check-Call Real-Time Visibility</p>
+            </div>
+            <div style="padding:22px 24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;background:#fff;">
+              <p style="margin:0 0 12px;">Your shipment <strong>${load.pickup_location} → ${load.delivery_location}</strong> is actively tracked via Shipping Wish Mobile GPS.</p>
+              <p style="margin:0 0 18px;font-size:13px;color:#475569;">Current Status: <strong>${String(load.status || 'booked').replace(/_/g, ' ').toUpperCase()}</strong> • Equipment: ${load.equipment_type || '53ft Truck'}</p>
+              <a href="${trackingUrl}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:8px;">Open Live GPS Map & Milestones ↗</a>
+              <p style="margin:18px 0 0;font-size:12px;color:#64748b;">Or copy link: <a href="${trackingUrl}">${trackingUrl}</a></p>
+            </div>
+          </div>
+        `
+      }).then(() => { emailed = true; }).catch((err) => console.warn('[Broker Tracking Email]:', err.message));
+    }
+
+    res.json({
+      ok: true,
+      load_id: loadId,
+      load_number: load.load_number,
+      token,
+      tracking_url: trackingUrl,
+      emailed,
+      emailed_to: emailed ? targetEmail : null,
+      message: emailed
+        ? `Live GPS tracking link sent to ${targetEmail}!`
+        : 'Live GPS tracking link generated and ready to copy!'
+    });
+  } catch (err) {
+    console.error('[Broker Tracking] Send link error:', err);
+    res.status(500).json({ error: 'Could not generate broker tracking link.' });
+  }
+});
 
 /**
  * GET /api/tracking/:token
