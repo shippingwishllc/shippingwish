@@ -589,7 +589,7 @@ router.get('/search', optionalAuth, async (req, res) => {
     const sqlConditions = [
       `l.deleted_at IS NULL`,
       `(l.status IN ('new', 'open') OR (l.status = 'covered' AND l.updated_at > NOW() - interval '30 seconds'))`,
-      `(l.is_public_board = TRUE OR (l.carrier_id IS NULL AND COALESCE(l.source_type, '') IN ('broker', 'api', 'dat', 'ai_ingest', 'partner_api', 'loadboard')))`,
+      `(l.is_public_board = TRUE OR l.carrier_id IS NULL OR COALESCE(l.source_type, '') IN ('broker', 'api', 'dat', 'dat_sync', 'ai_ingest', 'partner_api', 'loadboard'))`,
       `l.load_number NOT LIKE 'SW-AI-%'`,
       `COALESCE(l.broker_name, '') NOT ILIKE '%LoadNexus Direct%'`
     ];
@@ -954,7 +954,7 @@ router.post('/ai-match', requireAuth, async (req, res) => {
     const sqlConditions = [
       `l.deleted_at IS NULL`,
       `(l.status IN ('new', 'open') OR (l.status = 'covered' AND l.updated_at > NOW() - interval '30 seconds'))`,
-      `(l.is_public_board = TRUE OR (l.carrier_id IS NULL AND COALESCE(l.source_type, '') IN ('broker', 'api', 'dat', 'ai_ingest', 'partner_api', 'loadboard')))`,
+      `(l.is_public_board = TRUE OR l.carrier_id IS NULL OR COALESCE(l.source_type, '') IN ('broker', 'api', 'dat', 'dat_sync', 'ai_ingest', 'partner_api', 'loadboard'))`,
       `l.load_number NOT LIKE 'SW-AI-%'`,
       `COALESCE(l.broker_name, '') NOT ILIKE '%LoadNexus Direct%'`
     ];
@@ -2232,7 +2232,7 @@ router.get('/updates', optionalAuth, async (req, res) => {
               pickup_date, equipment_type, weight, miles, rpm, broker_name, broker_mc, created_at, updated_at
        FROM loads
        WHERE deleted_at IS NULL
-         AND (is_public_board = TRUE OR (carrier_id IS NULL AND COALESCE(source_type, '') IN ('broker', 'api', 'dat', 'ai_ingest', 'partner_api')))
+         AND (is_public_board = TRUE OR carrier_id IS NULL OR COALESCE(source_type, '') IN ('broker', 'api', 'dat', 'dat_sync', 'ai_ingest', 'partner_api', 'loadboard'))
          AND updated_at > $1
        ORDER BY updated_at DESC
        LIMIT 50`,

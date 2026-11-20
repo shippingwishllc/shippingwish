@@ -1153,6 +1153,192 @@
         gap: 10px !important;
       }
     }
+
+    /* ============================================================
+       DAT ONE-STYLE ULTRA-CLEAN SINGLE-ROW SEARCH CONSOLE
+       Zero overlapping labels, full radius visibility, collapsible filters
+       ============================================================ */
+    .dat-search-card {
+      background: #ffffff;
+      border: 1px solid #dbe4f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+    }
+    .dat-topbar-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #eef2f7;
+    }
+    .dat-primary-row {
+      display: grid;
+      grid-template-columns: minmax(215px, 1.35fr) minmax(215px, 1.35fr) minmax(175px, 1fr) minmax(140px, 0.8fr) auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .dat-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+    .dat-field-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .dat-field-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin: 0;
+      white-space: nowrap;
+    }
+    .dat-dh-badge {
+      font-size: 10px;
+      font-weight: 800;
+      color: #2563eb;
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      border-radius: 6px;
+      padding: 1px 6px;
+      white-space: nowrap;
+    }
+    .dat-combo {
+      display: flex;
+      align-items: stretch;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      background: #fff;
+      transition: border-color .15s, box-shadow .15s;
+      position: relative;
+    }
+    .dat-combo:focus-within {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .dat-combo input.dat-combo-input {
+      flex: 1;
+      min-width: 0;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      padding: 9px 11px !important;
+      font-size: 13.5px !important;
+      font-weight: 600;
+      color: #0f172a;
+      background: transparent !important;
+      height: 40px;
+    }
+    .dat-combo select.dat-radius-select {
+      width: 88px;
+      flex-shrink: 0;
+      border: none !important;
+      border-left: 1px solid #e2e8f0 !important;
+      border-radius: 0 9px 9px 0 !important;
+      background: #f8fafc !important;
+      padding: 0 6px 0 8px !important;
+      font-size: 12px !important;
+      font-weight: 700;
+      color: #1e293b;
+      height: 40px;
+      cursor: pointer;
+    }
+    .dat-control {
+      height: 42px !important;
+      border: 1.5px solid #cbd5e1 !important;
+      border-radius: 10px !important;
+      padding: 0 11px !important;
+      font-size: 13.5px !important;
+      font-weight: 600 !important;
+      color: #0f172a !important;
+      background: #ffffff !important;
+      width: 100%;
+    }
+    .dat-control:focus {
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+      outline: none !important;
+    }
+    .dat-cta-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 42px;
+    }
+    .dat-btn-search {
+      height: 42px;
+      padding: 0 20px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+      transition: transform .12s, box-shadow .15s;
+    }
+    .dat-btn-search:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35); }
+    .dat-btn-filters {
+      height: 42px;
+      padding: 0 13px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #1e293b;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .dat-btn-filters:hover, .dat-btn-filters.open {
+      background: #eff6ff;
+      border-color: #2563eb;
+      color: #1d4ed8;
+    }
+    .dat-more-drawer {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px dashed #cbd5e1;
+    }
+    .dat-more-drawer.open { display: block; }
+    .dat-adv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 1120px) {
+      .dat-primary-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .dat-cta-group {
+        grid-column: 1 / -1;
+      }
+    }
+    @media (max-width: 640px) {
+      .dat-primary-row {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body class="app-body">
@@ -1208,7 +1394,7 @@
         <button type="button" class="btn btn-primary btn-sm" onclick="openPostLoadModal()" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);border:none;font-weight:800;color:#fff;padding:6px 14px;border-radius:8px;box-shadow:0 2px 6px rgba(16,185,129,0.3);cursor:pointer;">
           ➕ Post a Load (Free)
         </button>
-        <a href="/admin-loadnexus" class="btn btn-primary btn-sm" style="background:#0B192C;border:1px solid #3B82F6;">
+        <a href="/admin-loadnexus" class="btn btn-primary btn-sm" style="background:#0B192C;color:#ffffff !important;border:1px solid #3B82F6;font-weight:700;">
           🛡️ LoadNexus Command Center
         </a>
         <div class="live-status" aria-live="polite">
@@ -1290,79 +1476,44 @@
         </button>
       </div>
 
-      <!-- SEARCH & AI LANE MATCHER CARD -->
-      <div class="search-card-container">
-        
-        <!-- Tab Meta Header & Quick Rename -->
-        <div class="search-card-header">
-          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:240px;">
-            <span style="font-size:20px;">🚛</span>
-            <input type="text" id="tab-custom-title" onchange="updateCurrentTabTitle(this.value)" 
-                   class="tab-title-edit-input" title="Click to rename tab" placeholder="e.g. Truck #101 - Dry Van (Dallas)">
+      <!-- DAT ONE-STYLE ULTRA-CLEAN SEARCH CONSOLE -->
+      <div class="dat-search-card">
+
+        <!-- Compact Truck Tab Name & Status Strip -->
+        <div class="dat-topbar-row">
+          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px;">
+            <span style="font-size:17px;">🚛</span>
+            <input type="text" id="tab-custom-title" onchange="updateCurrentTabTitle(this.value)"
+                   class="tab-title-edit-input" style="font-size:14px;font-weight:800;padding:4px 8px;" title="Click to rename tab" placeholder="Truck #101 — Dry Van Search">
           </div>
-          <div style="display:flex;gap:10px;align-items:center;">
-            <span class="tab-meta-badge" id="tab-search-meta">Configuring Search Tab</span>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="resetActiveTabFilters()" style="display:inline-flex;align-items:center;gap:4px;">
-              <span>↺</span> Reset Tab
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div id="date-relative-label" class="date-status-indicator status-today" style="font-size:11px;padding:4px 10px;">
+              ⚡ Today (Ready Now)
+            </div>
+            <span class="tab-meta-badge" id="tab-search-meta" style="font-size:11px;">Live Search</span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="resetActiveTabFilters()" style="font-size:11.5px;padding:4px 10px;border-radius:8px;">
+              ↺ Reset
             </button>
           </div>
         </div>
 
-        <!-- 1. DEDICATED PICKUP SCHEDULE & DATES TOOLBAR (TOP TIER) -->
-        <div class="schedule-toolbar">
-          <div class="schedule-toolbar-left">
-            <div class="schedule-label">
-              <span style="font-size:14px;">📅</span>
-              <span>Pickup Schedule:</span>
-            </div>
+        <!-- 1. CLEAN SINGLE-ROW PRIMARY SEARCH BAR (LIKE DAT ONE — ZERO CLUTTER!) -->
+        <div class="dat-primary-row">
 
-            <!-- Quick Preset Segmented Buttons -->
-            <div class="schedule-presets">
-              <button type="button" class="sched-pill active" id="pill-today" onclick="applyDatePreset('today')">
-                ⚡ Today <span class="sched-sub">(Ready Now)</span>
-              </button>
-              <button type="button" class="sched-pill" id="pill-tomorrow" onclick="applyDatePreset('tomorrow')">
-                📅 Tomorrow <span class="sched-sub">(Reload)</span>
-              </button>
-              <button type="button" class="sched-pill" id="pill-2days" onclick="applyDatePreset('+2days')">
-                🗓️ +2 Days
-              </button>
-              <button type="button" class="sched-pill" id="pill-advance" onclick="triggerDatePicker()">
-                🗓️ Advance / Custom
-              </button>
+          <!-- Origin + DH-O Radius -->
+          <div class="dat-field">
+            <div class="dat-field-head">
+              <label class="dat-field-label" for="search-origin">Origin (City, ST or ZIP)</label>
+              <span class="dat-dh-badge">DH-O</span>
             </div>
-
-            <!-- Clean Date Input -->
-            <div class="schedule-date-input-wrap">
-              <input type="date" id="search-date" class="form-input schedule-date-input" 
-                     onchange="onDateInputChange(this.value)" title="Choose exact pickup date">
-            </div>
-          </div>
-
-          <div class="schedule-toolbar-right">
-            <div id="date-relative-label" class="date-status-indicator status-today">
-              ⚡ Today (Ready to Dispatch)
-            </div>
-          </div>
-        </div>
-
-        <!-- 2. ROUTING & EQUIPMENT SEARCH GRID (MIDDLE TIER) -->
-        <div class="routing-fields-grid">
-          
-          <!-- Origin (City, State or ZIP) & DHO -->
-          <div class="routing-field-col">
-            <div class="field-header">
-              <label class="form-label field-label" for="search-origin">Origin (City, State or ZIP)</label>
-              <span class="radius-tag">DHO Radius</span>
-            </div>
-            <div class="field-input-combo" style="position:relative;">
-              <input type="text" id="search-origin" class="form-input combo-text" value="Rincon, GA" 
-                     placeholder="e.g. Rincon, GA or All Origin" autocomplete="off"
-                     oninput="handleOriginAutocompleteInput(this.value)" 
+            <div class="dat-combo">
+              <input type="text" id="search-origin" class="dat-combo-input" value="Rincon, GA"
+                     placeholder="City, ST or ZIP" autocomplete="off"
+                     oninput="handleOriginAutocompleteInput(this.value)"
                      onkeydown="handleAutocompleteKeydown(event, 'origin')"
                      onfocus="handleOriginAutocompleteInput(this.value)"
                      onchange="syncActiveTabField('origin', this.value)">
-              <select id="search-dho" class="form-select combo-radius" onchange="syncActiveTabField('dho', this.value)" title="Deadhead Origin Radius">
+              <select id="search-dho" class="dat-radius-select" onchange="syncActiveTabField('dho', this.value)" title="Deadhead Origin Radius">
                 <option value="25">25 mi</option>
                 <option value="50">50 mi</option>
                 <option value="100">100 mi</option>
@@ -1371,23 +1522,23 @@
               </select>
               <div id="origin-autocomplete-dropdown" class="places-autocomplete-dropdown" style="display:none;"></div>
             </div>
-            <div id="origin-zip-hint" style="display:none;font-size:11px;color:#2563eb;font-weight:700;margin-top:3px;"></div>
+            <div id="origin-zip-hint" style="display:none;font-size:11px;color:#2563eb;font-weight:700;"></div>
           </div>
 
-          <!-- Destination(s) & DHD -->
-          <div class="routing-field-col">
-            <div class="field-header">
-              <label class="form-label field-label" for="search-dest">Destination(s) / States or ZIP</label>
-              <span class="radius-tag">DHD Radius</span>
+          <!-- Destination + DH-D Radius -->
+          <div class="dat-field">
+            <div class="dat-field-head">
+              <label class="dat-field-label" for="search-dest">Destination (Anywhere / States)</label>
+              <span class="dat-dh-badge">DH-D</span>
             </div>
-            <div class="field-input-combo" style="position:relative;">
-              <input type="text" id="search-dest" class="form-input combo-text" value="" 
-                     placeholder="e.g. All 48 States, or TX, FL, GA" autocomplete="off"
-                     oninput="handleDestAutocompleteInput(this.value)" 
+            <div class="dat-combo">
+              <input type="text" id="search-dest" class="dat-combo-input" value=""
+                     placeholder="Anywhere, or TX, FL, GA" autocomplete="off"
+                     oninput="handleDestAutocompleteInput(this.value)"
                      onkeydown="handleAutocompleteKeydown(event, 'dest')"
                      onfocus="handleDestAutocompleteInput(this.value)"
                      onchange="syncActiveTabField('dest', this.value)">
-              <select id="search-dhd" class="form-select combo-radius" onchange="syncActiveTabField('dhd', this.value)" title="Deadhead Destination Radius">
+              <select id="search-dhd" class="dat-radius-select" onchange="syncActiveTabField('dhd', this.value)" title="Deadhead Destination Radius">
                 <option value="25">25 mi</option>
                 <option value="50">50 mi</option>
                 <option value="100" selected>100 mi</option>
@@ -1396,126 +1547,151 @@
               </select>
               <div id="dest-autocomplete-dropdown" class="places-autocomplete-dropdown" style="display:none;"></div>
             </div>
-            <div id="dest-zip-hint" style="display:none;font-size:11px;color:#2563eb;font-weight:700;margin-top:3px;"></div>
+            <div id="dest-zip-hint" style="display:none;font-size:11px;color:#2563eb;font-weight:700;"></div>
           </div>
 
           <!-- Equipment Type -->
-          <div class="routing-field-col">
-            <div class="field-header">
-              <label class="form-label field-label" for="search-equipment">Equipment Type</label>
+          <div class="dat-field">
+            <div class="dat-field-head">
+              <label class="dat-field-label" for="search-equipment">Equipment</label>
             </div>
-            <select id="search-equipment" class="form-select" onchange="handleEquipmentChange(this.value)" style="font-weight:600;">
+            <select id="search-equipment" class="dat-control" onchange="handleEquipmentChange(this.value)">
               <option value="53ft Dry Van" selected>53ft Dry Van</option>
               <option value="53ft Reefer">53ft Reefer (Temp)</option>
-              <option value="Flatbed / Step Deck">Flatbed / Step Deck (48ft–53ft)</option>
+              <option value="Flatbed / Step Deck">Flatbed / Step Deck</option>
               <option value="Power Only">Power Only</option>
-              <option value="Box Truck">26ft Box Truck (≤ 10,000 lbs)</option>
-              <option value="Cargo Van / Sprinter">Cargo Van / Sprinter (≤ 4,000 lbs)</option>
-              <option value="30ft Hotshot">30ft Hotshot (Non-CDL ≤ 15,000 lbs)</option>
-              <option value="35ft Hotshot">35ft Hotshot (Gooseneck ≤ 18,000 lbs)</option>
-              <option value="40ft Hotshot">40ft Hotshot (CDL ≤ 24,000 lbs)</option>
-              <option value="Hotshot">Hotshot (All 24ft–40ft + Open Deck LTL)</option>
+              <option value="Box Truck">26ft Box Truck (≤10k lbs)</option>
+              <option value="Cargo Van / Sprinter">Cargo Van / Sprinter</option>
+              <option value="30ft Hotshot">30ft Hotshot (≤15k lbs)</option>
+              <option value="35ft Hotshot">35ft Hotshot (≤18k lbs)</option>
+              <option value="40ft Hotshot">40ft Hotshot (≤24k lbs)</option>
+              <option value="Hotshot">Hotshot (All Open Deck)</option>
             </select>
           </div>
 
-          <!-- Trailer Length (ft) & Max Weight (lbs) Filter -->
-          <div class="routing-field-col" style="min-width:190px;">
-            <div class="field-header">
-              <label class="form-label field-label" for="search-max-length">Max Length (ft) / Weight</label>
+          <!-- Pickup Date -->
+          <div class="dat-field">
+            <div class="dat-field-head">
+              <label class="dat-field-label" for="search-date">Pickup Date</label>
             </div>
-            <div style="display:flex;gap:4px;">
-              <select id="search-max-length" class="form-select" onchange="syncActiveTabField('maxLength', this.value); runActiveTabSearch();" style="font-weight:700;padding-left:8px;padding-right:20px;" title="Filter loads by maximum trailer length in feet">
-                <option value="">Any ft</option>
-                <option value="53">≤ 53 ft</option>
-                <option value="48">≤ 48 ft</option>
-                <option value="26">≤ 26 ft</option>
-                <option value="40">≤ 40 ft (Hotshot)</option>
-                <option value="35">≤ 35 ft (Hotshot)</option>
-                <option value="30">≤ 30 ft (Hotshot)</option>
-              </select>
-              <select id="search-max-weight" class="form-select" onchange="syncActiveTabField('maxWeight', this.value); runActiveTabSearch();" style="font-weight:700;padding-left:8px;padding-right:20px;" title="Filter loads by maximum payload weight in lbs">
-                <option value="">Any lbs</option>
-                <option value="10000">≤ 10k lbs</option>
-                <option value="15000">≤ 15k lbs</option>
-                <option value="18000">≤ 18k lbs</option>
-                <option value="24000">≤ 24k lbs</option>
-                <option value="45000">≤ 45k lbs</option>
-              </select>
-            </div>
+            <input type="date" id="search-date" class="dat-control" onchange="onDateInputChange(this.value)" title="Choose exact pickup date">
           </div>
 
-          <!-- Target Carrier Fleet / Active Carrier Authority -->
-          <div class="routing-field-col" id="carrier-select-group" style="min-width:220px;">
-            <div class="field-header" style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-              <label class="form-label field-label" for="search-carrier-id" id="carrier-select-label" style="margin:0;">Active Carrier</label>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <button type="button" onclick="refreshCarriersRosterNow()" style="background:none;border:none;color:#059669;font-size:11.5px;font-weight:800;cursor:pointer;padding:0;" title="Instant sync newly added carriers">↻ Sync</button>
-                <button type="button" id="btn-quick-add-carrier" onclick="openAddCarrierModal()" style="background:none;border:none;color:#2563eb;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;" title="Add another carrier to your roster">+ Add Carrier</button>
+          <!-- Search & More Filters Toggle -->
+          <div class="dat-cta-group">
+            <button type="button" class="dat-btn-search" id="btn-run-search" onclick="runActiveTabSearch()">
+              <span>🔍</span> Search
+            </button>
+            <button type="button" class="dat-btn-filters" id="btn-dat-more-filters" onclick="toggleDatMoreFilters()">
+              <span>⚙️</span> Filters ▾
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. COLLAPSIBLE ADVANCED FILTERS DRAWER (Hidden by default for ultra-clean DAT One view!) -->
+        <div class="dat-more-drawer" id="dat-more-filters">
+          <div class="dat-adv-grid">
+
+            <!-- Active Carrier Authority -->
+            <div class="dat-field" id="carrier-select-group">
+              <div class="dat-field-head">
+                <label class="dat-field-label" for="search-carrier-id" id="carrier-select-label">Active Carrier</label>
+                <div style="display:flex;gap:8px;">
+                  <button type="button" onclick="refreshCarriersRosterNow()" style="background:none;border:none;color:#059669;font-size:11px;font-weight:800;cursor:pointer;padding:0;">↻ Sync</button>
+                  <button type="button" id="btn-quick-add-carrier" onclick="openAddCarrierModal()" style="background:none;border:none;color:#2563eb;font-size:11px;font-weight:800;cursor:pointer;padding:0;">+ Add</button>
+                </div>
+              </div>
+              <select id="search-carrier-id" class="dat-control" onchange="handleCarrierChange(this.value)">
+                <option value="">Select carrier authority...</option>
+              </select>
+            </div>
+
+            <!-- Max Length & Max Weight -->
+            <div class="dat-field">
+              <div class="dat-field-head">
+                <label class="dat-field-label" for="search-max-length">Max Length / Weight</label>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <select id="search-max-length" class="dat-control" onchange="syncActiveTabField('maxLength', this.value); runActiveTabSearch();">
+                  <option value="">Any ft</option>
+                  <option value="53">≤ 53 ft</option>
+                  <option value="48">≤ 48 ft</option>
+                  <option value="40">≤ 40 ft</option>
+                  <option value="35">≤ 35 ft</option>
+                  <option value="30">≤ 30 ft</option>
+                  <option value="26">≤ 26 ft</option>
+                </select>
+                <select id="search-max-weight" class="dat-control" onchange="syncActiveTabField('maxWeight', this.value); runActiveTabSearch();">
+                  <option value="">Any lbs</option>
+                  <option value="10000">≤ 10k lbs</option>
+                  <option value="15000">≤ 15k lbs</option>
+                  <option value="18000">≤ 18k lbs</option>
+                  <option value="24000">≤ 24k lbs</option>
+                  <option value="45000">≤ 45k lbs</option>
+                </select>
               </div>
             </div>
-            <select id="search-carrier-id" class="form-select" onchange="handleCarrierChange(this.value)">
-              <option value="">Select carrier authority...</option>
-            </select>
-          </div>
 
-          <!-- Min RPM -->
-          <div class="routing-field-col">
-            <div class="field-header">
-              <label class="form-label field-label" for="search-min-rpm">Min $/Mile</label>
+            <!-- Min $/Mile -->
+            <div class="dat-field">
+              <div class="dat-field-head">
+                <label class="dat-field-label" for="search-min-rpm">Min Rate ($/Mile)</label>
+              </div>
+              <div style="position:relative;">
+                <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-weight:800;color:#64748b;font-size:13px;">$</span>
+                <input type="number" step="0.05" id="search-min-rpm" class="dat-control" value=""
+                       placeholder="All Rates / Any" onchange="syncActiveTabField('minRpm', this.value)" style="padding-left:24px !important;">
+              </div>
             </div>
-            <div style="position:relative;">
-              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--text-muted);font-size:13px;">$</span>
-              <input type="number" step="0.05" id="search-min-rpm" class="form-input" value="" 
-                     placeholder="All Rates / Any" onchange="syncActiveTabField('minRpm', this.value)" style="padding-left:24px;font-weight:700;">
+
+            <!-- Pro Dispatch Tools -->
+            <div class="dat-field">
+              <div class="dat-field-head">
+                <label class="dat-field-label">AI &amp; DAT Import Tools</label>
+              </div>
+              <div style="display:flex;gap:8px;height:42px;">
+                <button type="button" class="btn-ai-match" id="btn-run-ai" onclick="runActiveTabAiMatch()" style="flex:1;height:42px;border-radius:10px;justify-content:center;">
+                  <span>⚡</span> AI Match
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-open-dat-paste" onclick="openDatPasteModal()" style="flex:1;height:42px;border-radius:10px;font-weight:700;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;justify-content:center;">
+                  <span>📋</span> Import DAT
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <div class="routing-actions-col">
-            <button type="button" class="btn-search-primary" id="btn-run-search" onclick="runActiveTabSearch()">
-              <span>🔍</span> Search Loads
-            </button>
-            <button type="button" class="btn-ai-match" id="btn-run-ai" onclick="runActiveTabAiMatch()" title="Run AI Smart Matching Engine">
-              <span>⚡</span> AI Match
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-open-dat-paste" onclick="openDatPasteModal()" title="Import copied loads from your active DAT One subscription" style="display:inline-flex;align-items:center;gap:5px;font-weight:700;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;height:38px;padding:0 12px;border-radius:8px;">
-              <span>📋</span> Import DAT Loads
-            </button>
+          <!-- Compact Pickup Presets & Quick Regions -->
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0 4px;">
+            <span style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;">Dates:</span>
+            <button type="button" class="sched-pill active" id="pill-today" onclick="applyDatePreset('today')">⚡ Today</button>
+            <button type="button" class="sched-pill" id="pill-tomorrow" onclick="applyDatePreset('tomorrow')">📅 Tomorrow</button>
+            <button type="button" class="sched-pill" id="pill-2days" onclick="applyDatePreset('+2days')">+2 Days</button>
+            <button type="button" class="sched-pill" id="pill-advance" onclick="triggerDatePicker()">Custom</button>
+            <span style="width:1px;height:18px;background:#e2e8f0;margin:0 4px;"></span>
+            <span style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;">Regions:</span>
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Anywhere / All 48 States')">All 48</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Midwest (IL, IN, OH, MI)')">Midwest</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Southeast (GA, FL, NC, SC, TN)')">Southeast</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('West (CA, AZ, NV, UT, WA)')">West</button>
+            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('TX, WY, CO')">TX/WY/CO</button>
+            <button type="button" class="quick-lane-pill" onclick="applyOriginZipPreset('75201', 'Dallas, TX')">📍 Dallas</button>
+            <button type="button" class="quick-lane-pill" onclick="applyOriginZipPreset('60601', 'Chicago, IL')">📍 Chicago</button>
+            <button type="button" class="quick-lane-pill" onclick="applyOriginZipPreset('30301', 'Atlanta, GA')">📍 Atlanta</button>
+            <button type="button" class="quick-lane-pill" onclick="applyOriginZipPreset('90001', 'Los Angeles, CA')">📍 LA</button>
           </div>
         </div>
-
-        <!-- 3. QUICK DESTINATION LANES (BOTTOM TIER) -->
-        <div class="quick-lanes-bar">
-          <div class="quick-lanes-label">
-            <span>⚡ QUICK DESTINATIONS:</span>
-          </div>
-          <div class="quick-lanes-pills">
-            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('TX, WY, CO')">TX, WY, CO</button>
-            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('WY, MT, ID')">WY, MT, ID</button>
-            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Midwest (IL, IN, OH, MI)')">Midwest (IL, IN, OH, MI)</button>
-            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Southeast (GA, FL, NC, SC, TN)')">Southeast (GA, FL, NC, SC, TN)</button>
-            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('West (CA, AZ, NV, UT, WA)')">West (CA, AZ, NV, UT, WA)</button>
-            <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Anywhere / All 48 States')">All 48 States</button>
-          </div>
-        </div>
-
-        <!-- 4. QUICK FREIGHT HUB ZIPs -->
-        <div class="quick-lanes-bar" style="margin-top:8px;background:rgba(37,99,235,0.04);border:1px dashed #bfdbfe;border-radius:10px;padding:8px 14px;">
-          <div class="quick-lanes-label" style="font-size:11px;font-weight:800;color:#1e40af;">
-            <span>📮 POPULAR FREIGHT ZIPs:</span>
-          </div>
-          <div class="quick-lanes-pills" style="gap:6px;">
-            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyOriginZipPreset('75201', 'Dallas, TX')">📍 75201 (Dallas, TX)</button>
-            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyOriginZipPreset('60601', 'Chicago, IL')">📍 60601 (Chicago, IL)</button>
-            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyOriginZipPreset('30301', 'Atlanta, GA')">📍 30301 (Atlanta, GA)</button>
-            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyOriginZipPreset('90001', 'Los Angeles, CA')">📍 90001 (LA, CA)</button>
-            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyDestZipPreset('82001', 'Cheyenne, WY')">🏁 82001 (Cheyenne, WY)</button>
-            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyDestZipPreset('80202', 'Denver, CO')">🏁 80202 (Denver, CO)</button>
-            <button type="button" class="quick-lane-pill" style="font-size:11.5px;padding:3px 9px;" onclick="applyDestZipPreset('19104', 'Philadelphia, PA')">🏁 19104 (Philly, PA)</button>
-          </div>
-        </div>
-
       </div>
+
+      <script>
+        function toggleDatMoreFilters() {
+          var drawer = document.getElementById('dat-more-filters');
+          var btn = document.getElementById('btn-dat-more-filters');
+          if (!drawer || !btn) return;
+          var isOpen = drawer.classList.toggle('open');
+          btn.classList.toggle('open', isOpen);
+          btn.innerHTML = isOpen ? '<span>⚙️</span> Filters ▴' : '<span>⚙️</span> Filters ▾';
+        }
+      </script>
 
       <!-- AI SUMMARY HIGHLIGHT CARD (Shown after AI Match) -->
       <div id="ai-summary-card" style="display:none;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#1e3a8a;">
