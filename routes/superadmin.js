@@ -1375,14 +1375,14 @@ router.post('/run-trucking-e2e', requireAuth, requireSuperAdmin, async (req, res
     try {
       const a = analyzeLoadProfit({
         rate: 3450,
-        miles: 780,
+        loadedMiles: 780,
         deadheadMiles: 45,
         origin: 'Dallas, TX',
         destination: 'Atlanta, GA',
         equipmentType: '53ft Reefer'
       });
-      if (Number.isFinite(Number(a.true_net_profit)) && Number(a.net_rpm) > 0) {
-        pass(2, 'AI True Net-Profit Load Calculator', `True Net Profit: $${a.true_net_profit} | Net RPM: $${a.net_rpm}/mi | Fuel: $${a.fuel_cost} (${a.verdict_label})`);
+      if (Number.isFinite(Number(a.true_net_profit)) && Number(a.net_profit_per_mile) > 0) {
+        pass(2, 'AI True Net-Profit Load Calculator', `True Net Profit: $${a.true_net_profit} | Net RPM: $${a.net_profit_per_mile}/mi | Fuel: $${a.fuel_cost} (${a.verdict_label})`);
       } else {
         fail(2, 'AI True Net-Profit Load Calculator', 'Invalid profit calculation result.');
       }

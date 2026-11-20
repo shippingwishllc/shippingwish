@@ -50,10 +50,17 @@ async function ensureUnifiedSchema() {
       }
     }
 
-    // 2. Ensure unified lifecycle & permanent cloud storage columns exist
+    // 2. Ensure unified lifecycle, carrier/driver metadata, tracking_events & permanent cloud storage columns exist
     await pool.query(`
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS broker_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS is_public_board BOOLEAN DEFAULT FALSE;
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_name VARCHAR(200);
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_mc VARCHAR(60);
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS driver_name VARCHAR(150);
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS driver_phone VARCHAR(60);
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS truck_number VARCHAR(60);
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS trailer_number VARCHAR(60);
+      ALTER TABLE loads ADD COLUMN IF NOT EXISTS tracking_notes TEXT;
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS empty_miles NUMERIC(10, 2) DEFAULT 0;
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS detention_total NUMERIC(10, 2) DEFAULT 0;
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS fuel_est NUMERIC(10, 2) DEFAULT 0;
@@ -67,6 +74,25 @@ async function ensureUnifiedSchema() {
       ALTER TABLE documents ADD COLUMN IF NOT EXISTS mime_type VARCHAR(120);
       ALTER TABLE documents ADD COLUMN IF NOT EXISTS file_data_b64 TEXT;
       ALTER TABLE documents ADD COLUMN IF NOT EXISTS storage_provider VARCHAR(30) DEFAULT 'local';
+      CREATE TABLE IF NOT EXISTS tracking_events (
+        id SERIAL PRIMARY KEY,
+        load_id INT REFERENCES loads(id) ON DELETE SET NULL,
+        driver_id INT REFERENCES users(id) ON DELETE SET NULL,
+        latitude NUMERIC(10, 6),
+        longitude NUMERIC(10, 6),
+        speed NUMERIC(6, 2) DEFAULT 0,
+        heading NUMERIC(6, 2) DEFAULT 0,
+        location_name VARCHAR(255),
+        status VARCHAR(50),
+        notes TEXT,
+        ping_time TIMESTAMP DEFAULT now()
+      );
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS speed NUMERIC(6, 2) DEFAULT 0;
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS heading NUMERIC(6, 2) DEFAULT 0;
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS location_name VARCHAR(255);
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS status VARCHAR(50);
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS notes TEXT;
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS ping_time TIMESTAMP DEFAULT now();
     `);
     schemaReady = true;
   } catch (err) {

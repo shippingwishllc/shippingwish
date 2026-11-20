@@ -27,6 +27,12 @@ async function ensureTrackingTables() {
         notes TEXT,
         ping_time TIMESTAMP DEFAULT now()
       );
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS speed NUMERIC(6, 2) DEFAULT 0;
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS heading NUMERIC(6, 2) DEFAULT 0;
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS location_name VARCHAR(255);
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS status VARCHAR(50);
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS notes TEXT;
+      ALTER TABLE tracking_events ADD COLUMN IF NOT EXISTS ping_time TIMESTAMP DEFAULT now();
       CREATE INDEX IF NOT EXISTS idx_tracking_events_load_id ON tracking_events(load_id);
       CREATE INDEX IF NOT EXISTS idx_tracking_events_driver_id ON tracking_events(driver_id);
       CREATE INDEX IF NOT EXISTS idx_tracking_events_ping_time ON tracking_events(ping_time DESC);
