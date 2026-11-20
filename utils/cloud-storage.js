@@ -45,7 +45,8 @@ async function storeDocumentBuffer({
           Authorization: `Bearer ${blobToken}`,
           'Content-Type': mimeType,
           'x-api-version': '7',
-          'x-add-random-suffix': '0'
+          'x-add-random-suffix': '0',
+          'x-vercel-blob-access': 'private'
         },
         body: buffer
       });
@@ -110,9 +111,12 @@ async function storeDocumentBuffer({
 async function readDocumentBuffer(docRow) {
   if (!docRow) return null;
 
-  // 1. Cloud URL (Vercel Blob / HTTPS)
+  // 1. Cloud URL (Vercel Blob Private or Public HTTPS)
   if (docRow.cloud_url && /^https?:\/\//i.test(docRow.cloud_url)) {
-    const resp = await fetch(docRow.cloud_url);
+    const blobToken = String(process.env.BLOB_READ_WRITE_TOKEN || '').trim();
+    const isVercelBlob = docRow.cloud_url.includes('blob.vercel-storage.com');
+    const headers = (isVercelBlob && blobToken) ? { Authorization: `Bearer ${blobToken}` } : {};
+    const resp = await fetch(docRow.cloud_url, { headers });
     if (resp.ok) {
       const arrBuf = await resp.arrayBuffer();
       return Buffer.from(arrBuf);
