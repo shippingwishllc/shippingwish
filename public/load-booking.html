@@ -1182,6 +1182,25 @@
       gap: 10px;
       align-items: end;
     }
+    .dat-secondary-row {
+      display: grid;
+      grid-template-columns: minmax(210px, 1.15fr) minmax(160px, 0.85fr) auto auto;
+      gap: 10px;
+      align-items: end;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #f1f5f9;
+    }
+    @media (max-width: 960px) {
+      .dat-secondary-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 640px) {
+      .dat-secondary-row {
+        grid-template-columns: 1fr;
+      }
+    }
     .dat-field {
       display: flex;
       flex-direction: column;
@@ -1577,20 +1596,73 @@
             <input type="date" id="search-date" class="dat-control" onchange="onDateInputChange(this.value)" title="Choose exact pickup date">
           </div>
 
-          <!-- Search & More Filters Toggle -->
+          <!-- Primary Search Button -->
           <div class="dat-cta-group">
             <button type="button" class="dat-btn-search" id="btn-run-search" onclick="runActiveTabSearch()">
               <span>🔍</span> Search
             </button>
+          </div>
+        </div>
+
+        <!-- 2. CLEAN ALWAYS-VISIBLE SECONDARY ROW (Max Length/Weight, Min $/Mile, AI Match & More Filters) -->
+        <div class="dat-secondary-row">
+
+          <!-- Max Length & Max Weight -->
+          <div class="dat-field">
+            <div class="dat-field-head">
+              <label class="dat-field-label" for="search-max-length">Max Length / Weight</label>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <select id="search-max-length" class="dat-control" onchange="syncActiveTabField('maxLength', this.value); runActiveTabSearch();">
+                <option value="">Any ft</option>
+                <option value="53">≤ 53 ft</option>
+                <option value="48">≤ 48 ft</option>
+                <option value="40">≤ 40 ft</option>
+                <option value="35">≤ 35 ft</option>
+                <option value="30">≤ 30 ft</option>
+                <option value="26">≤ 26 ft</option>
+              </select>
+              <select id="search-max-weight" class="dat-control" onchange="syncActiveTabField('maxWeight', this.value); runActiveTabSearch();">
+                <option value="">Any lbs</option>
+                <option value="10000">≤ 10k lbs</option>
+                <option value="15000">≤ 15k lbs</option>
+                <option value="18000">≤ 18k lbs</option>
+                <option value="24000">≤ 24k lbs</option>
+                <option value="45000">≤ 45k lbs</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Min $/Mile -->
+          <div class="dat-field">
+            <div class="dat-field-head">
+              <label class="dat-field-label" for="search-min-rpm">Min Rate ($/Mile)</label>
+            </div>
+            <div style="position:relative;">
+              <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-weight:800;color:#64748b;font-size:13px;">$</span>
+              <input type="number" step="0.05" id="search-min-rpm" class="dat-control" value=""
+                     placeholder="All Rates / Any" onchange="syncActiveTabField('minRpm', this.value)" style="padding-left:24px !important;">
+            </div>
+          </div>
+
+          <!-- AI Smart Match Button (Zero third-party import buttons here!) -->
+          <div class="dat-cta-group">
+            <button type="button" class="btn-ai-match" id="btn-run-ai" onclick="runActiveTabAiMatch()" style="height:42px;padding:0 16px;border-radius:10px;justify-content:center;white-space:nowrap;">
+              <span>⚡</span> AI Match
+            </button>
+          </div>
+
+          <!-- Collapsible More Filters Toggle -->
+          <div class="dat-cta-group" style="justify-content:flex-end;">
             <button type="button" class="dat-btn-filters" id="btn-dat-more-filters" onclick="toggleDatMoreFilters()">
               <span>⚙️</span> Filters ▾
             </button>
           </div>
         </div>
 
-        <!-- 2. COLLAPSIBLE ADVANCED FILTERS DRAWER (Hidden by default for ultra-clean DAT One view!) -->
+        <!-- 3. COLLAPSIBLE EXTRA FILTERS DRAWER (Carrier Selector, Date Presets, Quick Regions & ZIPs) -->
         <div class="dat-more-drawer" id="dat-more-filters">
-          <div class="dat-adv-grid">
+          <div class="dat-adv-grid" style="grid-template-columns: minmax(260px, 360px) 1fr; align-items:end;">
 
             <!-- Active Carrier Authority -->
             <div class="dat-field" id="carrier-select-group">
@@ -1606,74 +1678,25 @@
               </select>
             </div>
 
-            <!-- Max Length & Max Weight -->
-            <div class="dat-field">
-              <div class="dat-field-head">
-                <label class="dat-field-label" for="search-max-length">Max Length / Weight</label>
-              </div>
-              <div style="display:flex;gap:6px;">
-                <select id="search-max-length" class="dat-control" onchange="syncActiveTabField('maxLength', this.value); runActiveTabSearch();">
-                  <option value="">Any ft</option>
-                  <option value="53">≤ 53 ft</option>
-                  <option value="48">≤ 48 ft</option>
-                  <option value="40">≤ 40 ft</option>
-                  <option value="35">≤ 35 ft</option>
-                  <option value="30">≤ 30 ft</option>
-                  <option value="26">≤ 26 ft</option>
-                </select>
-                <select id="search-max-weight" class="dat-control" onchange="syncActiveTabField('maxWeight', this.value); runActiveTabSearch();">
-                  <option value="">Any lbs</option>
-                  <option value="10000">≤ 10k lbs</option>
-                  <option value="15000">≤ 15k lbs</option>
-                  <option value="18000">≤ 18k lbs</option>
-                  <option value="24000">≤ 24k lbs</option>
-                  <option value="45000">≤ 45k lbs</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Min $/Mile -->
-            <div class="dat-field">
-              <div class="dat-field-head">
-                <label class="dat-field-label" for="search-min-rpm">Min Rate ($/Mile)</label>
-              </div>
-              <div style="position:relative;">
-                <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-weight:800;color:#64748b;font-size:13px;">$</span>
-                <input type="number" step="0.05" id="search-min-rpm" class="dat-control" value=""
-                       placeholder="All Rates / Any" onchange="syncActiveTabField('minRpm', this.value)" style="padding-left:24px !important;">
-              </div>
-            </div>
-
-            <!-- Pro Dispatch Tools -->
-            <div class="dat-field">
-              <div class="dat-field-head">
-                <label class="dat-field-label">AI &amp; DAT Import Tools</label>
-              </div>
-              <div style="display:flex;gap:8px;height:42px;">
-                <button type="button" class="btn-ai-match" id="btn-run-ai" onclick="runActiveTabAiMatch()" style="flex:1;height:42px;border-radius:10px;justify-content:center;">
-                  <span>⚡</span> AI Match
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" id="btn-open-dat-paste" onclick="openDatPasteModal()" style="flex:1;height:42px;border-radius:10px;font-weight:700;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;justify-content:center;">
-                  <span>📋</span> Import DAT
-                </button>
-              </div>
+            <!-- Compact Pickup Presets -->
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-bottom:4px;">
+              <span style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;">Pickup Presets:</span>
+              <button type="button" class="sched-pill active" id="pill-today" onclick="applyDatePreset('today')">⚡ Today</button>
+              <button type="button" class="sched-pill" id="pill-tomorrow" onclick="applyDatePreset('tomorrow')">📅 Tomorrow</button>
+              <button type="button" class="sched-pill" id="pill-2days" onclick="applyDatePreset('+2days')">+2 Days</button>
+              <button type="button" class="sched-pill" id="pill-advance" onclick="triggerDatePicker()">Custom</button>
             </div>
           </div>
 
-          <!-- Compact Pickup Presets & Quick Regions -->
-          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0 4px;">
-            <span style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;">Dates:</span>
-            <button type="button" class="sched-pill active" id="pill-today" onclick="applyDatePreset('today')">⚡ Today</button>
-            <button type="button" class="sched-pill" id="pill-tomorrow" onclick="applyDatePreset('tomorrow')">📅 Tomorrow</button>
-            <button type="button" class="sched-pill" id="pill-2days" onclick="applyDatePreset('+2days')">+2 Days</button>
-            <button type="button" class="sched-pill" id="pill-advance" onclick="triggerDatePicker()">Custom</button>
-            <span style="width:1px;height:18px;background:#e2e8f0;margin:0 4px;"></span>
+          <!-- Quick Regions & Popular Freight Hubs -->
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 0 2px;">
             <span style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;">Regions:</span>
             <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Anywhere / All 48 States')">All 48</button>
             <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Midwest (IL, IN, OH, MI)')">Midwest</button>
             <button type="button" class="quick-lane-pill" onclick="applyDestPreset('Southeast (GA, FL, NC, SC, TN)')">Southeast</button>
             <button type="button" class="quick-lane-pill" onclick="applyDestPreset('West (CA, AZ, NV, UT, WA)')">West</button>
             <button type="button" class="quick-lane-pill" onclick="applyDestPreset('TX, WY, CO')">TX/WY/CO</button>
+            <span style="width:1px;height:18px;background:#e2e8f0;margin:0 4px;"></span>
             <button type="button" class="quick-lane-pill" onclick="applyOriginZipPreset('75201', 'Dallas, TX')">📍 Dallas</button>
             <button type="button" class="quick-lane-pill" onclick="applyOriginZipPreset('60601', 'Chicago, IL')">📍 Chicago</button>
             <button type="button" class="quick-lane-pill" onclick="applyOriginZipPreset('30301', 'Atlanta, GA')">📍 Atlanta</button>
@@ -2273,13 +2296,13 @@
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
           <span style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#60a5fa;background:rgba(37,99,235,0.15);padding:3px 10px;border-radius:20px;border:1px solid rgba(96,165,250,0.3);">
-            ⚡ Live DAT One™ Ingestion
+            🔄 Live Freight Sync
           </span>
           <h3 id="modal-datpaste-title" style="font-size:19px;font-weight:900;color:#fff;margin:8px 0 4px;">
-            Import Spot Freight from DAT One™
+            Sync Spot Freight Feed
           </h3>
           <p style="font-size:12.5px;color:#cbd5e1;margin:0;">
-            Sync your 200+ active loads directly from your active DAT One subscription.
+            Sync active loads directly into the unified LoadsNexus freight exchange.
           </p>
         </div>
         <button type="button" style="background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;line-height:1;" onclick="closeDatPasteModal()">&times;</button>

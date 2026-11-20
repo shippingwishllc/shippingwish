@@ -2506,6 +2506,110 @@ router.get('/reload-suggestions/:loadId', ...driverOrStaff, async (req, res) => 
   }
 });
 
+// GET /api/dispatch-desk/sync-network-status — Super Admin / Admin Master Feed Sync Status
+router.get('/sync-network-status', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const { ensureUnifiedSchema } = require('../utils/load-lifecycle');
+    await ensureUnifiedSchema();
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS system_kv_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `).catch(() => {});
+
+    const [kvRes, cntRes, srcRes] = await Promise.all([
+      pool.query(`SELECT key, value, updated_at FROM system_kv_settings WHERE key IN ('loadsnexus_auto_sync', 'loadsnexus_last_sync_at')`).catch(() => ({ rows: [] })),
+      pool.query(`SELECT COUNT(*)::int AS live_count FROM loads WHERE deleted_at IS NULL AND status IN ('new', 'open') AND (is_public_board = TRUE OR carrier_id IS NULL)`).catch(() => ({ rows: [{ live_count: 0 }] })),
+      pool.query(`SELECT COUNT(*)::int AS sources_count FROM loadboard_api_sources WHERE enabled = TRUE`).catch(() => ({ rows: [{ sources_count: 0 }] }))
+    ]);
+    const kv = {};
+    (kvRes.rows || []).forEach((r) => { kv[r.key] = r.value; });
+    res.json({
+      ok: true,
+      auto_sync_enabled: kv.loadsnexus_auto_sync !== 'false',
+      last_sync_at: kv.loadsnexus_last_sync_at || null,
+      live_public_loads: cntRes.rows[0]?.live_count || 0,
+      active_api_sources: srcRes.rows[0]?.sources_count || 0
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not read load sync status.' });
+  }
+});
+
+// POST /api/dispatch-desk/sync-network-loads — Super Admin / Admin 1-Click Master Sync (Broadcasts to Staff + All LoadsNexus Subscribers)
+router.post('/sync-network-loads', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const { ensureUnifiedSchema } = require('../utils/load-lifecycle');
+    await ensureUnifiedSchema();
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS system_kv_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `).catch(() => {});
+
+    if (typeof req.body?.auto_sync_enabled === 'boolean') {
+      await pool.query(
+        `INSERT INTO system_kv_settings (key, value, updated_at) VALUES ('loadsnexus_auto_sync', $1, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [String(req.body.auto_sync_enabled)]
+      );
+    }
+
+    const syncResults = { sources: [], cloudEngine: null, promotedPublic: 0 };
+
+    // 1. Sync all connected API load sources
+    try {
+      syncResults.sources = await syncDueSources();
+    } catch (e) {
+      syncResults.sourcesError = e.message;
+    }
+
+    // 2. Trigger automated cloud feed engine if configured
+    try {
+      if (datCloudEngine && typeof datCloudEngine.runSyncCycle === 'function') {
+        syncResults.cloudEngine = await datCloudEngine.runSyncCycle().catch((e) => ({ note: e.message }));
+      }
+    } catch (_) {}
+
+    // 3. Ensure all synced open loads are marked is_public_board = TRUE so internal staff & all LoadsNexus subscribers see them immediately!
+    const promo = await pool.query(`
+      UPDATE loads
+      SET is_public_board = TRUE, updated_at = NOW()
+      WHERE deleted_at IS NULL
+        AND status IN ('new', 'open')
+        AND carrier_id IS NULL
+        AND (is_public_board IS NOT TRUE)
+      RETURNING id
+    `).catch(() => ({ rows: [] }));
+    syncResults.promotedPublic = promo.rows.length;
+
+    const nowIso = new Date().toISOString();
+    await pool.query(
+      `INSERT INTO system_kv_settings (key, value, updated_at) VALUES ('loadsnexus_last_sync_at', $1, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [nowIso]
+    ).catch(() => {});
+
+    const cntRes = await pool.query(
+      `SELECT COUNT(*)::int AS live_count FROM loads WHERE deleted_at IS NULL AND status IN ('new', 'open') AND (is_public_board = TRUE OR carrier_id IS NULL)`
+    ).catch(() => ({ rows: [{ live_count: 0 }] }));
+
+    res.json({
+      ok: true,
+      synced_at: nowIso,
+      live_public_loads: cntRes.rows[0]?.live_count || 0,
+      results: syncResults,
+      message: `Live Freight Network synced! ${cntRes.rows[0]?.live_count || 0} active loads now live for Internal Staff & LoadsNexus Subscribers.`
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not sync freight feeds: ' + err.message });
+  }
+});
+
 module.exports = router;
 module.exports.syncDueSources = syncDueSources;
 module.exports.sendDueMorningTexts = sendDueMorningTexts;

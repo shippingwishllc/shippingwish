@@ -6947,7 +6947,7 @@
     const tbody = document.getElementById('dat-loads-tbody');
     const countEl = document.getElementById('dat-count-text');
     if (tbody) {
-      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-secondary);"><span class="dat-live-pulse" style="margin-right:8px;"></span> Querying DAT One live cloud feed for ${escHtml(origin || 'Nationwide')}...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:26px;color:var(--text-secondary);"><span class="dat-live-pulse" style="margin-right:8px;"></span> Querying LoadsNexus live freight feed for ${escHtml(origin || 'Nationwide')}...</td></tr>`;
     }
 
     try {
@@ -13485,5 +13485,6 @@
 
 </script>
 <script src="/js/app-shell.js?v=36"></script>
+<script src="/js/admin-load-sync-widget.js?v=1"></script>
 </body>
 </html>
