@@ -1124,4 +1124,119 @@ router.post('/ai/generate-marketing', requireAuth, requireSuperAdmin, async (req
   });
 });
 
+// =========================================================================
+// 1-CLICK CROSS-DOMAIN SUPERADMIN SSO (BuyWishOnline Admin, NYC Limo ERP, LoadsNexus)
+// Strictly super_admin only — mints a 60-second signed ticket exchanged for HttpOnly cookies on target domain!
+// =========================================================================
+router.post('/sso-launch', requireAuth, requireSuperAdmin, async (req, res) => {
+  try {
+    if (req.user.role !== 'super_admin' && !req.user.is_super_admin) {
+      return res.status(403).json({ error: 'Only Super Admin can launch cross-brand SSO.' });
+    }
+    const jwt = require('jsonwebtoken');
+    const crypto = require('crypto');
+    const { JWT_SECRET } = require('../middleware/auth');
+
+    const brand = String(req.body?.brand || '').toLowerCase();
+    const BRAND_TARGETS = {
+      buywish: { origin: 'https://www.buywishonline.com', next: '/admin' },
+      nyclimo: { origin: 'https://www.nyclimowish.com', next: '/erp' },
+      loadsnexus: { origin: 'https://www.loadsnexus.com', next: '/' }
+    };
+    const target = BRAND_TARGETS[brand];
+    if (!target) {
+      return res.status(400).json({ error: 'Invalid brand target.' });
+    }
+
+    const ticket = jwt.sign(
+      {
+        purpose: 'superadmin_sso',
+        id: req.user.id,
+        name: req.user.name || 'Super Admin',
+        email: req.user.email || '',
+        role: 'super_admin',
+        is_super_admin: true,
+        nonce: crypto.randomBytes(8).toString('hex')
+      },
+      JWT_SECRET,
+      { expiresIn: '60s' }
+    );
+
+    const launchUrl = `${target.origin}/api/superadmin/sso-exchange?ticket=${encodeURIComponent(ticket)}&next=${encodeURIComponent(target.next)}`;
+    res.json({ ok: true, brand, launch_url: launchUrl });
+  } catch (err) {
+    console.error('[SuperAdmin SSO Launch] Error:', err);
+    res.status(500).json({ error: 'Could not generate SSO launch link.' });
+  }
+});
+
+router.get('/sso-exchange', async (req, res) => {
+  try {
+    const jwt = require('jsonwebtoken');
+    const crypto = require('crypto');
+    const { JWT_SECRET } = require('../middleware/auth');
+
+    const ticket = String(req.query.ticket || '').trim();
+    const rawNext = String(req.query.next || '/').trim();
+    const safeNext = (rawNext.startsWith('/') && !rawNext.startsWith('//')) ? rawNext : '/';
+
+    if (!ticket) return res.status(400).send('Missing SSO ticket.');
+    const payload = jwt.verify(ticket, JWT_SECRET);
+    if (!payload || payload.purpose !== 'superadmin_sso' || payload.role !== 'super_admin') {
+      return res.status(403).send('Invalid or unauthorized SSO ticket.');
+    }
+
+    const sessionId = `sso_${crypto.randomBytes(12).toString('hex')}`;
+    try {
+      await pool.query(
+        `INSERT INTO user_active_sessions (user_id, session_id, device_type, ip_address, user_agent, last_active_at)
+         VALUES ($1, $2, 'superadmin_sso', $3, $4, NOW())`,
+        [payload.id, sessionId, req.ip || '', String(req.headers['user-agent'] || '').slice(0, 240)]
+      );
+    } catch (_) {}
+
+    const swJwt = jwt.sign(
+      {
+        id: payload.id,
+        name: payload.name,
+        email: payload.email,
+        role: 'super_admin',
+        is_super_admin: true,
+        session_id: sessionId
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const nlwJwt = jwt.sign(
+      {
+        id: payload.id,
+        name: payload.name,
+        email: payload.email,
+        role: 'super_admin',
+        is_super_admin: true,
+        is_limo_user: true
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const isSecure = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const cookieOpts = {
+      httpOnly: true,
+      secure: Boolean(isSecure),
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    };
+
+    res.cookie('sw_token', swJwt, cookieOpts);
+    res.cookie('nlw_token', nlwJwt, cookieOpts);
+    return res.redirect(302, safeNext);
+  } catch (err) {
+    console.error('[SuperAdmin SSO Exchange] Error:', err.message);
+    return res.status(401).send('SSO ticket expired or invalid. Please return to Superadmin Command Center and click again.');
+  }
+});
+
 module.exports = router;
