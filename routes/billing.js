@@ -934,6 +934,17 @@ async function handleTrialSignupCheckoutRequest(req, res) {
   try {
     const { name, company, phone, email, mc_number, mcNumber, dot_number, dotNumber, password, plan_key } = req.body || {};
 
+    const signupIp = String((req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '')).split(',')[0].trim().slice(0, 64) || null;
+    const signupUa = String(req.headers['user-agent'] || '').slice(0, 300) || null;
+    if (signupIp) {
+      const recent = await pool.query(
+        "SELECT count(*)::int AS n FROM users WHERE signup_ip = $1 AND created_at > now() - interval '1 hour'",
+        [signupIp]
+      );
+      if ((recent.rows[0] && recent.rows[0].n) >= 5) {
+        return res.status(429).json({ error: 'Too many signups from this network. Please try again later.' });
+      }
+    }
     const cleanEmail = String(email || '').trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       return res.status(400).json({ error: 'A valid business email address is required.' });
@@ -959,25 +970,18 @@ async function handleTrialSignupCheckoutRequest(req, res) {
       let brokerUser;
       const ex = await pool.query('SELECT * FROM users WHERE lower(email) = $1', [cleanEmail]);
       if (ex.rows.length) {
+        // Never modify an existing account from a public signup form.
         brokerUser = ex.rows[0];
-        await pool.query(
-          `UPDATE users SET
-             role = 'broker',
-             weekly_plan = 'free_broker',
-             password_hash = $1,
-             company_name = COALESCE(NULLIF($2,''), company_name),
-             phone = COALESCE(NULLIF($3,''), phone),
-             mc_number = COALESCE(NULLIF($4,''), mc_number),
-             dot_number = COALESCE(NULLIF($5,''), dot_number)
-           WHERE id = $6`,
-          [hash, company || cleanName, cleanPhone, mc || null, dot || null, brokerUser.id]
-        );
+        const sameSecret = brokerUser.password_hash ? await bcrypt.compare(cleanPassword, brokerUser.password_hash) : false;
+        if (brokerUser.role !== 'broker' || !sameSecret) {
+          return res.status(409).json({ error: 'An account already exists for this email. Please sign in at /login or reset your password.' });
+        }
       } else {
         const ins = await pool.query(
-          `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, weekly_plan, email_verified_at)
-           VALUES ($1, $2, $3, 'broker', $4, $5, $6, $7, 'free_broker', now())
+          `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, weekly_plan, email_verified_at, signup_ip, user_agent)
+           VALUES ($1, $2, $3, 'broker', $4, $5, $6, $7, 'free_broker', now(), $8, $9)
            RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, weekly_plan`,
-          [cleanName, cleanEmail, hash, company || cleanName, cleanPhone, mc || null, dot || null]
+          [cleanName, cleanEmail, hash, company || cleanName, cleanPhone, mc || null, dot || null, signupIp, signupUa]
         );
         brokerUser = ins.rows[0];
       }
@@ -1043,28 +1047,32 @@ async function handleTrialSignupCheckoutRequest(req, res) {
         });
       }
 
-      // Update password hash and carrier info for pending card verification
-      const hash = await bcrypt.hash(cleanPassword, 10);
+      // Never overwrite an existing account's password from a public form.
+      // Only a returning, unfinished signup (pending_card) with the SAME password may continue to checkout.
+      const sameSecret = user.password_hash ? await bcrypt.compare(cleanPassword, user.password_hash) : false;
+      if (user.weekly_plan !== 'pending_card' || !sameSecret) {
+        return res.status(409).json({
+          error: 'An account already exists for this email. Please sign in at /login or reset your password.'
+        });
+      }
       await pool.query(
         `UPDATE users SET
-           password_hash = $1,
-           name = COALESCE(NULLIF($2,''), name),
-           company_name = COALESCE(NULLIF($3,''), company_name),
-           phone = COALESCE(NULLIF($4,''), phone),
-           mc_number = COALESCE(NULLIF($5,''), mc_number),
-           dot_number = COALESCE(NULLIF($6,''), dot_number),
-           weekly_plan = 'pending_card'
-         WHERE id = $7`,
-        [hash, cleanName, company || cleanName, cleanPhone, mc || '', dot || '', user.id]
+           name = COALESCE(NULLIF($1,''), name),
+           company_name = COALESCE(NULLIF($2,''), company_name),
+           phone = COALESCE(NULLIF($3,''), phone),
+           mc_number = COALESCE(NULLIF($4,''), mc_number),
+           dot_number = COALESCE(NULLIF($5,''), dot_number)
+         WHERE id = $6`,
+        [cleanName, company || cleanName, cleanPhone, mc || '', dot || '', user.id]
       );
     } else {
       // 2. Create new carrier user with chosen password and pending_card status
       const hash = await bcrypt.hash(cleanPassword, 10);
       const insUser = await pool.query(
-        `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, weekly_plan)
-         VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, 'pending_card')
+        `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, weekly_plan, signup_ip, user_agent)
+         VALUES ($1, $2, $3, 'carrier', $4, $5, $6, $7, 'pending_card', $8, $9)
          RETURNING id, name, email, role, company_name, phone, mc_number, dot_number, weekly_plan`,
-        [cleanName, cleanEmail, hash, company || cleanName, cleanPhone, mc || null, dot || null]
+        [cleanName, cleanEmail, hash, company || cleanName, cleanPhone, mc || null, dot || null, signupIp, signupUa]
       );
       user = insUser.rows[0];
     }
