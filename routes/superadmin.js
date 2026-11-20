@@ -1128,6 +1128,47 @@ router.post('/ai/generate-marketing', requireAuth, requireSuperAdmin, async (req
 // 1-CLICK CROSS-DOMAIN SUPERADMIN SSO (BuyWishOnline Admin, NYC Limo ERP, LoadsNexus)
 // Strictly super_admin only — mints a 60-second signed ticket exchanged for HttpOnly cookies on target domain!
 // =========================================================================
+// Direct 1-Click GET Redirect Launcher (Zero popup blockers, zero about:blank!)
+router.get('/sso-go', requireAuth, requireSuperAdmin, (req, res) => {
+  try {
+    if (req.user.role !== 'super_admin' && !req.user.is_super_admin) {
+      return res.status(403).send('Only Super Admin can launch cross-brand SSO.');
+    }
+    const jwt = require('jsonwebtoken');
+    const crypto = require('crypto');
+    const { JWT_SECRET } = require('../middleware/auth');
+
+    const brand = String(req.query.brand || '').toLowerCase();
+    const BRAND_TARGETS = {
+      buywish: { origin: 'https://www.buywishonline.com', next: '/admin' },
+      nyclimo: { origin: 'https://www.nyclimowish.com', next: '/erp' },
+      loadsnexus: { origin: 'https://www.loadsnexus.com', next: '/' }
+    };
+    const target = BRAND_TARGETS[brand];
+    if (!target) return res.status(400).send('Invalid brand target.');
+
+    const ticket = jwt.sign(
+      {
+        purpose: 'superadmin_sso',
+        id: req.user.id,
+        name: req.user.name || 'Super Admin',
+        email: req.user.email || '',
+        role: 'super_admin',
+        is_super_admin: true,
+        nonce: crypto.randomBytes(8).toString('hex')
+      },
+      JWT_SECRET,
+      { expiresIn: '60s' }
+    );
+
+    const launchUrl = `${target.origin}/api/superadmin/sso-exchange?ticket=${encodeURIComponent(ticket)}&next=${encodeURIComponent(target.next)}`;
+    return res.redirect(302, launchUrl);
+  } catch (err) {
+    console.error('[SuperAdmin SSO Go] Error:', err);
+    return res.status(500).send('Could not launch SSO.');
+  }
+});
+
 router.post('/sso-launch', requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     if (req.user.role !== 'super_admin' && !req.user.is_super_admin) {

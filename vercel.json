@@ -34,6 +34,11 @@
     },
     {
       "source": "/admin",
+      "has": [{"type": "host", "value": "(?:www\\.)?buywishonline\\.com"}],
+      "destination": "/api"
+    },
+    {
+      "source": "/admin",
       "destination": "/admin.html"
     },
     {

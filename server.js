@@ -392,6 +392,11 @@ app.use((req, res, next) => {
   if (host.includes('nyclimo') || p.startsWith('/nyclimowish')) {
     const cleanP = p.replace(/^\/nyclimowish/, '') || '/';
 
+    // Allow shared Superadmin cross-domain SSO exchange directly on any brand domain
+    if (p.startsWith('/api/superadmin')) {
+      return next();
+    }
+
     // API routing
     if (cleanP.startsWith('/api') || p.startsWith('/api/nyclimo')) {
       const nyclimoRouter = require('./routes/nyclimo');
