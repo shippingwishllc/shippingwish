@@ -13,11 +13,14 @@ const CANONICAL_STATUSES = [
   'pending_carrier_approval',
   'booked',
   'ratecon_signed',
+  'assigned',
   'dispatched',
   'at_pickup',
+  'loading',
   'loaded',
   'in_transit',
   'at_delivery',
+  'unloading',
   'delivered',
   'pod_uploaded',
   'invoiced',
@@ -32,6 +35,22 @@ let schemaReady = false;
 async function ensureUnifiedSchema() {
   if (schemaReady) return;
   try {
+    // 1. If production PostgreSQL uses ENUM type `load_status`, safely register all canonical lifecycle values
+    //    (Each ALTER TYPE must execute as its own standalone query outside an implicit transaction block!)
+    const enumCheck = await pool.query(`SELECT 1 FROM pg_type WHERE typname = 'load_status' LIMIT 1`).catch(() => ({ rows: [] }));
+    if (enumCheck.rows.length > 0) {
+      const existingValsRes = await pool.query(
+        `SELECT e.enumlabel FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname = 'load_status'`
+      ).catch(() => ({ rows: [] }));
+      const existingSet = new Set(existingValsRes.rows.map((r) => r.enumlabel));
+      for (const st of CANONICAL_STATUSES) {
+        if (!existingSet.has(st)) {
+          await pool.query(`ALTER TYPE load_status ADD VALUE IF NOT EXISTS '${st}'`).catch(() => {});
+        }
+      }
+    }
+
+    // 2. Ensure unified lifecycle & permanent cloud storage columns exist
     await pool.query(`
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS broker_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
       ALTER TABLE loads ADD COLUMN IF NOT EXISTS is_public_board BOOLEAN DEFAULT FALSE;

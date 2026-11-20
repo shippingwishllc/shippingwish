@@ -1358,7 +1358,7 @@ router.post('/run-trucking-e2e', requireAuth, requireSuperAdmin, async (req, res
       );
       created.loadId = ins.rows[0].id;
       const checkSearch = await pool.query(
-        `SELECT id, load_number FROM loads WHERE id = $1 AND is_public_board = TRUE AND status IN ('open','new') AND deleted_at IS NULL`,
+        `SELECT id, load_number FROM loads WHERE id = $1 AND is_public_board = TRUE AND status::text IN ('open','new') AND deleted_at IS NULL`,
         [created.loadId]
       );
       if (checkSearch.rows.length === 1) {
@@ -1564,7 +1564,7 @@ router.post('/run-trucking-e2e', requireAuth, requireSuperAdmin, async (req, res
       const bwGw = getBrandGatewayStatus('buywish');
       const lmGw = getBrandGatewayStatus('nyclimo');
       const relQ = await pool.query(
-        `SELECT COUNT(*)::int AS open_cnt FROM loads WHERE deleted_at IS NULL AND status IN ('open','new')`
+        `SELECT COUNT(*)::int AS open_cnt FROM loads WHERE deleted_at IS NULL AND status::text IN ('open','new')`
       );
       pass(
         8,
