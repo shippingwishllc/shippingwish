@@ -159,6 +159,23 @@
             <div class="stat"><span>Products</span><b id="homeProducts">0</b></div>
             <div class="stat"><span>Customers</span><b id="homeCustomers">0</b></div>
           </div>
+          <div class="card" id="storeControlCard" style="border-left:4px solid #d97706;">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <div>
+                <h2 style="margin-bottom:4px;">Storefront Orders &amp; Anti-Chargeback Shield (Shopify Mode)</h2>
+                <p class="muted" id="storeControlSummary" style="margin:0;">Loading store checkout status...</p>
+              </div>
+              <div class="row">
+                <span class="pill off" id="storeStatusPill">⏸️ ORDERS PAUSED</span>
+                <button id="toggleOrdersBtn" type="button">▶ Enable Live Orders</button>
+              </div>
+            </div>
+            <div class="row" style="margin-top:10px; gap:10px; font-size:12px;">
+              <span class="pill on" id="geoShieldPill">🌍 Geo-Firewall: USA · CA · UK · AU · Europe</span>
+              <span class="pill on" id="cardMatchPill">🛡️ 3DS + Card/IP/Shipping Country Match: ON</span>
+              <span class="pill off" id="stripeIsolPill">⚠️ Stripe Key: Checking...</span>
+            </div>
+          </div>
           <div class="split">
             <div class="card table-wrap">
               <div class="row" style="justify-content:space-between;">
@@ -463,6 +480,7 @@
     document.getElementById('gate').style.display = 'none';
     document.getElementById('desk').style.display = 'block';
     showPanel('home');
+    loadStoreControls();
     loadCatalog();
     loadDeskCategories();
     loadMargin();
@@ -471,6 +489,71 @@
     loadDeals();
     loadOrders();
     loadOverview();
+  }
+  let currentStoreControls = { orders_enabled: false, strict_country_match: true, geo_restrict_enabled: true, dedicated_stripe_configured: false };
+  function paintStoreControls(data) {
+    currentStoreControls = { ...currentStoreControls, ...data };
+    const live = Boolean(currentStoreControls.orders_enabled);
+    const card = document.getElementById('storeControlCard');
+    const pill = document.getElementById('storeStatusPill');
+    const btn = document.getElementById('toggleOrdersBtn');
+    const summary = document.getElementById('storeControlSummary');
+    const stripePill = document.getElementById('stripeIsolPill');
+    if (card) card.style.borderLeftColor = live ? '#10b981' : '#d97706';
+    if (pill) {
+      pill.textContent = live ? '🟢 ORDERS LIVE' : '⏸️ ORDERS PAUSED';
+      pill.className = live ? 'pill on' : 'pill off';
+    }
+    if (btn) {
+      btn.textContent = live ? '⏸️ Pause All Orders' : '▶ Enable Live Orders';
+      btn.style.background = live ? '#991b1b' : '#0d6b3a';
+    }
+    if (summary) {
+      summary.textContent = live
+        ? 'Storefront checkout is LIVE. Only verified USA/CA/UK/AU/EU buyers with matching card + shipping countries and 3DS bank verification can pay.'
+        : 'Storefront checkout is PAUSED. Customers can browse catalog only — ZERO orders or Stripe charges can go through until you click Enable Live Orders.';
+    }
+    if (stripePill) {
+      if (currentStoreControls.dedicated_stripe_configured) {
+        stripePill.textContent = '✅ Dedicated BuyWish Stripe Sub-Account Active';
+        stripePill.className = 'pill on';
+      } else {
+        stripePill.textContent = '⚠️ Add BUYWISH_STRIPE_SECRET_KEY in Vercel before enabling live orders';
+        stripePill.className = 'pill off';
+      }
+    }
+  }
+  async function loadStoreControls() {
+    try {
+      const res = await fetch('/api/buywish/admin/settings', { headers: authHeaders(), credentials: 'include' });
+      const data = await res.json();
+      if (res.ok) paintStoreControls(data);
+    } catch (e) {}
+  }
+  const toggleBtnEl = document.getElementById('toggleOrdersBtn');
+  if (toggleBtnEl) {
+    toggleBtnEl.onclick = async () => {
+      const nextState = !currentStoreControls.orders_enabled;
+      if (nextState && !currentStoreControls.dedicated_stripe_configured) {
+        if (!confirm('Warning: Dedicated BUYWISH_STRIPE_SECRET_KEY is not set in Vercel yet (it would share the Shipping Wish LLC Stripe account). Are you sure you want to enable live orders now?')) {
+          return;
+        }
+      }
+      toggleBtnEl.disabled = true;
+      try {
+        const res = await fetch('/api/buywish/admin/settings/store-controls', {
+          method: 'PUT',
+          headers: authHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({ orders_enabled: nextState, strict_country_match: true, geo_restrict_enabled: true })
+        });
+        const data = await res.json();
+        if (res.ok) paintStoreControls(data);
+        else alert(data.error || 'Could not update store status.');
+      } finally {
+        toggleBtnEl.disabled = false;
+      }
+    };
   }
   async function loadSocial() {
     const res = await fetch('/api/buywish/admin/settings', { headers: authHeaders() });

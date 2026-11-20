@@ -916,11 +916,64 @@ const CURRENCY_RATES = {
   AUD: 1.54
 };
 
-const { getApprovedStripe, approvedWebhookSecret } = require('../utils/stripe-account');
+const { getApprovedStripe, approvedWebhookSecret, hasDedicatedStripeKey } = require('../utils/stripe-account');
+
+// BuyWishOnline Allowed Tier-1 Countries (USA, Canada, UK, Australia, Europe)
+const BUYWISH_ALLOWED_COUNTRIES = new Set([
+  'US', 'CA', 'GB', 'AU',
+  'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU',
+  'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+  'NO', 'CH', 'IS', 'LI'
+]);
+
+let storeControlsCache = { at: 0, value: null };
+async function readStoreControls() {
+  if (storeControlsCache.value && Date.now() - storeControlsCache.at < 15000) {
+    return storeControlsCache.value;
+  }
+  const defaults = {
+    orders_enabled: false, // PAUSED BY DEFAULT until owner enables stock in BuyWish ERP Admin
+    strict_country_match: true, // Block card/IP/shipping country mismatch to prevent chargebacks
+    geo_restrict_enabled: true // Restrict storefront & checkout to USA, Canada, UK, Australia & Europe
+  };
+  try {
+    await ensureBuyWishSchema();
+    const { rows } = await pool.query(
+      `SELECT key, value FROM buywish_settings WHERE key IN ('orders_enabled', 'strict_country_match', 'geo_restrict_enabled')`
+    );
+    const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    const result = {
+      orders_enabled: map.orders_enabled === 'true',
+      strict_country_match: map.strict_country_match !== 'false',
+      geo_restrict_enabled: map.geo_restrict_enabled !== 'false',
+      dedicated_stripe_configured: hasDedicatedStripeKey('buywish')
+    };
+    storeControlsCache = { at: Date.now(), value: result };
+    return result;
+  } catch (err) {
+    return { ...defaults, dedicated_stripe_configured: hasDedicatedStripeKey('buywish') };
+  }
+}
 
 function getStripe() {
-  return getApprovedStripe();
+  return getApprovedStripe('buywish');
 }
+
+router.get('/store-status', async (req, res) => {
+  try {
+    const controls = await readStoreControls();
+    res.json({
+      ok: true,
+      ...controls,
+      allowed_regions: 'United States, Canada, United Kingdom, Australia & Europe',
+      pause_message: controls.orders_enabled
+        ? null
+        : 'Orders are currently paused while our warehouse restocks verified inventory. Browse our catalog and check back shortly.'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not read store status.' });
+  }
+});
 
 const addressHits = new Map();
 function addressRateLimit(req, res, next) {
@@ -966,10 +1019,37 @@ router.get('/address/complete', addressRateLimit, async (req, res) => {
 // POST /api/buywish/checkout — Stripe Payments + Automatic Tax
 // ============================================================
 router.post('/checkout', async (req, res) => {
+  // GATE 1: Shopify-Style Master Store Pause (Zero orders accepted until owner enables stock in BuyWish Admin ERP)
+  const controls = await readStoreControls();
+  if (!controls.orders_enabled) {
+    return res.status(503).json({
+      error: 'BuyWishOnline checkout is currently paused while we restock our inventory. No card has been charged.',
+      code: 'STORE_ORDERS_PAUSED'
+    });
+  }
+
+  // GATE 2: Geo-IP Firewall (USA, Canada, UK, Australia & Europe ONLY)
+  const ipCountry = String(req.headers['x-vercel-ip-country'] || '').toUpperCase().trim();
+  if (controls.geo_restrict_enabled && ipCountry && !BUYWISH_ALLOWED_COUNTRIES.has(ipCountry)) {
+    return res.status(403).json({
+      error: 'BuyWishOnline orders are currently available only in the United States, Canada, United Kingdom, Australia, and Europe.',
+      code: 'GEO_RESTRICTED'
+    });
+  }
+
   const { items, customer, currency = 'USD' } = req.body || {};
   const signedIn = readCustomer(req);
   if (!Array.isArray(items) || items.length < 1 || items.length > 20 || !customer || !customer.email) {
     return res.status(400).json({ error: 'A valid cart and customer email are required.' });
+  }
+
+  // GATE 3: Strict IP-Country == Shipping-Country Anti-Chargeback Shield
+  const requestedShipCountry = String(customer.country || 'US').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+  if (controls.strict_country_match && ipCountry && requestedShipCountry && ipCountry !== requestedShipCountry) {
+    return res.status(403).json({
+      error: `For cardholder security and chargeback protection, your ordering region (${ipCountry}) must match your shipping country (${requestedShipCountry}).`,
+      code: 'COUNTRY_MISMATCH_BLOCKED'
+    });
   }
 
   const stripe = getStripe();
@@ -1120,10 +1200,23 @@ router.post('/checkout', async (req, res) => {
       shipping_address_collection: {
         allowed_countries: ['US', 'CA', 'GB']
       },
-      billing_address_collection: 'auto',
+      billing_address_collection: 'required',
       phone_number_collection: { enabled: true },
       allow_promotion_codes: true,
-      payment_intent_data: { metadata: { order_number: orderNumber, source: 'buywishonline' } }
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'any'
+        }
+      },
+      payment_intent_data: {
+        capture_method: 'manual',
+        metadata: {
+          order_number: orderNumber,
+          source: 'buywishonline',
+          expected_country: shipTo.country,
+          ip_country: ipCountry || shipTo.country
+        }
+      }
     };
 
     let session;
@@ -1160,19 +1253,71 @@ router.get('/verify-session', async (req, res) => {
   if (!stripe) return res.status(500).json({ error: 'Stripe is not configured' });
 
   try {
+    const controls = await readStoreControls();
     const session = await stripe.checkout.sessions.retrieve(session_id, {
-      expand: ['payment_intent', 'line_items']
+      expand: ['payment_intent.latest_charge', 'line_items']
     });
 
-    const isPaid = session.payment_status === 'paid';
+    const piObj = typeof session.payment_intent === 'object' ? session.payment_intent : null;
+    const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : piObj?.id;
+    const latestCharge = piObj && typeof piObj.latest_charge === 'object' ? piObj.latest_charge : null;
+    const cardDetails = latestCharge?.payment_method_details?.card || {};
+    const cardCountry = String(cardDetails.country || '').toUpperCase().trim();
+    const billingCountry = String(session.customer_details?.address?.country || '').toUpperCase().trim();
+    const shipCountry = String(session.shipping_details?.address?.country || piObj?.metadata?.expected_country || '').toUpperCase().trim();
+    const cvcCheck = String(cardDetails.checks?.cvc_check || '').toLowerCase();
+    const riskLevel = String(latestCharge?.outcome?.risk_level || '').toLowerCase();
+
     const orderNum = session.metadata?.order_number;
     if (!orderNum || (order_number && String(order_number).toUpperCase() !== String(orderNum).toUpperCase())) {
       return res.status(403).json({ error: 'Checkout session does not match this order.' });
     }
+
+    // GATE 4: Strict Anti-Chargeback Card-Country / Billing-Country / Risk Verification BEFORE Capture!
+    let fraudBlockedReason = null;
+    if (controls.strict_country_match && piObj && ['requires_capture', 'succeeded'].includes(piObj.status)) {
+      if (cardCountry && shipCountry && cardCountry !== shipCountry) {
+        fraudBlockedReason = `Card issuing country (${cardCountry}) does not match shipping country (${shipCountry}).`;
+      } else if (billingCountry && shipCountry && billingCountry !== shipCountry) {
+        fraudBlockedReason = `Card billing country (${billingCountry}) does not match shipping country (${shipCountry}).`;
+      } else if (cvcCheck === 'fail') {
+        fraudBlockedReason = 'Card security code (CVC) verification failed.';
+      } else if (riskLevel === 'highest' || riskLevel === 'elevated') {
+        fraudBlockedReason = `Stripe Radar flagged this card as ${riskLevel} risk.`;
+      }
+    }
+
+    if (fraudBlockedReason && paymentIntentId) {
+      if (piObj.status === 'requires_capture') {
+        await stripe.paymentIntents.cancel(paymentIntentId, { cancellation_reason: 'fraudulent' }).catch(() => {});
+      }
+      await ensureBuyWishSchema();
+      await pool.query(`
+        UPDATE ecommerce_orders
+        SET payment_status = 'blocked_fraud',
+            fulfillment_status = 'cancelled_fraud_shield',
+            customer_note = COALESCE(customer_note, '') || ' | FRAUD SHIELD BLOCKED: ' || $1,
+            updated_at = NOW()
+        WHERE upper(order_number) = upper($2)
+      `, [fraudBlockedReason, orderNum]);
+      return res.status(403).json({
+        ok: false,
+        paid: false,
+        code: 'CARD_FRAUD_BLOCKED',
+        error: `Order cancelled automatically for chargeback protection: ${fraudBlockedReason} Your card was NOT charged.`
+      });
+    }
+
+    // All fraud & country checks passed! Auto-capture authorized PaymentIntent now.
+    let isPaid = session.payment_status === 'paid';
+    if (piObj && piObj.status === 'requires_capture' && paymentIntentId) {
+      const captured = await stripe.paymentIntents.capture(paymentIntentId);
+      isPaid = captured.status === 'succeeded';
+    }
+
     const taxAmount = (session.total_details?.amount_tax || 0) / 100;
     const totalAmount = (session.amount_total || 0) / 100;
     const subtotalAmount = (session.amount_subtotal || 0) / 100;
-    const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
 
     if (isPaid && orderNum) {
       await ensureBuyWishSchema();
@@ -1666,9 +1811,42 @@ router.get('/admin/settings', ...buyWishAdmin, async (req, res) => {
     const margin_percent = await refreshStoreMargin();
     const tracking = await readTrackingIds();
     const social = await readSocialLinks();
-    res.json({ ok: true, margin_percent, ...tracking, social });
+    const controls = await readStoreControls();
+    res.json({ ok: true, margin_percent, ...tracking, social, ...controls });
   } catch (err) {
     res.status(500).json({ error: 'Could not load shop settings.' });
+  }
+});
+
+router.put('/admin/settings/store-controls', ...buyWishAdmin, async (req, res) => {
+  const body = req.body || {};
+  try {
+    await ensureBuyWishSchema();
+    const current = await readStoreControls();
+    const nextOrders = typeof body.orders_enabled === 'boolean' ? body.orders_enabled : current.orders_enabled;
+    const nextStrict = typeof body.strict_country_match === 'boolean' ? body.strict_country_match : current.strict_country_match;
+    const nextGeo = typeof body.geo_restrict_enabled === 'boolean' ? body.geo_restrict_enabled : current.geo_restrict_enabled;
+    await pool.query(
+      `INSERT INTO buywish_settings (key, value, updated_at) VALUES
+         ('orders_enabled', $1, now()),
+         ('strict_country_match', $2, now()),
+         ('geo_restrict_enabled', $3, now())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+      [String(nextOrders), String(nextStrict), String(nextGeo)]
+    );
+    storeControlsCache = { at: 0, value: null };
+    res.json({
+      ok: true,
+      orders_enabled: nextOrders,
+      strict_country_match: nextStrict,
+      geo_restrict_enabled: nextGeo,
+      dedicated_stripe_configured: hasDedicatedStripeKey('buywish'),
+      message: nextOrders
+        ? 'Storefront checkout is now LIVE (Accepting verified orders).'
+        : 'Storefront checkout is PAUSED (No customer orders will be accepted).'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not update store availability controls.' });
   }
 });
 
@@ -2818,7 +2996,7 @@ async function applyBuyWishStripeEvent(event) {
 
 async function handleBuyWishWebhook(req, res) {
   const sig = req.headers['stripe-signature'];
-  const webhookSecret = approvedWebhookSecret();
+  const webhookSecret = approvedWebhookSecret('buywish');
   const stripe = getStripe();
 
   if (!stripe) return res.status(503).send('Stripe is not configured');

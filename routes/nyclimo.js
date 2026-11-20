@@ -78,7 +78,7 @@ router.post('/logout', (req, res) => { res.clearCookie('nlw_token'); res.json({ 
 const { getApprovedStripe } = require('../utils/stripe-account');
 
 function getStripe() {
-  return getApprovedStripe();
+  return getApprovedStripe('nyclimo');
 }
 
 async function getVehicles() {
