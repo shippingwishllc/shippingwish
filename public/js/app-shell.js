@@ -1,20 +1,7 @@
 (function () {
   // #region agent log
-  function dbgLog(location, message, data, hypothesisId) {
-    const entry = { sessionId: '278583', location, message, data, timestamp: Date.now(), hypothesisId };
-    try {
-      const k = 'sw_debug_278583';
-      const arr = JSON.parse(sessionStorage.getItem(k) || '[]');
-      arr.push(entry);
-      if (arr.length > 40) arr.shift();
-      sessionStorage.setItem(k, JSON.stringify(arr));
-    } catch (_) { /* ignore */ }
-    fetch('http://127.0.0.1:7689/ingest/730a6415-7634-4c1c-9f05-42f0daa4c7f8', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '278583' },
-      body: JSON.stringify({ sessionId: '278583', location, message, data, timestamp: Date.now(), hypothesisId })
-    }).catch(() => {});
-  }
+  // Debug logging removed. No-op kept so existing calls still work.
+  function dbgLog() {}
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
