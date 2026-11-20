@@ -234,8 +234,8 @@ export default function BuyWishOnlineApp() {
         setScreen('track');
         Linking.openURL(res.url).catch(() => {});
         Alert.alert(
-          'Stripe Secure Checkout Opened',
-          `Order #${res.order_number || ''} created in BuyWishOnline! Complete payment in Stripe to trigger automatic Zendrop express fulfillment.`
+          'Secure Checkout Opened',
+          `Order #${res.order_number || ''} created in BuyWishOnline (${String(res.provider || 'Square/PayPal').toUpperCase()})! Complete payment in the secure window to trigger automatic fulfillment.`
         );
         return;
       }
@@ -602,7 +602,7 @@ export default function BuyWishOnlineApp() {
                 {checkingOut ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.buttonText}>💳 CHECKOUT WITH STRIPE • ${cartTotals.total.toFixed(2)}</Text>
+                  <Text style={styles.buttonText}>💳 SECURE CHECKOUT • ${cartTotals.total.toFixed(2)}</Text>
                 )}
               </TouchableOpacity>
             </>

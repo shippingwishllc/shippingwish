@@ -266,7 +266,7 @@ export default function NYCLimoWishApp() {
       setPayingStripe(false);
       if (data.url) {
         Linking.openURL(data.url).catch(() => {});
-        Alert.alert('Stripe Checkout Opened', 'Complete your payment in Stripe to lock your chauffeur dispatch.');
+        Alert.alert('Secure Checkout Opened', `Complete your payment via ${String(data.provider || 'Square / PayPal').toUpperCase()} to lock your chauffeur dispatch.`);
       } else {
         Alert.alert('Payment Notice', 'Stripe checkout link was not returned.');
       }
@@ -726,7 +726,7 @@ export default function NYCLimoWishApp() {
                     <ActivityIndicator color="#000" />
                   ) : (
                     <Text style={styles.goldPrimaryBtnText}>
-                      💳 PAY ${trackedRide.total_price} SECURELY WITH STRIPE
+                      💳 PAY ${trackedRide.total_price} SECURELY (SQUARE / PAYPAL)
                     </Text>
                   )}
                 </TouchableOpacity>

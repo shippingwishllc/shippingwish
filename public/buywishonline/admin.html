@@ -514,12 +514,19 @@
         : 'Storefront checkout is PAUSED. Customers can browse catalog only — ZERO orders or Stripe charges can go through until you click Enable Live Orders.';
     }
     if (stripePill) {
-      if (currentStoreControls.dedicated_stripe_configured) {
-        stripePill.textContent = '✅ Dedicated BuyWish Stripe Sub-Account Active';
+      const gw = currentStoreControls.payment_gateway || {};
+      if (gw.square_configured && gw.paypal_configured) {
+        stripePill.textContent = '✅ Square + PayPal Commerce Active (Stripe Isolated)';
+        stripePill.className = 'pill on';
+      } else if (gw.square_configured) {
+        stripePill.textContent = '✅ Square Checkout Active (Shipping Wish Stripe Isolated)';
+        stripePill.className = 'pill on';
+      } else if (gw.paypal_configured) {
+        stripePill.textContent = '✅ PayPal Commerce Active (Shipping Wish Stripe Isolated)';
         stripePill.className = 'pill on';
       } else {
-        stripePill.textContent = '🛡️ Shipping Wish Stripe Hard-Locked (Protected — Connect Square/PayPal for BuyWish)';
-        stripePill.className = 'pill on';
+        stripePill.textContent = '🛡️ Stripe Hard-Locked — Add Square or PayPal keys in Vercel';
+        stripePill.className = 'pill off';
       }
     }
   }
@@ -534,10 +541,10 @@
   if (toggleBtnEl) {
     toggleBtnEl.onclick = async () => {
       const nextState = !currentStoreControls.orders_enabled;
-      if (nextState && !currentStoreControls.dedicated_stripe_configured) {
-        if (!confirm('Warning: Dedicated BUYWISH_STRIPE_SECRET_KEY is not set in Vercel yet (it would share the Shipping Wish LLC Stripe account). Are you sure you want to enable live orders now?')) {
-          return;
-        }
+      const gw = currentStoreControls.payment_gateway || {};
+      if (nextState && !gw.active_provider && !currentStoreControls.dedicated_stripe_configured) {
+        alert('Cannot enable live orders yet: Please add Square (BUYWISH_SQUARE_ACCESS_TOKEN + BUYWISH_SQUARE_LOCATION_ID) or PayPal (BUYWISH_PAYPAL_CLIENT_ID + BUYWISH_PAYPAL_CLIENT_SECRET) in Vercel Environment Variables first. Shipping Wish LLC Stripe is hard-locked for your safety.');
+        return;
       }
       toggleBtnEl.disabled = true;
       try {

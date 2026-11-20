@@ -917,6 +917,7 @@ const CURRENCY_RATES = {
 };
 
 const { getApprovedStripe, approvedWebhookSecret, hasDedicatedStripeKey } = require('../utils/stripe-account');
+const { getBrandGatewayStatus, createBrandCheckout, verifyBrandPayment } = require('../utils/alt-payments');
 
 // BuyWishOnline Allowed Tier-1 Countries (USA, Canada, UK, Australia, Europe)
 const BUYWISH_ALLOWED_COUNTRIES = new Set([
@@ -946,12 +947,13 @@ async function readStoreControls() {
       orders_enabled: map.orders_enabled === 'true',
       strict_country_match: map.strict_country_match !== 'false',
       geo_restrict_enabled: map.geo_restrict_enabled !== 'false',
-      dedicated_stripe_configured: hasDedicatedStripeKey('buywish')
+      dedicated_stripe_configured: hasDedicatedStripeKey('buywish'),
+      payment_gateway: getBrandGatewayStatus('buywish')
     };
     storeControlsCache = { at: Date.now(), value: result };
     return result;
   } catch (err) {
-    return { ...defaults, dedicated_stripe_configured: hasDedicatedStripeKey('buywish') };
+    return { ...defaults, dedicated_stripe_configured: hasDedicatedStripeKey('buywish'), payment_gateway: getBrandGatewayStatus('buywish') };
   }
 }
 
@@ -1052,8 +1054,14 @@ router.post('/checkout', async (req, res) => {
     });
   }
 
+  const gwStatus = getBrandGatewayStatus('buywish');
   const stripe = getStripe();
-  if (!stripe) return res.status(503).json({ error: 'Checkout is temporarily unavailable.' });
+  if (!gwStatus.active_provider && !stripe) {
+    return res.status(503).json({
+      error: 'BuyWishOnline payment gateway is not configured yet. Connect Square (BUYWISH_SQUARE_ACCESS_TOKEN + BUYWISH_SQUARE_LOCATION_ID) or PayPal (BUYWISH_PAYPAL_CLIENT_ID + BUYWISH_PAYPAL_CLIENT_SECRET) in Vercel.',
+      code: 'PAYMENT_GATEWAY_REQUIRED'
+    });
+  }
 
   try {
     await refreshStoreMargin();
@@ -1174,6 +1182,51 @@ router.post('/checkout', async (req, res) => {
     const buyerName = String(customer.name || 'Valued Customer').slice(0, 160);
     const buyerEmail = String(customer.email).slice(0, 254);
     const buyerPhone = String(customer.phone || '').slice(0, 40);
+
+    // Primary: Dedicated Square Online Checkout or PayPal Commerce (100% isolated from Shipping Wish LLC Stripe!)
+    if (gwStatus.active_provider) {
+      const preferredProvider = String(req.body?.provider || '').toLowerCase();
+      const chosen = (preferredProvider === 'paypal' && gwStatus.paypal_configured) ? 'paypal'
+        : (preferredProvider === 'square' && gwStatus.square_configured) ? 'square'
+        : gwStatus.active_provider;
+
+      const returnUrl = `${baseUrl}/?order_success=${encodeURIComponent(orderNumber)}&provider=${chosen}`;
+      const cancelUrl = `${baseUrl}/?canceled=1`;
+
+      const altLineItems = lineItems.map((li) => ({
+        name: li.price_data?.product_data?.name || 'BuyWishOnline Item',
+        quantity: li.quantity || 1,
+        unitAmountCents: li.price_data?.unit_amount || 50
+      }));
+
+      const checkout = await createBrandCheckout({
+        brand: 'buywish',
+        preferredProvider: chosen,
+        referenceId: orderNumber,
+        title: `BuyWishOnline Order #${orderNumber}`,
+        description: `${trustedItems.length} item(s) shipping to ${shipTo.city}, ${shipTo.country}`,
+        amountCents: subtotalCents,
+        currency: curUpper,
+        lineItems: altLineItems,
+        redirectUrl: returnUrl,
+        returnUrl,
+        cancelUrl,
+        customerEmail: buyerEmail
+      });
+
+      await pool.query(
+        'UPDATE ecommerce_orders SET stripe_session_id = $1 WHERE upper(order_number) = upper($2)',
+        [checkout.sessionId, orderNumber]
+      );
+      return res.json({
+        ok: true,
+        url: checkout.url,
+        order_number: orderNumber,
+        session_id: checkout.sessionId,
+        provider: checkout.provider
+      });
+    }
+
     const stripeCustomer = await stripe.customers.create({
       email: buyerEmail,
       name: buyerName,
@@ -1243,18 +1296,91 @@ router.post('/checkout', async (req, res) => {
 });
 
 // ============================================================
-// GET /api/buywish/verify-session — Verify Stripe Session & Confirm Payment
+// GET /api/buywish/verify-session — Verify Square, PayPal, or Dedicated Checkout & Confirm Payment
 // ============================================================
 router.get('/verify-session', async (req, res) => {
-  const { session_id, order_number } = req.query;
-  if (!session_id) return res.status(400).json({ error: 'session_id is required' });
-
-  const stripe = getStripe();
-  if (!stripe) return res.status(500).json({ error: 'Stripe is not configured' });
+  const { session_id, token, order_number } = req.query;
+  const lookupSession = String(session_id || token || '').trim();
+  if (!lookupSession && !order_number) {
+    return res.status(400).json({ error: 'session_id or order_number is required' });
+  }
 
   try {
     const controls = await readStoreControls();
-    const session = await stripe.checkout.sessions.retrieve(session_id, {
+    await ensureBuyWishSchema();
+
+    // Check if this order uses Square or PayPal Commerce (100% isolated from Shipping Wish LLC Stripe!)
+    let orderRow = null;
+    if (order_number) {
+      const oRes = await pool.query('SELECT * FROM ecommerce_orders WHERE upper(order_number) = upper($1) LIMIT 1', [order_number]);
+      orderRow = oRes.rows[0] || null;
+    } else if (lookupSession) {
+      const oRes = await pool.query(
+        'SELECT * FROM ecommerce_orders WHERE stripe_session_id = $1 OR stripe_session_id = $2 OR stripe_session_id = $3 LIMIT 1',
+        [lookupSession, `paypal:${lookupSession}`, `square:${lookupSession}`]
+      );
+      orderRow = oRes.rows[0] || null;
+    }
+
+    const storedSessionId = String(orderRow?.stripe_session_id || lookupSession || '');
+    if (storedSessionId.startsWith('square:') || storedSessionId.startsWith('paypal:')) {
+      if (!orderRow) return res.status(404).json({ error: 'Order not found.' });
+      const verified = await verifyBrandPayment({
+        brand: 'buywish',
+        sessionId: storedSessionId,
+        expectedCountry: orderRow.shipping_country || '',
+        strictCountryMatch: controls.strict_country_match
+      });
+
+      if (verified && verified.fraudBlocked) {
+        await pool.query(`
+          UPDATE ecommerce_orders
+          SET payment_status = 'blocked_fraud',
+              fulfillment_status = 'cancelled_fraud_shield',
+              customer_note = COALESCE(customer_note, '') || ' | FRAUD SHIELD BLOCKED: ' || $1,
+              updated_at = NOW()
+          WHERE id = $2
+        `, [verified.reason || 'Country mismatch', orderRow.id]);
+        return res.status(403).json({
+          ok: false,
+          paid: false,
+          provider: verified.provider,
+          code: 'CARD_FRAUD_BLOCKED',
+          error: `Order cancelled automatically for chargeback protection: ${verified.reason}`
+        });
+      }
+
+      if (verified && verified.paid) {
+        await pool.query(`
+          UPDATE ecommerce_orders
+          SET payment_status = 'paid',
+              fulfillment_status = CASE WHEN zendrop_order_id IS NULL THEN 'payment_confirmed_pending_supplier' ELSE fulfillment_status END,
+              stripe_payment_intent = COALESCE($1, stripe_payment_intent),
+              updated_at = NOW()
+          WHERE id = $2
+        `, [verified.paymentId || storedSessionId, orderRow.id]);
+        await pushPaidOrderToZendrop(orderRow.order_number);
+        await sendOrderConfirmation(orderRow.order_number);
+      }
+
+      return res.json({
+        ok: true,
+        paid: Boolean(verified && verified.paid),
+        provider: verified?.provider || (storedSessionId.startsWith('square:') ? 'square' : 'paypal'),
+        order_number: orderRow.order_number,
+        amount_total: Number(orderRow.total_amount || 0),
+        amount_subtotal: Number(orderRow.subtotal_amount || 0),
+        tax_amount: Number(orderRow.tax_amount || 0),
+        currency: orderRow.currency || 'USD',
+        customer_email: orderRow.customer_email,
+        customer_name: orderRow.customer_name
+      });
+    }
+
+    const stripe = getStripe();
+    if (!stripe) return res.status(503).json({ error: 'Payment gateway not configured for this session.' });
+
+    const session = await stripe.checkout.sessions.retrieve(lookupSession, {
       expand: ['payment_intent.latest_charge', 'line_items']
     });
 

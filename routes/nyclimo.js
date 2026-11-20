@@ -76,10 +76,15 @@ router.get('/me', requireAuth, (req, res) => res.json({ user: req.user }));
 router.post('/logout', (req, res) => { res.clearCookie('nlw_token'); res.json({ ok: true }); });
 
 const { getApprovedStripe } = require('../utils/stripe-account');
+const { getBrandGatewayStatus, createBrandCheckout, verifyBrandPayment } = require('../utils/alt-payments');
 
 function getStripe() {
   return getApprovedStripe('nyclimo');
 }
+
+router.get('/payment-config', (req, res) => {
+  res.json({ ok: true, ...getBrandGatewayStatus('nyclimo') });
+});
 
 async function getVehicles() {
   await ensureSchema();
@@ -450,10 +455,41 @@ router.post('/bookings', async (req, res) => {
   }
 });
 
+async function markLimoBookingPaid(bookingId, sessionId, paymentRef, providerLabel = 'Square/PayPal') {
+  const updated = await pool.query(
+    `UPDATE limo_bookings
+     SET payment_status = 'paid', status = 'confirmed', stripe_payment_intent = $1, updated_at = now()
+     WHERE id = $2 AND stripe_session_id = $3 AND status = 'operator_accepted' AND payment_status <> 'paid'
+     RETURNING id`,
+    [paymentRef || null, bookingId, sessionId]
+  );
+  if (!updated.rows.length) return false;
+  await pool.query(
+    'INSERT INTO limo_booking_status_history (booking_id, status, note) VALUES ($1,$2,$3)',
+    [bookingId, 'confirmed', `Payment verified via ${providerLabel} after licensed operator acceptance`]
+  );
+  const { rows } = await pool.query('SELECT * FROM limo_bookings WHERE id = $1', [bookingId]);
+  if (rows[0]?.passenger_email) {
+    let vehicleObj = null;
+    if (rows[0].vehicle_id) {
+      try {
+        const vRes = await pool.query('SELECT * FROM limo_vehicles WHERE id = $1', [rows[0].vehicle_id]);
+        vehicleObj = vRes.rows[0] || null;
+      } catch (_) {}
+    }
+    await sendEmail({
+      to: rows[0].passenger_email,
+      from: getLimoSender(),
+      replyTo: getLimoReplyTo(),
+      subject: `Ride confirmed — ${rows[0].booking_number}`,
+      html: buildRideConfirmedHtml(rows[0], vehicleObj || {}, APP_URL)
+    }).catch((err) => console.warn('[LIMO CONFIRMATION EMAIL]:', err.message));
+  }
+  return true;
+}
+
 router.post('/bookings/:id/checkout', async (req, res) => {
   try {
-    const stripe = getStripe();
-    if (!stripe) return res.status(503).json({ error: 'Stripe not configured.' });
     const { rows } = await pool.query('SELECT * FROM limo_bookings WHERE id = $1', [req.params.id]);
     if (!rows[0]) return res.status(404).json({ error: 'Not found.' });
     const booking = rows[0];
@@ -461,9 +497,50 @@ router.post('/bookings/:id/checkout', async (req, res) => {
       return res.status(409).json({ error: 'A licensed operator must accept this ride before payment is enabled.' });
     }
     if (booking.payment_status === 'paid') return res.status(409).json({ error: 'This ride is already paid.' });
-    if (booking.stripe_session_id) {
+
+    const amountCents = Math.round(Number(booking.total_price) * 100);
+    const preferredProvider = String(req.body?.provider || '').toLowerCase();
+    const gwStatus = getBrandGatewayStatus('nyclimo');
+
+    // Primary: Dedicated NYC Limo Square Checkout or PayPal Commerce (100% isolated from Shipping Wish LLC Stripe!)
+    if (gwStatus.active_provider) {
+      const chosen = (preferredProvider === 'paypal' && gwStatus.paypal_configured) ? 'paypal'
+        : (preferredProvider === 'square' && gwStatus.square_configured) ? 'square'
+        : gwStatus.active_provider;
+
+      const returnUrl = `${APP_URL}/book/success?booking=${encodeURIComponent(booking.booking_number)}&provider=${chosen}`;
+      const cancelUrl = `${APP_URL}/book?canceled=1`;
+
+      const checkout = await createBrandCheckout({
+        brand: 'nyclimo',
+        preferredProvider: chosen,
+        referenceId: booking.booking_number,
+        title: `NYC Limo Wish — ${booking.booking_number}`,
+        description: booking.pickup_address,
+        amountCents,
+        currency: 'USD',
+        redirectUrl: returnUrl,
+        returnUrl,
+        cancelUrl,
+        customerEmail: booking.passenger_email || ''
+      });
+
+      await pool.query('UPDATE limo_bookings SET stripe_session_id = $1, updated_at = now() WHERE id = $2', [checkout.sessionId, booking.id]);
+      return res.json({ ok: true, url: checkout.url, provider: checkout.provider, session_id: checkout.sessionId });
+    }
+
+    // Optional fallback ONLY if dedicated NYCLIMO_STRIPE_SECRET_KEY was explicitly configured (never Shipping Wish LLC!)
+    const stripe = getStripe();
+    if (!stripe) {
+      return res.status(503).json({
+        error: 'NYC Limo Wish payment gateway is not configured yet. Add Square (NYCLIMO_SQUARE_ACCESS_TOKEN + NYCLIMO_SQUARE_LOCATION_ID) or PayPal (NYCLIMO_PAYPAL_CLIENT_ID + NYCLIMO_PAYPAL_CLIENT_SECRET) in Vercel.',
+        code: 'PAYMENT_GATEWAY_REQUIRED'
+      });
+    }
+
+    if (booking.stripe_session_id && !booking.stripe_session_id.includes(':')) {
       const prior = await stripe.checkout.sessions.retrieve(booking.stripe_session_id).catch(() => null);
-      if (prior?.status === 'open' && prior.url) return res.json({ url: prior.url });
+      if (prior?.status === 'open' && prior.url) return res.json({ url: prior.url, provider: 'stripe' });
     }
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -471,17 +548,17 @@ router.post('/bookings/:id/checkout', async (req, res) => {
       line_items: [{ price_data: {
         currency: 'usd',
         product_data: { name: `NYC Limo Wish — ${booking.booking_number}`, description: booking.pickup_address },
-        unit_amount: Math.round(Number(booking.total_price) * 100)
+        unit_amount: amountCents
       }, quantity: 1 }],
       metadata: { type: 'limo_booking', booking_id: String(booking.id), booking_number: booking.booking_number },
       success_url: `${APP_URL}/book/success?booking=${encodeURIComponent(booking.booking_number)}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${APP_URL}/book?canceled=1`
     }, { idempotencyKey: `limo-booking-${booking.id}` });
     await pool.query('UPDATE limo_bookings SET stripe_session_id = $1, updated_at = now() WHERE id = $2', [session.id, booking.id]);
-    res.json({ url: session.url });
+    res.json({ ok: true, url: session.url, provider: 'stripe', session_id: session.id });
   } catch (err) {
     console.error('[LIMO CHECKOUT ERROR]:', err.message);
-    res.status(500).json({ error: 'Could not start payment for this booking.' });
+    res.status(500).json({ error: err.message || 'Could not start payment for this booking.' });
   }
 });
 
@@ -489,7 +566,7 @@ router.get('/bookings/confirm', async (req, res) => {
   try {
     await ensureSchema();
     const bookingNumber = String(req.query.booking || '').trim();
-    const sessionId = String(req.query.session_id || '').trim();
+    const sessionId = String(req.query.session_id || req.query.token || '').trim();
     if (!bookingNumber) return res.status(400).json({ error: 'Booking reference required.' });
     const { rows } = await pool.query(
       'SELECT id, booking_number, status, payment_status, stripe_session_id FROM limo_bookings WHERE booking_number = $1',
@@ -498,7 +575,20 @@ router.get('/bookings/confirm', async (req, res) => {
     if (!rows[0]) return res.status(404).json({ error: 'Booking not found.' });
     const booking = rows[0];
     let paid = booking.payment_status === 'paid';
-    if (!paid && sessionId && sessionId === booking.stripe_session_id) {
+    const storedId = String(booking.stripe_session_id || '');
+
+    if (!paid && (storedId.startsWith('square:') || storedId.startsWith('paypal:'))) {
+      // Verify Square Order or Verify & Capture PayPal Order
+      const verified = await verifyBrandPayment({
+        brand: 'nyclimo',
+        sessionId: storedId,
+        strictCountryMatch: false
+      });
+      if (verified && verified.paid) {
+        paid = true;
+        await markLimoBookingPaid(booking.id, storedId, verified.paymentId || storedId, verified.provider.toUpperCase());
+      }
+    } else if (!paid && sessionId && sessionId === storedId) {
       const stripe = getStripe();
       if (stripe) {
         const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -524,7 +614,7 @@ router.get('/bookings/confirm', async (req, res) => {
     });
   } catch (err) {
     console.error('[LIMO CONFIRM ERROR]:', err.message);
-    res.status(500).json({ error: 'Could not confirm this payment.' });
+    res.status(500).json({ error: err.message || 'Could not confirm this payment.' });
   }
 });
 
