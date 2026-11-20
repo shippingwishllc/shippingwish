@@ -717,8 +717,15 @@ export default function ShippingWishApp() {
           ? `Load #${completedRecord.load_number} ($${completedRecord.rate.toLocaleString()}) has been moved to your Completed History & PDF Ledger.\n\n🚛 Next Active Load Now Loaded:\n#${nextLoad.load_number} (${nextLoad.origin} ➔ ${nextLoad.destination})`
           : `Load #${completedRecord.load_number} ($${completedRecord.rate.toLocaleString()}) has been completed and moved to your History & PDF Ledger!`,
         [
-          { text: 'View in History & PDF', onPress: () => setDriverTab('history') },
-          { text: 'Continue to Next Load' }
+          {
+            text: '💸 Send Factoring Packet',
+            onPress: () => {
+              api.sendFactoringPacket({ loadId: activeLoad.id, recipientType: 'factoring' }).catch(() => {});
+              Linking.openURL(api.getFactoringPacketPdfUrl(activeLoad.id)).catch(() => {});
+            }
+          },
+          { text: 'View History & PDF', onPress: () => setDriverTab('history') },
+          { text: 'Next Load' }
         ]
       );
       return;
@@ -755,7 +762,10 @@ export default function ShippingWishApp() {
 
   const handleOfferResponse = async (offer, action) => {
     setActingOfferId(offer.id);
-    await api.respondToOffer(offer.id, action);
+    await Promise.all([
+      api.submitCarrierLoadDecision(offer.id, action === 'book' ? 'approve' : 'decline', 'Responded from Shipping Wish Mobile App').catch(() => {}),
+      api.respondToOffer(offer.id, action).catch(() => {})
+    ]);
     setActingOfferId(null);
     setPendingOffers(prev => prev.filter(o => o.id !== offer.id));
 
@@ -818,9 +828,9 @@ export default function ShippingWishApp() {
           Alert.alert('Permission Needed', 'Please allow photo library access to attach documents.');
           return;
         }
-        const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.85, allowsEditing: true });
+        const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.78, allowsEditing: true, base64: true });
         if (!res.canceled && res.assets?.[0]) {
-          setCapturedImage(res.assets[0].uri);
+          setCapturedImage(res.assets[0].base64 ? `data:image/jpeg;base64,${res.assets[0].base64}` : res.assets[0].uri);
         }
       } else {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -828,9 +838,9 @@ export default function ShippingWishApp() {
           Alert.alert('Camera Permission', 'Please allow camera access to scan BOL/POD documents.');
           return;
         }
-        const res = await ImagePicker.launchCameraAsync({ quality: 0.85, allowsEditing: true });
+        const res = await ImagePicker.launchCameraAsync({ quality: 0.78, allowsEditing: true, base64: true });
         if (!res.canceled && res.assets?.[0]) {
-          setCapturedImage(res.assets[0].uri);
+          setCapturedImage(res.assets[0].base64 ? `data:image/jpeg;base64,${res.assets[0].base64}` : res.assets[0].uri);
         }
       }
     } catch (e) {
@@ -841,7 +851,17 @@ export default function ShippingWishApp() {
   const uploadScannedDoc = async () => {
     setUploadingDoc(true);
     if (capturedImage && activeLoad) {
-      await api.uploadDocument(activeLoad.id, docType, capturedImage, `${docType}_${Date.now()}.jpg`);
+      if (capturedImage.startsWith('data:')) {
+        await api.uploadDocumentBase64({
+          loadId: activeLoad.id,
+          category: docType,
+          originalName: `${docType}_${activeLoad.load_number || Date.now()}.jpg`,
+          mimeType: 'image/jpeg',
+          base64Data: capturedImage
+        }).catch(() => {});
+      } else {
+        await api.uploadDocument(activeLoad.id, docType, capturedImage, `${docType}_${Date.now()}.jpg`).catch(() => {});
+      }
     }
     setUploadingDoc(false);
     const newDoc = {

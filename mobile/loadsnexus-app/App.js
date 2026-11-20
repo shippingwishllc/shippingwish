@@ -136,9 +136,9 @@ export default function LoadsNexusApp() {
   const handleSearchLoads = async () => {
     setSearching(true);
     const filters = {};
-    if (originState.trim()) filters.origin_state = originState.trim().toUpperCase();
-    if (destState.trim()) filters.destination_state = destState.trim().toUpperCase();
-    if (equipmentFilter !== 'All') filters.equipment_type = equipmentFilter;
+    if (originState.trim()) filters.origin = originState.trim();
+    if (destState.trim()) filters.destination = destState.trim();
+    if (equipmentFilter !== 'All') filters.equipmentType = equipmentFilter;
 
     const res = await api.searchLoads(filters).catch(() => ({ ok: false }));
     setSearching(false);
@@ -279,21 +279,41 @@ export default function LoadsNexusApp() {
   const handleVettingSearch = async () => {
     if (!searchMc.trim()) return;
     const res = await api.vetCarrier(searchMc.trim()).catch(() => ({ ok: false }));
-    if (res.ok && res.data && res.data.carrier) {
-      setVettedCarrier(res.data.carrier);
+    if (res.ok && res.data && res.data.report) {
+      const r = res.data.report;
+      setVettedCarrier({
+        mc_number: r.mc_number || searchMc.trim(),
+        dot_number: r.dot_number || 'N/A',
+        legal_name: r.company_name || 'Unknown Carrier',
+        fmcsa_status: r.recommendation?.decision || 'REVIEW_REQUIRED',
+        safety_rating: r.safety?.rating || 'NOT_RATED',
+        operating_authority: r.operating_authority?.status || 'UNVERIFIED',
+        insurance_cargo: r.insurance?.cargo_insurance?.on_file
+          ? `$${Number(r.insurance.cargo_insurance.on_file).toLocaleString()} (${r.insurance.cargo_insurance.status})`
+          : 'COI Verification Required',
+        insurance_liability: r.insurance?.auto_liability?.on_file
+          ? `$${Number(r.insurance.auto_liability.on_file).toLocaleString()} (${r.insurance.auto_liability.status})`
+          : 'COI Verification Required',
+        unauthorized_broker_flag: `Risk Score: ${r.fraud_risk_analysis?.risk_score ?? 'N/A'}/100 (${r.fraud_risk_analysis?.risk_level || 'CHECK'})`,
+        verified_date: r.recommendation?.verified_by || 'Live FMCSA Shield'
+      });
       return;
     }
+    Alert.alert(
+      '⚠️ Unverified MC / DOT Number',
+      res.error || `No live FMCSA record found for ${searchMc.trim()}. Do NOT load without manual SAFER verification.`
+    );
     setVettedCarrier({
-      mc_number: searchMc.trim().replace(/^MC-?/i, ''),
-      dot_number: '3489102',
-      legal_name: `Verified Motor Carrier MC-${searchMc.trim().replace(/^MC-?/i, '')} LLC`,
-      fmcsa_status: 'AUTHORIZED FOR PROPERTY',
-      safety_rating: 'SATISFACTORY',
-      operating_authority: 'ACTIVE (Common & Contract Authority)',
-      insurance_cargo: '$100,000 Active Policy on File',
-      insurance_liability: '$1,000,000 Active Policy on File',
-      unauthorized_broker_flag: 'CLEAR (No Double-Brokering Violations)',
-      verified_date: 'Verified via Live FMCSA Census'
+      mc_number: searchMc.trim(),
+      dot_number: 'UNVERIFIED',
+      legal_name: 'Unverified Record — Manual SAFER Audit Required',
+      fmcsa_status: 'REJECT_UNVERIFIED',
+      safety_rating: 'UNVERIFIED',
+      operating_authority: 'NOT VERIFIED — DO NOT LOAD',
+      insurance_cargo: 'Unverified — Require ACORD 25 COI',
+      insurance_liability: 'Unverified — Require $1M BIPD COI',
+      unauthorized_broker_flag: 'HIGH RISK — No Live FMCSA Match',
+      verified_date: 'Live FMCSA Shield Check'
     });
   };
 
@@ -417,13 +437,18 @@ export default function LoadsNexusApp() {
                     <View style={styles.cardHeader}>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.laneText}>{item.origin} ➔ {item.destination}</Text>
-                        <Text style={styles.ageText}>Posted {item.age || '4m ago'} • {item.commodity || 'General Freight'}</Text>
+                        <Text style={styles.ageText}>Posted {item.posted_age || item.age || 'Live'} • {item.commodity || 'General Freight'}</Text>
                       </View>
                       <View style={styles.rateCol}>
                         <Text style={styles.rateText}>${Number(item.rate || 3450).toLocaleString()}</Text>
                         <Text style={styles.rpmText}>
-                          ${((item.rate || 3450) / (item.miles || 780)).toFixed(2)}/mi
+                          ${Number(item.rpm || ((item.rate || 3450) / (item.miles || 780))).toFixed(2)}/mi
                         </Text>
+                        {typeof item.net_profit_est === 'number' && (
+                          <Text style={[styles.ageText, { color: COLORS.success, fontWeight: '700' }]}>
+                            Net ~${Math.round(item.net_profit_est).toLocaleString()}
+                          </Text>
+                        )}
                       </View>
                     </View>
 
@@ -435,15 +460,20 @@ export default function LoadsNexusApp() {
                         <Text style={styles.metaText}>🛣️ {item.miles || 780} mi</Text>
                       </View>
                       <View style={styles.metaBadge}>
-                        <Text style={styles.metaText}>⚖️ {item.weight || '42,000'} lbs</Text>
+                        <Text style={styles.metaText}>⚖️ {item.weight || '42,000 lbs'}</Text>
                       </View>
+                      {item.profit_verdict_label ? (
+                        <View style={styles.metaBadge}>
+                          <Text style={[styles.metaText, { color: COLORS.gold }]}>{item.profit_verdict_label}</Text>
+                        </View>
+                      ) : null}
                     </View>
 
                     <View style={styles.cardFooter}>
                       <View style={styles.brokerTag}>
-                        <Text style={styles.brokerName}>{item.broker_name || 'Verified Direct Broker'}</Text>
+                        <Text style={styles.brokerName}>{item.broker_name || 'Freight Broker'}</Text>
                         <View style={styles.creditBadge}>
-                          <Text style={styles.creditText}>DTP: 19d • A+</Text>
+                          <Text style={styles.creditText}>DTP: {item.days_to_pay || 'Check'} • {item.credit_score || 'Verify'}</Text>
                         </View>
                       </View>
                       <View style={styles.verifiedBrokerBadge}>

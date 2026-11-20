@@ -499,12 +499,10 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                               </span>
                             ) : isLive ? (
                               <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">
-                                ⚡ LIVE BROKER
+                                ⚡ LIVE BROKER · {load.posted_age || 'Just now'}
                               </span>
-                            ) : index === 0 ? (
-                              'Just now'
                             ) : (
-                              `${index * 4 + 2}m ago`
+                              load.posted_age || 'Live'
                             )}
                           </div>
                         </td>
@@ -544,6 +542,11 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
                             >
                               ${rpmVal.toFixed(2)} / mi
                             </span>
+                            {typeof load.net_profit_est === 'number' && (
+                              <div className="text-[10px] font-bold text-emerald-700 mt-1">
+                                Net ~${Math.round(load.net_profit_est).toLocaleString()} {load.profit_verdict === 'HIGH_PROFIT' ? '🔥' : ''}
+                              </div>
+                            )}
                           </div>
                         </td>
 
