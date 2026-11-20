@@ -479,11 +479,11 @@
   "crons": [
     {
       "path": "/api/cron/loadboard-sync",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/cron/dispatch-automations",
-      "schedule": "0 * * * *"
+      "schedule": "0 13 * * *"
     }
   ]
 }
