@@ -447,8 +447,14 @@
   }
 
   function init() {
+    // Only render on Dispatch, Carrier Dashboard, and Load Board — and ALWAYS inside .app-content (never across sidebar!)
+    var p = (window.location.pathname || '').toLowerCase();
+    var allowed = p.includes('dispatcher-dashboard') || p.includes('/dashboard') || p.includes('load-booking');
+    if (!allowed) return;
+    if (document.querySelector('.sw-os-bar')) return;
+
     injectStyles();
-    const target = document.querySelector('main, .main-content, .dashboard-container, .container, body');
+    const target = document.querySelector('.app-content, main.app-content, .main-content, .dashboard-container');
     if (!target) return;
     const bar = document.createElement('div');
     bar.className = 'sw-os-bar';

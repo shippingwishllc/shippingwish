@@ -1416,9 +1416,19 @@
         <button type="button" class="btn btn-primary btn-sm" onclick="openPostLoadModal()" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);border:none;font-weight:800;color:#fff;padding:6px 14px;border-radius:8px;box-shadow:0 2px 6px rgba(16,185,129,0.3);cursor:pointer;">
           ➕ Post a Load (Free)
         </button>
-        <a href="/admin-loadnexus" class="btn btn-primary btn-sm" style="background:#0B192C;color:#ffffff !important;border:1px solid #3B82F6;font-weight:700;">
-          🛡️ LoadNexus Command Center
+        <a href="/superadmin-command" id="btn-header-superadmin-cmd" class="btn btn-primary btn-sm" style="display:none;background:#0B192C;color:#ffffff !important;border:1px solid #3B82F6;font-weight:700;">
+          👑 Superadmin Command
         </a>
+        <script>
+          (function(){
+            fetch('/api/me', { credentials: 'include' }).then(function(r){ return r.json(); }).then(function(d){
+              if (d && d.user && d.user.role === 'super_admin') {
+                var el = document.getElementById('btn-header-superadmin-cmd');
+                if (el) el.style.display = 'inline-flex';
+              }
+            }).catch(function(){});
+          })();
+        </script>
         <div class="live-status" aria-live="polite">
           <span class="live-dot" aria-hidden="true"></span>
           LOADNEXUS LIVE

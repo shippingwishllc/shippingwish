@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Superadmin Command Center | Shipping Wish LLC</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/style.css?v=36">
+  <style>
+    .sa-header {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      padding: 18px 24px; background: #fff; border-bottom: 1px solid #e2e8f0;
+    }
+    .sa-header h1 { margin: 0; font-size: 20px; font-weight: 900; color: #0b1528; display: flex; align-items: center; gap: 8px; }
+    .sa-header p { margin: 2px 0 0; font-size: 12.5px; color: #64748b; }
+    .sa-tabs {
+      display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 18px;
+      border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;
+    }
+    .sa-tab {
+      border: 1.5px solid #cbd5e1; background: #fff; color: #334155;
+      font-size: 13px; font-weight: 800; padding: 9px 16px; border-radius: 10px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 7px; transition: all .15s;
+    }
+    .sa-tab:hover { border-color: #2563eb; color: #1d4ed8; background: #eff6ff; }
+    .sa-tab.active { background: #0b1528; color: #fff; border-color: #0b1528; box-shadow: 0 4px 12px rgba(11,21,40,0.2); }
+    .sa-panel { display: none; }
+    .sa-panel.active { display: block; }
+    .sa-grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .sa-brand-card {
+      background: #fff; border: 1px solid #dbe4f0; border-radius: 14px; overflow: hidden;
+      box-shadow: 0 4px 14px rgba(15,23,42,0.04); display: flex; flex-direction: column;
+    }
+    .sa-brand-cap {
+      background: #0b1528; color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .sa-brand-cap strong { font-size: 14px; font-weight: 800; }
+    .sa-brand-pill { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: rgba(16,185,129,0.2); color: #34d399; }
+    .sa-brand-body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .sa-metric-row { display: flex; justify-content: space-between; font-size: 12.5px; color: #475569; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
+    .sa-metric-row strong { color: #0f172a; font-weight: 800; }
+    .sa-card {
+      background: #fff; border: 1px solid #dbe4f0; border-radius: 14px; padding: 18px 20px; margin-bottom: 16px;
+      box-shadow: 0 4px 14px rgba(15,23,42,0.04);
+    }
+    .sa-card h3 { margin: 0 0 12px; font-size: 15px; font-weight: 800; color: #0b1528; display: flex; align-items: center; gap: 8px; }
+    .sa-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .sa-table th { text-align: left; padding: 9px 10px; background: #f8fafc; color: #475569; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
+    .sa-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; color: #0f172a; }
+    .sa-btn {
+      border: none; border-radius: 9px; padding: 8px 14px; font-size: 12.5px; font-weight: 800;
+      cursor: pointer; background: #2563eb; color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .sa-btn:hover { background: #1d4ed8; }
+    .sa-btn.dark { background: #0b1528; }
+    .sa-btn.emerald { background: #059669; }
+    .sa-btn.ghost { background: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+
+  <div class="app-main">
+    <header class="sa-header">
+      <div>
+        <h1><span>👑</span> Superadmin Command Center</h1>
+        <p>Unified 4-Brand Executive Control • Master Freight Feed Sync • Live FMCSA Anti-Fraud &amp; System Audit</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="sa-btn ghost" onclick="refreshAllSuperadminData()">↻ Refresh All</button>
+        <a href="/load-booking" class="sa-btn">⚡ Open Load Board</a>
+      </div>
+    </header>
+
+    <main class="app-content" style="padding: 16px 24px 36px;">
+      <!-- Admin Master Feed Sync Widget auto-mounts cleanly right inside .app-content -->
+
+      <!-- Clean 3-Tab Unified Navigation -->
+      <div class="sa-tabs">
+        <button type="button" class="sa-tab active" data-sa-tab="brands" onclick="switchSaTab('brands', this)">🌐 4-Brand Executive Overview</button>
+        <button type="button" class="sa-tab" data-sa-tab="loadsnexus" onclick="switchSaTab('loadsnexus', this)">🛡️ Anti-Fraud, FMCSA &amp; Broker Trust</button>
+        <button type="button" class="sa-tab" data-sa-tab="audit" onclick="switchSaTab('audit', this)">👥 Subscriptions, Staff &amp; Audit</button>
+      </div>
+
+      <!-- TAB 1: 4-BRAND OVERVIEW -->
+      <section class="sa-panel active" id="sa-panel-brands">
+        <div class="sa-grid-4">
+          <div class="sa-brand-card">
+            <div class="sa-brand-cap"><strong>🚛 Shipping Wish (Trucking)</strong><span class="sa-brand-pill">FLAGSHIP</span></div>
+            <div class="sa-brand-body">
+              <div class="sa-metric-row"><span>Active Loads</span><strong id="sa-sw-loads">—</strong></div>
+              <div class="sa-metric-row"><span>Registered Carriers</span><strong id="sa-sw-carriers">—</strong></div>
+              <div class="sa-metric-row"><span>Active Subscriptions</span><strong id="sa-sw-subs">—</strong></div>
+              <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+                <a class="sa-btn" style="padding:6px 10px;font-size:11.5px;" href="/dispatcher-dashboard">Dispatch Desk</a>
+                <a class="sa-btn ghost" style="padding:6px 10px;font-size:11.5px;" href="https://www.shippingwish.com" target="_blank">Website ↗</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="sa-brand-card">
+            <div class="sa-brand-cap"><strong>⚡ Loads Nexus (Load Board)</strong><span class="sa-brand-pill">FLAGSHIP</span></div>
+            <div class="sa-brand-body">
+              <div class="sa-metric-row"><span>Live Marketplace Loads</span><strong id="sa-ln-loads">—</strong></div>
+              <div class="sa-metric-row"><span>Verified Brokers</span><strong id="sa-ln-brokers">—</strong></div>
+              <div class="sa-metric-row"><span>Avg Spot RPM</span><strong id="sa-ln-rpm">—</strong></div>
+              <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+                <a class="sa-btn emerald" style="padding:6px 10px;font-size:11.5px;" href="/load-booking">Load Board</a>
+                <a class="sa-btn ghost" style="padding:6px 10px;font-size:11.5px;" href="https://www.loadsnexus.com" target="_blank">Website ↗</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="sa-brand-card">
+            <div class="sa-brand-cap"><strong>🛍️ Buy Wish Online</strong><span class="sa-brand-pill">LIVE</span></div>
+            <div class="sa-brand-body">
+              <div class="sa-metric-row"><span>Catalog &amp; Orders</span><strong>E-Commerce Active</strong></div>
+              <div class="sa-metric-row"><span>Fulfillment</span><strong>Zendrop Connected</strong></div>
+              <div style="margin-top:auto;display:flex;gap:6px;flex-wrap:wrap;">
+                <a class="sa-btn ghost" style="padding:6px 10px;font-size:11.5px;" href="https://www.buywishonline.com/admin" target="_blank">Store Admin ↗</a>
+                <a class="sa-btn ghost" style="padding:6px 10px;font-size:11.5px;" href="https://www.buywishonline.com" target="_blank">Store ↗</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="sa-brand-card">
+            <div class="sa-brand-cap"><strong>🚘 NYC Limo Wish</strong><span class="sa-brand-pill">LIVE</span></div>
+            <div class="sa-brand-body">
+              <div class="sa-metric-row"><span>Chauffeur Operations</span><strong>TLC Portal Active</strong></div>
+              <div class="sa-metric-row"><span>Partner Bases</span><strong>Multi-Base Live</strong></div>
+              <div style="margin-top:auto;display:flex;gap:6px;flex-wrap:wrap;">
+                <a class="sa-btn ghost" style="padding:6px 10px;font-size:11.5px;" href="https://www.nyclimowish.com/erp" target="_blank">Limo ERP ↗</a>
+                <a class="sa-btn ghost" style="padding:6px 10px;font-size:11.5px;" href="https://www.nyclimowish.com" target="_blank">Website ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sa-card">
+          <h3>⚡ Quick Superadmin Controls</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a class="sa-btn" href="/staff-management">👥 Staff &amp; Role Management</a>
+            <a class="sa-btn dark" href="/settings">⚙️ Platform Settings</a>
+            <a class="sa-btn ghost" href="/invoices">💳 Invoices &amp; Billing</a>
+            <a class="sa-btn ghost" href="/fleet">🚛 Fleet &amp; Drivers</a>
+            <a class="sa-btn ghost" href="/brokers">🤝 Broker Directory</a>
+            <a class="sa-btn ghost" href="/trash">🗑️ Soft-Delete Trash</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: ANTI-FRAUD, LIVE FMCSA SHIELD & BROKER TRUST -->
+      <section class="sa-panel" id="sa-panel-loadsnexus">
+        <div class="sa-card">
+          <h3>🛡️ Live FMCSA Carrier &amp; Broker Vetting Shield</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+            <input id="sa-vet-input" type="text" placeholder="Enter MC# or USDOT# (e.g. 54283 or MC-1098412)" style="flex:1;min-width:240px;height:40px;padding:0 12px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:13.5px;font-weight:600;">
+            <button type="button" class="sa-btn" onclick="runSaVetting()">🔍 Run Live FMCSA Check</button>
+          </div>
+          <div id="sa-vet-result" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;font-size:13px;"></div>
+        </div>
+
+        <div class="sa-card">
+          <h3>🏦 Monitored Brokers — Credit Rating &amp; Days-To-Pay (DTP)</h3>
+          <div style="overflow-x:auto;">
+            <table class="sa-table">
+              <thead><tr><th>Broker Company</th><th>MC #</th><th>Credit Rating</th><th>Avg Days-To-Pay</th><th>Bond Status</th><th>Fraud Risk</th></tr></thead>
+              <tbody id="sa-brokers-tbody"><tr><td colspan="6" style="color:#64748b;">Loading monitored brokers...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="sa-card">
+          <h3>📡 Live Active Load Audit Stream</h3>
+          <div style="overflow-x:auto;">
+            <table class="sa-table">
+              <thead><tr><th>Load #</th><th>Lane (Origin → Destination)</th><th>Equipment</th><th>Rate</th><th>Status</th><th>Posted</th></tr></thead>
+              <tbody id="sa-audit-loads-tbody"><tr><td colspan="6" style="color:#64748b;">Loading live load audit feed...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: SUBSCRIPTIONS, STAFF & SECURITY AUDIT -->
+      <section class="sa-panel" id="sa-panel-audit">
+        <div class="sa-card">
+          <h3>🔒 Recent Security &amp; System Audit Logs</h3>
+          <div style="overflow-x:auto;">
+            <table class="sa-table">
+              <thead><tr><th>Timestamp</th><th>Action</th><th>Entity</th><th>IP Address</th><th>Details</th></tr></thead>
+              <tbody id="sa-sec-logs-tbody"><tr><td colspan="5" style="color:#64748b;">Loading audit logs...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script src="/js/app-shell.js?v=39"></script>
+<script src="/js/admin-load-sync-widget.js?v=1"></script>
+<script>
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function switchSaTab(key, btn) {
+    document.querySelectorAll('.sa-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sa-panel').forEach(p => p.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const panel = document.getElementById('sa-panel-' + key);
+    if (panel) panel.classList.add('active');
+  }
+
+  async function apiGet(url) {
+    const r = await fetch(url, { credentials: 'include' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+
+  async function runSaVetting() {
+    const q = (document.getElementById('sa-vet-input').value || '').trim();
+    const box = document.getElementById('sa-vet-result');
+    if (!q) return;
+    box.style.display = 'block';
+    box.innerHTML = 'Checking live FMCSA QCMobile / SAFER / Census...';
+    try {
+      const r = await fetch('/api/carrier-vetting/' + encodeURIComponent(q), { credentials: 'include' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.report) {
+        box.innerHTML = `<strong style="color:#dc2626">🚨 ${esc(d.recommendation?.badge || 'Unverified Record')}</strong><div style="margin-top:4px;color:#475569;">${esc(d.error || 'No active FMCSA match found.')}</div>`;
+        return;
+      }
+      const rep = d.report;
+      const col = rep.recommendation?.decision === 'APPROVED_TO_LOAD' ? '#059669' : (rep.recommendation?.decision === 'REVIEW_REQUIRED' ? '#d97706' : '#dc2626');
+      box.innerHTML = `
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+          <strong style="font-size:15px;color:#0f172a;">${esc(rep.company_name)} (${esc(rep.mc_number)} • ${esc(rep.dot_number)})</strong>
+          <span style="font-weight:800;color:${col};">${esc(rep.recommendation?.badge || rep.recommendation?.decision)}</span>
+        </div>
+        <div style="color:#334155;">Authority: <strong>${esc(rep.operating_authority?.status)}</strong> • Safety: <strong>${esc(rep.safety?.rating)}</strong> • Risk Score: <strong>${rep.fraud_risk_analysis?.risk_score}/100</strong></div>
+        ${(rep.fraud_risk_analysis?.risk_factors || []).length ? `<ul style="margin:8px 0 0 18px;color:#b91c1c;">${rep.fraud_risk_analysis.risk_factors.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+      `;
+    } catch (e) {
+      box.innerHTML = `<span style="color:#dc2626">${esc(e.message)}</span>`;
+    }
+  }
+
+  async function refreshAllSuperadminData() {
+    try {
+      const me = await apiGet('/api/me');
+      if (!me?.user || me.user.role !== 'super_admin') {
+        window.location.href = '/dispatcher-dashboard';
+        return;
+      }
+    } catch (_) {
+      window.location.href = '/login?redirect=/superadmin-command';
+      return;
+    }
+
+    // Load KPIs
+    apiGet('/api/loadboard/stats/live').then(d => {
+      document.getElementById('sa-ln-loads').textContent = Number(d.active_loads || d.total_loads || 0).toLocaleString();
+      document.getElementById('sa-ln-rpm').textContent = d.avg_rpm ? `$${Number(d.avg_rpm).toFixed(2)}/mi` : 'Live';
+    }).catch(() => {});
+
+    apiGet('/api/superadmin/overview').then(d => {
+      const s = d.summary || d.stats || d || {};
+      document.getElementById('sa-sw-loads').textContent = Number(s.total_loads || s.loads || 0).toLocaleString();
+      document.getElementById('sa-sw-carriers').textContent = Number(s.total_carriers || s.carriers || 0).toLocaleString();
+      document.getElementById('sa-sw-subs').textContent = Number(s.active_subscriptions || s.subscriptions || 0).toLocaleString();
+    }).catch(() => {});
+
+    // Brokers Credit Table
+    apiGet('/api/loadboard/brokers/scores').then(d => {
+      const rows = d.brokers || [];
+      document.getElementById('sa-ln-brokers').textContent = rows.length;
+      const tb = document.getElementById('sa-brokers-tbody');
+      tb.innerHTML = rows.length ? rows.slice(0, 20).map(b => `
+        <tr>
+          <td><strong>${esc(b.company_name || b.name)}</strong></td>
+          <td>${esc(b.mc_number || '-')}</td>
+          <td><strong>${esc(b.credit_rating || 'Pending')}</strong></td>
+          <td>${b.days_to_pay ? `${b.days_to_pay} days` : '-'}</td>
+          <td>${esc(b.bond_status || 'Verify FMCSA')}</td>
+          <td>${esc(b.fraud_risk || 'LOW')}</td>
+        </tr>`).join('') : '<tr><td colspan="6" style="color:#64748b;">No monitored brokers yet.</td></tr>';
+    }).catch(() => {});
+
+    // Live Load Audit Stream
+    apiGet('/api/loadboard/superadmin/audit-feed').then(d => {
+      const rows = d.recent_loads || d.loads || [];
+      const tb = document.getElementById('sa-audit-loads-tbody');
+      tb.innerHTML = rows.length ? rows.slice(0, 20).map(l => `
+        <tr>
+          <td><strong>${esc(l.load_number || l.id)}</strong></td>
+          <td>${esc(l.pickup_location)} → ${esc(l.delivery_location)}</td>
+          <td>${esc(l.equipment_type || '-')}</td>
+          <td><strong>$${Number(l.rate || 0).toLocaleString()}</strong></td>
+          <td>${esc(String(l.status || '').toUpperCase())}</td>
+          <td>${esc(String(l.created_at || '').slice(0, 16).replace('T', ' '))}</td>
+        </tr>`).join('') : '<tr><td colspan="6" style="color:#64748b;">No active loads under audit right now.</td></tr>';
+    }).catch(() => {});
+
+    // Security Audit Logs
+    apiGet('/api/audit-logs?limit=25').then(d => {
+      const rows = d.logs || d.auditLogs || [];
+      const tb = document.getElementById('sa-sec-logs-tbody');
+      tb.innerHTML = rows.length ? rows.slice(0, 25).map(l => `
+        <tr>
+          <td>${esc(String(l.created_at || '').slice(0, 19).replace('T', ' '))}</td>
+          <td><strong>${esc(l.action)}</strong></td>
+          <td>${esc(l.entity_type || '-')} #${esc(l.entity_id || '')}</td>
+          <td>${esc(l.ip_address || '-')}</td>
+          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(typeof l.details === 'object' ? JSON.stringify(l.details) : l.details)}</td>
+        </tr>`).join('') : '<tr><td colspan="5" style="color:#64748b;">No security audit logs recorded yet.</td></tr>';
+    }).catch(() => {});
+  }
+
+  document.addEventListener('DOMContentLoaded', refreshAllSuperadminData);
+</script>
+</body>
+</html>

@@ -21,6 +21,10 @@
       "destination": "/load-booking.html"
     },
     {
+      "source": "/superadmin-command",
+      "destination": "/superadmin-command.html"
+    },
+    {
       "source": "/superadmin",
       "destination": "/superadmin/index.html"
     },

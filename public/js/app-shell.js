@@ -5,7 +5,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '38';
+  const SIDEBAR_VERSION = '39';
   // #endregion
 
   function clearRoleCache() {
@@ -207,9 +207,7 @@
 
   const STAFF_LINKS = [
     { section: 'Executive Command', superAdminOnly: true },
-    { key: 'superadmin', href: '/superadmin', icon: IC.crown, label: 'Command Center (4-Brand)', superAdminOnly: true },
-    { key: 'loadnexus', href: '/admin-loadnexus', icon: IC.shield, label: '🛡️ LoadNexus Superadmin Command', superAdminOnly: true },
-    { key: 'social', href: '/social-media-hub', icon: IC.webcms, label: '📱 Social Media & Posting Hub', adminOnly: true },
+    { key: 'superadmin', href: '/superadmin-command', icon: IC.crown, label: '👑 Superadmin Command Center', superAdminOnly: true },
     { section: 'Operations Workflow' },
     { key: 'loadboard', href: '/load-booking', icon: IC.target, label: '⚡ Load Board & AI Match' },
     { key: 'ai-dispatch', href: '/ai-dispatch', icon: IC.robot, label: '🤖 AI Dispatch Operations' },
@@ -313,8 +311,10 @@
   ];
 
   const PAGE_KEY = {
-    'admin-loadnexus.html': 'loadnexus',
-    'admin-loadnexus': 'loadnexus',
+    'superadmin-command.html': 'superadmin',
+    'superadmin-command': 'superadmin',
+    'admin-loadnexus.html': 'superadmin',
+    'admin-loadnexus': 'superadmin',
     'admin-dashboard.html': 'overview',
     'dispatcher-dashboard.html': 'dispatch',
     'ai-dispatch.html': 'ai-dispatch',
@@ -706,8 +706,8 @@
     try {
       if (sessionStorage.getItem('sw_sidebar_ver') !== SIDEBAR_VERSION) return true;
       const cachedRole = sessionStorage.getItem(ROLE_CACHE_KEY);
-      if (cachedRole !== 'super_admin' && aside.querySelector('a[href="/superadmin"]')) return true;
-      if (cachedRole === 'super_admin' && !aside.querySelector('a[href="/superadmin"]')) return true;
+      if (cachedRole !== 'super_admin' && aside.querySelector('a[href="/superadmin-command"]')) return true;
+      if (cachedRole === 'super_admin' && !aside.querySelector('a[href="/superadmin-command"]')) return true;
     } catch (_) { /* ignore */ }
     return !aside.querySelector('a.sidebar-nav-link[href="/census-desk"]');
   }
@@ -1132,8 +1132,8 @@
         if (CURRENT_PLAN) sessionStorage.setItem(PLAN_CACHE_KEY, CURRENT_PLAN);
 
         const navReady = isSidebarBooted(aside);
-        const superMismatch = (CURRENT_ROLE === 'super_admin' && !aside.querySelector('a[href="/superadmin"]'))
-          || (CURRENT_ROLE !== 'super_admin' && !!aside.querySelector('a[href="/superadmin"]'));
+        const superMismatch = (CURRENT_ROLE === 'super_admin' && !aside.querySelector('a[href="/superadmin-command"]'))
+          || (CURRENT_ROLE !== 'super_admin' && !!aside.querySelector('a[href="/superadmin-command"]'));
         const skipRebuild = CURRENT_ROLE && CURRENT_ROLE === prevRole && CURRENT_PLAN === prevPlan && navReady && !superMismatch;
 
         if (skipRebuild) {

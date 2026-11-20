@@ -143,7 +143,8 @@
       last_sync_at: null
     }));
 
-    const target = document.querySelector('main, .app-content, .main-content, .container, body');
+    if (document.querySelector('.lnx-sync-bar')) return;
+    const target = document.querySelector('.app-content, main.app-content, main, .main-content, .container');
     if (!target) return;
 
     const bar = document.createElement('div');
