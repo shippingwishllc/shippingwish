@@ -1042,8 +1042,24 @@
       else openCommand();
     } else if (event.key === 'Escape') closeCommand();
   });
-  if (sessionStorage.getItem(tokenKey)) showDesk();
-  else document.getElementById('gate').style.display = 'grid';
+  if (sessionStorage.getItem(tokenKey)) {
+    showDesk();
+  } else {
+    // Support 1-Click Superadmin SSO cookie (sw_token) seamlessly without forcing manual login!
+    fetch('/api/me', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const role = String(d && d.user && d.user.role || '').toLowerCase();
+        if (role === 'super_admin' || role === 'admin') {
+          showDesk();
+        } else {
+          document.getElementById('gate').style.display = 'grid';
+        }
+      })
+      .catch(() => {
+        document.getElementById('gate').style.display = 'grid';
+      });
+  }
 </script>
 </body>
 </html>

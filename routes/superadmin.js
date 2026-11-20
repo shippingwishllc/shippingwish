@@ -1263,11 +1263,19 @@ router.get('/sso-exchange', async (req, res) => {
     );
 
     const isSecure = process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const reqHost = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim().split(':')[0].toLowerCase();
+    let cookieDomain;
+    if (reqHost.endsWith('buywishonline.com')) cookieDomain = '.buywishonline.com';
+    else if (reqHost.endsWith('nyclimowish.com')) cookieDomain = '.nyclimowish.com';
+    else if (reqHost.endsWith('loadsnexus.com')) cookieDomain = '.loadsnexus.com';
+    else if (reqHost.endsWith('shippingwish.com')) cookieDomain = '.shippingwish.com';
+
     const cookieOpts = {
       httpOnly: true,
       secure: Boolean(isSecure),
       sameSite: 'lax',
       path: '/',
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
       maxAge: 7 * 24 * 60 * 60 * 1000
     };
 
