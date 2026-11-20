@@ -4,6 +4,7 @@ const { requireAuth } = require('../middleware/auth');
 const { createNotification } = require('../utils/notifications');
 const { auditLog, getClientIp } = require('../utils/audit');
 const { sendPushToUsers } = require('./mobile-push');
+const { userCanAccessLoad } = require('../utils/load-lifecycle');
 
 const router = express.Router();
 
@@ -57,7 +58,12 @@ router.post('/ping', requireAuth, async (req, res) => {
       );
 
       if (loadRes.rows.length > 0) {
-        load = loadRes.rows[0];
+        const candidateLoad = loadRes.rows[0];
+        const allowed = await userCanAccessLoad(req, candidateLoad);
+        if (!allowed) {
+          return res.status(403).json({ error: 'You are not authorized to post GPS pings or status updates for this load.' });
+        }
+        load = candidateLoad;
       } else {
         resolvedLoadId = null; // not found, fallback to duty ping
       }

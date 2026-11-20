@@ -125,8 +125,7 @@ router.delete('/sources/:id', ...staff, async (req, res) => {
 router.get('/carriers', ...staff, async (req, res) => {
   try {
     await ensureBoardSchema();
-    await sendDueMorningTexts().catch(() => {});
-    await brain.sendDueEmptySoonOffers().catch(() => {});
+    // Side-effect-free GET: scheduled SMS/reload automations now run via /api/cron/dispatch-automations!
     const { rows } = await pool.query('SELECT * FROM ai_dispatch_carriers ORDER BY created_at DESC');
     res.json({ ok: true, carriers: rows });
   } catch (err) {
@@ -2371,6 +2370,141 @@ async function autoCoverStaleDatLoads() {
     console.warn('[LOADBOARD] Auto-cover stale loads error:', err.message);
   }
 }
+
+// POST /api/dispatch-desk/loads/:id/request-approval — Zero Forced Dispatch: Send 1-Tap Load Approval Offer to Carrier!
+router.post('/loads/:id/request-approval', ...staff, async (req, res) => {
+  try {
+    const { ensureUnifiedSchema } = require('../utils/load-lifecycle');
+    const { analyzeLoadProfit } = require('../utils/profit-engine');
+    const { createNotification } = require('../utils/notifications');
+    const { sendPushToUsers } = require('./mobile-push');
+    await ensureUnifiedSchema();
+
+    const loadId = parseInt(req.params.id, 10);
+    if (isNaN(loadId)) return res.status(400).json({ error: 'Invalid load ID.' });
+
+    const carrierId = req.body.carrierId ? parseInt(req.body.carrierId, 10) : null;
+    const loadRes = await pool.query('SELECT * FROM loads WHERE id = $1', [loadId]);
+    if (!loadRes.rows.length) return res.status(404).json({ error: 'Load not found.' });
+    const load = loadRes.rows[0];
+    const targetCarrierId = carrierId || load.carrier_id;
+    if (!targetCarrierId) return res.status(400).json({ error: 'carrierId is required to request approval.' });
+
+    const profit = analyzeLoadProfit({
+      rate: Number(load.rate || 0),
+      loadedMiles: Number(load.miles || 500),
+      deadheadMiles: Number(req.body.deadheadMiles || load.empty_miles || 0),
+      origin: load.pickup_location,
+      destination: load.delivery_location,
+      equipmentType: load.equipment_type
+    });
+
+    const updated = await pool.query(
+      `UPDATE loads
+       SET carrier_id = $1,
+           dispatcher_id = COALESCE(dispatcher_id, $2),
+           status = 'pending_carrier_approval',
+           carrier_approval_status = 'pending',
+           carrier_approval_requested_at = NOW(),
+           empty_miles = COALESCE($3, empty_miles),
+           fuel_est = $4,
+           net_profit_est = $5,
+           updated_at = NOW()
+       WHERE id = $6
+       RETURNING *`,
+      [targetCarrierId, req.user.id, Number(req.body.deadheadMiles || load.empty_miles || 0), profit.fuel_cost, profit.true_net_profit, loadId]
+    );
+
+    const title = `🚛 1-Tap Load Approval: #${load.load_number}`;
+    const body = `${load.pickup_location} -> ${load.delivery_location} | Gross: $${Number(load.rate || 0).toLocaleString()} | Est. Net Profit: $${profit.true_net_profit.toLocaleString()} (${profit.verdict_label}). Tap to Approve or Pass.`;
+    createNotification(targetCarrierId, title, body, 'info', `/load-detail.html?id=${loadId}`).catch(() => {});
+    sendPushToUsers(targetCarrierId, {
+      title,
+      body,
+      data: { load_id: loadId, type: 'carrier_approval_request' }
+    }).catch(() => {});
+
+    // Also send SMS if carrier has phone on file
+    const cRes = await pool.query('SELECT phone, company_name FROM users WHERE id = $1', [targetCarrierId]).catch(() => ({ rows: [] }));
+    if (cRes.rows[0]?.phone && typeof sendTwilioSms === 'function') {
+      sendTwilioSms(cRes.rows[0].phone, `Shipping Wish Approval Needed: Load #${load.load_number} (${load.pickup_location} to ${load.delivery_location}) Gross $${load.rate}, Est Net $${profit.true_net_profit}. Open app to APPROVE or PASS.`).catch(() => {});
+    }
+
+    res.json({ ok: true, load: updated.rows[0], profit, message: '1-Tap Carrier Load Approval request sent.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not send carrier approval request: ' + err.message });
+  }
+});
+
+// GET /api/dispatch-desk/reload-suggestions/:loadId — AI Pre-Delivery Reload Planner ("Zero Empty Miles")
+router.get('/reload-suggestions/:loadId', ...driverOrStaff, async (req, res) => {
+  try {
+    const { ensureUnifiedSchema } = require('../utils/load-lifecycle');
+    const { analyzeLoadProfit, formatPostedAge } = require('../utils/profit-engine');
+    await ensureUnifiedSchema();
+
+    const loadId = parseInt(req.params.loadId, 10);
+    if (isNaN(loadId)) return res.status(400).json({ error: 'Invalid load ID.' });
+
+    const activeRes = await pool.query('SELECT * FROM loads WHERE id = $1', [loadId]);
+    if (!activeRes.rows.length) return res.status(404).json({ error: 'Active load not found.' });
+    const active = activeRes.rows[0];
+
+    const destState = stateOf(active.delivery_location || '') || '';
+    const candidateStates = [destState, ...(ADJACENT_STATES[destState] || [])].filter(Boolean);
+
+    let where = `deleted_at IS NULL AND status IN ('new', 'open') AND is_public_board = TRUE AND id != $1`;
+    const params = [loadId];
+    if (candidateStates.length) {
+      const clauses = candidateStates.map((st) => {
+        params.push(`%${st}%`);
+        return `pickup_location ILIKE $${params.length}`;
+      });
+      where += ` AND (${clauses.join(' OR ')})`;
+    }
+
+    const { rows } = await pool.query(
+      `SELECT id, load_number, pickup_location, delivery_location, pickup_date, equipment_type, weight, miles, rate, rpm, broker_name, broker_mc, broker_contact, created_at
+       FROM loads WHERE ${where} ORDER BY rpm DESC, created_at DESC LIMIT 30`,
+      params
+    );
+
+    const suggestions = rows.map((r) => {
+      const deadhead = getFreightDeadhead(active.delivery_location, r.pickup_location);
+      const profit = analyzeLoadProfit({
+        rate: Number(r.rate || 0),
+        loadedMiles: Number(r.miles || 500),
+        deadheadMiles: deadhead,
+        origin: r.pickup_location,
+        destination: r.delivery_location,
+        equipmentType: r.equipment_type || active.equipment_type || '53ft Dry Van'
+      });
+      return {
+        ...r,
+        deadhead_from_delivery: deadhead,
+        posted_age: formatPostedAge(r.created_at),
+        profit_analysis: profit
+      };
+    })
+      .filter((s) => s.deadhead_from_delivery <= 150)
+      .sort((a, b) => b.profit_analysis.net_profit_per_mile - a.profit_analysis.net_profit_per_mile)
+      .slice(0, 10);
+
+    res.json({
+      ok: true,
+      active_load: {
+        id: active.id,
+        load_number: active.load_number,
+        delivery_location: active.delivery_location,
+        equipment_type: active.equipment_type
+      },
+      count: suggestions.length,
+      suggestions
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not compute AI reload suggestions: ' + err.message });
+  }
+});
 
 module.exports = router;
 module.exports.syncDueSources = syncDueSources;

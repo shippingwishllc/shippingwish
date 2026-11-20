@@ -14,7 +14,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const crypto = require('crypto');
 
 // Audit logger helper
@@ -377,7 +377,7 @@ router.get('/roster', requireAuth, async (req, res) => {
 // POST /api/dispatch-voice/trigger
 // Triggers an automated check-call to a driver (or interactive test)
 // -------------------------------------------------------------
-router.post('/trigger', requireAuth, async (req, res) => {
+router.post('/trigger', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
   await ensureTables();
   try {
     const {
@@ -508,7 +508,7 @@ router.get('/calls/:id', requireAuth, async (req, res) => {
 // POST /api/dispatch-voice/calls/:id/manual-override
 // Dispatcher manual override of disposition or delay notes
 // -------------------------------------------------------------
-router.post('/calls/:id/manual-override', requireAuth, async (req, res) => {
+router.post('/calls/:id/manual-override', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;

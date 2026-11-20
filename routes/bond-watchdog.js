@@ -14,7 +14,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { requireAuth, optionalAuth } = require('../middleware/auth');
+const { requireAuth, requireRole, optionalAuth } = require('../middleware/auth');
 const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
 
@@ -572,7 +572,7 @@ router.post('/claims/file', requireAuth, async (req, res) => {
 // POST /api/bond-watchdog/claims/:id/status
 // Updates claim disposition, settlement amount, or rejection
 // -------------------------------------------------------------
-router.post('/claims/:id/status', requireAuth, async (req, res) => {
+router.post('/claims/:id/status', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;

@@ -592,6 +592,8 @@ app.use('/api/accessorials', carrierApiGate, require('./routes/accessorials'));
 app.use('/api/fuel', carrierApiGate, require('./routes/fuel'));
 app.use('/api/ifta', carrierApiGate, require('./routes/ifta'));
 app.use('/api/invoices', carrierApiGate, require('./routes/invoices'));
+app.use('/api/settlements', carrierApiGate, require('./routes/settlements')); // Driver Settlements, Per-Truck P&L & 1-Click Factoring Packets
+app.use('/api/cron', require('./routes/cron')); // Serverless Vercel Cron Automations (CRON_SECRET protected)
 app.use('/api/portal', carrierApiGate, require('./routes/portal'));
 app.use('/api/loadboard', require('./routes/loadboard'));
 app.use('/api/dispatch-desk', require('./routes/dispatch-desk'));

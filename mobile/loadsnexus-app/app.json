@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Loads Nexus",
+    "slug": "loadsnexus-app",
+    "owner": "shippingwish",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.loadsnexus.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Loads Nexus uses your location to match nearby spot loads and verify carrier lane capacity."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#070F1E"
+      },
+      "package": "com.loadsnexus.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
+  }
+}

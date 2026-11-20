@@ -2,7 +2,7 @@ const express = require('express');
 const PDFDocument = require('pdfkit');
 const crypto = require('crypto');
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { auditLog, getClientIp } = require('../utils/audit');
 
 const router = express.Router();
@@ -364,7 +364,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 // POST /api/freight-audit/:id/approve
 // Approve full payment when discrepancies are resolved or waived
 // -------------------------------------------------------------
-router.post('/:id/approve', requireAuth, async (req, res) => {
+router.post('/:id/approve', requireAuth, requireRole('admin', 'super_admin', 'dispatcher'), async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;
@@ -406,7 +406,7 @@ router.post('/:id/approve', requireAuth, async (req, res) => {
 // POST /api/freight-audit/:id/short-pay
 // Execute Short-Pay deduction and generate deduction notice
 // -------------------------------------------------------------
-router.post('/:id/short-pay', requireAuth, async (req, res) => {
+router.post('/:id/short-pay', requireAuth, requireRole('admin', 'super_admin', 'dispatcher'), async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;

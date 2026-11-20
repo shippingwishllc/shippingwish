@@ -3,7 +3,7 @@
 
 export const CONFIG = {
   // Live Vercel SaaS Production Server URL (All mobile apps connect directly to Vercel)
-  LIVE_VERCEL_URL: 'https://shippingwish.com',
+  LIVE_VERCEL_URL: 'https://www.shippingwish.com',
 
   // Local fallback (only if specifically needed for offline debugging)
   DEV_API_URL: 'http://localhost:3000',

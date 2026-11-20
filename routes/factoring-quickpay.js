@@ -1,10 +1,11 @@
 const express = require('express');
 const PDFDocument = require('pdfkit');
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { createNotification } = require('../utils/notifications');
 const { sendPushToUsers } = require('./mobile-push');
 const { auditLog, getClientIp } = require('../utils/audit');
+const { userCanAccessLoad } = require('../utils/load-lifecycle');
 
 const router = express.Router();
 
@@ -66,6 +67,11 @@ router.post('/submit', requireAuth, async (req, res) => {
 
     if (loadRes.rows.length === 0) return res.status(404).json({ error: 'Load not found.' });
     const load = loadRes.rows[0];
+
+    const allowed = await userCanAccessLoad(req, load);
+    if (!allowed) {
+      return res.status(403).json({ error: 'You cannot submit factoring/QuickPay for a load not assigned to your carrier account.' });
+    }
 
     const grossAmount = parseFloat(load.rate || 3200);
     let feePercent = 0.0;
@@ -170,8 +176,8 @@ router.get('/submissions', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/factoring/approve/:id — Approve payout and initiate ACH / Stripe release
-router.post('/approve/:id', requireAuth, async (req, res) => {
+// POST /api/factoring/approve/:id — Admin-only payout approval
+router.post('/approve/:id', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   await ensureTable();
   const subId = parseInt(req.params.id, 10);
   if (isNaN(subId)) return res.status(400).json({ error: 'Invalid submission ID.' });

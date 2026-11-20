@@ -2,7 +2,7 @@ const express = require('express');
 const PDFDocument = require('pdfkit');
 const crypto = require('crypto');
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { auditLog, getClientIp } = require('../utils/audit');
 
 const router = express.Router();
@@ -270,7 +270,7 @@ router.post('/file', requireAuth, async (req, res) => {
 });
 
 // POST /api/claims/:id/settle — Settle, compromise, or formally deny claim
-router.post('/:id/settle', requireAuth, async (req, res) => {
+router.post('/:id/settle', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   await ensureTables();
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) return res.status(400).json({ error: 'Invalid claim ID.' });

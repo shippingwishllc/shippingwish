@@ -696,5 +696,53 @@ router.post('/create-custom', requireAuth, requireRole('dispatcher', 'admin', 's
   }
 });
 
+// Serverless-Safe Live Invoice PDF Stream (Fixes 404 /tmp/invoices on Vercel!)
+router.get('/:id/pdf', requireAuth, async (req, res) => {
+  try {
+    const PDFDocument = require('pdfkit');
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid invoice ID.' });
+
+    const invRes = await pool.query(
+      `SELECT i.*, u.name AS carrier_name, u.company_name AS carrier_company, u.mc_number AS carrier_mc, u.phone AS carrier_phone, u.email AS carrier_email
+       FROM invoices i
+       LEFT JOIN users u ON u.id = i.carrier_id
+       WHERE i.id = $1`,
+      [id]
+    );
+    if (!invRes.rows.length) return res.status(404).json({ error: 'Invoice not found.' });
+    const inv = invRes.rows[0];
+
+    if (['carrier', 'carrier_admin'].includes(req.user.role) && Number(inv.carrier_id) !== Number(req.user.id)) {
+      return res.status(403).json({ error: 'Access denied to this invoice.' });
+    }
+
+    const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="Invoice_${inv.invoice_number || inv.id}.pdf"`);
+    doc.pipe(res);
+
+    doc.rect(0, 0, doc.page.width, 84).fill('#0B1528');
+    doc.fillColor('#FFFFFF').fontSize(20).font('Helvetica-Bold').text('SHIPPING WISH LLC', 40, 22);
+    doc.fillColor('#F59E0B').fontSize(10).text(`OFFICIAL INVOICE #${inv.invoice_number || inv.id}  •  STATUS: ${String(inv.status || 'UNPAID').toUpperCase()}`, 40, 48);
+    doc.fillColor('#94A3B8').fontSize(9).text('19266 Coastal Hwy, Rehoboth, DE 19971  |  +1 (917) 737-0021  |  dispatch@shippingwish.com', 40, 64);
+
+    doc.fillColor('#0F172A').fontSize(12).font('Helvetica-Bold').text(`Bill To: ${inv.carrier_company || inv.carrier_name || 'Carrier Partner'}`, 40, 106);
+    doc.font('Helvetica').fontSize(10).fillColor('#334155')
+      .text(`MC #: ${inv.carrier_mc || 'On File'}   •   Email: ${inv.carrier_email || '-'}   •   Phone: ${inv.carrier_phone || '-'}`, 40, 124)
+      .text(`Issued: ${String(inv.created_at || '').slice(0, 10)}   •   Due: ${String(inv.due_date || inv.created_at || '').slice(0, 10)}`, 40, 140);
+
+    doc.rect(40, 168, 532, 74).fillAndStroke('#F8FAFC', '#CBD5E1');
+    doc.fillColor('#0F172A').fontSize(11).font('Helvetica-Bold').text('Invoice Summary', 54, 180);
+    doc.font('Helvetica').fontSize(10).fillColor('#334155').text(inv.notes || 'Dispatch & TMS Operations Statement', 54, 198, { width: 320 });
+    doc.fillColor('#1D4ED8').fontSize(18).font('Helvetica-Bold').text(`$${Number(inv.amount || inv.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 420, 194);
+
+    doc.end();
+  } catch (err) {
+    console.error('Invoice PDF stream error:', err);
+    res.status(500).json({ error: 'Could not stream invoice PDF.' });
+  }
+});
+
 module.exports = router;
 

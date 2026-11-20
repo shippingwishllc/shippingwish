@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Shipping Wish",
+    "slug": "shippingwish-app",
+    "owner": "shippingwish",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shippingwish.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Shipping Wish requires camera access to scan and upload signed Bill of Lading (BOL), Proof of Delivery (POD), and scale tickets.",
+        "NSPhotoLibraryUsageDescription": "Shipping Wish requires photo library access to attach freight documents and inspection photos.",
+        "NSLocationWhenInUseUsageDescription": "Shipping Wish uses your location for real-time load tracking, ELD compliance, and automated detention check-in."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#070F1E"
+      },
+      "package": "com.shippingwish.app",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
+  }
+}

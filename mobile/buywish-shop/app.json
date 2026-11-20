@@ -1,18 +1,31 @@
 {
   "expo": {
-    "name": "BuyWishOnline",
-    "slug": "buywishonline",
+    "name": "Buy Wish Online",
+    "slug": "buywish-shop",
+    "owner": "shippingwish",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": { "backgroundColor": "#14120f" },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.shippingwish.buywish"
+      "bundleIdentifier": "com.buywishonline.app"
     },
     "android": {
-      "package": "com.shippingwish.buywish",
-      "adaptiveIcon": { "backgroundColor": "#14120f" }
-    }
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#14120F"
+      },
+      "package": "com.buywishonline.app",
+      "permissions": [
+        "INTERNET"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
   }
 }

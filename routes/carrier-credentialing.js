@@ -14,7 +14,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { requireAuth, optionalAuth } = require('../middleware/auth');
+const { requireAuth, requireRole, optionalAuth } = require('../middleware/auth');
 const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
 
@@ -508,7 +508,7 @@ router.post('/auto-vet', requireAuth, async (req, res) => {
 // POST /api/carrier-credentialing/:id/decision
 // Update credentialing decision & supervisor override
 // -------------------------------------------------------------
-router.post('/:id/decision', requireAuth, async (req, res) => {
+router.post('/:id/decision', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;

@@ -13,7 +13,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
 
@@ -428,7 +428,7 @@ router.get('/invoices/:id', requireAuth, async (req, res) => {
 // POST /api/detention-collector/invoices/:id/status
 // Updates invoice collection status (PAID, DISPUTED, SETTLED, etc.)
 // -------------------------------------------------------------
-router.post('/invoices/:id/status', requireAuth, async (req, res) => {
+router.post('/invoices/:id/status', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
   await ensureTables();
   try {
     const { id } = req.params;

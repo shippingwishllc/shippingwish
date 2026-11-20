@@ -4,6 +4,8 @@ const fs = require('fs');
 const multer = require('multer');
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { storeDocumentBuffer, readDocumentBuffer } = require('../utils/cloud-storage');
+const { ensureUnifiedSchema } = require('../utils/load-lifecycle');
 
 const router = express.Router();
 
@@ -42,23 +44,17 @@ try {
   console.warn('[WARN] Could not create uploads directory:', e.message);
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-  }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
   limits: { fileSize: 15 * 1024 * 1024 } // 15MB max file size
 });
 
-// Upload document (linked to loadId or carrierId)
+// Upload document (linked to loadId or carrierId) — Permanent Cloud/DB Storage (Never vanishes on Vercel!)
 router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file was uploaded.' });
+  await ensureUnifiedSchema();
+  if (!req.file || !req.file.buffer) return res.status(400).json({ error: 'No file was uploaded.' });
   
   let { loadId, carrierId, category } = req.body;
   const isCarrier = ['carrier', 'carrier_admin'].includes(req.user.role);
@@ -70,7 +66,6 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
     if (loadId) {
       const checkLoad = await pool.query('SELECT id FROM loads WHERE id = $1 AND carrier_id = $2', [loadId, req.user.id]);
       if (!checkLoad.rows.length) {
-        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         return res.status(403).json({ error: 'You cannot upload documents for a load not assigned to you.' });
       }
     }
@@ -85,27 +80,48 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
     const ids = dr.rows.map((r) => r.id);
     const checkLoad = await pool.query('SELECT id, driver_id, carrier_id FROM loads WHERE id = $1', [loadId]);
     if (!checkLoad.rows.length || !ids.includes(checkLoad.rows[0].driver_id)) {
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(403).json({ error: 'You cannot upload documents for a load not assigned to you.' });
     }
     if (!carrierId) carrierId = checkLoad.rows[0].carrier_id;
   }
 
-  const validCategories = ['rate_confirmation', 'bol', 'pod', 'carrier_packet', 'insurance', 'w9', 'mc_certificate', 'invoice', 'other'];
+  const validCategories = ['rate_confirmation', 'bol', 'pod', 'carrier_packet', 'insurance', 'w9', 'mc_certificate', 'invoice', 'fuel_receipt', 'lumper_receipt', 'other'];
   const cat = validCategories.includes(category) ? category : 'other';
 
   try {
+    const stored = await storeDocumentBuffer({
+      buffer: req.file.buffer,
+      filename: req.file.originalname,
+      folder: `tms/${cat}`,
+      mimeType: req.file.mimetype || 'application/octet-stream',
+      localDir: UPLOADS_DIR
+    });
+
     const result = await pool.query(
-      `INSERT INTO documents (load_id, carrier_id, category, filename, original_name, filepath, file_size, uploaded_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [loadId ? parseInt(loadId, 10) : null, carrierId ? parseInt(carrierId, 10) : null, cat, req.file.filename, req.file.originalname, req.file.path, req.file.size, req.user.id]
+      `INSERT INTO documents (load_id, carrier_id, category, filename, original_name, filepath, file_size, uploaded_by, cloud_url, mime_type, file_data_b64, storage_provider)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       RETURNING id, load_id, carrier_id, category, filename, original_name, filepath, file_size, uploaded_by, cloud_url, mime_type, storage_provider, uploaded_at`,
+      [
+        loadId ? parseInt(loadId, 10) : null,
+        carrierId ? parseInt(carrierId, 10) : null,
+        cat,
+        path.basename(stored.filepath || req.file.originalname),
+        req.file.originalname,
+        stored.filepath,
+        stored.file_size,
+        req.user.id,
+        stored.cloud_url,
+        req.file.mimetype || 'application/octet-stream',
+        stored.file_data_b64,
+        stored.storage_provider
+      ]
     );
 
-    // If category is POD or Rate Confirmation, update load status automatically
+    // If category is POD, advance load lifecycle automatically
     if (loadId && cat === 'pod') {
       await pool.query(`UPDATE loads SET status = 'pod_uploaded', updated_at = now() WHERE id = $1`, [loadId]);
       await pool.query(
-        `INSERT INTO load_status_history (load_id, status, changed_by, notes) VALUES ($1, 'pod_uploaded', $2, 'POD document uploaded')`,
+        `INSERT INTO load_status_history (load_id, status, changed_by, notes) VALUES ($1, 'pod_uploaded', $2, 'POD document uploaded to permanent cloud vault')`,
         [loadId, req.user.id]
       );
     }
@@ -113,7 +129,78 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
     res.json({ ok: true, document: result.rows[0] });
   } catch (err) {
     console.error('Upload document error:', err);
-    res.status(500).json({ error: 'Could not save document record.' });
+    res.status(500).json({ error: err.message || 'Could not save document record.' });
+  }
+});
+
+// Upload base64 document (ideal for Mobile Driver App Camera POD / BOL / Fuel Receipt Scanner)
+router.post('/upload-base64', requireAuth, async (req, res) => {
+  await ensureUnifiedSchema();
+  let { loadId, carrierId, category = 'pod', originalName = 'mobile-scan.jpg', mimeType = 'image/jpeg', base64Data } = req.body || {};
+  if (!base64Data || typeof base64Data !== 'string') {
+    return res.status(400).json({ error: 'base64Data is required.' });
+  }
+  const cleanB64 = base64Data.replace(/^data:[^;]+;base64,/, '');
+  const buffer = Buffer.from(cleanB64, 'base64');
+  if (!buffer.length || buffer.length > 10 * 1024 * 1024) {
+    return res.status(400).json({ error: 'Invalid or oversized document (max 10MB).' });
+  }
+
+  const isCarrier = ['carrier', 'carrier_admin'].includes(req.user.role);
+  if (isCarrier) {
+    carrierId = req.user.id;
+    if (loadId) {
+      const checkLoad = await pool.query('SELECT id FROM loads WHERE id = $1 AND carrier_id = $2', [loadId, req.user.id]);
+      if (!checkLoad.rows.length) {
+        return res.status(403).json({ error: 'You cannot upload documents for a load not assigned to you.' });
+      }
+    }
+  }
+
+  const validCategories = ['rate_confirmation', 'bol', 'pod', 'carrier_packet', 'insurance', 'w9', 'mc_certificate', 'invoice', 'fuel_receipt', 'lumper_receipt', 'other'];
+  const cat = validCategories.includes(category) ? category : 'other';
+
+  try {
+    const stored = await storeDocumentBuffer({
+      buffer,
+      filename: originalName,
+      folder: `tms/${cat}`,
+      mimeType,
+      localDir: UPLOADS_DIR
+    });
+
+    const result = await pool.query(
+      `INSERT INTO documents (load_id, carrier_id, category, filename, original_name, filepath, file_size, uploaded_by, cloud_url, mime_type, file_data_b64, storage_provider)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       RETURNING id, load_id, carrier_id, category, filename, original_name, filepath, file_size, uploaded_by, cloud_url, mime_type, storage_provider, uploaded_at`,
+      [
+        loadId ? parseInt(loadId, 10) : null,
+        carrierId ? parseInt(carrierId, 10) : null,
+        cat,
+        path.basename(stored.filepath || originalName),
+        originalName,
+        stored.filepath,
+        stored.file_size,
+        req.user.id,
+        stored.cloud_url,
+        mimeType,
+        stored.file_data_b64,
+        stored.storage_provider
+      ]
+    );
+
+    if (loadId && cat === 'pod') {
+      await pool.query(`UPDATE loads SET status = 'pod_uploaded', updated_at = now() WHERE id = $1`, [loadId]);
+      await pool.query(
+        `INSERT INTO load_status_history (load_id, status, changed_by, notes) VALUES ($1, 'pod_uploaded', $2, 'Mobile POD scan uploaded to permanent vault')`,
+        [loadId, req.user.id]
+      );
+    }
+
+    res.json({ ok: true, document: result.rows[0] });
+  } catch (err) {
+    console.error('Upload base64 document error:', err);
+    res.status(500).json({ error: err.message || 'Could not upload scanned document.' });
   }
 });
 
@@ -155,7 +242,7 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// View document inline in browser (PDF or Image viewer)
+// View document inline in browser (reads permanently from Cloud URL, Postgres durable b64, or local disk)
 router.get('/:id/view', requireAuth, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM documents WHERE id = $1', [req.params.id]);
@@ -165,11 +252,12 @@ router.get('/:id/view', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Access denied.' });
     }
 
-    if (!fs.existsSync(doc.filepath)) {
-      return res.status(404).json({ error: 'File on disk not found.' });
+    const buf = await readDocumentBuffer(doc);
+    if (!buf) {
+      return res.status(404).json({ error: 'Document file not found in cloud or local storage.' });
     }
 
-    const ext = path.extname(doc.original_name).toLowerCase();
+    const ext = path.extname(doc.original_name || '').toLowerCase();
     const mimeTypes = {
       '.pdf':  'application/pdf',
       '.png':  'image/png',
@@ -178,17 +266,17 @@ router.get('/:id/view', requireAuth, async (req, res) => {
       '.webp': 'image/webp',
       '.txt':  'text/plain'
     };
-    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    const contentType = doc.mime_type || mimeTypes[ext] || 'application/octet-stream';
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `inline; filename="${doc.original_name}"`);
-    fs.createReadStream(doc.filepath).pipe(res);
+    res.send(buf);
   } catch (err) {
     res.status(500).json({ error: 'Could not view document.' });
   }
 });
 
-// Download document
+// Download document (reads permanently from Cloud URL, Postgres durable b64, or local disk)
 router.get('/:id/download', requireAuth, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM documents WHERE id = $1', [req.params.id]);
@@ -198,11 +286,14 @@ router.get('/:id/download', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Access denied.' });
     }
 
-    if (!fs.existsSync(doc.filepath)) {
-      return res.status(404).json({ error: 'File on disk not found.' });
+    const buf = await readDocumentBuffer(doc);
+    if (!buf) {
+      return res.status(404).json({ error: 'Document file not found in cloud or local storage.' });
     }
 
-    res.download(doc.filepath, doc.original_name);
+    res.setHeader('Content-Type', doc.mime_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${doc.original_name}"`);
+    res.send(buf);
   } catch (err) {
     res.status(500).json({ error: 'Could not download document.' });
   }
@@ -244,28 +335,38 @@ router.post('/:id/replace', requireAuth, upload.single('file'), async (req, res)
   try {
     const docResult = await pool.query('SELECT * FROM documents WHERE id = $1', [id]);
     if (!docResult.rows.length) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(404).json({ error: 'Document not found.' });
     }
     const doc = docResult.rows[0];
 
     if (!await userCanAccessDocument(req, doc)) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(403).json({ error: 'Access denied.' });
     }
+
+    const stored = await storeDocumentBuffer({
+      buffer: req.file.buffer,
+      filename: req.file.originalname,
+      folder: `tms/${doc.category || 'other'}`,
+      mimeType: req.file.mimetype || 'application/octet-stream',
+      localDir: UPLOADS_DIR
+    });
+    const storedName = path.basename(stored.filepath || req.file.originalname);
 
     const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin';
 
     if (isAdmin) {
-      // Admin replaces file directly
-      if (fs.existsSync(doc.filepath)) fs.unlinkSync(doc.filepath);
+      if (doc.filepath && !doc.filepath.startsWith('db://') && !/^https?:\/\//i.test(doc.filepath) && fs.existsSync(doc.filepath)) {
+        try { fs.unlinkSync(doc.filepath); } catch (_) {}
+      }
 
       const update = await pool.query(
         `UPDATE documents
          SET filename = $1, original_name = $2, filepath = $3, file_size = $4,
-             approval_status = 'approved', edit_reason = $5, edit_requested_by = $6
-         WHERE id = $7 RETURNING *`,
-        [req.file.filename, req.file.originalname, req.file.path, req.file.size, reason, req.user.id, id]
+             cloud_url = $5, mime_type = $6, file_data_b64 = $7, storage_provider = $8,
+             approval_status = 'approved', edit_reason = $9, edit_requested_by = $10
+         WHERE id = $11
+         RETURNING id, load_id, carrier_id, category, filename, original_name, filepath, file_size, cloud_url, storage_provider, approval_status`,
+        [storedName, req.file.originalname, stored.filepath, stored.file_size, stored.cloud_url, req.file.mimetype || 'application/octet-stream', stored.file_data_b64, stored.storage_provider, reason, req.user.id, id]
       );
 
       return res.json({ ok: true, directApproved: true, message: 'Document replaced successfully.', document: update.rows[0] });
@@ -277,8 +378,9 @@ router.post('/:id/replace', requireAuth, upload.single('file'), async (req, res)
        SET approval_status = 'pending_approval', pending_filepath = $1,
            pending_filename = $2, pending_original_name = $3,
            edit_reason = $4, edit_requested_by = $5
-       WHERE id = $6 RETURNING *`,
-      [req.file.path, req.file.filename, req.file.originalname, reason, req.user.id, id]
+       WHERE id = $6
+       RETURNING id, load_id, carrier_id, category, original_name, pending_original_name, approval_status`,
+      [stored.filepath, storedName, req.file.originalname, reason, req.user.id, id]
     );
 
     // Create Admin Notifications

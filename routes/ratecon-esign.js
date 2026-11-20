@@ -6,6 +6,7 @@ const { optionalAuth, requireAuth } = require('../middleware/auth');
 const { createNotification } = require('../utils/notifications');
 const { sendPushToUsers } = require('./mobile-push');
 const { auditLog, getClientIp } = require('../utils/audit');
+const { userCanAccessLoad } = require('../utils/load-lifecycle');
 
 const router = express.Router();
 
@@ -65,17 +66,20 @@ router.get('/:id/ratecon/preview', requireAuth, async (req, res) => {
   try {
     const load = await getLoadContractData(loadId);
     if (!load) return res.status(404).json({ error: 'Load not found.' });
+    if (!(await userCanAccessLoad(req, load))) {
+      return res.status(403).json({ error: 'You do not have access to this load Rate Confirmation.' });
+    }
 
     const contract = {
       load_id: load.id,
       load_number: load.load_number || `SW-${load.id}`,
       date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
       broker: {
-        name: load.broker_company || 'LoadNexus Certified Brokerage LLC',
-        mc: load.broker_mc || 'MC-894102',
-        bond: load.broker_bond || 'ACTIVE ($75,000 BMC-84)',
-        address: '19266 Coastal Hwy, Rehoboth Beach, DE 19971',
-        phone: '(800) 555-0199'
+        name: load.broker_company || load.broker_name || 'Broker (On File)',
+        mc: load.broker_mc || 'MC Not Listed',
+        bond: load.broker_bond || 'Verify via FMCSA',
+        address: 'USA Freight Brokerage Partner',
+        phone: load.broker_contact || '+1 (917) 737-0021'
       },
       carrier: {
         name: load.carrier_company || load.carrier_name || 'Carrier Partner',
@@ -139,6 +143,9 @@ router.get('/:id/ratecon/pdf', requireAuth, async (req, res) => {
   try {
     const load = await getLoadContractData(loadId);
     if (!load) return res.status(404).json({ error: 'Load not found.' });
+    if (!(await userCanAccessLoad(req, load))) {
+      return res.status(403).json({ error: 'You do not have access to download this Rate Confirmation.' });
+    }
 
     const doc = new PDFDocument({ margin: 36, size: 'LETTER' });
 
@@ -298,6 +305,9 @@ router.post('/:id/ratecon/sign', requireAuth, async (req, res) => {
   try {
     const load = await getLoadContractData(loadId);
     if (!load) return res.status(404).json({ error: 'Load not found.' });
+    if (!(await userCanAccessLoad(req, load))) {
+      return res.status(403).json({ error: 'You are not authorized to sign this load Rate Confirmation.' });
+    }
 
     // Generate SHA-256 cryptographic audit hash
     const signatureHash = crypto

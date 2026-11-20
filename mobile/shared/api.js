@@ -98,7 +98,7 @@ class MobileApiClient {
   async login(email, password) {
     const res = await this.request('/api/login', {
       method: 'POST',
-      body: { email, password }
+      body: { email, password, device_type: 'mobile' }
     });
 
     if (res.ok && res.data && res.data.token) {
@@ -106,6 +106,36 @@ class MobileApiClient {
       this.setUser(res.data.user);
     }
     return res;
+  }
+
+  async sendSignupOtp(payload) {
+    return this.request('/api/signup/send-otp', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  async verifySignupOtp(email, otp, planKey = 'solo_weekly', trialDays = 7) {
+    const res = await this.request('/api/signup/verify-otp', {
+      method: 'POST',
+      body: { email, otp, planKey, trialDays, device_type: 'mobile' }
+    });
+    if (res.ok && res.data && res.data.token) {
+      this.setAuthToken(res.data.token);
+      this.setUser(res.data.user);
+    }
+    return res;
+  }
+
+  async startSubscriptionCheckout(payload) {
+    return this.request('/api/billing/checkout', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  async getBillingPlans() {
+    return this.request('/api/billing/plans', { method: 'GET' });
   }
 
   async getMe() {
@@ -965,6 +995,70 @@ class MobileApiClient {
 
   async getBorderWaitTimes() {
     return this.request('/api/cross-border/ports/wait-times', { method: 'GET' });
+  }
+
+  // --- Unified USA Trucking OS Endpoints (Net Profit, 1-Tap Approval, Cloud POD, Factoring Packet, Settlements, Reloads) ---
+  async analyzeLoadProfit(params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/api/loads/profit-analyze?${q}`, { method: 'GET' });
+  }
+
+  async submitCarrierLoadDecision(loadId, decision, notes = '') {
+    return this.request(`/api/loads/${loadId}/carrier-decision`, {
+      method: 'POST',
+      body: { decision, notes }
+    });
+  }
+
+  async getAiReloadSuggestions(loadId) {
+    return this.request(`/api/dispatch-desk/reload-suggestions/${loadId}`, { method: 'GET' });
+  }
+
+  async getLoadboardUpdates(sinceIso = null) {
+    const q = sinceIso ? `?since=${encodeURIComponent(sinceIso)}` : '';
+    return this.request(`/api/loadboard/updates${q}`, { method: 'GET' });
+  }
+
+  async uploadDocumentBase64({ loadId, carrierId, category = 'pod', originalName = 'scan.jpg', mimeType = 'image/jpeg', base64Data }) {
+    return this.request('/api/documents/upload-base64', {
+      method: 'POST',
+      body: { loadId, carrierId, category, originalName, mimeType, base64Data }
+    });
+  }
+
+  async sendFactoringPacket(payload) {
+    return this.request('/api/settlements/factoring-packet', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  getFactoringPacketPdfUrl(loadId) {
+    return `${this.getBaseUrl()}/api/settlements/factoring-packet/${loadId}/pdf`;
+  }
+
+  async getDriverSettlements() {
+    return this.request('/api/settlements', { method: 'GET' });
+  }
+
+  async generateDriverSettlement(payload) {
+    return this.request('/api/settlements/generate', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  getDriverSettlementPdfUrl(settlementId) {
+    return `${this.getBaseUrl()}/api/settlements/${settlementId}/pdf`;
+  }
+
+  async getTruckPnL(days = 30) {
+    return this.request(`/api/settlements/truck-pnl?days=${days}`, { method: 'GET' });
+  }
+
+  getLoadHistoryPdfUrl(period = '30_days', loadNumber = null) {
+    const q = new URLSearchParams({ period, ...(loadNumber ? { loadNumber } : {}) }).toString();
+    return `${this.getBaseUrl()}/api/loads/history-report/pdf?${q}`;
   }
 }
 

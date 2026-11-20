@@ -34,8 +34,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
     const user = { id: rows[0].id, name: rows[0].name, email: rows[0].email, role: rows[0].role, partner_base_id: rows[0].partner_base_id || null };
-    res.cookie('nlw_token', signLimoToken(user), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 86400 * 1000 });
-    res.json({ ok: true, user });
+    const token = signLimoToken(user);
+    res.cookie('nlw_token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 86400 * 1000 });
+    res.json({ ok: true, token, user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -62,8 +63,9 @@ router.post('/signup', async (req, res) => {
        VALUES ($1,$2,$3,'customer',$4,$5,$6,$7) RETURNING id, name, email, role`,
       [name, email, hash, phone || null, company || null, designation || null, Boolean(body.newsletter)]
     );
-    res.cookie('nlw_token', signLimoToken(rows[0]), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 86400 * 1000 });
-    res.json({ ok: true, user: rows[0] });
+    const token = signLimoToken(rows[0]);
+    res.cookie('nlw_token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 86400 * 1000 });
+    res.json({ ok: true, token, user: rows[0] });
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'Email already registered.' });
     res.status(500).json({ error: err.message });

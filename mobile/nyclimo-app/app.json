@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "NYC Limo Wish",
+    "slug": "nyclimo-app",
+    "owner": "shippingwish",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nyclimowish.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "NYC Limo Wish uses your location to dispatch nearby TLC-licensed chauffeurs and track live ride status."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0C"
+      },
+      "package": "com.nyclimowish.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
+  }
+}

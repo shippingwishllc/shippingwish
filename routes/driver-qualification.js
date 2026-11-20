@@ -2,7 +2,7 @@ const express = require('express');
 const PDFDocument = require('pdfkit');
 const crypto = require('crypto');
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { auditLog, getClientIp } = require('../utils/audit');
 
 const router = express.Router();
@@ -238,7 +238,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // POST /api/dq/upsert — Create or update driver qualification file
-router.post('/upsert', requireAuth, async (req, res) => {
+router.post('/upsert', requireAuth, requireRole('dispatcher', 'admin', 'super_admin', 'carrier', 'carrier_admin'), async (req, res) => {
   await ensureTables();
   const {
     id = null,

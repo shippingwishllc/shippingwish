@@ -35,7 +35,7 @@ async function verifyLoadAccess(user, loadId) {
   if (['admin', 'super_admin'].includes(user.role)) return true;
 
   const res = await pool.query(
-    `SELECT id, carrier_id, dispatcher_id, driver_id, broker_id, load_number FROM loads WHERE id = $1`,
+    `SELECT id, carrier_id, dispatcher_id, driver_id, broker_id, broker_user_id, load_number FROM loads WHERE id = $1`,
     [loadId]
   );
   if (res.rows.length === 0) return null;
@@ -43,7 +43,7 @@ async function verifyLoadAccess(user, loadId) {
 
   if (['carrier', 'carrier_admin'].includes(user.role) && load.carrier_id === user.id) return load;
   if (user.role === 'dispatcher' && (load.dispatcher_id === user.id || !load.dispatcher_id)) return load;
-  if (user.role === 'broker' && load.broker_id === user.id) return load;
+  if (user.role === 'broker' && (load.broker_user_id === user.id || load.broker_id === user.id)) return load;
 
   if (user.role === 'driver') {
     const dr = await pool.query(`SELECT id FROM drivers WHERE user_id = $1`, [user.id]);

@@ -8,6 +8,8 @@ const { parseFreightWithAI, saveLoadsToDatabase, normalizeEquipmentAndWeight } =
 const { getFreightDeadhead, ADJACENT_STATES } = require('../utils/geo');
 const { extractPhoneWithExt } = require('../utils/dat-load-parser');
 const { getKnownBroker } = require('../utils/broker-vet');
+const { analyzeLoadProfit, formatPostedAge } = require('../utils/profit-engine');
+const { ensureUnifiedSchema, awardLoadToCarrier } = require('../utils/load-lifecycle');
 
 const router = express.Router();
 
@@ -582,12 +584,14 @@ router.get('/search', optionalAuth, async (req, res) => {
 
     const dimLimits = resolveEquipmentDimensionLimits(equipmentType, maxLength, maxWeight);
 
-    // Build parameterized dynamic SQL query for loads
+    // Strictly query ONLY public marketplace loads (NEVER leak private booked/dispatched/delivered/paid TMS loads!)
+    await ensureUnifiedSchema();
     const sqlConditions = [
-      `status NOT IN ('cancelled', 'expired')`,
-      `(status != 'covered' OR updated_at > NOW() - interval '30 seconds')`,
-      `load_number NOT LIKE 'SW-AI-%'`,
-      `COALESCE(broker_name, '') NOT ILIKE '%LoadNexus Direct%'`
+      `l.deleted_at IS NULL`,
+      `(l.status IN ('new', 'open') OR (l.status = 'covered' AND l.updated_at > NOW() - interval '30 seconds'))`,
+      `(l.is_public_board = TRUE OR (l.carrier_id IS NULL AND COALESCE(l.source_type, '') IN ('broker', 'api', 'dat', 'ai_ingest', 'partner_api', 'loadboard')))`,
+      `l.load_number NOT LIKE 'SW-AI-%'`,
+      `COALESCE(l.broker_name, '') NOT ILIKE '%LoadNexus Direct%'`
     ];
     const sqlParams = [];
 
@@ -664,12 +668,18 @@ router.get('/search', optionalAuth, async (req, res) => {
     try {
       const whereClause = sqlConditions.length ? `WHERE ${sqlConditions.join(' AND ')}` : '';
       const dbRes = await pool.query(
-        `SELECT id, load_number, status, rate, pickup_location, delivery_location,
-                pickup_date, delivery_date, equipment_type, weight, commodity,
-                notes, broker_name, broker_mc, broker_contact, miles, rpm, created_at, updated_at
-         FROM loads
+        `SELECT l.id, l.load_number, l.status, l.rate, l.pickup_location, l.delivery_location,
+                l.pickup_date, l.delivery_date, l.equipment_type, l.weight, l.commodity,
+                l.notes, l.broker_name, l.broker_mc, l.broker_contact, l.miles, l.rpm,
+                l.created_at, l.updated_at, l.source_type,
+                b.credit_rating AS db_credit_rating,
+                b.days_to_pay AS db_days_to_pay,
+                b.bond_status AS db_bond_status,
+                b.fraud_risk AS db_fraud_risk
+         FROM loads l
+         LEFT JOIN brokers b ON (b.id = l.broker_id OR (l.broker_mc IS NOT NULL AND l.broker_mc != '' AND b.mc_number = l.broker_mc))
          ${whereClause}
-         ORDER BY created_at DESC
+         ORDER BY l.created_at DESC
          LIMIT 250`,
         sqlParams
       );
@@ -718,9 +728,23 @@ router.get('/search', optionalAuth, async (req, res) => {
 
           const rawWeightNum = parseInt(String(r.weight || '').replace(/\D/g, ''), 10) || 0;
           const lengthFt = extractLoadLengthFt(r.equipment_type, r.notes, rawWeightNum);
+          const profit = analyzeLoadProfit({
+            rate,
+            loadedMiles: miles,
+            deadheadMiles: loadDho,
+            origin: r.pickup_location,
+            destination: r.delivery_location,
+            equipmentType: r.equipment_type || "53' Dry Van"
+          });
+          const hasVerifiedBrokerRecord = Boolean(r.db_credit_rating || known);
+          const brokerCredit = r.db_credit_rating || (known ? 'Verified Partner' : 'Unverified (Check MC)');
+          const brokerDtp = r.db_days_to_pay ? `${r.db_days_to_pay} days` : (known && known.daysToPay ? `${known.daysToPay} days` : 'Not Reported');
+          const brokerBond = r.db_bond_status || (known ? 'FMCSA Listed' : 'Verify via FMCSA');
+          const brokerFraudRisk = r.db_fraud_risk || (hasVerifiedBrokerRecord ? 'LOW' : 'UNVERIFIED');
 
           return {
             id: r.load_number || `SW-${r.id}`,
+            db_id: r.id,
             origin: r.pickup_location,
             destination: r.delivery_location,
             pickup_location: r.pickup_location,
@@ -728,6 +752,12 @@ router.get('/search', optionalAuth, async (req, res) => {
             miles,
             rate,
             rpm: String(rpm),
+            effective_rpm: String(profit.effective_rpm),
+            net_profit_est: profit.true_net_profit,
+            fuel_cost_est: profit.fuel_cost,
+            profit_verdict: profit.verdict,
+            profit_verdict_label: profit.verdict_label,
+            profit_analysis: profit,
             equipment_type: r.equipment_type || "53' Dry Van",
             length_ft: lengthFt,
             weight_num: rawWeightNum || 42000,
@@ -741,13 +771,14 @@ router.get('/search', optionalAuth, async (req, res) => {
             broker_mc: bMc,
             broker_phone: bPhone,
             broker_email: bEmail,
-            credit_score: 'A+ (98)',
-            days_to_pay: '18 days',
-            bond_status: 'ACTIVE ($75,000 BMC-84)',
-            fraud_risk: 'LOW (Verified)',
-            verified_broker: true,
-            is_live_broker_post: true,
-            posted_age: 'Just now',
+            credit_score: brokerCredit,
+            days_to_pay: brokerDtp,
+            bond_status: brokerBond,
+            fraud_risk: brokerFraudRisk,
+            verified_broker: hasVerifiedBrokerRecord,
+            is_live_broker_post: r.source_type === 'broker' || r.source_type === 'partner_api',
+            posted_age: formatPostedAge(r.created_at),
+            created_at: r.created_at,
             status: r.status || 'new',
             is_covered: isCovered,
             covered_at: isCovered ? new Date(r.updated_at).getTime() : null
@@ -758,7 +789,7 @@ router.get('/search', optionalAuth, async (req, res) => {
       console.warn('Live DB loads fetch error in /search:', e.message);
     }
 
-    // Only genuine live loads from database (e.g. synced from TAL One / verified carriers)
+    // Only genuine live loads from database (e.g. synced from TAL One / verified brokers)
     let combinedRawLoads = [...liveDbLoads];
 
     // Filter by calculated DHO deadhead radius if origin is provided
@@ -779,50 +810,15 @@ router.get('/search', optionalAuth, async (req, res) => {
       });
     }
 
-    // Apply Hotshot / Max Length (ft) / Max Weight (lbs) filtering & Open-Deck LTL adaptation
+    // Strict physical trailer length (ft) & weight (lbs) filtering — NEVER falsify broker load weights!
     if (dimLimits.isHotshot || dimLimits.maxLengthFt > 0 || dimLimits.maxWeightLbs > 0) {
       const maxFt = dimLimits.maxLengthFt || 53;
       const maxWt = dimLimits.maxWeightLbs || 48000;
-      const strictMatches = combinedRawLoads.filter(l => {
-        const isExplicitHotshot = /hot\s*shot/i.test(l.equipment_type || '');
+      combinedRawLoads = combinedRawLoads.filter(l => {
         const wOk = (l.weight_num || 0) <= maxWt;
         const ftOk = (l.length_ft || 53) <= maxFt;
-        return isExplicitHotshot ? (wOk || maxWt >= 15000) : (wOk && ftOk);
+        return wOk && ftOk;
       });
-
-      if (strictMatches.length > 0) {
-        combinedRawLoads = strictMatches.map(l => {
-          if (dimLimits.isHotshot) {
-            const adjFt = Math.min(l.length_ft || maxFt, maxFt);
-            const adjWt = Math.min(l.weight_num || 12500, maxWt);
-            return {
-              ...l,
-              length_ft: adjFt,
-              weight_num: adjWt,
-              weight: `${adjWt.toLocaleString()} lbs`,
-              equipment_type: /hot\s*shot/i.test(l.equipment_type) ? l.equipment_type : `${adjFt}ft Hotshot / ${l.equipment_type} LTL`
-            };
-          }
-          return l;
-        });
-      } else if (dimLimits.isHotshot && combinedRawLoads.length > 0) {
-        // When open-deck (Flatbed/Step Deck) broker loads exist on the corridor with default full weights,
-        // expose them as Hotshot-eligible Open-Deck Partial/LTL loads capped to the Hotshot's exact feet & payload
-        combinedRawLoads = combinedRawLoads.map((l, idx) => {
-          const adjFt = maxFt <= 30 ? (idx % 2 === 0 ? 30 : 28) : (maxFt <= 35 ? 35 : 40);
-          const adjWt = maxFt <= 30 ? (9800 + (idx % 5) * 950) : (12500 + (idx % 6) * 1400);
-          const cappedWt = Math.min(adjWt, maxWt);
-          return {
-            ...l,
-            length_ft: adjFt,
-            weight_num: cappedWt,
-            weight: `${cappedWt.toLocaleString()} lbs`,
-            equipment_type: `${adjFt}ft Hotshot (${l.equipment_type} Partial)`
-          };
-        });
-      } else {
-        combinedRawLoads = strictMatches;
-      }
     }
 
     if (minRpm) {
@@ -953,12 +949,14 @@ router.post('/ai-match', requireAuth, async (req, res) => {
     const minRpm = targetRpm || '2.85';
     const dimLimits = resolveEquipmentDimensionLimits(eq, maxLength, maxWeight);
 
-    // Build parameterized dynamic SQL query for loads
+    // Strictly query ONLY public marketplace loads (NEVER leak private booked/dispatched/delivered/paid TMS loads!)
+    await ensureUnifiedSchema();
     const sqlConditions = [
-      `status NOT IN ('cancelled', 'expired')`,
-      `(status != 'covered' OR updated_at > NOW() - interval '30 seconds')`,
-      `load_number NOT LIKE 'SW-AI-%'`,
-      `COALESCE(broker_name, '') NOT ILIKE '%LoadNexus Direct%'`
+      `l.deleted_at IS NULL`,
+      `(l.status IN ('new', 'open') OR (l.status = 'covered' AND l.updated_at > NOW() - interval '30 seconds'))`,
+      `(l.is_public_board = TRUE OR (l.carrier_id IS NULL AND COALESCE(l.source_type, '') IN ('broker', 'api', 'dat', 'ai_ingest', 'partner_api', 'loadboard')))`,
+      `l.load_number NOT LIKE 'SW-AI-%'`,
+      `COALESCE(l.broker_name, '') NOT ILIKE '%LoadNexus Direct%'`
     ];
     const sqlParams = [];
 
@@ -1024,11 +1022,11 @@ router.post('/ai-match', requireAuth, async (req, res) => {
 
     const whereClause = sqlConditions.length ? `WHERE ${sqlConditions.join(' AND ')}` : '';
     const { rows } = await pool.query(
-      `SELECT id, load_number, pickup_location, delivery_location, miles, rate, rpm,
-              equipment_type, weight, commodity, notes, pickup_date, broker_name, broker_mc, broker_contact
-       FROM loads
+      `SELECT l.id, l.load_number, l.pickup_location, l.delivery_location, l.miles, l.rate, l.rpm,
+              l.equipment_type, l.weight, l.commodity, l.notes, l.pickup_date, l.broker_name, l.broker_mc, l.broker_contact
+       FROM loads l
        ${whereClause}
-       ORDER BY rpm DESC
+       ORDER BY l.rpm DESC
        LIMIT 25`,
       sqlParams
     );
@@ -2044,28 +2042,19 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
     // Shield 3b: Equipment Physics Sanity Check
     const norm = normalizeEquipmentAndWeight(equipment, weight);
 
-    await pool.query(`
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS broker_name TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS broker_mc TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS broker_contact TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS miles NUMERIC(8,2) DEFAULT 0;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS rpm NUMERIC(6,2) DEFAULT 0;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS source_type TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS source_id INTEGER;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS external_id TEXT;
-    `).catch(() => {});
+    await ensureUnifiedSchema();
 
     const loadNumber = 'SW-' + Math.floor(100000 + Math.random() * 900000);
 
     const ins = await pool.query(
       `INSERT INTO loads (
-        load_number, status, rate, pickup_location, delivery_location,
+        load_number, status, is_public_board, broker_user_id, rate, pickup_location, delivery_location,
         pickup_date, delivery_date, equipment_type, weight, commodity,
         notes, broker_name, broker_mc, broker_contact, miles, rpm, source_type, created_at, updated_at
-      ) VALUES ($1, 'new', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'broker', NOW(), NOW())
+      ) VALUES ($1, 'new', TRUE, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'broker', NOW(), NOW())
       RETURNING *`,
       [
-        loadNumber, numRate, origin, destination,
+        loadNumber, req.user.id, numRate, origin, destination,
         pickupDate || new Date(), deliveryDate || null,
         norm.equipment_type, norm.weight, commodity || 'General Freight',
         `Posted by Verified Broker: ${bName} (${mc}). Phone: ${phone}. Email: ${email}. Anti-Double Brokering Guard: VERIFIED. ${notes || ''}`,
@@ -2109,34 +2098,28 @@ router.post('/broker/post-load', optionalAuth, async (req, res) => {
   }
 });
 
-// GET /api/loadboard/broker/my-loads — Broker's active posted loads
+// GET /api/loadboard/broker/my-loads — Broker's active posted loads (strictly scoped to owner)
 router.get('/broker/my-loads', requireAuth, async (req, res) => {
   try {
-    await pool.query(`
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_name TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_mc TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS driver_name TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS driver_phone TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS truck_number TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS trailer_number TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS tracking_notes TEXT;
-    `).catch(() => {});
+    await ensureUnifiedSchema();
 
-    const userEmail = req.user ? req.user.email : null;
-    const mc = req.user ? req.user.mc_number : null;
+    const userId = req.user.id;
+    const userEmail = req.user.email || '';
+    const mc = req.user.mc_number || '';
+    const isStaff = ['admin', 'super_admin', 'dispatcher'].includes(req.user.role);
     let query = `
-      SELECT id, load_number, status, rate, pickup_location, delivery_location,
+      SELECT id, load_number, status, is_public_board, broker_user_id, rate, pickup_location, delivery_location,
              pickup_date, delivery_date, equipment_type, weight, commodity,
              broker_name, broker_mc, broker_contact, miles, rpm,
-             carrier_name, carrier_mc, driver_name, driver_phone, truck_number, trailer_number, tracking_notes,
-             created_at
+             carrier_id, carrier_name, carrier_mc, driver_name, driver_phone, truck_number, trailer_number,
+             broker_tracking_token, tracking_notes, created_at, updated_at
       FROM loads
-      WHERE status != 'cancelled'
+      WHERE deleted_at IS NULL AND status != 'cancelled'
     `;
     const params = [];
-    if (userEmail || mc) {
-      query += ` AND (broker_contact ILIKE $1 OR notes ILIKE $1 OR broker_mc = $2)`;
-      params.push(`%${userEmail}%`, mc || '');
+    if (!isStaff) {
+      params.push(userId, `%${userEmail}%`, mc);
+      query += ` AND (broker_user_id = $1 OR (broker_user_id IS NULL AND (broker_contact ILIKE $2 OR (COALESCE($3, '') != '' AND broker_mc = $3))))`;
     }
     query += ` ORDER BY created_at DESC LIMIT 50`;
     const r = await pool.query(query, params);
@@ -2231,8 +2214,43 @@ router.get('/stream/stats', (req, res) => {
     ok: true,
     status: 'online',
     active_listeners: sseClients.size,
+    serverless_poll_endpoint: '/api/loadboard/updates',
     timestamp: Date.now()
   });
+});
+
+// GET /api/loadboard/updates — Serverless-safe real-time incremental load feed (works across all Vercel instances!)
+router.get('/updates', optionalAuth, async (req, res) => {
+  try {
+    await ensureUnifiedSchema();
+    const sinceRaw = req.query.since;
+    const sinceDate = sinceRaw && !isNaN(Date.parse(sinceRaw))
+      ? new Date(sinceRaw)
+      : new Date(Date.now() - 60 * 1000);
+    const { rows } = await pool.query(
+      `SELECT id, load_number, status, rate, pickup_location, delivery_location,
+              pickup_date, equipment_type, weight, miles, rpm, broker_name, broker_mc, created_at, updated_at
+       FROM loads
+       WHERE deleted_at IS NULL
+         AND (is_public_board = TRUE OR (carrier_id IS NULL AND COALESCE(source_type, '') IN ('broker', 'api', 'dat', 'ai_ingest', 'partner_api')))
+         AND updated_at > $1
+       ORDER BY updated_at DESC
+       LIMIT 50`,
+      [sinceDate]
+    );
+    res.json({
+      ok: true,
+      server_time: new Date().toISOString(),
+      count: rows.length,
+      updates: rows.map((r) => ({
+        ...r,
+        posted_age: formatPostedAge(r.created_at),
+        is_covered: r.status === 'covered' || r.status === 'booked'
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch live load updates.' });
+  }
 });
 
 async function ensureCarrierLaneAlertsTable() {
@@ -2712,15 +2730,30 @@ router.get('/ratecon-pdf', requireAuth, (req, res) => {
   router.handle({ ...req, url: `/loads/${loadId}/ratecon-pdf` }, res);
 });
 
-// POST /api/loadboard/loads/:id/cover — Mark a load as COVERED (Auto-fades out of active exchange)
+// POST /api/loadboard/loads/:id/cover — Mark a load as COVERED (Broker owner or Staff only!)
 router.post('/loads/:id/cover', requireAuth, requireRole('broker', 'admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
   const loadId = req.params.id;
   try {
-    // If it exists in PostgreSQL database, update its status
-    await pool.query(
-      `UPDATE loads SET status = 'covered', updated_at = NOW() WHERE load_number = $1 OR id::text = $1`,
+    await ensureUnifiedSchema();
+    const check = await pool.query(
+      `SELECT id, load_number, broker_user_id, broker_contact, broker_mc FROM loads WHERE load_number = $1 OR id::text = $1 LIMIT 1`,
       [loadId]
-    ).catch(() => {});
+    );
+    if (!check.rows.length) return res.status(404).json({ error: 'Load not found.' });
+    const existing = check.rows[0];
+
+    if (req.user.role === 'broker') {
+      const ownsById = existing.broker_user_id && Number(existing.broker_user_id) === Number(req.user.id);
+      const ownsByEmail = !existing.broker_user_id && req.user.email && String(existing.broker_contact || '').toLowerCase().includes(req.user.email.toLowerCase());
+      if (!ownsById && !ownsByEmail) {
+        return res.status(403).json({ error: 'You can only mark your own posted loads as covered.' });
+      }
+    }
+
+    await pool.query(
+      `UPDATE loads SET status = 'covered', is_public_board = FALSE, updated_at = NOW() WHERE id = $1`,
+      [existing.id]
+    );
 
     try {
       broadcastLoadboardEvent('load_covered', { id: loadId, status: 'covered', covered_at: Date.now() });
@@ -2733,7 +2766,7 @@ router.post('/loads/:id/cover', requireAuth, requireRole('broker', 'admin', 'sup
       id: loadId,
       status: 'covered',
       is_covered: true,
-      message: 'Load successfully marked as COVERED. Auto-purging from live stream in 10 seconds.',
+      message: 'Load successfully marked as COVERED and removed from active public marketplace.',
       auto_remove_in_ms: 10000
     });
   } catch (err) {
@@ -2742,66 +2775,51 @@ router.post('/loads/:id/cover', requireAuth, requireRole('broker', 'admin', 'sup
   }
 });
 
-// POST /api/loadboard/loads/:id/assign-carrier — Assign Carrier, Driver & Equipment to Load
+// POST /api/loadboard/loads/:id/assign-carrier — Assign Carrier, Driver & Equipment & Bridge into Shipping Wish TMS!
 router.post('/loads/:id/assign-carrier', requireAuth, requireRole('broker', 'admin', 'super_admin', 'dispatcher', 'sales_rep'), async (req, res) => {
   const loadId = req.params.id;
   const {
-    carrier_name, carrier_mc, driver_name, driver_phone,
-    truck_number, trailer_number, tracking_notes
+    carrier_id, carrier_name, carrier_mc, driver_id, driver_name, driver_phone,
+    truck_id, truck_number, trailer_number, final_rate, tracking_notes
   } = req.body;
 
   try {
-    await pool.query(`
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_name TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS carrier_mc TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS driver_name TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS driver_phone TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS truck_number TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS trailer_number TEXT;
-      ALTER TABLE loads ADD COLUMN IF NOT EXISTS tracking_notes TEXT;
-    `).catch(() => {});
-
-    const updateRes = await pool.query(
-      `UPDATE loads
-       SET status = 'covered',
-           carrier_name = COALESCE($1, carrier_name),
-           carrier_mc = COALESCE($2, carrier_mc),
-           driver_name = COALESCE($3, driver_name),
-           driver_phone = COALESCE($4, driver_phone),
-           truck_number = COALESCE($5, truck_number),
-           trailer_number = COALESCE($6, trailer_number),
-           tracking_notes = COALESCE($7, tracking_notes),
-           updated_at = NOW()
-       WHERE load_number = $8 OR id::text = $8
-       RETURNING *`,
-      [
-        carrier_name || null,
-        carrier_mc || null,
-        driver_name || null,
-        driver_phone || null,
-        truck_number || null,
-        trailer_number || null,
-        tracking_notes || null,
-        loadId
-      ]
+    await ensureUnifiedSchema();
+    const check = await pool.query(
+      `SELECT id, load_number, broker_user_id, broker_contact FROM loads WHERE load_number = $1 OR id::text = $1 LIMIT 1`,
+      [loadId]
     );
+    if (!check.rows.length) return res.status(404).json({ error: 'Load not found.' });
+    const existing = check.rows[0];
 
-    const updatedLoad = updateRes.rows[0] || {
-      id: loadId,
-      carrier_name,
-      carrier_mc,
-      driver_name,
-      driver_phone,
-      truck_number,
-      trailer_number,
-      tracking_notes,
-      status: 'covered'
-    };
+    if (req.user.role === 'broker') {
+      const ownsById = existing.broker_user_id && Number(existing.broker_user_id) === Number(req.user.id);
+      const ownsByEmail = !existing.broker_user_id && req.user.email && String(existing.broker_contact || '').toLowerCase().includes(req.user.email.toLowerCase());
+      if (!ownsById && !ownsByEmail) {
+        return res.status(403).json({ error: 'You can only assign carriers to your own posted loads.' });
+      }
+    }
+
+    const awarded = await awardLoadToCarrier({
+      loadId: existing.id,
+      carrierId: carrier_id || null,
+      carrierName: carrier_name || null,
+      carrierMc: carrier_mc || null,
+      driverId: driver_id || null,
+      driverName: driver_name || null,
+      driverPhone: driver_phone || null,
+      truckId: truck_id || null,
+      truckNumber: truck_number || null,
+      trailerNumber: trailer_number || null,
+      finalRate: final_rate || null,
+      awardedByUserId: req.user.id,
+      notes: tracking_notes || ''
+    });
 
     try {
       broadcastLoadboardEvent('load_covered', {
         id: loadId,
-        status: 'covered',
+        status: 'booked',
         carrier_name,
         carrier_mc,
         driver_name,
@@ -2814,8 +2832,10 @@ router.post('/loads/:id/assign-carrier', requireAuth, requireRole('broker', 'adm
 
     res.json({
       ok: true,
-      load: updatedLoad,
-      message: `Carrier ${carrier_name || 'Partner'} successfully assigned to Load #${loadId}. Capacity locked and tracking active.`
+      load: awarded.load,
+      profit: awarded.profit,
+      tracking_url: awarded.tracking_url,
+      message: `Carrier ${carrier_name || 'Partner'} assigned to Load #${awarded.load.load_number}. Synced into Shipping Wish TMS & live tracking active.`
     });
   } catch (err) {
     console.error('Assign carrier error:', err);

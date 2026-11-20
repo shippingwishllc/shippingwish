@@ -2,7 +2,7 @@ const express = require('express');
 const PDFDocument = require('pdfkit');
 const crypto = require('crypto');
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { auditLog, getClientIp } = require('../utils/audit');
 
 const router = express.Router();
@@ -261,7 +261,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 // POST /api/dvir/:id/mechanic-signoff — Mechanic certifies defects corrected
-router.post('/:id/mechanic-signoff', requireAuth, async (req, res) => {
+router.post('/:id/mechanic-signoff', requireAuth, requireRole('dispatcher', 'admin', 'super_admin', 'carrier', 'carrier_admin'), async (req, res) => {
   await ensureTables();
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) return res.status(400).json({ error: 'Invalid inspection ID.' });

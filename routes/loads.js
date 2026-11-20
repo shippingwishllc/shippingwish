@@ -7,9 +7,9 @@ const { createNotification } = require('../utils/notifications');
 const router = express.Router();
 
 const STATUS_FLOW = [
-  'new', 'booked', 'dispatched', 'at_pickup', 'loaded',
-  'in_transit', 'at_delivery', 'delivered', 'pod_uploaded', 'invoiced', 'paid',
-  'cancellation_requested', 'cancelled'
+  'open', 'new', 'pending_carrier_approval', 'booked', 'ratecon_signed', 'dispatched',
+  'at_pickup', 'loaded', 'in_transit', 'at_delivery', 'delivered', 'pod_uploaded',
+  'invoiced', 'paid', 'covered', 'cancellation_requested', 'cancelled'
 ];
 
 async function denyIfNoLoadAccess(req, res, load) {
@@ -223,8 +223,9 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // Load detail — includes status history, mileage, accessorials, and documents
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, async (req, res, next) => {
   const { id } = req.params;
+  if (!/^\d+$/.test(String(id))) return next();
   try {
     const loadResult = await pool.query(
       `SELECT l.*,
@@ -234,7 +235,7 @@ router.get('/:id', requireAuth, async (req, res) => {
               t.truck_number, tr.trailer_number,
               b.company_name AS broker_table_name, b.mc_number AS broker_table_mc
        FROM loads l
-       JOIN users u ON u.id = l.carrier_id
+       LEFT JOIN users u ON u.id = l.carrier_id
        LEFT JOIN users d ON d.id = l.dispatcher_id
        LEFT JOIN drivers dr ON dr.id = l.driver_id
        LEFT JOIN trucks t ON t.id = l.truck_id
@@ -573,6 +574,249 @@ router.delete('/:id', requireAuth, requireRole('admin', 'super_admin'), async (r
   } catch (err) {
     console.error('Trash load error:', err);
     res.status(500).json({ error: 'Could not move load to trash.' });
+  }
+});
+
+// GET /api/loads/profit-analyze — True USA Trucking Net-Profit Calculator
+router.get('/profit-analyze', requireAuth, (req, res) => {
+  const { analyzeLoadProfit } = require('../utils/profit-engine');
+  const result = analyzeLoadProfit({
+    rate: Number(req.query.rate || 0),
+    loadedMiles: Number(req.query.miles || req.query.loadedMiles || 500),
+    deadheadMiles: Number(req.query.deadhead || req.query.deadheadMiles || 0),
+    origin: req.query.origin || '',
+    destination: req.query.destination || '',
+    equipmentType: req.query.equipment || '53ft Dry Van',
+    mpg: req.query.mpg ? Number(req.query.mpg) : null,
+    dieselPrice: req.query.dieselPrice ? Number(req.query.dieselPrice) : null,
+    factoringPercent: req.query.factoringPercent !== undefined ? Number(req.query.factoringPercent) : 2.0,
+    dispatchPercent: req.query.dispatchPercent !== undefined ? Number(req.query.dispatchPercent) : 0
+  });
+  res.json({ ok: true, analysis: result });
+});
+
+// POST /api/loads/:id/carrier-decision — 1-Tap Carrier Load Approval ("Zero Forced Dispatch")
+router.post('/:id/carrier-decision', requireAuth, async (req, res) => {
+  const { ensureUnifiedSchema, awardLoadToCarrier } = require('../utils/load-lifecycle');
+  await ensureUnifiedSchema();
+
+  const loadId = parseInt(req.params.id, 10);
+  const decision = String(req.body.decision || '').toLowerCase(); // 'approve' | 'decline'
+  const notes = String(req.body.notes || '').trim();
+  if (isNaN(loadId) || !['approve', 'decline'].includes(decision)) {
+    return res.status(400).json({ error: 'Valid load ID and decision (approve or decline) are required.' });
+  }
+
+  try {
+    const loadRes = await pool.query('SELECT * FROM loads WHERE id = $1 AND deleted_at IS NULL', [loadId]);
+    if (!loadRes.rows.length) return res.status(404).json({ error: 'Load not found.' });
+    const load = loadRes.rows[0];
+
+    const isStaff = ['admin', 'super_admin', 'dispatcher'].includes(req.user.role);
+    if (!isStaff && Number(load.carrier_id) !== Number(req.user.id)) {
+      return res.status(403).json({ error: 'You can only approve or decline loads offered to your carrier account.' });
+    }
+
+    if (decision === 'approve') {
+      const awarded = await awardLoadToCarrier({
+        loadId: load.id,
+        carrierId: load.carrier_id || req.user.id,
+        awardedByUserId: req.user.id,
+        notes: notes || 'Approved by Carrier via 1-Tap Zero Forced Dispatch'
+      });
+      await pool.query(
+        `UPDATE loads SET carrier_approval_status = 'approved', carrier_approved_at = NOW(), carrier_approval_notes = $1 WHERE id = $2`,
+        [notes || 'Approved by carrier', load.id]
+      );
+
+      if (load.dispatcher_id) {
+        createNotification(
+          load.dispatcher_id,
+          `✅ Carrier APPROVED Load #${load.load_number}`,
+          `Carrier approved ${load.pickup_location} -> ${load.delivery_location} ($${Number(load.rate || 0).toLocaleString()}). Ready to finalize RateCon & dispatch!`,
+          'success',
+          `/load-detail.html?id=${load.id}`
+        ).catch(() => {});
+      }
+
+      return res.json({
+        ok: true,
+        decision: 'approved',
+        load: awarded.load,
+        tracking_url: awarded.tracking_url,
+        message: `Load #${load.load_number} APPROVED! Status updated to BOOKED and live tracking link generated.`
+      });
+    }
+
+    await pool.query(
+      `UPDATE loads SET status = 'open', is_public_board = CASE WHEN source_type IN ('broker','api','dat') THEN TRUE ELSE is_public_board END, carrier_approval_status = 'declined', carrier_approval_notes = $1, updated_at = NOW() WHERE id = $2`,
+      [notes || 'Declined by carrier', load.id]
+    );
+    await pool.query(
+      `INSERT INTO load_status_history (load_id, status, changed_by, notes) VALUES ($1, 'open', $2, $3)`,
+      [load.id, req.user.id, `Carrier declined load offer: ${notes || 'Passed'}`]
+    ).catch(() => {});
+
+    if (load.dispatcher_id) {
+      createNotification(
+        load.dispatcher_id,
+        `❌ Carrier Declined Load #${load.load_number}`,
+        `Carrier passed on ${load.pickup_location} -> ${load.delivery_location}. Reason: ${notes || 'No reason provided'}`,
+        'warning',
+        `/dispatcher-dashboard.html`
+      ).catch(() => {});
+    }
+
+    return res.json({ ok: true, decision: 'declined', message: `Load #${load.load_number} declined. Dispatcher has been notified.` });
+  } catch (err) {
+    console.error('Carrier decision error:', err);
+    res.status(500).json({ error: 'Could not process carrier load decision.' });
+  }
+});
+
+// GET /api/loads/history-report/pdf — Branded Real-Data Driver & Fleet Performance History PDF Report
+router.get('/history-report/pdf', requireAuth, async (req, res) => {
+  try {
+    const PDFDocument = require('pdfkit');
+    const { analyzeLoadProfit } = require('../utils/profit-engine');
+    const { ensureUnifiedSchema } = require('../utils/load-lifecycle');
+    await ensureUnifiedSchema();
+
+    const period = String(req.query.period || '30_days');
+    const loadFilter = req.query.loadNumber ? String(req.query.loadNumber).trim() : null;
+
+    const uRes = await pool.query(
+      `SELECT id, name, company_name, mc_number, phone FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+    const u = uRes.rows[0] || {};
+    const driverName = req.query.driverName || u.name || 'Carrier Operator';
+    const companyName = req.query.companyName || u.company_name || 'Shipping Wish Carrier Partner';
+    const mcNumber = req.query.mcNumber || u.mc_number || 'MC-ON-FILE';
+    const truckUnit = req.query.truckUnit || 'Fleet';
+
+    const params = [];
+    let sql = `
+      SELECT id, load_number, pickup_location, delivery_location, miles, empty_miles, rate, detention_total, fuel_est, equipment_type, delivery_date, updated_at, status
+      FROM loads
+      WHERE deleted_at IS NULL
+        AND status IN ('delivered', 'pod_uploaded', 'invoiced', 'paid')
+    `;
+
+    if (['carrier', 'carrier_admin'].includes(req.user.role)) {
+      params.push(req.user.id);
+      sql += ` AND carrier_id = $${params.length}`;
+    } else if (req.user.role === 'driver') {
+      params.push(req.user.id, req.user.email || '');
+      sql += ` AND (driver_id IN (SELECT id FROM drivers WHERE user_id = $${params.length - 1} OR lower(email) = lower($${params.length})) OR carrier_id = $${params.length - 1})`;
+    } else if (req.query.carrierId) {
+      params.push(parseInt(req.query.carrierId, 10));
+      sql += ` AND carrier_id = $${params.length}`;
+    }
+
+    if (loadFilter) {
+      params.push(loadFilter);
+      sql += ` AND (load_number = $${params.length} OR id::text = $${params.length})`;
+    } else {
+      const daysBack = period === '7_days' ? 7 : (period === '15_days' ? 15 : 30);
+      params.push(daysBack);
+      sql += ` AND COALESCE(delivery_date, updated_at::date) >= CURRENT_DATE - ($${params.length}::int)`;
+    }
+    sql += ` ORDER BY COALESCE(delivery_date, updated_at::date) DESC LIMIT 100`;
+
+    const dbRes = await pool.query(sql, params);
+    const rows = (dbRes.rows || []).map((r) => {
+      const loadedMi = Number(r.miles || 0);
+      const emptyMi = Number(r.empty_miles || 0);
+      const gross = Number(r.rate || 0) + Number(r.detention_total || 0);
+      const est = analyzeLoadProfit({
+        rate: gross,
+        loadedMiles: loadedMi || 1,
+        deadheadMiles: emptyMi,
+        origin: r.pickup_location,
+        destination: r.delivery_location,
+        equipmentType: r.equipment_type
+      });
+      const fuelCost = Number(r.fuel_est || 0) > 0 ? Number(r.fuel_est) : est.fuel_cost;
+      return {
+        load_number: r.load_number || `SW-${r.id}`,
+        date: String(r.delivery_date || r.updated_at || '').slice(0, 10),
+        origin: r.pickup_location || '-',
+        destination: r.delivery_location || '-',
+        loaded_miles: loadedMi,
+        empty_miles: emptyMi,
+        rate: gross,
+        fuel_cost: fuelCost
+      };
+    });
+
+    const totalLoads = rows.length;
+    const loadedMiles = rows.reduce((s, r) => s + r.loaded_miles, 0);
+    const emptyMiles = rows.reduce((s, r) => s + r.empty_miles, 0);
+    const totalMiles = loadedMiles + emptyMiles;
+    const grossEarnings = rows.reduce((s, r) => s + r.rate, 0);
+    const fuelExpense = rows.reduce((s, r) => s + r.fuel_cost, 0);
+    const netProfit = grossEarnings - fuelExpense;
+
+    const doc = new PDFDocument({ margin: 40, size: 'LETTER' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="ShippingWish_Report_${period}.pdf"`);
+    doc.pipe(res);
+
+    doc.rect(0, 0, doc.page.width, 92).fill('#0B1528');
+    doc.fillColor('#FFFFFF').fontSize(20).font('Helvetica-Bold').text('SHIPPING WISH LLC', 40, 26);
+    doc.fillColor('#F59E0B').fontSize(10).text('24/7 FLEET OPERATIONS DESK & ENTERPRISE TMS STATEMENT', 40, 50);
+    doc.fillColor('#94A3B8').fontSize(9).text(`Generated: ${new Date().toUTCString()}   |   Period: ${period.toUpperCase().replace('_', ' ')}`, 40, 66);
+
+    doc.fillColor('#0F172A').fontSize(12).font('Helvetica-Bold').text(`Carrier / Company: ${companyName} (${mcNumber})`, 40, 110);
+    doc.fontSize(10).font('Helvetica').fillColor('#334155').text(`Operator: ${driverName}   •   Unit: ${truckUnit}   •   Support: +1 (917) 737-0021`, 40, 128);
+
+    doc.fillColor('#0B1528').fontSize(13).font('Helvetica-Bold').text('1. EXECUTIVE MILEAGE, EARNINGS & FUEL SUMMARY', 40, 156);
+    doc.rect(40, 174, 532, 78).fillAndStroke('#F8FAFC', '#CBD5E1');
+
+    doc.fillColor('#0F172A').fontSize(10).font('Helvetica-Bold');
+    doc.text(`Completed Loads: ${totalLoads}`, 54, 186);
+    doc.text(`Total Driven Miles: ${totalMiles.toLocaleString()} mi`, 54, 204);
+    doc.text(`Loaded: ${loadedMiles.toLocaleString()} mi   |   Empty (Deadhead): ${emptyMiles.toLocaleString()} mi`, 54, 222);
+
+    doc.fillColor('#15803D').text(`Gross Earnings: $${grossEarnings.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 338, 186);
+    doc.fillColor('#B45309').text(`Est. Fuel Expense: -$${fuelExpense.toFixed(2)}`, 338, 204);
+    doc.fillColor('#1D4ED8').text(`Net Profit (After Fuel): $${netProfit.toFixed(2)}`, 338, 222);
+
+    doc.fillColor('#0B1528').fontSize(13).font('Helvetica-Bold').text('2. LINE-BY-LINE COMPLETED LOAD LEDGER', 40, 272);
+    let y = 295;
+    doc.rect(40, y, 532, 22).fill('#0B1528');
+    doc.fillColor('#FFFFFF').fontSize(9).font('Helvetica-Bold');
+    doc.text('LOAD #', 48, y + 6);
+    doc.text('DATE', 110, y + 6);
+    doc.text('ROUTE (ORIGIN -> DESTINATION)', 168, y + 6);
+    doc.text('LOADED / EMPTY', 338, y + 6);
+    doc.text('GROSS', 430, y + 6);
+    doc.text('FUEL EST.', 480, y + 6);
+    doc.text('NET', 532, y + 6);
+    y += 26;
+
+    if (!rows.length) {
+      doc.fillColor('#64748B').fontSize(10).font('Helvetica').text('No completed loads found for the selected period.', 48, y + 4);
+    } else {
+      rows.forEach((r, idx) => {
+        if (y > 700) { doc.addPage(); y = 50; }
+        if (idx % 2 === 0) doc.rect(40, y - 4, 532, 22).fill('#F8FAFC');
+        doc.fillColor('#0F172A').fontSize(8.5).font('Helvetica-Bold').text(r.load_number, 48, y);
+        doc.font('Helvetica').fillColor('#334155').text(r.date, 110, y);
+        doc.text(`${r.origin} -> ${r.destination}`, 168, y, { width: 165, ellipsis: true });
+        doc.text(`${r.loaded_miles} / ${r.empty_miles} mi`, 338, y);
+        doc.fillColor('#15803D').font('Helvetica-Bold').text(`$${r.rate.toFixed(0)}`, 430, y);
+        doc.fillColor('#B45309').font('Helvetica').text(`-$${r.fuel_cost.toFixed(0)}`, 480, y);
+        doc.fillColor('#1D4ED8').font('Helvetica-Bold').text(`$${(r.rate - r.fuel_cost).toFixed(0)}`, 532, y);
+        y += 22;
+      });
+    }
+
+    doc.end();
+  } catch (err) {
+    console.error('History PDF error:', err);
+    res.status(500).json({ error: 'Could not generate load history PDF.' });
   }
 });
 

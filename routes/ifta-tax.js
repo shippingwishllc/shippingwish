@@ -99,30 +99,7 @@ async function ensureTables() {
       CREATE INDEX IF NOT EXISTS idx_ifta_fuel_carrier ON ifta_fuel_purchases(carrier_id);
     `);
 
-    // Seed sample trip & fuel rows if completely empty for demonstration
-    const checkMiles = await pool.query('SELECT COUNT(*) FROM ifta_trip_miles');
-    if (parseInt(checkMiles.rows[0].count, 10) === 0) {
-      let driver = await pool.query(`SELECT id FROM users WHERE role::text IN ('carrier', 'super_admin') LIMIT 1`);
-      const driverId = driver.rows.length > 0 ? driver.rows[0].id : null;
-      if (driverId) {
-        await pool.query(`
-          INSERT INTO ifta_trip_miles (driver_id, quarter, trip_date, state_code, toll_miles, non_toll_miles, total_miles, notes)
-          VALUES 
-            ($1, '2026-Q1', '2026-02-10', 'TX', 45.00, 485.00, 530.00, 'Dallas to Texarkana I-30 Corridor'),
-            ($1, '2026-Q1', '2026-02-11', 'AR', 0.00, 280.00, 280.00, 'Texarkana to West Memphis I-40'),
-            ($1, '2026-Q1', '2026-02-12', 'TN', 0.00, 395.00, 395.00, 'Memphis to Knoxville I-40 Corridor'),
-            ($1, '2026-Q1', '2026-02-14', 'VA', 0.00, 220.00, 220.00, 'Bristol to Roanoke I-81'),
-            ($1, '2026-Q1', '2026-02-16', 'PA', 60.00, 190.00, 250.00, 'Harrisburg to Allentown PA Turnpike');
-
-          INSERT INTO ifta_fuel_purchases (carrier_id, quarter, purchase_date, state_code, vendor_name, gallons, price_per_gallon, total_amount, tax_paid, invoice_ref)
-          VALUES
-            ($1, '2026-Q1', '2026-02-10', 'TX', 'Love''s Travel Stop #402', 120.00, 3.450, 414.00, 24.00, 'INV-TX-9901'),
-            ($1, '2026-Q1', '2026-02-12', 'TN', 'Pilot Flying J #712', 105.00, 3.520, 369.60, 28.35, 'INV-TN-4310'),
-            ($1, '2026-Q1', '2026-02-16', 'PA', 'TA Travel Center #88', 45.00, 3.990, 179.55, 35.33, 'INV-PA-1102');
-        `, [driverId]);
-      }
-    }
-
+    // Production safety: NEVER seed synthetic demo trips or fake fuel receipts into live IFTA tax filings!
     migrated = true;
   } catch (err) {
     console.error('[IFTA Migration] Error:', err.message);

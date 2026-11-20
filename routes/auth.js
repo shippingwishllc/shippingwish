@@ -328,8 +328,12 @@ router.post('/signup/verify-otp', rateLimit(10, 60000), async (req, res) => {
 
     const isBroker = pending.role === 'broker';
     const role = isBroker ? 'broker' : 'carrier';
-    const trialEnds = isBroker ? null : new Date(Date.now() + TRIAL_DAYS * 86400000);
-    const weeklyPlan = isBroker ? 'free_broker' : null;
+    const customTrialDays = Number(req.body.trialDays) === 15 ? 15 : (Number(req.body.trialDays) === 7 ? 7 : TRIAL_DAYS);
+    const trialEnds = isBroker ? null : new Date(Date.now() + customTrialDays * 86400000);
+    // Never grant paid loadboard_* status before Stripe checkout; store selected trial tier safely
+    const allowedTrialPlans = ['solo_weekly', 'fleet_weekly', 'command_weekly'];
+    const requestedPlan = String(req.body.planKey || '').trim();
+    const weeklyPlan = isBroker ? 'free_broker' : (allowedTrialPlans.includes(requestedPlan) ? requestedPlan : null);
 
     const result = await pool.query(
       `INSERT INTO users (name, email, password_hash, role, company_name, phone, mc_number, dot_number, address, signup_ip, user_agent, trial_ends_at, email_verified_at, weekly_plan)

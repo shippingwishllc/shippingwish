@@ -1,9 +1,10 @@
 const express = require('express');
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const { createNotification } = require('../utils/notifications');
 const { sendPushToUsers } = require('./mobile-push');
 const { auditLog, getClientIp } = require('../utils/audit');
+const { awardLoadToCarrier } = require('../utils/load-lifecycle');
 
 const router = express.Router();
 
@@ -165,8 +166,8 @@ router.get('/my-bids', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/bids/:id/respond — Broker / Dispatcher responds (accept, reject, counter)
-router.post('/:id/respond', requireAuth, async (req, res) => {
+// POST /api/bids/:id/respond — Broker / Dispatcher / Admin responds (accept, reject, counter)
+router.post('/:id/respond', requireAuth, requireRole('broker', 'dispatcher', 'admin', 'super_admin', 'sales_rep'), async (req, res) => {
   await ensureTable();
   const bidId = parseInt(req.params.id, 10);
   const { action, counter_amount, counter_notes } = req.body;
@@ -178,14 +179,26 @@ router.post('/:id/respond', requireAuth, async (req, res) => {
 
   try {
     const check = await pool.query(`
-      SELECT b.*, l.load_number, l.rate as original_rate, l.pickup_location, l.delivery_location, l.dispatcher_id
+      SELECT b.*, l.load_number, l.rate as original_rate, l.pickup_location, l.delivery_location,
+             l.dispatcher_id, l.broker_user_id, l.broker_contact,
+             u.company_name AS carrier_company, u.name AS carrier_name, u.mc_number AS carrier_mc
       FROM load_bids b
       JOIN loads l ON l.id = b.load_id
+      LEFT JOIN users u ON u.id = b.carrier_id
       WHERE b.id = $1
     `, [bidId]);
 
     if (check.rows.length === 0) return res.status(404).json({ error: 'Bid not found.' });
     const bid = check.rows[0];
+
+    // Enforce broker ownership (a broker can only accept/reject bids on their own posted load)
+    if (req.user.role === 'broker') {
+      const ownsById = bid.broker_user_id && Number(bid.broker_user_id) === Number(req.user.id);
+      const ownsByEmail = !bid.broker_user_id && req.user.email && String(bid.broker_contact || '').toLowerCase().includes(req.user.email.toLowerCase());
+      if (!ownsById && !ownsByEmail) {
+        return res.status(403).json({ error: 'You can only respond to bids on your own posted loads.' });
+      }
+    }
 
     if (action === 'accepted') {
       // 1. Mark this bid accepted
@@ -203,24 +216,23 @@ router.post('/:id/respond', requireAuth, async (req, res) => {
         WHERE load_id = $1 AND id != $2 AND status = 'submitted'
       `, [bid.load_id, bidId]);
 
-      // 3. Award load to carrier and update rate
-      await pool.query(`
-        UPDATE loads
-        SET carrier_id = $1, rate = $2, status = 'booked', updated_at = now()
-        WHERE id = $3
-      `, [bid.carrier_id, bid.offered_rate, bid.load_id]);
+      // 3. Bridge seamlessly into Shipping Wish TMS (sets carrier_id, removes from public board, generates Broker Tracking Link)
+      const awarded = await awardLoadToCarrier({
+        loadId: bid.load_id,
+        carrierId: bid.carrier_id,
+        carrierName: bid.carrier_company || bid.carrier_name || null,
+        carrierMc: bid.carrier_mc || null,
+        driverName: bid.driver_name || null,
+        truckNumber: bid.truck_unit || null,
+        finalRate: bid.offered_rate,
+        awardedByUserId: req.user.id,
+        notes: `Bid #${bidId} accepted at $${Number(bid.offered_rate).toFixed(2)}.`
+      });
 
-      // 4. Record in status history
-      await pool.query(`
-        INSERT INTO load_status_history (load_id, status, changed_by, notes)
-        VALUES ($1, 'booked', $2, $3)
-      `, [bid.load_id, req.user.id, `Bid #${bidId} accepted at $${Number(bid.offered_rate).toFixed(2)}. RateCon ready for e-signature.`]);
-
-      // 5. Push notification to carrier
+      // 4. Push notification to carrier
       if (bid.carrier_id) {
         const title = `🎉 Bid Accepted: Load #${bid.load_number || bid.load_id}`;
         const body = `Your offer of $${Number(bid.offered_rate).toLocaleString()} was ACCEPTED! Load has been awarded. RateCon is ready for signature.`;
-        createNotification(bid.carrier_id, title, body, 'success', `/admin-loadnexus.html`).catch(() => {});
         sendPushToUsers(bid.carrier_id, {
           title,
           body,
@@ -232,8 +244,9 @@ router.post('/:id/respond', requireAuth, async (req, res) => {
 
       return res.json({
         ok: true,
-        message: `Bid #${bidId} accepted! Load #${bid.load_number} has been awarded to carrier at $${Number(bid.offered_rate).toLocaleString()}.`,
-        bid: updatedBid.rows[0]
+        message: `Bid #${bidId} accepted! Load #${bid.load_number} awarded and synced into Shipping Wish TMS.`,
+        bid: updatedBid.rows[0],
+        tracking_url: awarded.tracking_url
       });
     }
 
