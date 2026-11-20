@@ -292,7 +292,115 @@
     }
   }
 
-  // 4. Check Pending 1-Tap Carrier Load Approvals ("Zero Forced Dispatch")
+  // 4. Dispatcher: 1-Click Send Load for Carrier Approval ("Zero Forced Dispatch")
+  async function openSendApprovalModal() {
+    openModal('📲 Send 1-Tap Carrier Load Approval (Zero Forced Dispatch)', `<div id="swsa-wrap">Loading loads &amp; carriers...</div>`);
+    const wrap = document.getElementById('swsa-wrap');
+    try {
+      const [loadsData, carriersData] = await Promise.all([
+        apiJson('/api/loads'),
+        apiJson('/api/carriers').catch(() => ({ carriers: [] }))
+      ]);
+      const loads = (loadsData.loads || []).slice(0, 40);
+      const carriers = carriersData.carriers || carriersData.users || [];
+      if (!loads.length) {
+        wrap.innerHTML = '<p>No loads available yet. Create or book a load first.</p>';
+        return;
+      }
+      wrap.innerHTML = `
+        <div class="sw-os-grid">
+          <div class="sw-os-field"><label>Select Load</label>
+            <select id="swsa-load">${loads.map(l => `<option value="${l.id}" data-cid="${l.carrier_id || ''}">${esc(l.load_number)} — ${esc(l.pickup_location)} → ${esc(l.delivery_location)} ($${Number(l.rate||0).toLocaleString()})</option>`).join('')}</select>
+          </div>
+          <div class="sw-os-field"><label>Carrier Account</label>
+            <select id="swsa-carrier">
+              <option value="">Use Load's Assigned Carrier</option>
+              ${carriers.map(c => `<option value="${c.id}">${esc(c.company_name || c.name)} (${esc(c.mc_number || c.email || '')})</option>`).join('')}
+            </select>
+          </div>
+          <div class="sw-os-field"><label>Estimated Deadhead Miles</label><input id="swsa-dh" type="number" value="35"></div>
+        </div>
+        <button class="sw-os-btn emerald" id="swsa-send">🚀 Send 1-Tap Approval (Push + SMS + Portal)</button>
+        <div id="swsa-out" class="sw-os-result" style="display:none"></div>
+      `;
+      document.getElementById('swsa-send').onclick = async () => {
+        const out = document.getElementById('swsa-out');
+        out.style.display = 'block';
+        out.textContent = 'Calculating Net Profit & transmitting approval offer to carrier...';
+        try {
+          const sel = document.getElementById('swsa-load');
+          const lid = sel.value;
+          const cid = document.getElementById('swsa-carrier').value || sel.options[sel.selectedIndex].getAttribute('data-cid');
+          const r = await apiJson(`/api/dispatch-desk/loads/${encodeURIComponent(lid)}/request-approval`, {
+            method: 'POST',
+            body: JSON.stringify({
+              carrierId: cid ? Number(cid) : undefined,
+              deadheadMiles: Number(document.getElementById('swsa-dh').value || 0)
+            })
+          });
+          out.innerHTML = `<strong style="color:#059669">✅ ${esc(r.message)}</strong><div style="font-size:12px;color:#334155;margin-top:6px;">Est. True Net Profit sent to carrier: <strong>$${Number(r.profit?.true_net_profit || 0).toLocaleString()}</strong> (${esc(r.profit?.verdict_label || '')})</div>`;
+        } catch (e) {
+          out.innerHTML = `<span style="color:#dc2626">${esc(e.message)}</span>`;
+        }
+      };
+    } catch (e) {
+      wrap.innerHTML = `<span style="color:#dc2626">${esc(e.message)}</span>`;
+    }
+  }
+
+  // 5. AI Pre-Delivery Reload Planner ("Zero Empty Miles")
+  async function openReloadFinderModal() {
+    openModal('⚡ AI Pre-Delivery Reload Planner ("Zero Empty Miles")', `<div id="swrl-wrap">Loading active loads...</div>`);
+    const wrap = document.getElementById('swrl-wrap');
+    try {
+      const data = await apiJson('/api/loads');
+      const loads = (data.loads || []).slice(0, 30);
+      if (!loads.length) {
+        wrap.innerHTML = '<p>No loads found to match reloads against.</p>';
+        return;
+      }
+      wrap.innerHTML = `
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">
+          <div class="sw-os-field" style="flex:1;min-width:240px;"><label>Active / Delivering Load</label>
+            <select id="swrl-load">${loads.map(l => `<option value="${l.id}">${esc(l.load_number)} — Delivering to ${esc(l.delivery_location)} (${esc(l.equipment_type || '53ft')})</option>`).join('')}</select>
+          </div>
+          <button class="sw-os-btn" id="swrl-run">🔍 Find Highest Net-Profit Reloads</button>
+        </div>
+        <div id="swrl-out" class="sw-os-result" style="display:none"></div>
+      `;
+      document.getElementById('swrl-run').onclick = async () => {
+        const out = document.getElementById('swrl-out');
+        out.style.display = 'block';
+        out.textContent = 'Scanning open marketplace loads near delivery ZIP & ranking by True Net Profit/Mile...';
+        try {
+          const lid = document.getElementById('swrl-load').value;
+          const r = await apiJson(`/api/dispatch-desk/reload-suggestions/${encodeURIComponent(lid)}`);
+          const list = r.suggestions || [];
+          if (!list.length) {
+            out.innerHTML = `<p style="margin:0;color:#475569;">No open marketplace reloads within 150 mi of <strong>${esc(r.active_load?.delivery_location)}</strong> right now. Post or sync fresh Loads Nexus freight to populate instant matches.</p>`;
+            return;
+          }
+          out.innerHTML = list.map(s => `
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+              <div>
+                <strong style="color:#0f172a">${esc(s.pickup_location)} → ${esc(s.delivery_location)}</strong>
+                <div style="font-size:11px;color:#475569;">${esc(s.equipment_type)} • ${Number(s.miles||0)} mi • Deadhead: <strong>${s.deadhead_from_delivery} mi</strong> • ${esc(s.posted_age)}</div>
+              </div>
+              <div style="text-align:right;">
+                <strong style="color:#059669;font-size:14px;">$${Number(s.rate||0).toLocaleString()}</strong>
+                <div style="font-size:11px;font-weight:700;color:#1d4ed8;">Net ~$${Math.round(s.profit_analysis?.true_net_profit||0).toLocaleString()} • ${esc(s.profit_analysis?.verdict_label||'')}</div>
+              </div>
+            </div>`).join('');
+        } catch (e) {
+          out.innerHTML = `<span style="color:#dc2626">${esc(e.message)}</span>`;
+        }
+      };
+    } catch (e) {
+      wrap.innerHTML = `<span style="color:#dc2626">${esc(e.message)}</span>`;
+    }
+  }
+
+  // 6. Check Pending 1-Tap Carrier Load Approvals ("Zero Forced Dispatch")
   async function renderPendingCarrierApprovals(anchor) {
     try {
       const data = await apiJson('/api/loads?status=pending_carrier_approval');
@@ -351,6 +459,8 @@
       </div>
       <div class="sw-os-actions">
         <button class="sw-os-btn" id="sw-os-profit-btn">💰 AI Net-Profit Calc</button>
+        <button class="sw-os-btn" style="background:#7c3aed;" id="sw-os-reload-btn">⚡ AI Reload Finder</button>
+        <button class="sw-os-btn emerald" id="sw-os-approval-btn">📲 Send Carrier Approval</button>
         <button class="sw-os-btn emerald" id="sw-os-packet-btn">💸 1-Click Factoring Packet</button>
         <button class="sw-os-btn amber" id="sw-os-stl-btn">📊 Settlements &amp; Truck P&amp;L</button>
         <a class="sw-os-btn ghost" target="_blank" href="/api/loads/history-report/pdf?period=30_days">📄 30-Day History PDF</a>
@@ -360,6 +470,8 @@
     else target.appendChild(bar);
 
     document.getElementById('sw-os-profit-btn').onclick = openProfitModal;
+    document.getElementById('sw-os-reload-btn').onclick = openReloadFinderModal;
+    document.getElementById('sw-os-approval-btn').onclick = openSendApprovalModal;
     document.getElementById('sw-os-packet-btn').onclick = openFactoringPacketModal;
     document.getElementById('sw-os-stl-btn').onclick = openSettlementsModal;
     renderPendingCarrierApprovals(bar);
