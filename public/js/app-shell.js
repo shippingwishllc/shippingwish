@@ -5,7 +5,7 @@
   let initCallCount = 0;
   const ROLE_CACHE_KEY = 'sw_portal_role';
   const SIDEBAR_HTML_KEY = 'sw_sidebar_html';
-  const SIDEBAR_VERSION = '39';
+  const SIDEBAR_VERSION = '40';
   // #endregion
 
   function clearRoleCache() {
@@ -233,7 +233,8 @@
     { key: 'trash', href: '/trash', icon: IC.trash, label: 'Trash', adminOnly: true },
     { key: 'audit', navId: 'nav-tab-audit', href: '/admin-dashboard#audit', icon: IC.auditlog, label: 'Audit Logs', adminOnly: true },
     { key: 'webcms', navId: 'nav-tab-settings', href: '/admin-dashboard#settings', icon: IC.webcms, label: 'Website CMS', adminOnly: true },
-    { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: IC.blog, label: 'Blog Manager', adminOnly: true }
+    { key: 'blog', navId: 'nav-tab-blog', href: '/admin-dashboard#blog', icon: IC.blog, label: 'Blog Manager', adminOnly: true },
+    { key: 'social', href: '/social-media-hub', icon: IC.webcms, label: 'Social Media & Posting Hub', adminOnly: true }
   ];
 
   const HR_LINKS = [
