@@ -16,6 +16,10 @@ function sanitizeFileName(name) {
     .slice(0, 140);
 }
 
+function isBlobConfigured() {
+  return Boolean(String(process.env.BLOB_READ_WRITE_TOKEN || '').trim());
+}
+
 /**
  * Upload a Buffer to permanent storage.
  * Returns { storage_provider, cloud_url, file_data_b64, filepath, file_size }.
@@ -48,7 +52,8 @@ async function storeDocumentBuffer({
           'x-add-random-suffix': '0',
           'x-vercel-blob-access': 'private'
         },
-        body: buffer
+        body: buffer,
+        signal: AbortSignal.timeout(4500)
       });
       if (resp.ok) {
         const data = await resp.json().catch(() => ({}));
@@ -113,13 +118,17 @@ async function readDocumentBuffer(docRow) {
 
   // 1. Cloud URL (Vercel Blob Private or Public HTTPS)
   if (docRow.cloud_url && /^https?:\/\//i.test(docRow.cloud_url)) {
-    const blobToken = String(process.env.BLOB_READ_WRITE_TOKEN || '').trim();
-    const isVercelBlob = docRow.cloud_url.includes('blob.vercel-storage.com');
-    const headers = (isVercelBlob && blobToken) ? { Authorization: `Bearer ${blobToken}` } : {};
-    const resp = await fetch(docRow.cloud_url, { headers });
-    if (resp.ok) {
-      const arrBuf = await resp.arrayBuffer();
-      return Buffer.from(arrBuf);
+    try {
+      const blobToken = String(process.env.BLOB_READ_WRITE_TOKEN || '').trim();
+      const isVercelBlob = docRow.cloud_url.includes('blob.vercel-storage.com');
+      const headers = (isVercelBlob && blobToken) ? { Authorization: `Bearer ${blobToken}` } : {};
+      const resp = await fetch(docRow.cloud_url, { headers, signal: AbortSignal.timeout(4500) });
+      if (resp.ok) {
+        const arrBuf = await resp.arrayBuffer();
+        return Buffer.from(arrBuf);
+      }
+    } catch (err) {
+      console.warn('[CloudStorage] Cloud read warning:', err.message);
     }
   }
 
@@ -141,5 +150,6 @@ async function readDocumentBuffer(docRow) {
 module.exports = {
   storeDocumentBuffer,
   readDocumentBuffer,
-  sanitizeFileName
+  sanitizeFileName,
+  isBlobConfigured
 };

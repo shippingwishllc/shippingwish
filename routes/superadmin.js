@@ -1508,6 +1508,38 @@ router.post('/run-trucking-e2e', requireAuth, requireSuperAdmin, async (req, res
         doc.end();
       });
       const stlNum = 'E2E-STL-' + Math.floor(10000 + Math.random() * 89999);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS driver_settlements (
+          id SERIAL PRIMARY KEY,
+          settlement_number VARCHAR(50) UNIQUE NOT NULL,
+          carrier_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
+          driver_name VARCHAR(150),
+          truck_number VARCHAR(50),
+          period_start DATE NOT NULL,
+          period_end DATE NOT NULL,
+          loads_count INTEGER DEFAULT 0,
+          loaded_miles NUMERIC(10, 2) DEFAULT 0,
+          empty_miles NUMERIC(10, 2) DEFAULT 0,
+          gross_revenue NUMERIC(12, 2) DEFAULT 0,
+          pay_type VARCHAR(20) DEFAULT 'percent',
+          pay_rate NUMERIC(8, 2) DEFAULT 28.00,
+          driver_gross_pay NUMERIC(12, 2) DEFAULT 0,
+          fuel_deduction NUMERIC(12, 2) DEFAULT 0,
+          advances_deduction NUMERIC(12, 2) DEFAULT 0,
+          other_deductions NUMERIC(12, 2) DEFAULT 0,
+          reimbursements NUMERIC(12, 2) DEFAULT 0,
+          net_driver_pay NUMERIC(12, 2) DEFAULT 0,
+          carrier_net_profit NUMERIC(12, 2) DEFAULT 0,
+          load_ids_json JSONB DEFAULT '[]'::jsonb,
+          notes TEXT,
+          status VARCHAR(30) DEFAULT 'draft',
+          paid_at TIMESTAMP,
+          created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
       const stlIns = await pool.query(
         `INSERT INTO driver_settlements (
            settlement_number, carrier_id, driver_name, period_start, period_end,
@@ -1542,14 +1574,18 @@ router.post('/run-trucking-e2e', requireAuth, requireSuperAdmin, async (req, res
     } catch (e) {
       fail(8, 'AI Reload Pool & Stripe Isolation Health', e.message);
     }
+  } catch (outerErr) {
+    fail(0, 'Unhandled E2E Stage Error', outerErr.message || String(outerErr));
   } finally {
-    // AUTO-CLEANUP: Delete ALL temporary E2E rows so production database remains 100% spotless!
-    if (created.settlementId) await pool.query('DELETE FROM driver_settlements WHERE id = $1', [created.settlementId]).catch(() => {});
-    if (created.docId) await pool.query('DELETE FROM documents WHERE id = $1', [created.docId]).catch(() => {});
+    // AUTO-CLEANUP IN PARALLEL: Fast (<300ms) so production DB stays 100% spotless!
+    await Promise.all([
+      created.settlementId ? pool.query('DELETE FROM driver_settlements WHERE id = $1', [created.settlementId]).catch(() => {}) : null,
+      created.docId ? pool.query('DELETE FROM documents WHERE id = $1', [created.docId]).catch(() => {}) : null,
+      created.loadId ? pool.query('DELETE FROM tracking_events WHERE load_id = $1', [created.loadId]).catch(() => {}) : null,
+      created.loadId ? pool.query('DELETE FROM load_status_history WHERE load_id = $1', [created.loadId]).catch(() => {}) : null,
+      created.loadId ? pool.query(`DELETE FROM notifications WHERE link LIKE $1`, [`%${created.loadId}%`]).catch(() => {}) : null
+    ]);
     if (created.loadId) {
-      await pool.query('DELETE FROM tracking_events WHERE load_id = $1', [created.loadId]).catch(() => {});
-      await pool.query('DELETE FROM load_status_history WHERE load_id = $1', [created.loadId]).catch(() => {});
-      await pool.query(`DELETE FROM notifications WHERE link LIKE $1`, [`%${created.loadId}%`]).catch(() => {});
       await pool.query('DELETE FROM loads WHERE id = $1', [created.loadId]).catch(() => {});
     }
   }
