@@ -174,7 +174,7 @@ router.post('/send-link/:loadId', requireAuth, async (req, res) => {
     }
 
     const baseUrl = (process.env.APP_URL || 'https://www.shippingwish.com').replace(/\/$/, '');
-    const trackingUrl = `${baseUrl}/track-load.html?token=${encodeURIComponent(token)}`;
+    const trackingUrl = `${baseUrl}/track/${encodeURIComponent(token)}`;
 
     const rawContact = String(req.body?.brokerEmail || load.broker_contact || '').trim();
     const emailMatch = rawContact.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
