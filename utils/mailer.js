@@ -92,7 +92,10 @@ async function sendBrandedEmail({
     replyTo = list.length === 1 ? list[0] : list;
   }
   const headers = isTx
-    ? undefined
+    ? {
+      'Auto-Submitted': 'auto-generated',
+      'X-Auto-Response-Suppress': 'All'
+    }
     : {
       'List-Unsubscribe': `<${unsubscribeUrl(to)}>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
