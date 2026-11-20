@@ -1140,7 +1140,7 @@ router.get('/sso-go', requireAuth, requireSuperAdmin, (req, res) => {
 
     const brand = String(req.query.brand || '').toLowerCase();
     const BRAND_TARGETS = {
-      buywish: { origin: 'https://www.buywishonline.com', next: '/admin' },
+      buywish: { origin: 'https://www.buywishonline.com', next: '/buywishonline/admin' },
       nyclimo: { origin: 'https://www.nyclimowish.com', next: '/erp' },
       loadsnexus: { origin: 'https://www.loadsnexus.com', next: '/' }
     };
@@ -1180,7 +1180,7 @@ router.post('/sso-launch', requireAuth, requireSuperAdmin, async (req, res) => {
 
     const brand = String(req.body?.brand || '').toLowerCase();
     const BRAND_TARGETS = {
-      buywish: { origin: 'https://www.buywishonline.com', next: '/admin' },
+      buywish: { origin: 'https://www.buywishonline.com', next: '/buywishonline/admin' },
       nyclimo: { origin: 'https://www.nyclimowish.com', next: '/erp' },
       loadsnexus: { origin: 'https://www.loadsnexus.com', next: '/' }
     };
