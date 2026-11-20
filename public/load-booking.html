@@ -1178,13 +1178,13 @@
     }
     .dat-primary-row {
       display: grid;
-      grid-template-columns: minmax(215px, 1.35fr) minmax(215px, 1.35fr) minmax(175px, 1fr) minmax(140px, 0.8fr) auto;
+      grid-template-columns: minmax(220px, 1.45fr) minmax(220px, 1.45fr) minmax(180px, 1fr) minmax(155px, 0.85fr);
       gap: 10px;
       align-items: end;
     }
     .dat-secondary-row {
       display: grid;
-      grid-template-columns: minmax(210px, 1.15fr) minmax(160px, 0.85fr) auto auto;
+      grid-template-columns: minmax(220px, 1.15fr) minmax(165px, 0.85fr) auto;
       gap: 10px;
       align-items: end;
       margin-top: 10px;
@@ -1194,6 +1194,9 @@
     @media (max-width: 960px) {
       .dat-secondary-row {
         grid-template-columns: 1fr 1fr;
+      }
+      .dat-secondary-row .dat-cta-group {
+        grid-column: 1 / -1;
       }
     }
     @media (max-width: 640px) {
@@ -1595,16 +1598,9 @@
             </div>
             <input type="date" id="search-date" class="dat-control" onchange="onDateInputChange(this.value)" title="Choose exact pickup date">
           </div>
-
-          <!-- Primary Search Button -->
-          <div class="dat-cta-group">
-            <button type="button" class="dat-btn-search" id="btn-run-search" onclick="runActiveTabSearch()">
-              <span>🔍</span> Search
-            </button>
-          </div>
         </div>
 
-        <!-- 2. CLEAN ALWAYS-VISIBLE SECONDARY ROW (Max Length/Weight, Min $/Mile, AI Match & More Filters) -->
+        <!-- 2. CLEAN ALWAYS-VISIBLE SECONDARY ROW (Max Length/Weight, Min $/Mile -> Search, AI Match & Filters) -->
         <div class="dat-secondary-row">
 
           <!-- Max Length & Max Weight -->
@@ -1633,7 +1629,7 @@
             </div>
           </div>
 
-          <!-- Min $/Mile -->
+          <!-- Min $/Mile (Hit Enter to Search Immediately!) -->
           <div class="dat-field">
             <div class="dat-field-head">
               <label class="dat-field-label" for="search-min-rpm">Min Rate ($/Mile)</label>
@@ -1641,19 +1637,21 @@
             <div style="position:relative;">
               <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-weight:800;color:#64748b;font-size:13px;">$</span>
               <input type="number" step="0.05" id="search-min-rpm" class="dat-control" value=""
-                     placeholder="All Rates / Any" onchange="syncActiveTabField('minRpm', this.value)" style="padding-left:24px !important;">
+                     placeholder="All Rates / Any"
+                     onchange="syncActiveTabField('minRpm', this.value)"
+                     onkeydown="if(event.key==='Enter'){ syncActiveTabField('minRpm', this.value); runActiveTabSearch(); }"
+                     style="padding-left:24px !important;">
             </div>
           </div>
 
-          <!-- AI Smart Match Button (Zero third-party import buttons here!) -->
-          <div class="dat-cta-group">
+          <!-- Natural End-of-Form Action Cluster: Search -> AI Match -> Filters -->
+          <div class="dat-cta-group" style="flex-wrap:wrap;height:auto;">
+            <button type="button" class="dat-btn-search" id="btn-run-search" onclick="runActiveTabSearch()">
+              <span>🔍</span> Search Loads
+            </button>
             <button type="button" class="btn-ai-match" id="btn-run-ai" onclick="runActiveTabAiMatch()" style="height:42px;padding:0 16px;border-radius:10px;justify-content:center;white-space:nowrap;">
               <span>⚡</span> AI Match
             </button>
-          </div>
-
-          <!-- Collapsible More Filters Toggle -->
-          <div class="dat-cta-group" style="justify-content:flex-end;">
             <button type="button" class="dat-btn-filters" id="btn-dat-more-filters" onclick="toggleDatMoreFilters()">
               <span>⚙️</span> Filters ▾
             </button>
