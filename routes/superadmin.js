@@ -1321,7 +1321,7 @@ router.get('/sso-exchange', async (req, res) => {
 //    Auto Broker GPS Tracking Link -> Driver GPS Ping -> Private Vercel Blob POD
 //    Upload/Read -> Factoring Packet & Settlement PDFs -> AI Reloads -> Clean Purge!
 // =========================================================================
-router.post('/run-trucking-e2e', requireAuth, requireRole('super_admin'), async (req, res) => {
+router.post('/run-trucking-e2e', requireAuth, requireSuperAdmin, async (req, res) => {
   const startedAt = Date.now();
   const stages = [];
   const pass = (id, name, detail) => stages.push({ id, name, status: 'PASS', detail });
