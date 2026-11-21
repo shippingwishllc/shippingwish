@@ -152,6 +152,9 @@
             <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Sync real USA freight brokers from your live load board &amp; official US DOT FMCSA Census API, then invite them to post loads FREE or connect their API.</div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button type="button" class="btn btn-sm" style="background:#f59e0b;color:#0f172a;border:none;font-weight:800;" onclick="openDispatcherScriptsModal()">
+              📞 Dispatcher Scripts
+            </button>
             <button type="button" id="btn-sync-loads-brokers" class="btn btn-sm" style="background:#2563eb;color:#fff;border:none;font-weight:700;" onclick="syncBrokersFromLoads()">
               🔄 Sync From Live Loads
             </button>
@@ -347,6 +350,10 @@
     </div>
     <div class="modal-body">
       <div id="outreach-targets-summary" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#065f46;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:700;margin-bottom:14px;"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <button type="button" class="btn btn-light btn-sm" style="font-weight:700;font-size:11.5px;" onclick="applyOutreachPreset('cold')">⚡ Cold Partner + API Invite</button>
+        <button type="button" class="btn btn-light btn-sm" style="font-weight:700;font-size:11.5px;border-color:#059669;color:#047857;" onclick="applyOutreachPreset('postcall')">📞 Post-Call Warm Follow-Up (CC loads@loadsnexus.com)</button>
+      </div>
       <div class="form-group" style="margin-bottom:14px;">
         <label class="form-label required">Email Subject</label>
         <input class="form-input" type="text" id="outreach-subject" value="Partner with LoadsNexus & Shipping Wish — Free Load Posting + Direct API">
@@ -360,6 +367,54 @@
     <div class="modal-footer">
       <button onclick="closeOutreachModal()" class="btn btn-light">Cancel</button>
       <button type="button" id="btn-confirm-outreach" class="btn btn-primary" style="background:#059669;border-color:#059669;" onclick="confirmSendOutreach()">🚀 Send Branded Invite Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- DISPATCHER PHONE & FOLLOW-UP SCRIPTS MODAL -->
+<div class="modal-backdrop" id="scripts-modal">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-header">
+      <h2>📞 Dispatcher Broker Outreach Scripts (Live Playbook)</h2>
+      <button onclick="closeDispatcherScriptsModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body" style="max-height:72vh;overflow-y:auto;">
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+          <strong style="color:#92400e;font-size:13.5px;">A. 30-Second Phone Script (Say Right After Booking or Quoting a Load)</strong>
+          <button type="button" class="btn btn-sm" style="background:#f59e0b;color:#0f172a;border:none;font-weight:800;" onclick="copyScriptText('phone-script-text', this)">📋 Copy Script</button>
+        </div>
+        <p id="phone-script-text" style="margin:0;font-size:13px;line-height:1.6;color:#1e293b;white-space:pre-line;">"Hey [Broker Name], before we hang up—since we book trucks with you guys regularly through Shipping Wish, I wanted to make sure we see your open loads before they even hit DAT. We run our own carrier network and load board at LoadsNexus.com—it's 100% free for verified brokers. Can I add your email to our daily load list so you can just CC loads@loadsnexus.com whenever you send out your available freight blasts?"</p>
+      </div>
+
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+          <strong style="color:#065f46;font-size:13.5px;">B. Post-Call Follow-Up Email (Copy &amp; Paste or Send via Invite Modal)</strong>
+          <button type="button" class="btn btn-sm" style="background:#059669;color:#fff;border:none;font-weight:800;" onclick="copyScriptText('email-script-text', this)">📋 Copy Email</button>
+        </div>
+        <pre id="email-script-text" style="margin:0;font-family:inherit;font-size:12.5px;line-height:1.55;color:#1e293b;white-space:pre-wrap;">Subject: Direct capacity for your open lanes — Shipping Wish / LoadsNexus
+
+Hi [Broker Name],
+
+Great speaking with you earlier regarding the [Origin City] to [Destination City] lane.
+
+At Shipping Wish LLC, our 24/7 operations desk manages dispatch and booking for vetted U.S. owner-operators and small fleets across the Lower 48 (Dry Van, Reefer, Flatbed, and Box Trucks).
+
+To help you cover freight faster without extra load board fees, we built LoadsNexus—a free posting portal and AI load feed exclusively for FMCSA-verified brokers:
+• Zero Cost for Brokers: Posting is 100% free.
+• Zero Extra Work: Just CC loads@loadsnexus.com on your daily "available loads" email blast, or upload a CSV/API feed. Our system automatically lists your freight directly in front of our active carriers.
+• Direct Booking: Our dispatchers and carriers reach out to you directly with active MC#, insurance, and W-9 ready to go.
+
+Reply with your MC# or activate your free broker portal here: https://www.loadsnexus.com
+
+Best regards,
+[Dispatcher Name]
+Fleet Operations Desk | Shipping Wish LLC
+📞 +1 (917) 737-0021 | 🌐 https://www.shippingwish.com</pre>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeDispatcherScriptsModal()" class="btn btn-primary">Done</button>
     </div>
   </div>
 </div>
@@ -828,6 +883,31 @@
 
   function openNewBrokerModal() { document.getElementById('new-broker-modal').classList.add('open'); }
   function closeNewBrokerModal() { document.getElementById('new-broker-modal').classList.remove('open'); }
+  function openDispatcherScriptsModal() { document.getElementById('scripts-modal').classList.add('open'); }
+  function closeDispatcherScriptsModal() { document.getElementById('scripts-modal').classList.remove('open'); }
+
+  function copyScriptText(elId, btn) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    navigator.clipboard.writeText(el.innerText || el.textContent || '').then(() => {
+      const orig = btn.innerText;
+      btn.innerText = '✅ Copied!';
+      setTimeout(() => { btn.innerText = orig; }, 2000);
+    }).catch(() => {});
+  }
+
+  function applyOutreachPreset(mode) {
+    const subj = document.getElementById('outreach-subject');
+    const msg = document.getElementById('outreach-message');
+    if (!subj || !msg) return;
+    if (mode === 'postcall') {
+      subj.value = 'Direct capacity for your open lanes — Shipping Wish / LoadsNexus';
+      msg.value = 'Great speaking with you earlier! At Shipping Wish LLC, our 24/7 operations desk manages dispatch and booking for vetted U.S. owner-operators and small fleets across the Lower 48 (Dry Van, Reefer, Flatbed, and Box Trucks). Just CC loads@loadsnexus.com on your daily available load blasts—zero cost and zero extra work—so our carriers see your freight before it hits DAT.';
+    } else {
+      subj.value = 'Partner with LoadsNexus & Shipping Wish — Free Load Posting + Direct API';
+      msg.value = "We are reaching out from Shipping Wish LLC & LoadsNexus (loadsnexus.com). We operate an active nationwide network of vetted US carriers (53' Dry Vans, Reefers, Flatbeds, Hotshots & Box Trucks) looking for direct broker freight. We would love to connect your API, receive your daily load blast via loads@loadsnexus.com, or set up your free brokerage posting account on LoadsNexus.";
+    }
+  }
 
   document.getElementById('new-broker-form').addEventListener('submit', async (e) => {
     e.preventDefault();

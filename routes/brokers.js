@@ -744,14 +744,16 @@ router.post('/send-outreach', requireAuth, requireRole('dispatcher', 'admin', 's
 
 ${defaultParagraph}
 
-Two zero-cost ways to cover your loads faster with our network:
-1. Post Unlimited Loads 100% FREE on LoadsNexus: https://www.loadsnexus.com/post-load
-2. Direct API Integration: Connect your TMS / Broker API to our platform — or use our LoadsNexus Partner Load API — so your available loads automatically publish to our carriers and dispatchers in real time and auto-remove the second they are covered.
+Three zero-cost ways to cover your loads faster with our network:
+1. Zero Extra Work — Just CC loads@loadsnexus.com: Add loads@loadsnexus.com to your daily "available loads" email blast and our AI automatically posts your lanes live to our vetted carriers within 30 seconds.
+2. Post Unlimited Loads 100% FREE (Single or Bulk CSV): https://www.loadsnexus.com/post-load
+3. Direct API Integration: Connect your TMS / Broker API to our platform — or use our LoadsNexus Partner Load API — so your available loads publish in real time and auto-remove the second they are covered.
 
-Reply to this email with your API docs, daily load list, or carrier setup packet and our integration team will get your brokerage connected today.
+Reply to this email with your MC#, daily load list, or API docs and our operations team will get your brokerage connected today.
 
 Best regards,
 Shipping Wish LLC / LoadsNexus Carrier & Broker Partnerships
+Phone: +1 (917) 737-0021
 Web: https://www.loadsnexus.com | https://www.shippingwish.com
 Email: dispatch@loadsnexus.com`;
 
@@ -761,21 +763,22 @@ Email: dispatch@loadsnexus.com`;
   <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
     <div style="background:#059669;padding:20px 28px;color:#ffffff;">
       <div style="font-size:18px;font-weight:800;letter-spacing:-0.2px;">LoadsNexus</div>
-      <div style="font-size:12px;opacity:0.9;margin-top:2px;">Broker Partnership &amp; Direct API Freight Network · Powered by Shipping Wish LLC</div>
+      <div style="font-size:12px;opacity:0.9;margin-top:2px;">Broker Partnership &amp; Direct Capacity Network · Powered by Shipping Wish LLC</div>
     </div>
     <div style="padding:26px 28px;font-size:14.5px;line-height:1.65;color:#334155;">
       <p style="margin:0 0 14px;color:#0f172a;font-weight:600;">${greeting}</p>
       <p style="margin:0 0 16px;">${defaultParagraph.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</p>
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 18px;margin:18px 0;">
-        <div style="font-weight:700;color:#065f46;margin-bottom:8px;">Two Zero-Cost Ways to Move More Freight With Us:</div>
-        <div style="margin-bottom:6px;"><strong>1. Free Unlimited Load Posting:</strong> Post spot &amp; contract lanes free at <a href="https://www.loadsnexus.com" style="color:#059669;font-weight:700;">loadsnexus.com</a>.</div>
-        <div><strong>2. Direct API / EDI Syndication:</strong> Connect your Broker TMS API (or use our LoadsNexus Partner API) for instant real-time posting and automatic covered-load removal.</div>
+        <div style="font-weight:700;color:#065f46;margin-bottom:8px;">Three Zero-Cost Ways to Cover Freight Faster With Us:</div>
+        <div style="margin-bottom:8px;"><strong>1. Zero Extra Work — CC <span style="font-family:monospace;color:#047857;">loads@loadsnexus.com</span>:</strong> Simply CC <a href="mailto:loads@loadsnexus.com" style="color:#059669;font-weight:700;">loads@loadsnexus.com</a> on your daily "available loads" email blast — our AI auto-posts your open lanes directly to active carriers in 30 seconds.</div>
+        <div style="margin-bottom:8px;"><strong>2. Free Broker Portal &amp; Bulk CSV Upload:</strong> Post unlimited spot &amp; contract lanes 100% free at <a href="https://www.loadsnexus.com" style="color:#059669;font-weight:700;">loadsnexus.com</a>.</div>
+        <div><strong>3. Direct API / TMS Syndication:</strong> Connect your Broker TMS API (or use our LoadsNexus Partner REST API) for real-time posting and instant covered-load removal.</div>
       </div>
-      <p style="margin:16px 0 20px;">Simply reply to this email with your API documentation, carrier setup packet, or available load list — our dispatch &amp; integration team will connect <strong>${String(b.company_name).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</strong> today.</p>
-      <a href="https://www.loadsnexus.com" style="display:inline-block;background:#059669;color:#ffffff;text-decoration:none;font-weight:700;padding:11px 22px;border-radius:8px;font-size:14px;">Open LoadsNexus Broker Portal</a>
+      <p style="margin:16px 0 20px;">Simply reply with your MC#, daily load list, or carrier setup packet — our dispatchers and carriers reach out directly with active MC#, insurance, and W-9 ready to roll for <strong>${String(b.company_name).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</strong>.</p>
+      <a href="https://www.loadsnexus.com" style="display:inline-block;background:#059669;color:#ffffff;text-decoration:none;font-weight:700;padding:11px 22px;border-radius:8px;font-size:14px;">Activate Free Broker Portal</a>
       <p style="margin:24px 0 0;font-size:12.5px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:14px;">
-        <strong>Shipping Wish LLC &amp; LoadsNexus Partnerships</strong><br>
-        <a href="https://www.loadsnexus.com" style="color:#059669;text-decoration:none;">www.loadsnexus.com</a> &middot; <a href="https://www.shippingwish.com" style="color:#2563eb;text-decoration:none;">www.shippingwish.com</a>
+        <strong>Fleet Operations Desk | Shipping Wish LLC &amp; LoadsNexus</strong><br>
+        📞 +1 (917) 737-0021 &middot; <a href="https://www.loadsnexus.com" style="color:#059669;text-decoration:none;">www.loadsnexus.com</a> &middot; <a href="https://www.shippingwish.com" style="color:#2563eb;text-decoration:none;">www.shippingwish.com</a>
       </p>
     </div>
   </div>
