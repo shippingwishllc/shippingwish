@@ -775,6 +775,7 @@ module.exports = {
   searchFmcsa,
   searchCensusFiltered,
   lookupCensusRow,
+  censusQuery,
   normalizeCarrier,
   enrichOne,
   digits,

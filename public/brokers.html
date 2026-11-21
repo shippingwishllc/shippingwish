@@ -141,12 +141,106 @@
         </div>
       </div>
 
+      <!-- ================= USA BROKER SYNC & OUTREACH COMMAND BAR ================= -->
+      <div style="background:linear-gradient(135deg,#0b1528 0%,#102a43 100%);color:#f8fafc;border:1px solid #1e40af;border-radius:var(--radius-2xl);padding:18px 22px;margin-bottom:var(--space-6);box-shadow:var(--shadow-md);">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;">
+              <span>🏛️ USA Freight Broker Database &amp; Partner Outreach Hub</span>
+              <span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(52,211,153,0.4);">LIVE FMCSA + LOADS SYNC</span>
+            </div>
+            <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Sync real USA freight brokers from your live load board &amp; official US DOT FMCSA Census API, then invite them to post loads FREE or connect their API.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button type="button" id="btn-sync-loads-brokers" class="btn btn-sm" style="background:#2563eb;color:#fff;border:none;font-weight:700;" onclick="syncBrokersFromLoads()">
+              🔄 Sync From Live Loads
+            </button>
+            <select id="fmcsa-state-select" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#0f172a;color:#f8fafc;font-size:12px;font-weight:700;">
+              <option value="ALL">All 50 USA States</option>
+              <option value="TX">TX — Texas</option>
+              <option value="CA">CA — California</option>
+              <option value="IL">IL — Illinois</option>
+              <option value="GA">GA — Georgia</option>
+              <option value="FL">FL — Florida</option>
+              <option value="OH">OH — Ohio</option>
+              <option value="PA">PA — Pennsylvania</option>
+              <option value="NJ">NJ — New Jersey</option>
+              <option value="NC">NC — North Carolina</option>
+              <option value="TN">TN — Tennessee</option>
+              <option value="NY">NY — New York</option>
+              <option value="MI">MI — Michigan</option>
+              <option value="IN">IN — Indiana</option>
+              <option value="WA">WA — Washington</option>
+              <option value="AZ">AZ — Arizona</option>
+              <option value="CO">CO — Colorado</option>
+              <option value="MO">MO — Missouri</option>
+              <option value="MN">MN — Minnesota</option>
+              <option value="WI">WI — Wisconsin</option>
+              <option value="VA">VA — Virginia</option>
+            </select>
+            <button type="button" id="btn-sync-fmcsa-brokers" class="btn btn-sm" style="background:#059669;color:#fff;border:none;font-weight:700;" onclick="syncBrokersFromFmcsa()">
+              🏛️ Sync +500 USA Brokers (FMCSA)
+            </button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;">
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Total USA Brokers</div>
+            <div style="font-size:20px;font-weight:900;color:#fff;margin-top:2px;" id="bstat-total">0</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Verified Emails</div>
+            <div style="font-size:20px;font-weight:900;color:#34d399;margin-top:2px;" id="bstat-email">0</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Direct Phones</div>
+            <div style="font-size:20px;font-weight:900;color:#60a5fa;margin-top:2px;" id="bstat-phone">0</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">From Live Loads</div>
+            <div style="font-size:20px;font-weight:900;color:#fbbf24;margin-top:2px;" id="bstat-loads">0</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">From FMCSA API</div>
+            <div style="font-size:20px;font-weight:900;color:#c084fc;margin-top:2px;" id="bstat-fmcsa">0</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">API Invites Sent</div>
+            <div style="font-size:20px;font-weight:900;color:#38bdf8;margin-top:2px;" id="bstat-invited">0</div>
+          </div>
+        </div>
+        <div id="broker-sync-banner" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:700;background:rgba(16,185,129,0.18);color:#a7f3d0;border:1px solid rgba(52,211,153,0.4);"></div>
+      </div>
+
       <!-- Main Directory Table Card -->
       <div class="tms-table-card">
-        <div class="toolbar-filter-bar">
-          <div class="search-input-group">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="broker-search-input" placeholder="Search saved broker name, MC#, contact..." oninput="filterBrokersTable()">
+        <div class="toolbar-filter-bar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1;">
+            <div class="search-input-group" style="min-width:240px;flex:1;max-width:360px;">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="broker-search-input" placeholder="Search company, MC#, DOT#, email, phone, city..." oninput="debouncedLoadBrokers()">
+            </div>
+            <select id="filter-broker-source" class="form-select" style="width:auto;padding:8px 10px;font-size:12.5px;" onchange="loadBrokersList(1)">
+              <option value="all">All Sources</option>
+              <option value="load_sync">Live Synced Loads</option>
+              <option value="fmcsa_census">FMCSA Live Census</option>
+              <option value="known_verified">Tier-1 Verified</option>
+              <option value="manual">Manual Added</option>
+            </select>
+            <select id="filter-broker-outreach" class="form-select" style="width:auto;padding:8px 10px;font-size:12.5px;" onchange="loadBrokersList(1)">
+              <option value="all">All Outreach Status</option>
+              <option value="not_contacted">Not Contacted Yet</option>
+              <option value="invited">Invited (Email Sent)</option>
+            </select>
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--text-primary);cursor:pointer;">
+              <input type="checkbox" id="filter-has-email" checked onchange="loadBrokersList(1)"> Has Email Only
+            </label>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" id="btn-bulk-outreach" class="btn btn-primary btn-sm" style="background:#059669;border-color:#059669;" onclick="openOutreachModalForSelected()">
+              ✉️ Email Selected (<span id="selected-broker-count">0</span>)
+            </button>
           </div>
         </div>
 
@@ -154,12 +248,12 @@
           <table class="tms-table-v2" id="brokers-table">
             <thead>
               <tr>
-                <th>Broker Company Name</th>
-                <th>MC Number</th>
-                <th>Contact Person</th>
-                <th>Phone / Email</th>
-                <th>Credit Rating</th>
-                <th>Notes</th>
+                <th style="width:34px;"><input type="checkbox" id="select-all-brokers" onchange="toggleSelectAllBrokers(this.checked)" title="Select up to 20 brokers on this page"></th>
+                <th>Broker Company &amp; Location</th>
+                <th>MC# / USDOT#</th>
+                <th>Contact / Officer</th>
+                <th>Phone &amp; Email</th>
+                <th>Source &amp; Status</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -167,6 +261,14 @@
               <tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">Loading broker directory...</td></tr>
             </tbody>
           </table>
+        </div>
+
+        <div id="brokers-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--border-default);font-size:12.5px;color:var(--text-muted);">
+          <div id="brokers-page-info">Showing 0 brokers</div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn btn-light btn-sm" id="btn-brokers-prev" onclick="loadBrokersList(currentBrokerPage - 1)">← Previous</button>
+            <button type="button" class="btn btn-light btn-sm" id="btn-brokers-next" onclick="loadBrokersList(currentBrokerPage + 1)">Next →</button>
+          </div>
         </div>
       </div>
 
@@ -236,6 +338,32 @@
   </div>
 </div>
 
+<!-- BROKER PARTNER OUTREACH / API INVITE MODAL -->
+<div class="modal-backdrop" id="outreach-modal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <h2>✉️ Invite Broker — Free Load Posting &amp; API Integration</h2>
+      <button onclick="closeOutreachModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="outreach-targets-summary" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#065f46;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:700;margin-bottom:14px;"></div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label required">Email Subject</label>
+        <input class="form-input" type="text" id="outreach-subject" value="Partner with LoadsNexus & Shipping Wish — Free Load Posting + Direct API">
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Intro Message (LoadsNexus Free Portal &amp; Direct API details are automatically included below)</label>
+        <textarea class="form-textarea" id="outreach-message" rows="4">We are reaching out from Shipping Wish LLC &amp; LoadsNexus (loadsnexus.com). We operate an active nationwide network of vetted US carriers (53' Dry Vans, Reefers, Flatbeds, Hotshots &amp; Box Trucks) looking for direct broker freight. We would love to connect your API or set up a free brokerage posting account on LoadsNexus.</textarea>
+      </div>
+      <div id="outreach-send-status" style="font-size:12.5px;font-weight:700;margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeOutreachModal()" class="btn btn-light">Cancel</button>
+      <button type="button" id="btn-confirm-outreach" class="btn btn-primary" style="background:#059669;border-color:#059669;" onclick="confirmSendOutreach()">🚀 Send Branded Invite Email</button>
+    </div>
+  </div>
+</div>
+
 <script src="/js/notifications-bell.js"></script>
 <script src="/js/main.js"></script>
 <script src="/js/auth.js"></script>
@@ -244,6 +372,16 @@
   let currentUser = null;
   let rawBrokers = [];
   let lastCheckedBrokerData = null;
+  let currentBrokerPage = 1;
+  let totalFilteredBrokers = 0;
+  let selectedBrokerIds = new Set();
+  let pendingOutreachIds = [];
+  let _brokerSearchTimer = null;
+
+  function debouncedLoadBrokers() {
+    clearTimeout(_brokerSearchTimer);
+    _brokerSearchTimer = setTimeout(() => loadBrokersList(1), 280);
+  }
 
   async function initBrokers() {
     currentUser = await checkAuth(['carrier', 'dispatcher', 'admin', 'super_admin']);
@@ -254,68 +392,264 @@
     const av = document.getElementById('broker-avatar') || document.getElementById('user-avatar-initials');
     if (av) av.textContent = (currentUser.name||'BD').slice(0,2).toUpperCase();
 
-    loadBrokersList();
+    loadBrokersList(1);
   }
 
-  async function loadBrokersList() {
+  function updateStatsBar(stats = {}) {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = Number(v || 0).toLocaleString(); };
+    set('bstat-total', stats.total_brokers);
+    set('bstat-email', stats.with_email);
+    set('bstat-phone', stats.with_phone);
+    set('bstat-loads', stats.from_loads);
+    set('bstat-fmcsa', stats.from_fmcsa);
+    set('bstat-invited', stats.invited_count);
+  }
+
+  async function loadBrokersList(page = 1) {
+    currentBrokerPage = Math.max(1, page);
     const tbody = document.querySelector('#brokers-table tbody');
+    const q = (document.getElementById('broker-search-input')?.value || '').trim();
+    const source = document.getElementById('filter-broker-source')?.value || 'all';
+    const outreach = document.getElementById('filter-broker-outreach')?.value || 'all';
+    const hasEmail = document.getElementById('filter-has-email')?.checked ? '1' : '0';
+
+    const params = new URLSearchParams({
+      page: String(currentBrokerPage),
+      limit: '100',
+      source,
+      outreach,
+      hasEmail
+    });
+    if (q) params.set('search', q);
+
     try {
-      const res = await fetch('/api/brokers');
+      const res = await fetch(`/api/brokers?${params.toString()}`, { credentials: 'include' });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load brokers');
       rawBrokers = data.brokers || [];
+      totalFilteredBrokers = Number(data.filtered_total || rawBrokers.length);
+      updateStatsBar(data.stats || {});
+      selectedBrokerIds.clear();
+      updateSelectedCounter();
+      const sa = document.getElementById('select-all-brokers');
+      if (sa) sa.checked = false;
       renderBrokersTable(rawBrokers);
+
+      const startIdx = totalFilteredBrokers ? ((currentBrokerPage - 1) * 100 + 1) : 0;
+      const endIdx = Math.min(totalFilteredBrokers, currentBrokerPage * 100);
+      document.getElementById('brokers-page-info').textContent = `Showing ${startIdx.toLocaleString()}–${endIdx.toLocaleString()} of ${totalFilteredBrokers.toLocaleString()} matching brokers`;
+      document.getElementById('btn-brokers-prev').disabled = currentBrokerPage <= 1;
+      document.getElementById('btn-brokers-next').disabled = endIdx >= totalFilteredBrokers;
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">Error loading brokers.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">Error loading brokers: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
-  function filterBrokersTable() {
-    const q = (document.getElementById('broker-search-input').value || '').toLowerCase().trim();
-    if (!q) {
-      renderBrokersTable(rawBrokers);
-      return;
+  function updateSelectedCounter() {
+    const el = document.getElementById('selected-broker-count');
+    if (el) el.textContent = String(selectedBrokerIds.size);
+  }
+
+  function toggleBrokerSelect(id, checked) {
+    if (checked) {
+      if (selectedBrokerIds.size >= 20) {
+        alert('You can select up to 20 brokers per outreach batch to protect inbox deliverability.');
+        const cb = document.querySelector(`input.broker-row-cb[data-id="${id}"]`);
+        if (cb) cb.checked = false;
+        return;
+      }
+      selectedBrokerIds.add(id);
+    } else {
+      selectedBrokerIds.delete(id);
     }
-    const filtered = rawBrokers.filter(b =>
-      (b.company_name||'').toLowerCase().includes(q) ||
-      (b.mc_number||'').toLowerCase().includes(q) ||
-      (b.contact_person||'').toLowerCase().includes(q)
-    );
-    renderBrokersTable(filtered);
+    updateSelectedCounter();
+  }
+
+  function toggleSelectAllBrokers(checked) {
+    selectedBrokerIds.clear();
+    const boxes = Array.from(document.querySelectorAll('input.broker-row-cb:not(:disabled)'));
+    boxes.forEach((cb, idx) => {
+      const selectIt = checked && idx < 20;
+      cb.checked = selectIt;
+      if (selectIt) selectedBrokerIds.add(parseInt(cb.dataset.id, 10));
+    });
+    updateSelectedCounter();
   }
 
   function renderBrokersTable(list) {
     const tbody = document.querySelector('#brokers-table tbody');
     if (!list.length) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">No brokers found in directory.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">No brokers match this filter. Click <strong>Sync From Live Loads</strong> or <strong>Sync +500 USA Brokers (FMCSA)</strong> above!</td></tr>`;
       return;
     }
 
+    const canManage = currentUser && !['carrier', 'carrier_admin'].includes(currentUser.role);
+
     tbody.innerHTML = list.map(b => {
-      const rating = b.credit_rating || 'A';
-      let ratingBadgeClass = 'badge-status active';
-      if (rating === 'A+' || rating === 'A') ratingBadgeClass = 'badge-status active';
-      else if (rating === 'B') ratingBadgeClass = 'badge-status dispatched';
-      else ratingBadgeClass = 'badge-status dead';
+      const hasEmail = Boolean(b.email && b.email.includes('@'));
+      const srcLabel = b.source === 'load_sync' ? 'Live Loads'
+        : b.source === 'fmcsa_census' ? 'FMCSA Live'
+        : b.source === 'known_verified' ? 'Tier-1 Verified' : 'Directory';
+      const srcBg = b.source === 'load_sync' ? '#eff6ff;color:#1d4ed8'
+        : b.source === 'fmcsa_census' ? '#f5f3ff;color:#6d28d9'
+        : '#ecfdf5;color:#047857';
+      const invited = b.outreach_status === 'invited';
+      const loc = [b.city, b.state].filter(Boolean).join(', ');
 
       return `
         <tr>
-          <td><strong style="color:var(--text-primary);font-size:14px;">${escapeHtml(b.company_name)}</strong></td>
-          <td><span class="equip-tag">${escapeHtml(b.mc_number || 'N/A')}</span></td>
-          <td><div style="font-size:13px;font-weight:600;">👤 ${escapeHtml(b.contact_person || 'N/A')}</div></td>
           <td>
-            <div style="font-size:12px;font-weight:600;color:var(--text-primary);">${escapeHtml(b.phone || '')}</div>
-            <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(b.email || '')}</div>
+            <input type="checkbox" class="broker-row-cb" data-id="${b.id}" ${hasEmail ? '' : 'disabled title="No email address"'} onchange="toggleBrokerSelect(${b.id}, this.checked)">
           </td>
-          <td><span class="${ratingBadgeClass}">${escapeHtml(rating)} Rating</span></td>
-          <td><div style="font-size:12px;color:var(--text-muted);">${escapeHtml(b.notes || '-')}</div></td>
           <td>
-            ${currentUser && (currentUser.role === 'carrier' || currentUser.role === 'carrier_admin') ? '' : `
-            <button onclick="deleteBroker(${b.id})" class="btn-table-action call" style="color:#ef4444;border-color:#fecaca;" title="Delete Broker">Delete</button>
-            `}
+            <strong style="color:var(--text-primary);font-size:13.5px;">${escapeHtml(b.company_name)}</strong>
+            ${loc ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">📍 ${escapeHtml(loc)}</div>` : ''}
+          </td>
+          <td>
+            <span class="equip-tag">${escapeHtml(b.mc_number || 'MC Pending')}</span>
+            ${b.dot_number ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px;">DOT #${escapeHtml(b.dot_number)}</div>` : ''}
+          </td>
+          <td><div style="font-size:12.5px;font-weight:600;">👤 ${escapeHtml(b.contact_person || 'Broker Desk')}</div></td>
+          <td>
+            ${b.phone ? `<div style="font-size:12px;font-weight:700;"><a href="tel:${escapeHtml(b.phone)}" style="color:var(--text-primary);text-decoration:none;">📞 ${escapeHtml(b.phone)}</a></div>` : ''}
+            ${hasEmail ? `<div style="font-size:11.5px;margin-top:2px;"><a href="mailto:${escapeHtml(b.email)}" style="color:#2563eb;text-decoration:none;font-weight:600;">✉️ ${escapeHtml(b.email)}</a></div>` : '<div style="font-size:11px;color:#94a3b8;">No email on file</div>'}
+          </td>
+          <td>
+            <span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:800;background:${srcBg};">${srcLabel}</span>
+            <div style="margin-top:4px;font-size:11px;font-weight:700;color:${invited ? '#059669' : '#64748b'};">
+              ${invited ? `✅ Invited (${b.email_count || 1}x)` : '○ Not Contacted'}
+            </div>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              ${canManage && hasEmail ? `<button onclick="openOutreachModal([${b.id}], '${escapeHtml(b.company_name).replace(/'/g, "\\'")}', '${escapeHtml(b.email).replace(/'/g, "\\'")}')" class="btn-table-action" style="background:#059669;color:#fff;border-color:#059669;font-weight:700;" title="Send Free Posting & API Invite Email">✉️ Invite / API</button>` : ''}
+              ${canManage ? `<button onclick="deleteBroker(${b.id})" class="btn-table-action call" style="color:#ef4444;border-color:#fecaca;" title="Delete Broker">Delete</button>` : ''}
+            </div>
           </td>
         </tr>
       `;
     }).join('');
+  }
+
+  function showSyncBanner(msg, isErr = false) {
+    const el = document.getElementById('broker-sync-banner');
+    if (!el) return;
+    el.style.display = 'block';
+    el.style.background = isErr ? 'rgba(220,38,38,0.22)' : 'rgba(16,185,129,0.18)';
+    el.style.color = isErr ? '#fecaca' : '#a7f3d0';
+    el.style.borderColor = isErr ? 'rgba(248,113,113,0.45)' : 'rgba(52,211,153,0.4)';
+    el.textContent = msg;
+  }
+
+  async function syncBrokersFromLoads() {
+    const btn = document.getElementById('btn-sync-loads-brokers');
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ Syncing From Loads...';
+    try {
+      const res = await fetch('/api/brokers/sync-from-loads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ includeTopBrokers: true })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Sync failed');
+      showSyncBanner('✅ ' + data.message);
+      loadBrokersList(1);
+    } catch (err) {
+      showSyncBanner('❌ ' + err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  }
+
+  async function syncBrokersFromFmcsa() {
+    const btn = document.getElementById('btn-sync-fmcsa-brokers');
+    const state = document.getElementById('fmcsa-state-select')?.value || 'ALL';
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = `⏳ Pulling 500 FMCSA (${state})...`;
+    try {
+      const res = await fetch('/api/brokers/sync-fmcsa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ state, limit: 500, emailsOnly: true })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'FMCSA sync failed');
+      showSyncBanner('✅ ' + data.message + ' Click again anytime to pull the next 500!');
+      loadBrokersList(1);
+    } catch (err) {
+      showSyncBanner('❌ ' + err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  }
+
+  function openOutreachModal(ids, singleName = '', singleEmail = '') {
+    pendingOutreachIds = ids;
+    document.getElementById('outreach-send-status').textContent = '';
+    const sumEl = document.getElementById('outreach-targets-summary');
+    if (ids.length === 1 && singleName) {
+      sumEl.textContent = `Recipient: ${singleName} (${singleEmail}) — Sending branded LoadsNexus Partner & API Invite`;
+    } else {
+      sumEl.textContent = `Selected Recipients: ${ids.length} verified USA brokers — Sending personalized LoadsNexus Partner & API Invites`;
+    }
+    document.getElementById('outreach-modal').classList.add('open');
+  }
+
+  function openOutreachModalForSelected() {
+    const ids = Array.from(selectedBrokerIds);
+    if (!ids.length) {
+      alert('Please check at least one broker with an email address first.');
+      return;
+    }
+    openOutreachModal(ids);
+  }
+
+  function closeOutreachModal() {
+    document.getElementById('outreach-modal').classList.remove('open');
+  }
+
+  async function confirmSendOutreach() {
+    if (!pendingOutreachIds.length) return;
+    const btn = document.getElementById('btn-confirm-outreach');
+    const st = document.getElementById('outreach-send-status');
+    btn.disabled = true;
+    btn.textContent = '⏳ Sending Invites...';
+    st.style.color = '#2563eb';
+    st.textContent = 'Delivering branded partnership emails via LoadsNexus Dispatch...';
+
+    try {
+      const res = await fetch('/api/brokers/send-outreach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          broker_ids: pendingOutreachIds,
+          subject: document.getElementById('outreach-subject').value.trim(),
+          message: document.getElementById('outreach-message').value.trim()
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not send emails');
+      st.style.color = '#059669';
+      st.textContent = '✅ ' + data.message;
+      setTimeout(() => {
+        closeOutreachModal();
+        loadBrokersList(currentBrokerPage);
+      }, 1200);
+    } catch (err) {
+      st.style.color = '#dc2626';
+      st.textContent = '❌ ' + err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🚀 Send Branded Invite Email';
+    }
   }
 
   function quickCheck(mc) {

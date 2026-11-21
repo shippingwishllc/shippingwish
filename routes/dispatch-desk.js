@@ -1361,6 +1361,14 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
       }
     }
 
+    // Auto-save / enrich newly synced real brokers into the Broker Directory
+    try {
+      const brokersRouter = require('./brokers');
+      if (insertedLoads.length > 0 && typeof brokersRouter.syncBrokersFromLoadRows === 'function') {
+        await brokersRouter.syncBrokersFromLoadRows(insertedLoads).catch(() => {});
+      }
+    } catch (_) {}
+
     // Broadcast newly inserted loads to LoadsNexus real-time board
     try {
       const loadboardRouter = require('./loadboard');
