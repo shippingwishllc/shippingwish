@@ -25,14 +25,50 @@ const router = express.Router();
 const staff = [requireAuth, requireRole('admin', 'super_admin', 'dispatcher')];
 const driverOrStaff = [requireAuth, requireRole('admin', 'super_admin', 'dispatcher', 'driver', 'carrier')];
 
-// TAL One bridge (PowerShell script / Chrome extension) authenticates with a shared key
-// sent in the x-bridge-key header (env DAT_BRIDGE_KEY). Otherwise a staff session is required.
-function bridgeOrStaff(req, res, next) {
+// TAL One / Desktop Clipboard Bridge authenticates with a shared key sent in x-bridge-key
+// (matches env DAT_BRIDGE_KEY OR SuperAdmin-generated desktop_bridge_key in system_kv_settings).
+// Otherwise a logged-in staff session is required.
+async function getOrCreateDesktopBridgeKey(forceRotate = false) {
   const nodeCrypto = require('crypto');
-  const key = String(process.env.DAT_BRIDGE_KEY || '');
-  const provided = String(req.headers['x-bridge-key'] || '');
-  if (key && provided.length === key.length && nodeCrypto.timingSafeEqual(Buffer.from(provided), Buffer.from(key))) {
-    return next();
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS system_kv_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `).catch(() => {});
+
+  if (!forceRotate) {
+    const existing = await pool.query(
+      `SELECT value FROM system_kv_settings WHERE key = 'desktop_bridge_key' LIMIT 1`
+    ).catch(() => ({ rows: [] }));
+    if (existing.rows[0]?.value) return String(existing.rows[0].value);
+  }
+
+  const freshKey = 'swb_' + nodeCrypto.randomBytes(24).toString('hex');
+  await pool.query(
+    `INSERT INTO system_kv_settings (key, value, updated_at) VALUES ('desktop_bridge_key', $1, NOW())
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+    [freshKey]
+  );
+  return freshKey;
+}
+
+async function bridgeOrStaff(req, res, next) {
+  const nodeCrypto = require('crypto');
+  const provided = String(req.headers['x-bridge-key'] || '').trim();
+  if (provided) {
+    const envKey = String(process.env.DAT_BRIDGE_KEY || '').trim();
+    if (envKey && provided.length === envKey.length && nodeCrypto.timingSafeEqual(Buffer.from(provided), Buffer.from(envKey))) {
+      return next();
+    }
+    try {
+      const dbRes = await pool.query(`SELECT value FROM system_kv_settings WHERE key = 'desktop_bridge_key' LIMIT 1`);
+      const dbKey = String(dbRes.rows[0]?.value || '').trim();
+      if (dbKey && provided.length === dbKey.length && nodeCrypto.timingSafeEqual(Buffer.from(provided), Buffer.from(dbKey))) {
+        return next();
+      }
+    } catch (_) {}
   }
   return requireAuth(req, res, (err) => {
     if (err) return next(err);
@@ -2565,6 +2601,26 @@ router.get('/sync-network-status', requireAuth, requireRole('admin', 'super_admi
     });
   } catch (err) {
     res.status(500).json({ error: 'Could not read load sync status.' });
+  }
+});
+
+// GET /api/dispatch-desk/bridge-token — Super Admin / Admin ONLY: retrieve secure Desktop Clipboard Bridge key
+router.get('/bridge-token', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const key = await getOrCreateDesktopBridgeKey(false);
+    res.json({ ok: true, bridge_key: key, endpoint: 'https://shippingwish.com/api/dispatch-desk/sync-dat-bulk' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load desktop bridge key: ' + err.message });
+  }
+});
+
+// POST /api/dispatch-desk/bridge-token/rotate — Super Admin / Admin ONLY: revoke old key & issue new key
+router.post('/bridge-token/rotate', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
+  try {
+    const key = await getOrCreateDesktopBridgeKey(true);
+    res.json({ ok: true, bridge_key: key, rotated: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not rotate desktop bridge key: ' + err.message });
   }
 });
 

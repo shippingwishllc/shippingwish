@@ -178,6 +178,7 @@
           <button type="button" class="lnx-sync-btn emerald" id="lnx-btn-sync-now">🔄 Sync Loads</button>
           <button type="button" class="lnx-sync-btn ghost" id="lnx-btn-auto-toggle">${autoOn ? '⏸ Pause Auto-Sync' : '▶ Enable Auto-Sync'}</button>
           <button type="button" class="lnx-sync-btn" id="lnx-btn-bulk-sync">📥 Bulk Feed Sync</button>
+          <button type="button" class="lnx-sync-btn ghost" id="lnx-btn-bridge-key" title="Copy secure Desktop Clipboard Bridge key for Windows PC auto-sync">🔑 Copy PC Bridge Key</button>
         </div>
       `;
 
@@ -216,6 +217,26 @@
       const bulkBtn = bar.querySelector('#lnx-btn-bulk-sync');
       if (bulkBtn) bulkBtn.onclick = () => {
         openBulkSyncModal((r) => renderBar(r.live_public_loads, r.synced_at));
+      };
+
+      const keyBtn = bar.querySelector('#lnx-btn-bridge-key');
+      if (keyBtn) keyBtn.onclick = async () => {
+        const orig = keyBtn.textContent;
+        keyBtn.disabled = true;
+        keyBtn.textContent = '⏳ Loading Key...';
+        try {
+          const r = await apiJson('/api/dispatch-desk/bridge-token');
+          if (r.bridge_key) {
+            try { await navigator.clipboard.writeText(r.bridge_key); } catch (_) {}
+            keyBtn.textContent = '✅ Key Copied!';
+            setTimeout(() => { keyBtn.textContent = orig; keyBtn.disabled = false; }, 2200);
+            window.prompt('Desktop PC Bridge Key (already copied to clipboard — paste into Desktop Bridge window):', r.bridge_key);
+          }
+        } catch (err) {
+          alert(err.message || 'Could not load PC Bridge Key');
+          keyBtn.textContent = orig;
+          keyBtn.disabled = false;
+        }
       };
     }
 
