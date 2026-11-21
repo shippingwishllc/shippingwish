@@ -470,12 +470,16 @@ function parseUniversalDat(text) {
     const weightMatch = chunk.match(/([0-9,]+)\s*(?:lbs|lb)\b/i);
     const weight = weightMatch ? parseInt(weightMatch[1].replace(/,/g, ''), 10) : 40000;
 
+    // Strip ", ST" state abbreviations before detecting equipment codes so e.g. "Yankton, SD" never matches Step Deck (SD)
+    const eqChunk = chunk.replace(/,\s*[A-Z]{2}\b/g, '');
     let eq = '53ft Dry Van';
-    if (/\b(VR|REEFER|R)\b/i.test(chunk)) eq = '53ft Reefer';
-    else if (/\b(F|FLATBED|FLAT)\b/i.test(chunk)) eq = 'Flatbed';
-    else if (/\b(SB|BOX|STRAIGHT)\b/i.test(chunk)) eq = '26ft Box Truck';
-    else if (/\b(SD|STEP)\b/i.test(chunk)) eq = 'Step Deck';
-    else if (/\b(V|VAN)\b/i.test(chunk)) eq = '53ft Dry Van';
+    if (/(?:^|[\t\r\n])\s*(?:VR|R)\s*(?:[\t\r\n]|$)|\bREEFER\b/i.test(eqChunk)) eq = '53ft Reefer';
+    else if (/(?:^|[\t\r\n])\s*(?:F|FD|FH)\s*(?:[\t\r\n]|$)|\bFLATBED\b/i.test(eqChunk)) eq = 'Flatbed';
+    else if (/(?:^|[\t\r\n])\s*SB\s*(?:[\t\r\n]|$)|\b(?:BOX\s*TRUCK|STRAIGHT\s*TRUCK)\b/i.test(eqChunk)) eq = '26ft Box Truck';
+    else if (/(?:^|[\t\r\n])\s*SD\s*(?:[\t\r\n]|$)|\bSTEP\s*DECK\b/i.test(eqChunk)) eq = 'Step Deck';
+    else if (/(?:^|[\t\r\n])\s*HS\s*(?:[\t\r\n]|$)|\bHOTSHOT\b/i.test(eqChunk)) eq = 'Hotshot';
+    else if (/(?:^|[\t\r\n])\s*PO\s*(?:[\t\r\n]|$)|\bPOWER\s*ONLY\b/i.test(eqChunk)) eq = 'Power Only';
+    else if (/(?:^|[\t\r\n])\s*V\s*(?:[\t\r\n]|$)|\b(?:DRY\s*VAN|VAN)\b/i.test(eqChunk)) eq = '53ft Dry Van';
 
     const phone = extractPhoneWithExt(chunk);
 
