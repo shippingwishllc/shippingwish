@@ -132,7 +132,7 @@ function parseKeyValueFormat(text) {
     const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : 0;
 
     return [{
-      load_id: `DAT-${Math.floor(100000 + Math.random() * 900000)}`,
+      load_id: `LNX-${Math.floor(100000 + Math.random() * 900000)}`,
       dho: data.dho || 0,
       loaded_miles: miles,
       origin: orig.full || data.origin,
@@ -148,7 +148,7 @@ function parseKeyValueFormat(text) {
       rate: rate,
       rpm: rpm,
       notes: data.notes || '',
-      broker_name: data.broker_raw || 'Direct Broker (DAT)',
+      broker_name: data.broker_raw || 'Verified Freight Broker',
       broker_email: data.broker_email || null,
       broker_phone: data.broker_phone || null,
       raw_source: text.slice(0, 500)
@@ -209,16 +209,17 @@ function parseDatTableRows(text) {
       const phone = extractPhoneWithExt(line);
 
       // Extract Broker company name
-      let brokerName = 'DAT Verified Broker';
+      let brokerName = 'Verified Freight Broker';
       if (email) {
         const domain = email.split('@')[1]?.replace(/\.[a-z]{2,}$/i, '');
         if (domain) brokerName = domain.toUpperCase() + ' Logistics';
       }
 
       const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : 0;
+      const mcMatch = line.match(/MC\s*[#\-]?\s*(\d{5,8})/i);
 
       results.push({
-        load_id: `DAT-${Math.floor(100000 + Math.random() * 900000)}`,
+        load_id: `LNX-${Math.floor(100000 + Math.random() * 900000)}`,
         dho: dho,
         loaded_miles: miles,
         origin: orig.full || 'Pasted Origin',
@@ -237,6 +238,7 @@ function parseDatTableRows(text) {
         broker_name: brokerName,
         broker_email: email,
         broker_phone: phone,
+        mc_number: mcMatch ? `MC-${mcMatch[1]}` : null,
         raw_source: line.slice(0, 300)
       });
     }
@@ -371,7 +373,7 @@ function parseDatCard(text) {
     const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : 0;
 
     return {
-      load_id: data.mc_number ? `DAT-MC${data.mc_number}` : `DAT-${Math.floor(100000 + Math.random() * 900000)}`,
+      load_id: data.mc_number ? `LNX-MC${data.mc_number}` : `LNX-${Math.floor(100000 + Math.random() * 900000)}`,
       dho: data.dho || 0,
       loaded_miles: miles,
       origin: orig.full || data.origin,
@@ -386,11 +388,11 @@ function parseDatCard(text) {
       equipment_type: data.equipment || '53ft Dry Van',
       rate: rate,
       rpm: rpm,
-      notes: data.notes || (data.is_spot_benchmark ? `DAT Spot benchmark rate ($${rate})` : ''),
+      notes: data.notes || (data.is_spot_benchmark ? `Spot benchmark rate ($${rate})` : ''),
       broker_name: data.broker_name || 'Verified Freight Broker',
       broker_email: data.broker_email || null,
       broker_phone: data.broker_phone || null,
-      mc_number: data.mc_number || null,
+      mc_number: data.mc_number ? `MC-${data.mc_number}` : null,
       raw_source: text.slice(0, 400)
     };
   }
@@ -480,14 +482,21 @@ function parseUniversalDat(text) {
     const emailMatch = chunk.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
     const email = emailMatch ? emailMatch[1].toLowerCase() : null;
 
-    let broker = 'DAT Verified Broker';
-    const brokerMatch = chunk.match(/(?:Full|Partial|53 ft|26 ft)[\s\t]+([A-Za-z0-9\s.,&'-]+?)(?:[\s\t]+\([0-9]{3}\)|[\s\t]+[0-9]{2}\s+CS|[\s\t]+[a-zA-Z0-9._%+-]+@|$)/i);
-    if (brokerMatch && brokerMatch[1].trim().length > 3) {
-      broker = brokerMatch[1].replace(/^(?:-\s*)?(?:Full|Partial)\s*[\t\s]*/i, '').trim();
+    let broker = 'Verified Freight Broker';
+    const brokerMatch =
+      chunk.match(/(?:Full|Partial)[\s\t]+([A-Za-z0-9\s.,&'-]+?)(?:[\s\t]+\([0-9]{3}\)|[\s\t]+[0-9]{2}\s+CS|[\s\t]+MC\s*[#\-]?\s*\d|[\s\t]+[a-zA-Z0-9._%+-]+@|\t|$)/i) ||
+      chunk.match(/(?:53 ft|48 ft|26 ft)[\s\t]+(?:-\s*)?(?:Full|Partial)?[\s\t]*([A-Za-z][A-Za-z0-9\s.,&'-]{2,}?)(?:[\s\t]+\([0-9]{3}\)|[\s\t]+[0-9]{2}\s+CS|[\s\t]+MC\s*[#\-]?\s*\d|[\s\t]+[a-zA-Z0-9._%+-]+@|\t|$)/i);
+    if (brokerMatch && brokerMatch[1].trim().length > 2) {
+      const candidate = brokerMatch[1].replace(/^(?:-\s*)?(?:Full|Partial)\s*[\t\s]*/i, '').trim();
+      if (!/^(?:[VRFSB]{1,2}\s+)?[\d,]+\s*lbs?$/i.test(candidate)) {
+        broker = candidate;
+      }
     } else if (email) {
       const domain = email.split('@')[1]?.replace(/\.[a-z]{2,}$/i, '');
       if (domain) broker = domain.toUpperCase() + ' Logistics';
     }
+
+    const mcMatch = chunk.match(/MC\s*[#\-]?\s*(\d{5,8})/i);
 
     // Extract any notes, comments, commodity, or special instructions from chunk
     let notes = '';
@@ -501,7 +510,7 @@ function parseUniversalDat(text) {
     const rpm = miles > 0 && rate > 0 ? parseFloat((rate / miles).toFixed(2)) : 0;
 
     results.push({
-      load_id: `DAT-${Math.floor(100000 + Math.random() * 900000)}`,
+      load_id: `LNX-${Math.floor(100000 + Math.random() * 900000)}`,
       origin: orig.full,
       origin_city: orig.city,
       origin_state: orig.state,
@@ -517,6 +526,7 @@ function parseUniversalDat(text) {
       broker_name: broker,
       broker_phone: phone,
       broker_email: email,
+      mc_number: mcMatch ? `MC-${mcMatch[1]}` : null,
       rpm,
       pickup_time: 'Ready Today',
       delivery_time: 'Standard Delivery',
@@ -583,7 +593,7 @@ function parseDatInput(text) {
     const email = emailMatch ? emailMatch[1].toLowerCase() : null;
 
     return [{
-      load_id: `DAT-${Math.floor(100000 + Math.random() * 900000)}`,
+      load_id: `LNX-${Math.floor(100000 + Math.random() * 900000)}`,
       dho: 50,
       loaded_miles: miles,
       origin: orig.full,

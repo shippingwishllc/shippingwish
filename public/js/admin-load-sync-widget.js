@@ -106,9 +106,9 @@
       const st = document.getElementById('lnx-bulk-status');
       if (!txt) { st.style.color = '#dc2626'; st.textContent = 'Please paste load feed text first.'; return; }
       st.style.color = '#2563eb';
-      st.textContent = 'Syncing loads and broadcasting to Staff & LoadsNexus Subscribers...';
+      st.textContent = 'Syncing loads and broadcasting to Shipping Wish & LoadsNexus...';
       try {
-        await apiJson('/api/dispatch-desk/parse-dat-loads', {
+        const bulk = await apiJson('/api/dispatch-desk/sync-dat-bulk', {
           method: 'POST',
           body: JSON.stringify({ rawText: txt, text: txt })
         });
@@ -116,8 +116,11 @@
           method: 'POST',
           body: JSON.stringify({ auto_sync_enabled: true })
         });
+        const added = Number(bulk.inserted_count || 0);
+        const dupes = Number(bulk.skipped_duplicate_count || 0);
+        const liveTotal = Number(r.live_public_loads || added);
         st.style.color = '#059669';
-        st.textContent = '✅ ' + (r.message || 'Loads synced live!');
+        st.textContent = `✅ +${added} new load(s) synced live (${dupes} duplicate skipped) • ${liveTotal} total active on Shipping Wish & LoadsNexus!`;
         document.getElementById('lnx-bulk-text').value = '';
         if (typeof onSynced === 'function') onSynced(r);
       } catch (e) {

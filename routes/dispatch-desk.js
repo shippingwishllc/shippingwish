@@ -1118,6 +1118,8 @@ router.post('/dat-cloud/sync-now', ...staff, async (req, res) => {
  */
 router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
   try {
+    const { ensureUnifiedSchema } = require('../utils/load-lifecycle');
+    await ensureUnifiedSchema();
     await ensureBoardSchema();
     const rawInput = String(req.body.rawText || req.body.text || '').trim();
 
@@ -1202,9 +1204,10 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
         load.companyName ||
         load.poster?.companyName ||
         load.broker?.name ||
-        'DAT Verified Broker'
-      ).trim();
+        'Verified Freight Broker'
+      ).replace(/DAT\s+Verified\s+Broker/i, 'Verified Freight Broker').replace(/Direct\s+Broker\s*\(DAT\)/i, 'Verified Freight Broker').trim();
 
+      const brokerMc = load.mc_number || load.broker_mc || null;
       const email = load.broker_email || load.email || load.poster?.email || null;
       const phone = load.broker_phone || load.phone || load.poster?.phone || null;
       const dho = parseInt(load.dho || load.deadhead_miles || load.deadheadOrigin, 10) || 0;
@@ -1212,6 +1215,8 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
       const equipment = load.equipment_type || load.equipment || load.equipmentType || '53ft Dry Van';
       const notes = load.notes || null;
       const pickupDate = load.pickup_date || new Date().toISOString().slice(0, 10);
+      const originState = load.origin_state || (origin.match(/,\s*([A-Z]{2})\b/i)?.[1]?.toUpperCase()) || null;
+      const destState = load.destination_state || (dest.match(/,\s*([A-Z]{2})\b/i)?.[1]?.toUpperCase()) || null;
 
       if (!origin || !dest) {
         skippedCount++;
@@ -1221,7 +1226,8 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
       // Check deduplication (look for identical origin, destination, rate, and broker within the last 48 hours)
       const existing = await pool.query(
         `SELECT id, load_number FROM loads 
-         WHERE pickup_location = $1 AND delivery_location = $2 AND rate = $3 
+         WHERE deleted_at IS NULL
+           AND pickup_location = $1 AND delivery_location = $2 AND rate = $3 
            AND (broker_name = $4 OR broker_contact LIKE $5)
            AND created_at > NOW() - INTERVAL '48 hours'
          LIMIT 1`,
@@ -1233,22 +1239,24 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
         skippedCount++;
         loadRow = existing.rows[0];
       } else {
-        const loadNum = load.load_id || `DAT-${Math.floor(100000 + Math.random() * 900000)}`;
+        const rawLoadNum = load.load_id ? String(load.load_id).replace(/^DAT-/i, 'LNX-') : '';
+        const loadNum = rawLoadNum || `LNX-${Math.floor(100000 + Math.random() * 900000)}`;
         const ins = await pool.query(
           `INSERT INTO loads (
-            load_number, broker_name, broker_contact, pickup_location, pickup_state,
+            load_number, broker_name, broker_mc, broker_contact, pickup_location, pickup_state,
             delivery_location, delivery_state, pickup_date, pickup_time, delivery_time,
-            equipment_type, weight, miles, rate, rpm, status, source_type, notes
-          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'new','dat_sync',$16)
+            equipment_type, weight, miles, rate, rpm, status, source_type, is_public_board, notes
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'open','dat_sync',TRUE,$17)
           RETURNING *`,
           [
             loadNum,
             broker,
+            brokerMc,
             [email, phone].filter(Boolean).join(' | ') || null,
             origin,
-            load.origin_state || null,
+            originState,
             dest,
-            load.destination_state || null,
+            destState,
             pickupDate,
             load.pickup_time || 'Ready Today',
             load.delivery_time || 'Next Day',
@@ -1322,7 +1330,8 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
         `UPDATE loads 
          SET status = 'covered', updated_at = NOW() 
          WHERE source_type = 'dat_sync' 
-           AND status = 'new' 
+           AND deleted_at IS NULL
+           AND status::text IN ('new', 'open') 
            AND updated_at < NOW() - INTERVAL '12 hours'
          RETURNING id, load_number`
       );
