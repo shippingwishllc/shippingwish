@@ -680,7 +680,7 @@ router.get('/search', optionalAuth, async (req, res) => {
          LEFT JOIN brokers b ON (b.id = l.broker_id OR (l.broker_mc IS NOT NULL AND l.broker_mc != '' AND b.mc_number = l.broker_mc))
          ${whereClause}
          ORDER BY l.created_at DESC
-         LIMIT 250`,
+         LIMIT 500`,
         sqlParams
       );
 
@@ -726,7 +726,8 @@ router.get('/search', optionalAuth, async (req, res) => {
           const loadDho = origInfo ? getFreightDeadhead(origInfo, r.pickup_location) : 10;
           const loadDhd = cleanDest ? getFreightDeadhead(cleanDest, r.delivery_location) : 15;
 
-          const rawWeightNum = parseInt(String(r.weight || '').replace(/\D/g, ''), 10) || 0;
+          // PostgreSQL NUMERIC returns "42000.00" — parseFloat first so ".00" is never concatenated into 4,200,000!
+          const rawWeightNum = Math.round(parseFloat(String(r.weight ?? '').replace(/[^0-9.]/g, ''))) || 0;
           const lengthFt = extractLoadLengthFt(r.equipment_type, r.notes, rawWeightNum);
           const profit = analyzeLoadProfit({
             rate,
@@ -803,7 +804,7 @@ router.get('/search', optionalAuth, async (req, res) => {
         if (!l.equipment_type) return false;
         if (!equipmentMatches(equipmentType, l.equipment_type)) return false;
         if (/box/i.test(equipmentType) || /box/i.test(l.equipment_type)) {
-          const wNum = parseInt(String(l.weight || '').replace(/[^0-9]/g, ''), 10);
+          const wNum = Number(l.weight_num) || Math.round(parseFloat(String(l.weight || '').replace(/[^0-9.]/g, ''))) || 0;
           if (wNum > 10000) return false;
         }
         return true;
