@@ -2608,7 +2608,7 @@ router.get('/sync-network-status', requireAuth, requireRole('admin', 'super_admi
 router.get('/bridge-token', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const key = await getOrCreateDesktopBridgeKey(false);
-    res.json({ ok: true, bridge_key: key, endpoint: 'https://shippingwish.com/api/dispatch-desk/sync-dat-bulk' });
+    res.json({ ok: true, bridge_key: key, endpoint: 'https://www.shippingwish.com/api/dispatch-desk/sync-dat-bulk' });
   } catch (err) {
     res.status(500).json({ error: 'Could not load desktop bridge key: ' + err.message });
   }

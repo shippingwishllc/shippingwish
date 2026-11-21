@@ -15,7 +15,7 @@ $ErrorActionPreference = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $ConfigPath = Join-Path $env:USERPROFILE '.shippingwish-bridge.json'
-$ApiUrl     = 'https://shippingwish.com/api/dispatch-desk/sync-dat-bulk'
+$ApiUrl     = 'https://www.shippingwish.com/api/dispatch-desk/sync-dat-bulk'
 
 Clear-Host
 Write-Host "=================================================================" -ForegroundColor Cyan
