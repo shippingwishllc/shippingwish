@@ -94,6 +94,14 @@
         </div>
       </div>
 
+      <div id="high-rpm-alerts-box" style="display:none;margin-bottom:18px;background:#fff;border:1px solid #fed7aa;border-left:4px solid #ea580c;border-radius:12px;padding:14px 18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:13.5px;font-weight:800;color:#9a3412;">🔥 Instant High-RPM Truck Matches <span id="alerts-count-badge" style="background:#ffedd5;color:#c2410c;padding:2px 8px;border-radius:999px;font-size:11px;margin-left:6px;">0</span></div>
+          <span style="font-size:11px;color:#64748b;">Auto-matched live from Broker API, AI Email &amp; Bulk CSV against active Shipping Wish trucks</span>
+        </div>
+        <div id="high-rpm-alerts-list" style="display:grid;gap:8px;"></div>
+      </div>
+
       <div class="tms-table-card">
         <div class="tms-table-wrapper">
           <table class="tms-table-v2">
@@ -133,6 +141,49 @@
     currentUser = await checkAuth(['dispatcher', 'admin', 'super_admin', 'carrier', 'carrier_admin']);
     if (!currentUser) return;
     loadProposals();
+    if (['dispatcher', 'admin', 'super_admin'].includes(String(currentUser.role || '').toLowerCase())) {
+      loadHighRpmAlerts();
+    }
+  }
+
+  async function loadHighRpmAlerts() {
+    const box = document.getElementById('high-rpm-alerts-box');
+    const list = document.getElementById('high-rpm-alerts-list');
+    const badge = document.getElementById('alerts-count-badge');
+    try {
+      const res = await fetch('/api/v1/dispatch/alerts?status=unread&limit=10', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const alerts = data.alerts || [];
+      if (!alerts.length) {
+        box.style.display = 'none';
+        return;
+      }
+      box.style.display = 'block';
+      badge.textContent = String(alerts.length);
+      list.innerHTML = alerts.map(a => `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7ed;border:1px solid #ffedd5;border-radius:10px;padding:10px 12px;font-size:12px;">
+          <div>
+            <strong>🚚 ${esc(a.carrier_company)} (Truck #${esc(a.truck_number)})</strong>
+            <span style="color:#64748b;"> · DH ${Number(a.deadhead_mi || 0)} mi → </span>
+            <strong>${esc(a.origin)} → ${esc(a.destination)}</strong>
+            <span style="color:#059669;font-weight:800;margin-left:6px;">$${Number(a.rate || 0).toLocaleString()} ($${Number(a.rpm || 0).toFixed(2)}/mi)</span>
+            <span class="src-badge" style="margin-left:6px;">${esc(a.source_channel || 'LOADSNEXUS')}</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <a href="/load-booking" class="btn btn-primary btn-sm" style="background:#ea580c;border-color:#ea580c;">⚡ Book / Propose</a>
+            <button type="button" class="btn btn-light btn-sm" onclick="dismissAlert(${a.id})">✓ Dismiss</button>
+          </div>
+        </div>
+      `).join('');
+    } catch (_) {}
+  }
+
+  async function dismissAlert(id) {
+    try {
+      await fetch(`/api/v1/dispatch/alerts/${id}/ack`, { method: 'POST', credentials: 'include' });
+      loadHighRpmAlerts();
+    } catch (_) {}
   }
 
   async function loadProposals() {

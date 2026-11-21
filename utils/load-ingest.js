@@ -374,6 +374,12 @@ async function upsertStandardLoad(raw, ctx = {}) {
     }
   } catch (_) {}
 
+  // Vercel-native Instant High-RPM Dispatcher Truck Matching Alert (zero node-cron)
+  try {
+    const { matchAndAlertDispatchersForLoad } = require('./dispatcher-alerts');
+    matchAndAlertDispatchersForLoad(inserted).catch(() => {});
+  } catch (_) {}
+
   return { ok: true, action: 'inserted', load: inserted, normalized: norm };
 }
 

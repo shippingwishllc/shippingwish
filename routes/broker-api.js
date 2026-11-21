@@ -831,4 +831,30 @@ router.post('/v1/loads/expire-stale', requireAuth, requireRole('admin', 'super_a
   }
 });
 
+// ====================================================
+// 8. INSTANT HIGH-RPM DISPATCHER ALERTS (VERCEL-NATIVE)
+// ====================================================
+
+router.get('/v1/dispatch/alerts', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
+  try {
+    const { listDispatcherAlerts } = require('../utils/dispatcher-alerts');
+    const status = String(req.query.status || 'unread').toLowerCase();
+    const alerts = await listDispatcherAlerts({ status, limit: req.query.limit || 30 });
+    res.json({ ok: true, count: alerts.length, alerts });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load dispatcher alerts: ' + err.message });
+  }
+});
+
+router.post('/v1/dispatch/alerts/:id/ack', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
+  try {
+    const { acknowledgeAlert } = require('../utils/dispatcher-alerts');
+    const updated = await acknowledgeAlert(req.params.id);
+    if (!updated) return res.status(404).json({ error: 'Alert not found.' });
+    res.json({ ok: true, alert: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not dismiss alert: ' + err.message });
+  }
+});
+
 module.exports = router;
