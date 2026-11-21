@@ -369,6 +369,15 @@
 <script src="/js/auth.js"></script>
 <script src="/js/tms.js"></script>
 <script>
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   let currentUser = null;
   let rawBrokers = [];
   let lastCheckedBrokerData = null;
@@ -522,7 +531,7 @@
           </td>
           <td>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              ${canManage && hasEmail ? `<button onclick="openOutreachModal([${b.id}], '${escapeHtml(b.company_name).replace(/'/g, "\\'")}', '${escapeHtml(b.email).replace(/'/g, "\\'")}')" class="btn-table-action" style="background:#059669;color:#fff;border-color:#059669;font-weight:700;" title="Send Free Posting & API Invite Email">✉️ Invite / API</button>` : ''}
+              ${canManage && hasEmail ? `<button onclick="openOutreachForBrokerId(${b.id})" class="btn-table-action" style="background:#059669;color:#fff;border-color:#059669;font-weight:700;" title="Send Free Posting & API Invite Email">✉️ Invite / API</button>` : ''}
               ${canManage ? `<button onclick="deleteBroker(${b.id})" class="btn-table-action call" style="color:#ef4444;border-color:#fecaca;" title="Delete Broker">Delete</button>` : ''}
             </div>
           </td>
@@ -588,6 +597,11 @@
       btn.disabled = false;
       btn.textContent = orig;
     }
+  }
+
+  function openOutreachForBrokerId(id) {
+    const b = rawBrokers.find(x => x.id === id);
+    openOutreachModal([id], b ? b.company_name : `Broker #${id}`, b ? (b.email || '') : '');
   }
 
   function openOutreachModal(ids, singleName = '', singleEmail = '') {
