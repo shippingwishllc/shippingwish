@@ -416,6 +416,10 @@ router.patch('/:id', requireAuth, requireRole('dispatcher', 'admin', 'super_admi
         `INSERT INTO load_status_history (load_id, status, changed_by, notes) VALUES ($1, 'paid', $2, 'Invoice marked paid')`,
         [result.rows[0].load_id, req.user.id]
       );
+      try {
+        const { recordBrokerPaymentFromInvoice } = require('../utils/broker-credit');
+        recordBrokerPaymentFromInvoice(req.params.id).catch(() => {});
+      } catch (_) {}
     }
     res.json({ ok: true });
   } catch (err) {
@@ -571,6 +575,10 @@ router.post('/stripe-webhook', express.raw({ type: 'application/json' }), async 
         const paidDate = new Date().toISOString().slice(0, 10);
         await pool.query('UPDATE invoices SET status = \'paid\', paid_date = $1 WHERE id = $2', [paidDate, inv.id]);
         await pool.query('UPDATE loads SET status = \'paid\', updated_at = now() WHERE id = $1', [inv.load_id]);
+        try {
+          const { recordBrokerPaymentFromInvoice } = require('../utils/broker-credit');
+          recordBrokerPaymentFromInvoice(inv.id).catch(() => {});
+        } catch (_) {}
       }
     }
     res.json({ received: true });

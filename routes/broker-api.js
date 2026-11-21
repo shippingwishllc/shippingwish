@@ -857,4 +857,41 @@ router.post('/v1/dispatch/alerts/:id/ack', requireAuth, requireRole('dispatcher'
   }
 });
 
+// ====================================================
+// 9. BROKER CREDIT TELEMETRY & AUTO-DTP ENGINE
+// ====================================================
+
+router.get('/v1/brokers/:mcOrId/credit', rateLimitFmcsa, async (req, res) => {
+  try {
+    const { getBrokerCreditTelemetry } = require('../utils/broker-credit');
+    const telemetry = await getBrokerCreditTelemetry(req.params.mcOrId);
+    if (!telemetry) {
+      return res.status(404).json({ ok: false, error: 'Broker not found in LoadsNexus directory.' });
+    }
+    res.json({ ok: true, credit: telemetry });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch broker credit telemetry: ' + err.message });
+  }
+});
+
+router.post('/v1/brokers/payment-record', requireAuth, requireRole('dispatcher', 'admin', 'super_admin'), async (req, res) => {
+  try {
+    const { recordBrokerPayment } = require('../utils/broker-credit');
+    const out = await recordBrokerPayment({
+      brokerId: req.body.broker_id,
+      brokerMc: req.body.broker_mc,
+      brokerName: req.body.broker_name,
+      loadReferenceId: req.body.load_reference_id,
+      invoiceAmount: req.body.invoice_amount,
+      invoicedAt: req.body.invoiced_at,
+      paidAt: req.body.paid_at,
+      verifiedSource: req.body.verified_source || 'SHIPPING_WISH_TMS'
+    });
+    if (!out.ok) return res.status(400).json({ error: out.reason || 'Could not log payment record.' });
+    res.status(201).json(out);
+  } catch (err) {
+    res.status(500).json({ error: 'Could not record broker payment: ' + err.message });
+  }
+});
+
 module.exports = router;
