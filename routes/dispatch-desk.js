@@ -1272,12 +1272,22 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
       );
 
       let loadRow = null;
+      const contactStr = [email, phone].filter(Boolean).join(' | ') || null;
       if (existing.rows.length > 0) {
         skippedCount++;
         loadRow = existing.rows[0];
         activeSnapshotIds.push(loadRow.id);
-        // Touch updated_at so still-active loads stay fresh on the live board
-        await pool.query(`UPDATE loads SET updated_at = NOW(), is_public_board = TRUE WHERE id = $1`, [loadRow.id]).catch(() => {});
+        // Touch updated_at, enrich contact/MC if newly found, and reopen if previously auto-covered (never touch carrier-booked loads)
+        await pool.query(
+          `UPDATE loads
+           SET updated_at = NOW(),
+               is_public_board = TRUE,
+               status = CASE WHEN carrier_id IS NULL AND status::text = 'covered' THEN 'open' ELSE status END,
+               broker_contact = COALESCE(NULLIF($2, ''), broker_contact),
+               broker_mc = COALESCE(NULLIF($3, ''), broker_mc)
+           WHERE id = $1`,
+          [loadRow.id, contactStr, brokerMc]
+        ).catch(() => {});
       } else {
         const rawLoadNum = load.load_id ? String(load.load_id).replace(/^DAT-/i, 'LNX-') : '';
         const loadNum = rawLoadNum || `LNX-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -1292,7 +1302,7 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
             loadNum,
             broker,
             brokerMc,
-            [email, phone].filter(Boolean).join(' | ') || null,
+            contactStr,
             origin,
             originState,
             dest,
@@ -1375,9 +1385,10 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
            SET status = 'covered', updated_at = NOW() 
            WHERE source_type = 'dat_sync' 
              AND deleted_at IS NULL
+             AND carrier_id IS NULL
              AND status::text IN ('new', 'open') 
              AND NOT (id = ANY($1::int[]))
-             AND updated_at < NOW() - INTERVAL '90 seconds'
+             AND updated_at < NOW() - INTERVAL '15 seconds'
            RETURNING id, load_number`,
           [activeSnapshotIds]
         );

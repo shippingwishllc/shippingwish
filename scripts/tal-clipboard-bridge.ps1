@@ -14,16 +14,43 @@
 $ErrorActionPreference = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+# Disable Windows Console QuickEdit Mode so clicking inside this window NEVER pauses/freezes syncing!
+try {
+  Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class SwConsoleMode {
+  [DllImport("kernel32.dll", SetLastError = true)]
+  public static extern IntPtr GetStdHandle(int nStdHandle);
+  [DllImport("kernel32.dll", SetLastError = true)]
+  public static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+  [DllImport("kernel32.dll", SetLastError = true)]
+  public static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+  public static void DisableQuickEdit() {
+    IntPtr handle = GetStdHandle(-10); // STD_INPUT_HANDLE
+    uint mode;
+    if (GetConsoleMode(handle, out mode)) {
+      mode &= ~0x0040u; // Clear ENABLE_QUICK_EDIT_MODE
+      mode |= 0x0080u;  // Set ENABLE_EXTENDED_FLAGS
+      SetConsoleMode(handle, mode);
+    }
+  }
+}
+"@ -ErrorAction SilentlyContinue
+  [SwConsoleMode]::DisableQuickEdit()
+} catch {}
+
 $ConfigPath = Join-Path $env:USERPROFILE '.shippingwish-bridge.json'
 $ApiUrl     = 'https://www.shippingwish.com/api/dispatch-desk/sync-dat-bulk'
 
 Clear-Host
 Write-Host "=================================================================" -ForegroundColor Cyan
-Write-Host "   SHIPPING WISH & LOADS NEXUS - DESKTOP LOAD SYNC BRIDGE" -ForegroundColor White
+Write-Host "   SHIPPING WISH & LOADS NEXUS - DESKTOP LOAD SYNC BRIDGE v2" -ForegroundColor White
 Write-Host "=================================================================" -ForegroundColor Cyan
-Write-Host "  Live Endpoint : $ApiUrl" -ForegroundColor DarkGray
+Write-Host "  Live Endpoint : $ApiUrl" -ForegroundColor Green
+Write-Host "  Click-Freeze  : DISABLED (safe to click or minimize anytime)" -ForegroundColor Green
 Write-Host "  Privacy Guard : Ignores non-freight text (only syncs load rows)" -ForegroundColor DarkGray
-Write-Host "  Auto-Deduct   : ON (missing loads from new batch marked Covered)" -ForegroundColor DarkGray
+Write-Host "  Auto-Deduct   : ON (covered loads auto-removed in 15s)" -ForegroundColor DarkGray
 Write-Host "=================================================================`n" -ForegroundColor Cyan
 
 # Load or prompt for SuperAdmin Desktop Bridge Key (one-time setup)
@@ -121,6 +148,13 @@ while ($true) {
     $total   = [int]($resp.total_received)
 
     Write-Host "[$ts] SYNC #$SyncCount OK! +$added new | -$covered covered removed | $dupes unchanged (parsed $total)" -ForegroundColor Green
+    if ($resp.inserted_loads -and $resp.inserted_loads.Count -gt 0) {
+      $preview = $resp.inserted_loads | Select-Object -First 3
+      foreach ($l in $preview) {
+        $contact = if ($l.broker_contact) { $l.broker_contact } else { 'No direct email/phone on row' }
+        Write-Host ("       -> {0} | {1} -> {2} | `${3} | {4} | {5}" -f $l.load_number, $l.pickup_location, $l.delivery_location, $l.rate, $l.broker_name, $contact) -ForegroundColor Gray
+      }
+    }
     [Console]::Beep(880, 90)
   } catch {
     $errMsg = $_.Exception.Message
