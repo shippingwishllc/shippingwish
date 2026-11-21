@@ -445,6 +445,8 @@ router.get('/credit-check/:mc', requireAuth, async (req, res) => {
 });
 
 // List brokers — fast server-side search, filtering, pagination & live directory stats
+// Staff (super_admin/admin/dispatcher/sales_rep) get full management + outreach;
+// Paid/Trial Carriers get full read-only directory access; Unpaid Carriers get locked teaser preview.
 router.get('/', requireAuth, async (req, res) => {
   await ensureBrokersSchema();
   const { search, state, source, hasEmail, outreach } = req.query;
@@ -453,6 +455,30 @@ router.get('/', requireAuth, async (req, res) => {
   const offset = (page - 1) * limit;
 
   try {
+    const role = String(req.user?.role || '').toLowerCase();
+    const isStaff = ['super_admin', 'admin', 'dispatcher', 'sales_rep'].includes(role);
+    let hasFullAccess = isStaff;
+
+    if (!hasFullAccess && (role === 'carrier' || role === 'carrier_admin')) {
+      const userCheck = await pool.query(
+        `SELECT u.weekly_plan, u.trial_ends_at,
+                (SELECT b.status FROM billing_subscriptions b WHERE b.user_id = u.id ORDER BY b.created_at DESC LIMIT 1) AS sub_status,
+                (SELECT b.plan_key FROM billing_subscriptions b WHERE b.user_id = u.id ORDER BY b.created_at DESC LIMIT 1) AS sub_plan
+         FROM users u WHERE u.id = $1`,
+        [req.user.id]
+      ).catch(() => ({ rows: [] }));
+      if (userCheck.rows.length) {
+        const u = userCheck.rows[0];
+        const isSubActive = ['active', 'trialing'].includes(String(u.sub_status || '').toLowerCase());
+        const isTrial = u.trial_ends_at && new Date(u.trial_ends_at) > new Date();
+        const planKey = String(u.weekly_plan || '');
+        const subKey = String(u.sub_plan || '');
+        if (isSubActive || isTrial || planKey.startsWith('loadboard_') || subKey.startsWith('loadboard_') || (planKey && planKey !== 'free' && planKey !== 'canceled')) {
+          hasFullAccess = true;
+        }
+      }
+    }
+
     const where = [];
     const params = [];
 
@@ -480,7 +506,9 @@ router.get('/', requireAuth, async (req, res) => {
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const countRes = await pool.query(`SELECT COUNT(*)::int AS filtered_total FROM brokers ${whereSql}`, params);
 
-    const listParams = [...params, limit, offset];
+    const effectiveLimit = hasFullAccess ? limit : 5;
+    const effectiveOffset = hasFullAccess ? offset : 0;
+    const listParams = [...params, effectiveLimit, effectiveOffset];
     const result = await pool.query(
       `SELECT * FROM brokers ${whereSql}
        ORDER BY (CASE WHEN email IS NOT NULL AND email LIKE '%@%' THEN 0 ELSE 1 END), id DESC
@@ -499,12 +527,24 @@ router.get('/', requireAuth, async (req, res) => {
       FROM brokers
     `);
 
+    const brokersOut = hasFullAccess
+      ? result.rows
+      : result.rows.map((b) => ({
+          ...b,
+          email: b.email ? 'locked@carrierpass.com (Subscription Required)' : null,
+          phone: b.phone ? '(800) ***-**** (Pass Required)' : null,
+          is_locked: true
+        }));
+
     res.json({
       ok: true,
-      brokers: result.rows,
+      has_full_access: hasFullAccess,
+      can_manage: isStaff,
+      locked_preview: !hasFullAccess,
+      brokers: brokersOut,
       filtered_total: countRes.rows[0]?.filtered_total || 0,
       page,
-      limit,
+      limit: effectiveLimit,
       stats: statsRes.rows[0] || {}
     });
   } catch (err) {

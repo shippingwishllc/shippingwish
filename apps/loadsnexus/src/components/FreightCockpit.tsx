@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { FreightLoad, UserSession, SearchFilter } from '../types';
 import type { LaneAlert } from './LaneAlertsModal';
 import { LiveLoadBoard } from './LiveLoadBoard';
+import { BrokerDirectoryPanel } from './BrokerDirectoryPanel';
 
 interface FreightCockpitProps {
   user: UserSession;
@@ -1285,6 +1286,24 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
               >
                 <span>🔔</span>
                 <span>My Lane Alerts ({savedAlerts.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('broker-directory')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
+                  activeTab === 'broker-directory'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                    : isLight
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                }`}
+              >
+                <span>🏛️</span>
+                <span>Broker Directory</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950">
+                  5,000+ USA
+                </span>
               </button>
 
               <button
@@ -2711,6 +2730,17 @@ print(response.json()) # Returns: {"ok": true, "load_id": "SW-109281", "status":
               </form>
             </div>
           </div>
+        )}
+
+        {/* TAB: USA BROKER DIRECTORY (ADMIN/STAFF FULL OUTREACH + PAID CARRIERS READ-ONLY) */}
+        {!isBroker && activeTab === 'broker-directory' && (
+          <BrokerDirectoryPanel
+            user={user}
+            isLight={isLight}
+            onOpenBrokerCredit={onOpenBrokerCredit}
+            onOpenCarrierCheckout={onOpenCarrierCheckout}
+            showToast={showToast}
+          />
         )}
 
         {/* TAB: LIVE SPOT FREIGHT BOARD */}

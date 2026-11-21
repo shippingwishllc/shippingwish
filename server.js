@@ -592,6 +592,7 @@ app.use('/api/dashboard', carrierApiGate, require('./routes/dashboard')); // TMS
 app.use('/api/loads', carrierApiGate, require('./routes/loads'));
 app.use('/api/brokers', (req, res, next) => {
   if (req.headers['x-bridge-key'] && (req.path === '/sync-from-loads' || req.path === '/sync-fmcsa')) return next();
+  if (req.method === 'GET' && (req.path === '/' || req.path === '')) return requireAuth(req, res, next);
   return requireAuth(req, res, (err) => err ? next(err) : requireCarrierSubscription(req, res, next));
 }, require('./routes/brokers'));
 app.use('/api/fleet', carrierApiGate, require('./routes/fleet'));
