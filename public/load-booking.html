@@ -1539,8 +1539,8 @@
               <span class="dat-dh-badge">DH-O</span>
             </div>
             <div class="dat-combo">
-              <input type="text" id="search-origin" class="dat-combo-input" value="Rincon, GA"
-                     placeholder="City, ST or ZIP" autocomplete="off"
+              <input type="text" id="search-origin" class="dat-combo-input" value=""
+                     placeholder="Anywhere (All States) or City, ST / ZIP" autocomplete="off"
                      oninput="handleOriginAutocompleteInput(this.value)"
                      onkeydown="handleAutocompleteKeydown(event, 'origin')"
                      onfocus="handleOriginAutocompleteInput(this.value)"
@@ -1588,7 +1588,8 @@
               <label class="dat-field-label" for="search-equipment">Equipment</label>
             </div>
             <select id="search-equipment" class="dat-control" onchange="handleEquipmentChange(this.value)">
-              <option value="53ft Dry Van" selected>53ft Dry Van</option>
+              <option value="all" selected>All Equipment (Vans, Reefers, Flatbeds)</option>
+              <option value="53ft Dry Van">53ft Dry Van</option>
               <option value="53ft Reefer">53ft Reefer (Temp)</option>
               <option value="Flatbed / Step Deck">Flatbed / Step Deck</option>
               <option value="Power Only">Power Only</option>
@@ -2503,13 +2504,13 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
   let SEARCH_TABS = [
     {
       id: 1,
-      title: 'Truck 1 (Rincon, GA · Open)',
+      title: 'All Live Loads (Nationwide · Open)',
       carrierId: '',
-      origin: 'Rincon, GA',
+      origin: '',
       dho: '150',
       dest: '',
       dhd: '100',
-      equipment: '53ft Dry Van',
+      equipment: 'all',
       minRpm: '',
       pickupDate: getTodayString(),
       results: [],
@@ -2517,13 +2518,13 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
     },
     {
       id: 2,
-      title: 'Truck 2 (Nationwide · Open)',
+      title: 'Truck 2 (53ft Dry Van · Open)',
       carrierId: '',
       origin: '',
       dho: '150',
       dest: '',
       dhd: '100',
-      equipment: '53ft Reefer',
+      equipment: '53ft Dry Van',
       minRpm: '',
       pickupDate: getTodayString(),
       results: [],
@@ -3027,6 +3028,9 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
     if (eq.includes('flat') || eq.includes('step') || eq.includes('deck')) {
       return { equipment: 'Flatbed / Step Deck', maxLength: '', maxWeight: '' };
     }
+    if (!eq || eq === 'all' || eq === 'any') {
+      return { equipment: 'all', maxLength: '', maxWeight: '' };
+    }
     if (eq.includes('power')) {
       return { equipment: 'Power Only', maxLength: '', maxWeight: '' };
     }
@@ -3161,7 +3165,7 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
     document.getElementById('search-dho').value = tab.dho || '150';
     document.getElementById('search-dest').value = tab.dest || '';
     document.getElementById('search-dhd').value = tab.dhd || '100';
-    document.getElementById('search-equipment').value = tab.equipment || '53ft Dry Van';
+    document.getElementById('search-equipment').value = tab.equipment || 'all';
     const lenSel = document.getElementById('search-max-length');
     const wtSel = document.getElementById('search-max-weight');
     if (lenSel) lenSel.value = tab.maxLength || '';
@@ -3280,17 +3284,18 @@ Houston, TX -> Atlanta, GA | 53R | 43,500 lbs | $3,100 | TQL (MC-325990) | (800)
   function resetActiveTabFilters() {
     const tab = getActiveTab();
     if (!tab) return;
-    tab.origin = 'Rincon, GA';
+    tab.origin = '';
     tab.dho = '150';
     tab.dest = '';
     tab.dhd = '100';
-    tab.equipment = '53ft Dry Van';
+    tab.equipment = 'all';
     tab.maxLength = '';
     tab.maxWeight = '';
     tab.minRpm = '';
     tab.carrierId = '';
     tab.pickupDate = getTodayString();
     loadTabInputs(tab.id);
+    runActiveTabSearch();
   }
 
   function applyDestPreset(presetValue) {
