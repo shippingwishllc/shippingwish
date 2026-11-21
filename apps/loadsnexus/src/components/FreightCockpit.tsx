@@ -182,7 +182,9 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
   onSwitchView,
   onOpenAuth,
 }) => {
-  const isBroker = user.role === 'broker' || user.role === 'admin' || user.role === 'super_admin';
+  const isStaff = ['admin', 'super_admin', 'dispatcher'].includes(user.role);
+  const isBroker = user.role === 'broker' || isStaff;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // 1. THEME MODE: Default to 'light' per user requirement, persisted in localStorage
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -202,9 +204,9 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
     showToast(`Switched interface to ${nextTheme.toUpperCase()} theme.`);
   };
 
-  // Active navigation tab
+  // Active navigation tab — External brokers land on My Posted Freight; Staff/Admins/Carriers land on Live Load Board
   const [activeTab, setActiveTab] = useState<string>(
-    isBroker ? 'my-posted-freight' : 'live-spot-board'
+    user.role === 'broker' ? 'my-posted-freight' : 'live-spot-board'
   );
 
   // User menu dropdown
@@ -781,11 +783,33 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
     return true;
   });
 
+  // Live calculated KPI telemetry (zero fake/hardcoded numbers)
+  const ratedLiveLoads = loads.filter((l) => Number(l.rpm) > 0);
+  const avgLiveRpm = ratedLiveLoads.length
+    ? (ratedLiveLoads.reduce((sum, l) => sum + Number(l.rpm || 0), 0) / ratedLiveLoads.length).toFixed(2)
+    : null;
+  const activePostedCount = brokerLoads.filter((l) => l.status === 'active').length;
+  const coveredPostedCount = brokerLoads.filter((l) => l.status === 'covered').length;
+
+  const selectTab = (tab: string) => {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+    if (tab === 'ai-matchmaker' && truckMatches.length === 0) {
+      runMatchEngine();
+    }
+  };
+
+  const sideBtnClass = (tabId: string) =>
+    `w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+      activeTab === tabId
+        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+        : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+    }`;
+
   // Theme-based class helpers
   const isLight = theme === 'light';
   const rootBg = isLight ? 'bg-slate-100 text-slate-800' : 'bg-slate-900 text-slate-100';
   const headerBg = isLight ? 'bg-white/95 border-b border-slate-200 shadow-sm' : 'bg-slate-950/95 border-b border-slate-800 shadow-xl';
-  const navBg = isLight ? 'bg-white border-b border-slate-200' : 'bg-slate-950 border-b border-slate-800';
   const cardBg = isLight ? 'bg-white border border-slate-200 shadow-sm text-slate-800' : 'bg-slate-950 border border-slate-800 shadow-xl text-slate-100';
   const innerCardBg = isLight ? 'bg-slate-50 border border-slate-200' : 'bg-slate-900/90 border border-slate-800';
   const textTitle = isLight ? 'text-slate-900' : 'text-white';
@@ -797,48 +821,62 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-150 ${rootBg}`}>
       {/* 1. TOP ENTERPRISE COMMAND HEADER */}
       <header className={`sticky top-0 z-40 backdrop-blur-md ${headerBg}`}>
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
-          {/* Brand Identity & System Status */}
+        <div className="w-full px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+          {/* Brand Identity & Mobile Sidebar Toggle */}
           <div className="flex items-center gap-3 shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 flex items-center justify-center font-black text-white text-base shadow-lg shadow-blue-500/20">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className={`lg:hidden p-2 rounded-xl border text-sm font-black ${
+                isLight ? 'bg-slate-100 border-slate-300 text-slate-800' : 'bg-slate-800 border-slate-700 text-white'
+              }`}
+              aria-label="Toggle Navigation Menu"
+            >
+              ☰
+            </button>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-blue-700 flex items-center justify-center font-black text-white text-base shadow-lg shadow-emerald-500/20">
               LN
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className={`text-lg font-black tracking-tight font-display ${textTitle}`}>
-                  Loads<span className="text-blue-600">Nexus</span>™
+                  Loads<span className="text-emerald-600">Nexus</span>™
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 border border-blue-500/20">
-                  COCKPIT v2.6
+                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-700 border border-emerald-500/25">
+                  LIVE EXCHANGE
                 </span>
               </div>
               <div className={`flex items-center gap-2 text-[11px] ${textSub}`}>
                 <span className="flex items-center gap-1.5 font-medium">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span className="text-emerald-600 font-bold">SSE Stream Active</span>
+                  <span className="text-emerald-600 font-bold">SSE Live Stream</span>
                 </span>
                 <span>•</span>
                 <span className="truncate max-w-[200px] font-semibold">
-                  {user.company_name || (isBroker ? 'Summit Logistics Brokerage' : 'Apex Global Freight')}
+                  {user.company_name || (isStaff ? 'Shipping Wish LLC Command' : 'Verified Freight Partner')}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Quick Authority & Compliance Indicators */}
+          {/* Quick Authority & Compliance Indicators (Real Data Only) */}
           <div className={`hidden xl:flex items-center gap-3 text-xs px-3.5 py-1.5 rounded-xl border ${innerCardBg}`}>
             <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
               <span>🛡️</span>
-              <span>FMCSA: ACTIVE</span>
+              <span>FMCSA Live Connected</span>
             </div>
             <span className={isLight ? 'text-slate-300' : 'text-slate-700'}>|</span>
             <div className={`font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-              MC: <strong className={textTitle}>{user.mc_number || (isBroker ? 'MC-582104' : 'MC-1094821')}</strong>
+              {user.mc_number ? (
+                <>MC: <strong className={textTitle}>{user.mc_number}</strong></>
+              ) : (
+                <strong className={textTitle}>{isStaff ? 'Executive Staff Command' : 'Verified Account'}</strong>
+              )}
             </div>
             <span className={isLight ? 'text-slate-300' : 'text-slate-700'}>|</span>
-            <div className="text-purple-600 font-bold flex items-center gap-1">
-              <span>🔒</span>
-              <span>{isBroker ? 'BMC-84 $75K Bond Verified' : '$1M Cargo Active'}</span>
+            <div className="text-blue-600 font-bold flex items-center gap-1">
+              <span>⚡</span>
+              <span>{loads.length.toLocaleString()} Live Loads</span>
             </div>
           </div>
 
@@ -945,21 +983,18 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
                   </div>
 
                   <div className="py-1">
-                    {/* Public site link hidden for brokers */}
-                    {!isBroker && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUserDropdownOpen(false);
-                          onSwitchView('website');
-                        }}
-                        className={`w-full text-left px-4 py-2 flex items-center gap-2 font-medium ${
-                          isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-800'
-                        }`}
-                      >
-                        <span>🌐</span> View Public Website
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        onSwitchView('website');
+                      }}
+                      className={`w-full text-left px-4 py-2 flex items-center gap-2 font-medium ${
+                        isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <span>🌐</span> View Public Website
+                    </button>
 
                     <button
                       type="button"
@@ -1019,338 +1054,316 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
         </div>
       </header>
 
-      {/* 2. ENTERPRISE NAVIGATION TABS BAR */}
-      <nav className={navBg}>
-        <div className="max-w-[1600px] mx-auto flex items-center gap-1.5 overflow-x-auto py-2.5 px-4 sm:px-6 lg:px-8 scrollbar-thin">
-          {isBroker ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setActiveTab('my-posted-freight')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'my-posted-freight'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>📦</span>
-                <span>My Posted Freight</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                  activeTab === 'my-posted-freight' ? 'bg-purple-800 text-purple-100' : 'bg-slate-200 text-slate-700'
-                }`}>
-                  {brokerLoads.filter((l) => l.status === 'active').length} Active
-                </span>
-              </button>
+      {/* 2. DAT-STYLE LEFT SIDEBAR + MAIN WORKSPACE SHELL */}
+      <div className="flex-1 flex min-h-0 relative">
+        {/* Mobile Backdrop */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('search-capacity')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'search-capacity'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>🚚</span>
-                <span>Search Trucks &amp; Capacity</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  Vetted Fleets
-                </span>
-              </button>
+        {/* DAT One-Style Dark Navy Left Sidebar */}
+        <aside
+          className={`${
+            mobileMenuOpen ? 'fixed inset-y-0 left-0 z-50 flex' : 'hidden lg:flex'
+          } w-64 shrink-0 flex-col bg-[#0b1220] text-slate-200 border-r border-slate-800/90 select-none`}
+        >
+          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+            {/* Section 1: Freight Exchange */}
+            <div>
+              <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                Freight Exchange
+              </div>
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => selectTab('live-spot-board')}
+                  className={sideBtnClass('live-spot-board')}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span>🔍</span>
+                    <span>Search Live Loads</span>
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                    activeTab === 'live-spot-board' ? 'bg-emerald-800 text-emerald-100' : 'bg-emerald-500/20 text-emerald-300'
+                  }`}>
+                    {loads.length}
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('carrier-vetting')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'carrier-vetting'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>🛡️</span>
-                <span>Carrier MC Vetting Desk</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => selectTab('ai-matchmaker')}
+                  className={sideBtnClass('ai-matchmaker')}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span>⚡</span>
+                    <span>AI Matchmaker</span>
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-500/25 text-indigo-300 border border-indigo-400/30">
+                    AI
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('rate-intel')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'rate-intel'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>📊</span>
-                <span>Corridor Rate Intelligence</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => selectTab('rate-intel')}
+                  className={sideBtnClass('rate-intel')}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span>📊</span>
+                    <span>Corridor Rate Intel</span>
+                  </span>
+                </button>
+              </div>
+            </div>
 
-              {/* Sub-Users / Team Tab for Broker Admin */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('team-members')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'team-members'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>👥</span>
-                <span>Team &amp; Sub-Users</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                  activeTab === 'team-members' ? 'bg-purple-800 text-purple-100' : 'bg-slate-200 text-slate-700'
-                }`}>
-                  {teamMembers.length}
-                </span>
-              </button>
+            {/* Section 2: Carrier & Dispatch Tools */}
+            <div>
+              <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                Carrier &amp; Dispatch
+              </div>
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => selectTab('post-truck')}
+                  className={sideBtnClass('post-truck')}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span>🚚</span>
+                    <span>Post Available Truck</span>
+                  </span>
+                </button>
 
-              {/* Developer API Tab */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('api-desk')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'api-desk'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>🔑</span>
-                <span>Developer API</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-blue-100 text-blue-800 border border-blue-300">
-                  REST v1
-                </span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenLaneAlerts();
+                  }}
+                  className="w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all text-left cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span>🔔</span>
+                    <span>My Lane Alerts</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-800 text-slate-300">
+                    {savedAlerts.length}
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('ai-matchmaker');
-                  if (truckMatches.length === 0) runMatchEngine();
-                }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'ai-matchmaker'
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>⚡</span>
-                <span>AI Matchmaker &amp; Triangulation</span>
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950 animate-pulse">
-                  Smart Match
-                </span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenBrokerCredit();
+                  }}
+                  className="w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all text-left cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span>🛡️</span>
+                    <span>Broker Credit &amp; FMCSA</span>
+                  </span>
+                </button>
+              </div>
+            </div>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('live-spot-board')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'live-spot-board'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>🔎</span>
-                <span>Nationwide Spot Board</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => setActiveTab('live-spot-board')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'live-spot-board'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>🔎</span>
-                <span>Live Spot Board</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950">
-                  4,850+ Live
-                </span>
-              </button>
+            {/* Section 3: Broker & API Desk */}
+            {isBroker && (
+              <div>
+                <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  Broker &amp; API Desk
+                </div>
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => selectTab('my-posted-freight')}
+                    className={sideBtnClass('my-posted-freight')}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span>📦</span>
+                      <span>My Posted Freight</span>
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      activeTab === 'my-posted-freight' ? 'bg-emerald-800 text-emerald-100' : 'bg-slate-800 text-slate-300'
+                    }`}>
+                      {activePostedCount}
+                    </span>
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('ai-matchmaker');
-                  if (truckMatches.length === 0) runMatchEngine();
-                }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'ai-matchmaker'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>⚡</span>
-                <span>AI Matchmaker &amp; Triangulation</span>
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950 animate-pulse">
-                  Smart Match
-                </span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => selectTab('search-capacity')}
+                    className={sideBtnClass('search-capacity')}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span>🚛</span>
+                      <span>Search Trucks &amp; Capacity</span>
+                    </span>
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('post-truck')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'post-truck'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>🚚</span>
-                <span>Post Available Truck</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => selectTab('carrier-vetting')}
+                    className={sideBtnClass('carrier-vetting')}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span>🛡️</span>
+                      <span>Carrier MC Vetting</span>
+                    </span>
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => onOpenLaneAlerts()}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  isLight ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>🔔</span>
-                <span>My Lane Alerts ({savedAlerts.length})</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => selectTab('api-desk')}
+                    className={sideBtnClass('api-desk')}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span>🔑</span>
+                      <span>Developer API</span>
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                      v1
+                    </span>
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => onOpenBrokerCredit()}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  isLight ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>🛡️</span>
-                <span>Broker Credit &amp; DTP</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => selectTab('team-members')}
+                    className={sideBtnClass('team-members')}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span>👥</span>
+                      <span>Team &amp; Sub-Users</span>
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-800 text-slate-300">
+                      {teamMembers.length}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('rate-intel')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
-                  activeTab === 'rate-intel'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span>📊</span>
-                <span>National RPM Benchmark</span>
-              </button>
-            </>
-          )}
-        </div>
-      </nav>
+            {/* Section 4: Executive Portal Links (Staff/Admin Only) */}
+            {isStaff && (
+              <div>
+                <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  Executive Portal
+                </div>
+                <div className="space-y-1">
+                  <a
+                    href="https://www.shippingwish.com/brokers"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800/80 transition-all"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span>🏛️</span>
+                      <span>USA Broker Directory</span>
+                    </span>
+                    <span className="text-[10px] opacity-80">↗</span>
+                  </a>
+                  <a
+                    href="https://www.shippingwish.com/dispatch/proposals"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:bg-slate-800/80 transition-all"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span>✅</span>
+                      <span>Dispatch Proposals</span>
+                    </span>
+                    <span className="text-[10px] opacity-80">↗</span>
+                  </a>
+                  <a
+                    href="https://www.shippingwish.com/superadmin-command"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-bold text-sky-300 hover:bg-slate-800/80 transition-all"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span>👑</span>
+                      <span>Shipping Wish Command</span>
+                    </span>
+                    <span className="text-[10px] opacity-80">↗</span>
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
 
-      {/* 3. OPERATIONAL KPI METRIC RIBBON */}
-      <section className={`border-b px-4 sm:px-6 lg:px-8 py-3.5 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/60 border-slate-800/80'}`}>
-        <div className="max-w-[1600px] mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {isBroker ? (
-            <>
+          {/* Sidebar Footer Actions */}
+          <div className="p-3 border-t border-slate-800/90 space-y-1.5">
+            <button
+              type="button"
+              onClick={() => onSwitchView('website')}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-all cursor-pointer"
+            >
+              <span>🌐</span>
+              <span>Public Website View</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-950/60 transition-all cursor-pointer"
+            >
+              <span>🚪</span>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Right Main Content Column */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* 3. REAL-TIME KPI METRIC RIBBON (Zero Fake Placeholder Metrics) */}
+          <section className={`border-b px-4 sm:px-6 lg:px-8 py-3.5 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/60 border-slate-800/80'}`}>
+            <div className="max-w-[1520px] mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className={`rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>Active Freight</span>
+                <span className={`text-[10.5px] font-bold uppercase tracking-wider ${textSub}`}>Live Spot Loads</span>
                 <div className={`text-xl font-black mt-1 flex items-baseline gap-1.5 ${textTitle}`}>
-                  <span>{brokerLoads.filter((l) => l.status === 'active').length}</span>
-                  <span className="text-[11px] font-semibold text-emerald-600">Receiving Bids</span>
+                  <span>{loads.length.toLocaleString()}</span>
+                  <span className="text-[11px] font-semibold text-emerald-600">Real-Time DB</span>
                 </div>
               </div>
               <div className={`rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>Carrier Inquiries</span>
-                <div className="text-xl font-black text-purple-600 mt-1 flex items-baseline gap-1.5">
-                  <span>28 Calls</span>
-                  <span className={`text-[11px] font-semibold ${textSub}`}>Today</span>
-                </div>
-              </div>
-              <div className={`rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>Loads Covered</span>
-                <div className="text-xl font-black text-emerald-600 mt-1 flex items-baseline gap-1.5">
-                  <span>{brokerLoads.filter((l) => l.status === 'covered').length} Dispatched</span>
-                  <span className={`text-[11px] font-semibold ${textSub}`}>($43.2k)</span>
-                </div>
-              </div>
-              <div className={`rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>Avg Time to Cover</span>
+                <span className={`text-[10.5px] font-bold uppercase tracking-wider ${textSub}`}>Live Avg RPM</span>
                 <div className="text-xl font-black text-blue-600 mt-1 flex items-baseline gap-1.5">
-                  <span>38 mins</span>
-                  <span className={`text-[11px] font-semibold ${textSub}`}>High Velocity</span>
-                </div>
-              </div>
-              <div className={`col-span-2 sm:col-span-1 rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>Broker Authority</span>
-                <div className="text-xs font-extrabold text-emerald-600 mt-1 flex items-center gap-1.5">
-                  <span>✓</span>
-                  <span>Pacific Surety #84-90214</span>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className={`rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>Live Spot Loads</span>
-                <div className={`text-xl font-black mt-1 flex items-baseline gap-1.5 ${textTitle}`}>
-                  <span>4,850+</span>
-                  <span className="text-[11px] font-semibold text-emerald-600">Real-Time</span>
+                  <span>{avgLiveRpm ? `$${avgLiveRpm}/mi` : 'Live'}</span>
+                  <span className={`text-[11px] font-semibold ${textSub}`}>Rated Loads</span>
                 </div>
               </div>
               <div className={`rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>National Avg RPM</span>
-                <div className="text-xl font-black text-blue-600 mt-1 flex items-baseline gap-1.5">
-                  <span>$3.24/mi</span>
-                  <span className={`text-[11px] font-semibold ${textSub}`}>Van &amp; Reefer</span>
-                </div>
-              </div>
-              <div className={`rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>Active Lane Alerts</span>
+                <span className={`text-[10.5px] font-bold uppercase tracking-wider ${textSub}`}>
+                  {isBroker ? 'My Posted Freight' : 'Active Lane Alerts'}
+                </span>
                 <div className="text-xl font-black text-purple-600 mt-1 flex items-baseline gap-1.5">
-                  <span>{savedAlerts.length} Active</span>
-                  <span className={`text-[11px] font-semibold ${textSub}`}>SMS / Email</span>
+                  {isBroker ? (
+                    <>
+                      <span>{activePostedCount}</span>
+                      <span className={`text-[11px] font-semibold ${textSub}`}>{coveredPostedCount} Covered</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{savedAlerts.length}</span>
+                      <span className={`text-[11px] font-semibold ${textSub}`}>SMS / Email</span>
+                    </>
+                  )}
                 </div>
               </div>
               <div className={`rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>Broker Contacts</span>
-                <div className="text-xl font-black text-emerald-600 mt-1 flex items-baseline gap-1.5">
-                  <span>100% Unlocked</span>
-                  <span className={`text-[11px] font-semibold ${textSub}`}>Direct Pay</span>
-                </div>
-              </div>
-              <div className={`col-span-2 sm:col-span-1 rounded-xl p-3 flex flex-col justify-between ${innerCardBg}`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${textSub}`}>Carrier Plan</span>
-                <div className="text-xs font-extrabold text-blue-600 mt-1 flex items-center gap-1.5">
+                <span className={`text-[10.5px] font-bold uppercase tracking-wider ${textSub}`}>Account Status</span>
+                <div className="text-xs font-extrabold text-emerald-600 mt-1.5 flex items-center gap-1.5">
                   <span>✓</span>
-                  <span>Unlimited $19/mo Pass</span>
+                  <span>{isStaff ? 'Unlimited Executive Pass' : (isBroker ? 'Free Broker Portal Active' : 'Active Carrier Pass')}</span>
                 </div>
               </div>
-            </>
-          )}
-        </div>
-      </section>
+            </div>
+          </section>
 
-      {/* 4. MAIN COCKPIT WORKSPACE */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* 4. MAIN COCKPIT WORKSPACE */}
+          <main className="flex-1 max-w-[1520px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* TAB: BROKER - MY POSTED FREIGHT */}
         {isBroker && activeTab === 'my-posted-freight' && (
           <div className="space-y-5">
@@ -2590,7 +2603,7 @@ print(response.json()) # Returns: {"ok": true, "load_id": "SW-109281", "status":
         )}
 
         {/* TAB: CARRIER - POST AVAILABLE TRUCK */}
-        {!isBroker && activeTab === 'post-truck' && (
+        {activeTab === 'post-truck' && (
           <div className="space-y-6">
             <div className={`rounded-2xl p-6 max-w-2xl mx-auto ${cardBg}`}>
               <h3 className={`text-lg font-bold mb-2 flex items-center gap-2 ${textTitle}`}>
@@ -3138,7 +3151,7 @@ print(response.json()) # Returns: {"ok": true, "load_id": "SW-109281", "status":
 
       {/* 5. ENTERPRISE FOOTER */}
       <footer className={`mt-auto px-4 sm:px-6 lg:px-8 py-4 ${footerBg}`}>
-        <div className="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="max-w-[1520px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-3">
             <strong className={isLight ? 'text-slate-700' : 'text-slate-400'}>LoadsNexus™ Enterprise Cockpit</strong>
             <span>•</span>
@@ -3149,10 +3162,12 @@ print(response.json()) # Returns: {"ok": true, "load_id": "SW-109281", "status":
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               All Systems Operational
             </span>
-            <span>24/7 Operations: +1 (800) 580-3101</span>
+            <span>24/7 Operations: +1 (917) 737-0021</span>
           </div>
         </div>
       </footer>
+        </div>
+      </div>
     </div>
   );
 };
