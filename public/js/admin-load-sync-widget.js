@@ -87,7 +87,11 @@
             <p style="font-size:12.5px;color:#475569;margin:0 0 10px;">
               Paste freight rows below to publish them live across <strong>Internal Dispatch Staff</strong> and all <strong>LoadsNexus Subscribers</strong>.
             </p>
-            <textarea id="lnx-bulk-text" rows="7" style="width:100%;border:1.5px solid #cbd5e1;border-radius:10px;padding:10px;font-family:monospace;font-size:12px;" placeholder="Dallas, TX -> Atlanta, GA | 53V | 42,000 lbs | $3,200 | Broker Name (MC-123456) | (800) 555-0199"></textarea>
+            <textarea id="lnx-bulk-text" rows="7" style="width:100%;border:1.5px solid #cbd5e1;border-radius:10px;padding:10px;font-family:monospace;font-size:12px;" placeholder="Paste copied freight table rows here (Ctrl+V)..."></textarea>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:#334155;font-weight:700;cursor:pointer;">
+              <input type="checkbox" id="lnx-reconcile-covered" checked style="width:15px;height:15px;">
+              Auto-remove covered loads (mark older synced loads missing from this new list as Covered)
+            </label>
             <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
               <button class="lnx-sync-btn emerald" id="lnx-bulk-submit">🚀 Sync &amp; Broadcast Loads</button>
             </div>
@@ -103,6 +107,7 @@
 
     document.getElementById('lnx-bulk-submit').onclick = async () => {
       const txt = (document.getElementById('lnx-bulk-text').value || '').trim();
+      const reconcile = Boolean(document.getElementById('lnx-reconcile-covered')?.checked);
       const st = document.getElementById('lnx-bulk-status');
       if (!txt) { st.style.color = '#dc2626'; st.textContent = 'Please paste load feed text first.'; return; }
       st.style.color = '#2563eb';
@@ -110,7 +115,7 @@
       try {
         const bulk = await apiJson('/api/dispatch-desk/sync-dat-bulk', {
           method: 'POST',
-          body: JSON.stringify({ rawText: txt, text: txt })
+          body: JSON.stringify({ rawText: txt, text: txt, reconcile_snapshot: reconcile })
         });
         const r = await apiJson('/api/dispatch-desk/sync-network-loads', {
           method: 'POST',
@@ -118,9 +123,10 @@
         });
         const added = Number(bulk.inserted_count || 0);
         const dupes = Number(bulk.skipped_duplicate_count || 0);
+        const covered = Number(bulk.covered_stale_count || 0);
         const liveTotal = Number(r.live_public_loads || added);
         st.style.color = '#059669';
-        st.textContent = `✅ +${added} new load(s) synced live (${dupes} duplicate skipped) • ${liveTotal} total active on Shipping Wish & LoadsNexus!`;
+        st.textContent = `✅ +${added} new synced, -${covered} covered/removed, ${dupes} unchanged • ${liveTotal} total live on Shipping Wish & LoadsNexus!`;
         document.getElementById('lnx-bulk-text').value = '';
         if (typeof onSynced === 'function') onSynced(r);
       } catch (e) {
@@ -152,6 +158,8 @@
 
     const bar = document.createElement('div');
     bar.className = 'lnx-sync-bar';
+    if (target.firstChild) target.insertBefore(bar, target.firstChild);
+    else target.appendChild(bar);
     let autoOn = status.auto_sync_enabled !== false;
 
     function renderBar(liveCount, lastAt) {
@@ -173,7 +181,8 @@
         </div>
       `;
 
-      document.getElementById('lnx-btn-sync-now').onclick = async (e) => {
+      const syncBtn = bar.querySelector('#lnx-btn-sync-now');
+      if (syncBtn) syncBtn.onclick = async (e) => {
         const btn = e.currentTarget;
         btn.disabled = true;
         btn.textContent = '⏳ Syncing Loads...';
@@ -190,7 +199,8 @@
         }
       };
 
-      document.getElementById('lnx-btn-auto-toggle').onclick = async () => {
+      const toggleBtn = bar.querySelector('#lnx-btn-auto-toggle');
+      if (toggleBtn) toggleBtn.onclick = async () => {
         autoOn = !autoOn;
         try {
           const r = await apiJson('/api/dispatch-desk/sync-network-loads', {
@@ -203,14 +213,13 @@
         }
       };
 
-      document.getElementById('lnx-btn-bulk-sync').onclick = () => {
+      const bulkBtn = bar.querySelector('#lnx-btn-bulk-sync');
+      if (bulkBtn) bulkBtn.onclick = () => {
         openBulkSyncModal((r) => renderBar(r.live_public_loads, r.synced_at));
       };
     }
 
     renderBar(status.live_public_loads, status.last_sync_at);
-    if (target.firstChild) target.insertBefore(bar, target.firstChild);
-    else target.appendChild(bar);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

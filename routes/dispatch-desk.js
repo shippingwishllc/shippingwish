@@ -1174,6 +1174,7 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
     } catch {}
 
     const insertedLoads = [];
+    const activeSnapshotIds = [];
     let skippedCount = 0;
     const matchedOffers = [];
 
@@ -1238,6 +1239,9 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
       if (existing.rows.length > 0) {
         skippedCount++;
         loadRow = existing.rows[0];
+        activeSnapshotIds.push(loadRow.id);
+        // Touch updated_at so still-active loads stay fresh on the live board
+        await pool.query(`UPDATE loads SET updated_at = NOW(), is_public_board = TRUE WHERE id = $1`, [loadRow.id]).catch(() => {});
       } else {
         const rawLoadNum = load.load_id ? String(load.load_id).replace(/^DAT-/i, 'LNX-') : '';
         const loadNum = rawLoadNum || `LNX-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -1270,6 +1274,7 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
         );
         loadRow = ins.rows[0];
         insertedLoads.push(loadRow);
+        activeSnapshotIds.push(loadRow.id);
       }
 
       // Fleet Matching
@@ -1322,19 +1327,35 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
       console.warn('[DAT Bulk Sync] Real-time broadcast warning:', e.message);
     }
 
-    // Auto-cover & deduct stale DAT loads that are no longer active on the exchange
+    // Auto-cover & deduct loads that disappeared from the live snapshot (or expired > 12h)
     let coveredStaleCount = 0;
     try {
       const loadboardRouter = require('./loadboard');
-      const staleRes = await pool.query(
-        `UPDATE loads 
-         SET status = 'covered', updated_at = NOW() 
-         WHERE source_type = 'dat_sync' 
-           AND deleted_at IS NULL
-           AND status::text IN ('new', 'open') 
-           AND updated_at < NOW() - INTERVAL '12 hours'
-         RETURNING id, load_number`
-      );
+      const shouldReconcile = Boolean(req.body.reconcile_snapshot) && activeSnapshotIds.length >= 3;
+      let staleRes;
+      if (shouldReconcile) {
+        staleRes = await pool.query(
+          `UPDATE loads 
+           SET status = 'covered', updated_at = NOW() 
+           WHERE source_type = 'dat_sync' 
+             AND deleted_at IS NULL
+             AND status::text IN ('new', 'open') 
+             AND NOT (id = ANY($1::int[]))
+             AND updated_at < NOW() - INTERVAL '90 seconds'
+           RETURNING id, load_number`,
+          [activeSnapshotIds]
+        );
+      } else {
+        staleRes = await pool.query(
+          `UPDATE loads 
+           SET status = 'covered', updated_at = NOW() 
+           WHERE source_type = 'dat_sync' 
+             AND deleted_at IS NULL
+             AND status::text IN ('new', 'open') 
+             AND updated_at < NOW() - INTERVAL '12 hours'
+           RETURNING id, load_number`
+        );
+      }
       coveredStaleCount = staleRes.rows.length;
       if (coveredStaleCount > 0 && typeof loadboardRouter.broadcastLoadboardEvent === 'function') {
         staleRes.rows.forEach(r => {
