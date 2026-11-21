@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { FreightLoad, UserSession } from '../types';
+import { BrokerIngestionTools } from './BrokerIngestionTools';
 
 interface BrokerPostModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [postedLoad, setPostedLoad] = useState<FreightLoad | null>(null);
+  const [postTab, setPostTab] = useState<'single' | 'bulk'>('single');
 
   useEffect(() => {
     if (user) {
@@ -403,6 +405,43 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
               </div>
             </div>
 
+            {/* Mode Tabs: Single Load Form vs Bulk CSV / AI Email Upload */}
+            <div className="grid grid-cols-2 gap-2 p-1 mb-5 rounded-xl bg-slate-100 border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setPostTab('single')}
+                className={`py-2 px-3 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                  postTab === 'single'
+                    ? 'bg-white text-purple-700 shadow-sm border border-purple-200/80'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📝 Single Load Form
+              </button>
+              <button
+                type="button"
+                onClick={() => setPostTab('bulk')}
+                className={`py-2 px-3 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                  postTab === 'bulk'
+                    ? 'bg-white text-emerald-700 shadow-sm border border-emerald-200/80'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📊 Bulk CSV / 🤖 AI Email
+              </button>
+            </div>
+
+            {postTab === 'bulk' ? (
+              <BrokerIngestionTools
+                isLight={true}
+                compact={true}
+                showToast={onShowToast}
+                onLoadsPublished={() => {
+                  onClose();
+                }}
+              />
+            ) : (
+            <>
             {errorMessage && (
               <div className="p-3 mb-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
                 {errorMessage}
@@ -647,6 +686,8 @@ export const BrokerPostModal: React.FC<BrokerPostModalProps> = ({
                 )}
               </button>
             </form>
+            </>
+            )}
           </div>
         )}
       </div>

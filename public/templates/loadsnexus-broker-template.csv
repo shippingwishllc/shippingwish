@@ -1,0 +1,5 @@
+reference_id,origin_city,origin_state,origin_zip,destination_city,destination_state,destination_zip,pickup_date,equipment_type,weight_lbs,rate_total_usd,commodity
+LN-1001,Chicago,IL,60601,Dallas,TX,75201,2026-11-23,DRY_VAN,42000,2850,General Freight / CPG
+LN-1002,Atlanta,GA,30301,Miami,FL,33101,2026-11-23,REEFER,38500,2450,Fresh Produce / Chilled
+LN-1003,Los Angeles,CA,90001,Phoenix,AZ,85001,2026-11-24,FLATBED,44000,1450,Structural Steel Coils
+LN-1004,Philadelphia,PA,19101,Charlotte,NC,28201,2026-11-23,BOX_TRUCK,10000,1720,Retail Goods

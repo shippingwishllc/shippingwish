@@ -23,12 +23,14 @@ interface BrokerIngestionToolsProps {
   isLight: boolean;
   onLoadsPublished: () => void;
   showToast: (msg: string) => void;
+  compact?: boolean;
 }
 
 export const BrokerIngestionTools: React.FC<BrokerIngestionToolsProps> = ({
   isLight,
   onLoadsPublished,
   showToast,
+  compact = false,
 }) => {
   const [csvText, setCsvText] = useState('');
   const [fileName, setFileName] = useState('');
@@ -113,7 +115,7 @@ export const BrokerIngestionTools: React.FC<BrokerIngestionToolsProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className={compact ? 'space-y-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
       {/* 1. CSV / Excel Drag-and-Drop Bulk Uploader */}
       <div className={`rounded-2xl p-5 ${cardBg}`}>
         <div className="flex items-center justify-between gap-2 mb-3">
@@ -199,6 +201,19 @@ export const BrokerIngestionTools: React.FC<BrokerIngestionToolsProps> = ({
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {invalidRows.length > 0 && (
+              <div className="max-h-28 overflow-y-auto rounded-lg border border-rose-200 dark:border-rose-900 bg-rose-50/80 dark:bg-rose-950/40 p-2.5 space-y-1 text-[11px] text-rose-700 dark:text-rose-300">
+                <div className="font-extrabold">Rows to fix before re-uploading:</div>
+                {invalidRows.slice(0, 10).map((ir) => (
+                  <div key={ir.row} className="leading-snug">
+                    <strong>Row #{ir.row}:</strong> {Array.isArray(ir.errors) ? ir.errors.join('; ') : String(ir.errors)}
+                  </div>
+                ))}
+                {invalidRows.length > 10 && (
+                  <div className="italic opacity-80">...and {invalidRows.length - 10} more row(s)</div>
+                )}
               </div>
             )}
             <button

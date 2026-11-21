@@ -5,7 +5,8 @@
 const crypto = require('crypto');
 const pool = require('../db');
 const { ensureUnifiedSchema } = require('./load-lifecycle');
-const { stateCenter, roadMiles } = require('./geo');
+const { stateCenter, roadMiles, FREIGHT_COORDINATES } = require('./geo');
+const { lookupZip } = require('./us-zipcodes');
 const { extractPhoneWithExt } = require('./dat-load-parser');
 const { sanitizeEmail } = require('./email-valid');
 
@@ -58,8 +59,29 @@ function parseCityState(rawStr, cityIn, stateIn, zipIn) {
       city = clean;
     }
   }
+  if ((!city || !state) && zip && zip.length === 5) {
+    try {
+      const zInfo = lookupZip(zip);
+      if (zInfo) {
+        if (!city && zInfo.city) city = zInfo.city;
+        if (!state && zInfo.state) state = String(zInfo.state).toUpperCase().slice(0, 2);
+      }
+    } catch (_) {}
+  }
   const full = city && state ? `${city}, ${state}` : (raw || city || '');
   return { city, state: state || null, zip: zip || null, full };
+}
+
+function resolveOfflineCoords(loc) {
+  if (!loc) return null;
+  if (loc.city && loc.state) {
+    const key = `${loc.city.toLowerCase()}, ${loc.state.toLowerCase()}`;
+    if (FREIGHT_COORDINATES && FREIGHT_COORDINATES[key]) {
+      return FREIGHT_COORDINATES[key];
+    }
+  }
+  if (loc.state) return stateCenter(loc.state);
+  return null;
 }
 
 function parseDateSafe(val, fallbackIso = null) {
@@ -104,8 +126,8 @@ function normalizeStandardLoad(raw = {}, ctx = {}) {
     raw.destination_zip
   );
 
-  const origGeo = orig.state ? stateCenter(orig.state) : null;
-  const destGeo = dest.state ? stateCenter(dest.state) : null;
+  const origGeo = resolveOfflineCoords(orig);
+  const destGeo = resolveOfflineCoords(dest);
 
   const originLat = raw.origin_lat != null ? Number(raw.origin_lat) : (origGeo ? Number(origGeo.lat) : null);
   const originLng = raw.origin_lng != null ? Number(raw.origin_lng) : (origGeo ? Number(origGeo.lng) : null);
@@ -396,37 +418,45 @@ function parseCsvFreightText(csvText, customMap = {}) {
   const headers = splitCsvLine(lines[0]).map((h) => h.replace(/^\uFEFF/, '').trim());
   const normHeaders = headers.map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
 
-  const findCol = (field, aliases) => {
+  const findCol = (field, aliases, excludeTokens = []) => {
     if (customMap && customMap[field]) {
       const target = String(customMap[field]).toLowerCase().replace(/[^a-z0-9]/g, '');
       const idx = normHeaders.indexOf(target);
       if (idx >= 0) return idx;
     }
+    // Pass 1: Exact normalized header match (prevents origin_state from hijacking origin_city)
     for (const a of aliases) {
-      const idx = normHeaders.findIndex((h) => h === a || h.includes(a));
+      const idx = normHeaders.findIndex((h) => h === a);
+      if (idx >= 0) return idx;
+    }
+    // Pass 2: Safe substring fallback (respecting exclusions)
+    for (const a of aliases) {
+      const idx = normHeaders.findIndex(
+        (h) => h.includes(a) && !excludeTokens.some((ex) => h.includes(ex))
+      );
       if (idx >= 0) return idx;
     }
     return -1;
   };
 
   const colIdx = {
-    origin: findCol('origin', ['origin', 'pickuplocation', 'pickupcity', 'from', 'orig']),
-    origin_state: findCol('origin_state', ['originstate', 'pickupstate', 'origst']),
-    origin_zip: findCol('origin_zip', ['originzip', 'pickupzip']),
-    destination: findCol('destination', ['destination', 'deliverylocation', 'deliverycity', 'dest', 'to']),
-    destination_state: findCol('destination_state', ['destinationstate', 'deliverystate', 'destst']),
-    destination_zip: findCol('destination_zip', ['destinationzip', 'deliveryzip']),
-    equipment: findCol('equipment', ['equipment', 'equipmenttype', 'trailer', 'trucktype']),
-    weight: findCol('weight', ['weight', 'weightlbs', 'lbs']),
-    length_ft: findCol('length_ft', ['length', 'lengthft', 'ft']),
+    origin: findCol('origin', ['origincity', 'pickupcity', 'pickuplocation', 'originlocation', 'origin', 'from', 'orig'], ['state', 'zip', 'postal', 'lat', 'lng', 'date']),
+    origin_state: findCol('origin_state', ['originstate', 'pickupstate', 'origst', 'fromstate']),
+    origin_zip: findCol('origin_zip', ['originzip', 'pickupzip', 'origzip', 'fromzip']),
+    destination: findCol('destination', ['destinationcity', 'deliverycity', 'destcity', 'deliverylocation', 'destinationlocation', 'destination', 'dest', 'to'], ['state', 'zip', 'postal', 'lat', 'lng', 'date']),
+    destination_state: findCol('destination_state', ['destinationstate', 'deliverystate', 'deststate', 'destst', 'tostate']),
+    destination_zip: findCol('destination_zip', ['destinationzip', 'deliveryzip', 'destzip', 'tozip']),
+    equipment: findCol('equipment', ['equipmenttype', 'equipment', 'trailertype', 'trailer', 'trucktype']),
+    weight: findCol('weight', ['weightlbs', 'weight', 'lbs']),
+    length_ft: findCol('length_ft', ['lengthft', 'length', 'trailerlength']),
     full_or_partial: findCol('full_or_partial', ['fullorpartial', 'loadtype', 'ftlltl', 'capacity']),
-    rate: findCol('rate', ['rate', 'ratetotalusd', 'totalrate', 'price', 'pay']),
-    miles: findCol('miles', ['miles', 'estimatedmiles', 'loadedmiles', 'trip', 'distance']),
+    rate: findCol('rate', ['ratetotalusd', 'totalrate', 'rate', 'price', 'pay']),
+    miles: findCol('miles', ['estimatedmiles', 'loadedmiles', 'miles', 'trip', 'distance']),
     pickup_date: findCol('pickup_date', ['pickupdate', 'pickupdatestart', 'shipdate', 'date']),
     delivery_date: findCol('delivery_date', ['deliverydate', 'deliverydatestart', 'dropdate']),
-    commodity: findCol('commodity', ['commodity', 'commoditydescription', 'freight', 'cargo']),
-    external_ref: findCol('external_ref', ['externalreferenceid', 'ref', 'reference', 'loadnumber', 'loadid', 'bol']),
-    notes: findCol('notes', ['notes', 'comments', 'instructions'])
+    commodity: findCol('commodity', ['commoditydescription', 'commodity', 'freight', 'cargo']),
+    external_ref: findCol('external_ref', ['externalreferenceid', 'referenceid', 'externalref', 'ref', 'reference', 'loadnumber', 'loadid', 'bol']),
+    notes: findCol('notes', ['notes', 'specialinstructions', 'comments', 'instructions'])
   };
 
   const validRows = [];
