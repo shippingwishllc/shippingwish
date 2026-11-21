@@ -2615,6 +2615,62 @@ router.get('/sync-network-status', requireAuth, requireRole('admin', 'super_admi
   }
 });
 
+// GET /api/dispatch-desk/bridge-verify — Bridge-key or Staff audit of live synced loads (real broker emails, phones, covered count)
+router.get('/bridge-verify', bridgeOrStaff, async (req, res) => {
+  try {
+    const { ensureUnifiedSchema } = require('../utils/load-lifecycle');
+    await ensureUnifiedSchema();
+
+    // Auto-purge any previously ingested corrupted expanded-drawer dummy rows (e.g. (800) 555-5555 or multi-line Truck/Commodity broker_name)
+    const purged = await pool.query(
+      `UPDATE loads
+       SET deleted_at = NOW(), status = 'covered'
+       WHERE source_type = 'dat_sync'
+         AND deleted_at IS NULL
+         AND carrier_id IS NULL
+         AND (
+           broker_name ~ '[\r\n]'
+           OR broker_name ILIKE '%Reference ID%'
+           OR broker_name ILIKE '%missing broker%'
+           OR broker_contact ILIKE '%(800) 555-5555%'
+           OR (rate > 0 AND rate < 50)
+         )
+       RETURNING id, load_number`
+    ).catch(() => ({ rows: [] }));
+
+    const [statsRes, sampleRes] = await Promise.all([
+      pool.query(`
+        SELECT
+          COUNT(*) FILTER (WHERE deleted_at IS NULL AND status::text IN ('new','open'))::int AS open_loads,
+          COUNT(*) FILTER (WHERE deleted_at IS NULL AND status::text = 'covered')::int AS covered_loads,
+          COUNT(*) FILTER (WHERE deleted_at IS NULL AND status::text IN ('new','open') AND broker_contact LIKE '%@%')::int AS with_email,
+          COUNT(*) FILTER (WHERE deleted_at IS NULL AND status::text IN ('new','open') AND broker_contact ~ '\\([0-9]{3}\\)')::int AS with_phone,
+          COUNT(*) FILTER (WHERE deleted_at IS NULL AND status::text IN ('new','open') AND rate >= 50)::int AS with_rate,
+          MAX(updated_at) AS last_synced_at
+        FROM loads
+        WHERE source_type = 'dat_sync'
+      `),
+      pool.query(`
+        SELECT load_number, pickup_location, delivery_location, rate, miles, rpm, weight, equipment_type,
+               broker_name, broker_mc, broker_contact, status, is_public_board, updated_at
+        FROM loads
+        WHERE source_type = 'dat_sync' AND deleted_at IS NULL AND status::text IN ('new','open')
+        ORDER BY updated_at DESC, id DESC
+        LIMIT 12
+      `)
+    ]);
+
+    res.json({
+      ok: true,
+      purged_corrupted_rows: purged.rows.length,
+      stats: statsRes.rows[0] || {},
+      sample_loads: sampleRes.rows || []
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Bridge verify error: ' + err.message });
+  }
+});
+
 // GET /api/dispatch-desk/bridge-token — Super Admin / Admin ONLY: retrieve secure Desktop Clipboard Bridge key
 router.get('/bridge-token', requireAuth, requireRole('admin', 'super_admin'), async (req, res) => {
   try {

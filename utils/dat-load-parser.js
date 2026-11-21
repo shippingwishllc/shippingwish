@@ -451,15 +451,22 @@ function parseUniversalDat(text) {
   }
 
   const results = [];
-  for (const chunk of chunks) {
+  for (const rawChunk of chunks) {
+    // Strip expanded TAL One detail-drawer boilerplate so blurred placeholders & side panels never corrupt row fields
+    const chunk = rawChunk
+      .split(/\b(?:MARKET\s+RATES|LOAD\s+ACTIVITY|LOAD\s+RESOURCES|CONTRACT\s+RATE|Equipment\s*\r?\n\s*Load)\b/i)[0]
+      .trim();
+
     const cityMatches = Array.from(chunk.matchAll(/\b([A-Za-z\s.]+),\s*([A-Za-z]{2})\b/g));
     if (cityMatches.length < 2) continue;
 
     const orig = cleanLocation(`${cityMatches[0][1].trim()}, ${cityMatches[0][2].trim()}`);
     const dest = cleanLocation(`${cityMatches[1][1].trim()}, ${cityMatches[1][2].trim()}`);
 
-    const rateMatch = chunk.match(/\$([0-9,]+(?:\.[0-9]{2})?)/);
-    const rate = rateMatch ? parseMoney(rateMatch[1]) : 0;
+    // Match total load rate ONLY — explicitly exclude per-mile rates like "$2.50/mi" or "$3.48/mi"
+    const rateMatch = chunk.match(/\$([0-9,]+(?:\.[0-9]{2})?)(?!\s*\/\s*mi\b)/i);
+    let rate = rateMatch ? parseMoney(rateMatch[1]) : 0;
+    if (rate > 0 && rate < 50) rate = 0; // Guard against stray per-mile figures
 
     const milesMatch = chunk.match(/\b([0-9,]{2,5})\s*(?:mi|miles)\b/i) || chunk.match(/(?:^|\s|\t)([0-9]{2,4})(?:\s|\t|$)/);
     const miles = milesMatch ? parseInt(milesMatch[1].replace(/,/g, ''), 10) : 500;
@@ -467,7 +474,7 @@ function parseUniversalDat(text) {
     const dhoMatch = chunk.match(/\(([0-9]{1,3})\)/) || chunk.match(/DH-?O:?\s*([0-9]{1,3})/i);
     const dho = dhoMatch ? parseInt(dhoMatch[1], 10) : 0;
 
-    const weightMatch = chunk.match(/([0-9,]+)\s*(?:lbs|lb)\b/i);
+    const weightMatch = chunk.match(/\b([0-9]{1,2},[0-9]{3}|[0-9]{3,5})\s*(?:lbs|lb)\b/i);
     const weight = weightMatch ? parseInt(weightMatch[1].replace(/,/g, ''), 10) : 40000;
 
     // Strip ", ST" state abbreviations before detecting equipment codes so e.g. "Yankton, SD" never matches Step Deck (SD)
@@ -481,23 +488,40 @@ function parseUniversalDat(text) {
     else if (/(?:^|[\t\r\n])\s*PO\s*(?:[\t\r\n]|$)|\bPOWER\s*ONLY\b/i.test(eqChunk)) eq = 'Power Only';
     else if (/(?:^|[\t\r\n])\s*V\s*(?:[\t\r\n]|$)|\b(?:DRY\s*VAN|VAN)\b/i.test(eqChunk)) eq = '53ft Dry Van';
 
-    const phone = extractPhoneWithExt(chunk);
+    let phone = extractPhoneWithExt(chunk);
+    // Reject TAL One blurred dummy placeholder numbers
+    if (phone && /^\(?(?:800|888|555)\)?[\s-]*555[\s-]*5555/.test(phone)) {
+      phone = null;
+    }
 
     const emailMatch = chunk.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
     const email = emailMatch ? emailMatch[1].toLowerCase() : null;
 
+    // Skip locked TAL One rows where broker contact is hidden behind "missing broker requirements" and there is no rate/contact
+    const isMissingReq = /missing\s+broker\s+requirements/i.test(rawChunk);
+    if (isMissingReq && !email && !phone && rate === 0) {
+      continue;
+    }
+
     let broker = 'Verified Freight Broker';
     const brokerMatch =
-      chunk.match(/(?:Full|Partial)[\s\t]+([A-Za-z0-9\s.,&'-]+?)(?:[\s\t]+\([0-9]{3}\)|[\s\t]+[0-9]{2}\s+CS|[\s\t]+MC\s*[#\-]?\s*\d|[\s\t]+[a-zA-Z0-9._%+-]+@|\t|$)/i) ||
-      chunk.match(/(?:53 ft|48 ft|26 ft)[\s\t]+(?:-\s*)?(?:Full|Partial)?[\s\t]*([A-Za-z][A-Za-z0-9\s.,&'-]{2,}?)(?:[\s\t]+\([0-9]{3}\)|[\s\t]+[0-9]{2}\s+CS|[\s\t]+MC\s*[#\-]?\s*\d|[\s\t]+[a-zA-Z0-9._%+-]+@|\t|$)/i);
-    if (brokerMatch && brokerMatch[1].trim().length > 2) {
-      const candidate = brokerMatch[1].replace(/^(?:-\s*)?(?:Full|Partial)\s*[\t\s]*/i, '').trim();
-      if (!/^(?:[VRFSB]{1,2}\s+)?[\d,]+\s*lbs?$/i.test(candidate)) {
+      chunk.match(/(?:Full|Partial)[ \t\r\n]+([A-Za-z0-9 .,\/&'-]{3,70}?)(?=[ \t]*\r?\n|\t|[ \t]+\([0-9]{3}\)|[ \t]+[0-9]{2}\s+CS|[ \t]+MC\s*[#\-]?\s*\d|[ \t]+[a-zA-Z0-9._%+-]+@|$)/i) ||
+      chunk.match(/(?:53 ft|48 ft|26 ft)[ \t]+(?:-\s*)?(?:Full|Partial)?[ \t\r\n]*([A-Za-z][A-Za-z0-9 .,\/&'-]{2,70}?)(?=[ \t]*\r?\n|\t|[ \t]+\([0-9]{3}\)|[ \t]+[0-9]{2}\s+CS|[ \t]+MC\s*[#\-]?\s*\d|[ \t]+[a-zA-Z0-9._%+-]+@|$)/i);
+    if (brokerMatch && brokerMatch[1]) {
+      const candidate = brokerMatch[1]
+        .replace(/[\r\n]+/g, ' ')
+        .replace(/^(?:-\s*)?(?:Full|Partial)\s*/i, '')
+        .replace(/\.{2,}$/, '')
+        .trim();
+      const isNoise = /^(?:[VRFSB]{1,2}\s+)?[\d,]+\s*lbs?$/i.test(candidate) ||
+        /\b(?:missing\s+broker|Truck|Length|Weight|Commodity|Reference\s*ID|BOOK\s+ON\s+EXTERNAL)\b/i.test(candidate);
+      if (candidate.length >= 3 && candidate.length <= 80 && !isNoise) {
         broker = candidate;
       }
-    } else if (email) {
-      const domain = email.split('@')[1]?.replace(/\.[a-z]{2,}$/i, '');
-      if (domain) broker = domain.toUpperCase() + ' Logistics';
+    }
+    if (broker === 'Verified Freight Broker' && email) {
+      const domain = email.split('@')[1]?.replace(/\.[a-z]{2,}$/i, '').replace(/^(?:inbound|dispatch|loads|freight)\./i, '');
+      if (domain && domain.length >= 2) broker = domain.toUpperCase() + ' Logistics';
     }
 
     const mcMatch = chunk.match(/MC\s*[#\-]?\s*(\d{5,8})/i);
