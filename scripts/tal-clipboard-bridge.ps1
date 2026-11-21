@@ -50,7 +50,7 @@ Write-Host "=================================================================" -
 Write-Host "  Live Endpoint : $ApiUrl" -ForegroundColor Green
 Write-Host "  Click-Freeze  : DISABLED (safe to click or minimize anytime)" -ForegroundColor Green
 Write-Host "  Privacy Guard : Ignores non-freight text (only syncs load rows)" -ForegroundColor DarkGray
-Write-Host "  Auto-Deduct   : ON (covered loads auto-removed in 15s)" -ForegroundColor DarkGray
+Write-Host "  Multi-Scroll  : STACK MODE ON (scroll & copy to build 100s of loads; auto-expires stale loads after 3h)" -ForegroundColor DarkGray
 Write-Host "=================================================================`n" -ForegroundColor Cyan
 
 # Load or prompt for SuperAdmin Desktop Bridge Key (one-time setup)
@@ -130,7 +130,7 @@ while ($true) {
     $payload = @{
       rawText            = $clip
       text               = $clip
-      reconcile_snapshot = $true
+      reconcile_snapshot = $false
     } | ConvertTo-Json -Depth 4 -Compress
 
     $utf8Bytes = [System.Text.Encoding]::UTF8.GetBytes($payload)
@@ -142,12 +142,13 @@ while ($true) {
     $resp = Invoke-RestMethod -Uri $ApiUrl -Method POST -Headers $headers -Body $utf8Bytes -TimeoutSec 25
     $SyncCount++
 
-    $added   = [int]($resp.inserted_count)
-    $covered = [int]($resp.covered_stale_count)
-    $dupes   = [int]($resp.skipped_duplicate_count)
-    $total   = [int]($resp.total_received)
+    $added     = [int]($resp.inserted_count)
+    $covered   = [int]($resp.covered_stale_count)
+    $dupes     = [int]($resp.skipped_duplicate_count)
+    $total     = [int]($resp.total_received)
+    $liveTotal = [int]($resp.total_live_open)
 
-    Write-Host "[$ts] SYNC #$SyncCount OK! +$added new | -$covered covered removed | $dupes unchanged (parsed $total)" -ForegroundColor Green
+    Write-Host "[$ts] SYNC #$SyncCount OK! +$added new | -$covered expired | $dupes dupes | TOTAL LIVE: $liveTotal loads!" -ForegroundColor Green
     if ($resp.inserted_loads -and $resp.inserted_loads.Count -gt 0) {
       $preview = $resp.inserted_loads | Select-Object -First 3
       foreach ($l in $preview) {

@@ -1398,8 +1398,9 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
            SET status = 'covered', updated_at = NOW() 
            WHERE source_type = 'dat_sync' 
              AND deleted_at IS NULL
+             AND carrier_id IS NULL
              AND status::text IN ('new', 'open') 
-             AND updated_at < NOW() - INTERVAL '12 hours'
+             AND updated_at < NOW() - INTERVAL '3 hours'
            RETURNING id, load_number`
         );
       }
@@ -1433,16 +1434,22 @@ router.post('/sync-dat-bulk', bridgeOrStaff, async (req, res) => {
       console.warn('[DAT Bulk Sync] Config telemetry update warning:', e.message);
     }
 
+    const livePoolRes = await pool.query(
+      `SELECT COUNT(*)::int AS total_open FROM loads WHERE deleted_at IS NULL AND status::text IN ('new', 'open') AND (is_public_board = TRUE OR carrier_id IS NULL)`
+    ).catch(() => ({ rows: [{ total_open: insertedLoads.length }] }));
+    const totalLiveOpen = livePoolRes.rows[0]?.total_open || insertedLoads.length;
+
     res.json({
       ok: true,
       total_received: loadsToProcess.length,
       inserted_count: insertedLoads.length,
       skipped_duplicate_count: skippedCount,
       covered_stale_count: coveredStaleCount,
+      total_live_open: totalLiveOpen,
       matched_count: matchedOffers.length,
       inserted_loads: insertedLoads,
       matched_offers: matchedOffers,
-      message: `Successfully processed ${loadsToProcess.length} loads (${insertedLoads.length} new published to LoadsNexus, ${coveredStaleCount} covered/deducted, ${matchedOffers.length} matched to fleet).`
+      message: `Successfully processed ${loadsToProcess.length} loads (${insertedLoads.length} new published, ${totalLiveOpen} total live on Shipping Wish & LoadsNexus, ${coveredStaleCount} expired/covered).`
     });
   } catch (err) {
     console.error('[DAT Bulk Sync] Error:', err);
