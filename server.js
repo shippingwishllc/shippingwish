@@ -590,7 +590,10 @@ app.get('/api/health', (req, res) => {
 app.use('/api', require('./routes/auth'));                // /api/signup, /api/login, /api/me, /api/users, /api/carriers
 app.use('/api/dashboard', carrierApiGate, require('./routes/dashboard')); // TMS dashboard analytics
 app.use('/api/loads', carrierApiGate, require('./routes/loads'));
-app.use('/api/brokers', carrierApiGate, require('./routes/brokers'));
+app.use('/api/brokers', (req, res, next) => {
+  if (req.headers['x-bridge-key'] && (req.path === '/sync-from-loads' || req.path === '/sync-fmcsa')) return next();
+  return requireAuth(req, res, (err) => err ? next(err) : requireCarrierSubscription(req, res, next));
+}, require('./routes/brokers'));
 app.use('/api/fleet', carrierApiGate, require('./routes/fleet'));
 app.use('/api/documents', carrierApiGate, require('./routes/documents'));
 app.use('/api/accessorials', carrierApiGate, require('./routes/accessorials'));
