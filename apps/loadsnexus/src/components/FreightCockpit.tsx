@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { FreightLoad, UserSession, SearchFilter } from '../types';
 import type { LaneAlert } from './LaneAlertsModal';
 import { LiveLoadBoard } from './LiveLoadBoard';
+import { BrokerIngestionTools } from './BrokerIngestionTools';
 
 interface FreightCockpitProps {
   user: UserSession;
@@ -209,94 +210,28 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
   // User menu dropdown
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  // Broker Posted Freight State
-  const [brokerLoads, setBrokerLoads] = useState<BrokerPostedLoad[]>([
-    {
-      id: 'SW-9021',
-      origin: 'Chicago, IL',
-      destination: 'Dallas, TX',
-      equipment: "53' Dry Van",
-      weight: '42,000 lbs',
-      rate: 2850,
-      miles: 925,
-      rpm: 3.08,
-      pickup_date: 'Today (Immediate)',
-      status: 'active',
-      inquiries_count: 5,
-      bids_count: 2,
-    },
-    {
-      id: 'SW-9022',
-      origin: 'Atlanta, GA',
-      destination: 'Miami, FL',
-      equipment: "53' Reefer",
-      weight: '39,000 lbs',
-      rate: 2450,
-      miles: 660,
-      rpm: 3.71,
-      pickup_date: 'Tomorrow 08:00',
-      status: 'active',
-      inquiries_count: 8,
-      bids_count: 4,
-    },
-    {
-      id: 'SW-9023',
-      origin: 'Columbus, OH',
-      destination: 'Charlotte, NC',
-      equipment: "53' Dry Van",
-      weight: '36,500 lbs',
-      rate: 1850,
-      miles: 440,
-      rpm: 4.20,
-      pickup_date: 'Today',
-      status: 'covered',
-      inquiries_count: 12,
-      bids_count: 6,
-      carrier_assigned: 'Apex Global Freight (MC-1094821)',
-      carrier_name: 'Apex Global Freight LLC',
-      carrier_mc: 'MC-1094821',
-      driver_name: 'Robert Miller',
-      driver_phone: '+1 (312) 555-0192',
-      truck_number: 'Unit 402',
-      trailer_number: 'TR-8910',
-      tracking_notes: 'Driver confirmed pickup at dock. ETA Charlotte 06:00 AM.',
-    },
-    {
-      id: 'SW-9024',
-      origin: 'Houston, TX',
-      destination: 'Nashville, TN',
-      equipment: "53' Dry Van",
-      weight: '41,000 lbs',
-      rate: 2550,
-      miles: 780,
-      rpm: 3.27,
-      pickup_date: 'In 2 Days',
-      status: 'active',
-      inquiries_count: 3,
-      bids_count: 1,
-    },
-  ]);
+  // Real Broker Posted Freight State (zero hardcoded fake rows)
+  const [brokerLoads, setBrokerLoads] = useState<BrokerPostedLoad[]>([]);
 
-  // Load backend broker loads if available
-  useEffect(() => {
+  const reloadBrokerLoads = () => {
     if (typeof window === 'undefined') return;
-    fetch('/api/loadboard/broker/my-loads', { credentials: 'include' })
+    fetch('/api/v1/loads', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data?.loads && data.loads.length > 0) {
+        if (data?.loads && Array.isArray(data.loads)) {
           const apiLoads: BrokerPostedLoad[] = data.loads.map((l: any) => ({
-            id: l.load_number || `SW-${l.id}`,
+            id: l.load_number || `LNX-${l.id}`,
             origin: l.pickup_location || 'Origin, US',
             destination: l.delivery_location || 'Destination, US',
             equipment: l.equipment_type || "53' Dry Van",
-            weight: l.weight ? `${Number(l.weight).toLocaleString()} lbs` : '40,000 lbs',
-            rate: Number(l.rate) || 2500,
-            miles: Number(l.miles) || 600,
-            rpm: Number(l.rpm) || 3.15,
+            weight: l.weight ? `${Number(l.weight).toLocaleString()} lbs` : '42,000 lbs',
+            rate: Number(l.rate) || 0,
+            miles: Number(l.miles) || 0,
+            rpm: Number(l.rpm) || 0,
             pickup_date: l.pickup_date ? String(l.pickup_date).slice(0, 10) : 'Today',
-            status: l.status === 'covered' ? 'covered' : 'active',
-            inquiries_count: Math.floor(Math.random() * 8) + 2,
-            bids_count: Math.floor(Math.random() * 4) + 1,
+            status: l.status === 'covered' || l.status === 'booked' ? 'covered' : 'active',
+            inquiries_count: Number(l.inquiries_count || 0),
+            bids_count: Number(l.bids_count || 0),
             carrier_assigned: l.carrier_name ? `${l.carrier_name} (${l.carrier_mc || 'MC-FILE'})` : undefined,
             carrier_name: l.carrier_name,
             carrier_mc: l.carrier_mc,
@@ -306,17 +241,31 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
             trailer_number: l.trailer_number,
             tracking_notes: l.tracking_notes,
           }));
-          setBrokerLoads((prev) => {
-            const combined = [...apiLoads];
-            prev.forEach((p) => {
-              if (!combined.some((c) => c.id === p.id)) combined.push(p);
-            });
-            return combined;
-          });
+          setBrokerLoads(apiLoads);
         }
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    reloadBrokerLoads();
   }, []);
+
+  const handleBumpLoad24h = async (loadId: string) => {
+    try {
+      const res = await fetch(`/api/v1/loads/${encodeURIComponent(loadId)}/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not refresh load');
+      showToast(data.message || `Load #${loadId} bumped live for another 24 hours!`);
+      reloadBrokerLoads();
+      onRefresh();
+    } catch (err: any) {
+      showToast(err?.message || 'Refresh failed');
+    }
+  };
 
   // Filter state for posted loads
   const [brokerLoadFilter, setBrokerLoadFilter] = useState<'all' | 'active' | 'covered'>('all');
@@ -1405,6 +1354,16 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
         {/* TAB: BROKER - MY POSTED FREIGHT */}
         {isBroker && activeTab === 'my-posted-freight' && (
           <div className="space-y-5">
+            {/* Bulk CSV Drag-and-Drop Uploader + AI Email-to-Load (loads@loadsnexus.com) */}
+            <BrokerIngestionTools
+              isLight={isLight}
+              onLoadsPublished={() => {
+                reloadBrokerLoads();
+                onRefresh();
+              }}
+              showToast={showToast}
+            />
+
             {/* Control Strip */}
             <div className={`rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 ${cardBg}`}>
               <div className="flex flex-wrap items-center gap-2">
@@ -1612,8 +1571,18 @@ export const FreightCockpit: React.FC<FreightCockpitProps> = ({
                                   📍 Driver &amp; Tracking
                                 </button>
                               )}
+                              {load.status !== 'covered' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleBumpLoad24h(load.id)}
+                                  className="px-2.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 border border-blue-500/30 rounded-lg text-xs font-bold transition-all"
+                                  title="Refresh & Reset 24-Hour Expiration Timer"
+                                >
+                                  🔄 Bump 24h
+                                </button>
+                              )}
                               <a
-                                href={`/api/loadboard/loads/${encodeURIComponent(load.id)}/ratecon-pdf?origin=${encodeURIComponent(load.origin)}&destination=${encodeURIComponent(load.destination)}&rate=${load.rate}&miles=${load.miles}&rpm=${load.rpm}&equipment=${encodeURIComponent(load.equipment)}&broker=${encodeURIComponent(user.company_name || 'Summit Logistics Brokerage')}&mc=${encodeURIComponent(user.mc_number || 'MC-582104')}&carrier_name=${encodeURIComponent(load.carrier_name || '')}&carrier_mc=${encodeURIComponent(load.carrier_mc || '')}&driver_name=${encodeURIComponent(load.driver_name || '')}&driver_phone=${encodeURIComponent(load.driver_phone || '')}`}
+                                href={`/api/loadboard/loads/${encodeURIComponent(load.id)}/ratecon-pdf?origin=${encodeURIComponent(load.origin)}&destination=${encodeURIComponent(load.destination)}&rate=${load.rate}&miles=${load.miles}&rpm=${load.rpm}&equipment=${encodeURIComponent(load.equipment)}&broker=${encodeURIComponent(user.company_name || 'Verified Freight Brokerage')}&mc=${encodeURIComponent(user.mc_number || '')}&carrier_name=${encodeURIComponent(load.carrier_name || '')}&carrier_mc=${encodeURIComponent(load.carrier_mc || '')}&driver_name=${encodeURIComponent(load.driver_name || '')}&driver_phone=${encodeURIComponent(load.driver_phone || '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={`px-2.5 py-1.5 border rounded-lg text-xs font-bold transition-colors ${

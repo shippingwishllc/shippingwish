@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dispatch Carrier Approval Queue — Shipping Wish LLC</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/design-system.css?v=36">
+  <style>
+    .prop-banner {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      color: #fff; border-radius: 14px; padding: 18px 22px; margin-bottom: 18px;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+      border: 1px solid #2563eb;
+    }
+    .prop-kpis {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 18px;
+    }
+    .prop-kpi {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px;
+      border-top: 3px solid #2563eb;
+    }
+    .prop-kpi.emerald { border-top-color: #10b981; }
+    .prop-kpi.amber { border-top-color: #f59e0b; }
+    .prop-kpi.rose { border-top-color: #ef4444; }
+    .prop-kpi-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #64748b; }
+    .prop-kpi-val { font-size: 22px; font-weight: 900; color: #0f172a; margin-top: 4px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 800; white-space: nowrap;
+    }
+    .pill-sent { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .pill-approved { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .pill-declined { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .pill-ratecon { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+    .src-badge {
+      display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 10px; font-weight: 800;
+      background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;
+    }
+  </style>
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Portal navigation"></aside>
+  <script src="/js/app-shell-boot.js"></script>
+
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <h1 style="font-size:var(--text-lg);font-weight:800;color:var(--text-primary);margin:0;">Carrier Approval Queue &amp; Dispatch Proposals</h1>
+        <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;">"You approve every load before it is booked. No forced dispatch." — Connected live to LoadsNexus &amp; Shipping Wish TMS.</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <a href="/load-booking" class="btn btn-primary btn-sm">⚡ Propose New Load</a>
+        <button type="button" class="btn btn-light btn-sm" onclick="loadProposals()">↻ Refresh</button>
+      </div>
+    </header>
+
+    <main class="app-content">
+      <div class="prop-banner">
+        <div>
+          <div style="font-size:15px;font-weight:800;">🛡️ Shipping Wish Zero-Forced-Dispatch Carrier Approval Bridge</div>
+          <div style="font-size:12px;color:#cbd5e1;margin-top:3px;">Every load proposed from LoadsNexus appears here in real time. Carriers tap Approve or Decline on Web or Mobile App before RateCon is locked.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <select id="filter-pill" class="form-select" style="width:auto;background:#0f172a;color:#fff;border-color:#334155;font-size:12px;font-weight:700;" onchange="renderTable()">
+            <option value="ALL">All Statuses</option>
+            <option value="Sent to Carrier">Sent to Carrier</option>
+            <option value="Carrier Approved (Ready to Book)">Carrier Approved (Ready to Book)</option>
+            <option value="Declined by Carrier">Declined by Carrier</option>
+            <option value="Rate Con Uploaded">Rate Con Uploaded</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="prop-kpis">
+        <div class="prop-kpi">
+          <div class="prop-kpi-lbl">📤 Sent to Carrier</div>
+          <div class="prop-kpi-val" id="kpi-sent">0</div>
+        </div>
+        <div class="prop-kpi emerald">
+          <div class="prop-kpi-lbl">✅ Carrier Approved</div>
+          <div class="prop-kpi-val" id="kpi-approved">0</div>
+        </div>
+        <div class="prop-kpi amber">
+          <div class="prop-kpi-lbl">📄 Rate Con Uploaded</div>
+          <div class="prop-kpi-val" id="kpi-ratecon">0</div>
+        </div>
+        <div class="prop-kpi rose">
+          <div class="prop-kpi-lbl">✕ Declined</div>
+          <div class="prop-kpi-val" id="kpi-declined">0</div>
+        </div>
+      </div>
+
+      <div class="tms-table-card">
+        <div class="tms-table-wrapper">
+          <table class="tms-table-v2">
+            <thead>
+              <tr>
+                <th>Load # &amp; Source</th>
+                <th>Lane / Corridor</th>
+                <th>Rate &amp; RPM</th>
+                <th>Carrier Client</th>
+                <th>Broker</th>
+                <th>Approval Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="proposals-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">Loading carrier approval proposals...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/tms.js"></script>
+<script src="/js/app-shell.js?v=40"></script>
+<script>
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  let allProposals = [];
+  let currentUser = null;
+
+  async function initPage() {
+    currentUser = await checkAuth(['dispatcher', 'admin', 'super_admin', 'carrier', 'carrier_admin']);
+    if (!currentUser) return;
+    loadProposals();
+  }
+
+  async function loadProposals() {
+    const tbody = document.getElementById('proposals-tbody');
+    try {
+      const res = await fetch('/api/v1/dispatch/proposals', { credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load proposals');
+      allProposals = data.proposals || [];
+      updateKpis();
+      renderTable();
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#dc2626;">${esc(err.message)}</td></tr>`;
+    }
+  }
+
+  function updateKpis() {
+    const cnt = (label) => allProposals.filter(p => p.display_pill === label).length;
+    document.getElementById('kpi-sent').textContent = cnt('Sent to Carrier');
+    document.getElementById('kpi-approved').textContent = cnt('Carrier Approved (Ready to Book)');
+    document.getElementById('kpi-ratecon').textContent = cnt('Rate Con Uploaded');
+    document.getElementById('kpi-declined').textContent = cnt('Declined by Carrier');
+  }
+
+  function pillClass(label) {
+    if (label === 'Carrier Approved (Ready to Book)') return 'pill pill-approved';
+    if (label === 'Rate Con Uploaded') return 'pill pill-ratecon';
+    if (label === 'Declined by Carrier') return 'pill pill-declined';
+    return 'pill pill-sent';
+  }
+
+  async function decideProposal(loadId, decision) {
+    const note = decision === 'decline' ? (prompt('Optional reason for declining this load:') || '') : '';
+    try {
+      const res = await fetch(`/api/loads/${loadId}/carrier-decision`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ decision, notes: note })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Decision failed');
+      alert(data.message || `Load ${decision}d!`);
+      loadProposals();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('proposals-tbody');
+    const filter = document.getElementById('filter-pill').value;
+    const rows = filter === 'ALL' ? allProposals : allProposals.filter(p => p.display_pill === filter);
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;" class="text-muted">No carrier proposals yet. Go to <strong>Load Board &amp; AI Match</strong> and propose a load to any carrier!</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rows.map(p => {
+      const rate = Number(p.rate || 0);
+      const miles = Number(p.miles || 0);
+      const rpm = miles > 0 && rate > 0 ? (rate / miles).toFixed(2) : Number(p.rpm || 0).toFixed(2);
+      const isPending = p.display_pill === 'Sent to Carrier';
+      const carrierDisplay = p.assigned_carrier_company || p.assigned_carrier_name || p.carrier_name || 'Assigned Carrier';
+      return `
+        <tr>
+          <td>
+            <strong>${esc(p.load_number || ('#' + p.id))}</strong>
+            <div style="margin-top:3px;"><span class="src-badge">${esc(p.source_channel || 'LOADSNEXUS')}</span></div>
+          </td>
+          <td>
+            <div style="font-weight:700;">${esc(p.pickup_location)} &rarr; ${esc(p.delivery_location)}</div>
+            <div style="font-size:11px;color:#64748b;">${esc(p.equipment_type || '53ft Dry Van')} · ${miles ? miles.toLocaleString() + ' mi' : 'Est'}</div>
+          </td>
+          <td>
+            <strong style="color:#059669;">$${rate.toLocaleString()}</strong>
+            <div style="font-size:11px;color:#475569;">$${rpm}/mi</div>
+          </td>
+          <td>
+            <div style="font-weight:700;">${esc(carrierDisplay)}</div>
+            ${p.assigned_carrier_phone ? `<div style="font-size:11px;color:#64748b;">${esc(p.assigned_carrier_phone)}</div>` : ''}
+          </td>
+          <td>
+            <div style="font-weight:600;">${esc(p.broker_name || 'Verified Broker')}</div>
+            ${p.broker_mc ? `<div style="font-size:11px;color:#64748b;">${esc(p.broker_mc)}</div>` : ''}
+          </td>
+          <td><span class="${pillClass(p.display_pill)}">${esc(p.display_pill)}</span></td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              ${isPending ? `
+                <button type="button" class="btn btn-primary btn-sm" style="background:#059669;border-color:#059669;" onclick="decideProposal(${p.id}, 'approve')">✅ Approve</button>
+                <button type="button" class="btn btn-light btn-sm" style="color:#dc2626;" onclick="decideProposal(${p.id}, 'decline')">✕ Decline</button>
+              ` : `
+                <a href="/api/loadboard/loads/${encodeURIComponent(p.load_number || p.id)}/ratecon-pdf" target="_blank" class="btn btn-light btn-sm">📄 RateCon</a>
+              `}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', initPage);
+</script>
+</body>
+</html>

@@ -21,6 +21,14 @@
       "destination": "/load-booking.html"
     },
     {
+      "source": "/dispatch/proposals",
+      "destination": "/dispatch-proposals.html"
+    },
+    {
+      "source": "/dispatch-proposals",
+      "destination": "/dispatch-proposals.html"
+    },
+    {
       "source": "/superadmin-command",
       "destination": "/superadmin-command.html"
     },

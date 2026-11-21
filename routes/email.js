@@ -1161,6 +1161,23 @@ router.post('/inbound', async (req, res) => {
       return res.status(400).json({ error: 'Inbound payload missing from address' });
     }
     const result = await ingestInbound(parsed);
+
+    // Module B Auto-Hook: If email was forwarded to loads@loadsnexus.com / freight@loadsnexus.com / loads@shippingwish.com,
+    // automatically extract broker freight loads via AI & publish live to LoadsNexus!
+    try {
+      const { isFreightIngestRecipient, processInboundFreightEmail } = require('../utils/email-load-pipeline');
+      if (isFreightIngestRecipient(parsed.toEmail)) {
+        result.freight_ingest = await processInboundFreightEmail({
+          fromEmail: parsed.fromEmail,
+          toEmail: parsed.toEmail,
+          subject: parsed.subject,
+          bodyText: parsed.bodyText,
+          bodyHtml: parsed.bodyHtml,
+          attachments: parsed.attachments || []
+        }).catch((e) => ({ ok: false, error: e.message }));
+      }
+    } catch (_) {}
+
     res.json(result);
   } catch (err) {
     console.error('Inbound email error:', err);

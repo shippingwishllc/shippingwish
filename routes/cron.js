@@ -36,6 +36,18 @@ router.get('/loadboard-sync', requireCronAuth, async (req, res) => {
       await dispatchDesk.autoCoverStaleDatLoads().catch(() => {});
       results.staleCleaned = true;
     }
+    try {
+      const { expireStaleLoads } = require('../utils/load-ingest');
+      results.expired24h = await expireStaleLoads();
+    } catch (e) {
+      results.expired24h = { error: e.message };
+    }
+    try {
+      const { pollConfiguredAdapters } = require('../utils/broker-adapters');
+      results.brokerAdapters = await pollConfiguredAdapters();
+    } catch (e) {
+      results.brokerAdapters = { error: e.message };
+    }
     res.json({ ok: true, job: 'loadboard-sync', timestamp: new Date().toISOString(), results });
   } catch (err) {
     res.status(500).json({ error: err.message });

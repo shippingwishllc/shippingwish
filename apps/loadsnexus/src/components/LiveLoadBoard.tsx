@@ -430,14 +430,15 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-500 font-semibold">
-                      <div className="inline-flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
-                        Scanning 50-State Spot Network for Live Verified Freight…
-                      </div>
-                    </td>
-                  </tr>
+                  <>
+                    {[1, 2, 3, 4, 5].map((sk) => (
+                      <tr key={sk} className="animate-pulse">
+                        <td colSpan={8} className="py-3.5 px-4">
+                          <div className="h-4 bg-slate-200 rounded-md w-full opacity-70" />
+                        </td>
+                      </tr>
+                    ))}
+                  </>
                 ) : visibleLoads.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-500 font-medium">
@@ -570,13 +571,26 @@ export const LiveLoadBoard: React.FC<LiveLoadBoardProps> = ({
 
                         {/* Broker & Score */}
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900 truncate max-w-[150px]">{bName}</div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className="font-bold text-slate-900 truncate max-w-[160px] flex items-center gap-1">
+                            <span>{bName}</span>
+                            {load.verified_broker && (
+                              <span title="FMCSA Verified Broker Authority" className="text-emerald-600 text-xs">🛡️</span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1 mt-0.5">
                             <span className="text-[10px] font-extrabold px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">
                               {dtp} DTP
                             </span>
-                            <span className="text-[10px] font-bold px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded">
-                              Bond Active
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 bg-blue-50 text-blue-700 border border-blue-200 rounded">
+                              {load.source_channel === 'BROKER_API'
+                                ? 'Broker API'
+                                : load.source_channel === 'EMAIL_PARSER'
+                                ? 'Verified Email'
+                                : load.source_channel === 'CSV_SYNC'
+                                ? 'CSV Feed'
+                                : load.source_channel === 'EDI_204'
+                                ? 'EDI 204'
+                                : 'Direct Broker'}
                             </span>
                           </div>
                         </td>

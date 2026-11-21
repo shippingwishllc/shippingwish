@@ -22,6 +22,10 @@ export interface FreightLoad {
   credit_score?: string;
   bond_status?: string;
   is_live_broker_post?: boolean;
+  verified_broker?: boolean;
+  source_channel?: string;
+  full_or_partial?: string;
+  expires_at?: string | null;
   posted_age?: string;
   effective_rpm?: string | number;
   net_profit_est?: number;

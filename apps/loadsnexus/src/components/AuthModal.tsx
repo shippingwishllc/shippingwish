@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { UserSession } from '../types';
+import { BrokerRegisterModal } from './BrokerRegisterModal';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -32,8 +33,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [resetOtp, setResetOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isBrokerRegisterOpen, setIsBrokerRegisterOpen] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen && !isBrokerRegisterOpen) return null;
+  if (isBrokerRegisterOpen) {
+    return (
+      <BrokerRegisterModal
+        isOpen={isBrokerRegisterOpen}
+        onClose={() => {
+          setIsBrokerRegisterOpen(false);
+          onClose();
+        }}
+        onSuccess={(u) => {
+          setIsBrokerRegisterOpen(false);
+          onSuccess(u);
+          onClose();
+        }}
+        onShowToast={onShowToast}
+      />
+    );
+  }
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -307,18 +326,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <div>
-                    New Broker?{' '}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onOpenBrokerPost();
-                      }}
-                      className="text-purple-600 font-bold hover:underline"
-                    >
-                      Post loads 100% Free →
-                    </button>
+                  <div className="space-y-1.5">
+                    <div>
+                      New Freight Broker?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setIsBrokerRegisterOpen(true)}
+                        className="text-emerald-600 font-extrabold hover:underline"
+                      >
+                        Verify MC# &amp; Register Free (FMCSA Live) →
+                      </button>
+                    </div>
+                    <div>
+                      Or{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onOpenBrokerPost();
+                        }}
+                        className="text-purple-600 font-bold hover:underline"
+                      >
+                        Post a Load Immediately →
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
