@@ -630,10 +630,23 @@
           </div>
         </div>
 
+        <!-- Step 2: 6-Digit Email OTP Verification Box (Revealed after OTP sent from noreply@nyclimowish.com) -->
+        <div id="otp-verify-box" style="display:none;margin-bottom:16px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.45);border-radius:12px;padding:16px;">
+          <div style="font-size:0.86rem;font-weight:800;color:#86efac;margin-bottom:6px;">📧 Step 2: Enter 6-Digit Email Verification Code</div>
+          <p id="otp-sent-hint" style="margin:0 0 12px;font-size:0.8rem;color:#cbd5e1;line-height:1.45;">
+            We sent a 6-digit code from <strong>noreply@nyclimowish.com</strong> to your email. Enter it below to submit your application.
+          </p>
+          <input type="hidden" name="otpToken" id="otpToken">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input class="app-input" type="text" inputmode="numeric" maxlength="6" name="otpCode" id="otpCode" placeholder="6-digit OTP" style="max-width:180px;letter-spacing:0.25em;font-weight:800;font-size:1.05rem;text-align:center;">
+            <button type="button" id="btn-resend-otp" style="background:#2d2d2d;border:1px solid rgba(255,255,255,0.2);color:#e2e8f0;padding:11px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:700;">↻ Resend Code</button>
+          </div>
+        </div>
+
         <div id="form-msg" style="display:none;margin-bottom:16px;padding:12px;border-radius:8px;font-size:0.88rem;"></div>
 
         <button type="submit" class="limo-btn limo-btn-gold limo-btn-block" id="submit-app-btn" style="padding:15px;font-weight:800;letter-spacing:0.06em;">
-          SUBMIT APPLICATION
+          📧 SEND EMAIL VERIFICATION CODE
         </button>
       </form>
     </div>
@@ -737,21 +750,106 @@
   }
   loadHumanChallenge();
 
-  document.getElementById('partner-apply-form')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const btn = document.getElementById('submit-app-btn');
-    const msg = document.getElementById('form-msg');
-    btn.disabled = true;
-    btn.textContent = 'SUBMITTING APPLICATION...';
-    msg.style.display = 'none';
+  let otpStepActive = false;
 
-    const formData = new FormData(e.target);
+  function showFormMsg(ok, htmlText) {
+    const msg = document.getElementById('form-msg');
+    if (!msg) return;
+    msg.style.display = 'block';
+    msg.style.background = ok ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+    msg.style.border = ok ? '1px solid #22c55e' : '1px solid #ef4444';
+    msg.style.color = ok ? '#86efac' : '#fca5a5';
+    msg.innerHTML = htmlText;
+  }
+
+  function collectApplicationPayload(form) {
+    const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
-    
-    // Collect checkboxes
     const software = [];
     document.querySelectorAll('input[name="dispatchSoftware"]:checked').forEach(cb => software.push(cb.value));
     data.dispatchSoftware = software;
+    return data;
+  }
+
+  async function requestEmailOtp(form) {
+    const btn = document.getElementById('submit-app-btn');
+    const otpBox = document.getElementById('otp-verify-box');
+    const otpTokEl = document.getElementById('otpToken');
+    const otpCodeEl = document.getElementById('otpCode');
+    const hintEl = document.getElementById('otp-sent-hint');
+    const data = collectApplicationPayload(form);
+
+    btn.disabled = true;
+    btn.textContent = 'SENDING 6-DIGIT OTP TO YOUR EMAIL...';
+    document.getElementById('form-msg').style.display = 'none';
+
+    try {
+      const res = await fetch('/api/nyclimo/partner/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Could not send verification code');
+
+      otpStepActive = true;
+      if (otpTokEl) otpTokEl.value = result.otpToken || '';
+      if (otpBox) otpBox.style.display = 'block';
+      if (otpCodeEl) {
+        otpCodeEl.required = true;
+        otpCodeEl.value = '';
+        otpCodeEl.focus();
+      }
+      if (hintEl) {
+        hintEl.innerHTML = `We sent a 6-digit code from <strong>noreply@nyclimowish.com</strong> to <strong>${String(data.email || '').replace(/</g, '&lt;')}</strong>. Enter it below to finalize your application.`;
+      }
+      showFormMsg(true, '<strong>OTP Sent!</strong> Check your inbox (and spam folder) for your 6-digit code from <strong>noreply@nyclimowish.com</strong>.');
+      btn.disabled = false;
+      btn.textContent = '✅ VERIFY OTP & SUBMIT APPLICATION';
+    } catch (err) {
+      showFormMsg(false, String(err.message || 'Could not send verification code.').replace(/</g, '&lt;'));
+      loadHumanChallenge();
+      btn.disabled = false;
+      btn.textContent = otpStepActive ? '✅ VERIFY OTP & SUBMIT APPLICATION' : '📧 SEND EMAIL VERIFICATION CODE';
+    }
+  }
+
+  document.getElementById('btn-resend-otp')?.addEventListener('click', function() {
+    const form = document.getElementById('partner-apply-form');
+    if (form) requestEmailOtp(form);
+  });
+
+  document.getElementById('email')?.addEventListener('change', function() {
+    if (otpStepActive) {
+      otpStepActive = false;
+      document.getElementById('otp-verify-box').style.display = 'none';
+      document.getElementById('otpToken').value = '';
+      document.getElementById('otpCode').required = false;
+      document.getElementById('submit-app-btn').textContent = '📧 SEND EMAIL VERIFICATION CODE';
+    }
+  });
+
+  document.getElementById('partner-apply-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const btn = document.getElementById('submit-app-btn');
+
+    // Step 1: Send 6-digit Email OTP from noreply@nyclimowish.com first
+    if (!otpStepActive || !document.getElementById('otpToken')?.value) {
+      return requestEmailOtp(form);
+    }
+
+    // Step 2: Verify 6-digit OTP & Submit Application
+    const data = collectApplicationPayload(form);
+    const cleanOtp = String(data.otpCode || '').replace(/\D/g, '');
+    if (cleanOtp.length !== 6) {
+      showFormMsg(false, 'Please enter the exact 6-digit verification code sent to your email.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'VERIFYING OTP & SUBMITTING...';
+    document.getElementById('form-msg').style.display = 'none';
 
     try {
       const res = await fetch('/api/nyclimo/partner/apply', {
@@ -762,23 +860,18 @@
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Could not submit application');
 
-      msg.style.display = 'block';
-      msg.style.background = 'rgba(34, 197, 94, 0.15)';
-      msg.style.border = '1px solid #22c55e';
-      msg.style.color = '#86efac';
-      msg.innerHTML = '<strong>Success!</strong> Your partner application has been received. Our dispatch onboarding desk will review your details and contact you shortly.';
-      e.target.reset();
+      showFormMsg(true, '<strong>Email Verified &amp; Application Submitted!</strong> Your chauffeur partner application has been received. Our dispatch onboarding desk will review your details and contact you shortly.');
+      form.reset();
+      otpStepActive = false;
+      document.getElementById('otp-verify-box').style.display = 'none';
+      document.getElementById('otpToken').value = '';
+      document.getElementById('otpCode').required = false;
       loadHumanChallenge();
       btn.textContent = 'APPLICATION SUBMITTED ✓';
     } catch (err) {
-      msg.style.display = 'block';
-      msg.style.background = 'rgba(239, 68, 68, 0.15)';
-      msg.style.border = '1px solid #ef4444';
-      msg.style.color = '#fca5a5';
-      msg.textContent = err.message || 'Submission error. Please try again.';
-      loadHumanChallenge();
+      showFormMsg(false, String(err.message || 'Submission error. Please try again.').replace(/</g, '&lt;'));
       btn.disabled = false;
-      btn.textContent = 'SUBMIT APPLICATION';
+      btn.textContent = '✅ VERIFY OTP & SUBMIT APPLICATION';
     }
   });
 </script>

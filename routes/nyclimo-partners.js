@@ -10,6 +10,8 @@ const {
 const {
   createChallenge,
   verifyChallenge,
+  createEmailOtpToken,
+  verifyEmailOtpToken,
   checkIpRateLimit,
   isLikelyBotApplication,
   escapeHtml
@@ -597,11 +599,135 @@ router.patch('/erp/commissions/:id/payout', ...adminGate, async (req, res) => {
 });
 
 // ---------- PUBLIC DRIVER & AFFILIATE ONBOARDING APPLICATION ----------
+const LIMO_OTP_SENDER = process.env.NYCLIMO_OTP_FROM || 'NYC Limo Wish <noreply@nyclimowish.com>';
+
 router.get('/partner/challenge', (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.json({ ok: true, ...createChallenge() });
 });
 
+// Step 1: Validate Anti-Bot Shield & Send 6-Digit Email OTP from noreply@nyclimowish.com
+router.post('/partner/send-otp', async (req, res) => {
+  const b = req.body || {};
+
+  // Layer 1: Invisible Honeypot Trap (silently swallow bots — zero email sent!)
+  if (String(b.website_url || b.website || b.fax_number || '').trim().length > 0) {
+    return res.status(200).json({ ok: true, message: 'Verification code sent.' });
+  }
+
+  // Layer 2: Strict IP rate limit (max 3 OTP emails/hour per IP — prevents OTP bombing)
+  const rl = checkIpRateLimit(req, 'nyclimo_partner_otp', 3, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return res.status(429).json({
+      error: 'Too many verification code requests from this network. Please wait before trying again.'
+    });
+  }
+
+  // Layer 3: Signed Human Math Challenge + minimum fill-time (>= 2.5s)
+  const challengeCheck = verifyChallenge(b.challengeToken, b.challengeAnswer);
+  if (!challengeCheck.ok) {
+    return res.status(400).json({ error: challengeCheck.reason });
+  }
+
+  const fullName = String(b.fullName || b.name || '').trim().slice(0, 150);
+  const companyName = String(b.companyName || '').trim().slice(0, 150);
+  const phone = String(b.phone || b.contactNumber || '').trim().slice(0, 50);
+  const email = String(b.email || '').trim().toLowerCase().slice(0, 254);
+  const vehicleName = String(b.vehicleName || b.vehicleModel || '').trim().slice(0, 100);
+  const vehicleColor = String(b.vehicleColor || '').trim().slice(0, 50);
+  const licenseNumber = String(b.licenseNumber || b.tlcLicense || b.commercialLicense || '').trim().slice(0, 100);
+  const notes = String(b.notes || b.comments || '').trim().slice(0, 1000);
+
+  if (!fullName || fullName.split(/\s+/).filter(Boolean).length < 2) {
+    return res.status(400).json({ error: 'Please enter your full First and Last Name.' });
+  }
+  if (!phone || !/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(400).json({ error: 'Full name, valid phone number, and email address are required.' });
+  }
+
+  // Layer 4: Automated bot / gibberish / Gmail dot-trick filter (BEFORE sending OTP!)
+  const spamCheck = isLikelyBotApplication({
+    fullName,
+    companyName,
+    phone,
+    email,
+    vehicleName,
+    vehicleColor,
+    licenseNumber,
+    notes
+  });
+  if (spamCheck.isSpam) {
+    console.warn('[NYCLIMO OTP ANTI-SPAM BLOCKED]:', spamCheck.reasons.join(','), email);
+    return res.status(400).json({
+      error: 'Please enter valid real chauffeur name, phone, email, and vehicle details (no random characters).'
+    });
+  }
+
+  try {
+    await ensureSchema();
+
+    // Prevent duplicate applications from same email/phone within 24 hours
+    const dupRes = await pool.query(
+      `SELECT id FROM limo_partner_applications
+       WHERE (LOWER(email) = LOWER($1) OR phone = $2)
+         AND created_at > NOW() - INTERVAL '24 hours'
+       LIMIT 1`,
+      [email, phone]
+    );
+    if (dupRes.rows.length > 0) {
+      return res.status(409).json({
+        error: 'We already received an application with this email or phone today. Our dispatch desk will contact you shortly.'
+      });
+    }
+
+    const { code, otpToken, expiresInMinutes } = createEmailOtpToken(email, 10 * 60 * 1000);
+    const { sendEmail } = require('../utils/mailer');
+    const safeName = escapeHtml(fullName);
+
+    const mailRes = await sendEmail({
+      to: email,
+      from: LIMO_OTP_SENDER,
+      replyTo: getLimoReplyTo(),
+      subject: `${code} is your NYC Limo Wish Partner Verification Code`,
+      text: `Hello ${fullName},\n\nYour NYC Limo Wish Partner Application verification code is: ${code}\n\nThis code expires in ${expiresInMinutes} minutes. Enter this code on nyclimowish.com/partner to complete your chauffeur application.\n\nIf you did not request this code, please ignore this email.\n\nNYC Limo Wish · Shipping Wish LLC`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d0d0d;color:#ffffff;border-radius:14px;padding:30px;border:1px solid rgba(216,159,37,0.35);">
+          <div style="text-align:center;margin-bottom:22px;">
+            <h1 style="color:#d89f25;letter-spacing:0.06em;margin:0;font-size:1.45rem;">NYC LIMO WISH</h1>
+            <p style="color:#94a3b8;font-size:0.82rem;margin-top:4px;">Chauffeur &amp; Fleet Partner Email Verification</p>
+          </div>
+          <p style="font-size:0.95rem;color:#e2e8f0;line-height:1.6;">Hello ${safeName},</p>
+          <p style="font-size:0.9rem;color:#cbd5e1;line-height:1.6;">Enter the 6-digit verification code below on the onboarding page to submit your NYC Limo Wish Partner Application:</p>
+          <div style="background:#181818;border:1px solid #d89f25;border-radius:10px;padding:18px;text-align:center;margin:22px 0;">
+            <div style="font-size:2rem;font-weight:900;letter-spacing:0.28em;color:#d89f25;font-family:monospace;">${code}</div>
+            <div style="font-size:0.78rem;color:#94a3b8;margin-top:8px;">Valid for ${expiresInMinutes} minutes</div>
+          </div>
+          <p style="font-size:0.8rem;color:#94a3b8;line-height:1.5;">If you did not apply to NYC Limo Wish, you can safely ignore this email.</p>
+          <div style="margin-top:22px;border-top:1px solid rgba(255,255,255,0.1);padding-top:14px;text-align:center;font-size:0.75rem;color:#64748b;">
+            NYC Limo Wish · Shipping Wish LLC · noreply@nyclimowish.com
+          </div>
+        </div>
+      `
+    });
+
+    if (mailRes && mailRes.error) {
+      console.warn('[NYCLIMO OTP EMAIL ERROR]:', mailRes.error);
+      return res.status(502).json({ error: 'Could not deliver OTP email right now. Please verify your email address and try again.' });
+    }
+
+    return res.json({
+      ok: true,
+      otpToken,
+      expiresInMinutes,
+      message: `6-digit verification code sent from noreply@nyclimowish.com to ${email}.`
+    });
+  } catch (err) {
+    console.error('[PARTNER OTP SEND ERROR]:', err.message);
+    return res.status(500).json({ error: 'Could not send verification code. Please try again.' });
+  }
+});
+
+// Step 2: Verify 6-Digit Email OTP & Finalize Application
 router.post('/partner/apply', async (req, res) => {
   const b = req.body || {};
 
@@ -613,18 +739,12 @@ router.post('/partner/apply', async (req, res) => {
     });
   }
 
-  // Layer 2: Per-IP hourly rate limit (max 3 submissions/hour per IP)
-  const rl = checkIpRateLimit(req, 'nyclimo_partner_apply', 3, 60 * 60 * 1000);
+  // Layer 2: Per-IP hourly rate limit (max 5 finalize attempts/hour per IP)
+  const rl = checkIpRateLimit(req, 'nyclimo_partner_apply', 5, 60 * 60 * 1000);
   if (!rl.allowed) {
     return res.status(429).json({
       error: 'Too many applications submitted from this network. Please wait before trying again.'
     });
-  }
-
-  // Layer 3: Signed HMAC human math challenge + minimum fill-time check (>= 2.5s)
-  const challengeCheck = verifyChallenge(b.challengeToken, b.challengeAnswer);
-  if (!challengeCheck.ok) {
-    return res.status(400).json({ error: challengeCheck.reason });
   }
 
   const applicantType = String(b.applicantType || 'chauffeur').toLowerCase() === 'affiliate' ? 'affiliate' : 'chauffeur';
@@ -632,6 +752,13 @@ router.post('/partner/apply', async (req, res) => {
   const companyName = String(b.companyName || '').trim().slice(0, 150);
   const phone = String(b.phone || b.contactNumber || '').trim().slice(0, 50);
   const email = String(b.email || '').trim().toLowerCase().slice(0, 254);
+
+  // Layer 3: Mandatory 6-Digit Email OTP Verification (proves applicant owns the real inbox!)
+  const otpCheck = verifyEmailOtpToken(b.otpToken, email, b.otpCode);
+  if (!otpCheck.ok) {
+    return res.status(400).json({ error: otpCheck.reason, code: 'OTP_REQUIRED' });
+  }
+
   const vehicleType = String(b.vehicleType || '').trim().slice(0, 100);
   const vehicleName = String(b.vehicleName || b.vehicleModel || '').trim().slice(0, 100);
   const vehicleYear = String(b.vehicleYear || b.modelYear || '').trim().slice(0, 20);
@@ -722,7 +849,7 @@ router.post('/partner/apply', async (req, res) => {
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;">
           <h2 style="color:#0f172a;margin-top:0;">New Partner / Chauffeur Application</h2>
-          <p style="color:#64748b;font-size:0.9rem;">An applicant has registered via the NYC Limo Wish Chauffeur Onboarding Portal (Human Verified ✓).</p>
+          <p style="color:#64748b;font-size:0.9rem;">An applicant has registered via the NYC Limo Wish Chauffeur Onboarding Portal (Email OTP Verified ✓).</p>
           <hr style="border:0;border-top:1px solid #eee;margin:16px 0;" />
           <table style="width:100%;font-size:0.9rem;color:#1e293b;border-collapse:collapse;">
             <tr><td style="padding:6px 0;font-weight:bold;width:160px;">Applicant Type:</td><td>${escapeHtml(app.applicant_type.toUpperCase())}</td></tr>

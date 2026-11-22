@@ -193,9 +193,63 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function createEmailOtpToken(email, ttlMs = 10 * 60 * 1000) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const code = String(crypto.randomInt(100000, 999999));
+  const codeHash = crypto.createHmac('sha256', SECRET).update(`${cleanEmail}:${code}`).digest('hex');
+  const payload = JSON.stringify({
+    email: cleanEmail,
+    h: codeHash,
+    exp: Date.now() + ttlMs
+  });
+  const payloadB64 = Buffer.from(payload, 'utf8').toString('base64url');
+  const sig = signPayload(payloadB64);
+  return {
+    code,
+    otpToken: `${payloadB64}.${sig}`,
+    expiresInMinutes: Math.round(ttlMs / 60000)
+  };
+}
+
+function verifyEmailOtpToken(otpToken, email, userCode) {
+  const raw = String(otpToken || '').trim();
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const cleanCode = String(userCode || '').replace(/\D/g, '').trim();
+  if (!raw || !raw.includes('.') || cleanCode.length !== 6) {
+    return { ok: false, reason: 'Please enter the 6-digit verification code sent to your email.' };
+  }
+  const [payloadB64, sig] = raw.split('.');
+  const expectedSig = signPayload(payloadB64);
+  const sigBuf = Buffer.from(sig || '');
+  const expBuf = Buffer.from(expectedSig);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+    return { ok: false, reason: 'Invalid verification session. Please request a new OTP code.' };
+  }
+  try {
+    const parsed = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+    if (Date.now() > Number(parsed.exp || 0)) {
+      return { ok: false, reason: 'Your 6-digit code expired. Please click "Resend Code" to get a fresh OTP.' };
+    }
+    if (String(parsed.email || '').toLowerCase() !== cleanEmail) {
+      return { ok: false, reason: 'Email address changed after OTP was sent. Please request a new code for this email.' };
+    }
+    const candidateHash = crypto.createHmac('sha256', SECRET).update(`${cleanEmail}:${cleanCode}`).digest('hex');
+    const aBuf = Buffer.from(String(parsed.h || ''));
+    const bBuf = Buffer.from(candidateHash);
+    if (aBuf.length !== bBuf.length || !crypto.timingSafeEqual(aBuf, bBuf)) {
+      return { ok: false, reason: 'Incorrect 6-digit OTP code. Please check your email and try again.' };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: 'Corrupted verification session. Please request a new OTP code.' };
+  }
+}
+
 module.exports = {
   createChallenge,
   verifyChallenge,
+  createEmailOtpToken,
+  verifyEmailOtpToken,
   checkIpRateLimit,
   isRandomMixedCaseGibberish,
   isGmailDotTrickSpam,
