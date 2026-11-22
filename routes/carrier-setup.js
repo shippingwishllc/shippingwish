@@ -10,6 +10,15 @@ const { isValidEmail } = require('../utils/email-valid');
 const { buildCarrierSetupPdf, welcomeSms } = require('../utils/carrier-setup-packet');
 const { sendTwilioSms, sendTwilioWhatsApp } = require('./voip');
 const { logSmsMessage, OUR_NUMBER } = require('../utils/sms-inbox');
+const {
+  createEmailOtpToken,
+  verifyEmailOtpToken,
+  checkIpRateLimit,
+  isRandomMixedCaseGibberish,
+  isGmailDotTrickSpam
+} = require('../utils/form-antispam');
+
+const SW_OTP_SENDER = process.env.MAIL_FROM_NOREPLY || 'Shipping Wish LLC <noreply@shippingwish.com>';
 
 const os = require('os');
 
@@ -114,13 +123,94 @@ function escapeHtml(str) {
 }
 
 /**
+ * POST /api/carrier-setup/send-otp
+ * Step 1: Anti-bot shield + send 6-digit verification OTP from noreply@shippingwish.com
+ */
+router.post('/send-otp', async (req, res) => {
+  const b = req.body || {};
+  if (String(b.website_url || b.website || '').trim().length > 0) {
+    return res.json({ ok: true, message: 'Verification code sent.' });
+  }
+  const rl = checkIpRateLimit(req, 'sw_carrier_setup_otp', 4, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return res.status(429).json({ error: 'Too many OTP requests from this network. Please wait before trying again.' });
+  }
+
+  const companyName = String(b.company_name || '').trim().slice(0, 150);
+  const ownerName = String(b.owner_name || b.contact_name || '').trim().slice(0, 150);
+  const phone = String(b.phone || '').trim().slice(0, 50);
+  const email = String(b.email || '').trim().toLowerCase().slice(0, 254);
+
+  if (!companyName || !phone || !email || !isValidEmail(email)) {
+    return res.status(400).json({ error: 'Company name, phone number, and valid email address are required first.' });
+  }
+  if (
+    isGmailDotTrickSpam(email) ||
+    isRandomMixedCaseGibberish(companyName) ||
+    isRandomMixedCaseGibberish(ownerName)
+  ) {
+    console.warn('[CARRIER-SETUP OTP ANTI-SPAM BLOCKED]:', email, companyName);
+    return res.status(400).json({ error: 'Please enter valid real company, contact name, and email details.' });
+  }
+
+  try {
+    const { code, otpToken, expiresInMinutes } = createEmailOtpToken(email, 10 * 60 * 1000);
+    const safeName = escapeHtml(ownerName || companyName);
+    const safeEmail = escapeHtml(email);
+
+    await sendBrandedEmail({
+      to: email,
+      from: SW_OTP_SENDER,
+      replyTo: 'dispatch@shippingwish.com',
+      subject: `${code} is your Shipping Wish Carrier Onboarding Verification Code`,
+      emailType: 'carrier_setup_otp',
+      transactional: true,
+      text: `Hello ${ownerName || companyName},\n\nYour Shipping Wish LLC Carrier Setup verification code is: ${code}\n\nThis code expires in ${expiresInMinutes} minutes. Enter it on shippingwish.com/carrier-setup to complete your onboarding packet.\n\nShipping Wish LLC · +1 (917) 737-0021`,
+      html: `<!DOCTYPE html><html><body style="margin:0;padding:24px 12px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#0f172a;">
+        <div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+          <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+            <span style="font-size:20px;font-weight:800;color:#0f172a;">Shipping<span style="color:#d97706;">Wish</span></span>
+          </div>
+          <div style="padding:20px 24px;background:#2563eb;color:#ffffff;font-size:20px;font-weight:700;">Carrier Setup Verification Code</div>
+          <div style="padding:24px;font-size:14px;line-height:1.6;color:#1e293b;">
+            <p style="margin:0 0 12px;">Dear ${safeName},</p>
+            <p style="margin:0 0 16px;">Enter this 6-digit code to verify your email (${safeEmail}) and submit your Shipping Wish Carrier Onboarding Packet:</p>
+            <div style="margin:18px 0;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;text-align:center;">
+              <span style="font-family:monospace;font-size:32px;font-weight:800;letter-spacing:5px;color:#0f172a;">${code}</span>
+            </div>
+            <p style="margin:0;color:#475569;font-size:13px;">Expires in <strong>${expiresInMinutes} minutes</strong>. Do not share this code with anyone.</p>
+          </div>
+          <div style="padding:14px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11.5px;color:#64748b;">
+            Shipping Wish LLC · 19266 Coastal Hwy, Rehoboth, DE 19971 · +1 (917) 737-0021 · noreply@shippingwish.com
+          </div>
+        </div>
+      </body></html>`
+    });
+
+    return res.json({
+      ok: true,
+      otpToken,
+      expiresInMinutes,
+      message: `6-digit verification code sent from noreply@shippingwish.com to ${email}.`
+    });
+  } catch (err) {
+    console.error('[CARRIER-SETUP OTP ERROR]:', err.message);
+    return res.status(500).json({ error: 'Could not send verification code. Please try again.' });
+  }
+});
+
+/**
  * POST /api/carrier-setup/submit
- * Handles multi-step digital carrier onboarding submission
+ * Handles multi-step digital carrier onboarding submission (Mandatory Email OTP Verified)
  */
 router.post('/submit', uploadFields, async (req, res) => {
   try {
     await ensureOnboardingTable();
     const body = req.body || {};
+
+    if (String(body.website_url || body.website || '').trim().length > 0) {
+      return res.json({ ok: true, company_name: body.company_name || 'Carrier', mc_number: body.mc_number || '' });
+    }
 
     const companyName = String(body.company_name || '').trim();
     const dba = String(body.dba || '').trim();
@@ -129,6 +219,15 @@ router.post('/submit', uploadFields, async (req, res) => {
     const phone = String(body.phone || '').trim();
     const emergencyPhone = String(body.emergency_phone || '').trim();
     const email = String(body.email || '').trim().toLowerCase();
+
+    // Verify 6-digit Email OTP sent from noreply@shippingwish.com
+    const otpCheck = verifyEmailOtpToken(body.otp_token || body.otpToken, email, body.otp_code || body.otpCode);
+    if (!otpCheck.ok) {
+      return res.status(400).json({ error: otpCheck.reason, code: 'OTP_REQUIRED' });
+    }
+    if (isGmailDotTrickSpam(email) || isRandomMixedCaseGibberish(companyName) || isRandomMixedCaseGibberish(ownerName)) {
+      return res.status(400).json({ error: 'Invalid carrier onboarding details detected.' });
+    }
     const billingEmail = String(body.billing_email || '').trim().toLowerCase();
     const address = String(body.address || '').trim();
     const city = String(body.city || '').trim();

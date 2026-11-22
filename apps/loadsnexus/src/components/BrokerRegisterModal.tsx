@@ -40,6 +40,9 @@ export const BrokerRegisterModal: React.FC<BrokerRegisterModalProps> = ({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpNotice, setOtpNotice] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -73,43 +76,89 @@ export const BrokerRegisterModal: React.FC<BrokerRegisterModalProps> = ({
     fmcsa?.expected_email_domain && emailDomain && emailDomain === fmcsa.expected_email_domain.toLowerCase()
   );
 
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendBrokerOtp = async () => {
     if (!fmcsa) return;
     if (password.length < 8) return setError('Password must be at least 8 characters.');
+    if (!email.trim() || !email.includes('@')) return setError('Please enter a valid work email address.');
     setError('');
+    setOtpNotice('');
     setSubmitting(true);
     try {
-      const res = await fetch('/api/signup', {
+      const res = await fetch('/api/signup/send-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Brand': 'loadsnexus' },
         credentials: 'include',
         body: JSON.stringify({
+          brand: 'loadsnexus',
           name: contactName.trim() || fmcsa.legal_name,
           email: email.trim(),
           password,
           role: 'broker',
-          company_name: fmcsa.legal_name,
-          mc_number: fmcsa.mc_number,
-          dot_number: fmcsa.dot_number,
+          company: fmcsa.legal_name,
+          mcNumber: fmcsa.mc_number,
+          dotNumber: fmcsa.dot_number,
           phone: phone.trim() || fmcsa.phone,
           address: fmcsa.address,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Registration failed. Please verify your details.');
+        setError(data.error || 'Could not send verification code. Please check your details.');
+        return;
+      }
+      setOtpSent(true);
+      setOtpCode('');
+      setOtpNotice(`6-digit verification code sent from noreply@loadsnexus.com to ${email.trim()}.`);
+      onShowToast(`Verification code sent to ${email.trim()}!`);
+    } catch {
+      setError('Network error while sending verification code.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fmcsa) return;
+
+    // Step 3a: Send 6-digit OTP from noreply@loadsnexus.com first
+    if (!otpSent) {
+      return handleSendBrokerOtp();
+    }
+
+    // Step 3b: Verify 6-digit OTP & activate FMCSA Broker account
+    const cleanOtp = otpCode.replace(/\D/g, '');
+    if (cleanOtp.length !== 6) {
+      return setError('Please enter the 6-digit verification code sent from noreply@loadsnexus.com.');
+    }
+
+    setError('');
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/signup/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Brand': 'loadsnexus' },
+        credentials: 'include',
+        body: JSON.stringify({
+          brand: 'loadsnexus',
+          email: email.trim(),
+          otp: cleanOtp,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Incorrect or expired verification code.');
         return;
       }
       onShowToast(
         domainMatchesFmcsa
-          ? `Welcome ${fmcsa.legal_name}! Instant FMCSA Verified Broker access unlocked.`
-          : `Broker account created for ${fmcsa.legal_name}!`
+          ? `Welcome ${fmcsa.legal_name}! Email Verified & Instant FMCSA Broker access unlocked.`
+          : `Email Verified! Broker account activated for ${fmcsa.legal_name}.`
       );
       if (data.user) onSuccess(data.user);
       onClose();
     } catch {
-      setError('Network error during broker registration.');
+      setError('Network error while verifying OTP.');
     } finally {
       setSubmitting(false);
     }
@@ -274,10 +323,42 @@ export const BrokerRegisterModal: React.FC<BrokerRegisterModalProps> = ({
                   />
                 </div>
               </div>
+              {otpSent && (
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2">
+                  <div className="text-xs font-black text-emerald-900">
+                    📧 Enter 6-Digit Email OTP (from noreply@loadsnexus.com)
+                  </div>
+                  {otpNotice && <div className="text-[11px] text-emerald-800">{otpNotice}</div>}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      required
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="123456"
+                      className="w-36 px-3 py-2 rounded-xl border border-emerald-300 bg-white text-center font-mono text-sm font-black tracking-[0.25em] text-slate-900"
+                    />
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={handleSendBrokerOtp}
+                      className="px-3 py-2 rounded-xl border border-emerald-300 bg-white hover:bg-emerald-100 text-emerald-800 text-[11px] font-extrabold"
+                    >
+                      ↻ Resend Code
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
+                  onClick={() => {
+                    setOtpSent(false);
+                    setStep(2);
+                  }}
                   className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700"
                 >
                   ← Back
@@ -287,7 +368,9 @@ export const BrokerRegisterModal: React.FC<BrokerRegisterModalProps> = ({
                   disabled={submitting}
                   className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-black shadow-md"
                 >
-                  {submitting ? '⏳ Creating Verified Account...' : '🚀 Complete Free Broker Registration'}
+                  {submitting
+                    ? (otpSent ? '⏳ Verifying OTP...' : '⏳ Sending OTP...')
+                    : (otpSent ? '✅ Verify OTP & Activate Broker Account' : '📧 Send Verification Code (OTP) →')}
                 </button>
               </div>
             </form>

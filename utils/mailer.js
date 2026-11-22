@@ -25,7 +25,8 @@ const LOADSNEXUS_SENDERS = {
   billing: 'LoadsNexus Billing <billing@loadsnexus.com>',
   support: 'LoadsNexus Support <support@loadsnexus.com>',
   deals: 'LoadsNexus Deals <deals@loadsnexus.com>',
-  auth: 'LoadsNexus Security <auth@loadsnexus.com>',
+  auth: 'LoadsNexus <noreply@loadsnexus.com>',
+  noreply: 'LoadsNexus <noreply@loadsnexus.com>',
   dispatch: 'LoadsNexus Dispatch <dispatch@loadsnexus.com>'
 };
 

@@ -8,6 +8,10 @@ const { sendBrandedEmail, getLoadsNexusSender } = require('../utils/mailer');
 const { COMPANY, APP_URL, escapeHtml, buildTemplate } = require('../utils/email-templates');
 const { getCarrierAccess, TRIAL_DAYS, isCarrierRole } = require('../middleware/subscription');
 const { verifyTotp, generateBase32Secret, getOtpAuthUrl } = require('../utils/totp');
+const {
+  isRandomMixedCaseGibberish,
+  isGmailDotTrickSpam
+} = require('../utils/form-antispam');
 
 const router = express.Router();
 
@@ -329,9 +333,15 @@ async function ensureSignupTables() {
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS weekly_plan TEXT').catch(() => {});
 }
 
-// Step 1 — send OTP to email (noreply@shippingwish.com)
+// Step 1 — send OTP to email (noreply@shippingwish.com or noreply@loadsnexus.com by brand)
 router.post('/signup/send-otp', rateLimit(5, 60000), async (req, res) => {
-  const { name, company, phone, email, password, mcNumber, dotNumber, address, role } = req.body;
+  const { name, company, phone, email, password, mcNumber, dotNumber, address, role, website_url, website } = req.body || {};
+
+  // Anti-Bot Shield Layer 1: Invisible honeypot trap (zero email sent)
+  if (String(website_url || website || '').trim().length > 0) {
+    return res.json({ ok: true, message: 'Verification code sent.', expiresInMinutes: 10 });
+  }
+
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email, and password are required.' });
   }
@@ -339,10 +349,24 @@ router.post('/signup/send-otp', rateLimit(5, 60000), async (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 8 characters.' });
   }
 
+  const emailNorm = String(email).trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(emailNorm)) {
+    return res.status(400).json({ error: 'Please enter a valid email address.' });
+  }
+
+  // Anti-Bot Shield Layer 2: Block Gmail dot-trick spam & random mixed-case bot gibberish BEFORE sending OTP
+  if (
+    isGmailDotTrickSpam(emailNorm) ||
+    isRandomMixedCaseGibberish(name) ||
+    isRandomMixedCaseGibberish(company)
+  ) {
+    console.warn('[SIGNUP OTP ANTI-SPAM BLOCKED]:', emailNorm, String(name).slice(0, 40));
+    return res.status(400).json({ error: 'Please enter a valid real name, company, and email address.' });
+  }
+
   const userRole = role === 'broker' ? 'broker' : 'carrier';
   const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').split(',')[0].trim();
   const userAgent = req.headers['user-agent'] || '';
-  const emailNorm = String(email).trim().toLowerCase();
 
   try {
     await ensureSignupTables();

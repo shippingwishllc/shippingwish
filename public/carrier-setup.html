@@ -966,11 +966,29 @@
           </label>
         </div>
 
+        <!-- Invisible Anti-Bot Honeypot -->
+        <div style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;" aria-hidden="true">
+          <input type="text" name="website_url" id="website_url" tabindex="-1" autocomplete="off">
+        </div>
+
+        <!-- Email OTP Verification Box (noreply@shippingwish.com) -->
+        <div id="sw-otp-box" style="display:none;margin:16px 0;padding:16px;border-radius:12px;background:#ecfdf5;border:1px solid #a7f3d0;">
+          <div style="font-size:0.9rem;font-weight:800;color:#065f46;margin-bottom:6px;">📧 Email Verification Required (from noreply@shippingwish.com)</div>
+          <p id="sw-otp-hint" style="margin:0 0 10px;font-size:0.82rem;color:#047857;">
+            We sent a 6-digit verification code from <strong>noreply@shippingwish.com</strong> to your email. Enter it below to finalize your carrier packet.
+          </p>
+          <input type="hidden" name="otp_token" id="sw_otp_token">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="text" inputmode="numeric" maxlength="6" name="otp_code" id="sw_otp_code" class="form-control" placeholder="6-digit OTP" style="max-width:170px;text-align:center;font-weight:800;letter-spacing:0.25em;font-size:1.05rem;">
+            <button type="button" id="btn-sw-resend-otp" style="padding:10px 14px;border-radius:8px;border:1px solid #059669;background:#fff;color:#047857;font-weight:700;font-size:0.8rem;cursor:pointer;">↻ Resend Code</button>
+          </div>
+        </div>
+
         <div class="wizard-actions">
           <button type="button" class="btn-prev" onclick="goToStep(2)">← Back to Fleet</button>
           <button type="submit" class="btn-next" id="btn-submit-setup">
-            <span id="submit-btn-text">Submit &amp; Activate Dispatch →</span>
-            <span id="submit-btn-spinner" style="display:none;">⏳ Submitting Packet...</span>
+            <span id="submit-btn-text">📧 Verify Email &amp; Activate Dispatch →</span>
+            <span id="submit-btn-spinner" style="display:none;">⏳ Processing...</span>
           </button>
         </div>
       </div>
@@ -1262,9 +1280,73 @@
   }
 
   // Handle Form Submission
+  let swOtpStepActive = false;
+
+  async function requestCarrierSetupOtp() {
+    const btnSubmit = document.getElementById('btn-submit-setup');
+    const textSpan = document.getElementById('submit-btn-text');
+    const spinnerSpan = document.getElementById('submit-btn-spinner');
+    const emailVal = (document.getElementById('email')?.value || '').trim();
+    const companyVal = (document.getElementById('company_name')?.value || '').trim();
+    const ownerVal = (document.getElementById('owner_name')?.value || '').trim();
+    const phoneVal = (document.getElementById('phone')?.value || '').trim();
+    const honeyVal = (document.getElementById('website_url')?.value || '').trim();
+
+    btnSubmit.disabled = true;
+    textSpan.style.display = 'none';
+    spinnerSpan.textContent = '⏳ Sending 6-Digit OTP...';
+    spinnerSpan.style.display = 'inline';
+
+    try {
+      const res = await fetch('/api/carrier-setup/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_name: companyVal,
+          owner_name: ownerVal,
+          phone: phoneVal,
+          email: emailVal,
+          website_url: honeyVal
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Could not send verification code');
+      }
+      swOtpStepActive = true;
+      document.getElementById('sw_otp_token').value = data.otpToken || '';
+      document.getElementById('sw-otp-box').style.display = 'block';
+      document.getElementById('sw-otp-hint').innerHTML = `We sent a 6-digit code from <strong>noreply@shippingwish.com</strong> to <strong>${emailVal.replace(/</g, '&lt;')}</strong>. Enter it below to finalize your carrier setup packet.`;
+      const codeInput = document.getElementById('sw_otp_code');
+      codeInput.value = '';
+      codeInput.focus();
+      document.getElementById('form-error-banner').style.display = 'none';
+      textSpan.textContent = '✅ Verify OTP & Submit Packet →';
+    } catch (err) {
+      showError(err.message || 'Could not send email verification code.');
+    } finally {
+      btnSubmit.disabled = false;
+      textSpan.style.display = 'inline';
+      spinnerSpan.style.display = 'none';
+    }
+  }
+
+  document.getElementById('btn-sw-resend-otp')?.addEventListener('click', requestCarrierSetupOtp);
+
   document.getElementById('carrier-setup-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!validateStep(3)) return;
+
+    // Step 1: Send 6-digit OTP from noreply@shippingwish.com first
+    if (!swOtpStepActive || !document.getElementById('sw_otp_token')?.value) {
+      return requestCarrierSetupOtp();
+    }
+
+    const cleanCode = (document.getElementById('sw_otp_code')?.value || '').replace(/\D/g, '');
+    if (cleanCode.length !== 6) {
+      showError('Please enter the 6-digit verification code sent from noreply@shippingwish.com.');
+      return;
+    }
 
     const btnSubmit = document.getElementById('btn-submit-setup');
     const textSpan = document.getElementById('submit-btn-text');
@@ -1272,6 +1354,7 @@
 
     btnSubmit.disabled = true;
     textSpan.style.display = 'none';
+    spinnerSpan.textContent = '⏳ Verifying OTP & Submitting Packet...';
     spinnerSpan.style.display = 'inline';
 
     try {
