@@ -303,6 +303,22 @@ ${['pending_operator','offering'].includes(b.status) ? '          <button class=
   }
 
   document.getElementById('btn-refresh-apps')?.addEventListener('click', loadPartnerApplications);
+  document.getElementById('btn-purge-spam-apps')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-purge-spam-apps');
+    if (!confirm('Remove automated bot spam applications (gibberish names/vehicles/Gmail dot-trick emails) while keeping real chauffeurs?')) return;
+    btn.disabled = true;
+    btn.textContent = 'Cleaning Spam...';
+    try {
+      const res = await api('/erp/partner-applications/purge-spam', { method: 'POST' });
+      alert(res.message || 'Bot spam cleaned!');
+      loadPartnerApplications();
+    } catch (e) {
+      alert(e.message || 'Failed to purge spam');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🧹 Clean Bot Spam';
+    }
+  });
 
   document.getElementById('btn-search-carriers')?.addEventListener('click', async () => {
     const btn = document.getElementById('btn-search-carriers');

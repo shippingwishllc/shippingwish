@@ -614,6 +614,22 @@
           <textarea class="app-input" name="notes" id="notes" rows="3" placeholder="Tell us about your chauffeuring experience, fleet size, or coverage area..."></textarea>
         </div>
 
+        <!-- Invisible Anti-Bot Honeypot (Hidden from real human users) -->
+        <div style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;" aria-hidden="true">
+          <label for="website_url">Website</label>
+          <input type="text" name="website_url" id="website_url" tabindex="-1" autocomplete="off">
+        </div>
+
+        <!-- Human Verification Check -->
+        <div class="app-field" style="background:rgba(216,159,37,0.08);border:1px solid rgba(216,159,37,0.35);border-radius:10px;padding:12px 14px;">
+          <label for="challengeAnswer" style="color:#d89f25;margin-bottom:8px;">🛡️ Human Verification * — <span id="challenge-question" style="color:#ffffff;">Loading check...</span></label>
+          <input type="hidden" name="challengeToken" id="challengeToken">
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input class="app-input" type="number" inputmode="numeric" name="challengeAnswer" id="challengeAnswer" placeholder="Enter answer" required style="max-width:180px;">
+            <button type="button" id="btn-reload-challenge" onclick="loadHumanChallenge()" style="background:#2d2d2d;border:1px solid rgba(255,255,255,0.2);color:#e2e8f0;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:700;">↻ New Check</button>
+          </div>
+        </div>
+
         <div id="form-msg" style="display:none;margin-bottom:16px;padding:12px;border-radius:8px;font-size:0.88rem;"></div>
 
         <button type="submit" class="limo-btn limo-btn-gold limo-btn-block" id="submit-app-btn" style="padding:15px;font-weight:800;letter-spacing:0.06em;">
@@ -702,6 +718,25 @@
     document.getElementById('form-heading').textContent = isAffiliate ? 'Affiliate Company Onboarding Form' : 'Driver Onboarding Form';
   }
 
+  async function loadHumanChallenge() {
+    const qEl = document.getElementById('challenge-question');
+    const tokEl = document.getElementById('challengeToken');
+    const ansEl = document.getElementById('challengeAnswer');
+    if (qEl) qEl.textContent = 'Loading...';
+    if (ansEl) ansEl.value = '';
+    try {
+      const r = await fetch('/api/nyclimo/partner/challenge', { cache: 'no-store' });
+      const d = await r.json();
+      if (d?.ok && d.token && d.question) {
+        if (qEl) qEl.textContent = d.question;
+        if (tokEl) tokEl.value = d.token;
+      }
+    } catch {
+      if (qEl) qEl.textContent = 'Please refresh page';
+    }
+  }
+  loadHumanChallenge();
+
   document.getElementById('partner-apply-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = document.getElementById('submit-app-btn');
@@ -733,6 +768,7 @@
       msg.style.color = '#86efac';
       msg.innerHTML = '<strong>Success!</strong> Your partner application has been received. Our dispatch onboarding desk will review your details and contact you shortly.';
       e.target.reset();
+      loadHumanChallenge();
       btn.textContent = 'APPLICATION SUBMITTED ✓';
     } catch (err) {
       msg.style.display = 'block';
@@ -740,6 +776,7 @@
       msg.style.border = '1px solid #ef4444';
       msg.style.color = '#fca5a5';
       msg.textContent = err.message || 'Submission error. Please try again.';
+      loadHumanChallenge();
       btn.disabled = false;
       btn.textContent = 'SUBMIT APPLICATION';
     }

@@ -643,11 +643,31 @@ router.get('/track/:number', async (req, res) => {
 
 router.post('/corporate-lead', async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, message } = req.body || {};
+    const { checkIpRateLimit, isRandomMixedCaseGibberish, isGmailDotTrickSpam, escapeHtml } = require('../utils/form-antispam');
+    const b = req.body || {};
+    if (String(b.website_url || b.website || '').trim()) {
+      return res.json({ ok: true });
+    }
+    const rl = checkIpRateLimit(req, 'nyclimo_corporate_lead', 5, 60 * 60 * 1000);
+    if (!rl.allowed) return res.status(429).json({ error: 'Too many requests. Please wait and try again.' });
+
+    const firstName = String(b.firstName || '').trim().slice(0, 80);
+    const lastName = String(b.lastName || '').trim().slice(0, 80);
+    const email = String(b.email || '').trim().toLowerCase().slice(0, 200);
+    const phone = String(b.phone || '').trim().slice(0, 40);
+    const message = String(b.message || '').trim().slice(0, 1500);
+
+    if (!firstName || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ error: 'Valid name and email address are required.' });
+    }
+    if (isGmailDotTrickSpam(email) || isRandomMixedCaseGibberish(firstName) || isRandomMixedCaseGibberish(lastName) || isRandomMixedCaseGibberish(message)) {
+      return res.status(400).json({ error: 'Invalid submission detected.' });
+    }
+
     await sendEmail({
       to: process.env.OPS_EMAIL || 'info@nyclimowish.com',
-      subject: `Corporate Lead — ${firstName} ${lastName}`,
-      html: `<p><strong>${firstName} ${lastName}</strong><br>${email}<br>${phone || ''}</p><p>${message || ''}</p>`
+      subject: `Corporate Lead — ${firstName} ${lastName}`.trim(),
+      html: `<p><strong>${escapeHtml(firstName)} ${escapeHtml(lastName)}</strong><br>${escapeHtml(email)}<br>${escapeHtml(phone)}</p><p>${escapeHtml(message)}</p>`
     });
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }

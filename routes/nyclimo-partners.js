@@ -7,6 +7,13 @@ const { ensureSchema } = require('../utils/limo-ensure-schema');
 const {
   getLimoSender, getLimoReplyTo, buildOperatorAcceptedHtml, buildRideStatusUpdateHtml
 } = require('../utils/limo-email-templates');
+const {
+  createChallenge,
+  verifyChallenge,
+  checkIpRateLimit,
+  isLikelyBotApplication,
+  escapeHtml
+} = require('../utils/form-antispam');
 
 const APP_URL = (process.env.NYCLIMO_APP_URL || 'https://www.nyclimowish.com').replace(/\/$/, '');
 
@@ -590,8 +597,36 @@ router.patch('/erp/commissions/:id/payout', ...adminGate, async (req, res) => {
 });
 
 // ---------- PUBLIC DRIVER & AFFILIATE ONBOARDING APPLICATION ----------
+router.get('/partner/challenge', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ ok: true, ...createChallenge() });
+});
+
 router.post('/partner/apply', async (req, res) => {
   const b = req.body || {};
+
+  // Layer 1: Invisible Honeypot Trap (silently swallow bot submissions — zero DB write, zero email)
+  if (String(b.website_url || b.website || b.fax_number || '').trim().length > 0) {
+    return res.status(200).json({
+      ok: true,
+      message: 'Application received successfully. Our team will review and contact you shortly.'
+    });
+  }
+
+  // Layer 2: Per-IP hourly rate limit (max 3 submissions/hour per IP)
+  const rl = checkIpRateLimit(req, 'nyclimo_partner_apply', 3, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return res.status(429).json({
+      error: 'Too many applications submitted from this network. Please wait before trying again.'
+    });
+  }
+
+  // Layer 3: Signed HMAC human math challenge + minimum fill-time check (>= 2.5s)
+  const challengeCheck = verifyChallenge(b.challengeToken, b.challengeAnswer);
+  if (!challengeCheck.ok) {
+    return res.status(400).json({ error: challengeCheck.reason });
+  }
+
   const applicantType = String(b.applicantType || 'chauffeur').toLowerCase() === 'affiliate' ? 'affiliate' : 'chauffeur';
   const fullName = String(b.fullName || b.name || '').trim().slice(0, 150);
   const companyName = String(b.companyName || '').trim().slice(0, 150);
@@ -608,12 +643,48 @@ router.post('/partner/apply', async (req, res) => {
   const licenseNumber = String(b.licenseNumber || b.tlcLicense || b.commercialLicense || '').trim().slice(0, 100);
   const notes = String(b.notes || b.comments || '').trim().slice(0, 1000);
 
-  if (!fullName || !phone || !/^\S+@\S+\.\S+$/.test(email)) {
+  if (!fullName || fullName.split(/\s+/).filter(Boolean).length < 2) {
+    return res.status(400).json({ error: 'Please enter your full First and Last Name.' });
+  }
+  if (!phone || !/^\S+@\S+\.\S+$/.test(email)) {
     return res.status(400).json({ error: 'Full name, valid phone number, and email address are required.' });
+  }
+
+  // Layer 4: Automated bot / gibberish / Gmail dot-trick filter
+  const spamCheck = isLikelyBotApplication({
+    fullName,
+    companyName,
+    phone,
+    email,
+    vehicleName,
+    vehicleColor,
+    licenseNumber,
+    notes
+  });
+  if (spamCheck.isSpam) {
+    console.warn('[NYCLIMO ANTI-SPAM BLOCKED]:', spamCheck.reasons.join(','), email);
+    return res.status(400).json({
+      error: 'Please enter valid real chauffeur name, phone, email, and vehicle details (no random characters).'
+    });
   }
 
   try {
     await ensureSchema();
+
+    // Layer 5: Prevent duplicate applications from same email/phone within 24 hours
+    const dupRes = await pool.query(
+      `SELECT id FROM limo_partner_applications
+       WHERE (LOWER(email) = LOWER($1) OR phone = $2)
+         AND created_at > NOW() - INTERVAL '24 hours'
+       LIMIT 1`,
+      [email, phone]
+    );
+    if (dupRes.rows.length > 0) {
+      return res.status(409).json({
+        error: 'We already received an application with this email or phone today. Our dispatch desk will contact you shortly.'
+      });
+    }
+
     const { rows } = await pool.query(
       `INSERT INTO limo_partner_applications (
          applicant_type, full_name, company_name, phone, email,
@@ -627,6 +698,18 @@ router.post('/partner/apply', async (req, res) => {
     );
 
     const app = rows[0];
+    const safeName = escapeHtml(fullName);
+    const safeCompany = escapeHtml(companyName);
+    const safePhone = escapeHtml(phone);
+    const safeEmail = escapeHtml(email);
+    const safeVehType = escapeHtml(vehicleType);
+    const safeVehName = escapeHtml(vehicleName);
+    const safeVehYear = escapeHtml(vehicleYear);
+    const safeVehColor = escapeHtml(vehicleColor);
+    const safeLic = escapeHtml(licenseNumber || 'Not specified');
+    const safeSoft = escapeHtml(dispatchSoftware || 'Independent');
+    const safeAirports = escapeHtml(airports);
+    const safeNotes = escapeHtml(notes);
 
     // Notify operations email
     const opsEmail = process.env.OPS_EMAIL || 'shippingwishllc@gmail.com';
@@ -639,19 +722,19 @@ router.post('/partner/apply', async (req, res) => {
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;">
           <h2 style="color:#0f172a;margin-top:0;">New Partner / Chauffeur Application</h2>
-          <p style="color:#64748b;font-size:0.9rem;">An applicant has registered via the NYC Limo Wish Chauffeur Onboarding Portal.</p>
+          <p style="color:#64748b;font-size:0.9rem;">An applicant has registered via the NYC Limo Wish Chauffeur Onboarding Portal (Human Verified ✓).</p>
           <hr style="border:0;border-top:1px solid #eee;margin:16px 0;" />
           <table style="width:100%;font-size:0.9rem;color:#1e293b;border-collapse:collapse;">
-            <tr><td style="padding:6px 0;font-weight:bold;width:160px;">Applicant Type:</td><td>${app.applicant_type.toUpperCase()}</td></tr>
-            <tr><td style="padding:6px 0;font-weight:bold;">Full Name:</td><td>${fullName}</td></tr>
-            ${companyName ? `<tr><td style="padding:6px 0;font-weight:bold;">Company:</td><td>${companyName}</td></tr>` : ''}
-            <tr><td style="padding:6px 0;font-weight:bold;">Phone:</td><td><a href="tel:${phone}">${phone}</a></td></tr>
-            <tr><td style="padding:6px 0;font-weight:bold;">Email:</td><td><a href="mailto:${email}">${email}</a></td></tr>
-            <tr><td style="padding:6px 0;font-weight:bold;">Vehicle:</td><td>${vehicleYear} ${vehicleName} (${vehicleType}) - ${vehicleColor}</td></tr>
-            <tr><td style="padding:6px 0;font-weight:bold;">TLC / License #:</td><td>${licenseNumber || 'Not specified'}</td></tr>
-            <tr><td style="padding:6px 0;font-weight:bold;">Dispatch Networks:</td><td>${dispatchSoftware || 'Independent'}</td></tr>
-            <tr><td style="padding:6px 0;font-weight:bold;">Airports Served:</td><td>${airports}</td></tr>
-            ${notes ? `<tr><td style="padding:6px 0;font-weight:bold;">Comments:</td><td>${notes}</td></tr>` : ''}
+            <tr><td style="padding:6px 0;font-weight:bold;width:160px;">Applicant Type:</td><td>${escapeHtml(app.applicant_type.toUpperCase())}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">Full Name:</td><td>${safeName}</td></tr>
+            ${safeCompany ? `<tr><td style="padding:6px 0;font-weight:bold;">Company:</td><td>${safeCompany}</td></tr>` : ''}
+            <tr><td style="padding:6px 0;font-weight:bold;">Phone:</td><td><a href="tel:${safePhone}">${safePhone}</a></td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">Email:</td><td><a href="mailto:${safeEmail}">${safeEmail}</a></td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">Vehicle:</td><td>${safeVehYear} ${safeVehName} (${safeVehType}) - ${safeVehColor}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">TLC / License #:</td><td>${safeLic}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">Dispatch Networks:</td><td>${safeSoft}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold;">Airports Served:</td><td>${safeAirports}</td></tr>
+            ${safeNotes ? `<tr><td style="padding:6px 0;font-weight:bold;">Comments:</td><td>${safeNotes}</td></tr>` : ''}
           </table>
           <div style="margin-top:24px;text-align:center;">
             <a href="${APP_URL}/erp" style="background:#d89f25;color:#000;padding:10px 22px;border-radius:8px;font-weight:bold;text-decoration:none;display:inline-block;">Open Dispatch ERP to Review</a>
@@ -672,8 +755,8 @@ router.post('/partner/apply', async (req, res) => {
             <h1 style="color:#d89f25;letter-spacing:0.05em;margin:0;font-size:1.6rem;">NYC LIMO WISH</h1>
             <p style="color:#94a3b8;font-size:0.85rem;margin-top:4px;">Executive Chauffeur &amp; Fleet Partner Network</p>
           </div>
-          <p style="font-size:1rem;line-height:1.6;color:#e2e8f0;">Dear ${fullName},</p>
-          <p style="font-size:0.95rem;line-height:1.6;color:#cbd5e1;">Thank you for applying to partner with NYC Limo Wish. Your application for <strong>${vehicleType || 'Executive Fleet'} (${vehicleName || 'Vehicle'})</strong> has been received by our operations dispatch team.</p>
+          <p style="font-size:1rem;line-height:1.6;color:#e2e8f0;">Dear ${safeName},</p>
+          <p style="font-size:0.95rem;line-height:1.6;color:#cbd5e1;">Thank you for applying to partner with NYC Limo Wish. Your application for <strong>${safeVehType || 'Executive Fleet'} (${safeVehName || 'Vehicle'})</strong> has been received by our operations dispatch team.</p>
           <div style="background:#181818;border-left:3px solid #d89f25;padding:16px 20px;border-radius:6px;margin:20px 0;">
             <h4 style="margin:0 0 8px;color:#d89f25;font-size:0.9rem;">What Happens Next:</h4>
             <ol style="margin:0;padding-left:18px;color:#94a3b8;font-size:0.85rem;line-height:1.6;">
@@ -730,6 +813,40 @@ router.patch('/erp/partner-applications/:id', ...adminGate, async (req, res) => 
     res.json({ ok: true, application: rows[0] });
   } catch (err) {
     res.status(500).json({ error: 'Could not update application.' });
+  }
+});
+
+// Admin endpoint to purge automated bot spam applications safely (leaves genuine chauffeurs intact)
+router.post('/erp/partner-applications/purge-spam', ...adminGate, async (req, res) => {
+  try {
+    await ensureSchema();
+    const { rows } = await pool.query(`SELECT * FROM limo_partner_applications ORDER BY id DESC LIMIT 1000`);
+    const spamIds = [];
+    for (const r of rows) {
+      const check = isLikelyBotApplication({
+        fullName: r.full_name,
+        companyName: r.company_name,
+        phone: r.phone,
+        email: r.email,
+        vehicleName: r.vehicle_name,
+        vehicleColor: r.vehicle_color,
+        licenseNumber: r.license_number,
+        notes: r.notes
+      });
+      if (check.isSpam) spamIds.push(r.id);
+    }
+    if (spamIds.length > 0) {
+      await pool.query(`DELETE FROM limo_partner_applications WHERE id = ANY($1::int[])`, [spamIds]);
+    }
+    const rem = await pool.query(`SELECT COUNT(*)::int AS cnt FROM limo_partner_applications`);
+    res.json({
+      ok: true,
+      deleted_count: spamIds.length,
+      remaining_count: Number(rem.rows[0]?.cnt || 0),
+      message: `Cleaned ${spamIds.length} automated bot spam application(s).`
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not purge spam applications: ' + err.message });
   }
 });
 
